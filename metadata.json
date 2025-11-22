@@ -1,0 +1,5 @@
+{
+  "name": "Apex AI",
+  "description": "Un simulador de gestión de fútbol realista y diseñado para móviles en el que asumes el rol de presidente de un club. Gestiona las finanzas, realiza fichajes y navega por el dinámico mundo del fútbol a través de noticias y eventos generados por IA. Con características como guardado de partidas, logros y estadísticas.",
+  "requestFramePermissions": []
+}
