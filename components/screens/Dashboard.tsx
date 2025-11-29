@@ -25,99 +25,24 @@ interface DashboardProps {
 }
 
 // --- Subcomponente: Tarjeta de Partido Inmersiva ---
-const MatchDayCard: React.FC<{ 
-    gameState: GameState, 
-    matchPhase: MatchPhase, 
-    onPlayMatch: () => void, 
+// --- Subcomponente: Tarjeta de Partido Inmersiva ---
+import { MatchEngine } from '../gameflow/MatchEngine';
+
+const MatchDayCard: React.FC<{
+    gameState: GameState,
+    matchPhase: MatchPhase,
+    onPlayMatch: () => void,
     pendingResults: PendingSimulationResults | null,
     onWeekComplete: () => void,
     dispatch: React.Dispatch<GameAction>
 }> = ({ gameState, matchPhase, onPlayMatch, pendingResults, onWeekComplete, dispatch }) => {
-    
+
     const nextWeek = gameState.currentWeek + 1;
     const nextMatch = gameState.schedule.find(m => m.week === nextWeek && (m.homeTeamId === gameState.team.id || m.awayTeamId === gameState.team.id));
-    
-    // Estados locales para la animación
-    const [displayHomeScore, setDisplayHomeScore] = useState(0);
-    const [displayAwayScore, setDisplayAwayScore] = useState(0);
-    const [gameMinute, setGameMinute] = useState(0);
-    const [matchEvent, setMatchEvent] = useState("El partido está por comenzar...");
 
     const opponentId = nextMatch ? (nextMatch.homeTeamId === gameState.team.id ? nextMatch.awayTeamId : nextMatch.homeTeamId) : 0;
     const opponent = gameState.allTeams.find(t => t.id === opponentId);
     const isHome = nextMatch?.homeTeamId === gameState.team.id;
-
-    // Resetear animación al entrar
-    useEffect(() => {
-        if (matchPhase === 'PRE') {
-            setDisplayHomeScore(0);
-            setDisplayAwayScore(0);
-            setGameMinute(0);
-            setMatchEvent("Calentamiento en progreso...");
-        }
-    }, [matchPhase]);
-
-    // Lógica de animación del partido
-    useEffect(() => {
-        if (matchPhase === 'LIVE' && pendingResults?.playerMatchResult) {
-            const finalHome = pendingResults.playerMatchResult.homeScore;
-            const finalAway = pendingResults.playerMatchResult.awayScore;
-            const totalDurationMs = 5000; // 5 segundos de simulación
-            const intervalTime = 50; // Actualizar cada 50ms
-            const steps = totalDurationMs / intervalTime;
-            const minutesPerStep = 90 / steps;
-
-            let currentStep = 0;
-
-            const timer = setInterval(() => {
-                currentStep++;
-                const currentMin = Math.min(90, Math.floor(currentStep * minutesPerStep));
-                setGameMinute(currentMin);
-
-                // Calcular goles progresivos
-                const progress = currentStep / steps; // 0 a 1
-                
-                // Goles Home
-                if (finalHome > 0) {
-                   const expectedGoalsNow = Math.floor(finalHome * progress);
-                   if (Math.random() < 0.1 && displayHomeScore < finalHome) {
-                       setDisplayHomeScore(prev => Math.min(finalHome, prev + 1));
-                       setMatchEvent(`¡GOOOOOOOL del ${isHome ? gameState.team.name : opponent?.name}!`);
-                   } else if (displayHomeScore < expectedGoalsNow) {
-                       setDisplayHomeScore(expectedGoalsNow);
-                   }
-                }
-
-                // Goles Away
-                if (finalAway > 0) {
-                    const expectedGoalsNow = Math.floor(finalAway * progress);
-                    if (Math.random() < 0.1 && displayAwayScore < finalAway) {
-                        setDisplayAwayScore(prev => Math.min(finalAway, prev + 1));
-                        setMatchEvent(`¡GOOOOOOOL del ${!isHome ? gameState.team.name : opponent?.name}!`);
-                    } else if (displayAwayScore < expectedGoalsNow) {
-                        setDisplayAwayScore(expectedGoalsNow);
-                    }
-                }
-
-                // Eventos aleatorios
-                if (Math.random() < 0.05 && displayHomeScore === 0 && displayAwayScore === 0) {
-                    const events = ["Balón al palo!", "Gran atajada del portero", "Juego trabado en medio campo", "El árbitro saca tarjeta amarilla", "Falta peligrosa al borde del área"];
-                    setMatchEvent(events[Math.floor(Math.random() * events.length)]);
-                }
-
-                if (currentStep >= steps) {
-                    clearInterval(timer);
-                    setDisplayHomeScore(finalHome);
-                    setDisplayAwayScore(finalAway);
-                    setMatchEvent("¡Final del Partido!");
-                    setTimeout(onWeekComplete, 1500); // Auto-continuar tras el pitido final
-                }
-            }, intervalTime);
-
-            return () => clearInterval(timer);
-        }
-    }, [matchPhase, pendingResults, isHome, gameState.team.name, opponent?.name, onWeekComplete]);
-
 
     if (!nextMatch || !opponent) {
         return (
@@ -127,22 +52,38 @@ const MatchDayCard: React.FC<{
                 <p className="text-slate-400 mb-8 max-w-md">
                     Has completado la temporada {gameState.season}. Revisa la clasificación final y prepárate para el próximo año. Los jugadores envejecerán, algunos se retirarán y llegarán nuevas promesas de la cantera.
                 </p>
-                <button 
+                <button
                     onClick={() => dispatch({ type: 'START_NEW_SEASON' })}
                     className="bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-8 rounded-lg shadow-xl shadow-sky-600/30 transform hover:scale-105 transition-all duration-200 text-lg flex items-center gap-2"
                 >
-                   <TrendingUpIcon className="w-6 h-6" /> Comenzar Temporada {gameState.season + 1}
+                    <TrendingUpIcon className="w-6 h-6" /> Comenzar Temporada {gameState.season + 1}
                 </button>
             </div>
         );
     }
 
-    // Renderizado según la fase
+    if (matchPhase === 'LIVE' && pendingResults?.playerMatchResult) {
+        return (
+            <MatchEngine
+                homeTeam={isHome ? gameState.team : opponent}
+                awayTeam={!isHome ? gameState.team : opponent}
+                matchPhase={matchPhase}
+                finalResult={{
+                    homeScore: pendingResults.playerMatchResult.homeScore,
+                    awayScore: pendingResults.playerMatchResult.awayScore,
+                    events: pendingResults.playerMatchResult.events || []
+                }}
+                onMatchComplete={onWeekComplete}
+            />
+        );
+    }
+
+    // Renderizado Pre-Partido
     return (
         <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-xl border border-slate-700 shadow-2xl mb-6">
             {/* Background Pattern */}
             <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-sky-900 via-slate-950 to-slate-950"></div>
-            
+
             <div className="relative z-10 p-6">
                 {/* Header: Competición */}
                 <div className="text-center mb-6">
@@ -154,70 +95,49 @@ const MatchDayCard: React.FC<{
                 <div className="flex items-center justify-between px-2 md:px-10 py-4">
                     {/* Home Team */}
                     <div className="flex flex-col items-center w-1/3">
-                        <div className={`transform transition-transform duration-500 ${matchPhase === 'LIVE' && displayHomeScore > displayAwayScore ? 'scale-110' : 'scale-100'}`}>
+                        <div className={`transform transition-transform duration-500 scale-100`}>
                             {isHome ? gameState.team.logo : opponent.logo}
                         </div>
                         <h2 className="text-lg md:text-2xl font-bold mt-3 text-center leading-tight">
                             {isHome ? gameState.team.name : opponent.name}
                         </h2>
-                        {matchPhase === 'PRE' && (
-                            <span className="text-xs bg-slate-700 px-2 py-1 rounded mt-2 text-slate-300">
-                                {isHome ? 'Local' : 'Visitante'}
-                            </span>
-                        )}
+                        <span className="text-xs bg-slate-700 px-2 py-1 rounded mt-2 text-slate-300">
+                            {isHome ? 'Local' : 'Visitante'}
+                        </span>
                     </div>
 
-                    {/* Center: VS or Score */}
+                    {/* Center: VS */}
                     <div className="flex flex-col items-center w-1/3">
-                        {matchPhase === 'PRE' ? (
-                            <div className="text-center space-y-2">
-                                <span className="text-4xl font-black text-slate-600 italic">VS</span>
-                                <div className="text-xs text-slate-400">
-                                    Dif: <span className={opponent.tier === 'Top' ? 'text-red-400' : opponent.tier === 'Mid' ? 'text-yellow-400' : 'text-green-400'}>{opponent.tier}</span>
-                                </div>
+                        <div className="text-center space-y-2">
+                            <span className="text-4xl font-black text-slate-600 italic">VS</span>
+                            <div className="text-xs text-slate-400">
+                                Dif: <span className={opponent.tier === 'Top' ? 'text-red-400' : opponent.tier === 'Mid' ? 'text-yellow-400' : 'text-green-400'}>{opponent.tier}</span>
                             </div>
-                        ) : (
-                            <div className="text-center animate-pulse">
-                                <div className="text-5xl md:text-6xl font-black text-white font-mono tracking-tighter">
-                                    {displayHomeScore} - {displayAwayScore}
-                                </div>
-                                <div className="text-green-400 font-mono text-lg mt-1">
-                                    {gameMinute}'
-                                </div>
-                            </div>
-                        )}
+                        </div>
                     </div>
 
                     {/* Away Team */}
                     <div className="flex flex-col items-center w-1/3">
-                         <div className={`transform transition-transform duration-500 ${matchPhase === 'LIVE' && displayAwayScore > displayHomeScore ? 'scale-110' : 'scale-100'}`}>
+                        <div className={`transform transition-transform duration-500 scale-100`}>
                             {!isHome ? gameState.team.logo : opponent.logo}
                         </div>
                         <h2 className="text-lg md:text-2xl font-bold mt-3 text-center leading-tight">
                             {!isHome ? gameState.team.name : opponent.name}
                         </h2>
-                        {matchPhase === 'PRE' && (
-                            <span className="text-xs bg-slate-700 px-2 py-1 rounded mt-2 text-slate-300">
-                                {!isHome ? 'Local' : 'Visitante'}
-                            </span>
-                        )}
+                        <span className="text-xs bg-slate-700 px-2 py-1 rounded mt-2 text-slate-300">
+                            {!isHome ? 'Local' : 'Visitante'}
+                        </span>
                     </div>
                 </div>
 
-                {/* Footer: Actions or Commentary */}
+                {/* Footer: Actions */}
                 <div className="mt-8 text-center">
-                    {matchPhase === 'PRE' ? (
-                        <button 
-                            onClick={onPlayMatch}
-                            className="bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-12 rounded-full shadow-lg shadow-sky-600/30 transform hover:scale-105 transition-all duration-200 text-lg animate-bounce"
-                        >
-                            Jugar Partido
-                        </button>
-                    ) : (
-                        <div className="h-8 text-sky-300 font-semibold animate-fade-in">
-                            {matchEvent}
-                        </div>
-                    )}
+                    <button
+                        onClick={onPlayMatch}
+                        className="bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-12 rounded-full shadow-lg shadow-sky-600/30 transform hover:scale-105 transition-all duration-200 text-lg animate-bounce"
+                    >
+                        Jugar Partido
+                    </button>
                 </div>
             </div>
         </div>
@@ -228,7 +148,7 @@ const MatchDayCard: React.FC<{
 // --- Bloques Laterales (Inbox, Stats rápidas) ---
 const QuickStats: React.FC<{ gameState: GameState }> = ({ gameState }) => {
     const playerTeamRow = gameState.leagueTable.find(row => row.teamId === gameState.team.id);
-    
+
     return (
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex justify-around items-center shadow-md">
             <div className="text-center">
@@ -240,7 +160,7 @@ const QuickStats: React.FC<{ gameState: GameState }> = ({ gameState }) => {
                 <div className="text-slate-400 text-xs uppercase font-bold mb-1">Liga</div>
                 <div className="text-xl font-bold text-white">{playerTeamRow ? `${playerTeamRow.position}º` : '-'}</div>
             </div>
-             <div className="h-8 w-px bg-slate-700"></div>
+            <div className="h-8 w-px bg-slate-700"></div>
             <div className="text-center">
                 <div className="text-slate-400 text-xs uppercase font-bold mb-1">Fondos</div>
                 <div className="text-xl font-bold text-green-400">{formatCurrency(gameState.finances.transferBudget)}</div>
@@ -249,7 +169,7 @@ const QuickStats: React.FC<{ gameState: GameState }> = ({ gameState }) => {
     );
 };
 
-const InboxPreview: React.FC<{ gameState: GameState, dispatch: React.Dispatch<GameAction>}> = ({ gameState, dispatch }) => {
+const InboxPreview: React.FC<{ gameState: GameState, dispatch: React.Dispatch<GameAction> }> = ({ gameState, dispatch }) => {
     const { incomingOffers, allTeams, team } = gameState;
     const getTeamName = (id: number) => allTeams.find(t => t.id === id)?.name || 'Club';
     const getPlayerName = (id: number) => team.squad.find(p => p.id === id)?.name || 'Jugador';
@@ -258,7 +178,7 @@ const InboxPreview: React.FC<{ gameState: GameState, dispatch: React.Dispatch<Ga
 
     return (
         <div className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg p-4 mt-6">
-             <h2 className="text-sm font-bold text-sky-400 border-b border-slate-800 pb-2 mb-3 flex items-center gap-2">
+            <h2 className="text-sm font-bold text-sky-400 border-b border-slate-800 pb-2 mb-3 flex items-center gap-2">
                 <InboxIcon className="w-4 h-4" /> Ofertas Pendientes ({incomingOffers.length})
             </h2>
             <div className="space-y-3">
@@ -268,7 +188,7 @@ const InboxPreview: React.FC<{ gameState: GameState, dispatch: React.Dispatch<Ga
                             <span className="text-white font-semibold">{getPlayerName(offer.playerId)}</span>
                             <span className="text-slate-400 text-xs block">Oferta de {getTeamName(offer.offeringTeamId)}: <span className='text-green-400'>{formatCurrency(offer.offerValue)}</span></span>
                         </div>
-                        <button 
+                        <button
                             onClick={() => dispatch({ type: 'ACCEPT_OFFER', payload: { offerId: offer.id } })}
                             className="bg-green-600 hover:bg-green-500 text-white text-xs py-1 px-3 rounded"
                         >
@@ -300,13 +220,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ gameState, onPlayMatch, ma
 
     return (
         <div className="p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-            
+
             {/* Center Column (Main Focus): Match Day */}
             <div className="lg:col-span-8 lg:order-2 space-y-6">
-                <MatchDayCard 
-                    gameState={gameState} 
-                    matchPhase={matchPhase} 
-                    onPlayMatch={onPlayMatch} 
+                <MatchDayCard
+                    gameState={gameState}
+                    matchPhase={matchPhase}
+                    onPlayMatch={onPlayMatch}
                     pendingResults={pendingResults}
                     onWeekComplete={onWeekComplete}
                     dispatch={dispatch}
@@ -329,7 +249,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ gameState, onPlayMatch, ma
             <div className="lg:col-span-4 lg:order-1 space-y-6">
                 <QuickStats gameState={gameState} />
                 <InboxPreview gameState={gameState} dispatch={dispatch} />
-                
+
                 {/* News Feed */}
                 <div className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg p-5 h-full max-h-[500px] flex flex-col">
                     <h2 className="text-lg font-bold mb-4 text-sky-400 flex items-center gap-2">

@@ -2,16 +2,67 @@
 import React from 'react';
 import { Team } from './types';
 
-// Using simple div with initials as placeholder logos for simplicity
-const createLogo = (initials: string, color: string, isDarkText: boolean = false) => (
-  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg ${color} ${isDarkText ? 'text-slate-900' : 'text-white'}`}>
-    {initials}
-  </div>
-);
+// Enhanced Logo Generator
+const createLogo = (initials: string, colorClass: string, isDarkText: boolean = false) => {
+  // Extract hex color from class name map (simplified for this demo, ideally we'd pass hex directly)
+  // For now, we keep the existing signature but render a nice SVG shield
+  const bgColor = colorClass.replace('bg-', '').replace('-', '');
+
+  return (
+    <div className={`w-12 h-12 relative flex items-center justify-center drop-shadow-lg transform hover:scale-110 transition-transform duration-300`}>
+      <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible">
+        <defs>
+          <linearGradient id={`grad-${initials}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="currentColor" className={colorClass.replace('bg-', 'text-')} stopOpacity="1" />
+            <stop offset="100%" stopColor="black" stopOpacity="0.4" />
+          </linearGradient>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
+            <feMerge>
+              <feMergeNode in="coloredBlur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
+        {/* Shield Shape */}
+        <path
+          d="M50 5 L90 20 V50 C90 75 50 95 50 95 C50 95 10 75 10 50 V20 L50 5 Z"
+          className={`${colorClass} fill-current stroke-white stroke-2`}
+          style={{ filter: 'url(#glow)' }}
+        />
+
+        {/* Inner Detail */}
+        <path
+          d="M50 15 L80 25 V50 C80 68 50 85 50 85 C50 85 20 68 20 50 V25 L50 15 Z"
+          fill="none"
+          stroke="white"
+          strokeWidth="1"
+          opacity="0.3"
+        />
+
+        {/* Text */}
+        <text
+          x="50"
+          y="60"
+          fontSize="35"
+          fontFamily="Arial, sans-serif"
+          fontWeight="900"
+          textAnchor="middle"
+          fill={isDarkText ? "#1a1a1a" : "white"}
+          style={{ textShadow: '0px 2px 4px rgba(0,0,0,0.5)' }}
+        >
+          {initials}
+        </text>
+      </svg>
+    </div>
+  );
+};
 
 export const TEAMS: Team[] = [
   {
     id: 5, name: 'Manchester City', logo: createLogo('MC', 'bg-sky-400'), budget: 700, transferBudget: 180, tier: 'Top', teamMorale: 'Feliz',
+    primaryColor: '#6CABDD', secondaryColor: '#1C2C5B', tactics: 'Attacking',
     squad: [
       { id: 501, name: 'E. Haaland', position: 'DEL', rating: 91, value: 180, wage: 375000, morale: 'Contento', contractYears: 4 },
       { id: 502, name: 'K. De Bruyne', position: 'CEN', rating: 91, value: 80, wage: 400000, morale: 'Feliz', contractYears: 2 },
@@ -33,6 +84,7 @@ export const TEAMS: Team[] = [
   },
   {
     id: 1, name: 'Arsenal', logo: createLogo('AR', 'bg-red-600'), budget: 250, transferBudget: 80, tier: 'Top', teamMorale: 'Feliz',
+    primaryColor: '#EF0107', secondaryColor: '#063672', tactics: 'Attacking',
     squad: [
       { id: 101, name: 'B. Saka', position: 'DEL', rating: 88, value: 120, wage: 195000, morale: 'Feliz', contractYears: 5 },
       { id: 102, name: 'M. Ødegaard', position: 'CEN', rating: 87, value: 90, wage: 115000, morale: 'Feliz', contractYears: 4 },
@@ -54,6 +106,7 @@ export const TEAMS: Team[] = [
   },
   {
     id: 4, name: 'Liverpool', logo: createLogo('LIV', 'bg-red-700'), budget: 480, transferBudget: 120, tier: 'Top', teamMorale: 'Feliz',
+    primaryColor: '#C8102E', secondaryColor: '#00B2A9', tactics: 'Attacking',
     squad: [
       { id: 401, name: 'M. Salah', position: 'DEL', rating: 90, value: 100, wage: 350000, morale: 'Contento', contractYears: 2 },
       { id: 402, name: 'Alisson', position: 'POR', rating: 89, value: 65, wage: 150000, morale: 'Feliz', contractYears: 4 },
@@ -75,6 +128,7 @@ export const TEAMS: Team[] = [
   },
   {
     id: 6, name: 'Manchester Utd', logo: createLogo('MU', 'bg-red-500'), budget: 650, transferBudget: 140, tier: 'Top', teamMorale: 'Contento',
+    primaryColor: '#DA291C', secondaryColor: '#FBE122', tactics: 'Attacking',
     squad: [
       { id: 601, name: 'B. Fernandes', position: 'CEN', rating: 88, value: 90, wage: 240000, morale: 'Contento', contractYears: 4 },
       { id: 602, name: 'M. Rashford', position: 'DEL', rating: 85, value: 80, wage: 300000, morale: 'Normal', contractYears: 3 },
@@ -94,8 +148,9 @@ export const TEAMS: Team[] = [
       { id: 616, name: 'A. Bayindir', position: 'POR', rating: 77, value: 10, wage: 40000, morale: 'Normal', contractYears: 4 },
     ],
   },
-    {
+  {
     id: 3, name: 'Chelsea', logo: createLogo('CH', 'bg-blue-600'), budget: 450, transferBudget: 150, tier: 'Top', teamMorale: 'Contento',
+    primaryColor: '#034694', secondaryColor: '#EE242C', tactics: 'Balanced',
     squad: [
       { id: 301, name: 'C. Palmer', position: 'CEN', rating: 84, value: 80, wage: 75000, morale: 'Feliz', contractYears: 5 },
       { id: 302, name: 'E. Fernández', position: 'CEN', rating: 83, value: 80, wage: 180000, morale: 'Contento', contractYears: 6 },
@@ -117,6 +172,7 @@ export const TEAMS: Team[] = [
   },
   {
     id: 8, name: 'Tottenham', logo: createLogo('SP', 'bg-white', true), budget: 400, transferBudget: 90, tier: 'Mid', teamMorale: 'Contento',
+    primaryColor: '#132257', secondaryColor: '#FFFFFF', tactics: 'Attacking',
     squad: [
       { id: 801, name: 'Son H.M.', position: 'DEL', rating: 87, value: 60, wage: 190000, morale: 'Feliz', contractYears: 2 },
       { id: 802, name: 'J. Maddison', position: 'CEN', rating: 84, value: 70, wage: 170000, morale: 'Contento', contractYears: 4 },
@@ -138,6 +194,7 @@ export const TEAMS: Team[] = [
   },
   {
     id: 2, name: 'Aston Villa', logo: createLogo('AV', 'bg-sky-800'), budget: 180, transferBudget: 50, tier: 'Mid', teamMorale: 'Feliz',
+    primaryColor: '#670E36', secondaryColor: '#95BJE5', tactics: 'Balanced',
     squad: [
       { id: 201, name: 'O. Watkins', position: 'DEL', rating: 85, value: 65, wage: 130000, morale: 'Feliz', contractYears: 4 },
       { id: 202, name: 'Douglas Luiz', position: 'CEN', rating: 83, value: 60, wage: 75000, morale: 'Contento', contractYears: 3 },
@@ -159,6 +216,7 @@ export const TEAMS: Team[] = [
   },
   {
     id: 7, name: 'Newcastle Utd', logo: createLogo('NU', 'bg-black'), budget: 300, transferBudget: 70, tier: 'Mid', teamMorale: 'Contento',
+    primaryColor: '#241F20', secondaryColor: '#FFFFFF', tactics: 'Balanced',
     squad: [
       { id: 701, name: 'B. Guimarães', position: 'CEN', rating: 86, value: 85, wage: 160000, morale: 'Contento', contractYears: 5 },
       { id: 702, name: 'A. Isak', position: 'DEL', rating: 84, value: 75, wage: 120000, morale: 'Contento', contractYears: 4 },
@@ -178,222 +236,270 @@ export const TEAMS: Team[] = [
       { id: 716, name: 'M. Dubravka', position: 'POR', rating: 79, value: 5, wage: 40000, morale: 'Normal', contractYears: 2 },
     ],
   },
-    { id: 9, name: 'West Ham', logo: createLogo('WH', 'bg-purple-900'), budget: 150, transferBudget: 40, tier: 'Mid', teamMorale: 'Normal', squad: [
-        { id: 901, name: 'J. Bowen', position: 'DEL', rating: 82, value: 50, wage: 120000, morale: 'Contento', contractYears: 4 },
-        { id: 902, name: 'M. Kudus', position: 'CEN', rating: 81, value: 50, wage: 90000, morale: 'Contento', contractYears: 5 },
-        { id: 903, name: 'L. Paquetá', position: 'CEN', rating: 84, value: 65, wage: 150000, morale: 'Normal', contractYears: 3 },
-        { id: 904, name: 'J. Ward-Prowse', position: 'CEN', rating: 82, value: 40, wage: 115000, morale: 'Contento', contractYears: 4 },
-        { id: 905, name: 'A. Areola', position: 'POR', rating: 81, value: 20, wage: 120000, morale: 'Contento', contractYears: 3 },
-        { id: 906, name: 'K. Zouma', position: 'DEF', rating: 80, value: 20, wage: 125000, morale: 'Normal', contractYears: 2 },
-        { id: 907, name: 'E. Álvarez', position: 'CEN', rating: 80, value: 35, wage: 100000, morale: 'Contento', contractYears: 4 },
-        { id: 908, name: 'N. Aguerd', position: 'DEF', rating: 79, value: 30, wage: 50000, morale: 'Normal', contractYears: 4 },
-        { id: 909, name: 'Emerson', position: 'DEF', rating: 78, value: 18, wage: 95000, morale: 'Contento', contractYears: 3 },
-        { id: 910, name: 'V. Coufal', position: 'DEF', rating: 78, value: 15, wage: 65000, morale: 'Contento', contractYears: 2 },
-        { id: 911, name: 'T. Soucek', position: 'CEN', rating: 79, value: 30, wage: 65000, morale: 'Normal', contractYears: 3 },
-        { id: 912, name: 'M. Antonio', position: 'DEL', rating: 78, value: 10, wage: 85000, morale: 'Normal', contractYears: 1 },
-        { id: 913, name: 'S. Benrahma', position: 'DEL', rating: 78, value: 22, wage: 55000, morale: 'Descontento', contractYears: 3 },
-        { id: 914, name: 'D. Ings', position: 'DEL', rating: 77, value: 10, wage: 125000, morale: 'Descontento', contractYears: 2 },
-        { id: 915, name: 'L. Fabianski', position: 'POR', rating: 78, value: 3, wage: 65000, morale: 'Normal', contractYears: 1 },
-        { id: 916, name: 'A. Ogbonna', position: 'DEF', rating: 76, value: 2, wage: 70000, morale: 'Normal', contractYears: 1 },
-    ] },
-    { id: 10, name: 'Brighton', logo: createLogo('BH', 'bg-blue-500'), budget: 130, transferBudget: 45, tier: 'Mid', teamMorale: 'Normal', squad: [
-        { id: 1001, name: 'K. Mitoma', position: 'CEN', rating: 81, value: 50, wage: 80000, morale: 'Contento', contractYears: 3 },
-        { id: 1002, name: 'João Pedro', position: 'DEL', rating: 79, value: 45, wage: 65000, morale: 'Contento', contractYears: 4 },
-        { id: 1003, name: 'P. Estupiñán', position: 'DEF', rating: 80, value: 35, wage: 70000, morale: 'Normal', contractYears: 4 },
-        { id: 1004, name: 'L. Dunk', position: 'DEF', rating: 81, value: 25, wage: 80000, morale: 'Feliz', contractYears: 3 },
-        { id: 1005, name: 'P. Groß', position: 'CEN', rating: 82, value: 20, wage: 65000, morale: 'Contento', contractYears: 2 },
-        { id: 1006, name: 'S. March', position: 'CEN', rating: 80, value: 30, wage: 50000, morale: 'Normal', contractYears: 3 },
-        { id: 1007, name: 'E. Ferguson', position: 'DEL', rating: 76, value: 60, wage: 40000, morale: 'Contento', contractYears: 5 },
-        { id: 1008, name: 'B. Verbruggen', position: 'POR', rating: 76, value: 20, wage: 25000, morale: 'Contento', contractYears: 5 },
-        { id: 1009, name: 'A. Fati', position: 'DEL', rating: 78, value: 30, wage: 160000, morale: 'Normal', contractYears: 1 },
-        { id: 1010, name: 'B. Gilmour', position: 'CEN', rating: 77, value: 25, wage: 45000, morale: 'Contento', contractYears: 3 },
-        { id: 1011, name: 'T. Lamptey', position: 'DEF', rating: 76, value: 18, wage: 50000, morale: 'Normal', contractYears: 2 },
-        { id: 1012, name: 'J. Veltman', position: 'DEF', rating: 78, value: 10, wage: 55000, morale: 'Contento', contractYears: 2 },
-        { id: 1013, name: 'D. Welbeck', position: 'DEL', rating: 77, value: 8, wage: 65000, morale: 'Normal', contractYears: 1 },
-        { id: 1014, name: 'J. Steele', position: 'POR', rating: 74, value: 5, wage: 25000, morale: 'Normal', contractYears: 3 },
-        { id: 1015, name: 'S. Adingra', position: 'DEL', rating: 75, value: 22, wage: 30000, morale: 'Contento', contractYears: 4 },
-        { id: 1016, name: 'A. Webster', position: 'DEF', rating: 77, value: 15, wage: 50000, morale: 'Normal', contractYears: 2 },
-    ] },
-    { id: 11, name: 'Fulham', logo: createLogo('FU', 'bg-gray-800'), budget: 110, transferBudget: 30, tier: 'Lower', teamMorale: 'Normal', squad: [
-        { id: 1101, name: 'J. Palhinha', position: 'CEN', rating: 83, value: 55, wage: 90000, morale: 'Contento', contractYears: 3 },
-        { id: 1102, name: 'A. Pereira', position: 'CEN', rating: 79, value: 30, wage: 65000, morale: 'Contento', contractYears: 3 },
-        { id: 1103, name: 'B. Leno', position: 'POR', rating: 80, value: 15, wage: 80000, morale: 'Contento', contractYears: 2 },
-        { id: 1104, name: 'Willian', position: 'DEL', rating: 79, value: 8, wage: 90000, morale: 'Contento', contractYears: 1 },
-        { id: 1105, name: 'A. Iwobi', position: 'CEN', rating: 78, value: 28, wage: 80000, morale: 'Contento', contractYears: 4 },
-        { id: 1106, name: 'T. Castagne', position: 'DEF', rating: 78, value: 20, wage: 65000, morale: 'Contento', contractYears: 4 },
-        { id: 1107, name: 'H. Wilson', position: 'DEL', rating: 77, value: 20, wage: 45000, morale: 'Contento', contractYears: 3 },
-        { id: 1108, name: 'T. Adarabioyo', position: 'DEF', rating: 77, value: 18, wage: 40000, morale: 'Normal', contractYears: 1 },
-        { id: 1109, name: 'R. Jiménez', position: 'DEL', rating: 77, value: 12, wage: 85000, morale: 'Normal', contractYears: 2 },
-        { id: 1110, name: 'H. Reed', position: 'CEN', rating: 77, value: 18, wage: 60000, morale: 'Contento', contractYears: 3 },
-        { id: 1111, name: 'A. Robinson', position: 'DEF', rating: 76, value: 15, wage: 50000, morale: 'Contento', contractYears: 4 },
-        { id: 1112, name: 'I. Diop', position: 'DEF', rating: 76, value: 14, wage: 60000, morale: 'Normal', contractYears: 4 },
-        { id: 1113, name: 'S. Lukić', position: 'CEN', rating: 76, value: 15, wage: 50000, morale: 'Normal', contractYears: 3 },
-        { id: 1114, name: 'T. Ream', position: 'DEF', rating: 75, value: 2, wage: 35000, morale: 'Contento', contractYears: 1 },
-        { id: 1115, name: 'M. Rodák', position: 'POR', rating: 73, value: 3, wage: 20000, morale: 'Normal', contractYears: 2 },
-        { id: 1116, name: 'C. Bassey', position: 'DEF', rating: 75, value: 16, wage: 70000, morale: 'Contento', contractYears: 4 },
-    ] },
-    { id: 12, name: 'Crystal Palace', logo: createLogo('CP', 'bg-blue-700'), budget: 120, transferBudget: 35, tier: 'Lower', teamMorale: 'Normal', squad: [
-        { id: 1201, name: 'E. Eze', position: 'CEN', rating: 81, value: 55, wage: 100000, morale: 'Feliz', contractYears: 4 },
-        { id: 1202, name: 'M. Olise', position: 'DEL', rating: 80, value: 60, wage: 100000, morale: 'Feliz', contractYears: 4 },
-        { id: 1203, name: 'M. Guéhi', position: 'DEF', rating: 80, value: 40, wage: 80000, morale: 'Contento', contractYears: 3 },
-        { id: 1204, name: 'C. Doucouré', position: 'CEN', rating: 81, value: 35, wage: 65000, morale: 'Contento', contractYears: 4 },
-        { id: 1205, name: 'S. Johnstone', position: 'POR', rating: 79, value: 15, wage: 40000, morale: 'Contento', contractYears: 3 },
-        { id: 1206, name: 'J. Andersen', position: 'DEF', rating: 79, value: 30, wage: 80000, morale: 'Contento', contractYears: 3 },
-        { id: 1207, name: 'J. Lerma', position: 'CEN', rating: 78, value: 20, wage: 100000, morale: 'Contento', contractYears: 3 },
-        { id: 1208, name: 'O. Édouard', position: 'DEL', rating: 77, value: 20, wage: 90000, morale: 'Normal', contractYears: 3 },
-        { id: 1209, name: 'T. Mitchell', position: 'DEF', rating: 77, value: 20, wage: 45000, morale: 'Contento', contractYears: 3 },
-        { id: 1210, name: 'J. Schlupp', position: 'CEN', rating: 76, value: 10, wage: 55000, morale: 'Normal', contractYears: 2 },
-        { id: 1211, name: 'J. Ward', position: 'DEF', rating: 75, value: 3, wage: 50000, morale: 'Contento', contractYears: 1 },
-        { id: 1212, name: 'J. Ayew', position: 'DEL', rating: 76, value: 8, wage: 40000, morale: 'Normal', contractYears: 2 },
-        { id: 1213, name: 'D. Henderson', position: 'POR', rating: 78, value: 12, wage: 80000, morale: 'Normal', contractYears: 4 },
-        { id: 1214, name: 'C. Richards', position: 'DEF', rating: 74, value: 10, wage: 35000, morale: 'Normal', contractYears: 4 },
-        { id: 1215, name: 'W. Hughes', position: 'CEN', rating: 75, value: 8, wage: 45000, morale: 'Normal', contractYears: 2 },
-        { id: 1216, name: 'J.P. Mateta', position: 'DEL', rating: 75, value: 15, wage: 55000, morale: 'Normal', contractYears: 2 },
-    ] },
-    { id: 13, name: 'Brentford', logo: createLogo('BR', 'bg-red-500'), budget: 100, transferBudget: 30, tier: 'Lower', teamMorale: 'Normal', squad: [
-        { id: 1301, name: 'I. Toney', position: 'DEL', rating: 80, value: 50, wage: 100000, morale: 'Normal', contractYears: 1 },
-        { id: 1302, name: 'B. Mbeumo', position: 'DEL', rating: 79, value: 40, wage: 70000, morale: 'Contento', contractYears: 3 },
-        { id: 1303, name: 'R. Henry', position: 'DEF', rating: 77, value: 25, wage: 50000, morale: 'Normal', contractYears: 4 },
-        { id: 1304, name: 'M. Flekken', position: 'POR', rating: 79, value: 18, wage: 35000, morale: 'Contento', contractYears: 4 },
-        { id: 1305, name: 'M. Jensen', position: 'CEN', rating: 78, value: 25, wage: 45000, morale: 'Contento', contractYears: 3 },
-        { id: 1306, name: 'C. Nørgaard', position: 'CEN', rating: 78, value: 22, wage: 50000, morale: 'Contento', contractYears: 3 },
-        { id: 1307, name: 'E. Pinnock', position: 'DEF', rating: 77, value: 18, wage: 40000, morale: 'Contento', contractYears: 4 },
-        { id: 1308, name: 'K. Schade', position: 'DEL', rating: 74, value: 20, wage: 35000, morale: 'Normal', contractYears: 5 },
-        { id: 1309, name: 'V. Janelt', position: 'CEN', rating: 76, value: 18, wage: 30000, morale: 'Contento', contractYears: 3 },
-        { id: 1310, name: 'N. Collins', position: 'DEF', rating: 76, value: 20, wage: 45000, morale: 'Normal', contractYears: 5 },
-        { id: 1311, name: 'M. Damsgaard', position: 'CEN', rating: 75, value: 15, wage: 50000, morale: 'Normal', contractYears: 4 },
-        { id: 1312, name: 'Y. Wissa', position: 'DEL', rating: 75, value: 16, wage: 40000, morale: 'Contento', contractYears: 3 },
-        { id: 1313, name: 'K. Ajer', position: 'DEF', rating: 75, value: 15, wage: 35000, morale: 'Normal', contractYears: 3 },
-        { id: 1314, name: 'M. Roerslev', position: 'DEF', rating: 74, value: 12, wage: 25000, morale: 'Normal', contractYears: 3 },
-        { id: 1315, name: 'T. Strakosha', position: 'POR', rating: 76, value: 8, wage: 30000, morale: 'Normal', contractYears: 3 },
-        { id: 1316, name: 'J. Dasilva', position: 'CEN', rating: 74, value: 10, wage: 28000, morale: 'Normal', contractYears: 2 },
-    ] },
-    { id: 14, name: 'Everton', logo: createLogo('EV', 'bg-blue-800'), budget: 140, transferBudget: 25, tier: 'Lower', teamMorale: 'Normal', squad: [
-        { id: 1401, name: 'J. Pickford', position: 'POR', rating: 82, value: 25, wage: 125000, morale: 'Contento', contractYears: 3 },
-        { id: 1402, name: 'A. Onana', position: 'CEN', rating: 79, value: 50, wage: 100000, morale: 'Normal', contractYears: 4 },
-        { id: 1403, name: 'J. Branthwaite', position: 'DEF', rating: 78, value: 45, wage: 75000, morale: 'Contento', contractYears: 3 },
-        { id: 1404, name: 'D. Calvert-Lewin', position: 'DEL', rating: 79, value: 30, wage: 100000, morale: 'Normal', contractYears: 2 },
-        { id: 1405, name: 'A. Doucouré', position: 'CEN', rating: 79, value: 20, wage: 120000, morale: 'Contento', contractYears: 2 },
-        { id: 1406, name: 'J. Tarkowski', position: 'DEF', rating: 79, value: 15, wage: 100000, morale: 'Contento', contractYears: 2 },
-        { id: 1407, name: 'D. McNeil', position: 'CEN', rating: 77, value: 25, wage: 45000, morale: 'Contento', contractYears: 4 },
-        { id: 1408, name: 'I. Gueye', position: 'CEN', rating: 78, value: 8, wage: 80000, morale: 'Normal', contractYears: 1 },
-        { id: 1409, name: 'V. Mykolenko', position: 'DEF', rating: 76, value: 20, wage: 32000, morale: 'Normal', contractYears: 4 },
-        { id: 1410, name: 'J. Garner', position: 'CEN', rating: 76, value: 20, wage: 50000, morale: 'Contento', contractYears: 3 },
-        { id: 1411, name: 'Beto', position: 'DEL', rating: 76, value: 18, wage: 50000, morale: 'Normal', contractYears: 4 },
-        { id: 1412, name: 'J. Harrison', position: 'DEL', rating: 77, value: 20, wage: 90000, morale: 'Normal', contractYears: 1 },
-        { id: 1413, name: 'A. Young', position: 'DEF', rating: 74, value: 1, wage: 40000, morale: 'Normal', contractYears: 1 },
-        { id: 1414, name: 'S. Coleman', position: 'DEF', rating: 73, value: 1, wage: 55000, morale: 'Contento', contractYears: 1 },
-        { id: 1415, name: 'A. Danjuma', position: 'DEL', rating: 78, value: 18, wage: 65000, morale: 'Descontento', contractYears: 1 },
-        { id: 1416, name: 'J. Virginia', position: 'POR', rating: 68, value: 1, wage: 10000, morale: 'Normal', contractYears: 2 },
-    ] },
-    { id: 15, name: 'Nottm Forest', logo: createLogo('NF', 'bg-red-600'), budget: 90, transferBudget: 20, tier: 'Lower', teamMorale: 'Normal', squad: [
-        { id: 1501, name: 'M. Gibbs-White', position: 'CEN', rating: 79, value: 40, wage: 80000, morale: 'Contento', contractYears: 4 },
-        { id: 1502, name: 'Murillo', position: 'DEF', rating: 77, value: 35, wage: 50000, morale: 'Contento', contractYears: 5 },
-        { id: 1503, name: 'Danilo', position: 'CEN', rating: 78, value: 30, wage: 60000, morale: 'Normal', contractYears: 4 },
-        { id: 1504, name: 'T. Awoniyi', position: 'DEL', rating: 78, value: 25, wage: 50000, morale: 'Contento', contractYears: 4 },
-        { id: 1505, name: 'O. Mangala', position: 'CEN', rating: 77, value: 22, wage: 55000, morale: 'Normal', contractYears: 3 },
-        { id: 1506, name: 'N. Williams', position: 'DEF', rating: 75, value: 15, wage: 50000, morale: 'Normal', contractYears: 3 },
-        { id: 1507, name: 'M. Sels', position: 'POR', rating: 77, value: 8, wage: 30000, morale: 'Contento', contractYears: 3 },
-        { id: 1508, name: 'A. Elanga', position: 'DEL', rating: 75, value: 20, wage: 40000, morale: 'Contento', contractYears: 4 },
-        { id: 1509, name: 'I. Sangaré', position: 'CEN', rating: 79, value: 30, wage: 75000, morale: 'Normal', contractYears: 4 },
-        { id: 1510, name: 'W. Boly', position: 'DEF', rating: 76, value: 5, wage: 50000, morale: 'Normal', contractYears: 2 },
-        { id: 1511, name: 'C. Hudson-Odoi', position: 'DEL', rating: 76, value: 18, wage: 80000, morale: 'Normal', contractYears: 3 },
-        { id: 1512, name: 'H. Toffolo', position: 'DEF', rating: 74, value: 8, wage: 20000, morale: 'Normal', contractYears: 3 },
-        { id: 1513, name: 'N. Domínguez', position: 'CEN', rating: 76, value: 16, wage: 60000, morale: 'Normal', contractYears: 4 },
-        { id: 1514, name: 'C. Wood', position: 'DEL', rating: 75, value: 8, wage: 40000, morale: 'Contento', contractYears: 2 },
-        { id: 1515, name: 'M. Turner', position: 'POR', rating: 76, value: 10, wage: 35000, morale: 'Descontento', contractYears: 4 },
-        { id: 1516, name: 'S. Aurier', position: 'DEF', rating: 76, value: 6, wage: 40000, morale: 'Normal', contractYears: 1 },
-    ] },
-    { id: 16, name: 'Bournemouth', logo: createLogo('BO', 'bg-red-800'), budget: 85, transferBudget: 25, tier: 'Lower', teamMorale: 'Normal', squad: [
-        { id: 1601, name: 'D. Solanke', position: 'DEL', rating: 80, value: 35, wage: 75000, morale: 'Contento', contractYears: 3 },
-        { id: 1602, name: 'Neto', position: 'POR', rating: 80, value: 10, wage: 60000, morale: 'Contento', contractYears: 2 },
-        { id: 1603, name: 'P. Billing', position: 'CEN', rating: 77, value: 20, wage: 65000, morale: 'Normal', contractYears: 3 },
-        { id: 1604, name: 'M. Senesi', position: 'DEF', rating: 78, value: 22, wage: 50000, morale: 'Contento', contractYears: 4 },
-        { id: 1605, name: 'L. Cook', position: 'CEN', rating: 77, value: 18, wage: 40000, morale: 'Contento', contractYears: 3 },
-        { id: 1606, name: 'T. Adams', position: 'CEN', rating: 77, value: 20, wage: 55000, morale: 'Normal', contractYears: 4 },
-        { id: 1607, name: 'A. Semenyo', position: 'DEL', rating: 75, value: 15, wage: 30000, morale: 'Contento', contractYears: 4 },
-        { id: 1608, name: 'I. Zabarnyi', position: 'DEF', rating: 75, value: 20, wage: 40000, morale: 'Contento', contractYears: 5 },
-        { id: 1609, name: 'M. Tavernier', position: 'CEN', rating: 76, value: 18, wage: 35000, morale: 'Normal', contractYears: 4 },
-        { id: 1610, name: 'J. Kluivert', position: 'DEL', rating: 76, value: 18, wage: 80000, morale: 'Normal', contractYears: 4 },
-        { id: 1611, name: 'M. Kerkez', position: 'DEF', rating: 75, value: 20, wage: 30000, morale: 'Contento', contractYears: 5 },
-        { id: 1612, name: 'R. Christie', position: 'CEN', rating: 75, value: 12, wage: 35000, morale: 'Normal', contractYears: 2 },
-        { id: 1613, name: 'L. Kelly', position: 'DEF', rating: 75, value: 12, wage: 30000, morale: 'Normal', contractYears: 1 },
-        { id: 1614, name: 'M. Aarons', position: 'DEF', rating: 75, value: 15, wage: 60000, morale: 'Normal', contractYears: 4 },
-        { id: 1615, name: 'A. Smith', position: 'DEF', rating: 74, value: 2, wage: 35000, morale: 'Contento', contractYears: 1 },
-        { id: 1616, name: 'M. Travers', position: 'POR', rating: 73, value: 5, wage: 20000, morale: 'Normal', contractYears: 4 },
-    ] },
-    { id: 17, name: 'Wolves', logo: createLogo('WO', 'bg-yellow-500'), budget: 100, transferBudget: 30, tier: 'Lower', teamMorale: 'Normal', squad: [
-        { id: 1701, name: 'P. Neto', position: 'DEL', rating: 80, value: 45, wage: 90000, morale: 'Normal', contractYears: 3 },
-        { id: 1702, name: 'M. Cunha', position: 'DEL', rating: 81, value: 55, wage: 100000, morale: 'Contento', contractYears: 4 },
-        { id: 1703, name: 'C. Dawson', position: 'DEF', rating: 78, value: 5, wage: 55000, morale: 'Normal', contractYears: 1 },
-        { id: 1704, name: 'José Sá', position: 'POR', rating: 81, value: 20, wage: 40000, morale: 'Contento', contractYears: 3 },
-        { id: 1705, name: 'M. Kilman', position: 'DEF', rating: 78, value: 30, wage: 50000, morale: 'Contento', contractYears: 5 },
-        { id: 1706, name: 'R. Aït-Nouri', position: 'DEF', rating: 77, value: 28, wage: 35000, morale: 'Contento', contractYears: 3 },
-        { id: 1707, name: 'Hwang H.C.', position: 'DEL', rating: 78, value: 25, wage: 30000, morale: 'Contento', contractYears: 4 },
-        { id: 1708, name: 'M. Lemina', position: 'CEN', rating: 78, value: 18, wage: 45000, morale: 'Contento', contractYears: 3 },
-        { id: 1709, name: 'J. Gomes', position: 'CEN', rating: 76, value: 22, wage: 30000, morale: 'Contento', contractYears: 4 },
-        { id: 1710, name: 'N. Semedo', position: 'DEF', rating: 79, value: 18, wage: 80000, morale: 'Normal', contractYears: 2 },
-        { id: 1711, name: 'P. Sarabia', position: 'CEN', rating: 79, value: 15, wage: 90000, morale: 'Normal', contractYears: 2 },
-        { id: 1712, name: 'B. Traoré', position: 'CEN', rating: 74, value: 10, wage: 20000, morale: 'Normal', contractYears: 4 },
-        { id: 1713, name: 'Toti Gomes', position: 'DEF', rating: 74, value: 10, wage: 20000, morale: 'Normal', contractYears: 4 },
-        { id: 1714, name: 'D. Bentley', position: 'POR', rating: 72, value: 2, wage: 25000, morale: 'Normal', contractYears: 2 },
-        { id: 1715, name: 'S. Bueno', position: 'DEF', rating: 74, value: 8, wage: 30000, morale: 'Normal', contractYears: 4 },
-        { id: 1716, name: 'J. Bellegarde', position: 'CEN', rating: 76, value: 15, wage: 45000, morale: 'Normal', contractYears: 4 },
-    ] },
-    { id: 18, name: 'Ipswich Town', logo: createLogo('IT', 'bg-blue-500'), budget: 50, transferBudget: 15, tier: 'Lower', teamMorale: 'Contento', squad: [
-        { id: 1801, name: 'L. Davis', position: 'DEF', rating: 75, value: 10, wage: 25000, morale: 'Contento', contractYears: 2 },
-        { id: 1802, name: 'C. Chaplin', position: 'CEN', rating: 74, value: 8, wage: 20000, morale: 'Contento', contractYears: 3 },
-        { id: 1803, name: 'S. Morsy', position: 'CEN', rating: 73, value: 5, wage: 18000, morale: 'Feliz', contractYears: 2 },
-        { id: 1804, name: 'W. Burns', position: 'CEN', rating: 72, value: 4, wage: 15000, morale: 'Contento', contractYears: 2 },
-        { id: 1805, name: 'V. Hladky', position: 'POR', rating: 71, value: 3, wage: 10000, morale: 'Contento', contractYears: 3 },
-        { id: 1806, name: 'L. Woolfenden', position: 'DEF', rating: 72, value: 4, wage: 12000, morale: 'Contento', contractYears: 3 },
-        { id: 1807, name: 'C. Burgess', position: 'DEF', rating: 70, value: 2, wage: 8000, morale: 'Contento', contractYears: 2 },
-        { id: 1808, name: 'N. Broadhead', position: 'DEL', rating: 71, value: 3, wage: 15000, morale: 'Contento', contractYears: 3 },
-        { id: 1809, name: 'G. Hirst', position: 'DEL', rating: 70, value: 3, wage: 12000, morale: 'Normal', contractYears: 3 },
-        { id: 1810, name: 'M. Luongo', position: 'CEN', rating: 71, value: 3, wage: 14000, morale: 'Contento', contractYears: 1 },
-        { id: 1811, name: 'H. Clarke', position: 'DEF', rating: 69, value: 2, wage: 10000, morale: 'Normal', contractYears: 3 },
-        { id: 1812, name: 'K. Moore', position: 'DEL', rating: 72, value: 4, wage: 25000, morale: 'Normal', contractYears: 1 },
-        { id: 1813, name: 'A. Tuanzebe', position: 'DEF', rating: 70, value: 3, wage: 20000, morale: 'Normal', contractYears: 1 },
-        { id: 1814, name: 'J. Taylor', position: 'CEN', rating: 68, value: 2, wage: 9000, morale: 'Normal', contractYears: 3 },
-        { id: 1815, name: 'C. Walton', position: 'POR', rating: 68, value: 1, wage: 8000, morale: 'Normal', contractYears: 2 },
-        { id: 1816, name: 'K. Jackson', position: 'DEL', rating: 67, value: 1, wage: 7000, morale: 'Normal', contractYears: 2 },
-    ] },
-    { id: 19, name: 'Leicester City', logo: createLogo('LC', 'bg-blue-600'), budget: 70, transferBudget: 20, tier: 'Lower', teamMorale: 'Contento', squad: [
-        { id: 1901, name: 'K. Dewsbury-Hall', position: 'CEN', rating: 78, value: 30, wage: 75000, morale: 'Contento', contractYears: 3 },
-        { id: 1902, name: 'J. Vardy', position: 'DEL', rating: 79, value: 5, wage: 100000, morale: 'Feliz', contractYears: 1 },
-        { id: 1903, name: 'R. Pereira', position: 'DEF', rating: 78, value: 15, wage: 80000, morale: 'Normal', contractYears: 2 },
-        { id: 1904, name: 'W. Faes', position: 'DEF', rating: 77, value: 20, wage: 50000, morale: 'Contento', contractYears: 4 },
-        { id: 1905, name: 'H. Winks', position: 'CEN', rating: 77, value: 18, wage: 90000, morale: 'Contento', contractYears: 4 },
-        { id: 1906, name: 'M. Hermansen', position: 'POR', rating: 75, value: 12, wage: 25000, morale: 'Contento', contractYears: 4 },
-        { id: 1907, name: 'K. Iheanacho', position: 'DEL', rating: 77, value: 15, wage: 80000, morale: 'Normal', contractYears: 1 },
-        { id: 1908, name: 'P. Daka', position: 'DEL', rating: 75, value: 18, wage: 75000, morale: 'Normal', contractYears: 3 },
-        { id: 1909, name: 'W. Ndidi', position: 'CEN', rating: 78, value: 20, wage: 75000, morale: 'Normal', contractYears: 1 },
-        { id: 1910, name: 'J. Justin', position: 'DEF', rating: 75, value: 12, wage: 30000, morale: 'Normal', contractYears: 3 },
-        { id: 1911, name: 'C. Coady', position: 'DEF', rating: 76, value: 8, wage: 45000, morale: 'Contento', contractYears: 2 },
-        { id: 1912, name: 'S. Mavididi', position: 'DEL', rating: 76, value: 18, wage: 40000, morale: 'Contento', contractYears: 4 },
-        { id: 1913, name: 'H. Souttar', position: 'DEF', rating: 74, value: 10, wage: 40000, morale: 'Descontento', contractYears: 4 },
-        { id: 1914, name: 'D. Praet', position: 'CEN', rating: 76, value: 12, wage: 75000, morale: 'Descontento', contractYears: 2 },
-        { id: 1915, name: 'D. Ward', position: 'POR', rating: 73, value: 3, wage: 35000, morale: 'Normal', contractYears: 3 },
-        { id: 1916, name: 'Y. Akgün', position: 'DEL', rating: 74, value: 10, wage: 28000, morale: 'Normal', contractYears: 1 },
-    ] },
-    { id: 20, name: 'Southampton', logo: createLogo('SO', 'bg-red-500'), budget: 60, transferBudget: 18, tier: 'Lower', teamMorale: 'Contento', squad: [
-        { id: 2001, name: 'K. Walker-Peters', position: 'DEF', rating: 77, value: 20, wage: 50000, morale: 'Contento', contractYears: 2 },
-        { id: 2002, name: 'A. Armstrong', position: 'DEL', rating: 76, value: 18, wage: 65000, morale: 'Contento', contractYears: 3 },
-        { id: 2003, name: 'T. Harwood-Bellis', position: 'DEF', rating: 75, value: 15, wage: 45000, morale: 'Contento', contractYears: 4 },
-        { id: 2004, name: 'G. Bazunu', position: 'POR', rating: 72, value: 10, wage: 40000, morale: 'Contento', contractYears: 4 },
-        { id: 2005, name: 'F. Downes', position: 'CEN', rating: 74, value: 8, wage: 25000, morale: 'Contento', contractYears: 3 },
-        { id: 2006, name: 'J. Aribo', position: 'CEN', rating: 75, value: 12, wage: 70000, morale: 'Normal', contractYears: 3 },
-        { id: 2007, name: 'C. Alcaraz', position: 'CEN', rating: 74, value: 15, wage: 30000, morale: 'Normal', contractYears: 4 },
-        { id: 2008, name: 'J. Bednarek', position: 'DEF', rating: 74, value: 10, wage: 60000, morale: 'Normal', contractYears: 3 },
-        { id: 2009, name: 'S. Edozie', position: 'DEL', rating: 71, value: 8, wage: 20000, morale: 'Contento', contractYears: 4 },
-        { id: 2010, name: 'R. Fraser', position: 'DEL', rating: 75, value: 8, wage: 42000, morale: 'Normal', contractYears: 1 },
-        { id: 2011, name: 'S. Armstrong', position: 'CEN', rating: 74, value: 6, wage: 65000, morale: 'Normal', contractYears: 1 },
-        { id: 2012, name: 'S. Mara', position: 'DEL', rating: 70, value: 7, wage: 35000, morale: 'Normal', contractYears: 4 },
-        { id: 2013, name: 'J. Stephens', position: 'DEF', rating: 71, value: 3, wage: 50000, morale: 'Contento', contractYears: 2 },
-        { id: 2014, name: 'A. McCarthy', position: 'POR', rating: 72, value: 2, wage: 50000, morale: 'Normal', contractYears: 1 },
-        { id: 2015, name: 'W. Smallbone', position: 'CEN', rating: 70, value: 4, wage: 15000, morale: 'Contento', contractYears: 3 },
-        { id: 2016, name: 'K. Sulemana', position: 'DEL', rating: 74, value: 18, wage: 65000, morale: 'Normal', contractYears: 4 },
-    ] },
+  {
+    id: 9, name: 'West Ham', logo: createLogo('WH', 'bg-purple-900'), budget: 150, transferBudget: 40, tier: 'Mid', teamMorale: 'Normal',
+    primaryColor: '#7A263A', secondaryColor: '#1BB1E7', tactics: 'Defensive',
+    squad: [
+      { id: 901, name: 'J. Bowen', position: 'DEL', rating: 82, value: 50, wage: 120000, morale: 'Contento', contractYears: 4 },
+      { id: 902, name: 'M. Kudus', position: 'CEN', rating: 81, value: 50, wage: 90000, morale: 'Contento', contractYears: 5 },
+      { id: 903, name: 'L. Paquetá', position: 'CEN', rating: 84, value: 65, wage: 150000, morale: 'Normal', contractYears: 3 },
+      { id: 904, name: 'J. Ward-Prowse', position: 'CEN', rating: 82, value: 40, wage: 115000, morale: 'Contento', contractYears: 4 },
+      { id: 905, name: 'A. Areola', position: 'POR', rating: 81, value: 20, wage: 120000, morale: 'Contento', contractYears: 3 },
+      { id: 906, name: 'K. Zouma', position: 'DEF', rating: 80, value: 20, wage: 125000, morale: 'Normal', contractYears: 2 },
+      { id: 907, name: 'E. Álvarez', position: 'CEN', rating: 80, value: 35, wage: 100000, morale: 'Contento', contractYears: 4 },
+      { id: 908, name: 'N. Aguerd', position: 'DEF', rating: 79, value: 30, wage: 50000, morale: 'Normal', contractYears: 4 },
+      { id: 909, name: 'Emerson', position: 'DEF', rating: 78, value: 18, wage: 95000, morale: 'Contento', contractYears: 3 },
+      { id: 910, name: 'V. Coufal', position: 'DEF', rating: 78, value: 15, wage: 65000, morale: 'Contento', contractYears: 2 },
+      { id: 911, name: 'T. Soucek', position: 'CEN', rating: 79, value: 30, wage: 65000, morale: 'Normal', contractYears: 3 },
+      { id: 912, name: 'M. Antonio', position: 'DEL', rating: 78, value: 10, wage: 85000, morale: 'Normal', contractYears: 1 },
+      { id: 913, name: 'S. Benrahma', position: 'DEL', rating: 78, value: 22, wage: 55000, morale: 'Descontento', contractYears: 3 },
+      { id: 914, name: 'D. Ings', position: 'DEL', rating: 77, value: 10, wage: 125000, morale: 'Descontento', contractYears: 2 },
+      { id: 915, name: 'L. Fabianski', position: 'POR', rating: 78, value: 3, wage: 65000, morale: 'Normal', contractYears: 1 },
+      { id: 916, name: 'A. Ogbonna', position: 'DEF', rating: 76, value: 2, wage: 70000, morale: 'Normal', contractYears: 1 },
+    ]
+  },
+  {
+    id: 10, name: 'Brighton', logo: createLogo('BH', 'bg-blue-500'), budget: 130, transferBudget: 45, tier: 'Mid', teamMorale: 'Normal',
+    primaryColor: '#0057B8', secondaryColor: '#FFFFFF', tactics: 'Attacking',
+    squad: [
+      { id: 1001, name: 'K. Mitoma', position: 'CEN', rating: 81, value: 50, wage: 80000, morale: 'Contento', contractYears: 3 },
+      { id: 1002, name: 'João Pedro', position: 'DEL', rating: 79, value: 45, wage: 65000, morale: 'Contento', contractYears: 4 },
+      { id: 1003, name: 'P. Estupiñán', position: 'DEF', rating: 80, value: 35, wage: 70000, morale: 'Normal', contractYears: 4 },
+      { id: 1004, name: 'L. Dunk', position: 'DEF', rating: 81, value: 25, wage: 80000, morale: 'Feliz', contractYears: 3 },
+      { id: 1005, name: 'P. Groß', position: 'CEN', rating: 82, value: 20, wage: 65000, morale: 'Contento', contractYears: 2 },
+      { id: 1006, name: 'S. March', position: 'CEN', rating: 80, value: 30, wage: 50000, morale: 'Normal', contractYears: 3 },
+      { id: 1007, name: 'E. Ferguson', position: 'DEL', rating: 76, value: 60, wage: 40000, morale: 'Contento', contractYears: 5 },
+      { id: 1008, name: 'B. Verbruggen', position: 'POR', rating: 76, value: 20, wage: 25000, morale: 'Contento', contractYears: 5 },
+      { id: 1009, name: 'A. Fati', position: 'DEL', rating: 78, value: 30, wage: 160000, morale: 'Normal', contractYears: 1 },
+      { id: 1010, name: 'B. Gilmour', position: 'CEN', rating: 77, value: 25, wage: 45000, morale: 'Contento', contractYears: 3 },
+      { id: 1011, name: 'T. Lamptey', position: 'DEF', rating: 76, value: 18, wage: 50000, morale: 'Normal', contractYears: 2 },
+      { id: 1012, name: 'J. Veltman', position: 'DEF', rating: 78, value: 10, wage: 55000, morale: 'Contento', contractYears: 2 },
+      { id: 1013, name: 'D. Welbeck', position: 'DEL', rating: 77, value: 8, wage: 65000, morale: 'Normal', contractYears: 1 },
+      { id: 1014, name: 'J. Steele', position: 'POR', rating: 74, value: 5, wage: 25000, morale: 'Normal', contractYears: 3 },
+      { id: 1015, name: 'S. Adingra', position: 'DEL', rating: 75, value: 22, wage: 30000, morale: 'Contento', contractYears: 4 },
+      { id: 1016, name: 'A. Webster', position: 'DEF', rating: 77, value: 15, wage: 50000, morale: 'Normal', contractYears: 2 },
+    ]
+  },
+  {
+    id: 11, name: 'Fulham', logo: createLogo('FU', 'bg-gray-800'), budget: 110, transferBudget: 30, tier: 'Lower', teamMorale: 'Normal',
+    primaryColor: '#000000', secondaryColor: '#CC0000', tactics: 'Balanced',
+    squad: [
+      { id: 1101, name: 'J. Palhinha', position: 'CEN', rating: 83, value: 55, wage: 90000, morale: 'Contento', contractYears: 3 },
+      { id: 1102, name: 'A. Pereira', position: 'CEN', rating: 79, value: 30, wage: 65000, morale: 'Contento', contractYears: 3 },
+      { id: 1103, name: 'B. Leno', position: 'POR', rating: 80, value: 15, wage: 80000, morale: 'Contento', contractYears: 2 },
+      { id: 1104, name: 'Willian', position: 'DEL', rating: 79, value: 8, wage: 90000, morale: 'Contento', contractYears: 1 },
+      { id: 1105, name: 'A. Iwobi', position: 'CEN', rating: 78, value: 28, wage: 80000, morale: 'Contento', contractYears: 4 },
+      { id: 1106, name: 'T. Castagne', position: 'DEF', rating: 78, value: 20, wage: 65000, morale: 'Contento', contractYears: 4 },
+      { id: 1107, name: 'H. Wilson', position: 'DEL', rating: 77, value: 20, wage: 45000, morale: 'Contento', contractYears: 3 },
+      { id: 1108, name: 'T. Adarabioyo', position: 'DEF', rating: 77, value: 18, wage: 40000, morale: 'Normal', contractYears: 1 },
+      { id: 1109, name: 'R. Jiménez', position: 'DEL', rating: 77, value: 12, wage: 85000, morale: 'Normal', contractYears: 2 },
+      { id: 1110, name: 'H. Reed', position: 'CEN', rating: 77, value: 18, wage: 60000, morale: 'Contento', contractYears: 3 },
+      { id: 1111, name: 'A. Robinson', position: 'DEF', rating: 76, value: 15, wage: 50000, morale: 'Contento', contractYears: 4 },
+      { id: 1112, name: 'I. Diop', position: 'DEF', rating: 76, value: 14, wage: 60000, morale: 'Normal', contractYears: 4 },
+      { id: 1113, name: 'S. Lukić', position: 'CEN', rating: 76, value: 15, wage: 50000, morale: 'Normal', contractYears: 3 },
+      { id: 1114, name: 'T. Ream', position: 'DEF', rating: 75, value: 2, wage: 35000, morale: 'Contento', contractYears: 1 },
+      { id: 1115, name: 'M. Rodák', position: 'POR', rating: 73, value: 3, wage: 20000, morale: 'Normal', contractYears: 2 },
+      { id: 1116, name: 'C. Bassey', position: 'DEF', rating: 75, value: 16, wage: 70000, morale: 'Contento', contractYears: 4 },
+    ]
+  },
+  {
+    id: 12, name: 'Crystal Palace', logo: createLogo('CP', 'bg-blue-700'), budget: 120, transferBudget: 35, tier: 'Lower', teamMorale: 'Normal',
+    primaryColor: '#1B458F', secondaryColor: '#C4122E', tactics: 'Defensive',
+    squad: [
+      { id: 1201, name: 'E. Eze', position: 'CEN', rating: 81, value: 55, wage: 100000, morale: 'Feliz', contractYears: 4 },
+      { id: 1202, name: 'M. Olise', position: 'DEL', rating: 80, value: 60, wage: 100000, morale: 'Feliz', contractYears: 4 },
+      { id: 1203, name: 'M. Guéhi', position: 'DEF', rating: 80, value: 40, wage: 80000, morale: 'Contento', contractYears: 3 },
+      { id: 1204, name: 'C. Doucouré', position: 'CEN', rating: 81, value: 35, wage: 65000, morale: 'Contento', contractYears: 4 },
+      { id: 1205, name: 'S. Johnstone', position: 'POR', rating: 79, value: 15, wage: 40000, morale: 'Contento', contractYears: 3 },
+      { id: 1206, name: 'J. Andersen', position: 'DEF', rating: 79, value: 30, wage: 80000, morale: 'Contento', contractYears: 3 },
+      { id: 1207, name: 'J. Lerma', position: 'CEN', rating: 78, value: 20, wage: 100000, morale: 'Contento', contractYears: 3 },
+      { id: 1208, name: 'O. Édouard', position: 'DEL', rating: 77, value: 20, wage: 90000, morale: 'Normal', contractYears: 3 },
+      { id: 1209, name: 'T. Mitchell', position: 'DEF', rating: 77, value: 20, wage: 45000, morale: 'Contento', contractYears: 3 },
+      { id: 1210, name: 'J. Schlupp', position: 'CEN', rating: 76, value: 10, wage: 55000, morale: 'Normal', contractYears: 2 },
+      { id: 1211, name: 'J. Ward', position: 'DEF', rating: 75, value: 3, wage: 50000, morale: 'Contento', contractYears: 1 },
+      { id: 1212, name: 'J. Ayew', position: 'DEL', rating: 76, value: 8, wage: 40000, morale: 'Normal', contractYears: 2 },
+      { id: 1213, name: 'D. Henderson', position: 'POR', rating: 78, value: 12, wage: 80000, morale: 'Normal', contractYears: 4 },
+      { id: 1214, name: 'C. Richards', position: 'DEF', rating: 74, value: 10, wage: 35000, morale: 'Normal', contractYears: 4 },
+      { id: 1215, name: 'W. Hughes', position: 'CEN', rating: 75, value: 8, wage: 45000, morale: 'Normal', contractYears: 2 },
+      { id: 1216, name: 'J.P. Mateta', position: 'DEL', rating: 75, value: 15, wage: 55000, morale: 'Normal', contractYears: 2 },
+    ]
+  },
+  {
+    id: 13, name: 'Brentford', logo: createLogo('BR', 'bg-red-500'), budget: 100, transferBudget: 30, tier: 'Lower', teamMorale: 'Normal',
+    primaryColor: '#E30613', secondaryColor: '#F9F9F9', tactics: 'Attacking',
+    squad: [
+      { id: 1301, name: 'I. Toney', position: 'DEL', rating: 80, value: 50, wage: 100000, morale: 'Normal', contractYears: 1 },
+      { id: 1302, name: 'B. Mbeumo', position: 'DEL', rating: 79, value: 40, wage: 70000, morale: 'Contento', contractYears: 3 },
+      { id: 1303, name: 'R. Henry', position: 'DEF', rating: 77, value: 25, wage: 50000, morale: 'Normal', contractYears: 4 },
+      { id: 1304, name: 'M. Flekken', position: 'POR', rating: 79, value: 18, wage: 35000, morale: 'Contento', contractYears: 4 },
+      { id: 1305, name: 'M. Jensen', position: 'CEN', rating: 78, value: 25, wage: 45000, morale: 'Contento', contractYears: 3 },
+      { id: 1306, name: 'C. Nørgaard', position: 'CEN', rating: 78, value: 22, wage: 50000, morale: 'Contento', contractYears: 3 },
+      { id: 1307, name: 'E. Pinnock', position: 'DEF', rating: 77, value: 18, wage: 40000, morale: 'Contento', contractYears: 4 },
+      { id: 1308, name: 'K. Schade', position: 'DEL', rating: 74, value: 20, wage: 35000, morale: 'Normal', contractYears: 5 },
+      { id: 1309, name: 'V. Janelt', position: 'CEN', rating: 76, value: 18, wage: 30000, morale: 'Contento', contractYears: 3 },
+      { id: 1310, name: 'N. Collins', position: 'DEF', rating: 76, value: 20, wage: 45000, morale: 'Normal', contractYears: 5 },
+      { id: 1311, name: 'M. Damsgaard', position: 'CEN', rating: 75, value: 15, wage: 50000, morale: 'Normal', contractYears: 4 },
+      { id: 1312, name: 'Y. Wissa', position: 'DEL', rating: 75, value: 16, wage: 40000, morale: 'Contento', contractYears: 3 },
+      { id: 1313, name: 'K. Ajer', position: 'DEF', rating: 75, value: 15, wage: 35000, morale: 'Normal', contractYears: 3 },
+      { id: 1314, name: 'M. Roerslev', position: 'DEF', rating: 74, value: 12, wage: 25000, morale: 'Normal', contractYears: 3 },
+      { id: 1315, name: 'T. Strakosha', position: 'POR', rating: 76, value: 8, wage: 30000, morale: 'Normal', contractYears: 3 },
+      { id: 1316, name: 'J. Dasilva', position: 'CEN', rating: 74, value: 10, wage: 28000, morale: 'Normal', contractYears: 2 },
+    ]
+  },
+  {
+    id: 14, name: 'Everton', logo: createLogo('EV', 'bg-blue-800'), budget: 140, transferBudget: 25, tier: 'Lower', teamMorale: 'Normal',
+    primaryColor: '#003399', secondaryColor: '#FFFFFF', tactics: 'Defensive',
+    squad: [
+      { id: 1401, name: 'J. Pickford', position: 'POR', rating: 82, value: 25, wage: 125000, morale: 'Contento', contractYears: 3 },
+      { id: 1402, name: 'A. Onana', position: 'CEN', rating: 79, value: 50, wage: 100000, morale: 'Normal', contractYears: 4 },
+      { id: 1403, name: 'J. Branthwaite', position: 'DEF', rating: 78, value: 45, wage: 75000, morale: 'Contento', contractYears: 3 },
+      { id: 1404, name: 'D. Calvert-Lewin', position: 'DEL', rating: 79, value: 30, wage: 100000, morale: 'Normal', contractYears: 2 },
+      { id: 1405, name: 'A. Doucouré', position: 'CEN', rating: 79, value: 20, wage: 120000, morale: 'Contento', contractYears: 2 },
+      { id: 1406, name: 'J. Tarkowski', position: 'DEF', rating: 79, value: 15, wage: 100000, morale: 'Contento', contractYears: 2 },
+      { id: 1407, name: 'D. McNeil', position: 'CEN', rating: 77, value: 25, wage: 45000, morale: 'Contento', contractYears: 4 },
+      { id: 1408, name: 'I. Gueye', position: 'CEN', rating: 78, value: 8, wage: 80000, morale: 'Normal', contractYears: 1 },
+      { id: 1409, name: 'V. Mykolenko', position: 'DEF', rating: 76, value: 20, wage: 32000, morale: 'Normal', contractYears: 4 },
+      { id: 1410, name: 'J. Garner', position: 'CEN', rating: 76, value: 20, wage: 50000, morale: 'Contento', contractYears: 3 },
+      { id: 1411, name: 'Beto', position: 'DEL', rating: 76, value: 18, wage: 50000, morale: 'Normal', contractYears: 4 },
+      { id: 1412, name: 'J. Harrison', position: 'DEL', rating: 77, value: 20, wage: 90000, morale: 'Normal', contractYears: 1 },
+      { id: 1413, name: 'A. Young', position: 'DEF', rating: 74, value: 1, wage: 40000, morale: 'Normal', contractYears: 1 },
+      { id: 1414, name: 'S. Coleman', position: 'DEF', rating: 73, value: 1, wage: 55000, morale: 'Contento', contractYears: 1 },
+      { id: 1415, name: 'A. Danjuma', position: 'DEL', rating: 78, value: 18, wage: 65000, morale: 'Descontento', contractYears: 1 },
+      { id: 1416, name: 'J. Virginia', position: 'POR', rating: 68, value: 1, wage: 10000, morale: 'Normal', contractYears: 2 },
+    ]
+  },
+  {
+    id: 15, name: 'Nottm Forest', logo: createLogo('NF', 'bg-red-600'), budget: 90, transferBudget: 20, tier: 'Lower', teamMorale: 'Normal',
+    primaryColor: '#DD0000', secondaryColor: '#FFFFFF', tactics: 'Balanced',
+    squad: [
+      { id: 1501, name: 'M. Gibbs-White', position: 'CEN', rating: 79, value: 40, wage: 80000, morale: 'Contento', contractYears: 4 },
+      { id: 1502, name: 'Murillo', position: 'DEF', rating: 77, value: 35, wage: 50000, morale: 'Contento', contractYears: 5 },
+      { id: 1503, name: 'Danilo', position: 'CEN', rating: 78, value: 30, wage: 60000, morale: 'Normal', contractYears: 4 },
+      { id: 1504, name: 'T. Awoniyi', position: 'DEL', rating: 78, value: 25, wage: 50000, morale: 'Contento', contractYears: 4 },
+      { id: 1505, name: 'O. Mangala', position: 'CEN', rating: 77, value: 22, wage: 55000, morale: 'Normal', contractYears: 3 },
+      { id: 1506, name: 'N. Williams', position: 'DEF', rating: 75, value: 15, wage: 50000, morale: 'Normal', contractYears: 3 },
+      { id: 1507, name: 'M. Sels', position: 'POR', rating: 77, value: 8, wage: 30000, morale: 'Contento', contractYears: 3 },
+      { id: 1508, name: 'A. Elanga', position: 'DEL', rating: 75, value: 20, wage: 40000, morale: 'Contento', contractYears: 4 },
+      { id: 1509, name: 'I. Sangaré', position: 'CEN', rating: 79, value: 30, wage: 75000, morale: 'Normal', contractYears: 4 },
+      { id: 1510, name: 'W. Boly', position: 'DEF', rating: 76, value: 5, wage: 50000, morale: 'Normal', contractYears: 2 },
+      { id: 1511, name: 'C. Hudson-Odoi', position: 'DEL', rating: 76, value: 18, wage: 80000, morale: 'Normal', contractYears: 3 },
+      { id: 1512, name: 'H. Toffolo', position: 'DEF', rating: 74, value: 8, wage: 20000, morale: 'Normal', contractYears: 3 },
+      { id: 1513, name: 'N. Domínguez', position: 'CEN', rating: 76, value: 16, wage: 60000, morale: 'Normal', contractYears: 4 },
+      { id: 1514, name: 'C. Wood', position: 'DEL', rating: 75, value: 8, wage: 40000, morale: 'Contento', contractYears: 2 },
+      { id: 1515, name: 'M. Turner', position: 'POR', rating: 76, value: 10, wage: 35000, morale: 'Descontento', contractYears: 4 },
+      { id: 1516, name: 'S. Aurier', position: 'DEF', rating: 76, value: 6, wage: 40000, morale: 'Normal', contractYears: 1 },
+    ]
+  },
+  {
+    id: 16, name: 'Bournemouth', logo: createLogo('BO', 'bg-red-800'), budget: 85, transferBudget: 25, tier: 'Lower', teamMorale: 'Normal',
+    primaryColor: '#DA291C', secondaryColor: '#000000', tactics: 'Attacking',
+    squad: [
+      { id: 1601, name: 'D. Solanke', position: 'DEL', rating: 80, value: 35, wage: 75000, morale: 'Contento', contractYears: 3 },
+      { id: 1602, name: 'Neto', position: 'POR', rating: 80, value: 10, wage: 60000, morale: 'Contento', contractYears: 2 },
+      { id: 1603, name: 'P. Billing', position: 'CEN', rating: 77, value: 20, wage: 65000, morale: 'Normal', contractYears: 3 },
+      { id: 1604, name: 'M. Senesi', position: 'DEF', rating: 78, value: 22, wage: 50000, morale: 'Contento', contractYears: 4 },
+      { id: 1605, name: 'L. Cook', position: 'CEN', rating: 77, value: 18, wage: 40000, morale: 'Contento', contractYears: 3 },
+      { id: 1606, name: 'T. Adams', position: 'CEN', rating: 77, value: 20, wage: 55000, morale: 'Normal', contractYears: 4 },
+      { id: 1607, name: 'A. Semenyo', position: 'DEL', rating: 75, value: 15, wage: 30000, morale: 'Contento', contractYears: 4 },
+      { id: 1608, name: 'I. Zabarnyi', position: 'DEF', rating: 75, value: 20, wage: 40000, morale: 'Contento', contractYears: 5 },
+      { id: 1609, name: 'M. Tavernier', position: 'CEN', rating: 76, value: 18, wage: 35000, morale: 'Normal', contractYears: 4 },
+      { id: 1610, name: 'J. Kluivert', position: 'DEL', rating: 76, value: 18, wage: 80000, morale: 'Normal', contractYears: 4 },
+      { id: 1611, name: 'M. Kerkez', position: 'DEF', rating: 75, value: 20, wage: 30000, morale: 'Contento', contractYears: 5 },
+      { id: 1612, name: 'R. Christie', position: 'CEN', rating: 75, value: 12, wage: 35000, morale: 'Normal', contractYears: 2 },
+      { id: 1613, name: 'L. Kelly', position: 'DEF', rating: 75, value: 12, wage: 30000, morale: 'Normal', contractYears: 1 },
+      { id: 1614, name: 'M. Aarons', position: 'DEF', rating: 75, value: 15, wage: 60000, morale: 'Normal', contractYears: 4 },
+      { id: 1615, name: 'A. Smith', position: 'DEF', rating: 74, value: 2, wage: 35000, morale: 'Contento', contractYears: 1 },
+      { id: 1616, name: 'M. Travers', position: 'POR', rating: 73, value: 5, wage: 20000, morale: 'Normal', contractYears: 4 },
+    ]
+  },
+  {
+    id: 17, name: 'Wolves', logo: createLogo('WO', 'bg-yellow-500'), budget: 100, transferBudget: 30, tier: 'Lower', teamMorale: 'Normal',
+    primaryColor: '#FDB913', secondaryColor: '#231F20', tactics: 'Balanced',
+    squad: [
+      { id: 1701, name: 'P. Neto', position: 'DEL', rating: 80, value: 45, wage: 90000, morale: 'Normal', contractYears: 3 },
+      { id: 1702, name: 'M. Cunha', position: 'DEL', rating: 81, value: 55, wage: 100000, morale: 'Contento', contractYears: 4 },
+      { id: 1703, name: 'C. Dawson', position: 'DEF', rating: 78, value: 5, wage: 55000, morale: 'Normal', contractYears: 1 },
+      { id: 1704, name: 'José Sá', position: 'POR', rating: 81, value: 20, wage: 40000, morale: 'Contento', contractYears: 3 },
+      { id: 1705, name: 'M. Kilman', position: 'DEF', rating: 78, value: 30, wage: 50000, morale: 'Contento', contractYears: 5 },
+      { id: 1706, name: 'R. Aït-Nouri', position: 'DEF', rating: 77, value: 28, wage: 35000, morale: 'Contento', contractYears: 3 },
+      { id: 1707, name: 'Hwang H.C.', position: 'DEL', rating: 78, value: 25, wage: 30000, morale: 'Contento', contractYears: 4 },
+      { id: 1708, name: 'M. Lemina', position: 'CEN', rating: 78, value: 18, wage: 45000, morale: 'Contento', contractYears: 3 },
+      { id: 1709, name: 'J. Gomes', position: 'CEN', rating: 76, value: 22, wage: 30000, morale: 'Contento', contractYears: 4 },
+      { id: 1710, name: 'N. Semedo', position: 'DEF', rating: 79, value: 18, wage: 80000, morale: 'Normal', contractYears: 2 },
+      { id: 1711, name: 'P. Sarabia', position: 'CEN', rating: 79, value: 15, wage: 90000, morale: 'Normal', contractYears: 2 },
+      { id: 1712, name: 'B. Traoré', position: 'CEN', rating: 74, value: 10, wage: 20000, morale: 'Normal', contractYears: 4 },
+      { id: 1713, name: 'Toti Gomes', position: 'DEF', rating: 74, value: 10, wage: 20000, morale: 'Normal', contractYears: 4 },
+      { id: 1714, name: 'D. Bentley', position: 'POR', rating: 72, value: 2, wage: 25000, morale: 'Normal', contractYears: 2 },
+      { id: 1715, name: 'S. Bueno', position: 'DEF', rating: 74, value: 8, wage: 30000, morale: 'Normal', contractYears: 4 },
+      { id: 1716, name: 'J. Bellegarde', position: 'CEN', rating: 76, value: 15, wage: 45000, morale: 'Normal', contractYears: 4 },
+    ]
+  },
+  {
+    id: 18, name: 'Ipswich Town', logo: createLogo('IT', 'bg-blue-500'), budget: 50, transferBudget: 15, tier: 'Lower', teamMorale: 'Contento',
+    primaryColor: '#3A64A3', secondaryColor: '#FFFFFF', tactics: 'Defensive',
+    squad: [
+      { id: 1801, name: 'L. Davis', position: 'DEF', rating: 75, value: 10, wage: 25000, morale: 'Contento', contractYears: 2 },
+      { id: 1802, name: 'C. Chaplin', position: 'CEN', rating: 74, value: 8, wage: 20000, morale: 'Contento', contractYears: 3 },
+      { id: 1803, name: 'S. Morsy', position: 'CEN', rating: 73, value: 5, wage: 18000, morale: 'Feliz', contractYears: 2 },
+      { id: 1804, name: 'W. Burns', position: 'CEN', rating: 72, value: 4, wage: 15000, morale: 'Contento', contractYears: 2 },
+      { id: 1805, name: 'V. Hladky', position: 'POR', rating: 71, value: 3, wage: 10000, morale: 'Contento', contractYears: 3 },
+      { id: 1806, name: 'L. Woolfenden', position: 'DEF', rating: 72, value: 4, wage: 12000, morale: 'Contento', contractYears: 3 },
+      { id: 1807, name: 'C. Burgess', position: 'DEF', rating: 70, value: 2, wage: 8000, morale: 'Contento', contractYears: 2 },
+      { id: 1808, name: 'N. Broadhead', position: 'DEL', rating: 71, value: 3, wage: 15000, morale: 'Contento', contractYears: 3 },
+      { id: 1809, name: 'G. Hirst', position: 'DEL', rating: 70, value: 3, wage: 12000, morale: 'Normal', contractYears: 3 },
+      { id: 1810, name: 'M. Luongo', position: 'CEN', rating: 71, value: 3, wage: 14000, morale: 'Contento', contractYears: 1 },
+      { id: 1811, name: 'H. Clarke', position: 'DEF', rating: 69, value: 2, wage: 10000, morale: 'Normal', contractYears: 3 },
+      { id: 1812, name: 'K. Moore', position: 'DEL', rating: 72, value: 4, wage: 25000, morale: 'Normal', contractYears: 1 },
+      { id: 1813, name: 'A. Tuanzebe', position: 'DEF', rating: 70, value: 3, wage: 20000, morale: 'Normal', contractYears: 1 },
+      { id: 1814, name: 'J. Taylor', position: 'CEN', rating: 68, value: 2, wage: 9000, morale: 'Normal', contractYears: 3 },
+      { id: 1815, name: 'C. Walton', position: 'POR', rating: 68, value: 1, wage: 8000, morale: 'Normal', contractYears: 2 },
+      { id: 1816, name: 'K. Jackson', position: 'DEL', rating: 67, value: 1, wage: 7000, morale: 'Normal', contractYears: 2 },
+    ]
+  },
+  {
+    id: 19, name: 'Leicester City', logo: createLogo('LC', 'bg-blue-600'), budget: 70, transferBudget: 20, tier: 'Lower', teamMorale: 'Contento',
+    primaryColor: '#0053A0', secondaryColor: '#FDB913', tactics: 'Balanced',
+    squad: [
+      { id: 1901, name: 'K. Dewsbury-Hall', position: 'CEN', rating: 78, value: 30, wage: 75000, morale: 'Contento', contractYears: 3 },
+      { id: 1902, name: 'J. Vardy', position: 'DEL', rating: 79, value: 5, wage: 100000, morale: 'Feliz', contractYears: 1 },
+      { id: 1903, name: 'R. Pereira', position: 'DEF', rating: 78, value: 15, wage: 80000, morale: 'Normal', contractYears: 2 },
+      { id: 1904, name: 'W. Faes', position: 'DEF', rating: 77, value: 20, wage: 50000, morale: 'Contento', contractYears: 4 },
+      { id: 1905, name: 'H. Winks', position: 'CEN', rating: 77, value: 18, wage: 90000, morale: 'Contento', contractYears: 4 },
+      { id: 1906, name: 'M. Hermansen', position: 'POR', rating: 75, value: 12, wage: 25000, morale: 'Contento', contractYears: 4 },
+      { id: 1907, name: 'K. Iheanacho', position: 'DEL', rating: 77, value: 15, wage: 80000, morale: 'Normal', contractYears: 1 },
+      { id: 1908, name: 'P. Daka', position: 'DEL', rating: 75, value: 18, wage: 75000, morale: 'Normal', contractYears: 3 },
+      { id: 1909, name: 'W. Ndidi', position: 'CEN', rating: 78, value: 20, wage: 75000, morale: 'Normal', contractYears: 1 },
+      { id: 1910, name: 'J. Justin', position: 'DEF', rating: 75, value: 12, wage: 30000, morale: 'Normal', contractYears: 3 },
+      { id: 1911, name: 'C. Coady', position: 'DEF', rating: 76, value: 8, wage: 45000, morale: 'Contento', contractYears: 2 },
+      { id: 1912, name: 'S. Mavididi', position: 'DEL', rating: 76, value: 18, wage: 40000, morale: 'Contento', contractYears: 4 },
+      { id: 1913, name: 'H. Souttar', position: 'DEF', rating: 74, value: 10, wage: 40000, morale: 'Descontento', contractYears: 4 },
+      { id: 1914, name: 'D. Praet', position: 'CEN', rating: 76, value: 12, wage: 75000, morale: 'Descontento', contractYears: 2 },
+      { id: 1915, name: 'D. Ward', position: 'POR', rating: 73, value: 3, wage: 35000, morale: 'Normal', contractYears: 3 },
+      { id: 1916, name: 'Y. Akgün', position: 'DEL', rating: 74, value: 10, wage: 28000, morale: 'Normal', contractYears: 1 },
+    ]
+  },
+  {
+    id: 20, name: 'Southampton', logo: createLogo('SO', 'bg-red-500'), budget: 60, transferBudget: 18, tier: 'Lower', teamMorale: 'Contento',
+    primaryColor: '#D71920', secondaryColor: '#130C0E', tactics: 'Attacking',
+    squad: [
+      { id: 2001, name: 'K. Walker-Peters', position: 'DEF', rating: 77, value: 20, wage: 50000, morale: 'Contento', contractYears: 2 },
+      { id: 2002, name: 'A. Armstrong', position: 'DEL', rating: 76, value: 18, wage: 65000, morale: 'Contento', contractYears: 3 },
+      { id: 2003, name: 'T. Harwood-Bellis', position: 'DEF', rating: 75, value: 15, wage: 45000, morale: 'Contento', contractYears: 4 },
+      { id: 2004, name: 'G. Bazunu', position: 'POR', rating: 72, value: 10, wage: 40000, morale: 'Contento', contractYears: 4 },
+      { id: 2005, name: 'F. Downes', position: 'CEN', rating: 74, value: 8, wage: 25000, morale: 'Contento', contractYears: 3 },
+      { id: 2006, name: 'J. Aribo', position: 'CEN', rating: 75, value: 12, wage: 70000, morale: 'Normal', contractYears: 3 },
+      { id: 2007, name: 'C. Alcaraz', position: 'CEN', rating: 74, value: 15, wage: 30000, morale: 'Normal', contractYears: 4 },
+      { id: 2008, name: 'J. Bednarek', position: 'DEF', rating: 74, value: 10, wage: 60000, morale: 'Normal', contractYears: 3 },
+      { id: 2009, name: 'S. Edozie', position: 'DEL', rating: 71, value: 8, wage: 20000, morale: 'Contento', contractYears: 4 },
+      { id: 2010, name: 'R. Fraser', position: 'DEL', rating: 75, value: 8, wage: 42000, morale: 'Normal', contractYears: 1 },
+      { id: 2011, name: 'S. Armstrong', position: 'CEN', rating: 74, value: 6, wage: 65000, morale: 'Normal', contractYears: 1 },
+      { id: 2012, name: 'S. Mara', position: 'DEL', rating: 70, value: 7, wage: 35000, morale: 'Normal', contractYears: 4 },
+      { id: 2013, name: 'J. Stephens', position: 'DEF', rating: 71, value: 3, wage: 50000, morale: 'Contento', contractYears: 2 },
+      { id: 2014, name: 'A. McCarthy', position: 'POR', rating: 72, value: 2, wage: 50000, morale: 'Normal', contractYears: 1 },
+      { id: 2015, name: 'W. Smallbone', position: 'CEN', rating: 70, value: 4, wage: 15000, morale: 'Contento', contractYears: 3 },
+      { id: 2016, name: 'K. Sulemana', position: 'DEL', rating: 74, value: 18, wage: 65000, morale: 'Normal', contractYears: 4 },
+    ]
+  },
 ];
 
 // By separating the sort from the array declaration, TypeScript can correctly

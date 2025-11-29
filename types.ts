@@ -26,11 +26,14 @@ export interface Team {
   squad: Player[];
   tier: 'Top' | 'Mid' | 'Lower';
   teamMorale: Morale;
+  primaryColor: string;
+  secondaryColor: string;
+  tactics: 'Attacking' | 'Balanced' | 'Defensive';
 }
 
 export interface PlayerProfile {
-    name: string;
-    experience: number; // Starts at 0
+  name: string;
+  experience: number; // Starts at 0
 }
 
 export interface NewsItem {
@@ -62,11 +65,11 @@ export interface LeagueTableRow {
 }
 
 export interface Offer {
-    id: string;
-    playerId: number;
-    offeringTeamId: number;
-    offerValue: number;
-    message: string;
+  id: string;
+  playerId: number;
+  offeringTeamId: number;
+  offerValue: number;
+  message: string;
 }
 
 export interface GameState {
