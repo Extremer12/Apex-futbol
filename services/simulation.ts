@@ -22,7 +22,7 @@ const getTeamStats = (team: Team) => {
 export const generateYouthPlayer = (tier: Team['tier'] = 'Lower'): Player => {
     const positions: Player['position'][] = ['POR', 'DEF', 'CEN', 'DEL'];
     const position = positions[Math.floor(Math.random() * positions.length)];
-    
+
     // Base rating based on tier (better academies produce better players)
     let baseRating = 55;
     if (tier === 'Mid') baseRating = 60;
@@ -30,12 +30,12 @@ export const generateYouthPlayer = (tier: Team['tier'] = 'Lower'): Player => {
 
     // Random variance (-5 to +8)
     const rating = Math.min(85, Math.max(45, baseRating + Math.floor(Math.random() * 13) - 5));
-    
+
     // Value calculation based on rating
     const value = Math.round((rating * rating * rating) / 8000) / 10; // Exponential value curve
-    
+
     return {
-        id: Date.now() + Math.floor(Math.random() * 10000),
+        id: Date.now() + Math.floor(Math.random() * 100000) + Math.floor(performance.now()),
         name: generateRandomName(),
         position,
         rating,
@@ -56,7 +56,7 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
     const homeControl = homeStats.midfield * 1.1 + (Math.random() * 10);
     const awayControl = awayStats.midfield + (Math.random() * 10);
     const totalControl = homeControl + awayControl;
-    const homePossession = homeControl / totalControl; 
+    const homePossession = homeControl / totalControl;
 
     // 2. Factor de Moral y Forma
     const getMoralBonus = (m: Morale) => ({ 'Feliz': 3, 'Contento': 1, 'Normal': 0, 'Descontento': -2, 'Enojado': -5 }[m]);
@@ -77,7 +77,7 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
     let awayScore = 0;
     const events: string[] = [];
 
-    const homeConversionRate = 0.15 + ((homeStats.attack - awayStats.defense) / 200); 
+    const homeConversionRate = 0.15 + ((homeStats.attack - awayStats.defense) / 200);
     const awayConversionRate = 0.15 + ((awayStats.attack - homeStats.defense) / 200);
 
     for (let i = 0; i < Math.round(homeChances); i++) {
@@ -120,7 +120,7 @@ export const createInitialLeagueTable = (teams: Team[]): LeagueTableRow[] => {
     return teams.map(team => ({
         teamId: team.id, position: 0, played: 0, wins: 0, draws: 0, losses: 0,
         goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0, form: [],
-    })).sort((a,b) => teams.find(t=>t.id === a.teamId)!.name.localeCompare(teams.find(t=>t.id === b.teamId)!.name));
+    })).sort((a, b) => teams.find(t => t.id === a.teamId)!.name.localeCompare(teams.find(t => t.id === b.teamId)!.name));
 };
 
 export const updateTeamMorale = (currentMorale: Morale, result: 'W' | 'D' | 'L'): Morale => {

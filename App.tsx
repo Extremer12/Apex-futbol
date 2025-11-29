@@ -30,7 +30,7 @@ import { LeagueScreen } from './components/screens/LeagueScreen';
 import { SettingsScreen } from './components/screens/SettingsScreen';
 
 // Services
-import { evaluateElectionPitch, ElectionResponse, generateNews, generateMatchReport, generateTransferOffer, generatePlayerOfTheWeekNews, generateImportantNews } from './services/geminiService';
+import { evaluateElectionPitch, ElectionResponse, generateNews, generateMatchReport, generateTransferOffer, generatePlayerOfTheWeekNews, generateImportantNews } from './services/gameLogic';
 import { updateTeamMorale, simulateMatch } from './services/simulation';
 import { formatDate } from './utils';
 
@@ -56,23 +56,23 @@ function App() {
     const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
     const [electionResult, setElectionResult] = useState<ElectionResponse | null>(null);
     const [activeScreen, setActiveScreen] = useState<Screen>(Screen.Dashboard);
-    
+
     // Match Simulation State
     const [matchPhase, setMatchPhase] = useState<MatchPhase>('PRE');
     const [pendingResults, setPendingResults] = useState<PendingSimulationResults | null>(null);
-    
+
     // Save state
     const [currentSaveId, setCurrentSaveId] = useState<string | null>(null);
     const [currentSaveName, setCurrentSaveName] = useState<string | null>(null);
     const [lastSaved, setLastSaved] = useState<Date | null>(null);
     const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
     const [saveMode, setSaveMode] = useState<'overwrite' | 'new'>('overwrite');
-    
+
     // Notification State
-    const [notification, setNotification] = useState<{message: string, type: 'success' | 'error'} | null>(null);
+    const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
 
     const [gameState, dispatch] = useReducer(gameReducer, initialState);
-    
+
     const allPlayers = useMemo(() => gameState ? gameState.allTeams.flatMap(t => t.squad) : [], [gameState]);
     const viewingPlayer = useMemo(() => (gameState && gameState.viewingPlayer) || null, [gameState]);
 
@@ -110,7 +110,7 @@ function App() {
         setMatchPhase('PRE');
         setPendingResults(null);
     }, []);
-    
+
     const handleNewGame = useCallback(() => {
         resetGameData();
         setAppState('PROFILE_CREATION');
@@ -150,9 +150,20 @@ function App() {
         setAppState('ELECTION_PITCH');
     };
 
-    const handlePitchSubmit = useCallback(async (pitch: string) => {
+    const handlePitchSubmit = useCallback(async (debateSummary: string) => {
         if (!selectedTeam || !playerProfile) return;
-        const result = await evaluateElectionPitch(pitch, selectedTeam, playerProfile);
+
+        // The debate component already evaluated and passed a summary
+        // We just need to parse it and show results
+        const isSuccess = debateSummary.includes('Won');
+
+        const result = {
+            success: isSuccess,
+            feedback: isSuccess
+                ? `¡Felicidades! Has ganado las elecciones del ${selectedTeam.name}.`
+                : `No has conseguido suficientes votos. Intenta con otro equipo.`
+        };
+
         setElectionResult(result);
         setAppState('ELECTION_RESULT');
     }, [selectedTeam, playerProfile]);
@@ -162,13 +173,13 @@ function App() {
         dispatch({ type: 'INITIALIZE_GAME', payload: { team: selectedTeam, playerProfile } });
         setAppState('GAME_ACTIVE');
     }, [selectedTeam, playerProfile]);
-    
+
     const handleRetryElection = () => {
         setSelectedTeam(null);
         setElectionResult(null);
         setAppState('TEAM_SELECTION');
     };
-    
+
     const fetchInitialNews = useCallback(async (state: GameState) => {
         const initialNews = await generateNews(state);
         const newsItem: NewsItem = { ...initialNews, id: new Date().toISOString(), date: formatDate(state.currentDate) };
@@ -176,20 +187,20 @@ function App() {
     }, []);
 
     useEffect(() => {
-        if (gameState && gameState.newsFeed.length === 3) { 
+        if (gameState && gameState.newsFeed.length === 3) {
             fetchInitialNews(gameState);
         }
     }, [gameState, fetchInitialNews]);
-    
+
     const handleConfirmSave = useCallback(async (saveName: string) => {
         if (!gameState || !playerProfile) return;
-        
+
         // Determine ID: If explicit "new" mode OR no current ID exists, create new ID.
         // Otherwise (overwrite mode AND ID exists), use current ID.
-        const saveId = (saveMode === 'overwrite' && currentSaveId) 
-            ? currentSaveId 
+        const saveId = (saveMode === 'overwrite' && currentSaveId)
+            ? currentSaveId
             : `save_${Date.now()}`;
-            
+
         const now = new Date();
 
         const saveData: SavedGameData = {
@@ -211,7 +222,7 @@ function App() {
             console.error(e);
             showNotification("Error al guardar la partida", "error");
         }
-        
+
         setIsSaveModalOpen(false);
     }, [gameState, playerProfile, currentSaveId, saveMode]);
 
@@ -226,16 +237,16 @@ function App() {
     // Step 1: Calculate results and Start Animation
     const handlePlayMatch = useCallback(async () => {
         if (!gameState) return;
-        
+
         // Create calculation context
         const newWeek = gameState.currentWeek + 1;
         const newSchedule = [...gameState.schedule];
         const updatedLeagueTable = new Map<number, LeagueTableRow>(
-            gameState.leagueTable.map(row => [row.teamId, {...row, form: [...row.form]}] as [number, LeagueTableRow])
+            gameState.leagueTable.map(row => [row.teamId, { ...row, form: [...row.form] }] as [number, LeagueTableRow])
         );
         let updatedAllTeams = gameState.allTeams.map(t => ({ ...t }));
         const matchesThisWeek = newSchedule.filter(m => m.week === newWeek);
-        
+
         const weeklyNet = (gameState.finances.weeklyIncome - gameState.finances.weeklyWages) / 1_000_000;
         let confidenceChange = weeklyNet > 0 ? 1 : -1;
 
@@ -244,13 +255,13 @@ function App() {
         // Simulate all matches
         if (matchesThisWeek.length > 0) {
             matchesThisWeek.forEach(match => {
-                if(match.result) return;
+                if (match.result) return;
 
                 const homeTeam = updatedAllTeams.find(t => t.id === match.homeTeamId)!;
                 const awayTeam = updatedAllTeams.find(t => t.id === match.awayTeamId)!;
                 const homeRow = updatedLeagueTable.get(match.homeTeamId)!;
                 const awayRow = updatedLeagueTable.get(match.awayTeamId)!;
-                
+
                 const result = simulateMatch(homeTeam, awayTeam, homeRow, awayRow);
                 const matchIndex = newSchedule.findIndex(m => m.week === newWeek && m.homeTeamId === match.homeTeamId);
                 newSchedule[matchIndex] = { ...newSchedule[matchIndex], result: { homeScore: result.homeScore, awayScore: result.awayScore } };
@@ -266,30 +277,30 @@ function App() {
 
                 let homeResult: 'W' | 'D' | 'L', awayResult: 'W' | 'D' | 'L';
 
-                if (result.homeScore > result.awayScore) { 
+                if (result.homeScore > result.awayScore) {
                     homeRow.wins++; homeRow.points += 3; homeResult = 'W';
                     awayRow.losses++; awayResult = 'L';
-                } else if (result.awayScore > result.homeScore) { 
+                } else if (result.awayScore > result.homeScore) {
                     awayRow.wins++; awayRow.points += 3; awayResult = 'W';
                     homeRow.losses++; homeResult = 'L';
-                } else { 
+                } else {
                     homeRow.draws++; homeRow.points += 1; homeResult = 'D';
                     awayRow.draws++; awayRow.points += 1; awayResult = 'D';
                 }
                 homeRow.form.unshift(homeResult);
                 awayRow.form.unshift(awayResult);
-                
+
                 homeTeam.teamMorale = updateTeamMorale(homeTeam.teamMorale, homeResult);
                 awayTeam.teamMorale = updateTeamMorale(awayTeam.teamMorale, awayResult);
 
-                if (homeTeam.id === gameState.team.id) { 
+                if (homeTeam.id === gameState.team.id) {
                     if (homeResult === 'W') confidenceChange += 2;
-                    if (homeResult === 'D') confidenceChange -= 1; 
-                    if (homeResult === 'L') confidenceChange -= 4; 
+                    if (homeResult === 'D') confidenceChange -= 1;
+                    if (homeResult === 'L') confidenceChange -= 4;
                 }
-                if (awayTeam.id === gameState.team.id) { 
-                    if (awayResult === 'W') confidenceChange += 3; 
-                    if (awayResult === 'D') confidenceChange += 1; 
+                if (awayTeam.id === gameState.team.id) {
+                    if (awayResult === 'W') confidenceChange += 3;
+                    if (awayResult === 'D') confidenceChange += 1;
                     if (awayResult === 'L') confidenceChange -= 2;
                 }
             });
@@ -298,20 +309,20 @@ function App() {
         // Prepare News and Offers (Async parts)
         const newDate = new Date(gameState.currentDate);
         newDate.setDate(newDate.getDate() + 7);
-        
+
         const newsToAdd: NewsItem[] = [];
         const playerMatch = newSchedule.find(m => m.week === newWeek && (m.homeTeamId === gameState.team.id || m.awayTeamId === gameState.team.id));
 
-        if(playerMatch && playerMatch.result) {
+        if (playerMatch && playerMatch.result) {
             const isHome = playerMatch.homeTeamId === gameState.team.id;
             const opponent = gameState.allTeams.find(t => t.id === (isHome ? playerMatch.awayTeamId : playerMatch.homeTeamId))!;
             const myScore = isHome ? playerMatch.result.homeScore : playerMatch.result.awayScore;
             const oppScore = isHome ? playerMatch.result.awayScore : playerMatch.result.homeScore;
-            
+
             const isThrashing = (myScore - oppScore) >= 3;
             const isBadLoss = (oppScore - myScore) >= 3;
             const isUpset = myScore > oppScore && gameState.team.tier === 'Lower' && opponent.tier === 'Top';
-            
+
             if (isThrashing || isBadLoss || isUpset) {
                 const context = isUpset ? "Victoria histórica de un equipo pequeño contra un gigante." : isThrashing ? "Una goleada espectacular." : "Una derrota humillante.";
                 const detail = `El ${gameState.team.name} quedó ${myScore}-${oppScore} contra el ${opponent.name}.`;
@@ -322,10 +333,10 @@ function App() {
                 newsToAdd.push({ ...matchReport, id: `match_${new Date().toISOString()}`, date: formatDate(newDate) });
             }
         } else {
-             const generalNews = await generateNews(gameState);
-             newsToAdd.push({ ...generalNews, id: `general_${new Date().toISOString()}`, date: formatDate(newDate) });
+            const generalNews = await generateNews(gameState);
+            newsToAdd.push({ ...generalNews, id: `general_${new Date().toISOString()}`, date: formatDate(newDate) });
         }
-        
+
         // Player of the week
         if (matchesThisWeek.length > 0 && Math.random() < 0.3) {
             const winningTeamsIds: number[] = [];
@@ -334,7 +345,7 @@ function App() {
                 if (match.result.homeScore > match.result.awayScore) winningTeamsIds.push(match.homeTeamId);
                 else if (match.result.awayScore > match.result.homeScore) winningTeamsIds.push(match.awayTeamId);
             });
-            
+
             const candidatePlayers = updatedAllTeams
                 .filter(t => winningTeamsIds.includes(t.id))
                 .flatMap(t => t.squad.map(p => ({ player: p, team: t })))
@@ -387,7 +398,7 @@ function App() {
         if (!gameState || !pendingResults) return;
 
         const newConfidence = Math.max(0, Math.min(100, gameState.chairmanConfidence + pendingResults.confidenceChange));
-        
+
         dispatch({ type: 'ADVANCE_WEEK_START' });
         dispatch({
             type: 'ADVANCE_WEEK_SUCCESS',
@@ -420,28 +431,28 @@ function App() {
     if (appState === 'ELECTION_RESULT' && electionResult) return <ElectionResult result={electionResult} onContinue={handleStartGame} onRetry={handleRetryElection} />;
 
     if (!gameState || appState !== 'GAME_ACTIVE') {
-         return <div className="min-h-screen bg-slate-950 flex items-center justify-center"><LoadingSpinner /></div>;
+        return <div className="min-h-screen bg-slate-950 flex items-center justify-center"><LoadingSpinner /></div>;
     }
 
     const renderContent = () => {
         switch (activeScreen) {
-            case Screen.Dashboard: 
-                return <Dashboard 
-                    gameState={gameState} 
-                    onPlayMatch={handlePlayMatch} 
+            case Screen.Dashboard:
+                return <Dashboard
+                    gameState={gameState}
+                    onPlayMatch={handlePlayMatch}
                     matchPhase={matchPhase}
                     pendingResults={pendingResults}
                     onWeekComplete={handleWeekComplete}
-                    allPlayers={allPlayers} 
-                    dispatch={dispatch} 
+                    allPlayers={allPlayers}
+                    dispatch={dispatch}
                 />;
             case Screen.Squad: return <SquadScreen gameState={gameState} dispatch={dispatch} />;
             case Screen.Transfers: return <TransfersScreen gameState={gameState} dispatch={dispatch} />;
             case Screen.Finances: return <FinancesScreen gameState={gameState} />;
             case Screen.League: return <LeagueScreen gameState={gameState} />;
             case Screen.Settings: return (
-                <SettingsScreen 
-                    onSaveGame={(mode) => { setSaveMode(mode); setIsSaveModalOpen(true); }} 
+                <SettingsScreen
+                    onSaveGame={(mode) => { setSaveMode(mode); setIsSaveModalOpen(true); }}
                     onQuitToMenu={handleQuitToMenu}
                     currentSaveName={currentSaveName}
                     lastSaved={lastSaved}
@@ -453,16 +464,16 @@ function App() {
 
     return (
         <div className="bg-slate-900 min-h-screen text-slate-200 font-sans relative">
-             {notification && <Notification message={notification.message} type={notification.type} onClose={() => setNotification(null)} />}
-             {viewingPlayer && <PlayerDetailModal player={viewingPlayer} dispatch={dispatch} />}
-             {isSaveModalOpen && (
-                <SaveGameModal 
-                    onSave={handleConfirmSave} 
-                    onClose={() => setIsSaveModalOpen(false)} 
-                    defaultName={saveMode === 'overwrite' ? (currentSaveName || `${gameState.team.name} Carrera`) : `${gameState.team.name} Carrera (Nueva)`} 
+            {notification && <Notification message={notification.message} type={notification.type} onClose={() => setNotification(null)} />}
+            {viewingPlayer && <PlayerDetailModal player={viewingPlayer} dispatch={dispatch} />}
+            {isSaveModalOpen && (
+                <SaveGameModal
+                    onSave={handleConfirmSave}
+                    onClose={() => setIsSaveModalOpen(false)}
+                    defaultName={saveMode === 'overwrite' ? (currentSaveName || `${gameState.team.name} Carrera`) : `${gameState.team.name} Carrera (Nueva)`}
                     mode={saveMode}
                 />
-             )}
+            )}
             <div className="max-w-7xl mx-auto">
                 <Header gameState={gameState} />
                 <main className="pb-24">

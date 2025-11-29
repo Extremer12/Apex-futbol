@@ -1,3 +1,5 @@
+/* Tailwind CSS v4 */
+@import "tailwindcss";
+
 /* Global styles for Apex AI */
-/* Tailwind CSS is loaded via CDN in index.html */
-/* This file can be used for any custom global styles */
+/* Custom global styles can be added below */

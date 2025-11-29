@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { GameState, Player } from '../../types';
 import { GameAction } from '../../state/reducer';
 import { LoadingSpinner } from '../icons';
-import { generateTransferNegotiationResponse, NegotiationResponse } from '../../services/geminiService';
+import { generateTransferNegotiationResponse, NegotiationResponse } from '../../services/gameLogic';
 import { Modal } from '../ui/Modal';
 
 interface TransfersScreenProps {
@@ -15,7 +15,7 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
     const [filterPos, setFilterPos] = useState<'ALL' | Player['position']>('ALL');
     const [negotiatingPlayer, setNegotiatingPlayer] = useState<Player | null>(null);
     const [offer, setOffer] = useState(0);
-    const [negotiationHistory, setNegotiationHistory] = useState<Array<string | NegotiationResponse | {type: 'error', message: string}>>([]);
+    const [negotiationHistory, setNegotiationHistory] = useState<Array<string | NegotiationResponse | { type: 'error', message: string }>>([]);
     const [isNegotiating, setIsNegotiating] = useState(false);
 
     const { allTeams, team: myTeam, finances } = gameState;
@@ -31,7 +31,7 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
         setOffer(player.value);
         setNegotiationHistory([]);
     };
-    
+
     const handleSendOffer = async () => {
         if (!negotiatingPlayer) return;
         setIsNegotiating(true);
@@ -48,17 +48,17 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
     const handleAcceptDeal = () => {
         if (!negotiatingPlayer) return;
         if (offer > finances.transferBudget) {
-            setNegotiationHistory(prev => [...prev, {type: 'error', message: "Fichaje cancelado. La oferta supera tu presupuesto de fichajes."}]);
+            setNegotiationHistory(prev => [...prev, { type: 'error', message: "Fichaje cancelado. La oferta supera tu presupuesto de fichajes." }]);
             return;
         }
         if (offer > finances.balance) {
-             setNegotiationHistory(prev => [...prev, {type: 'error', message: "Fichaje cancelado. No tienes suficientes fondos en el balance del club."}]);
+            setNegotiationHistory(prev => [...prev, { type: 'error', message: "Fichaje cancelado. No tienes suficientes fondos en el balance del club." }]);
             return;
         }
         dispatch({ type: 'SIGN_PLAYER', payload: { player: negotiatingPlayer, fee: offer } });
         setNegotiatingPlayer(null);
     }
-    
+
     const isOfferInvalid = offer <= 0 || offer > finances.transferBudget;
 
     const lastHistoryItem = negotiationHistory.length > 0 ? negotiationHistory[negotiationHistory.length - 1] : null;
@@ -78,7 +78,7 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
                     <span className="col-span-2">Jugador</span><span>Pos</span><span>Nivel</span><span>Valor</span><span>Acción</span>
                 </div>
                 <div className="divide-y divide-slate-800 max-h-[60vh] overflow-y-auto">
-                    {availablePlayers.sort((a,b) => b.rating - a.rating).map(player => (
+                    {availablePlayers.sort((a, b) => b.rating - a.rating).map(player => (
                         <div key={player.id} className="grid grid-cols-6 p-4 items-center">
                             <span className="col-span-2 font-semibold">{player.name}</span>
                             <span className="text-slate-300">{player.position}</span>
@@ -90,7 +90,7 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
                 </div>
             </div>
             {negotiatingPlayer && (
-                 <Modal title={`Negociando por ${negotiatingPlayer.name}`} onClose={() => setNegotiatingPlayer(null)}>
+                <Modal title={`Negociando por ${negotiatingPlayer.name}`} onClose={() => setNegotiatingPlayer(null)}>
                     <div className="space-y-4">
                         <div className="bg-slate-800/50 p-3 rounded-lg max-h-40 overflow-y-auto space-y-2 text-sm border border-slate-700/50">
                             {negotiationHistory.length === 0 && <p className="text-slate-400">Listo para hacer tu primera oferta.</p>}
@@ -101,33 +101,33 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
                                 }
                                 const negotiationItem = item as NegotiationResponse;
                                 return (
-                                <div key={index} className="p-3 bg-slate-800 rounded">
-                                    <p className="font-semibold text-sky-400">Respuesta del Club:</p>
-                                    <p className="italic">"{negotiationItem.message}"</p>
-                                    {negotiationItem.decision === 'accepted' && <p className="text-green-400 font-bold mt-2">¡OFERTA ACEPTADA!</p>}
-                                    {negotiationItem.decision === 'rejected' && <p className="text-red-400 font-bold mt-2">OFERTA RECHAZADA.</p>}
-                                    {negotiationItem.decision === 'counter' && <p className="text-yellow-400 font-bold mt-2">Contraoferta: £{negotiationItem.counterOffer}M</p>}
-                                </div>
+                                    <div key={index} className="p-3 bg-slate-800 rounded">
+                                        <p className="font-semibold text-sky-400">Respuesta del Club:</p>
+                                        <p className="italic">"{negotiationItem.message}"</p>
+                                        {negotiationItem.decision === 'accepted' && <p className="text-green-400 font-bold mt-2">¡OFERTA ACEPTADA!</p>}
+                                        {negotiationItem.decision === 'rejected' && <p className="text-red-400 font-bold mt-2">OFERTA RECHAZADA.</p>}
+                                        {negotiationItem.decision === 'counter' && <p className="text-yellow-400 font-bold mt-2">Contraoferta: £{negotiationItem.counterOffer}M</p>}
+                                    </div>
                                 );
                             })}
                         </div>
                         <div>
                             <div className="flex items-center gap-3">
-                                 <label htmlFor="offerAmount" className="font-semibold">Tu Oferta:</label>
-                                 <input id="offerAmount" type="number" value={offer} onChange={e => setOffer(Number(e.target.value))} className="w-full px-3 py-2 bg-slate-800 border-2 border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"/>
-                                 <span className="font-semibold text-lg">M</span>
+                                <label htmlFor="offerAmount" className="font-semibold">Tu Oferta:</label>
+                                <input id="offerAmount" type="number" value={offer} onChange={e => setOffer(Number(e.target.value))} className="w-full px-3 py-2 bg-slate-800 border-2 border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                                <span className="font-semibold text-lg">M</span>
                             </div>
                             {offer > finances.transferBudget && <p className="text-xs text-red-400 mt-1">La oferta excede tu presupuesto de fichajes ({`£${finances.transferBudget.toFixed(1)}M`}).</p>}
-                             {offer <= 0 && <p className="text-xs text-red-400 mt-1">La oferta debe ser un número positivo.</p>}
+                            {offer <= 0 && <p className="text-xs text-red-400 mt-1">La oferta debe ser un número positivo.</p>}
                         </div>
 
                         <div className="flex gap-3 pt-3 border-t border-slate-800">
-                             <button onClick={handleSendOffer} disabled={isNegotiating || isOfferInvalid} className="flex-1 bg-blue-600 text-white font-bold py-2.5 px-4 rounded-lg flex items-center justify-center hover:bg-blue-500 disabled:bg-slate-600 disabled:cursor-not-allowed shadow-lg shadow-blue-600/20">
-                                {isNegotiating ? <LoadingSpinner/> : 'Enviar Oferta'}
-                             </button>
-                             {isOfferAccepted && (
+                            <button onClick={handleSendOffer} disabled={isNegotiating || isOfferInvalid} className="flex-1 bg-blue-600 text-white font-bold py-2.5 px-4 rounded-lg flex items-center justify-center hover:bg-blue-500 disabled:bg-slate-600 disabled:cursor-not-allowed shadow-lg shadow-blue-600/20">
+                                {isNegotiating ? <LoadingSpinner /> : 'Enviar Oferta'}
+                            </button>
+                            {isOfferAccepted && (
                                 <button onClick={handleAcceptDeal} className="flex-1 bg-green-600 text-white font-bold py-2.5 px-4 rounded-lg hover:bg-green-500 shadow-lg shadow-green-600/20">Fichar Jugador</button>
-                             )}
+                            )}
                         </div>
                     </div>
                 </Modal>

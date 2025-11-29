@@ -1,5 +1,5 @@
 import React from 'react';
-import { ElectionResponse } from '../../services/geminiService';
+import { ElectionResponse } from '../../services/gameLogic';
 
 interface ElectionResultProps {
     result: ElectionResponse;

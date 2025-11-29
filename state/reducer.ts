@@ -35,28 +35,28 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
             const allTeamsCopy = TEAMS.map(t => ({
                 ...t,
                 logo: t.logo,
-                squad: t.squad.map(player => ({ 
+                squad: t.squad.map(player => ({
                     ...player,
                     // Assign random age between 18 and 33 weighted towards 24-28
-                    age: Math.floor(18 + Math.random() * 16) 
+                    age: Math.floor(18 + Math.random() * 16)
                 })),
             }));
-            
+
             const playerTeamCopy = allTeamsCopy.find(t => t.id === team.id)!;
-            
+
             // Create Initial Youth Academy
             const initialYouthAcademy: Player[] = Array.from({ length: 4 }, () => generateYouthPlayer(playerTeamCopy.tier));
 
             const totalWages = playerTeamCopy.squad.reduce((sum, player) => sum + player.wage, 0);
             const weeklyIncome = 2_500_000;
-            
+
             const TUTORIAL_NEWS: NewsItem[] = [
-                { id: 'tutorial-4', headline: 'La Cantera te Espera', body: 'Hemos ojeado a jóvenes promesas. Revisa la pestaña "Cantera" en tu Plantilla para ver a las futuras estrellas.', date: formatDate(now)},
-                { id: 'tutorial-3', headline: '¡Comienza la Temporada!', body: 'La nueva temporada está sobre nosotros. ¡Es hora de llevar a este club a la gloria! Buena suerte, Presidente.', date: formatDate(now)},
-                { id: 'tutorial-2', headline: 'Consejo del Día: Mercado de Fichajes', body: `Utiliza la pantalla de 'Fichajes' para ojear jugadores y fortalecer tu equipo. Un buen fichaje puede cambiar tu temporada.`, date: formatDate(now)},
-                { id: 'tutorial-1', headline: `Bienvenido a ${team.name}`, body: `¡Felicidades por tu elección, ${playerProfile && playerProfile.name}! La junta y los aficionados confían en ti. El primer paso es revisar tu 'Plantilla' actual.`, date: formatDate(now)},
+                { id: 'tutorial-4', headline: 'La Cantera te Espera', body: 'Hemos ojeado a jóvenes promesas. Revisa la pestaña "Cantera" en tu Plantilla para ver a las futuras estrellas.', date: formatDate(now) },
+                { id: 'tutorial-3', headline: '¡Comienza la Temporada!', body: 'La nueva temporada está sobre nosotros. ¡Es hora de llevar a este club a la gloria! Buena suerte, Presidente.', date: formatDate(now) },
+                { id: 'tutorial-2', headline: 'Consejo del Día: Mercado de Fichajes', body: `Utiliza la pantalla de 'Fichajes' para ojear jugadores y fortalecer tu equipo. Un buen fichaje puede cambiar tu temporada.`, date: formatDate(now) },
+                { id: 'tutorial-1', headline: `Bienvenido a ${team.name}`, body: `¡Felicidades por tu elección, ${playerProfile && playerProfile.name}! La junta y los aficionados confían en ti. El primer paso es revisar tu 'Plantilla' actual.`, date: formatDate(now) },
             ];
-            
+
             const initialConfidence = { 'Top': 65, 'Mid': 75, 'Lower': 80 };
 
             return {
@@ -75,11 +75,11 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 youthAcademy: initialYouthAcademy,
             };
         }
-        
+
         case 'LOAD_GAME': {
             const rehydratedGameState = action.payload;
             const teamsMap = new Map(TEAMS.map(t => [t.id, t]));
-            
+
             const rehydratedAllTeams = rehydratedGameState.allTeams.map(savedTeam => {
                 const originalTeam = teamsMap.get(savedTeam.id);
                 return {
@@ -89,7 +89,7 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
             });
 
             const rehydratedPlayerTeam = rehydratedAllTeams.find(t => t.id === rehydratedGameState.team.id)!;
-            
+
             return {
                 ...rehydratedGameState,
                 allTeams: rehydratedAllTeams,
@@ -125,7 +125,7 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
             if (!state) return null;
             const { newsItems, newSchedule, newLeagueTable, newAllTeams, newConfidence, newOffers } = action.payload;
             const teamsMap = new Map(newAllTeams.map(t => [t.id, t]));
-            const sortedTable = newLeagueTable.sort((a,b) => {
+            const sortedTable = newLeagueTable.sort((a, b) => {
                 if (b.points !== a.points) return b.points - a.points;
                 const aGD = a.goalsFor - a.goalsAgainst;
                 const bGD = b.goalsFor - b.goalsAgainst;
@@ -155,17 +155,17 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
 
         case 'START_NEW_SEASON': {
             if (!state) return null;
-            
+
             const newSeasonYear = state.season + 1;
             const newDate = new Date(`${newSeasonYear}-07-01`);
 
             // 1. Process Aging & Retirements & Regens
             const processedTeams = state.allTeams.map(team => {
                 let updatedSquad: Player[] = team.squad
-                    .map(p => ({ 
-                        ...p, 
-                        age: (p.age || 25) + 1, 
-                        contractYears: Math.max(0, p.contractYears - 1) 
+                    .map(p => ({
+                        ...p,
+                        age: (p.age || 25) + 1,
+                        contractYears: Math.max(0, p.contractYears - 1)
                     }))
                     .filter(p => {
                         // Retirement logic
@@ -183,27 +183,27 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
             });
 
             const updatedPlayerTeam = processedTeams.find(t => t.id === state.team.id)!;
-            
+
             // 2. Refresh Player Academy
             // Remove players who got too old in academy (19+) or randomly replace some
             let updatedAcademy: Player[] = state.youthAcademy
                 .map(p => ({ ...p, age: (p.age || 16) + 1 }))
                 .filter(p => p.age !== undefined && p.age <= 19);
-            
+
             // Add new talent
             const newProspectsCount = 3 + Math.floor(Math.random() * 3); // 3-5 new players
-            for(let i=0; i<newProspectsCount; i++) {
+            for (let i = 0; i < newProspectsCount; i++) {
                 updatedAcademy.push(generateYouthPlayer(updatedPlayerTeam.tier));
             }
 
             // 3. Reset Competition
             const newSchedule = generateFixtures(processedTeams);
             const newTable = createInitialLeagueTable(processedTeams);
-            
+
             // 4. News
             const seasonNews: NewsItem = {
                 id: `season_start_${newSeasonYear}`,
-                headline: `Temporada ${newSeasonYear}-${newSeasonYear+1}`,
+                headline: `Temporada ${newSeasonYear}-${newSeasonYear + 1}`,
                 body: `La pretemporada ha terminado. Los veteranos se han retirado y nuevas caras llegan desde la cantera. ¡Objetivo: Ganar!`,
                 date: formatDate(newDate)
             };
@@ -222,15 +222,15 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 // Reset finances history slightly or keep continuous? Keep continuous.
             };
         }
-        
+
         case 'ADD_NEWS': {
-             if (!state) return null;
-             return {
+            if (!state) return null;
+            return {
                 ...state,
                 newsFeed: [action.payload, ...state.newsFeed].slice(0, 20),
-             }
+            }
         }
-        
+
         case 'ADD_OFFER': {
             if (!state) return null;
             return {
@@ -246,7 +246,7 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
 
             const player = state.team.squad.find(p => p.id === offer.playerId);
             if (!player) return state;
-            
+
             const offeringTeam = state.allTeams.find(t => t.id === offer.offeringTeamId);
 
             // Update finances
@@ -257,8 +257,16 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
             // Update squad
             const newSquad = state.team.squad.filter(p => p.id !== player.id);
             const newTeam = { ...state.team, squad: newSquad };
-            const newAllTeams = state.allTeams.map(t => t.id === newTeam.id ? newTeam : t);
-            
+
+            // Add player to offering team
+            const updatedOfferingTeam = offeringTeam ? { ...offeringTeam, squad: [...offeringTeam.squad, player] } : null;
+
+            const newAllTeams = state.allTeams.map(t => {
+                if (t.id === newTeam.id) return newTeam;
+                if (updatedOfferingTeam && t.id === updatedOfferingTeam.id) return updatedOfferingTeam;
+                return t;
+            });
+
             // Create news item
             const newsItem: NewsItem = {
                 id: `news_${new Date().toISOString()}`,
@@ -266,7 +274,7 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 body: `${player.name} ha completado su traspaso al ${offeringTeam?.name || 'otro club'} por una cifra de ${formatCurrency(offer.offerValue)}. El presidente expresó que era "una buena operación para el club".`,
                 date: formatDate(state.currentDate)
             };
-            
+
             return {
                 ...state,
                 team: newTeam,
@@ -281,7 +289,7 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 newsFeed: [newsItem, ...state.newsFeed].slice(0, 20),
             };
         }
-        
+
         case 'REJECT_OFFER': {
             if (!state) return null;
             return {
@@ -309,7 +317,7 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 return t;
             });
             const updatedPlayerTeam = updatedAllTeams.find(t => t.id === state.team.id)!;
-            
+
             return {
                 ...state,
                 team: updatedPlayerTeam,
@@ -321,7 +329,7 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
         case 'PROMOTE_PLAYER': {
             if (!state) return null;
             const player = action.payload;
-            
+
             // Remove from academy, add to main squad
             const newAcademy = state.youthAcademy.filter(p => p.id !== player.id);
             const promotedPlayer: Player = {
@@ -352,18 +360,18 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 newsFeed: [newsItem, ...state.newsFeed].slice(0, 20)
             };
         }
-        
+
         case 'TOGGLE_TRANSFER_LIST': {
             if (!state) return null;
             const playerToToggle = action.payload;
 
-            const newSquad = state.team.squad.map(p => 
-                p.id === playerToToggle.id 
-                ? { ...p, isTransferListed: !p.isTransferListed } 
-                : p
+            const newSquad = state.team.squad.map(p =>
+                p.id === playerToToggle.id
+                    ? { ...p, isTransferListed: !p.isTransferListed }
+                    : p
             );
             const newTeam = { ...state.team, squad: newSquad };
-            const newAllTeams = state.allTeams.map(t => 
+            const newAllTeams = state.allTeams.map(t =>
                 t.id === newTeam.id ? newTeam : t
             );
 
@@ -376,12 +384,12 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                     : state.viewingPlayer,
             };
         }
-        
+
         case 'SET_VIEWING_PLAYER': {
             if (!state) return null;
             return { ...state, viewingPlayer: action.payload };
         }
-        
+
         default:
             return state;
     }
