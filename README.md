@@ -32,8 +32,8 @@ Un juego de gestión de fútbol completo y totalmente funcional sin dependencias
 
 1. **Clonar el repositorio:**
    ```bash
-   git clone https://github.com/Extremer13/Apex-AI-.git
-   cd Apex-AI-
+   git clone https://github.com/Extremer12/Apex-futbol.git
+   cd Apex-futbol
    ```
 
 2. **Instalar dependencias:**
@@ -126,9 +126,9 @@ Las contribuciones son bienvenidas. Por favor, abre un issue o pull request.
 
 ## 👨‍💻 Autor
 
-Desarrollado por [Extremer13](https://github.com/Extremer13)
+Desarrollado por [Extremer12](https://github.com/Extremer12)
 
 ## 🔗 Links
 
-- **Demo en Vivo**: [Apex AI en Vercel](https://apex-ai.vercel.app)
-- **Repositorio**: [GitHub](https://github.com/Extremer13/Apex-AI-)
+- **Demo en Vivo**: [Apex AI en Vercel](https://apex-futbol.vercel.app)
+- **Repositorio**: [GitHub](https://github.com/Extremer12/Apex-futbol)
