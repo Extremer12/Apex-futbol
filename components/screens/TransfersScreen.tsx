@@ -66,27 +66,55 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
 
     return (
         <div className="p-4 md:p-6 space-y-4">
-            <h2 className="text-3xl font-bold text-sky-400">Mercado de Fichajes</h2>
+            {/* Premier League Header */}
+            <div className="flex items-center gap-4">
+                <img
+                    src="/components/ui/Inglaterra/Premier League.png"
+                    alt="Premier League"
+                    className="w-12 h-12 object-contain drop-shadow-lg"
+                />
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-400 via-purple-300 to-white bg-clip-text text-transparent">
+                    Mercado de Fichajes
+                </h2>
+            </div>
             <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex flex-col sm:flex-row gap-3">
                 <input type="text" placeholder="Buscar por nombre..." value={filterName} onChange={e => setFilterName(e.target.value)} className="flex-grow px-3 py-2 bg-slate-800 border-2 border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500" />
                 <select value={filterPos} onChange={e => setFilterPos(e.target.value as 'ALL' | Player['position'])} className="px-3 py-2 bg-slate-800 border-2 border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
                     <option value="ALL">Todas</option><option value="POR">POR</option><option value="DEF">DEF</option><option value="CEN">CEN</option><option value="DEL">DEL</option>
                 </select>
             </div>
-            <div className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg overflow-hidden">
-                <div className="grid grid-cols-6 text-xs font-semibold text-slate-400 p-4 bg-slate-800/50 uppercase tracking-wider">
-                    <span className="col-span-2">Jugador</span><span>Pos</span><span>Nivel</span><span>Valor</span><span>Acción</span>
+            <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-purple-950/20 border-2 border-purple-500/20 rounded-xl shadow-lg overflow-hidden">
+                <div className="grid grid-cols-7 text-xs font-semibold text-purple-200 p-4 bg-gradient-to-r from-purple-900/50 to-purple-800/50 uppercase tracking-wider">
+                    <span className="col-span-2">Jugador</span>
+                    <span>Equipo</span>
+                    <span>Pos</span>
+                    <span>Nivel</span>
+                    <span>Valor</span>
+                    <span>Acción</span>
                 </div>
-                <div className="divide-y divide-slate-800 max-h-[60vh] overflow-y-auto">
-                    {availablePlayers.sort((a, b) => b.rating - a.rating).map(player => (
-                        <div key={player.id} className="grid grid-cols-6 p-4 items-center">
-                            <span className="col-span-2 font-semibold">{player.name}</span>
-                            <span className="text-slate-300">{player.position}</span>
-                            <span className="font-bold text-sky-400">{player.rating}</span>
-                            <span className="text-green-400">{`£${player.value}M`}</span>
-                            <button onClick={() => startNegotiation(player)} className="bg-sky-600 text-white text-xs font-bold py-1.5 px-3 rounded-md hover:bg-sky-500 transition-colors shadow-md shadow-sky-600/10">Oferta</button>
-                        </div>
-                    ))}
+                <div className="divide-y divide-purple-500/10 max-h-[60vh] overflow-y-auto">
+                    {availablePlayers.sort((a, b) => b.rating - a.rating).map(player => {
+                        const playerTeam = allTeams.find(t => t.squad.some(p => p.id === player.id));
+                        return (
+                            <div key={player.id} className="grid grid-cols-7 p-4 items-center hover:bg-purple-500/10 transition-colors">
+                                <span className="col-span-2 font-semibold text-white">{player.name}</span>
+                                <div className="flex items-center gap-2">
+                                    <div className="transform hover:scale-110 transition-transform duration-200">
+                                        {playerTeam?.logo}
+                                    </div>
+                                </div>
+                                <span className="text-slate-300 font-medium">{player.position}</span>
+                                <span className="font-bold text-purple-400">{player.rating}</span>
+                                <span className="text-green-400 font-semibold">{`£${player.value}M`}</span>
+                                <button
+                                    onClick={() => startNegotiation(player)}
+                                    className="bg-gradient-to-r from-purple-600 to-purple-500 text-white text-xs font-bold py-2 px-4 rounded-lg hover:from-purple-500 hover:to-purple-400 transition-all shadow-lg shadow-purple-600/30 transform hover:scale-105"
+                                >
+                                    Oferta
+                                </button>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
             {negotiatingPlayer && (

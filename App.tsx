@@ -27,6 +27,7 @@ import { SquadScreen } from './components/screens/SquadScreen';
 import { TransfersScreen } from './components/screens/TransfersScreen';
 import { FinancesScreen } from './components/screens/FinancesScreen';
 import { LeagueScreen } from './components/screens/LeagueScreen';
+import { StatisticsScreen } from './components/screens/StatisticsScreen';
 import { SettingsScreen } from './components/screens/SettingsScreen';
 
 // Services
@@ -450,6 +451,7 @@ function App() {
             case Screen.Transfers: return <TransfersScreen gameState={gameState} dispatch={dispatch} />;
             case Screen.Finances: return <FinancesScreen gameState={gameState} />;
             case Screen.League: return <LeagueScreen gameState={gameState} />;
+            case Screen.Statistics: return <StatisticsScreen gameState={gameState} />;
             case Screen.Settings: return (
                 <SettingsScreen
                     onSaveGame={(mode) => { setSaveMode(mode); setIsSaveModalOpen(true); }}

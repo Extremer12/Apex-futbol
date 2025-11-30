@@ -2,66 +2,46 @@
 import React from 'react';
 import { Team } from './types';
 
-// Enhanced Logo Generator
-const createLogo = (initials: string, colorClass: string, isDarkText: boolean = false) => {
-  // Extract hex color from class name map (simplified for this demo, ideally we'd pass hex directly)
-  // For now, we keep the existing signature but render a nice SVG shield
-  const bgColor = colorClass.replace('bg-', '').replace('-', '');
-
+// Premier League Team Logos
+const createTeamLogo = (logoPath: string, teamName: string) => {
   return (
-    <div className={`w-12 h-12 relative flex items-center justify-center drop-shadow-lg transform hover:scale-110 transition-transform duration-300`}>
-      <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible">
-        <defs>
-          <linearGradient id={`grad-${initials}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="currentColor" className={colorClass.replace('bg-', 'text-')} stopOpacity="1" />
-            <stop offset="100%" stopColor="black" stopOpacity="0.4" />
-          </linearGradient>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
-            <feMerge>
-              <feMergeNode in="coloredBlur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-
-        {/* Shield Shape */}
-        <path
-          d="M50 5 L90 20 V50 C90 75 50 95 50 95 C50 95 10 75 10 50 V20 L50 5 Z"
-          className={`${colorClass} fill-current stroke-white stroke-2`}
-          style={{ filter: 'url(#glow)' }}
-        />
-
-        {/* Inner Detail */}
-        <path
-          d="M50 15 L80 25 V50 C80 68 50 85 50 85 C50 85 20 68 20 50 V25 L50 15 Z"
-          fill="none"
-          stroke="white"
-          strokeWidth="1"
-          opacity="0.3"
-        />
-
-        {/* Text */}
-        <text
-          x="50"
-          y="60"
-          fontSize="35"
-          fontFamily="Arial, sans-serif"
-          fontWeight="900"
-          textAnchor="middle"
-          fill={isDarkText ? "#1a1a1a" : "white"}
-          style={{ textShadow: '0px 2px 4px rgba(0,0,0,0.5)' }}
-        >
-          {initials}
-        </text>
-      </svg>
+    <div className="w-12 h-12 relative flex items-center justify-center">
+      <img
+        src={logoPath}
+        alt={`${teamName} logo`}
+        className="w-full h-full object-contain drop-shadow-lg hover:scale-110 transition-transform duration-300"
+      />
     </div>
   );
 };
 
+// Logo paths for all Premier League teams
+const TEAM_LOGOS = {
+  'Arsenal': '/components/ui/Inglaterra/Arsenal FC.png',
+  'Aston Villa': '/components/ui/Inglaterra/Aston Villa FC.png',
+  'AFC Bournemouth': '/components/ui/Inglaterra/AFC Bournemouth.png',
+  'Brentford': '/components/ui/Inglaterra/Brentford FC 512x.png',
+  'Brighton': '/components/ui/Inglaterra/Brighton Hove Albion.png',
+  'Chelsea': '/components/ui/Inglaterra/Chelsea FC.png',
+  'Crystal Palace': '/components/ui/Inglaterra/Crystal Palace FC.png',
+  'Everton': '/components/ui/Inglaterra/Everton FC.png',
+  'Fulham': '/components/ui/Inglaterra/Fulham FC.png',
+  'Ipswich Town': '/components/ui/Inglaterra/Ipswich Town FC.png',
+  'Leicester City': '/components/ui/Inglaterra/Leicester City FC.png',
+  'Liverpool': '/components/ui/Inglaterra/Liverpool FC.png',
+  'Manchester City': '/components/ui/Inglaterra/Manchester City FC.png',
+  'Manchester United': '/components/ui/Inglaterra/Manchester United FC.png',
+  'Newcastle United': '/components/ui/Inglaterra/Newcastle United FC.png',
+  'Nottingham Forest': '/components/ui/Inglaterra/Nottingham Forest FC.png',
+  'Southampton': '/components/ui/Inglaterra/Southampton FC.png',
+  'Tottenham': '/components/ui/Inglaterra/Tottenham Hotspur FC.png',
+  'West Ham': '/components/ui/Inglaterra/West Ham United FC.png',
+  'Wolverhampton': '/components/ui/Inglaterra/Wolverhampton Wanderers FC.png',
+};
+
 export const TEAMS: Team[] = [
   {
-    id: 5, name: 'Manchester City', logo: createLogo('MC', 'bg-sky-400'), budget: 700, transferBudget: 180, tier: 'Top', teamMorale: 'Feliz',
+    id: 5, name: 'Manchester City', logo: createTeamLogo(TEAM_LOGOS['Manchester City'], 'Manchester City'), budget: 700, transferBudget: 180, tier: 'Top', teamMorale: 'Feliz',
     primaryColor: '#6CABDD', secondaryColor: '#1C2C5B', tactics: 'Attacking',
     squad: [
       { id: 501, name: 'E. Haaland', position: 'DEL', rating: 91, value: 180, wage: 375000, morale: 'Contento', contractYears: 4 },
@@ -83,7 +63,7 @@ export const TEAMS: Team[] = [
     ],
   },
   {
-    id: 1, name: 'Arsenal', logo: createLogo('AR', 'bg-red-600'), budget: 250, transferBudget: 80, tier: 'Top', teamMorale: 'Feliz',
+    id: 1, name: 'Arsenal', logo: createTeamLogo(TEAM_LOGOS['Arsenal'], 'Arsenal'), budget: 250, transferBudget: 80, tier: 'Top', teamMorale: 'Feliz',
     primaryColor: '#EF0107', secondaryColor: '#063672', tactics: 'Attacking',
     squad: [
       { id: 101, name: 'B. Saka', position: 'DEL', rating: 88, value: 120, wage: 195000, morale: 'Feliz', contractYears: 5 },
@@ -105,7 +85,7 @@ export const TEAMS: Team[] = [
     ],
   },
   {
-    id: 4, name: 'Liverpool', logo: createLogo('LIV', 'bg-red-700'), budget: 480, transferBudget: 120, tier: 'Top', teamMorale: 'Feliz',
+    id: 4, name: 'Liverpool', logo: createTeamLogo(TEAM_LOGOS['Liverpool'], 'Liverpool'), budget: 480, transferBudget: 120, tier: 'Top', teamMorale: 'Feliz',
     primaryColor: '#C8102E', secondaryColor: '#00B2A9', tactics: 'Attacking',
     squad: [
       { id: 401, name: 'M. Salah', position: 'DEL', rating: 90, value: 100, wage: 350000, morale: 'Contento', contractYears: 2 },
@@ -127,7 +107,7 @@ export const TEAMS: Team[] = [
     ],
   },
   {
-    id: 6, name: 'Manchester Utd', logo: createLogo('MU', 'bg-red-500'), budget: 650, transferBudget: 140, tier: 'Top', teamMorale: 'Contento',
+    id: 6, name: 'Manchester Utd', logo: createTeamLogo(TEAM_LOGOS['Manchester United'], 'Manchester United'), budget: 650, transferBudget: 140, tier: 'Top', teamMorale: 'Contento',
     primaryColor: '#DA291C', secondaryColor: '#FBE122', tactics: 'Attacking',
     squad: [
       { id: 601, name: 'B. Fernandes', position: 'CEN', rating: 88, value: 90, wage: 240000, morale: 'Contento', contractYears: 4 },
@@ -149,7 +129,7 @@ export const TEAMS: Team[] = [
     ],
   },
   {
-    id: 3, name: 'Chelsea', logo: createLogo('CH', 'bg-blue-600'), budget: 450, transferBudget: 150, tier: 'Top', teamMorale: 'Contento',
+    id: 3, name: 'Chelsea', logo: createTeamLogo(TEAM_LOGOS['Chelsea'], 'Chelsea'), budget: 450, transferBudget: 150, tier: 'Top', teamMorale: 'Contento',
     primaryColor: '#034694', secondaryColor: '#EE242C', tactics: 'Balanced',
     squad: [
       { id: 301, name: 'C. Palmer', position: 'CEN', rating: 84, value: 80, wage: 75000, morale: 'Feliz', contractYears: 5 },
@@ -171,7 +151,7 @@ export const TEAMS: Team[] = [
     ],
   },
   {
-    id: 8, name: 'Tottenham', logo: createLogo('SP', 'bg-white', true), budget: 400, transferBudget: 90, tier: 'Mid', teamMorale: 'Contento',
+    id: 8, name: 'Tottenham', logo: createTeamLogo(TEAM_LOGOS['Tottenham'], 'Tottenham'), budget: 400, transferBudget: 90, tier: 'Mid', teamMorale: 'Contento',
     primaryColor: '#132257', secondaryColor: '#FFFFFF', tactics: 'Attacking',
     squad: [
       { id: 801, name: 'Son H.M.', position: 'DEL', rating: 87, value: 60, wage: 190000, morale: 'Feliz', contractYears: 2 },
@@ -193,7 +173,7 @@ export const TEAMS: Team[] = [
     ],
   },
   {
-    id: 2, name: 'Aston Villa', logo: createLogo('AV', 'bg-sky-800'), budget: 180, transferBudget: 50, tier: 'Mid', teamMorale: 'Feliz',
+    id: 2, name: 'Aston Villa', logo: createTeamLogo(TEAM_LOGOS['Aston Villa'], 'Aston Villa'), budget: 180, transferBudget: 50, tier: 'Mid', teamMorale: 'Feliz',
     primaryColor: '#670E36', secondaryColor: '#95BJE5', tactics: 'Balanced',
     squad: [
       { id: 201, name: 'O. Watkins', position: 'DEL', rating: 85, value: 65, wage: 130000, morale: 'Feliz', contractYears: 4 },
@@ -215,7 +195,7 @@ export const TEAMS: Team[] = [
     ],
   },
   {
-    id: 7, name: 'Newcastle Utd', logo: createLogo('NU', 'bg-black'), budget: 300, transferBudget: 70, tier: 'Mid', teamMorale: 'Contento',
+    id: 7, name: 'Newcastle Utd', logo: createTeamLogo(TEAM_LOGOS['Newcastle United'], 'Newcastle United'), budget: 300, transferBudget: 70, tier: 'Mid', teamMorale: 'Contento',
     primaryColor: '#241F20', secondaryColor: '#FFFFFF', tactics: 'Balanced',
     squad: [
       { id: 701, name: 'B. Guimarães', position: 'CEN', rating: 86, value: 85, wage: 160000, morale: 'Contento', contractYears: 5 },
@@ -237,7 +217,7 @@ export const TEAMS: Team[] = [
     ],
   },
   {
-    id: 9, name: 'West Ham', logo: createLogo('WH', 'bg-purple-900'), budget: 150, transferBudget: 40, tier: 'Mid', teamMorale: 'Normal',
+    id: 9, name: 'West Ham', logo: createTeamLogo(TEAM_LOGOS['West Ham'], 'West Ham'), budget: 150, transferBudget: 40, tier: 'Mid', teamMorale: 'Normal',
     primaryColor: '#7A263A', secondaryColor: '#1BB1E7', tactics: 'Defensive',
     squad: [
       { id: 901, name: 'J. Bowen', position: 'DEL', rating: 82, value: 50, wage: 120000, morale: 'Contento', contractYears: 4 },
@@ -259,7 +239,7 @@ export const TEAMS: Team[] = [
     ]
   },
   {
-    id: 10, name: 'Brighton', logo: createLogo('BH', 'bg-blue-500'), budget: 130, transferBudget: 45, tier: 'Mid', teamMorale: 'Normal',
+    id: 10, name: 'Brighton', logo: createTeamLogo(TEAM_LOGOS['Brighton'], 'Brighton'), budget: 130, transferBudget: 45, tier: 'Mid', teamMorale: 'Normal',
     primaryColor: '#0057B8', secondaryColor: '#FFFFFF', tactics: 'Attacking',
     squad: [
       { id: 1001, name: 'K. Mitoma', position: 'CEN', rating: 81, value: 50, wage: 80000, morale: 'Contento', contractYears: 3 },
@@ -281,7 +261,7 @@ export const TEAMS: Team[] = [
     ]
   },
   {
-    id: 11, name: 'Fulham', logo: createLogo('FU', 'bg-gray-800'), budget: 110, transferBudget: 30, tier: 'Lower', teamMorale: 'Normal',
+    id: 11, name: 'Fulham', logo: createTeamLogo(TEAM_LOGOS['Fulham'], 'Fulham'), budget: 110, transferBudget: 30, tier: 'Lower', teamMorale: 'Normal',
     primaryColor: '#000000', secondaryColor: '#CC0000', tactics: 'Balanced',
     squad: [
       { id: 1101, name: 'J. Palhinha', position: 'CEN', rating: 83, value: 55, wage: 90000, morale: 'Contento', contractYears: 3 },
@@ -303,7 +283,7 @@ export const TEAMS: Team[] = [
     ]
   },
   {
-    id: 12, name: 'Crystal Palace', logo: createLogo('CP', 'bg-blue-700'), budget: 120, transferBudget: 35, tier: 'Lower', teamMorale: 'Normal',
+    id: 12, name: 'Crystal Palace', logo: createTeamLogo(TEAM_LOGOS['Crystal Palace'], 'Crystal Palace'), budget: 120, transferBudget: 35, tier: 'Lower', teamMorale: 'Normal',
     primaryColor: '#1B458F', secondaryColor: '#C4122E', tactics: 'Defensive',
     squad: [
       { id: 1201, name: 'E. Eze', position: 'CEN', rating: 81, value: 55, wage: 100000, morale: 'Feliz', contractYears: 4 },
@@ -325,7 +305,7 @@ export const TEAMS: Team[] = [
     ]
   },
   {
-    id: 13, name: 'Brentford', logo: createLogo('BR', 'bg-red-500'), budget: 100, transferBudget: 30, tier: 'Lower', teamMorale: 'Normal',
+    id: 13, name: 'Brentford', logo: createTeamLogo(TEAM_LOGOS['Brentford'], 'Brentford'), budget: 100, transferBudget: 30, tier: 'Lower', teamMorale: 'Normal',
     primaryColor: '#E30613', secondaryColor: '#F9F9F9', tactics: 'Attacking',
     squad: [
       { id: 1301, name: 'I. Toney', position: 'DEL', rating: 80, value: 50, wage: 100000, morale: 'Normal', contractYears: 1 },
@@ -347,7 +327,7 @@ export const TEAMS: Team[] = [
     ]
   },
   {
-    id: 14, name: 'Everton', logo: createLogo('EV', 'bg-blue-800'), budget: 140, transferBudget: 25, tier: 'Lower', teamMorale: 'Normal',
+    id: 14, name: 'Everton', logo: createTeamLogo(TEAM_LOGOS['Everton'], 'Everton'), budget: 140, transferBudget: 25, tier: 'Lower', teamMorale: 'Normal',
     primaryColor: '#003399', secondaryColor: '#FFFFFF', tactics: 'Defensive',
     squad: [
       { id: 1401, name: 'J. Pickford', position: 'POR', rating: 82, value: 25, wage: 125000, morale: 'Contento', contractYears: 3 },
@@ -369,7 +349,7 @@ export const TEAMS: Team[] = [
     ]
   },
   {
-    id: 15, name: 'Nottm Forest', logo: createLogo('NF', 'bg-red-600'), budget: 90, transferBudget: 20, tier: 'Lower', teamMorale: 'Normal',
+    id: 15, name: 'Nottm Forest', logo: createTeamLogo(TEAM_LOGOS['Nottingham Forest'], 'Nottingham Forest'), budget: 90, transferBudget: 20, tier: 'Lower', teamMorale: 'Normal',
     primaryColor: '#DD0000', secondaryColor: '#FFFFFF', tactics: 'Balanced',
     squad: [
       { id: 1501, name: 'M. Gibbs-White', position: 'CEN', rating: 79, value: 40, wage: 80000, morale: 'Contento', contractYears: 4 },
@@ -391,7 +371,7 @@ export const TEAMS: Team[] = [
     ]
   },
   {
-    id: 16, name: 'Bournemouth', logo: createLogo('BO', 'bg-red-800'), budget: 85, transferBudget: 25, tier: 'Lower', teamMorale: 'Normal',
+    id: 16, name: 'Bournemouth', logo: createTeamLogo(TEAM_LOGOS['AFC Bournemouth'], 'AFC Bournemouth'), budget: 85, transferBudget: 25, tier: 'Lower', teamMorale: 'Normal',
     primaryColor: '#DA291C', secondaryColor: '#000000', tactics: 'Attacking',
     squad: [
       { id: 1601, name: 'D. Solanke', position: 'DEL', rating: 80, value: 35, wage: 75000, morale: 'Contento', contractYears: 3 },
@@ -413,7 +393,7 @@ export const TEAMS: Team[] = [
     ]
   },
   {
-    id: 17, name: 'Wolves', logo: createLogo('WO', 'bg-yellow-500'), budget: 100, transferBudget: 30, tier: 'Lower', teamMorale: 'Normal',
+    id: 17, name: 'Wolves', logo: createTeamLogo(TEAM_LOGOS['Wolverhampton'], 'Wolverhampton'), budget: 100, transferBudget: 30, tier: 'Lower', teamMorale: 'Normal',
     primaryColor: '#FDB913', secondaryColor: '#231F20', tactics: 'Balanced',
     squad: [
       { id: 1701, name: 'P. Neto', position: 'DEL', rating: 80, value: 45, wage: 90000, morale: 'Normal', contractYears: 3 },
@@ -435,7 +415,7 @@ export const TEAMS: Team[] = [
     ]
   },
   {
-    id: 18, name: 'Ipswich Town', logo: createLogo('IT', 'bg-blue-500'), budget: 50, transferBudget: 15, tier: 'Lower', teamMorale: 'Contento',
+    id: 18, name: 'Ipswich Town', logo: createTeamLogo(TEAM_LOGOS['Ipswich Town'], 'Ipswich Town'), budget: 50, transferBudget: 15, tier: 'Lower', teamMorale: 'Contento',
     primaryColor: '#3A64A3', secondaryColor: '#FFFFFF', tactics: 'Defensive',
     squad: [
       { id: 1801, name: 'L. Davis', position: 'DEF', rating: 75, value: 10, wage: 25000, morale: 'Contento', contractYears: 2 },
@@ -457,7 +437,7 @@ export const TEAMS: Team[] = [
     ]
   },
   {
-    id: 19, name: 'Leicester City', logo: createLogo('LC', 'bg-blue-600'), budget: 70, transferBudget: 20, tier: 'Lower', teamMorale: 'Contento',
+    id: 19, name: 'Leicester City', logo: createTeamLogo(TEAM_LOGOS['Leicester City'], 'Leicester City'), budget: 70, transferBudget: 20, tier: 'Lower', teamMorale: 'Contento',
     primaryColor: '#0053A0', secondaryColor: '#FDB913', tactics: 'Balanced',
     squad: [
       { id: 1901, name: 'K. Dewsbury-Hall', position: 'CEN', rating: 78, value: 30, wage: 75000, morale: 'Contento', contractYears: 3 },
@@ -479,7 +459,7 @@ export const TEAMS: Team[] = [
     ]
   },
   {
-    id: 20, name: 'Southampton', logo: createLogo('SO', 'bg-red-500'), budget: 60, transferBudget: 18, tier: 'Lower', teamMorale: 'Contento',
+    id: 20, name: 'Southampton', logo: createTeamLogo(TEAM_LOGOS['Southampton'], 'Southampton'), budget: 60, transferBudget: 18, tier: 'Lower', teamMorale: 'Contento',
     primaryColor: '#D71920', secondaryColor: '#130C0E', tactics: 'Attacking',
     squad: [
       { id: 2001, name: 'K. Walker-Peters', position: 'DEF', rating: 77, value: 20, wage: 50000, morale: 'Contento', contractYears: 2 },

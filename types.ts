@@ -101,5 +101,7 @@ export enum Screen {
   Transfers = 'FICHAJES',
   Finances = 'FINANZAS',
   League = 'LIGA',
+  Statistics = 'ESTADÍSTICAS',
   Settings = 'AJUSTES',
 }
+

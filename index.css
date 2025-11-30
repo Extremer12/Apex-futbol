@@ -2,4 +2,68 @@
 @import "tailwindcss";
 
 /* Global styles for Apex AI */
+
+/* Premier League Color Variables */
+:root {
+  --pl-purple-primary: #3d195b;
+  --pl-purple-light: #9333ea;
+  --pl-purple-dark: #2d1144;
+  --pl-white: #ffffff;
+  --pl-gradient-start: #9333ea;
+  --pl-gradient-end: #ffffff;
+}
+
+/* Premier League Gradient Utilities */
+.bg-pl-gradient {
+  background: linear-gradient(135deg, var(--pl-gradient-start), var(--pl-gradient-end));
+}
+
+.text-pl-gradient {
+  background: linear-gradient(135deg, var(--pl-gradient-start), var(--pl-gradient-end));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Custom Animations */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 3s infinite;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(147, 51, 234, 0.1) 50%,
+    transparent 100%
+  );
+  background-size: 1000px 100%;
+}
+
+/* Smooth Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1e293b;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #9333ea;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a855f7;
+}
+
 /* Custom global styles can be added below */
