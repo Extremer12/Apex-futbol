@@ -31,7 +31,7 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
             <div className='text-center my-8'>
                 <div className="flex items-center justify-center gap-4 mb-4">
                     <img
-                        src="/components/ui/Inglaterra/Premier League.png"
+                        src="/logos/Premier League.png"
                         alt="Premier League"
                         className="w-20 h-20 object-contain drop-shadow-2xl"
                     />

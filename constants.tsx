@@ -16,27 +16,28 @@ const createTeamLogo = (logoPath: string, teamName: string) => {
 };
 
 // Logo paths for all Premier League teams
+// Logo paths for all Premier League teams
 const TEAM_LOGOS = {
-  'Arsenal': '/components/ui/Inglaterra/Arsenal FC.png',
-  'Aston Villa': '/components/ui/Inglaterra/Aston Villa FC.png',
-  'AFC Bournemouth': '/components/ui/Inglaterra/AFC Bournemouth.png',
-  'Brentford': '/components/ui/Inglaterra/Brentford FC 512x.png',
-  'Brighton': '/components/ui/Inglaterra/Brighton Hove Albion.png',
-  'Chelsea': '/components/ui/Inglaterra/Chelsea FC.png',
-  'Crystal Palace': '/components/ui/Inglaterra/Crystal Palace FC.png',
-  'Everton': '/components/ui/Inglaterra/Everton FC.png',
-  'Fulham': '/components/ui/Inglaterra/Fulham FC.png',
-  'Ipswich Town': '/components/ui/Inglaterra/Ipswich Town FC.png',
-  'Leicester City': '/components/ui/Inglaterra/Leicester City FC.png',
-  'Liverpool': '/components/ui/Inglaterra/Liverpool FC.png',
-  'Manchester City': '/components/ui/Inglaterra/Manchester City FC.png',
-  'Manchester United': '/components/ui/Inglaterra/Manchester United FC.png',
-  'Newcastle United': '/components/ui/Inglaterra/Newcastle United FC.png',
-  'Nottingham Forest': '/components/ui/Inglaterra/Nottingham Forest FC.png',
-  'Southampton': '/components/ui/Inglaterra/Southampton FC.png',
-  'Tottenham': '/components/ui/Inglaterra/Tottenham Hotspur FC.png',
-  'West Ham': '/components/ui/Inglaterra/West Ham United FC.png',
-  'Wolverhampton': '/components/ui/Inglaterra/Wolverhampton Wanderers FC.png',
+  'Arsenal': '/logos/Arsenal FC.png',
+  'Aston Villa': '/logos/Aston Villa FC.png',
+  'AFC Bournemouth': '/logos/AFC Bournemouth.png',
+  'Brentford': '/logos/Brentford FC 512x.png',
+  'Brighton': '/logos/Brighton Hove Albion.png',
+  'Chelsea': '/logos/Chelsea FC.png',
+  'Crystal Palace': '/logos/Crystal Palace FC.png',
+  'Everton': '/logos/Everton FC.png',
+  'Fulham': '/logos/Fulham FC.png',
+  'Ipswich Town': '/logos/Ipswich Town FC.png',
+  'Leicester City': '/logos/Leicester City FC.png',
+  'Liverpool': '/logos/Liverpool FC.png',
+  'Manchester City': '/logos/Manchester City FC.png',
+  'Manchester United': '/logos/Manchester United FC.png',
+  'Newcastle United': '/logos/Newcastle United FC.png',
+  'Nottingham Forest': '/logos/Nottingham Forest FC.png',
+  'Southampton': '/logos/Southampton FC.png',
+  'Tottenham': '/logos/Tottenham Hotspur FC.png',
+  'West Ham': '/logos/West Ham United FC.png',
+  'Wolverhampton': '/logos/Wolverhampton Wanderers FC.png',
 };
 
 export const TEAMS: Team[] = [

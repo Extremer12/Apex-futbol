@@ -15,7 +15,7 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <img
-                        src="/components/ui/Inglaterra/Premier League.png"
+                        src="/logos/Premier League.png"
                         alt="Premier League"
                         className="w-16 h-16 object-contain drop-shadow-lg"
                     />

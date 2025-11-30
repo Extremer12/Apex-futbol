@@ -69,7 +69,7 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
             {/* Premier League Header */}
             <div className="flex items-center gap-4">
                 <img
-                    src="/components/ui/Inglaterra/Premier League.png"
+                    src="/logos/Premier League.png"
                     alt="Premier League"
                     className="w-12 h-12 object-contain drop-shadow-lg"
                 />

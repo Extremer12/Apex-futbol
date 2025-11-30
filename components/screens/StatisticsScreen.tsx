@@ -87,7 +87,7 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ gameState })
             {/* Premier League Header */}
             <div className="flex items-center gap-4">
                 <img
-                    src="/components/ui/Inglaterra/Premier League.png"
+                    src="/logos/Premier League.png"
                     alt="Premier League"
                     className="w-12 h-12 object-contain drop-shadow-lg"
                 />
