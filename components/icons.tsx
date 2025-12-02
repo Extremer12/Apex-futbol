@@ -2,32 +2,41 @@
 import React from 'react';
 
 export const DashboardIcon = ({ className }: { className?: string }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-  </svg>
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+    </svg>
 );
 
 export const SquadIcon = ({ className }: { className?: string }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-  </svg>
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+    </svg>
 );
 
 export const TransfersIcon = ({ className }: { className?: string }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-  </svg>
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+    </svg>
 );
 
 export const FinancesIcon = ({ className }: { className?: string }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-  </svg>
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+    </svg>
 );
 
 export const LeagueIcon = ({ className }: { className?: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M3 6h18M3 14h18M3 18h18" />
+    </svg>
+);
+
+export const CalendarIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+        <line x1="16" x2="16" y1="2" y2="6" />
+        <line x1="8" x2="8" y1="2" y2="6" />
+        <line x1="3" x2="21" y1="10" y2="10" />
     </svg>
 );
 
@@ -51,12 +60,12 @@ export const UsersIcon = ({ className }: { className?: string }) => (
 );
 
 export const TrophyIcon = ({ className }: { className?: string }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9a9.75 9.75 0 0 1 9 0Z" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M18.375 18.75c.934 0 1.688-.753 1.688-1.688V11.25c0-1.573-1.277-2.85-2.85-2.85S15.525 9.677 15.525 11.25v5.812c0 .935.754 1.688 1.688 1.688Z M5.625 18.75c-.934 0-1.688-.753-1.688-1.688V11.25c0-1.573 1.277-2.85 2.85-2.85s2.85 1.277 2.85 2.85v5.812c0 .935-.754 1.688-1.688 1.688Z" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M9 1.5a5.25 5.25 0 0 1 5.25 5.25v1.875c0 .54.435.975.975.975h.05a.975.975 0 0 1 .975.975v3.375c0 .54-.435.975-.975.975h-.05a.975.975 0 0 1-.975-.975V12a5.25 5.25 0 0 1-5.25-5.25V1.5Z M15 1.5a5.25 5.25 0 0 0-5.25 5.25v1.875c0 .54-.435.975-.975.975h-.05a.975.975 0 0 0-.975.975v3.375c0 .54.435.975.975.975h.05a.975.975 0 0 0 .975.975V12a5.25 5.25 0 0 0 5.25-5.25V1.5Z" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M12 21.75v-1.5" />
-  </svg>
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9a9.75 9.75 0 0 1 9 0Z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M18.375 18.75c.934 0 1.688-.753 1.688-1.688V11.25c0-1.573-1.277-2.85-2.85-2.85S15.525 9.677 15.525 11.25v5.812c0 .935.754 1.688 1.688 1.688Z M5.625 18.75c-.934 0-1.688-.753-1.688-1.688V11.25c0-1.573 1.277-2.85 2.85-2.85s2.85 1.277 2.85 2.85v5.812c0 .935-.754 1.688-1.688 1.688Z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 1.5a5.25 5.25 0 0 1 5.25 5.25v1.875c0 .54.435.975.975.975h.05a.975.975 0 0 1 .975.975v3.375c0 .54-.435.975-.975.975h-.05a.975.975 0 0 1-.975-.975V12a5.25 5.25 0 0 1-5.25-5.25V1.5Z M15 1.5a5.25 5.25 0 0 0-5.25 5.25v1.875c0 .54-.435.975-.975.975h-.05a.975.975 0 0 0-.975.975v3.375c0 .54.435.975.975.975h.05a.975.975 0 0 0 .975.975V12a5.25 5.25 0 0 0 5.25-5.25V1.5Z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 21.75v-1.5" />
+    </svg>
 );
 
 // FIX: Updated BriefcaseIcon to accept standard SVG props to resolve the type error when passing the `title` prop.

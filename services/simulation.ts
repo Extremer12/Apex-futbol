@@ -350,6 +350,36 @@ export const createInitialLeagueTable = (teams: Team[]): LeagueTableRow[] => {
     })).sort((a, b) => teams.find(t => t.id === a.teamId)!.name.localeCompare(teams.find(t => t.id === b.teamId)!.name));
 };
 
+export const handlePromotionRelegation = (allTeams: Team[], plTable: LeagueTableRow[], chTable: LeagueTableRow[]): Team[] => {
+    // Sort tables by points (descending), then goal difference, then goals for
+    const sortedPL = [...plTable].sort((a, b) => {
+        if (b.points !== a.points) return b.points - a.points;
+        if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
+        return b.goalsFor - a.goalsFor;
+    });
+
+    const sortedCH = [...chTable].sort((a, b) => {
+        if (b.points !== a.points) return b.points - a.points;
+        if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
+        return b.goalsFor - a.goalsFor;
+    });
+
+    // Identify teams to move
+    const relegatedTeamIds = sortedPL.slice(-3).map(row => row.teamId);
+    const promotedTeamIds = sortedCH.slice(0, 3).map(row => row.teamId);
+
+    // Create new teams array with updated leagueIds
+    return allTeams.map(team => {
+        if (relegatedTeamIds.includes(team.id)) {
+            return { ...team, leagueId: 'CHAMPIONSHIP' as any }; // Cast to avoid type issues if enum is strict
+        }
+        if (promotedTeamIds.includes(team.id)) {
+            return { ...team, leagueId: 'PREMIER_LEAGUE' as any };
+        }
+        return team;
+    });
+};
+
 export const updateTeamMorale = (currentMorale: Morale, result: 'W' | 'D' | 'L'): Morale => {
     const moraleOrder: Morale[] = ['Enojado', 'Descontento', 'Normal', 'Contento', 'Feliz'];
     const currentIndex = moraleOrder.indexOf(currentMorale);

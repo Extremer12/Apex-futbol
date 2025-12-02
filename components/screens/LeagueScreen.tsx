@@ -1,148 +1,247 @@
-import React from 'react';
-import { GameState } from '../../types';
+import React, { useState } from 'react';
+import { GameState, CupCompetition, LeagueTableRow } from '../../types';
 import { TeamForm } from '../ui/TeamForm';
+import { TrophyIcon } from '../icons';
 
 interface LeagueScreenProps {
     gameState: GameState;
 }
 
+type Tab = 'PREMIER_LEAGUE' | 'CHAMPIONSHIP' | 'FA_CUP' | 'CARABAO_CUP';
+
 export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
+    const [activeTab, setActiveTab] = useState<Tab>('PREMIER_LEAGUE');
+
     const getTeamById = (id: number) => gameState.allTeams.find(t => t.id === id);
+
+    const renderLeagueTable = (table: LeagueTableRow[], title: string, logoPath: string, isPremier: boolean) => (
+        <div className="bg-gradient-to-br from-purple-950/30 via-slate-900 to-slate-900 border-2 border-purple-500/30 rounded-2xl shadow-2xl overflow-hidden animate-fade-in">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-purple-600 via-purple-500 to-purple-600 px-6 py-4 flex items-center gap-4">
+                <img src={logoPath} alt={title} className="w-10 h-10 object-contain drop-shadow-md" />
+                <h3 className="text-white font-bold text-lg uppercase tracking-wider">{title}</h3>
+            </div>
+
+            {/* Table */}
+            <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                    <thead>
+                        <tr className="bg-gradient-to-r from-purple-900/50 to-purple-800/50 text-purple-200 uppercase text-xs font-semibold border-b-2 border-purple-500/30">
+                            <th className="px-4 py-4 text-center">Pos</th>
+                            <th className="px-6 py-4 text-left">Club</th>
+                            <th className="px-3 py-4 text-center">PJ</th>
+                            <th className="px-3 py-4 text-center">G</th>
+                            <th className="px-3 py-4 text-center">E</th>
+                            <th className="px-3 py-4 text-center">P</th>
+                            <th className="px-4 py-4 text-center">Forma</th>
+                            <th className="px-3 py-4 text-center">DG</th>
+                            <th className="px-4 py-4 text-center">Pts</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-purple-500/10">
+                        {table.map((row) => {
+                            const team = getTeamById(row.teamId);
+                            const isPlayerTeam = team?.id === gameState.team.id;
+
+                            // Zones Logic
+                            let zoneColor = '';
+                            let zoneLabel = '';
+
+                            if (isPremier) {
+                                if (row.position <= 4) { zoneColor = 'bg-purple-500'; zoneLabel = 'Champions League'; }
+                                else if (row.position === 5) { zoneColor = 'bg-orange-500'; zoneLabel = 'Europa League'; }
+                                else if (row.position >= 18) { zoneColor = 'bg-red-500'; zoneLabel = 'Descenso'; }
+                            } else {
+                                if (row.position <= 2) { zoneColor = 'bg-green-500'; zoneLabel = 'Ascenso Directo'; }
+                                else if (row.position >= 3 && row.position <= 6) { zoneColor = 'bg-blue-500'; zoneLabel = 'Play-offs'; }
+                                else if (row.position >= 22) { zoneColor = 'bg-red-500'; zoneLabel = 'Descenso'; }
+                            }
+
+                            return (
+                                <tr
+                                    key={row.teamId}
+                                    className={`
+                                        transition-all duration-200 hover:bg-purple-500/10
+                                        ${isPlayerTeam ? 'bg-gradient-to-r from-sky-900/40 to-sky-800/20 border-l-4 border-sky-400' : ''}
+                                    `}
+                                >
+                                    <td className="px-4 py-4 text-center relative">
+                                        <div className="flex items-center justify-center gap-2">
+                                            <span className={`font-bold text-base ${isPlayerTeam ? 'text-sky-400' : 'text-slate-300'}`}>
+                                                {row.position}
+                                            </span>
+                                            {zoneColor && (
+                                                <div className={`w-1 h-6 ${zoneColor} rounded-full absolute left-2`} title={zoneLabel}></div>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="transform hover:scale-110 transition-transform duration-200 w-8 h-8 flex items-center justify-center">
+                                                {team?.logo}
+                                            </div>
+                                            <span className={`font-semibold text-base ${isPlayerTeam ? 'text-sky-300 font-bold' : 'text-white'}`}>
+                                                {team?.name}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td className="px-3 py-4 text-center text-slate-300">{row.played}</td>
+                                    <td className="px-3 py-4 text-center text-green-400 font-semibold">{row.won}</td>
+                                    <td className="px-3 py-4 text-center text-yellow-400 font-semibold">{row.drawn}</td>
+                                    <td className="px-3 py-4 text-center text-red-400 font-semibold">{row.lost}</td>
+                                    <td className="px-4 py-4 text-center">
+                                        <TeamForm form={row.form} />
+                                    </td>
+                                    <td className={`px-3 py-4 text-center font-semibold ${row.goalDifference > 0 ? 'text-green-400' : row.goalDifference < 0 ? 'text-red-400' : 'text-slate-400'}`}>
+                                        {row.goalDifference > 0 ? `+${row.goalDifference}` : row.goalDifference}
+                                    </td>
+                                    <td className="px-4 py-4 text-center">
+                                        <span className="text-xl font-bold bg-gradient-to-br from-purple-400 to-purple-200 bg-clip-text text-transparent">
+                                            {row.points}
+                                        </span>
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Legend */}
+            <div className="bg-slate-900/80 px-6 py-3 border-t border-purple-500/20 flex flex-wrap gap-4 text-xs">
+                {isPremier ? (
+                    <>
+                        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-purple-500 rounded-full"></div><span className="text-slate-300">Champions League</span></div>
+                        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-orange-500 rounded-full"></div><span className="text-slate-300">Europa League</span></div>
+                        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-red-500 rounded-full"></div><span className="text-slate-300">Descenso</span></div>
+                    </>
+                ) : (
+                    <>
+                        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-green-500 rounded-full"></div><span className="text-slate-300">Ascenso Directo</span></div>
+                        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-blue-500 rounded-full"></div><span className="text-slate-300">Play-offs</span></div>
+                        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-red-500 rounded-full"></div><span className="text-slate-300">Descenso</span></div>
+                    </>
+                )}
+            </div>
+        </div>
+    );
+
+    const renderCupView = (cup: CupCompetition) => (
+        <div className="space-y-6 animate-fade-in">
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-lg">
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                        <TrophyIcon className={`w-12 h-12 ${cup.id === 'fa_cup' ? 'text-yellow-500' : 'text-sky-500'}`} />
+                        <div>
+                            <h2 className="text-2xl font-bold text-white">{cup.name}</h2>
+                            <p className="text-slate-400">Ronda Actual: <span className="text-sky-400 font-semibold">{cup.rounds[cup.currentRoundIndex]?.name || 'Finalizada'}</span></p>
+                        </div>
+                    </div>
+                    {cup.winnerId && (
+                        <div className="text-right">
+                            <p className="text-sm text-slate-400 uppercase tracking-wider">Campeón</p>
+                            <p className="text-xl font-bold text-yellow-400">{getTeamById(cup.winnerId)?.name}</p>
+                        </div>
+                    )}
+                </div>
+
+                <div className="space-y-4">
+                    {cup.rounds.slice().reverse().map((round, idx) => (
+                        <div key={idx} className="bg-slate-800/50 rounded-lg overflow-hidden">
+                            <div className="bg-slate-800 px-4 py-2 flex justify-between items-center">
+                                <h4 className="font-bold text-slate-300">{round.name}</h4>
+                                {round.completed ? (
+                                    <span className="text-xs bg-green-900/50 text-green-400 px-2 py-1 rounded">Completada</span>
+                                ) : (
+                                    <span className="text-xs bg-sky-900/50 text-sky-400 px-2 py-1 rounded">En Curso</span>
+                                )}
+                            </div>
+                            <div className="divide-y divide-slate-700/50">
+                                {round.fixtures.map((match, mIdx) => {
+                                    const homeTeam = getTeamById(match.homeTeamId);
+                                    const awayTeam = getTeamById(match.awayTeamId);
+                                    const isPlayed = match.result !== undefined;
+                                    const winnerId = match.result ? (
+                                        match.result.homeScore > match.result.awayScore ? match.homeTeamId :
+                                            match.result.awayScore > match.result.homeScore ? match.awayTeamId :
+                                                match.penalties ? (match.penalties.home > match.penalties.away ? match.homeTeamId : match.awayTeamId) : null
+                                    ) : null;
+
+                                    return (
+                                        <div key={mIdx} className="px-4 py-3 flex items-center justify-between hover:bg-slate-700/30 transition-colors">
+                                            <div className={`flex items-center gap-3 flex-1 justify-end ${winnerId === match.homeTeamId ? 'font-bold text-white' : 'text-slate-400'}`}>
+                                                <span>{homeTeam?.name}</span>
+                                                <div className="w-6 h-6">{homeTeam?.logo}</div>
+                                            </div>
+
+                                            <div className="px-4 flex flex-col items-center min-w-[80px]">
+                                                {isPlayed ? (
+                                                    <>
+                                                        <span className="text-white font-bold text-lg bg-slate-900 px-3 py-1 rounded border border-slate-700">
+                                                            {match.result?.homeScore} - {match.result?.awayScore}
+                                                        </span>
+                                                        {match.penalties && (
+                                                            <span className="text-[10px] text-slate-500 mt-1">
+                                                                ({match.penalties.home} - {match.penalties.away} pen.)
+                                                            </span>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <span className="text-slate-500 text-xs">vs</span>
+                                                )}
+                                            </div>
+
+                                            <div className={`flex items-center gap-3 flex-1 ${winnerId === match.awayTeamId ? 'font-bold text-white' : 'text-slate-400'}`}>
+                                                <div className="w-6 h-6">{awayTeam?.logo}</div>
+                                                <span>{awayTeam?.name}</span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
 
     return (
         <div className="p-4 md:p-6 space-y-6">
-            {/* Premier League Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <img
-                        src="/logos/Premier League.png"
-                        alt="Premier League"
-                        className="w-16 h-16 object-contain drop-shadow-lg"
-                    />
-                    <div>
-                        <h2 className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-purple-300 to-white bg-clip-text text-transparent">
-                            Premier League
-                        </h2>
-                        <p className="text-slate-400 text-sm mt-1">Temporada 2024/25</p>
-                    </div>
-                </div>
+            {/* Tabs Navigation */}
+            <div className="flex flex-wrap gap-2 bg-slate-900/50 p-1 rounded-xl backdrop-blur-sm border border-slate-800/50">
+                <button
+                    onClick={() => setActiveTab('PREMIER_LEAGUE')}
+                    className={`flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all duration-200 ${activeTab === 'PREMIER_LEAGUE' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                >
+                    Premier League
+                </button>
+                <button
+                    onClick={() => setActiveTab('CHAMPIONSHIP')}
+                    className={`flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all duration-200 ${activeTab === 'CHAMPIONSHIP' ? 'bg-sky-600 text-white shadow-lg shadow-sky-600/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                >
+                    Championship
+                </button>
+                <button
+                    onClick={() => setActiveTab('FA_CUP')}
+                    className={`flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all duration-200 ${activeTab === 'FA_CUP' ? 'bg-yellow-600 text-white shadow-lg shadow-yellow-600/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                >
+                    FA Cup
+                </button>
+                <button
+                    onClick={() => setActiveTab('CARABAO_CUP')}
+                    className={`flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all duration-200 ${activeTab === 'CARABAO_CUP' ? 'bg-green-600 text-white shadow-lg shadow-green-600/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                >
+                    Carabao Cup
+                </button>
             </div>
 
-            {/* League Table */}
-            <div className="bg-gradient-to-br from-purple-950/30 via-slate-900 to-slate-900 border-2 border-purple-500/30 rounded-2xl shadow-2xl overflow-hidden">
-                {/* Table Header with Purple Gradient */}
-                <div className="bg-gradient-to-r from-purple-600 via-purple-500 to-purple-600 px-6 py-4">
-                    <h3 className="text-white font-bold text-lg uppercase tracking-wider">Clasificación</h3>
-                </div>
-
-                {/* Table */}
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="bg-gradient-to-r from-purple-900/50 to-purple-800/50 text-purple-200 uppercase text-xs font-semibold border-b-2 border-purple-500/30">
-                                <th className="px-4 py-4 text-center">Pos</th>
-                                <th className="px-6 py-4 text-left">Club</th>
-                                <th className="px-3 py-4 text-center">PJ</th>
-                                <th className="px-3 py-4 text-center">G</th>
-                                <th className="px-3 py-4 text-center">E</th>
-                                <th className="px-3 py-4 text-center">P</th>
-                                <th className="px-4 py-4 text-center">Forma</th>
-                                <th className="px-3 py-4 text-center">DG</th>
-                                <th className="px-4 py-4 text-center">Pts</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-purple-500/10">
-                            {gameState.leagueTable.map((row, index) => {
-                                const team = getTeamById(row.teamId);
-                                const isPlayerTeam = team?.id === gameState.team.id;
-                                const isTopFour = row.position <= 4;
-                                const isEuropaLeague = row.position === 5;
-                                const isRelegation = row.position >= 18;
-
-                                return (
-                                    <tr
-                                        key={row.teamId}
-                                        className={`
-                                            transition-all duration-200 hover:bg-purple-500/10
-                                            ${isPlayerTeam ? 'bg-gradient-to-r from-sky-900/40 to-sky-800/20 border-l-4 border-sky-400' : ''}
-                                            ${isTopFour && !isPlayerTeam ? 'bg-purple-500/5' : ''}
-                                            ${isRelegation && !isPlayerTeam ? 'bg-red-500/5' : ''}
-                                        `}
-                                    >
-                                        <td className="px-4 py-4 text-center">
-                                            <div className="flex items-center justify-center gap-2">
-                                                <span className={`
-                                                    font-bold text-base
-                                                    ${isTopFour ? 'text-purple-400' : ''}
-                                                    ${isEuropaLeague ? 'text-orange-400' : ''}
-                                                    ${isRelegation ? 'text-red-400' : ''}
-                                                    ${!isTopFour && !isEuropaLeague && !isRelegation ? 'text-slate-300' : ''}
-                                                `}>
-                                                    {row.position}
-                                                </span>
-                                                {isTopFour && (
-                                                    <div className="w-1 h-8 bg-gradient-to-b from-purple-400 to-purple-600 rounded-full"></div>
-                                                )}
-                                                {isEuropaLeague && (
-                                                    <div className="w-1 h-8 bg-gradient-to-b from-orange-400 to-orange-600 rounded-full"></div>
-                                                )}
-                                                {isRelegation && (
-                                                    <div className="w-1 h-8 bg-gradient-to-b from-red-400 to-red-600 rounded-full"></div>
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="transform hover:scale-110 transition-transform duration-200">
-                                                    {team?.logo}
-                                                </div>
-                                                <span className={`
-                                                    font-semibold text-base
-                                                    ${isPlayerTeam ? 'text-sky-300 font-bold' : 'text-white'}
-                                                `}>
-                                                    {team?.name}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="px-3 py-4 text-center text-slate-300">{row.played}</td>
-                                        <td className="px-3 py-4 text-center text-green-400 font-semibold">{row.wins}</td>
-                                        <td className="px-3 py-4 text-center text-yellow-400 font-semibold">{row.draws}</td>
-                                        <td className="px-3 py-4 text-center text-red-400 font-semibold">{row.losses}</td>
-                                        <td className="px-4 py-4 text-center">
-                                            <TeamForm form={row.form} />
-                                        </td>
-                                        <td className={`px-3 py-4 text-center font-semibold ${row.goalDifference > 0 ? 'text-green-400' : row.goalDifference < 0 ? 'text-red-400' : 'text-slate-400'}`}>
-                                            {row.goalDifference > 0 ? `+${row.goalDifference}` : row.goalDifference}
-                                        </td>
-                                        <td className="px-4 py-4 text-center">
-                                            <span className="text-xl font-bold bg-gradient-to-br from-purple-400 to-purple-200 bg-clip-text text-transparent">
-                                                {row.points}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Legend */}
-                <div className="bg-gradient-to-r from-slate-800/50 to-slate-900/50 px-6 py-4 border-t border-purple-500/20">
-                    <div className="flex flex-wrap gap-6 text-xs">
-                        <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                            <span className="text-purple-300">Champions League (1-4)</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                            <span className="text-orange-300">Europa League (5)</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                            <span className="text-red-300">Descenso (18-20)</span>
-                        </div>
-                    </div>
-                </div>
+            {/* Content Area */}
+            <div className="min-h-[500px]">
+                {activeTab === 'PREMIER_LEAGUE' && renderLeagueTable(gameState.leagueTable, 'Premier League', '/logos/Premier League.png', true)}
+                {activeTab === 'CHAMPIONSHIP' && renderLeagueTable(gameState.championshipTable, 'EFL Championship', '/logos/EFL Championship.png', false)}
+                {activeTab === 'FA_CUP' && renderCupView(gameState.cups.faCup)}
+                {activeTab === 'CARABAO_CUP' && renderCupView(gameState.cups.carabaoCup)}
             </div>
         </div>
     );

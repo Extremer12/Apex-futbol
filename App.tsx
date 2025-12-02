@@ -27,6 +27,7 @@ import { SquadScreen } from './components/screens/SquadScreen';
 import { TransfersScreen } from './components/screens/TransfersScreen';
 import { FinancesScreen } from './components/screens/FinancesScreen';
 import { LeagueScreen } from './components/screens/LeagueScreen';
+import { CalendarScreen } from './components/screens/CalendarScreen';
 import { StatisticsScreen } from './components/screens/StatisticsScreen';
 import { SettingsScreen } from './components/screens/SettingsScreen';
 
@@ -449,7 +450,7 @@ function App() {
             // Determine next week for cup fixtures (e.g., 4 weeks from now)
             const nextCupWeek = newWeek + 4;
             updatedFaCup = advanceCupRound(updatedFaCup, updatedAllTeams, nextCupWeek);
-            
+
             // Add new round fixtures to schedule if a new round was created
             if (updatedFaCup.rounds.length > gameState.cups.faCup.rounds.length) {
                 const newRound = updatedFaCup.rounds[updatedFaCup.rounds.length - 1];
@@ -462,7 +463,7 @@ function App() {
         if (carabaoCupMatches.length > 0 && carabaoCupMatches.every(m => m.result !== undefined)) {
             const nextCupWeek = newWeek + 3;
             updatedCarabaoCup = advanceCupRound(updatedCarabaoCup, updatedAllTeams, nextCupWeek);
-            
+
             // Add new round fixtures to schedule
             if (updatedCarabaoCup.rounds.length > gameState.cups.carabaoCup.rounds.length) {
                 const newRound = updatedCarabaoCup.rounds[updatedCarabaoCup.rounds.length - 1];
@@ -549,6 +550,7 @@ function App() {
             case Screen.Transfers: return <TransfersScreen gameState={gameState} dispatch={dispatch} />;
             case Screen.Finances: return <FinancesScreen gameState={gameState} />;
             case Screen.League: return <LeagueScreen gameState={gameState} />;
+            case Screen.Calendar: return <CalendarScreen gameState={gameState} />;
             case Screen.Statistics: return <StatisticsScreen gameState={gameState} />;
             case Screen.Settings: return (
                 <SettingsScreen

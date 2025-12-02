@@ -61,12 +61,14 @@ export interface Match {
 
 export interface LeagueTableRow {
   teamId: number;
+  position: number;
   played: number;
   won: number;
   drawn: number;
   lost: number;
   goalsFor: number;
   goalsAgainst: number;
+  goalDifference: number;
   points: number;
   form: ('W' | 'D' | 'L')[];
 }
@@ -129,6 +131,7 @@ export enum Screen {
   Finances = 'FINANZAS',
   League = 'LIGA',
   Statistics = 'ESTADÍSTICAS',
+  Calendar = 'CALENDARIO',
   Settings = 'AJUSTES',
 }
 

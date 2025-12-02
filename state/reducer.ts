@@ -3,7 +3,7 @@
 import React from 'react';
 import { GameState, Team, PlayerProfile, NewsItem, Player, Match, LeagueTableRow, Offer } from '../types';
 import { TEAMS } from '../constants';
-import { generateSeasonSchedule, createInitialLeagueTable, generateYouthPlayer, generateCupDraw, advanceCupRound } from '../services/simulation';
+import { generateSeasonSchedule, createInitialLeagueTable, simulateMatch, generateCupDraw, advanceCupRound, determineCupWinner, handlePromotionRelegation, generateYouthPlayer } from '../services/simulation';
 import { formatDate, formatCurrency } from '../utils';
 
 // ... (imports remain the same)
@@ -145,10 +145,14 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 updatedAcademy.push(generateYouthPlayer(updatedPlayerTeam.tier));
             }
 
-            // 3. Reset Competition
-            const newSeasonSchedule = generateSeasonSchedule(processedTeams);
-            const newPlTeams = processedTeams.filter(t => t.leagueId === 'PREMIER_LEAGUE');
-            const newChTeams = processedTeams.filter(t => t.leagueId === 'CHAMPIONSHIP');
+            // 3. Reset Competition & Process Promotion/Relegation
+            // We need the FINAL tables from the previous season to determine promotion/relegation
+            // Assuming state.leagueTable and state.championshipTable are the final ones
+            const teamsAfterProRel = handlePromotionRelegation(processedTeams, state.leagueTable, state.championshipTable);
+
+            const newSeasonSchedule = generateSeasonSchedule(teamsAfterProRel);
+            const newPlTeams = teamsAfterProRel.filter(t => t.leagueId === 'PREMIER_LEAGUE');
+            const newChTeams = teamsAfterProRel.filter(t => t.leagueId === 'CHAMPIONSHIP');
 
             const newLeagueTable = createInitialLeagueTable(newPlTeams);
             const newChampionshipTable = createInitialLeagueTable(newChTeams);
