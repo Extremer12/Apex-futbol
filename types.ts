@@ -17,10 +17,16 @@ export interface Player {
   age?: number; // Added for Regens system
 }
 
+export enum LeagueId {
+  PREMIER_LEAGUE = 'PREMIER_LEAGUE',
+  CHAMPIONSHIP = 'CHAMPIONSHIP',
+}
+
 export interface Team {
   id: number;
   name: string;
   logo: React.ReactNode;
+  leagueId: LeagueId; // Added for multi-league support
   budget: number; // Main budget in millions
   transferBudget: number; // Transfer budget in millions
   squad: Player[];
@@ -48,18 +54,19 @@ export interface Match {
   homeTeamId: number;
   awayTeamId: number;
   result?: { homeScore: number; awayScore: number; };
+  competition?: 'League' | 'FA_Cup' | 'Carabao_Cup'; // Added to distinguish match types
+  isCupMatch?: boolean;
+  penalties?: { home: number; away: number; };
 }
 
 export interface LeagueTableRow {
   teamId: number;
-  position: number;
   played: number;
-  wins: number;
-  draws: number;
-  losses: number;
+  won: number;
+  drawn: number;
+  lost: number;
   goalsFor: number;
   goalsAgainst: number;
-  goalDifference: number;
   points: number;
   form: ('W' | 'D' | 'L')[];
 }
@@ -72,14 +79,29 @@ export interface Offer {
   message: string;
 }
 
+export interface CupRound {
+  name: string;
+  fixtures: Match[];
+  completed: boolean;
+}
+
+export interface CupCompetition {
+  id: string;
+  name: string;
+  rounds: CupRound[];
+  currentRoundIndex: number;
+  winnerId?: number;
+}
+
 export interface GameState {
   team: Team;
   allTeams: Team[];
   currentDate: Date;
   currentWeek: number;
-  newsFeed: NewsItem[];
+  newsFeed: NewsItem[]; // Kept as newsFeed to match App.tsx
   schedule: Match[];
-  leagueTable: LeagueTableRow[];
+  leagueTable: LeagueTableRow[]; // Premier League
+  championshipTable: LeagueTableRow[]; // Championship
   finances: {
     balance: number;
     transferBudget: number;
@@ -90,7 +112,12 @@ export interface GameState {
   chairmanConfidence: number; // 0-100
   viewingPlayer: Player | null;
   incomingOffers: Offer[];
+  cups: {
+    faCup: CupCompetition;
+    carabaoCup: CupCompetition;
+  };
   // New Fields for Academy & Regens
+  playerProfile?: PlayerProfile;
   youthAcademy: Player[];
   season: number;
 }

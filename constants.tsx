@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Team } from './types';
+import { Team, LeagueId, Player } from './types';
 
 // Premier League Team Logos
 const createTeamLogo = (logoPath: string, teamName: string) => {
@@ -40,9 +40,41 @@ const TEAM_LOGOS = {
   'Wolverhampton': '/logos/Wolverhampton Wanderers FC.png',
 };
 
+// Helper to generate generic squad for Championship teams
+const createGenericSquad = (startId: number, teamName: string): Player[] => {
+  const positions: { pos: 'POR' | 'DEF' | 'CEN' | 'DEL', count: number }[] = [
+    { pos: 'POR', count: 2 },
+    { pos: 'DEF', count: 6 },
+    { pos: 'CEN', count: 6 },
+    { pos: 'DEL', count: 4 }
+  ];
+
+  let squad: Player[] = [];
+  let idCounter = startId;
+
+  positions.forEach(({ pos, count }) => {
+    for (let i = 0; i < count; i++) {
+      squad.push({
+        id: idCounter++,
+        name: `${teamName} ${pos} ${i + 1}`, // Placeholder name
+        position: pos,
+        rating: Math.floor(65 + Math.random() * 10), // Rating 65-75 for Championship
+        value: Math.floor(1 + Math.random() * 10),
+        wage: Math.floor(5000 + Math.random() * 15000),
+        morale: 'Normal',
+        contractYears: Math.floor(1 + Math.random() * 3),
+        age: Math.floor(18 + Math.random() * 15)
+      });
+    }
+  });
+
+  return squad;
+};
+
 export const TEAMS: Team[] = [
+  // ... (Existing Premier League Teams - kept as is)
   {
-    id: 5, name: 'Manchester City', logo: createTeamLogo(TEAM_LOGOS['Manchester City'], 'Manchester City'), budget: 700, transferBudget: 180, tier: 'Top', teamMorale: 'Feliz',
+    id: 5, name: 'Manchester City', logo: createTeamLogo(TEAM_LOGOS['Manchester City'], 'Manchester City'), leagueId: LeagueId.PREMIER_LEAGUE, budget: 700, transferBudget: 180, tier: 'Top', teamMorale: 'Feliz',
     primaryColor: '#6CABDD', secondaryColor: '#1C2C5B', tactics: 'Attacking',
     squad: [
       { id: 501, name: 'E. Haaland', position: 'DEL', rating: 91, value: 180, wage: 375000, morale: 'Contento', contractYears: 4 },
@@ -63,8 +95,38 @@ export const TEAMS: Team[] = [
       { id: 516, name: 'S. Ortega', position: 'POR', rating: 80, value: 10, wage: 55000, morale: 'Contento', contractYears: 2 },
     ],
   },
+  // ... (Other Premier League teams would be here, assuming I am appending to the end or replacing the array. 
+  // Since I cannot see the full file content in the tool input, I will assume I need to append the new teams to the existing list.
+  // However, replace_file_content requires exact match. 
+  // Strategy: I will use the END of the file to append the new teams.)
+
+  // --- CHAMPIONSHIP TEAMS ---
+  { id: 101, name: 'Leeds United', logo: createTeamLogo('', 'Leeds United'), leagueId: LeagueId.CHAMPIONSHIP, budget: 40, transferBudget: 10, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#FFFFFF', secondaryColor: '#FFCD00', tactics: 'Attacking', squad: createGenericSquad(10100, 'Leeds') },
+  { id: 102, name: 'Burnley', logo: createTeamLogo('', 'Burnley'), leagueId: LeagueId.CHAMPIONSHIP, budget: 35, transferBudget: 8, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#6C1D45', secondaryColor: '#99D6EA', tactics: 'Defensive', squad: createGenericSquad(10200, 'Burnley') },
+  { id: 103, name: 'Luton Town', logo: createTeamLogo('', 'Luton Town'), leagueId: LeagueId.CHAMPIONSHIP, budget: 30, transferBudget: 5, tier: 'Mid', teamMorale: 'Contento', primaryColor: '#F78F1E', secondaryColor: '#002D56', tactics: 'Balanced', squad: createGenericSquad(10300, 'Luton') },
+  { id: 104, name: 'Sheffield Utd', logo: createTeamLogo('', 'Sheffield Utd'), leagueId: LeagueId.CHAMPIONSHIP, budget: 35, transferBudget: 8, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#EE2737', secondaryColor: '#000000', tactics: 'Defensive', squad: createGenericSquad(10400, 'Sheffield Utd') },
+  { id: 105, name: 'West Brom', logo: createTeamLogo('', 'West Brom'), leagueId: LeagueId.CHAMPIONSHIP, budget: 25, transferBudget: 5, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#122F67', secondaryColor: '#FFFFFF', tactics: 'Balanced', squad: createGenericSquad(10500, 'West Brom') },
+  { id: 106, name: 'Norwich City', logo: createTeamLogo('', 'Norwich City'), leagueId: LeagueId.CHAMPIONSHIP, budget: 25, transferBudget: 5, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#FFF200', secondaryColor: '#00A650', tactics: 'Attacking', squad: createGenericSquad(10600, 'Norwich') },
+  { id: 107, name: 'Hull City', logo: createTeamLogo('', 'Hull City'), leagueId: LeagueId.CHAMPIONSHIP, budget: 20, transferBudget: 4, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#F5A12D', secondaryColor: '#000000', tactics: 'Attacking', squad: createGenericSquad(10700, 'Hull') },
+  { id: 108, name: 'Coventry City', logo: createTeamLogo('', 'Coventry City'), leagueId: LeagueId.CHAMPIONSHIP, budget: 15, transferBudget: 3, tier: 'Lower', teamMorale: 'Contento', primaryColor: '#CC0000', secondaryColor: '#FFFFFF', tactics: 'Balanced', squad: createGenericSquad(10800, 'Coventry') },
+  { id: 109, name: 'Middlesbrough', logo: createTeamLogo('', 'Middlesbrough'), leagueId: LeagueId.CHAMPIONSHIP, budget: 20, transferBudget: 4, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#E03A3E', secondaryColor: '#FFFFFF', tactics: 'Balanced', squad: createGenericSquad(10900, 'Middlesbrough') },
+  { id: 110, name: 'Preston', logo: createTeamLogo('', 'Preston'), leagueId: LeagueId.CHAMPIONSHIP, budget: 10, transferBudget: 2, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#FFFFFF', secondaryColor: '#003399', tactics: 'Defensive', squad: createGenericSquad(11000, 'Preston') },
+  { id: 111, name: 'Cardiff City', logo: createTeamLogo('', 'Cardiff City'), leagueId: LeagueId.CHAMPIONSHIP, budget: 15, transferBudget: 3, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#0070B5', secondaryColor: '#FFFFFF', tactics: 'Defensive', squad: createGenericSquad(11100, 'Cardiff') },
+  { id: 112, name: 'Bristol City', logo: createTeamLogo('', 'Bristol City'), leagueId: LeagueId.CHAMPIONSHIP, budget: 15, transferBudget: 3, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#E30613', secondaryColor: '#FFFFFF', tactics: 'Balanced', squad: createGenericSquad(11200, 'Bristol City') },
+  { id: 113, name: 'Sunderland', logo: createTeamLogo('', 'Sunderland'), leagueId: LeagueId.CHAMPIONSHIP, budget: 20, transferBudget: 5, tier: 'Mid', teamMorale: 'Contento', primaryColor: '#FF0000', secondaryColor: '#FFFFFF', tactics: 'Attacking', squad: createGenericSquad(11300, 'Sunderland') },
+  { id: 114, name: 'Swansea City', logo: createTeamLogo('', 'Swansea City'), leagueId: LeagueId.CHAMPIONSHIP, budget: 15, transferBudget: 3, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#FFFFFF', secondaryColor: '#000000', tactics: 'Attacking', squad: createGenericSquad(11400, 'Swansea') },
+  { id: 115, name: 'Watford', logo: createTeamLogo('', 'Watford'), leagueId: LeagueId.CHAMPIONSHIP, budget: 25, transferBudget: 5, tier: 'Mid', teamMorale: 'Descontento', primaryColor: '#FBEE23', secondaryColor: '#ED2127', tactics: 'Attacking', squad: createGenericSquad(11500, 'Watford') },
+  { id: 116, name: 'Millwall', logo: createTeamLogo('', 'Millwall'), leagueId: LeagueId.CHAMPIONSHIP, budget: 10, transferBudget: 2, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#001F5B', secondaryColor: '#FFFFFF', tactics: 'Defensive', squad: createGenericSquad(11600, 'Millwall') },
+  { id: 117, name: 'QPR', logo: createTeamLogo('', 'QPR'), leagueId: LeagueId.CHAMPIONSHIP, budget: 12, transferBudget: 2, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#0054A6', secondaryColor: '#FFFFFF', tactics: 'Balanced', squad: createGenericSquad(11700, 'QPR') },
+  { id: 118, name: 'Stoke City', logo: createTeamLogo('', 'Stoke City'), leagueId: LeagueId.CHAMPIONSHIP, budget: 20, transferBudget: 4, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#E03A3E', secondaryColor: '#FFFFFF', tactics: 'Balanced', squad: createGenericSquad(11800, 'Stoke') },
+  { id: 119, name: 'Blackburn', logo: createTeamLogo('', 'Blackburn'), leagueId: LeagueId.CHAMPIONSHIP, budget: 15, transferBudget: 3, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#009EE0', secondaryColor: '#FFFFFF', tactics: 'Attacking', squad: createGenericSquad(11900, 'Blackburn') },
+  { id: 120, name: 'Sheffield Wed', logo: createTeamLogo('', 'Sheffield Wed'), leagueId: LeagueId.CHAMPIONSHIP, budget: 12, transferBudget: 2, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#0E00F7', secondaryColor: '#FFFFFF', tactics: 'Defensive', squad: createGenericSquad(12000, 'Sheffield Wed') },
+  { id: 121, name: 'Plymouth', logo: createTeamLogo('', 'Plymouth'), leagueId: LeagueId.CHAMPIONSHIP, budget: 8, transferBudget: 1, tier: 'Lower', teamMorale: 'Contento', primaryColor: '#1B4835', secondaryColor: '#FFFFFF', tactics: 'Defensive', squad: createGenericSquad(12100, 'Plymouth') },
+  { id: 122, name: 'Portsmouth', logo: createTeamLogo('', 'Portsmouth'), leagueId: LeagueId.CHAMPIONSHIP, budget: 10, transferBudget: 2, tier: 'Lower', teamMorale: 'Feliz', primaryColor: '#001489', secondaryColor: '#FFFFFF', tactics: 'Balanced', squad: createGenericSquad(12200, 'Portsmouth') },
+  { id: 123, name: 'Derby County', logo: createTeamLogo('', 'Derby County'), leagueId: LeagueId.CHAMPIONSHIP, budget: 12, transferBudget: 2, tier: 'Lower', teamMorale: 'Feliz', primaryColor: '#FFFFFF', secondaryColor: '#000000', tactics: 'Balanced', squad: createGenericSquad(12300, 'Derby') },
+  { id: 124, name: 'Oxford United', logo: createTeamLogo('', 'Oxford United'), leagueId: LeagueId.CHAMPIONSHIP, budget: 8, transferBudget: 1, tier: 'Lower', teamMorale: 'Feliz', primaryColor: '#F3A530', secondaryColor: '#002F5F', tactics: 'Defensive', squad: createGenericSquad(12400, 'Oxford') },
   {
-    id: 1, name: 'Arsenal', logo: createTeamLogo(TEAM_LOGOS['Arsenal'], 'Arsenal'), budget: 250, transferBudget: 80, tier: 'Top', teamMorale: 'Feliz',
+    id: 1, name: 'Arsenal', logo: createTeamLogo(TEAM_LOGOS['Arsenal'], 'Arsenal'), leagueId: LeagueId.PREMIER_LEAGUE, budget: 250, transferBudget: 80, tier: 'Top', teamMorale: 'Feliz',
     primaryColor: '#EF0107', secondaryColor: '#063672', tactics: 'Attacking',
     squad: [
       { id: 101, name: 'B. Saka', position: 'DEL', rating: 88, value: 120, wage: 195000, morale: 'Feliz', contractYears: 5 },
@@ -86,7 +148,7 @@ export const TEAMS: Team[] = [
     ],
   },
   {
-    id: 4, name: 'Liverpool', logo: createTeamLogo(TEAM_LOGOS['Liverpool'], 'Liverpool'), budget: 480, transferBudget: 120, tier: 'Top', teamMorale: 'Feliz',
+    id: 4, name: 'Liverpool', logo: createTeamLogo(TEAM_LOGOS['Liverpool'], 'Liverpool'), leagueId: LeagueId.PREMIER_LEAGUE, budget: 480, transferBudget: 120, tier: 'Top', teamMorale: 'Feliz',
     primaryColor: '#C8102E', secondaryColor: '#00B2A9', tactics: 'Attacking',
     squad: [
       { id: 401, name: 'M. Salah', position: 'DEL', rating: 90, value: 100, wage: 350000, morale: 'Contento', contractYears: 2 },
@@ -108,7 +170,7 @@ export const TEAMS: Team[] = [
     ],
   },
   {
-    id: 6, name: 'Manchester Utd', logo: createTeamLogo(TEAM_LOGOS['Manchester United'], 'Manchester United'), budget: 650, transferBudget: 140, tier: 'Top', teamMorale: 'Contento',
+    id: 6, name: 'Manchester Utd', logo: createTeamLogo(TEAM_LOGOS['Manchester United'], 'Manchester United'), leagueId: LeagueId.PREMIER_LEAGUE, budget: 650, transferBudget: 140, tier: 'Top', teamMorale: 'Contento',
     primaryColor: '#DA291C', secondaryColor: '#FBE122', tactics: 'Attacking',
     squad: [
       { id: 601, name: 'B. Fernandes', position: 'CEN', rating: 88, value: 90, wage: 240000, morale: 'Contento', contractYears: 4 },
@@ -130,7 +192,7 @@ export const TEAMS: Team[] = [
     ],
   },
   {
-    id: 3, name: 'Chelsea', logo: createTeamLogo(TEAM_LOGOS['Chelsea'], 'Chelsea'), budget: 450, transferBudget: 150, tier: 'Top', teamMorale: 'Contento',
+    id: 3, name: 'Chelsea', logo: createTeamLogo(TEAM_LOGOS['Chelsea'], 'Chelsea'), leagueId: LeagueId.PREMIER_LEAGUE, budget: 450, transferBudget: 150, tier: 'Top', teamMorale: 'Contento',
     primaryColor: '#034694', secondaryColor: '#EE242C', tactics: 'Balanced',
     squad: [
       { id: 301, name: 'C. Palmer', position: 'CEN', rating: 84, value: 80, wage: 75000, morale: 'Feliz', contractYears: 5 },
@@ -152,7 +214,7 @@ export const TEAMS: Team[] = [
     ],
   },
   {
-    id: 8, name: 'Tottenham', logo: createTeamLogo(TEAM_LOGOS['Tottenham'], 'Tottenham'), budget: 400, transferBudget: 90, tier: 'Mid', teamMorale: 'Contento',
+    id: 8, name: 'Tottenham', logo: createTeamLogo(TEAM_LOGOS['Tottenham'], 'Tottenham'), leagueId: LeagueId.PREMIER_LEAGUE, budget: 400, transferBudget: 90, tier: 'Mid', teamMorale: 'Contento',
     primaryColor: '#132257', secondaryColor: '#FFFFFF', tactics: 'Attacking',
     squad: [
       { id: 801, name: 'Son H.M.', position: 'DEL', rating: 87, value: 60, wage: 190000, morale: 'Feliz', contractYears: 2 },
@@ -174,7 +236,7 @@ export const TEAMS: Team[] = [
     ],
   },
   {
-    id: 2, name: 'Aston Villa', logo: createTeamLogo(TEAM_LOGOS['Aston Villa'], 'Aston Villa'), budget: 180, transferBudget: 50, tier: 'Mid', teamMorale: 'Feliz',
+    id: 2, name: 'Aston Villa', logo: createTeamLogo(TEAM_LOGOS['Aston Villa'], 'Aston Villa'), leagueId: LeagueId.PREMIER_LEAGUE, budget: 180, transferBudget: 50, tier: 'Mid', teamMorale: 'Feliz',
     primaryColor: '#670E36', secondaryColor: '#95BJE5', tactics: 'Balanced',
     squad: [
       { id: 201, name: 'O. Watkins', position: 'DEL', rating: 85, value: 65, wage: 130000, morale: 'Feliz', contractYears: 4 },
@@ -196,7 +258,7 @@ export const TEAMS: Team[] = [
     ],
   },
   {
-    id: 7, name: 'Newcastle Utd', logo: createTeamLogo(TEAM_LOGOS['Newcastle United'], 'Newcastle United'), budget: 300, transferBudget: 70, tier: 'Mid', teamMorale: 'Contento',
+    id: 7, name: 'Newcastle Utd', logo: createTeamLogo(TEAM_LOGOS['Newcastle United'], 'Newcastle United'), leagueId: LeagueId.PREMIER_LEAGUE, budget: 300, transferBudget: 70, tier: 'Mid', teamMorale: 'Contento',
     primaryColor: '#241F20', secondaryColor: '#FFFFFF', tactics: 'Balanced',
     squad: [
       { id: 701, name: 'B. Guimarães', position: 'CEN', rating: 86, value: 85, wage: 160000, morale: 'Contento', contractYears: 5 },
@@ -218,7 +280,7 @@ export const TEAMS: Team[] = [
     ],
   },
   {
-    id: 9, name: 'West Ham', logo: createTeamLogo(TEAM_LOGOS['West Ham'], 'West Ham'), budget: 150, transferBudget: 40, tier: 'Mid', teamMorale: 'Normal',
+    id: 9, name: 'West Ham', logo: createTeamLogo(TEAM_LOGOS['West Ham'], 'West Ham'), leagueId: LeagueId.PREMIER_LEAGUE, budget: 150, transferBudget: 40, tier: 'Mid', teamMorale: 'Normal',
     primaryColor: '#7A263A', secondaryColor: '#1BB1E7', tactics: 'Defensive',
     squad: [
       { id: 901, name: 'J. Bowen', position: 'DEL', rating: 82, value: 50, wage: 120000, morale: 'Contento', contractYears: 4 },
@@ -240,7 +302,7 @@ export const TEAMS: Team[] = [
     ]
   },
   {
-    id: 10, name: 'Brighton', logo: createTeamLogo(TEAM_LOGOS['Brighton'], 'Brighton'), budget: 130, transferBudget: 45, tier: 'Mid', teamMorale: 'Normal',
+    id: 10, name: 'Brighton', logo: createTeamLogo(TEAM_LOGOS['Brighton'], 'Brighton'), leagueId: LeagueId.PREMIER_LEAGUE, budget: 130, transferBudget: 45, tier: 'Mid', teamMorale: 'Normal',
     primaryColor: '#0057B8', secondaryColor: '#FFFFFF', tactics: 'Attacking',
     squad: [
       { id: 1001, name: 'K. Mitoma', position: 'CEN', rating: 81, value: 50, wage: 80000, morale: 'Contento', contractYears: 3 },
@@ -262,7 +324,7 @@ export const TEAMS: Team[] = [
     ]
   },
   {
-    id: 11, name: 'Fulham', logo: createTeamLogo(TEAM_LOGOS['Fulham'], 'Fulham'), budget: 110, transferBudget: 30, tier: 'Lower', teamMorale: 'Normal',
+    id: 11, name: 'Fulham', logo: createTeamLogo(TEAM_LOGOS['Fulham'], 'Fulham'), leagueId: LeagueId.PREMIER_LEAGUE, budget: 110, transferBudget: 30, tier: 'Lower', teamMorale: 'Normal',
     primaryColor: '#000000', secondaryColor: '#CC0000', tactics: 'Balanced',
     squad: [
       { id: 1101, name: 'J. Palhinha', position: 'CEN', rating: 83, value: 55, wage: 90000, morale: 'Contento', contractYears: 3 },
@@ -284,7 +346,7 @@ export const TEAMS: Team[] = [
     ]
   },
   {
-    id: 12, name: 'Crystal Palace', logo: createTeamLogo(TEAM_LOGOS['Crystal Palace'], 'Crystal Palace'), budget: 120, transferBudget: 35, tier: 'Lower', teamMorale: 'Normal',
+    id: 12, name: 'Crystal Palace', logo: createTeamLogo(TEAM_LOGOS['Crystal Palace'], 'Crystal Palace'), leagueId: LeagueId.PREMIER_LEAGUE, budget: 120, transferBudget: 35, tier: 'Lower', teamMorale: 'Normal',
     primaryColor: '#1B458F', secondaryColor: '#C4122E', tactics: 'Defensive',
     squad: [
       { id: 1201, name: 'E. Eze', position: 'CEN', rating: 81, value: 55, wage: 100000, morale: 'Feliz', contractYears: 4 },
@@ -306,7 +368,7 @@ export const TEAMS: Team[] = [
     ]
   },
   {
-    id: 13, name: 'Brentford', logo: createTeamLogo(TEAM_LOGOS['Brentford'], 'Brentford'), budget: 100, transferBudget: 30, tier: 'Lower', teamMorale: 'Normal',
+    id: 13, name: 'Brentford', logo: createTeamLogo(TEAM_LOGOS['Brentford'], 'Brentford'), leagueId: LeagueId.PREMIER_LEAGUE, budget: 100, transferBudget: 30, tier: 'Lower', teamMorale: 'Normal',
     primaryColor: '#E30613', secondaryColor: '#F9F9F9', tactics: 'Attacking',
     squad: [
       { id: 1301, name: 'I. Toney', position: 'DEL', rating: 80, value: 50, wage: 100000, morale: 'Normal', contractYears: 1 },
@@ -328,7 +390,7 @@ export const TEAMS: Team[] = [
     ]
   },
   {
-    id: 14, name: 'Everton', logo: createTeamLogo(TEAM_LOGOS['Everton'], 'Everton'), budget: 140, transferBudget: 25, tier: 'Lower', teamMorale: 'Normal',
+    id: 14, name: 'Everton', logo: createTeamLogo(TEAM_LOGOS['Everton'], 'Everton'), leagueId: LeagueId.PREMIER_LEAGUE, budget: 140, transferBudget: 25, tier: 'Lower', teamMorale: 'Normal',
     primaryColor: '#003399', secondaryColor: '#FFFFFF', tactics: 'Defensive',
     squad: [
       { id: 1401, name: 'J. Pickford', position: 'POR', rating: 82, value: 25, wage: 125000, morale: 'Contento', contractYears: 3 },
@@ -350,7 +412,7 @@ export const TEAMS: Team[] = [
     ]
   },
   {
-    id: 15, name: 'Nottm Forest', logo: createTeamLogo(TEAM_LOGOS['Nottingham Forest'], 'Nottingham Forest'), budget: 90, transferBudget: 20, tier: 'Lower', teamMorale: 'Normal',
+    id: 15, name: 'Nottm Forest', logo: createTeamLogo(TEAM_LOGOS['Nottingham Forest'], 'Nottingham Forest'), leagueId: LeagueId.PREMIER_LEAGUE, budget: 90, transferBudget: 20, tier: 'Lower', teamMorale: 'Normal',
     primaryColor: '#DD0000', secondaryColor: '#FFFFFF', tactics: 'Balanced',
     squad: [
       { id: 1501, name: 'M. Gibbs-White', position: 'CEN', rating: 79, value: 40, wage: 80000, morale: 'Contento', contractYears: 4 },
@@ -372,7 +434,7 @@ export const TEAMS: Team[] = [
     ]
   },
   {
-    id: 16, name: 'Bournemouth', logo: createTeamLogo(TEAM_LOGOS['AFC Bournemouth'], 'AFC Bournemouth'), budget: 85, transferBudget: 25, tier: 'Lower', teamMorale: 'Normal',
+    id: 16, name: 'Bournemouth', logo: createTeamLogo(TEAM_LOGOS['AFC Bournemouth'], 'AFC Bournemouth'), leagueId: LeagueId.PREMIER_LEAGUE, budget: 85, transferBudget: 25, tier: 'Lower', teamMorale: 'Normal',
     primaryColor: '#DA291C', secondaryColor: '#000000', tactics: 'Attacking',
     squad: [
       { id: 1601, name: 'D. Solanke', position: 'DEL', rating: 80, value: 35, wage: 75000, morale: 'Contento', contractYears: 3 },
@@ -394,7 +456,7 @@ export const TEAMS: Team[] = [
     ]
   },
   {
-    id: 17, name: 'Wolves', logo: createTeamLogo(TEAM_LOGOS['Wolverhampton'], 'Wolverhampton'), budget: 100, transferBudget: 30, tier: 'Lower', teamMorale: 'Normal',
+    id: 17, name: 'Wolves', logo: createTeamLogo(TEAM_LOGOS['Wolverhampton'], 'Wolverhampton'), leagueId: LeagueId.PREMIER_LEAGUE, budget: 100, transferBudget: 30, tier: 'Lower', teamMorale: 'Normal',
     primaryColor: '#FDB913', secondaryColor: '#231F20', tactics: 'Balanced',
     squad: [
       { id: 1701, name: 'P. Neto', position: 'DEL', rating: 80, value: 45, wage: 90000, morale: 'Normal', contractYears: 3 },
@@ -416,7 +478,7 @@ export const TEAMS: Team[] = [
     ]
   },
   {
-    id: 18, name: 'Ipswich Town', logo: createTeamLogo(TEAM_LOGOS['Ipswich Town'], 'Ipswich Town'), budget: 50, transferBudget: 15, tier: 'Lower', teamMorale: 'Contento',
+    id: 18, name: 'Ipswich Town', logo: createTeamLogo(TEAM_LOGOS['Ipswich Town'], 'Ipswich Town'), leagueId: LeagueId.PREMIER_LEAGUE, budget: 50, transferBudget: 15, tier: 'Lower', teamMorale: 'Contento',
     primaryColor: '#3A64A3', secondaryColor: '#FFFFFF', tactics: 'Defensive',
     squad: [
       { id: 1801, name: 'L. Davis', position: 'DEF', rating: 75, value: 10, wage: 25000, morale: 'Contento', contractYears: 2 },
@@ -438,7 +500,7 @@ export const TEAMS: Team[] = [
     ]
   },
   {
-    id: 19, name: 'Leicester City', logo: createTeamLogo(TEAM_LOGOS['Leicester City'], 'Leicester City'), budget: 70, transferBudget: 20, tier: 'Lower', teamMorale: 'Contento',
+    id: 19, name: 'Leicester City', logo: createTeamLogo(TEAM_LOGOS['Leicester City'], 'Leicester City'), leagueId: LeagueId.PREMIER_LEAGUE, budget: 70, transferBudget: 20, tier: 'Lower', teamMorale: 'Contento',
     primaryColor: '#0053A0', secondaryColor: '#FDB913', tactics: 'Balanced',
     squad: [
       { id: 1901, name: 'K. Dewsbury-Hall', position: 'CEN', rating: 78, value: 30, wage: 75000, morale: 'Contento', contractYears: 3 },
@@ -460,7 +522,7 @@ export const TEAMS: Team[] = [
     ]
   },
   {
-    id: 20, name: 'Southampton', logo: createTeamLogo(TEAM_LOGOS['Southampton'], 'Southampton'), budget: 60, transferBudget: 18, tier: 'Lower', teamMorale: 'Contento',
+    id: 20, name: 'Southampton', logo: createTeamLogo(TEAM_LOGOS['Southampton'], 'Southampton'), leagueId: LeagueId.PREMIER_LEAGUE, budget: 60, transferBudget: 18, tier: 'Lower', teamMorale: 'Contento',
     primaryColor: '#D71920', secondaryColor: '#130C0E', tactics: 'Attacking',
     squad: [
       { id: 2001, name: 'K. Walker-Peters', position: 'DEF', rating: 77, value: 20, wage: 50000, morale: 'Contento', contractYears: 2 },

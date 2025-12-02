@@ -1,5 +1,5 @@
 
-import { Team, Match, LeagueTableRow, Morale, Player } from '../types';
+import { Team, Match, LeagueTableRow, Morale, Player, CupCompetition, CupRound } from '../types';
 import { generateRandomName } from '../utils';
 
 // Calcula estadísticas detalladas del equipo basadas en las posiciones de los jugadores
@@ -58,7 +58,7 @@ const getTacticalBonus = (myTactic: Team['tactics'], oppTactic: Team['tactics'])
     return 0; // Same tactic
 };
 
-export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: LeagueTableRow, awayTableRow: LeagueTableRow): { homeScore: number; awayScore: number, events: string[] } => {
+export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: LeagueTableRow, awayTableRow: LeagueTableRow, isCupMatch: boolean = false): { homeScore: number; awayScore: number, events: string[], penalties?: { home: number, away: number } } => {
     const homeStats = getTeamStats(homeTeam);
     const awayStats = getTeamStats(awayTeam);
 
@@ -76,8 +76,8 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
     const getMoralBonus = (m: Morale) => ({ 'Feliz': 3, 'Contento': 1, 'Normal': 0, 'Descontento': -2, 'Enojado': -5 }[m]);
     const getFormBonus = (f: string[]) => f.slice(0, 3).reduce((acc, v) => acc + (v === 'W' ? 2 : v === 'L' ? -1 : 0), 0);
 
-    const homeMomentum = getMoralBonus(homeTeam.teamMorale) + getFormBonus(homeTableRow.form);
-    const awayMomentum = getMoralBonus(awayTeam.teamMorale) + getFormBonus(awayTableRow.form);
+    const homeMomentum = getMoralBonus(homeTeam.teamMorale) + getFormBonus(homeTableRow?.form || []);
+    const awayMomentum = getMoralBonus(awayTeam.teamMorale) + getFormBonus(awayTableRow?.form || []);
 
     // 3. Calcular Oportunidades (Chances)
     let homeChances = 4 + (homePossession * 6) + (homeStats.attack - awayStats.defense) / 5 + (homeMomentum / 3);
@@ -146,12 +146,56 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
     if (homeScore > 8) homeScore = 8; // Cap unrealistic scores
     if (awayScore > 8) awayScore = 8;
 
-    return { homeScore, awayScore, events };
+    // Cup Logic: Extra Time & Penalties
+    let penaltiesResult;
+    if (isCupMatch && homeScore === awayScore) {
+        events.push(`90' ⏱️ Final del tiempo reglamentario. ¡Nos vamos a la prórroga!`);
+
+        // Extra Time Simulation (Reduced chances)
+        const etHomeChances = Math.max(1, homeChances / 4);
+        const etAwayChances = Math.max(1, awayChances / 4);
+
+        for (let i = 0; i < Math.round(etHomeChances); i++) {
+            if (Math.random() < homeConversionRate) {
+                homeScore++;
+                events.push(`${90 + Math.floor(Math.random() * 30)}' ⚽ ¡GOL EN PRÓRROGA! ${homeTeam.name} se pone en ventaja.`);
+            }
+        }
+        for (let i = 0; i < Math.round(etAwayChances); i++) {
+            if (Math.random() < awayConversionRate) {
+                awayScore++;
+                events.push(`${90 + Math.floor(Math.random() * 30)}' ⚽ ¡GOL EN PRÓRROGA! ${awayTeam.name} empata el partido.`);
+            }
+        }
+
+        if (homeScore === awayScore) {
+            events.push(`120' ⏱️ Final de la prórroga. ¡El partido se decidirá en los penales!`);
+            // Penalties Simulation
+            let homePens = 0;
+            let awayPens = 0;
+            for (let k = 0; k < 5; k++) {
+                if (Math.random() > 0.2) homePens++;
+                if (Math.random() > 0.2) awayPens++;
+            }
+            // Sudden death if needed
+            while (homePens === awayPens) {
+                if (Math.random() > 0.2) homePens++;
+                if (Math.random() > 0.2) awayPens++;
+            }
+            penaltiesResult = { home: homePens, away: awayPens };
+            events.push(`🏁 Penales: ${homeTeam.name} ${homePens} - ${awayPens} ${awayTeam.name}`);
+        } else {
+            events.push(`120' 🏁 Final de la prórroga.`);
+        }
+    }
+
+    return { homeScore, awayScore, events, penalties: penaltiesResult };
 };
 
-export const generateFixtures = (teams: Team[]): Match[] => {
+// Helper to generate a round-robin schedule for a single league
+const generateLeagueSchedule = (teams: Team[], leagueId: string): Match[] => {
     const teamIds = teams.map(t => t.id);
-    if (teamIds.length % 2 !== 0) return [];
+    if (teamIds.length % 2 !== 0) return []; // Should handle odd teams with byes ideally
     const schedule: Match[] = [];
     const numWeeks = teamIds.length - 1;
     const halfSeasonSize = teamIds.length / 2;
@@ -166,15 +210,142 @@ export const generateFixtures = (teams: Team[]): Match[] => {
             const awayIndex = (week + teamsSlice.length - i) % teamsSlice.length;
             weekFixtures.push({ home: teamsSlice[homeIndex], away: teamsSlice[awayIndex] });
         }
-        weekFixtures.forEach(fixture => schedule.push({ week: week + 1, homeTeamId: fixture.home, awayTeamId: fixture.away }));
+        weekFixtures.forEach(fixture => schedule.push({
+            week: week + 1,
+            homeTeamId: fixture.home,
+            awayTeamId: fixture.away,
+            competition: 'League' as const,
+            isCupMatch: false
+        }));
     }
-    const secondHalf = schedule.map(match => ({ week: match.week + numWeeks, homeTeamId: match.awayTeamId, awayTeamId: match.homeTeamId }));
+    const secondHalf = schedule.map(match => ({
+        week: match.week + numWeeks,
+        homeTeamId: match.awayTeamId,
+        awayTeamId: match.homeTeamId,
+        competition: 'League' as const,
+        isCupMatch: false
+    }));
     return [...schedule, ...secondHalf];
+};
+
+export const generateSeasonSchedule = (allTeams: Team[]): Match[] => {
+    const premierLeagueTeams = allTeams.filter(t => t.leagueId === 'PREMIER_LEAGUE');
+    const championshipTeams = allTeams.filter(t => t.leagueId === 'CHAMPIONSHIP');
+
+    const plSchedule = generateLeagueSchedule(premierLeagueTeams, 'PREMIER_LEAGUE');
+    const chSchedule = generateLeagueSchedule(championshipTeams, 'CHAMPIONSHIP');
+
+    // Merge schedules. Since Championship has more games (46 rounds vs 38), 
+    // we just append them. The game loop handles weeks globally.
+    return [...plSchedule, ...chSchedule];
+};
+
+export const generateCupDraw = (teams: Team[], roundName: string, competition: 'FA_Cup' | 'Carabao_Cup' = 'FA_Cup'): Match[] => {
+    const shuffled = [...teams].sort(() => 0.5 - Math.random());
+    const fixtures: Match[] = [];
+
+    for (let i = 0; i < shuffled.length; i += 2) {
+        if (i + 1 < shuffled.length) {
+            fixtures.push({
+                week: 0, // Cup matches don't have a fixed week in advance usually, handled dynamically
+                homeTeamId: shuffled[i].id,
+                awayTeamId: shuffled[i + 1].id,
+                competition: competition,
+                isCupMatch: true
+            });
+        }
+    }
+    return fixtures;
+};
+
+// Helper function to determine cup winners from a round
+export const determineCupWinner = (match: Match): number | null => {
+    if (!match.result) return null;
+
+    const { homeScore, awayScore } = match.result;
+
+    // If there's a clear winner
+    if (homeScore > awayScore) return match.homeTeamId;
+    if (awayScore > homeScore) return match.awayTeamId;
+
+    // If it's a draw, check penalties
+    if (match.penalties) {
+        return match.penalties.home > match.penalties.away ? match.homeTeamId : match.awayTeamId;
+    }
+
+    return null; // Match not yet decided
+};
+
+// Helper function to advance cup to next round
+export const advanceCupRound = (cup: CupCompetition, allTeams: Team[], nextWeek: number): CupCompetition => {
+    const currentRound = cup.rounds[cup.currentRoundIndex];
+
+    // Check if current round is complete
+    const allMatchesPlayed = currentRound.fixtures.every(m => m.result !== undefined);
+    if (!allMatchesPlayed) {
+        return cup; // Round not complete yet
+    }
+
+    // Determine winners
+    const winners: number[] = [];
+    currentRound.fixtures.forEach(match => {
+        const winnerId = determineCupWinner(match);
+        if (winnerId !== null) {
+            winners.push(winnerId);
+        }
+    });
+
+    // If this was the final (only 2 teams), set winner
+    if (winners.length === 1) {
+        return {
+            ...cup,
+            winnerId: winners[0],
+            rounds: cup.rounds.map((r, idx) =>
+                idx === cup.currentRoundIndex ? { ...r, completed: true } : r
+            )
+        };
+    }
+
+    // Generate next round
+    const winnerTeams = winners.map(id => allTeams.find(t => t.id === id)!).filter(Boolean);
+    const nextRoundName = getNextRoundName(cup.rounds.length - cup.currentRoundIndex - 1);
+    const nextRoundFixtures = generateCupDraw(winnerTeams, nextRoundName, cup.id === 'fa_cup' ? 'FA_Cup' : 'Carabao_Cup');
+
+    // Assign week to next round fixtures
+    const fixturesWithWeek = nextRoundFixtures.map(f => ({ ...f, week: nextWeek }));
+
+    // Mark current round as complete and add next round
+    const updatedRounds = [
+        ...cup.rounds.map((r, idx) =>
+            idx === cup.currentRoundIndex ? { ...r, completed: true } : r
+        ),
+        {
+            name: nextRoundName,
+            fixtures: fixturesWithWeek,
+            completed: false
+        }
+    ];
+
+    return {
+        ...cup,
+        rounds: updatedRounds,
+        currentRoundIndex: cup.currentRoundIndex + 1
+    };
+};
+
+// Helper to get round names
+const getNextRoundName = (roundsRemaining: number): string => {
+    if (roundsRemaining === 0) return 'Final';
+    if (roundsRemaining === 1) return 'Semi-Final';
+    if (roundsRemaining === 2) return 'Quarter-Final';
+    if (roundsRemaining === 3) return 'Round of 16';
+    if (roundsRemaining === 4) return 'Round of 32';
+    return `Round ${6 - roundsRemaining}`;
 };
 
 export const createInitialLeagueTable = (teams: Team[]): LeagueTableRow[] => {
     return teams.map(team => ({
-        teamId: team.id, position: 0, played: 0, wins: 0, draws: 0, losses: 0,
+        teamId: team.id, position: 0, played: 0, won: 0, drawn: 0, lost: 0,
         goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0, form: [],
     })).sort((a, b) => teams.find(t => t.id === a.teamId)!.name.localeCompare(teams.find(t => t.id === b.teamId)!.name));
 };

@@ -14,10 +14,16 @@ Un juego de gestión de fútbol completo y totalmente funcional sin dependencias
 - **Mercado de Fichajes**: Negocia fichajes con lógica determinista inteligente
 - **Gestión Financiera**: Control de presupuesto, salarios e ingresos semanales
 
+### Competiciones
+- **Multi-Liga**: Premier League (20 equipos) y Championship (24 equipos) con calendarios independientes
+- **FA Cup**: Competición de copa con eliminación directa, extra time y penales
+- **Carabao Cup**: Segunda copa con progresión automática de rondas
+- **Sistema de Copas**: Avance automático a siguientes rondas tras completar partidos
+
 ### Experiencia de Juego
 - **Debate Presidencial Interactivo**: Sistema de elección mediante 6 preguntas de opción múltiple con oponentes virtuales
 - **Simulación de Partidos**: Motor de simulación realista con animaciones en vivo
-- **Liga Completa**: Sistema de liga con 20 equipos, calendario completo y tabla de posiciones
+- **Partidos de Copa**: Extra time y penales en caso de empate
 - **Sistema de Temporadas**: Envejecimiento de jugadores, retiros y regeneración automática
 
 ### Características Técnicas

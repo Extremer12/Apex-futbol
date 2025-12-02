@@ -3,25 +3,29 @@
 import React from 'react';
 import { GameState, Team, PlayerProfile, NewsItem, Player, Match, LeagueTableRow, Offer } from '../types';
 import { TEAMS } from '../constants';
-import { generateFixtures, createInitialLeagueTable, generateYouthPlayer } from '../services/simulation';
+import { generateSeasonSchedule, createInitialLeagueTable, generateYouthPlayer, generateCupDraw, advanceCupRound } from '../services/simulation';
 import { formatDate, formatCurrency } from '../utils';
 
+// ... (imports remain the same)
+
+// ... (imports remain the same)
+
+// Define all possible action types
 export type GameAction =
-    | { type: 'INITIALIZE_GAME'; payload: { team: Team, playerProfile: PlayerProfile } }
+    | { type: 'INITIALIZE_GAME'; payload: { team: Team; playerProfile: PlayerProfile } }
     | { type: 'LOAD_GAME'; payload: GameState }
     | { type: 'RESET_GAME' }
     | { type: 'ADVANCE_WEEK_START' }
-    | { type: 'ADVANCE_WEEK_SUCCESS'; payload: { newsItems: NewsItem[], newSchedule: Match[], newLeagueTable: LeagueTableRow[], newAllTeams: Team[], newConfidence: number, newOffers?: Offer[] } }
+    | { type: 'ADVANCE_WEEK_SUCCESS'; payload: { newsItems: NewsItem[]; newSchedule: Match[]; newLeagueTable: LeagueTableRow[]; newChampionshipTable: LeagueTableRow[]; newAllTeams: Team[]; newConfidence: number; newOffers: Offer[]; newCups?: { faCup: any; carabaoCup: any } } }
     | { type: 'START_NEW_SEASON' }
     | { type: 'ADD_NEWS'; payload: NewsItem }
-    | { type: 'SIGN_PLAYER'; payload: { player: Player, fee: number } }
-    | { type: 'PROMOTE_PLAYER'; payload: Player }
-    | { type: 'TOGGLE_TRANSFER_LIST'; payload: Player }
-    | { type: 'SET_VIEWING_PLAYER'; payload: Player | null }
     | { type: 'ADD_OFFER'; payload: Offer }
     | { type: 'ACCEPT_OFFER'; payload: { offerId: string } }
-    | { type: 'REJECT_OFFER'; payload: { offerId: string } };
-
+    | { type: 'REJECT_OFFER'; payload: { offerId: string } }
+    | { type: 'SIGN_PLAYER'; payload: { player: Player; fee: number } }
+    | { type: 'PROMOTE_PLAYER'; payload: Player }
+    | { type: 'TOGGLE_TRANSFER_LIST'; payload: Player }
+    | { type: 'SET_VIEWING_PLAYER'; payload: Player | null };
 
 export const initialState: GameState | null = null;
 
@@ -59,6 +63,21 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
 
             const initialConfidence = { 'Top': 65, 'Mid': 75, 'Lower': 80 };
 
+            // Separate teams by league for initial tables
+            const plTeams = allTeamsCopy.filter(t => t.leagueId === 'PREMIER_LEAGUE');
+            const chTeams = allTeamsCopy.filter(t => t.leagueId === 'CHAMPIONSHIP');
+
+            // Generate Initial Cup Draws
+            const faCupRound1 = generateCupDraw(allTeamsCopy, 'Round 1', 'FA_Cup');
+            const carabaoCupRound1 = generateCupDraw(allTeamsCopy, 'Round 1', 'Carabao_Cup');
+
+            // Add cup fixtures to schedule
+            // We need to assign them to specific weeks. Let's say Week 5 and Week 8 for now.
+            const faCupFixtures = faCupRound1.map(m => ({ ...m, week: 5 }));
+            const carabaoCupFixtures = carabaoCupRound1.map(m => ({ ...m, week: 2 }));
+
+            const initialSchedule = [...generateSeasonSchedule(allTeamsCopy), ...faCupFixtures, ...carabaoCupFixtures];
+
             return {
                 team: playerTeamCopy,
                 allTeams: allTeamsCopy,
@@ -66,92 +85,22 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 currentWeek: 0,
                 season: 2024,
                 newsFeed: TUTORIAL_NEWS,
-                schedule: generateFixtures(allTeamsCopy),
-                leagueTable: createInitialLeagueTable(allTeamsCopy),
+                schedule: initialSchedule,
+                leagueTable: createInitialLeagueTable(plTeams),
+                championshipTable: createInitialLeagueTable(chTeams),
                 finances: { balance: team.budget, transferBudget: team.transferBudget, weeklyIncome, weeklyWages: totalWages, balanceHistory: [team.budget] },
                 chairmanConfidence: initialConfidence[team.tier],
                 viewingPlayer: null,
                 incomingOffers: [],
                 youthAcademy: initialYouthAcademy,
-            };
-        }
-
-        case 'LOAD_GAME': {
-            const rehydratedGameState = action.payload;
-            const teamsMap = new Map(TEAMS.map(t => [t.id, t]));
-
-            const rehydratedAllTeams = rehydratedGameState.allTeams.map(savedTeam => {
-                const originalTeam = teamsMap.get(savedTeam.id);
-                return {
-                    ...savedTeam,
-                    logo: originalTeam ? originalTeam.logo : React.createElement('div', { className: 'w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center font-bold' }, '?')
-                };
-            });
-
-            const rehydratedPlayerTeam = rehydratedAllTeams.find(t => t.id === rehydratedGameState.team.id)!;
-
-            return {
-                ...rehydratedGameState,
-                allTeams: rehydratedAllTeams,
-                team: rehydratedPlayerTeam,
-                incomingOffers: rehydratedGameState.incomingOffers || [],
-                youthAcademy: rehydratedGameState.youthAcademy || [], // Fallback for old saves
-                season: rehydratedGameState.season || 2024, // Fallback for old saves
-            };
-        }
-
-        case 'RESET_GAME':
-            return initialState;
-
-        case 'ADVANCE_WEEK_START': {
-            if (!state) return null;
-            const newDate = new Date(state.currentDate);
-            newDate.setDate(newDate.getDate() + 7);
-            const weeklyNet = (state.finances.weeklyIncome - state.finances.weeklyWages) / 1_000_000;
-            const newBalance = state.finances.balance + weeklyNet;
-            return {
-                ...state,
-                currentDate: newDate,
-                currentWeek: state.currentWeek + 1,
-                finances: {
-                    ...state.finances,
-                    balance: newBalance,
-                    balanceHistory: [...state.finances.balanceHistory, newBalance],
+                cups: {
+                    faCup: { id: 'fa_cup', name: 'FA Cup', rounds: [{ name: 'Round 1', fixtures: faCupFixtures, completed: false }], currentRoundIndex: 0 },
+                    carabaoCup: { id: 'carabao_cup', name: 'Carabao Cup', rounds: [{ name: 'Round 1', fixtures: carabaoCupFixtures, completed: false }], currentRoundIndex: 0 }
                 }
             };
         }
 
-        case 'ADVANCE_WEEK_SUCCESS': {
-            if (!state) return null;
-            const { newsItems, newSchedule, newLeagueTable, newAllTeams, newConfidence, newOffers } = action.payload;
-            const teamsMap = new Map(newAllTeams.map(t => [t.id, t]));
-            const sortedTable = newLeagueTable.sort((a, b) => {
-                if (b.points !== a.points) return b.points - a.points;
-                const aGD = a.goalsFor - a.goalsAgainst;
-                const bGD = b.goalsFor - b.goalsAgainst;
-                if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor;
-                const aTeamName = teamsMap.get(a.teamId)!.name;
-                const bTeamName = teamsMap.get(b.teamId)!.name;
-                return aTeamName.localeCompare(bTeamName);
-            }).map((row, index) => ({
-                ...row,
-                position: index + 1,
-                goalDifference: row.goalsFor - row.goalsAgainst,
-            }));
-
-            const updatedPlayerTeam = newAllTeams.find(t => t.id === state.team.id)!;
-
-            return {
-                ...state,
-                team: updatedPlayerTeam,
-                allTeams: newAllTeams,
-                schedule: newSchedule,
-                leagueTable: sortedTable,
-                chairmanConfidence: newConfidence,
-                newsFeed: [...newsItems, ...state.newsFeed].slice(0, 20),
-                incomingOffers: [...state.incomingOffers, ...(newOffers || [])],
-            };
-        }
+        // ... (LOAD_GAME, RESET_GAME, ADVANCE_WEEK_START, ADVANCE_WEEK_SUCCESS remain same)
 
         case 'START_NEW_SEASON': {
             if (!state) return null;
@@ -197,8 +146,21 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
             }
 
             // 3. Reset Competition
-            const newSchedule = generateFixtures(processedTeams);
-            const newTable = createInitialLeagueTable(processedTeams);
+            const newSeasonSchedule = generateSeasonSchedule(processedTeams);
+            const newPlTeams = processedTeams.filter(t => t.leagueId === 'PREMIER_LEAGUE');
+            const newChTeams = processedTeams.filter(t => t.leagueId === 'CHAMPIONSHIP');
+
+            const newLeagueTable = createInitialLeagueTable(newPlTeams);
+            const newChampionshipTable = createInitialLeagueTable(newChTeams);
+
+            // Generate New Cup Draws
+            const faCupRound1 = generateCupDraw(processedTeams, 'Round 1', 'FA_Cup');
+            const carabaoCupRound1 = generateCupDraw(processedTeams, 'Round 1', 'Carabao_Cup');
+
+            const faCupFixtures = faCupRound1.map(m => ({ ...m, week: 5 }));
+            const carabaoCupFixtures = carabaoCupRound1.map(m => ({ ...m, week: 2 }));
+
+            const fullSchedule = [...newSeasonSchedule, ...faCupFixtures, ...carabaoCupFixtures];
 
             // 4. News
             const seasonNews: NewsItem = {
@@ -216,12 +178,111 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 season: newSeasonYear,
                 currentDate: newDate,
                 currentWeek: 0,
-                schedule: newSchedule,
-                leagueTable: newTable,
+                schedule: fullSchedule,
+                leagueTable: newLeagueTable,
+                championshipTable: newChampionshipTable,
                 newsFeed: [seasonNews, ...state.newsFeed].slice(0, 20),
-                // Reset finances history slightly or keep continuous? Keep continuous.
+                cups: {
+                    faCup: { id: 'fa_cup', name: 'FA Cup', rounds: [{ name: 'Round 1', fixtures: faCupFixtures, completed: false }], currentRoundIndex: 0 },
+                    carabaoCup: { id: 'carabao_cup', name: 'Carabao Cup', rounds: [{ name: 'Round 1', fixtures: carabaoCupFixtures, completed: false }], currentRoundIndex: 0 }
+                }
             };
         }
+        // ...
+
+
+        case 'LOAD_GAME': {
+            const rehydratedGameState = action.payload;
+            const teamsMap = new Map(TEAMS.map(t => [t.id, t]));
+
+            const rehydratedAllTeams = rehydratedGameState.allTeams.map(savedTeam => {
+                const originalTeam = teamsMap.get(savedTeam.id);
+                return {
+                    ...savedTeam,
+                    logo: originalTeam ? originalTeam.logo : React.createElement('div', { className: 'w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center font-bold' }, '?')
+                };
+            });
+
+            const rehydratedPlayerTeam = rehydratedAllTeams.find(t => t.id === rehydratedGameState.team.id)!;
+
+            return {
+                ...rehydratedGameState,
+                allTeams: rehydratedAllTeams,
+                team: rehydratedPlayerTeam,
+                incomingOffers: rehydratedGameState.incomingOffers || [],
+                youthAcademy: rehydratedGameState.youthAcademy || [], // Fallback for old saves
+                season: rehydratedGameState.season || 2024, // Fallback for old saves
+                championshipTable: rehydratedGameState.championshipTable || [],
+                cups: rehydratedGameState.cups || {
+                    faCup: { id: 'fa_cup', name: 'FA Cup', rounds: [], currentRoundIndex: 0 },
+                    carabaoCup: { id: 'carabao_cup', name: 'Carabao Cup', rounds: [], currentRoundIndex: 0 }
+                }
+            };
+        }
+
+        case 'RESET_GAME':
+            return initialState;
+
+        case 'ADVANCE_WEEK_START': {
+            if (!state) return null;
+            const newDate = new Date(state.currentDate);
+            newDate.setDate(newDate.getDate() + 7);
+            const weeklyNet = (state.finances.weeklyIncome - state.finances.weeklyWages) / 1_000_000;
+            const newBalance = state.finances.balance + weeklyNet;
+            return {
+                ...state,
+                currentDate: newDate,
+                currentWeek: state.currentWeek + 1,
+                finances: {
+                    ...state.finances,
+                    balance: newBalance,
+                    balanceHistory: [...state.finances.balanceHistory, newBalance],
+                }
+            };
+        }
+
+        case 'ADVANCE_WEEK_SUCCESS': {
+            if (!state) return null;
+            const { newsItems, newSchedule, newLeagueTable, newChampionshipTable, newAllTeams, newConfidence, newOffers, newCups } = action.payload;
+
+            // Helper to sort tables
+            const sortTable = (table: LeagueTableRow[], teams: Team[]) => {
+                const teamsMap = new Map(teams.map(t => [t.id, t]));
+                return table.sort((a, b) => {
+                    if (b.points !== a.points) return b.points - a.points;
+                    const aGD = a.goalsFor - a.goalsAgainst;
+                    const bGD = b.goalsFor - b.goalsAgainst;
+                    if (bGD !== aGD) return bGD - aGD;
+                    if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor;
+                    const aTeamName = teamsMap.get(a.teamId)?.name || '';
+                    const bTeamName = teamsMap.get(b.teamId)?.name || '';
+                    return aTeamName.localeCompare(bTeamName);
+                }).map((row, index) => ({
+                    ...row,
+                    position: index + 1,
+                    goalDifference: row.goalsFor - row.goalsAgainst,
+                }));
+            }
+
+            const sortedLeagueTable = sortTable(newLeagueTable, newAllTeams);
+            const sortedChampionshipTable = sortTable(newChampionshipTable, newAllTeams);
+
+            const updatedPlayerTeam = newAllTeams.find(t => t.id === state.team.id)!;
+
+            return {
+                ...state,
+                team: updatedPlayerTeam,
+                allTeams: newAllTeams,
+                schedule: newSchedule,
+                leagueTable: sortedLeagueTable,
+                championshipTable: sortedChampionshipTable,
+                chairmanConfidence: newConfidence,
+                newsFeed: [...newsItems, ...state.newsFeed].slice(0, 20),
+                incomingOffers: [...state.incomingOffers, ...(newOffers || [])],
+                cups: newCups || state.cups
+            };
+        }
+
 
         case 'ADD_NEWS': {
             if (!state) return null;

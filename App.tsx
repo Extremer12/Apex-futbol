@@ -32,7 +32,7 @@ import { SettingsScreen } from './components/screens/SettingsScreen';
 
 // Services
 import { evaluateElectionPitch, ElectionResponse, generateNews, generateMatchReport, generateTransferOffer, generatePlayerOfTheWeekNews, generateImportantNews } from './services/gameLogic';
-import { updateTeamMorale, simulateMatch } from './services/simulation';
+import { updateTeamMorale, simulateMatch, advanceCupRound } from './services/simulation';
 import { formatDate } from './utils';
 
 
@@ -44,10 +44,12 @@ interface PendingSimulationResults {
     newsToAdd: NewsItem[];
     updatedSchedule: Match[];
     updatedLeagueTable: LeagueTableRow[];
+    updatedChampionshipTable: LeagueTableRow[];
     updatedAllTeams: Team[];
     confidenceChange: number;
     newOffers: Offer[];
-    playerMatchResult: { homeScore: number; awayScore: number } | null;
+    playerMatchResult: { homeScore: number; awayScore: number, penalties?: { home: number, away: number } } | null;
+    updatedCups?: { faCup: any, carabaoCup: any };
 }
 
 // --- Main App Component ---
@@ -242,16 +244,22 @@ function App() {
         // Create calculation context
         const newWeek = gameState.currentWeek + 1;
         const newSchedule = [...gameState.schedule];
+
+        // Clone both tables
         const updatedLeagueTable = new Map<number, LeagueTableRow>(
             gameState.leagueTable.map(row => [row.teamId, { ...row, form: [...row.form] }] as [number, LeagueTableRow])
         );
+        const updatedChampionshipTable = new Map<number, LeagueTableRow>(
+            (gameState.championshipTable || []).map(row => [row.teamId, { ...row, form: [...row.form] }] as [number, LeagueTableRow])
+        );
+
         let updatedAllTeams = gameState.allTeams.map(t => ({ ...t }));
         const matchesThisWeek = newSchedule.filter(m => m.week === newWeek);
 
         const weeklyNet = (gameState.finances.weeklyIncome - gameState.finances.weeklyWages) / 1_000_000;
         let confidenceChange = weeklyNet > 0 ? 1 : -1;
 
-        let playerMatchResult: { homeScore: number, awayScore: number } | null = null;
+        let playerMatchResult: { homeScore: number, awayScore: number, penalties?: { home: number, away: number } } | null = null;
 
         // Simulate all matches
         if (matchesThisWeek.length > 0) {
@@ -260,49 +268,100 @@ function App() {
 
                 const homeTeam = updatedAllTeams.find(t => t.id === match.homeTeamId)!;
                 const awayTeam = updatedAllTeams.find(t => t.id === match.awayTeamId)!;
-                const homeRow = updatedLeagueTable.get(match.homeTeamId)!;
-                const awayRow = updatedLeagueTable.get(match.awayTeamId)!;
 
-                const result = simulateMatch(homeTeam, awayTeam, homeRow, awayRow);
+                // Determine which table to use based on competition or team league
+                let homeRow: LeagueTableRow | undefined;
+                let awayRow: LeagueTableRow | undefined;
+
+                if (!match.isCupMatch) {
+                    if (homeTeam.leagueId === 'PREMIER_LEAGUE') {
+                        homeRow = updatedLeagueTable.get(match.homeTeamId);
+                        awayRow = updatedLeagueTable.get(match.awayTeamId);
+                    } else {
+                        homeRow = updatedChampionshipTable.get(match.homeTeamId);
+                        awayRow = updatedChampionshipTable.get(match.awayTeamId);
+                    }
+                }
+
+                // If rows are missing (e.g. cup match against non-league team, or error), create dummy rows for simulation
+                const dummyRow: LeagueTableRow = { teamId: 0, played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0, form: [] };
+
+                const result = simulateMatch(homeTeam, awayTeam, homeRow || dummyRow, awayRow || dummyRow, match.isCupMatch);
+
                 const matchIndex = newSchedule.findIndex(m => m.week === newWeek && m.homeTeamId === match.homeTeamId);
-                newSchedule[matchIndex] = { ...newSchedule[matchIndex], result: { homeScore: result.homeScore, awayScore: result.awayScore } };
+                newSchedule[matchIndex] = {
+                    ...newSchedule[matchIndex],
+                    result: { homeScore: result.homeScore, awayScore: result.awayScore },
+                    penalties: result.penalties
+                };
 
                 // Store player match result specifically for UI
                 if (match.homeTeamId === gameState.team.id || match.awayTeamId === gameState.team.id) {
-                    playerMatchResult = { homeScore: result.homeScore, awayScore: result.awayScore };
+                    playerMatchResult = {
+                        homeScore: result.homeScore,
+                        awayScore: result.awayScore,
+                        penalties: result.penalties
+                    };
                 }
 
-                homeRow.played++; awayRow.played++;
-                homeRow.goalsFor += result.homeScore; awayRow.goalsFor += result.awayScore;
-                homeRow.goalsAgainst += result.awayScore; awayRow.goalsAgainst += result.homeScore;
+                // Update League Tables ONLY if it's a league match
+                if (!match.isCupMatch && homeRow && awayRow) {
+                    homeRow.played++; awayRow.played++;
+                    homeRow.goalsFor += result.homeScore; awayRow.goalsFor += result.awayScore;
+                    homeRow.goalsAgainst += result.awayScore; awayRow.goalsAgainst += result.homeScore;
 
-                let homeResult: 'W' | 'D' | 'L', awayResult: 'W' | 'D' | 'L';
+                    let homeResult: 'W' | 'D' | 'L', awayResult: 'W' | 'D' | 'L';
 
-                if (result.homeScore > result.awayScore) {
-                    homeRow.wins++; homeRow.points += 3; homeResult = 'W';
-                    awayRow.losses++; awayResult = 'L';
-                } else if (result.awayScore > result.homeScore) {
-                    awayRow.wins++; awayRow.points += 3; awayResult = 'W';
-                    homeRow.losses++; homeResult = 'L';
-                } else {
-                    homeRow.draws++; homeRow.points += 1; homeResult = 'D';
-                    awayRow.draws++; awayRow.points += 1; awayResult = 'D';
-                }
-                homeRow.form.unshift(homeResult);
-                awayRow.form.unshift(awayResult);
+                    if (result.homeScore > result.awayScore) {
+                        homeRow.won++; homeRow.points += 3; homeResult = 'W';
+                        awayRow.lost++; awayResult = 'L';
+                    } else if (result.awayScore > result.homeScore) {
+                        awayRow.won++; awayRow.points += 3; awayResult = 'W';
+                        homeRow.lost++; homeResult = 'L';
+                    } else {
+                        homeRow.drawn++; homeRow.points += 1; homeResult = 'D';
+                        awayRow.drawn++; awayRow.points += 1; awayResult = 'D';
+                    }
+                    homeRow.form.unshift(homeResult);
+                    awayRow.form.unshift(awayResult);
 
-                homeTeam.teamMorale = updateTeamMorale(homeTeam.teamMorale, homeResult);
-                awayTeam.teamMorale = updateTeamMorale(awayTeam.teamMorale, awayResult);
+                    // Update Morale
+                    homeTeam.teamMorale = updateTeamMorale(homeTeam.teamMorale, homeResult);
+                    awayTeam.teamMorale = updateTeamMorale(awayTeam.teamMorale, awayResult);
 
-                if (homeTeam.id === gameState.team.id) {
-                    if (homeResult === 'W') confidenceChange += 2;
-                    if (homeResult === 'D') confidenceChange -= 1;
-                    if (homeResult === 'L') confidenceChange -= 4;
-                }
-                if (awayTeam.id === gameState.team.id) {
-                    if (awayResult === 'W') confidenceChange += 3;
-                    if (awayResult === 'D') confidenceChange += 1;
-                    if (awayResult === 'L') confidenceChange -= 2;
+                    // Update Confidence
+                    if (homeTeam.id === gameState.team.id) {
+                        if (homeResult === 'W') confidenceChange += 2;
+                        if (homeResult === 'D') confidenceChange -= 1;
+                        if (homeResult === 'L') confidenceChange -= 4;
+                    }
+                    if (awayTeam.id === gameState.team.id) {
+                        if (awayResult === 'W') confidenceChange += 3;
+                        if (awayResult === 'D') confidenceChange += 1;
+                        if (awayResult === 'L') confidenceChange -= 2;
+                    }
+                } else if (match.isCupMatch) {
+                    // Cup Match Logic (Morale only, no points)
+                    // Determine winner including penalties
+                    let homeWin = result.homeScore > result.awayScore;
+                    if (result.homeScore === result.awayScore && result.penalties) {
+                        homeWin = result.penalties.home > result.penalties.away;
+                    }
+
+                    const homeResult = homeWin ? 'W' : 'L';
+                    const awayResult = homeWin ? 'L' : 'W';
+
+                    homeTeam.teamMorale = updateTeamMorale(homeTeam.teamMorale, homeResult);
+                    awayTeam.teamMorale = updateTeamMorale(awayTeam.teamMorale, awayResult);
+
+                    if (homeTeam.id === gameState.team.id) {
+                        if (homeResult === 'W') confidenceChange += 3; // Cup wins are good
+                        if (homeResult === 'L') confidenceChange -= 2;
+                    }
+                    if (awayTeam.id === gameState.team.id) {
+                        if (awayResult === 'W') confidenceChange += 3;
+                        if (awayResult === 'L') confidenceChange -= 2;
+                    }
                 }
             });
         }
@@ -379,14 +438,51 @@ function App() {
             }
         }
 
+        // Cup Progression Logic
+        // Check if any cup rounds are complete and advance them
+        let updatedFaCup = gameState.cups.faCup;
+        let updatedCarabaoCup = gameState.cups.carabaoCup;
+
+        // Check FA Cup progression
+        const faCupMatches = matchesThisWeek.filter(m => m.competition === 'FA_Cup');
+        if (faCupMatches.length > 0 && faCupMatches.every(m => m.result !== undefined)) {
+            // Determine next week for cup fixtures (e.g., 4 weeks from now)
+            const nextCupWeek = newWeek + 4;
+            updatedFaCup = advanceCupRound(updatedFaCup, updatedAllTeams, nextCupWeek);
+            
+            // Add new round fixtures to schedule if a new round was created
+            if (updatedFaCup.rounds.length > gameState.cups.faCup.rounds.length) {
+                const newRound = updatedFaCup.rounds[updatedFaCup.rounds.length - 1];
+                newSchedule.push(...newRound.fixtures);
+            }
+        }
+
+        // Check Carabao Cup progression
+        const carabaoCupMatches = matchesThisWeek.filter(m => m.competition === 'Carabao_Cup');
+        if (carabaoCupMatches.length > 0 && carabaoCupMatches.every(m => m.result !== undefined)) {
+            const nextCupWeek = newWeek + 3;
+            updatedCarabaoCup = advanceCupRound(updatedCarabaoCup, updatedAllTeams, nextCupWeek);
+            
+            // Add new round fixtures to schedule
+            if (updatedCarabaoCup.rounds.length > gameState.cups.carabaoCup.rounds.length) {
+                const newRound = updatedCarabaoCup.rounds[updatedCarabaoCup.rounds.length - 1];
+                newSchedule.push(...newRound.fixtures);
+            }
+        }
+
         setPendingResults({
             newsToAdd,
             updatedSchedule: newSchedule,
             updatedLeagueTable: Array.from(updatedLeagueTable.values()),
+            updatedChampionshipTable: Array.from(updatedChampionshipTable.values()),
             updatedAllTeams,
             confidenceChange,
             newOffers: generatedOffers,
-            playerMatchResult
+            playerMatchResult,
+            updatedCups: {
+                faCup: updatedFaCup,
+                carabaoCup: updatedCarabaoCup
+            }
         });
 
         // Transition state to LIVE simulation
@@ -407,9 +503,11 @@ function App() {
                 newsItems: pendingResults.newsToAdd,
                 newSchedule: pendingResults.updatedSchedule,
                 newLeagueTable: pendingResults.updatedLeagueTable,
+                newChampionshipTable: pendingResults.updatedChampionshipTable,
                 newAllTeams: pendingResults.updatedAllTeams,
                 newConfidence,
                 newOffers: pendingResults.newOffers,
+                newCups: pendingResults.updatedCups
             }
         });
 
