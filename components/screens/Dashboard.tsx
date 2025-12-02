@@ -44,23 +44,71 @@ const MatchDayCard: React.FC<{
     const opponent = gameState.allTeams.find(t => t.id === opponentId);
     const isHome = nextMatch?.homeTeamId === gameState.team.id;
 
-    if (!nextMatch || !opponent) {
+    const maxWeek = useMemo(() => gameState.schedule.length > 0 ? Math.max(...gameState.schedule.map(m => m.week)) : 38, [gameState.schedule]);
+
+    // 1. Check if Simulation was run but no match for player (Bye Week Simulation Complete)
+    if (matchPhase === 'LIVE' && !pendingResults?.playerMatchResult) {
         return (
-            <div className="bg-slate-900 rounded-xl p-8 text-center border border-slate-800 flex flex-col items-center justify-center min-h-[300px]">
-                <TrophyIcon className="w-16 h-16 text-yellow-400 mb-4" />
-                <h2 className="text-3xl font-bold text-white mb-2">Fin de Temporada</h2>
+            <div className="bg-slate-900 rounded-xl p-8 text-center border border-slate-800 flex flex-col items-center justify-center min-h-[300px] animate-fade-in">
+                <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                    <TrendingUpIcon className="w-8 h-8 text-sky-400" />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-2">Jornada Simulada</h2>
                 <p className="text-slate-400 mb-8 max-w-md">
-                    Has completado la temporada {gameState.season}. Revisa la clasificación final y prepárate para el próximo año. Los jugadores envejecerán, algunos se retirarán y llegarán nuevas promesas de la cantera.
+                    Los partidos de la jornada han finalizado. Tu equipo tuvo descanso esta semana.
                 </p>
                 <button
-                    onClick={() => dispatch({ type: 'START_NEW_SEASON' })}
-                    className="bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-8 rounded-lg shadow-xl shadow-sky-600/30 transform hover:scale-105 transition-all duration-200 text-lg flex items-center gap-2"
+                    onClick={onWeekComplete}
+                    className="bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-8 rounded-lg shadow-xl shadow-green-600/30 transform hover:scale-105 transition-all duration-200 text-lg"
                 >
-                    <TrendingUpIcon className="w-6 h-6" /> Comenzar Temporada {gameState.season + 1}
+                    Continuar
                 </button>
             </div>
         );
     }
+
+    if (!nextMatch) {
+        // Check if season is actually over
+        if (nextWeek > maxWeek) {
+            return (
+                <div className="bg-slate-900 rounded-xl p-8 text-center border border-slate-800 flex flex-col items-center justify-center min-h-[300px]">
+                    <TrophyIcon className="w-16 h-16 text-yellow-400 mb-4" />
+                    <h2 className="text-3xl font-bold text-white mb-2">Fin de Temporada</h2>
+                    <p className="text-slate-400 mb-8 max-w-md">
+                        Has completado la temporada {gameState.season}. Revisa la clasificación final y prepárate para el próximo año. Los jugadores envejecerán, algunos se retirarán y llegarán nuevas promesas de la cantera.
+                    </p>
+                    <button
+                        onClick={() => dispatch({ type: 'START_NEW_SEASON' })}
+                        className="bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-8 rounded-lg shadow-xl shadow-sky-600/30 transform hover:scale-105 transition-all duration-200 text-lg flex items-center gap-2"
+                    >
+                        <TrendingUpIcon className="w-6 h-6" /> Comenzar Temporada {gameState.season + 1}
+                    </button>
+                </div>
+            );
+        } else {
+            // Bye Week (Descanso)
+            return (
+                <div className="bg-slate-900 rounded-xl p-8 text-center border border-slate-800 flex flex-col items-center justify-center min-h-[300px]">
+                    <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                        <InboxIcon className="w-8 h-8 text-slate-400" />
+                    </div>
+                    <h2 className="text-3xl font-bold text-white mb-2">Jornada de Descanso</h2>
+                    <p className="text-slate-400 mb-8 max-w-md">
+                        Tu equipo no tiene partido programado para esta jornada (Semana {nextWeek}).
+                    </p>
+                    <button
+                        onClick={onPlayMatch}
+                        className="bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-8 rounded-lg shadow-xl shadow-sky-600/30 transform hover:scale-105 transition-all duration-200 text-lg flex items-center gap-2"
+                    >
+                        <TrendingUpIcon className="w-6 h-6" /> Simular Jornada
+                    </button>
+                </div>
+            );
+        }
+    }
+
+    // Ensure opponent exists (should always be true if nextMatch exists, but for safety)
+    if (!opponent) return null;
 
     if (matchPhase === 'LIVE' && pendingResults?.playerMatchResult) {
         return (

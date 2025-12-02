@@ -147,7 +147,7 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                             )}
                             <div>
                                 <h2 className="text-2xl font-bold text-white">{cup.name}</h2>
-                                <p className="text-slate-400">Ronda Actual: <span className="text-sky-400 font-semibold">{cup.rounds[cup.currentRoundIndex]?.name || 'Finalizada'}</span></p>
+                                <p className="text-slate-400">Ronda Actual: <span className="text-sky-400 font-semibold">{cup.rounds && cup.rounds[cup.currentRoundIndex] ? cup.rounds[cup.currentRoundIndex].name : 'Finalizada'}</span></p>
                             </div>
                         </div>
                         {cup.winnerId && (
@@ -175,7 +175,7 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                     </div>
 
                     {/* Rounds View */}
-                    {cupTab === 'ROUNDS' && (
+                    {cupTab === 'ROUNDS' && cup.rounds && (
                         <div className="space-y-4">
                             {cup.rounds.slice().reverse().map((round, idx) => (
                                 <div key={idx} className="bg-slate-800/50 rounded-lg overflow-hidden">
@@ -247,7 +247,7 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                                     </h3>
                                 </div>
                                 <div className="p-4">
-                                    {cup.statistics.topScorers.length === 0 ? (
+                                    {!cup.statistics?.topScorers || cup.statistics.topScorers.length === 0 ? (
                                         <p className="text-slate-500 text-center py-8">No hay goles registrados aún</p>
                                     ) : (
                                         <div className="space-y-2">
@@ -285,7 +285,7 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                                     </h3>
                                 </div>
                                 <div className="p-4">
-                                    {cup.statistics.championsHistory.length === 0 ? (
+                                    {!cup.statistics?.championsHistory || cup.statistics.championsHistory.length === 0 ? (
                                         <p className="text-slate-500 text-center py-8">No hay campeones registrados aún</p>
                                     ) : (
                                         <div className="space-y-2">
