@@ -1,18 +1,37 @@
 import React from 'react';
 
 /**
- * Creates a team logo component with hover animation
+ * Creates a team logo component with hover animation and fallback for missing logos
  * @param logoPath - Path to the logo image
  * @param teamName - Name of the team for alt text
- * @returns React component with team logo
+ * @returns React component with team logo or fallback
  */
 export const createTeamLogo = (logoPath: string, teamName: string) => {
+    const [imageError, setImageError] = React.useState(false);
+
+    // Fallback component when logo is missing
+    if (imageError || !logoPath) {
+        const initials = teamName
+            .split(' ')
+            .map(word => word[0])
+            .join('')
+            .toUpperCase()
+            .slice(0, 3);
+
+        return (
+            <div className="w-12 h-12 relative flex items-center justify-center bg-gradient-to-br from-slate-700 to-slate-800 rounded-lg border-2 border-slate-600">
+                <span className="text-white font-bold text-sm">{initials}</span>
+            </div>
+        );
+    }
+
     return (
         <div className="w-12 h-12 relative flex items-center justify-center">
             <img
                 src={logoPath}
                 alt={`${teamName} logo`}
                 className="w-full h-full object-contain drop-shadow-lg hover:scale-110 transition-transform duration-300"
+                onError={() => setImageError(true)}
             />
         </div>
     );

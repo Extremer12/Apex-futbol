@@ -297,9 +297,23 @@ export const advanceCupRound = (cup: CupCompetition, allTeams: Team[], nextWeek:
 
     // If this was the final (only 2 teams), set winner
     if (winners.length === 1) {
+        const winnerTeam = allTeams.find(t => t.id === winners[0]);
+        const updatedStatistics = {
+            ...cup.statistics,
+            championsHistory: [
+                {
+                    season: new Date().getFullYear(),
+                    winnerId: winners[0],
+                    winnerName: winnerTeam?.name || 'Unknown'
+                },
+                ...cup.statistics.championsHistory
+            ].slice(0, 10) // Keep only last 10 champions
+        };
+
         return {
             ...cup,
             winnerId: winners[0],
+            statistics: updatedStatistics,
             rounds: cup.rounds.map((r, idx) =>
                 idx === cup.currentRoundIndex ? { ...r, completed: true } : r
             )

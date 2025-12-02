@@ -285,7 +285,7 @@ function App() {
                 }
 
                 // If rows are missing (e.g. cup match against non-league team, or error), create dummy rows for simulation
-                const dummyRow: LeagueTableRow = { teamId: 0, played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0, form: [] };
+                const dummyRow: LeagueTableRow = { teamId: 0, position: 0, played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0, form: [] };
 
                 const result = simulateMatch(homeTeam, awayTeam, homeRow || dummyRow, awayRow || dummyRow, match.isCupMatch);
 
@@ -362,6 +362,40 @@ function App() {
                     if (awayTeam.id === gameState.team.id) {
                         if (awayResult === 'W') confidenceChange += 3;
                         if (awayResult === 'L') confidenceChange -= 2;
+                    }
+
+                    // Track Cup Goals for Statistics
+                    const cupId = match.competition === 'FA_Cup' ? 'faCup' : 'carabaoCup';
+                    const currentCup = cupId === 'faCup' ? updatedFaCup : updatedCarabaoCup;
+
+                    // Assign goals to random players from starting XI
+                    const assignGoals = (team: Team, goals: number) => {
+                        const startingXI = team.squad.slice(0, 11);
+                        for (let i = 0; i < goals; i++) {
+                            const scorer = startingXI[Math.floor(Math.random() * startingXI.length)];
+                            const existingScorer = currentCup.statistics.topScorers.find(s => s.playerId === scorer.id);
+                            if (existingScorer) {
+                                existingScorer.goals++;
+                            } else {
+                                currentCup.statistics.topScorers.push({
+                                    playerId: scorer.id,
+                                    playerName: scorer.name,
+                                    teamId: team.id,
+                                    teamName: team.name,
+                                    goals: 1
+                                });
+                            }
+                        }
+                    };
+
+                    assignGoals(homeTeam, result.homeScore);
+                    assignGoals(awayTeam, result.awayScore);
+
+                    // Update the cup reference
+                    if (cupId === 'faCup') {
+                        updatedFaCup = currentCup;
+                    } else {
+                        updatedCarabaoCup = currentCup;
                     }
                 }
             });

@@ -94,8 +94,20 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 incomingOffers: [],
                 youthAcademy: initialYouthAcademy,
                 cups: {
-                    faCup: { id: 'fa_cup', name: 'FA Cup', rounds: [{ name: 'Round 1', fixtures: faCupFixtures, completed: false }], currentRoundIndex: 0 },
-                    carabaoCup: { id: 'carabao_cup', name: 'Carabao Cup', rounds: [{ name: 'Round 1', fixtures: carabaoCupFixtures, completed: false }], currentRoundIndex: 0 }
+                    faCup: {
+                        id: 'fa_cup',
+                        name: 'FA Cup',
+                        rounds: [{ name: 'Round 1', fixtures: faCupFixtures, completed: false }],
+                        currentRoundIndex: 0,
+                        statistics: { topScorers: [], championsHistory: [] }
+                    },
+                    carabaoCup: {
+                        id: 'carabao_cup',
+                        name: 'Carabao Cup',
+                        rounds: [{ name: 'Round 1', fixtures: carabaoCupFixtures, completed: false }],
+                        currentRoundIndex: 0,
+                        statistics: { topScorers: [], championsHistory: [] }
+                    }
                 }
             };
         }
@@ -147,7 +159,16 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
 
             // 3. Reset Competition & Process Promotion/Relegation
             // We need the FINAL tables from the previous season to determine promotion/relegation
-            // Assuming state.leagueTable and state.championshipTable are the final ones
+            // Identify teams before changes for news
+            const sortedPL = [...state.leagueTable].sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference);
+            const sortedCH = [...state.championshipTable].sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference);
+
+            const relegatedIds = sortedPL.slice(-3).map(row => row.teamId);
+            const promotedIds = sortedCH.slice(0, 3).map(row => row.teamId);
+
+            const relegatedTeams = relegatedIds.map(id => processedTeams.find(t => t.id === id)?.name || 'Unknown').filter(Boolean);
+            const promotedTeams = promotedIds.map(id => processedTeams.find(t => t.id === id)?.name || 'Unknown').filter(Boolean);
+
             const teamsAfterProRel = handlePromotionRelegation(processedTeams, state.leagueTable, state.championshipTable);
 
             const newSeasonSchedule = generateSeasonSchedule(teamsAfterProRel);
@@ -158,15 +179,22 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
             const newChampionshipTable = createInitialLeagueTable(newChTeams);
 
             // Generate New Cup Draws
-            const faCupRound1 = generateCupDraw(processedTeams, 'Round 1', 'FA_Cup');
-            const carabaoCupRound1 = generateCupDraw(processedTeams, 'Round 1', 'Carabao_Cup');
+            const faCupRound1 = generateCupDraw(teamsAfterProRel, 'Round 1', 'FA_Cup');
+            const carabaoCupRound1 = generateCupDraw(teamsAfterProRel, 'Round 1', 'Carabao_Cup');
 
             const faCupFixtures = faCupRound1.map(m => ({ ...m, week: 5 }));
             const carabaoCupFixtures = carabaoCupRound1.map(m => ({ ...m, week: 2 }));
 
             const fullSchedule = [...newSeasonSchedule, ...faCupFixtures, ...carabaoCupFixtures];
 
-            // 4. News
+            // 4. News - Promotion/Relegation and Season Start
+            const proRelNews: NewsItem = {
+                id: `pro_rel_${newSeasonYear}`,
+                headline: `🔄 Cambios en las Ligas - Temporada ${newSeasonYear}`,
+                body: `⬆️ ASCENSOS: ${promotedTeams.join(', ')} suben a la Premier League.\n⬇️ DESCENSOS: ${relegatedTeams.join(', ')} descienden al Championship. ¡La nueva temporada promete emociones!`,
+                date: formatDate(newDate)
+            };
+
             const seasonNews: NewsItem = {
                 id: `season_start_${newSeasonYear}`,
                 headline: `Temporada ${newSeasonYear}-${newSeasonYear + 1}`,
@@ -185,10 +213,22 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 schedule: fullSchedule,
                 leagueTable: newLeagueTable,
                 championshipTable: newChampionshipTable,
-                newsFeed: [seasonNews, ...state.newsFeed].slice(0, 20),
+                newsFeed: [proRelNews, seasonNews, ...state.newsFeed].slice(0, 20),
                 cups: {
-                    faCup: { id: 'fa_cup', name: 'FA Cup', rounds: [{ name: 'Round 1', fixtures: faCupFixtures, completed: false }], currentRoundIndex: 0 },
-                    carabaoCup: { id: 'carabao_cup', name: 'Carabao Cup', rounds: [{ name: 'Round 1', fixtures: carabaoCupFixtures, completed: false }], currentRoundIndex: 0 }
+                    faCup: {
+                        id: 'fa_cup',
+                        name: 'FA Cup',
+                        rounds: [{ name: 'Round 1', fixtures: faCupFixtures, completed: false }],
+                        currentRoundIndex: 0,
+                        statistics: { topScorers: [], championsHistory: state.cups.faCup.statistics?.championsHistory || [] }
+                    },
+                    carabaoCup: {
+                        id: 'carabao_cup',
+                        name: 'Carabao Cup',
+                        rounds: [{ name: 'Round 1', fixtures: carabaoCupFixtures, completed: false }],
+                        currentRoundIndex: 0,
+                        statistics: { topScorers: [], championsHistory: state.cups.carabaoCup.statistics?.championsHistory || [] }
+                    }
                 }
             };
         }
@@ -217,9 +257,18 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 youthAcademy: rehydratedGameState.youthAcademy || [], // Fallback for old saves
                 season: rehydratedGameState.season || 2024, // Fallback for old saves
                 championshipTable: rehydratedGameState.championshipTable || [],
-                cups: rehydratedGameState.cups || {
-                    faCup: { id: 'fa_cup', name: 'FA Cup', rounds: [], currentRoundIndex: 0 },
-                    carabaoCup: { id: 'carabao_cup', name: 'Carabao Cup', rounds: [], currentRoundIndex: 0 }
+                cups: rehydratedGameState.cups ? {
+                    faCup: {
+                        ...rehydratedGameState.cups.faCup,
+                        statistics: rehydratedGameState.cups.faCup.statistics || { topScorers: [], championsHistory: [] }
+                    },
+                    carabaoCup: {
+                        ...rehydratedGameState.cups.carabaoCup,
+                        statistics: rehydratedGameState.cups.carabaoCup.statistics || { topScorers: [], championsHistory: [] }
+                    }
+                } : {
+                    faCup: { id: 'fa_cup', name: 'FA Cup', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
+                    carabaoCup: { id: 'carabao_cup', name: 'Carabao Cup', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } }
                 }
             };
         }

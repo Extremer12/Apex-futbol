@@ -87,12 +87,32 @@ export interface CupRound {
   completed: boolean;
 }
 
+export interface CupScorer {
+  playerId: number;
+  playerName: string;
+  teamId: number;
+  teamName: string;
+  goals: number;
+}
+
+export interface CupChampion {
+  season: number;
+  winnerId: number;
+  winnerName: string;
+}
+
+export interface CupStatistics {
+  topScorers: CupScorer[];
+  championsHistory: CupChampion[];
+}
+
 export interface CupCompetition {
   id: string;
   name: string;
   rounds: CupRound[];
   currentRoundIndex: number;
   winnerId?: number;
+  statistics: CupStatistics;
 }
 
 export interface GameState {
