@@ -132,7 +132,7 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
         </div>
     );
 
-    const renderCupView = (cup: CupCompetition) => {
+    const renderCupView = (cup: CupCompetition, logoPath: string) => {
         const [cupTab, setCupTab] = useState<'ROUNDS' | 'STATS'>('ROUNDS');
 
         return (
@@ -140,7 +140,11 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                 <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-lg">
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-4">
-                            <TrophyIcon className={`w-12 h-12 ${cup.id === 'fa_cup' ? 'text-yellow-500' : 'text-sky-500'}`} />
+                            {logoPath ? (
+                                <img src={logoPath} alt={cup.name} className="w-12 h-12 object-contain drop-shadow-md" />
+                            ) : (
+                                <TrophyIcon className={`w-12 h-12 ${cup.id === 'fa_cup' ? 'text-yellow-500' : 'text-sky-500'}`} />
+                            )}
                             <div>
                                 <h2 className="text-2xl font-bold text-white">{cup.name}</h2>
                                 <p className="text-slate-400">Ronda Actual: <span className="text-sky-400 font-semibold">{cup.rounds[cup.currentRoundIndex]?.name || 'Finalizada'}</span></p>
@@ -342,9 +346,9 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
             {/* Content Area */}
             <div className="min-h-[500px]">
                 {activeTab === 'PREMIER_LEAGUE' && renderLeagueTable(gameState.leagueTable, 'Premier League', '/logos/Premier League.png', true)}
-                {activeTab === 'CHAMPIONSHIP' && renderLeagueTable(gameState.championshipTable, 'EFL Championship', '', false)}
-                {activeTab === 'FA_CUP' && renderCupView(gameState.cups.faCup)}
-                {activeTab === 'CARABAO_CUP' && renderCupView(gameState.cups.carabaoCup)}
+                {activeTab === 'CHAMPIONSHIP' && renderLeagueTable(gameState.championshipTable, 'EFL Championship', '/logos/Sky Bet Championship.png', false)}
+                {activeTab === 'FA_CUP' && renderCupView(gameState.cups.faCup, '/logos/The Emirates FA Cup.png')}
+                {activeTab === 'CARABAO_CUP' && renderCupView(gameState.cups.carabaoCup, '/logos/carabao_cup_logo.png')}
             </div>
         </div>
     );
