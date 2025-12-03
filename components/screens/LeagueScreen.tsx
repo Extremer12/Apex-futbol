@@ -11,6 +11,7 @@ type Tab = 'PREMIER_LEAGUE' | 'CHAMPIONSHIP' | 'FA_CUP' | 'CARABAO_CUP';
 
 export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
     const [activeTab, setActiveTab] = useState<Tab>('PREMIER_LEAGUE');
+    const [cupTab, setCupTab] = useState<'ROUNDS' | 'STATS'>('ROUNDS'); // Add cup tab state here
 
     const getTeamById = (id: number) => gameState.allTeams.find(t => t.id === id);
 
@@ -133,8 +134,6 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
     );
 
     const renderCupView = (cup: CupCompetition, logoPath: string) => {
-        const [cupTab, setCupTab] = useState<'ROUNDS' | 'STATS'>('ROUNDS');
-
         return (
             <div className="space-y-6 animate-fade-in">
                 <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-lg">
