@@ -288,7 +288,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ gameState, onPlayMatch, ma
                             <h2 className="text-lg font-bold text-white">Resultados Jornada {displayedWeek}</h2>
                             <button onClick={() => setDisplayedWeek(w => Math.min(maxWeek, w + 1))} disabled={displayedWeek >= maxWeek} className="text-slate-400 hover:text-white text-sm">Siguiente &gt;</button>
                         </div>
-                        <WeeklyFixtures week={displayedWeek} matches={matchPhase === 'LIVE' && pendingResults ? pendingResults.playerMatchResult ? gameState.schedule : gameState.schedule : gameState.schedule} allTeams={gameState.allTeams} playerTeamId={gameState.team.id} />
+                        <WeeklyFixtures
+                            week={displayedWeek}
+                            matches={matchPhase === 'LIVE' && pendingResults ? pendingResults.playerMatchResult ? gameState.schedule : gameState.schedule : gameState.schedule}
+                            allTeams={gameState.allTeams}
+                            playerTeamId={gameState.team.id}
+                            playerTeamLeagueId={gameState.team.leagueId}
+                        />
                     </div>
                 )}
             </div>

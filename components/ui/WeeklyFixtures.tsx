@@ -6,11 +6,28 @@ interface WeeklyFixturesProps {
     matches: Match[];
     allTeams: Team[];
     playerTeamId: number;
+    playerTeamLeagueId?: string; // Add league filter
 }
 
-export const WeeklyFixtures: React.FC<WeeklyFixturesProps> = ({ week, matches, allTeams, playerTeamId }) => {
+export const WeeklyFixtures: React.FC<WeeklyFixturesProps> = ({ week, matches, allTeams, playerTeamId, playerTeamLeagueId }) => {
     const getTeamById = (id: number) => allTeams.find(t => t.id === id);
-    const weekMatches = matches.filter(m => m.week === week);
+
+    // Filter matches by week AND by player's league (if provided)
+    const weekMatches = matches.filter(m => {
+        if (m.week !== week) return false;
+
+        // If no league filter, show all matches
+        if (!playerTeamLeagueId) return true;
+
+        // For cup matches, always show them
+        if (m.isCupMatch) return true;
+
+        // For league matches, only show matches from player's league
+        const homeTeam = getTeamById(m.homeTeamId);
+        const awayTeam = getTeamById(m.awayTeamId);
+
+        return homeTeam?.leagueId === playerTeamLeagueId || awayTeam?.leagueId === playerTeamLeagueId;
+    });
 
     return (
         <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-2">

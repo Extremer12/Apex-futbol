@@ -257,6 +257,10 @@ function App() {
         let updatedAllTeams = gameState.allTeams.map(t => ({ ...t }));
         const matchesThisWeek = newSchedule.filter(m => m.week === newWeek);
 
+        // Initialize cup variables BEFORE they are used in the loop
+        let updatedFaCup = gameState.cups.faCup;
+        let updatedCarabaoCup = gameState.cups.carabaoCup;
+
         const weeklyNet = (gameState.finances.weeklyIncome - gameState.finances.weeklyWages) / 1_000_000;
         let confidenceChange = weeklyNet > 0 ? 1 : -1;
 
@@ -475,8 +479,6 @@ function App() {
 
         // Cup Progression Logic
         // Check if any cup rounds are complete and advance them
-        let updatedFaCup = gameState.cups.faCup;
-        let updatedCarabaoCup = gameState.cups.carabaoCup;
 
         // Check FA Cup progression
         const faCupMatches = matchesThisWeek.filter(m => m.competition === 'FA_Cup');
