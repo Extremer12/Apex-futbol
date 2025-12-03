@@ -305,21 +305,36 @@ export const Dashboard: React.FC<DashboardProps> = ({ gameState, onPlayMatch, ma
                 <InboxPreview gameState={gameState} dispatch={dispatch} />
 
                 {/* News Feed */}
-                <div className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg p-5 h-full max-h-[500px] flex flex-col">
-                    <h2 className="text-lg font-bold mb-4 text-sky-400 flex items-center gap-2">
-                        <TrendingUpIcon className="w-5 h-5" /> Noticias
+                <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-purple-950/20 border border-slate-800 rounded-xl shadow-lg p-5 h-full max-h-[500px] flex flex-col">
+                    <h2 className="text-lg font-bold mb-4 bg-gradient-to-r from-sky-400 to-purple-400 bg-clip-text text-transparent flex items-center gap-2">
+                        <div className="bg-gradient-to-br from-sky-500 to-purple-500 p-2 rounded-lg">
+                            <TrendingUpIcon className="w-5 h-5 text-white" />
+                        </div>
+                        Últimas Noticias
                     </h2>
-                    <div className="space-y-4 overflow-y-auto pr-2 flex-1">
-                        {gameState.newsFeed.map(item => (
-                            <div key={item.id} className="group">
-                                <div className="flex justify-between items-start mb-1">
-                                    <p className="text-sm font-bold text-white group-hover:text-sky-300 transition-colors leading-tight">{item.headline}</p>
-                                    <span className="text-[10px] text-slate-500 whitespace-nowrap ml-2">{item.date}</span>
+                    <div className="space-y-3 overflow-y-auto pr-2 flex-1 custom-scrollbar">
+                        {gameState.newsFeed.map((item, idx) => (
+                            <div
+                                key={item.id}
+                                className="group relative bg-gradient-to-br from-slate-800/50 to-slate-800/30 hover:from-slate-800/80 hover:to-slate-800/60 border border-slate-700/50 hover:border-sky-500/50 rounded-lg p-4 transition-all duration-300 hover:shadow-lg hover:shadow-sky-500/10 cursor-pointer"
+                            >
+                                {/* Breaking news badge for first item */}
+                                {idx === 0 && (
+                                    <div className="absolute -top-2 -right-2 bg-gradient-to-r from-red-600 to-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg animate-pulse">
+                                        🔥 NUEVO
+                                    </div>
+                                )}
+
+                                <div className="flex justify-between items-start mb-2">
+                                    <p className="text-sm font-bold text-white group-hover:text-sky-300 transition-colors leading-tight pr-2">{item.headline}</p>
+                                    <span className="text-[10px] text-slate-500 whitespace-nowrap bg-slate-900/50 px-2 py-1 rounded">{item.date}</span>
                                 </div>
-                                <p className="text-xs text-slate-400 line-clamp-3">
+                                <p className="text-xs text-slate-400 group-hover:text-slate-300 line-clamp-2 transition-colors">
                                     <LinkedText text={item.body} players={allPlayers} onPlayerClick={handlePlayerClick} />
                                 </p>
-                                <div className="h-px bg-slate-800 mt-3 w-1/2"></div>
+
+                                {/* Decorative gradient line */}
+                                <div className="h-px bg-gradient-to-r from-transparent via-sky-500/30 to-transparent mt-3 group-hover:via-sky-500/60 transition-all"></div>
                             </div>
                         ))}
                     </div>

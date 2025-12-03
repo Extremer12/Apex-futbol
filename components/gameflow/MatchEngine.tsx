@@ -100,40 +100,48 @@ export const MatchEngine: React.FC<MatchEngineProps> = ({ homeTeam, awayTeam, ma
             </div>
 
             {/* Scoreboard */}
-            <div className="relative h-64 bg-gradient-to-b from-slate-800 to-slate-900 flex items-center justify-center overflow-hidden">
+            <div className="relative h-72 bg-gradient-to-b from-slate-800 via-slate-850 to-slate-900 flex items-center justify-center overflow-hidden">
                 {/* Background Logos Faded */}
                 <div className="absolute left-0 top-0 w-1/2 h-full opacity-5 flex items-center justify-center transform -translate-x-1/4">
-                    <div className="scale-[5] grayscale">{homeTeam.logo}</div>
+                    <div className="scale-[5] grayscale [&>svg]:max-w-full [&>svg]:max-h-full">{homeTeam.logo}</div>
                 </div>
                 <div className="absolute right-0 top-0 w-1/2 h-full opacity-5 flex items-center justify-center transform translate-x-1/4">
-                    <div className="scale-[5] grayscale">{awayTeam.logo}</div>
+                    <div className="scale-[5] grayscale [&>svg]:max-w-full [&>svg]:max-h-full">{awayTeam.logo}</div>
                 </div>
 
                 <div className="relative z-10 flex items-center gap-8 md:gap-16 w-full px-8">
                     {/* Home */}
                     <div className="flex-1 flex flex-col items-center text-center">
-                        <div className="transform scale-150 mb-4 shadow-2xl rounded-full">{homeTeam.logo}</div>
-                        <h2 className="text-2xl md:text-4xl font-black text-white tracking-tight" style={{ textShadow: `0 0 20px ${homeTeam.primaryColor}` }}>{homeTeam.name}</h2>
-                        <div className="text-sm font-bold text-slate-400 mt-1" style={{ color: homeTeam.primaryColor }}>{homeTeam.tactics}</div>
+                        <div className="w-20 h-20 flex items-center justify-center mb-4 transform hover:scale-110 transition-transform duration-300">
+                            <div className="w-full h-full flex items-center justify-center [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:object-contain [&>svg]:drop-shadow-2xl">
+                                {homeTeam.logo}
+                            </div>
+                        </div>
+                        <h2 className="text-xl md:text-3xl font-black text-white tracking-tight drop-shadow-lg">{homeTeam.name}</h2>
+                        <div className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider">{homeTeam.tactics}</div>
                     </div>
 
                     {/* Score */}
                     <div className="flex flex-col items-center">
-                        <div className="bg-slate-950 px-6 py-3 rounded-lg border border-slate-700 shadow-xl flex items-center gap-4">
-                            <span className="text-5xl md:text-7xl font-mono font-bold text-white">{homeScore}</span>
-                            <span className="text-slate-600 text-4xl">-</span>
-                            <span className="text-5xl md:text-7xl font-mono font-bold text-white">{awayScore}</span>
+                        <div className="bg-gradient-to-br from-slate-950 to-slate-900 px-8 py-4 rounded-xl border-2 border-slate-700 shadow-2xl flex items-center gap-4 backdrop-blur-sm">
+                            <span className="text-6xl md:text-8xl font-mono font-bold bg-gradient-to-br from-white to-slate-300 bg-clip-text text-transparent drop-shadow-lg">{homeScore}</span>
+                            <span className="text-slate-600 text-4xl font-bold">-</span>
+                            <span className="text-6xl md:text-8xl font-mono font-bold bg-gradient-to-br from-white to-slate-300 bg-clip-text text-transparent drop-shadow-lg">{awayScore}</span>
                         </div>
-                        <div className="mt-2 bg-red-600 text-white px-3 py-0.5 rounded text-sm font-bold animate-pulse">
+                        <div className="mt-3 bg-gradient-to-r from-red-600 to-red-500 text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-lg shadow-red-500/50 animate-pulse">
                             {minute}'
                         </div>
                     </div>
 
                     {/* Away */}
                     <div className="flex-1 flex flex-col items-center text-center">
-                        <div className="transform scale-150 mb-4 shadow-2xl rounded-full">{awayTeam.logo}</div>
-                        <h2 className="text-2xl md:text-4xl font-black text-white tracking-tight" style={{ textShadow: `0 0 20px ${awayTeam.primaryColor}` }}>{awayTeam.name}</h2>
-                        <div className="text-sm font-bold text-slate-400 mt-1" style={{ color: awayTeam.primaryColor }}>{awayTeam.tactics}</div>
+                        <div className="w-20 h-20 flex items-center justify-center mb-4 transform hover:scale-110 transition-transform duration-300">
+                            <div className="w-full h-full flex items-center justify-center [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:object-contain [&>svg]:drop-shadow-2xl">
+                                {awayTeam.logo}
+                            </div>
+                        </div>
+                        <h2 className="text-xl md:text-3xl font-black text-white tracking-tight drop-shadow-lg">{awayTeam.name}</h2>
+                        <div className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider">{awayTeam.tactics}</div>
                     </div>
                 </div>
             </div>

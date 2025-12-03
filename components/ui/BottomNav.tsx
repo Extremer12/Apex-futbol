@@ -15,7 +15,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeScreen, onNavigate }
         { screen: Screen.Dashboard, icon: DashboardIcon, label: 'Panel' },
         { screen: Screen.Squad, icon: SquadIcon, label: 'Plantilla' },
         { screen: Screen.Transfers, icon: TransfersIcon, label: 'Fichajes' },
-        { screen: Screen.League, icon: LeagueIcon, label: 'Ligas' },
+        { screen: Screen.League, icon: LeagueIcon, label: 'Competiciones' },
     ];
 
     // Secondary navigation items (in menu)
@@ -51,8 +51,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeScreen, onNavigate }
                                     key={item.screen}
                                     onClick={() => handleNavigate(item.screen)}
                                     className={`flex items-center gap-3 p-4 rounded-xl transition-all duration-200 ${activeScreen === item.screen
-                                            ? 'bg-sky-600 text-white shadow-lg shadow-sky-600/20'
-                                            : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700 hover:text-white'
+                                        ? 'bg-sky-600 text-white shadow-lg shadow-sky-600/20'
+                                        : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700 hover:text-white'
                                         }`}
                                 >
                                     <item.icon className="h-6 w-6" />

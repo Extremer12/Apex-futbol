@@ -200,8 +200,12 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                                             return (
                                                 <div key={mIdx} className="px-4 py-3 flex items-center justify-between hover:bg-slate-700/30 transition-colors">
                                                     <div className={`flex items-center gap-3 flex-1 justify-end ${winnerId === match.homeTeamId ? 'font-bold text-white' : 'text-slate-400'}`}>
-                                                        <span>{homeTeam?.name}</span>
-                                                        <div className="w-6 h-6">{homeTeam?.logo}</div>
+                                                        <span className="truncate">{homeTeam?.name}</span>
+                                                        <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
+                                                            <div className="w-full h-full flex items-center justify-center [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:object-contain">
+                                                                {homeTeam?.logo}
+                                                            </div>
+                                                        </div>
                                                     </div>
 
                                                     <div className="px-4 flex flex-col items-center min-w-[80px]">
@@ -222,8 +226,12 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                                                     </div>
 
                                                     <div className={`flex items-center gap-3 flex-1 ${winnerId === match.awayTeamId ? 'font-bold text-white' : 'text-slate-400'}`}>
-                                                        <div className="w-6 h-6">{awayTeam?.logo}</div>
-                                                        <span>{awayTeam?.name}</span>
+                                                        <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
+                                                            <div className="w-full h-full flex items-center justify-center [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:object-contain">
+                                                                {awayTeam?.logo}
+                                                            </div>
+                                                        </div>
+                                                        <span className="truncate">{awayTeam?.name}</span>
                                                     </div>
                                                 </div>
                                             );
