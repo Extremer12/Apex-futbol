@@ -197,21 +197,84 @@ const MatchDayCard: React.FC<{
 const QuickStats: React.FC<{ gameState: GameState }> = ({ gameState }) => {
     const playerTeamRow = gameState.leagueTable.find(row => row.teamId === gameState.team.id);
 
+    // Determine position zone
+    const getPositionZone = (position: number | undefined) => {
+        if (!position) return { label: '-', color: 'text-slate-400', bg: 'from-slate-700 to-slate-800' };
+        if (position <= 4) return { label: 'Champions', color: 'text-sky-400', bg: 'from-sky-900/50 to-sky-800/50' };
+        if (position <= 6) return { label: 'Europa', color: 'text-yellow-400', bg: 'from-yellow-900/50 to-yellow-800/50' };
+        if (position >= 18) return { label: 'Descenso', color: 'text-red-400', bg: 'from-red-900/50 to-red-800/50' };
+        return { label: 'Media Tabla', color: 'text-slate-400', bg: 'from-slate-700 to-slate-800' };
+    };
+
+    const positionZone = getPositionZone(playerTeamRow?.position);
+
     return (
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex justify-around items-center shadow-md">
-            <div className="text-center">
-                <div className="text-slate-400 text-xs uppercase font-bold mb-1">Confianza</div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Confidence Card */}
+            <div className="bg-gradient-to-br from-purple-900/40 to-pink-900/40 border-2 border-purple-500/30 rounded-xl p-5 hover:scale-105 hover:border-purple-500/50 transition-all duration-300 shadow-lg hover:shadow-purple-500/20">
+                <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center shadow-lg">
+                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                        </svg>
+                    </div>
+                    <span className="text-slate-300 text-sm font-semibold">Confianza</span>
+                </div>
+                <div className="text-4xl font-bold text-white mb-3">
+                    {gameState.chairmanConfidence}%
+                </div>
                 <ConfidenceMeter value={gameState.chairmanConfidence} />
+                <div className={`text-xs mt-2 ${gameState.chairmanConfidence >= 70 ? 'text-green-400' : gameState.chairmanConfidence >= 40 ? 'text-yellow-400' : 'text-red-400'}`}>
+                    {gameState.chairmanConfidence >= 70 ? '↑ Excelente' : gameState.chairmanConfidence >= 40 ? '→ Estable' : '↓ En riesgo'}
+                </div>
             </div>
-            <div className="h-8 w-px bg-slate-700"></div>
-            <div className="text-center">
-                <div className="text-slate-400 text-xs uppercase font-bold mb-1">Liga</div>
-                <div className="text-xl font-bold text-white">{playerTeamRow ? `${playerTeamRow.position}º` : '-'}</div>
+
+            {/* League Position Card */}
+            <div className={`bg-gradient-to-br ${positionZone.bg} border-2 border-sky-500/30 rounded-xl p-5 hover:scale-105 hover:border-sky-500/50 transition-all duration-300 shadow-lg hover:shadow-sky-500/20`}>
+                <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-sky-600 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
+                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                        </svg>
+                    </div>
+                    <span className="text-slate-300 text-sm font-semibold">Posición</span>
+                </div>
+                <div className="text-4xl font-bold text-white mb-3">
+                    {playerTeamRow ? `${playerTeamRow.position}º` : '-'}
+                </div>
+                <div className="h-1 bg-slate-800 rounded-full overflow-hidden mb-2">
+                    <div
+                        className={`h-full bg-gradient-to-r ${playerTeamRow && playerTeamRow.position <= 4 ? 'from-sky-500 to-blue-500' : playerTeamRow && playerTeamRow.position >= 18 ? 'from-red-500 to-red-600' : 'from-slate-500 to-slate-600'}`}
+                        style={{ width: `${playerTeamRow ? Math.max(5, 100 - (playerTeamRow.position * 5)) : 0}%` }}
+                    />
+                </div>
+                <div className={`text-xs ${positionZone.color} font-semibold`}>
+                    {positionZone.label}
+                </div>
             </div>
-            <div className="h-8 w-px bg-slate-700"></div>
-            <div className="text-center">
-                <div className="text-slate-400 text-xs uppercase font-bold mb-1">Fondos</div>
-                <div className="text-xl font-bold text-green-400">{formatCurrency(gameState.finances.transferBudget)}</div>
+
+            {/* Finances Card */}
+            <div className="bg-gradient-to-br from-green-900/40 to-emerald-900/40 border-2 border-green-500/30 rounded-xl p-5 hover:scale-105 hover:border-green-500/50 transition-all duration-300 shadow-lg hover:shadow-green-500/20">
+                <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-green-600 to-emerald-600 rounded-lg flex items-center justify-center shadow-lg">
+                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <span className="text-slate-300 text-sm font-semibold">Fondos</span>
+                </div>
+                <div className="text-3xl font-bold text-white mb-1">
+                    {formatCurrency(gameState.finances.transferBudget)}
+                </div>
+                <div className="text-xs text-slate-400">
+                    de {formatCurrency(gameState.finances.budget)} total
+                </div>
+                <div className="h-1 bg-slate-800 rounded-full overflow-hidden mt-2">
+                    <div
+                        className="h-full bg-gradient-to-r from-green-500 to-emerald-500"
+                        style={{ width: `${(gameState.finances.transferBudget / gameState.finances.budget) * 100}%` }}
+                    />
+                </div>
             </div>
         </div>
     );

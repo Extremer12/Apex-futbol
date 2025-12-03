@@ -12,8 +12,8 @@ interface MatchEngineProps {
 
 export const MatchEngine: React.FC<MatchEngineProps> = ({ homeTeam, awayTeam, matchPhase, finalResult, onMatchComplete }) => {
     const [minute, setMinute] = useState(0);
-    const [homeScore, setHomeScore] = useState(0);
-    const [awayScore, setAwayScore] = useState(0);
+    const [displayScore, setDisplayScore] = useState({ home: 0, away: 0 });
+    const [showingFinalScore, setShowingFinalScore] = useState(false);
     const [currentEvent, setCurrentEvent] = useState<string>('');
     const [commentary, setCommentary] = useState<string[]>([]);
     const [stats, setStats] = useState({ homePossession: 50, awayPossession: 50, homeShots: 0, awayShots: 0 });
@@ -41,7 +41,7 @@ export const MatchEngine: React.FC<MatchEngineProps> = ({ homeTeam, awayTeam, ma
                 const currentMinute = Math.min(90, Math.floor(step * minuteIncrement));
                 setMinute(currentMinute);
 
-                // Process events
+                // Add commentary events (but don't show goals in score yet)
                 const eventsNow = finalResult.events.filter(e => {
                     const eventMin = parseInt(e.split("'")[0]);
                     return eventMin === currentMinute;
@@ -50,10 +50,12 @@ export const MatchEngine: React.FC<MatchEngineProps> = ({ homeTeam, awayTeam, ma
                 if (eventsNow.length > 0) {
                     eventsNow.forEach(e => {
                         if (!commentary.includes(e)) {
-                            setCommentary(prev => [...prev, e]);
-                            setCurrentEvent(e);
-                            if (e.includes(`GOOOOL de ${homeTeam.name}`)) setHomeScore(s => s + 1);
-                            if (e.includes(`GOOOOL de ${awayTeam.name}`)) setAwayScore(s => s + 1);
+                            // Add to commentary but hide goal info
+                            const hiddenEvent = e.includes('GOOOOL')
+                                ? `${e.split("'")[0]}' ¡Ocasión de gol! El balón entra en la red...`
+                                : e;
+                            setCommentary(prev => [...prev, hiddenEvent]);
+                            setCurrentEvent(hiddenEvent);
                         }
                     });
                 }
@@ -71,20 +73,31 @@ export const MatchEngine: React.FC<MatchEngineProps> = ({ homeTeam, awayTeam, ma
                 if (step >= totalSteps) {
                     clearInterval(timer);
                     setMinute(90);
-                    setHomeScore(finalResult.homeScore);
-                    setAwayScore(finalResult.awayScore);
-                    setCurrentEvent("¡FINAL DEL PARTIDO!");
-                    setTimeout(onMatchComplete, 2000);
+                    setCurrentEvent("¡PITIDO FINAL!");
+
+                    // Dramatic score reveal after a brief pause
+                    setTimeout(() => {
+                        setShowingFinalScore(true);
+                        setDisplayScore({ home: finalResult.homeScore, away: finalResult.awayScore });
+
+                        // Add final score to commentary
+                        setCommentary(prev => [
+                            ...prev,
+                            `90' ¡FINAL DEL PARTIDO! ${homeTeam.name} ${finalResult.homeScore} - ${finalResult.awayScore} ${awayTeam.name}`
+                        ]);
+                    }, 500);
+
+                    setTimeout(onMatchComplete, 3000);
                 }
             }, interval);
 
             return () => clearInterval(timer);
         } else if (matchPhase === 'PRE') {
             setMinute(0);
-            setHomeScore(0);
-            setAwayScore(0);
+            setDisplayScore({ home: 0, away: 0 });
+            setShowingFinalScore(false);
             setCommentary([]);
-            setCurrentEvent("Esperando inicio...");
+            setCurrentEvent("");
         }
     }, [matchPhase, finalResult]);
 
@@ -123,13 +136,17 @@ export const MatchEngine: React.FC<MatchEngineProps> = ({ homeTeam, awayTeam, ma
 
                     {/* Score */}
                     <div className="flex flex-col items-center">
-                        <div className="bg-gradient-to-br from-slate-950 to-slate-900 px-8 py-4 rounded-xl border-2 border-slate-700 shadow-2xl flex items-center gap-4 backdrop-blur-sm">
-                            <span className="text-6xl md:text-8xl font-mono font-bold bg-gradient-to-br from-white to-slate-300 bg-clip-text text-transparent drop-shadow-lg">{homeScore}</span>
+                        <div className={`bg-gradient-to-br from-slate-950 to-slate-900 px-8 py-4 rounded-xl border-2 ${showingFinalScore ? 'border-yellow-500 shadow-2xl shadow-yellow-500/30' : 'border-slate-700'} flex items-center gap-4 backdrop-blur-sm transition-all duration-500`}>
+                            <span className={`text-6xl md:text-8xl font-mono font-bold bg-gradient-to-br from-white to-slate-300 bg-clip-text text-transparent drop-shadow-lg ${showingFinalScore ? 'animate-pulse' : ''}`}>
+                                {displayScore.home}
+                            </span>
                             <span className="text-slate-600 text-4xl font-bold">-</span>
-                            <span className="text-6xl md:text-8xl font-mono font-bold bg-gradient-to-br from-white to-slate-300 bg-clip-text text-transparent drop-shadow-lg">{awayScore}</span>
+                            <span className={`text-6xl md:text-8xl font-mono font-bold bg-gradient-to-br from-white to-slate-300 bg-clip-text text-transparent drop-shadow-lg ${showingFinalScore ? 'animate-pulse' : ''}`}>
+                                {displayScore.away}
+                            </span>
                         </div>
-                        <div className="mt-3 bg-gradient-to-r from-red-600 to-red-500 text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-lg shadow-red-500/50 animate-pulse">
-                            {minute}'
+                        <div className={`mt-3 ${minute >= 90 ? 'bg-gradient-to-r from-green-600 to-green-500' : 'bg-gradient-to-r from-red-600 to-red-500'} text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-lg ${minute >= 90 ? 'shadow-green-500/50' : 'shadow-red-500/50 animate-pulse'}`}>
+                            {minute >= 90 ? 'FINAL' : `${minute}'`}
                         </div>
                     </div>
 
@@ -146,31 +163,82 @@ export const MatchEngine: React.FC<MatchEngineProps> = ({ homeTeam, awayTeam, ma
                 </div>
             </div>
 
-            {/* Stats Bar */}
-            <div className="bg-slate-950 py-2 px-4 flex justify-between text-xs font-mono text-slate-400 border-y border-slate-800">
-                <div className="flex gap-4">
-                    <span>POS: <span className="text-white">{Math.round(stats.homePossession)}%</span></span>
-                    <span>TIROS: <span className="text-white">{stats.homeShots}</span></span>
+            {/* Enhanced Stats Panel */}
+            <div className="bg-slate-950 py-4 px-6 border-y border-slate-800">
+                {/* Possession Bar */}
+                <div className="mb-4">
+                    <div className="flex justify-between items-center mb-2">
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Posesión</span>
+                        <span className="text-xs font-mono text-slate-500">{Math.round(stats.homePossession)}% - {Math.round(stats.awayPossession)}%</span>
+                    </div>
+                    <div className="relative h-3 bg-slate-800 rounded-full overflow-hidden">
+                        <div
+                            className="absolute left-0 top-0 h-full bg-gradient-to-r from-sky-500 to-sky-400 transition-all duration-500 ease-out"
+                            style={{ width: `${stats.homePossession}%` }}
+                        />
+                        <div
+                            className="absolute right-0 top-0 h-full bg-gradient-to-l from-purple-500 to-purple-400 transition-all duration-500 ease-out"
+                            style={{ width: `${stats.awayPossession}%` }}
+                        />
+                        <div className="absolute left-1/2 top-0 w-0.5 h-full bg-slate-950 transform -translate-x-1/2" />
+                    </div>
                 </div>
-                <div className="flex gap-4">
-                    <span>POS: <span className="text-white">{Math.round(stats.awayPossession)}%</span></span>
-                    <span>TIROS: <span className="text-white">{stats.awayShots}</span></span>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                        <div className="text-2xl font-bold text-white">{stats.homeShots}</div>
+                        <div className="text-[10px] text-slate-500 uppercase tracking-wider">Tiros</div>
+                    </div>
+                    <div className="border-x border-slate-800">
+                        <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Estadísticas</div>
+                        <div className="text-[10px] text-slate-600">En Vivo</div>
+                    </div>
+                    <div>
+                        <div className="text-2xl font-bold text-white">{stats.awayShots}</div>
+                        <div className="text-[10px] text-slate-500 uppercase tracking-wider">Tiros</div>
+                    </div>
                 </div>
             </div>
 
-            {/* Commentary Feed */}
-            <div className="h-48 bg-slate-900 p-4 overflow-y-auto scroll-smooth" ref={commentaryScrollRef}>
+            {/* Commentary Feed with Timeline */}
+            <div className="h-52 bg-gradient-to-b from-slate-900 to-slate-950 p-4 overflow-y-auto scroll-smooth" ref={commentaryScrollRef}>
                 {commentary.length === 0 ? (
-                    <div className="h-full flex items-center justify-center text-slate-600 italic">
-                        El partido está por comenzar...
+                    <div className="h-full flex flex-col items-center justify-center text-slate-600">
+                        <div className="w-16 h-16 border-4 border-slate-800 border-t-sky-500 rounded-full animate-spin mb-4" />
+                        <p className="text-sm font-semibold animate-pulse">Calentamiento previo...</p>
+                        <p className="text-xs mt-2">Los equipos están listos</p>
                     </div>
                 ) : (
-                    <div className="space-y-2">
-                        {commentary.map((line, i) => (
-                            <div key={i} className={`text-sm p-2 rounded ${line.includes('GOOOOL') ? 'bg-green-900/30 text-green-400 font-bold border-l-4 border-green-500' : line.includes('Tarjeta') ? 'bg-yellow-900/20 text-yellow-200 border-l-4 border-yellow-500' : 'text-slate-300'}`}>
-                                {line}
-                            </div>
-                        ))}
+                    <div className="space-y-3">
+                        {commentary.map((line, i) => {
+                            const isGoal = line.includes('GOOOOL') || line.includes('¡Ocasión de gol!');
+                            const isCard = line.includes('Tarjeta');
+                            const isFinal = line.includes('FINAL DEL PARTIDO');
+
+                            return (
+                                <div
+                                    key={i}
+                                    className={`relative pl-8 pb-3 ${i !== commentary.length - 1 ? 'border-l-2 border-slate-800' : ''}`}
+                                >
+                                    {/* Timeline dot */}
+                                    <div className={`absolute left-0 top-0 w-4 h-4 rounded-full border-2 ${isFinal ? 'bg-yellow-500 border-yellow-400 shadow-lg shadow-yellow-500/50 animate-pulse' :
+                                            isGoal ? 'bg-green-500 border-green-400 shadow-lg shadow-green-500/50' :
+                                                isCard ? 'bg-yellow-500 border-yellow-400' :
+                                                    'bg-slate-700 border-slate-600'
+                                        } transform -translate-x-[9px]`} />
+
+                                    {/* Commentary text */}
+                                    <div className={`text-sm p-3 rounded-lg ${isFinal ? 'bg-yellow-900/30 text-yellow-300 font-bold border-l-4 border-yellow-500 shadow-lg' :
+                                            isGoal ? 'bg-green-900/30 text-green-300 font-bold border-l-4 border-green-500 shadow-lg' :
+                                                isCard ? 'bg-yellow-900/20 text-yellow-200 border-l-4 border-yellow-500' :
+                                                    'bg-slate-800/50 text-slate-300'
+                                        }`}>
+                                        {line}
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
             </div>

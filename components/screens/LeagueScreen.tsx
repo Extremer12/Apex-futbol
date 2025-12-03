@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { GameState, CupCompetition, LeagueTableRow } from '../../types';
 import { TeamForm } from '../ui/TeamForm';
-import { TrophyIcon } from '../icons';
+import { TrophyIcon } from '../icons';mej 
 
 interface LeagueScreenProps {
     gameState: GameState;
