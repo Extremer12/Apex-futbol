@@ -51,10 +51,10 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                         </p>
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-6">
+                    <div className="grid md:grid-cols-3 gap-6">
                         {/* Premier League Card */}
                         <button
-                            onClick={() => setSelectedLeague('PREMIER_LEAGUE')}
+                            onClick={() => setSelectedLeague(LeagueId.PREMIER_LEAGUE)}
                             className="group relative bg-gradient-to-br from-purple-900/40 to-slate-900/40 border-2 border-purple-500/30 rounded-2xl p-8 hover:border-purple-500/60 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20"
                         >
                             <div className="absolute inset-0 bg-gradient-to-br from-purple-600/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -86,14 +86,18 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
 
                         {/* Championship Card */}
                         <button
-                            onClick={() => setSelectedLeague('CHAMPIONSHIP')}
+                            onClick={() => setSelectedLeague(LeagueId.CHAMPIONSHIP)}
                             className="group relative bg-gradient-to-br from-sky-900/40 to-slate-900/40 border-2 border-sky-500/30 rounded-2xl p-8 hover:border-sky-500/60 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-sky-500/20"
                         >
                             <div className="absolute inset-0 bg-gradient-to-br from-sky-600/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
 
                             <div className="relative">
-                                <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-sky-600 to-sky-800 rounded-2xl flex items-center justify-center shadow-lg">
-                                    <span className="text-white font-bold text-2xl">CH</span>
+                                <div className="w-20 h-20 mx-auto mb-6">
+                                    <img
+                                        src="/logos/Sky Bet Championship.png"
+                                        alt="Championship"
+                                        className="w-full h-full object-contain drop-shadow-2xl"
+                                    />
                                 </div>
 
                                 <h2 className="text-3xl font-bold text-white mb-3">
@@ -108,6 +112,34 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                                     <span className="font-semibold">24 Equipos</span>
                                     <span>•</span>
                                     <span>Segunda División</span>
+                                </div>
+                            </div>
+                        </button>
+
+                        {/* La Liga Card */}
+                        <button
+                            onClick={() => setSelectedLeague(LeagueId.LA_LIGA)}
+                            className="group relative bg-gradient-to-br from-orange-900/40 to-slate-900/40 border-2 border-orange-500/30 rounded-2xl p-8 hover:border-orange-500/60 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-orange-500/20"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-br from-orange-600/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                            <div className="relative">
+                                <div className="w-20 h-20 mx-auto mb-6 flex items-center justify-center">
+                                    <span className="text-5xl">🇪🇸</span>
+                                </div>
+
+                                <h2 className="text-3xl font-bold text-white mb-3">
+                                    La Liga
+                                </h2>
+
+                                <p className="text-slate-300 mb-4">
+                                    Técnica y pasión española
+                                </p>
+
+                                <div className="flex items-center justify-center gap-2 text-sm text-orange-400">
+                                    <span className="font-semibold">20 Equipos</span>
+                                    <span>•</span>
+                                    <span>Primera División</span>
                                 </div>
                             </div>
                         </button>
@@ -136,20 +168,26 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
             {/* League Header */}
             <div className='text-center my-8'>
                 <div className="flex items-center justify-center gap-4 mb-4">
-                    {selectedLeague === 'PREMIER_LEAGUE' ? (
+                    {selectedLeague === LeagueId.PREMIER_LEAGUE ? (
                         <img
                             src="/logos/Premier League.png"
                             alt="Premier League"
                             className="w-20 h-20 object-contain drop-shadow-2xl"
                         />
+                    ) : selectedLeague === LeagueId.CHAMPIONSHIP ? (
+                        <img
+                            src="/logos/Sky Bet Championship.png"
+                            alt="Championship"
+                            className="w-20 h-20 object-contain drop-shadow-2xl"
+                        />
                     ) : (
-                        <div className="w-20 h-20 bg-gradient-to-br from-sky-600 to-sky-800 rounded-2xl flex items-center justify-center shadow-lg">
-                            <span className="text-white font-bold text-3xl">CH</span>
+                        <div className="w-20 h-20 flex items-center justify-center">
+                            <span className="text-5xl">🇪🇸</span>
                         </div>
                     )}
                 </div>
                 <h1 className="text-4xl sm:text-5xl font-bold mb-3 bg-gradient-to-r from-purple-400 via-purple-300 to-white bg-clip-text text-transparent">
-                    {selectedLeague === 'PREMIER_LEAGUE' ? 'Premier League' : 'Championship'}
+                    {selectedLeague === LeagueId.PREMIER_LEAGUE ? 'Premier League' : selectedLeague === LeagueId.CHAMPIONSHIP ? 'Championship' : 'La Liga'}
                 </h1>
                 <p className="text-slate-300 text-lg">Elige un club para presentarte a presidente</p>
             </div>

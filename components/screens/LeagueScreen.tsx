@@ -7,7 +7,7 @@ interface LeagueScreenProps {
     gameState: GameState;
 }
 
-type Tab = 'PREMIER_LEAGUE' | 'CHAMPIONSHIP' | 'FA_CUP' | 'CARABAO_CUP';
+type Tab = 'PREMIER_LEAGUE' | 'CHAMPIONSHIP' | 'LA_LIGA' | 'FA_CUP' | 'CARABAO_CUP';
 
 export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
     const [activeTab, setActiveTab] = useState<Tab>('PREMIER_LEAGUE');
@@ -22,8 +22,8 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                 {logoPath ? (
                     <img src={logoPath} alt={title} className="w-10 h-10 object-contain drop-shadow-md" />
                 ) : (
-                    <div className="w-10 h-10 bg-gradient-to-br from-sky-600 to-sky-700 rounded-lg flex items-center justify-center">
-                        <span className="text-white font-bold text-xs">CH</span>
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${title === 'La Liga' ? 'bg-gradient-to-br from-orange-600 to-orange-700' : 'bg-gradient-to-br from-sky-600 to-sky-700'}`}>
+                        <span className="text-white font-bold text-xs">{title === 'La Liga' ? 'ES' : 'CH'}</span>
                     </div>
                 )}
                 <h3 className="text-white font-bold text-lg uppercase tracking-wider">{title}</h3>
@@ -337,6 +337,12 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                     Championship
                 </button>
                 <button
+                    onClick={() => setActiveTab('LA_LIGA')}
+                    className={`flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all duration-200 ${activeTab === 'LA_LIGA' ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                >
+                    La Liga
+                </button>
+                <button
                     onClick={() => setActiveTab('FA_CUP')}
                     className={`flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all duration-200 ${activeTab === 'FA_CUP' ? 'bg-yellow-600 text-white shadow-lg shadow-yellow-600/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
                 >
@@ -354,6 +360,7 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
             <div className="min-h-[500px]">
                 {activeTab === 'PREMIER_LEAGUE' && renderLeagueTable(gameState.leagueTable, 'Premier League', '/logos/Premier League.png', true)}
                 {activeTab === 'CHAMPIONSHIP' && renderLeagueTable(gameState.championshipTable, 'EFL Championship', '/logos/Sky Bet Championship.png', false)}
+                {activeTab === 'LA_LIGA' && renderLeagueTable(gameState.laLigaTable, 'La Liga', '', false)}
                 {activeTab === 'FA_CUP' && renderCupView(gameState.cups.faCup, '/logos/The Emirates FA Cup.png')}
                 {activeTab === 'CARABAO_CUP' && renderCupView(gameState.cups.carabaoCup, '/logos/carabao_cup_logo.png')}
             </div>

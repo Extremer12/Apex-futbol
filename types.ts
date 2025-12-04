@@ -20,6 +20,7 @@ export interface Player {
 export enum LeagueId {
   PREMIER_LEAGUE = 'PREMIER_LEAGUE',
   CHAMPIONSHIP = 'CHAMPIONSHIP',
+  LA_LIGA = 'LA_LIGA',
 }
 
 export interface Team {
@@ -204,6 +205,7 @@ export interface GameState {
   schedule: Match[];
   leagueTable: LeagueTableRow[]; // Premier League
   championshipTable: LeagueTableRow[]; // Championship
+  laLigaTable: LeagueTableRow[]; // La Liga
   finances: {
     balance: number;
     transferBudget: number;

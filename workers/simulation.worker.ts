@@ -1,7 +1,7 @@
 // Web Worker for match simulation
 // This runs in a separate thread to prevent UI freezing
 
-import { Team, LeagueTableRow, Match } from '../types';
+import { Team, LeagueTableRow, Match, Morale } from '../types';
 
 interface SimulationInput {
     type: 'SIMULATE_WEEK';
@@ -10,6 +10,7 @@ interface SimulationInput {
         schedule: Match[];
         leagueTable: LeagueTableRow[];
         championshipTable: LeagueTableRow[];
+        laLigaTable: LeagueTableRow[];
         allTeams: Team[];
         playerTeamId: number;
         cups: {
@@ -29,6 +30,7 @@ interface SimulationOutput {
         updatedSchedule: Match[];
         updatedLeagueTable: LeagueTableRow[];
         updatedChampionshipTable: LeagueTableRow[];
+        updatedLaLigaTable: LeagueTableRow[];
         updatedAllTeams: Team[];
         confidenceChange: number;
         playerMatchResult: { homeScore: number; awayScore: number; penalties?: { home: number; away: number } } | null;
@@ -37,6 +39,27 @@ interface SimulationOutput {
             carabaoCup: any;
         };
     };
+}
+
+// Helper to convert Morale string to number
+function getMoraleValue(morale: Morale): number {
+    switch (morale) {
+        case 'Feliz': return 90;
+        case 'Contento': return 75;
+        case 'Normal': return 50;
+        case 'Descontento': return 25;
+        case 'Enojado': return 10;
+        default: return 50;
+    }
+}
+
+// Helper to convert number to Morale string
+function getMoraleLabel(value: number): Morale {
+    if (value >= 85) return 'Feliz';
+    if (value >= 65) return 'Contento';
+    if (value >= 40) return 'Normal';
+    if (value >= 20) return 'Descontento';
+    return 'Enojado';
 }
 
 // Simple match simulation logic (extracted from App.tsx)
@@ -56,8 +79,9 @@ function simulateMatch(
     const adjustedHomeStrength = homeStrength + homeAdvantage;
 
     // Morale impact
-    const homeMoraleBonus = (homeTeam.teamMorale - 50) / 10;
-    const awayMoraleBonus = (awayTeam.teamMorale - 50) / 10;
+    // Morale impact
+    const homeMoraleBonus = (getMoraleValue(homeTeam.teamMorale) - 50) / 10;
+    const awayMoraleBonus = (getMoraleValue(awayTeam.teamMorale) - 50) / 10;
 
     // Form impact
     const homeFormBonus = homeRow.form.slice(0, 5).filter(r => r === 'W').length * 2;
@@ -96,13 +120,16 @@ function simulateMatch(
     return { homeScore, awayScore };
 }
 
-function updateTeamMorale(currentMorale: number, result: 'W' | 'D' | 'L'): number {
+function updateTeamMorale(currentMorale: Morale, result: 'W' | 'D' | 'L'): Morale {
     let change = 0;
     if (result === 'W') change = 5;
     else if (result === 'D') change = 0;
     else change = -5;
 
-    return Math.max(0, Math.min(100, currentMorale + change));
+    const currentValue = getMoraleValue(currentMorale);
+    const newValue = Math.max(0, Math.min(100, currentValue + change));
+
+    return getMoraleLabel(newValue);
 }
 
 // Worker message handler
@@ -115,6 +142,7 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
             schedule,
             leagueTable,
             championshipTable,
+            laLigaTable,
             allTeams,
             playerTeamId,
             cups,
@@ -129,6 +157,9 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
         );
         const updatedChampionshipTable = new Map<number, LeagueTableRow>(
             championshipTable.map(row => [row.teamId, { ...row, form: [...row.form] }])
+        );
+        const updatedLaLigaTable = new Map<number, LeagueTableRow>(
+            laLigaTable.map(row => [row.teamId, { ...row, form: [...row.form] }])
         );
 
         let updatedAllTeams = allTeams.map(t => ({ ...t }));
@@ -156,6 +187,9 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                     if (homeTeam.leagueId === 'PREMIER_LEAGUE') {
                         homeRow = updatedLeagueTable.get(match.homeTeamId);
                         awayRow = updatedLeagueTable.get(match.awayTeamId);
+                    } else if (homeTeam.leagueId === 'LA_LIGA') {
+                        homeRow = updatedLaLigaTable.get(match.homeTeamId);
+                        awayRow = updatedLaLigaTable.get(match.awayTeamId);
                     } else {
                         homeRow = updatedChampionshipTable.get(match.homeTeamId);
                         awayRow = updatedChampionshipTable.get(match.awayTeamId);
@@ -275,6 +309,7 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                 updatedSchedule: newSchedule,
                 updatedLeagueTable: Array.from(updatedLeagueTable.values()),
                 updatedChampionshipTable: Array.from(updatedChampionshipTable.values()),
+                updatedLaLigaTable: Array.from(updatedLaLigaTable.values()),
                 updatedAllTeams,
                 confidenceChange,
                 playerMatchResult,

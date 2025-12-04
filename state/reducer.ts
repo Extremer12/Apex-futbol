@@ -18,7 +18,7 @@ export type GameAction =
     | { type: 'LOAD_GAME'; payload: GameState }
     | { type: 'RESET_GAME' }
     | { type: 'ADVANCE_WEEK_START' }
-    | { type: 'ADVANCE_WEEK_SUCCESS'; payload: { newsItems: NewsItem[]; newSchedule: Match[]; newLeagueTable: LeagueTableRow[]; newChampionshipTable: LeagueTableRow[]; newAllTeams: Team[]; newConfidence: number; newOffers: Offer[]; newCups?: { faCup: any; carabaoCup: any } } }
+    | { type: 'ADVANCE_WEEK_SUCCESS'; payload: { newsItems: NewsItem[]; newSchedule: Match[]; newLeagueTable: LeagueTableRow[]; newChampionshipTable: LeagueTableRow[]; newLaLigaTable: LeagueTableRow[]; newAllTeams: Team[]; newConfidence: number; newOffers: Offer[]; newCups?: { faCup: any; carabaoCup: any } } }
     | { type: 'START_NEW_SEASON' }
     | { type: 'TRIGGER_ELECTION' }
     | { type: 'ELECTION_RESULT'; payload: { won: boolean; newApproval: number } }
@@ -77,6 +77,7 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
             // Separate teams by league for initial tables
             const plTeams = allTeamsCopy.filter(t => t.leagueId === 'PREMIER_LEAGUE');
             const chTeams = allTeamsCopy.filter(t => t.leagueId === 'CHAMPIONSHIP');
+            const laTeams = allTeamsCopy.filter(t => t.leagueId === 'LA_LIGA');
 
             // Generate Initial Cup Draws
             const faCupRound1 = generateCupDraw(allTeamsCopy, 'Round 1', 'FA_Cup');
@@ -99,6 +100,7 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 schedule: initialSchedule,
                 leagueTable: createInitialLeagueTable(plTeams),
                 championshipTable: createInitialLeagueTable(chTeams),
+                laLigaTable: createInitialLeagueTable(laTeams),
                 finances: { balance: team.budget, transferBudget: team.transferBudget, weeklyIncome, weeklyWages: totalWages, balanceHistory: [team.budget] },
 
                 // Political System
@@ -218,7 +220,7 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
 
         case 'ADVANCE_WEEK_SUCCESS': {
             if (!state) return null;
-            const { newsItems, newSchedule, newLeagueTable, newChampionshipTable, newAllTeams, newConfidence, newOffers, newCups } = action.payload;
+            const { newsItems, newSchedule, newLeagueTable, newChampionshipTable, newLaLigaTable, newAllTeams, newConfidence, newOffers, newCups } = action.payload;
 
             // Update player team from newAllTeams
             const updatedPlayerTeam = newAllTeams.find(t => t.id === state.team.id)!;
@@ -249,6 +251,7 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 schedule: newSchedule,
                 leagueTable: newLeagueTable,
                 championshipTable: newChampionshipTable,
+                laLigaTable: newLaLigaTable,
                 allTeams: newAllTeams,
                 team: updatedPlayerTeam,
                 boardConfidence: newConfidence,
@@ -325,9 +328,11 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
             const newSeasonSchedule = generateSeasonSchedule(teamsAfterProRel);
             const newPlTeams = teamsAfterProRel.filter(t => t.leagueId === 'PREMIER_LEAGUE');
             const newChTeams = teamsAfterProRel.filter(t => t.leagueId === 'CHAMPIONSHIP');
+            const newLaTeams = teamsAfterProRel.filter(t => t.leagueId === 'LA_LIGA');
 
             const newLeagueTable = createInitialLeagueTable(newPlTeams);
             const newChampionshipTable = createInitialLeagueTable(newChTeams);
+            const newLaLigaTable = createInitialLeagueTable(newLaTeams);
 
             // Generate New Cup Draws
             const faCupRound1 = generateCupDraw(teamsAfterProRel, 'Round 1', 'FA_Cup');
@@ -364,6 +369,7 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 schedule: fullSchedule,
                 leagueTable: newLeagueTable,
                 championshipTable: newChampionshipTable,
+                laLigaTable: newLaLigaTable,
                 newsFeed: [proRelNews, seasonNews, ...state.newsFeed].slice(0, 20),
                 // Update Mandate Year and Check for Elections
                 mandate: {
@@ -737,7 +743,7 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 const newSponsors = state.sponsors.map(s =>
                     s.type === sponsor.type ? sponsor : s
                 );
-                const newMarket = state.availableSponsors.filter(s => s.id !== sponsorId);
+                const newMarket = state.availableSponsors.filter(s => s.id !== sponsorId && s.type !== sponsor.type);
 
                 return {
                     ...state,
@@ -753,7 +759,7 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
             }
 
             // Add new sponsor
-            const newMarket = state.availableSponsors.filter(s => s.id !== sponsorId);
+            const newMarket = state.availableSponsors.filter(s => s.id !== sponsorId && s.type !== sponsor.type);
 
             return {
                 ...state,

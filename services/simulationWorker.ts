@@ -7,6 +7,7 @@ interface SimulationResult {
     updatedSchedule: Match[];
     updatedLeagueTable: LeagueTableRow[];
     updatedChampionshipTable: LeagueTableRow[];
+    updatedLaLigaTable: LeagueTableRow[];
     updatedAllTeams: Team[];
     confidenceChange: number;
     playerMatchResult: { homeScore: number; awayScore: number; penalties?: { home: number; away: number } } | null;
@@ -56,7 +57,8 @@ class SimulationWorkerManager {
                     schedule: gameState.schedule,
                     leagueTable: gameState.leagueTable,
                     championshipTable: gameState.championshipTable || [],
-                    allTeams: gameState.allTeams,
+                    laLigaTable: gameState.laLigaTable || [],
+                    allTeams: gameState.allTeams.map(t => ({ ...t, logo: undefined })),
                     playerTeamId: gameState.team.id,
                     cups: gameState.cups,
                     finances: gameState.finances

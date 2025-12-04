@@ -233,13 +233,15 @@ const generateLeagueSchedule = (teams: Team[], leagueId: string): Match[] => {
 export const generateSeasonSchedule = (allTeams: Team[]): Match[] => {
     const premierLeagueTeams = allTeams.filter(t => t.leagueId === 'PREMIER_LEAGUE');
     const championshipTeams = allTeams.filter(t => t.leagueId === 'CHAMPIONSHIP');
+    const laLigaTeams = allTeams.filter(t => t.leagueId === 'LA_LIGA');
 
     const plSchedule = generateLeagueSchedule(premierLeagueTeams, 'PREMIER_LEAGUE');
     const chSchedule = generateLeagueSchedule(championshipTeams, 'CHAMPIONSHIP');
+    const laSchedule = generateLeagueSchedule(laLigaTeams, 'LA_LIGA');
 
     // Merge schedules. Since Championship has more games (46 rounds vs 38), 
     // we just append them. The game loop handles weeks globally.
-    return [...plSchedule, ...chSchedule];
+    return [...plSchedule, ...chSchedule, ...laSchedule];
 };
 
 export const generateCupDraw = (teams: Team[], roundName: string, competition: 'FA_Cup' | 'Carabao_Cup' = 'FA_Cup'): Match[] => {
