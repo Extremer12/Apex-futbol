@@ -15,11 +15,14 @@ import { MainLayout } from './components/MainLayout';
 import { PlayerDetailModal } from './components/ui/PlayerDetailModal';
 import { SaveGameModal } from './components/ui/SaveGameModal';
 import { Notification } from './components/ui/Notification';
+import { EventModal } from './components/ui/EventModal';
 
 // Services
 import { ElectionResponse, generateNews, generateMatchReport, generateTransferOffer, generatePlayerOfTheWeekNews, generateImportantNews } from './services/gameLogic';
-import { updateTeamMorale, simulateMatch, advanceCupRound } from './services/simulation';
+import { advanceCupRound } from './services/simulation';
 import { formatDate } from './utils';
+import { simulationWorker } from './services/simulationWorker';
+import { eventEngine, TriggeredEvent } from './services/eventEngine';
 
 
 type AppStateType = 'START_SCREEN' | 'LOAD_GAME' | 'PROFILE_CREATION' | 'TEAM_SELECTION' | 'ELECTION_PITCH' | 'ELECTION_RESULT' | 'GAME_ACTIVE' | 'GAME_OVER';
@@ -49,6 +52,10 @@ function AppLogic() {
     // Match Simulation State
     const [matchPhase, setMatchPhase] = useState<MatchPhase>('PRE');
     const [pendingResults, setPendingResults] = useState<PendingSimulationResults | null>(null);
+    const [isSimulating, setIsSimulating] = useState(false);
+
+    // Event System State
+    const [currentEvent, setCurrentEvent] = useState<TriggeredEvent | null>(null);
 
     // Save state
     const [currentSaveId, setCurrentSaveId] = useState<string | null>(null);
@@ -210,265 +217,140 @@ function AppLogic() {
     }, [resetGameData]);
 
     const handlePlayMatch = useCallback(async () => {
-        if (!gameState) return;
+        if (!gameState || isSimulating) return;
 
-        const newWeek = gameState.currentWeek + 1;
-        const newSchedule = [...gameState.schedule];
+        try {
+            setIsSimulating(true);
+            setMatchPhase('LIVE');
 
-        const updatedLeagueTable = new Map<number, LeagueTableRow>(
-            gameState.leagueTable.map(row => [row.teamId, { ...row, form: [...row.form] }] as [number, LeagueTableRow])
-        );
-        const updatedChampionshipTable = new Map<number, LeagueTableRow>(
-            (gameState.championshipTable || []).map(row => [row.teamId, { ...row, form: [...row.form] }] as [number, LeagueTableRow])
-        );
+            // Use Web Worker for heavy simulation
+            const simulationResult = await simulationWorker.simulateWeek(gameState);
 
-        let updatedAllTeams = gameState.allTeams.map(t => ({ ...t }));
-        const matchesThisWeek = newSchedule.filter(m => m.week === newWeek);
+            // Generate news and offers (still on main thread, but lighter)
+            const newDate = new Date(gameState.currentDate);
+            newDate.setDate(newDate.getDate() + 7);
 
-        let updatedFaCup = gameState.cups.faCup;
-        let updatedCarabaoCup = gameState.cups.carabaoCup;
+            const newsToAdd: NewsItem[] = [];
+            const newWeek = gameState.currentWeek + 1;
+            const playerMatch = simulationResult.updatedSchedule.find(m => m.week === newWeek && (m.homeTeamId === gameState.team.id || m.awayTeamId === gameState.team.id));
 
-        const weeklyNet = (gameState.finances.weeklyIncome - gameState.finances.weeklyWages) / 1_000_000;
-        let confidenceChange = weeklyNet > 0 ? 1 : -1;
+            if (playerMatch && playerMatch.result) {
+                const isHome = playerMatch.homeTeamId === gameState.team.id;
+                const opponent = gameState.allTeams.find(t => t.id === (isHome ? playerMatch.awayTeamId : playerMatch.homeTeamId))!;
+                const myScore = isHome ? playerMatch.result.homeScore : playerMatch.result.awayScore;
+                const oppScore = isHome ? playerMatch.result.awayScore : playerMatch.result.homeScore;
 
-        let playerMatchResult: { homeScore: number, awayScore: number, penalties?: { home: number, away: number } } | null = null;
+                const isThrashing = (myScore - oppScore) >= 3;
+                const isBadLoss = (oppScore - myScore) >= 3;
+                const isUpset = myScore > oppScore && gameState.team.tier === 'Lower' && opponent.tier === 'Top';
 
-        if (matchesThisWeek.length > 0) {
-            matchesThisWeek.forEach(match => {
-                if (match.result) return;
-
-                const homeTeam = updatedAllTeams.find(t => t.id === match.homeTeamId)!;
-                const awayTeam = updatedAllTeams.find(t => t.id === match.awayTeamId)!;
-
-                let homeRow: LeagueTableRow | undefined;
-                let awayRow: LeagueTableRow | undefined;
-
-                if (!match.isCupMatch) {
-                    if (homeTeam.leagueId === 'PREMIER_LEAGUE') {
-                        homeRow = updatedLeagueTable.get(match.homeTeamId);
-                        awayRow = updatedLeagueTable.get(match.awayTeamId);
-                    } else {
-                        homeRow = updatedChampionshipTable.get(match.homeTeamId);
-                        awayRow = updatedChampionshipTable.get(match.awayTeamId);
-                    }
+                if (isThrashing || isBadLoss || isUpset) {
+                    const context = isUpset ? "Victoria histórica de un equipo pequeño contra un gigante." : isThrashing ? "Una goleada espectacular." : "Una derrota humillante.";
+                    const detail = `El ${gameState.team.name} quedó ${myScore}-${oppScore} contra el ${opponent.name}.`;
+                    const aiReport = await generateImportantNews(context, detail);
+                    newsToAdd.push({ ...aiReport, id: `match_ai_${new Date().toISOString()}`, date: formatDate(newDate) });
+                } else {
+                    const matchReport = await generateMatchReport(gameState.team.name, opponent.name, playerMatch.result.homeScore, playerMatch.result.awayScore, isHome);
+                    newsToAdd.push({ ...matchReport, id: `match_${new Date().toISOString()}`, date: formatDate(newDate) });
                 }
-
-                const dummyRow: LeagueTableRow = { teamId: 0, position: 0, played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0, form: [] };
-
-                const result = simulateMatch(homeTeam, awayTeam, homeRow || dummyRow, awayRow || dummyRow, match.isCupMatch);
-
-                const matchIndex = newSchedule.findIndex(m => m.week === newWeek && m.homeTeamId === match.homeTeamId);
-                newSchedule[matchIndex] = {
-                    ...newSchedule[matchIndex],
-                    result: { homeScore: result.homeScore, awayScore: result.awayScore },
-                    penalties: result.penalties
-                };
-
-                if (match.homeTeamId === gameState.team.id || match.awayTeamId === gameState.team.id) {
-                    playerMatchResult = {
-                        homeScore: result.homeScore,
-                        awayScore: result.awayScore,
-                        penalties: result.penalties
-                    };
-                }
-
-                if (!match.isCupMatch && homeRow && awayRow) {
-                    homeRow.played++; awayRow.played++;
-                    homeRow.goalsFor += result.homeScore; awayRow.goalsFor += result.awayScore;
-                    homeRow.goalsAgainst += result.awayScore; awayRow.goalsAgainst += result.homeScore;
-
-                    let homeResult: 'W' | 'D' | 'L', awayResult: 'W' | 'D' | 'L';
-
-                    if (result.homeScore > result.awayScore) {
-                        homeRow.won++; homeRow.points += 3; homeResult = 'W';
-                        awayRow.lost++; awayResult = 'L';
-                    } else if (result.awayScore > result.homeScore) {
-                        awayRow.won++; awayRow.points += 3; awayResult = 'W';
-                        homeRow.lost++; homeResult = 'L';
-                    } else {
-                        homeRow.drawn++; homeRow.points += 1; homeResult = 'D';
-                        awayRow.drawn++; awayRow.points += 1; awayResult = 'D';
-                    }
-                    homeRow.form.unshift(homeResult);
-                    awayRow.form.unshift(awayResult);
-
-                    homeTeam.teamMorale = updateTeamMorale(homeTeam.teamMorale, homeResult);
-                    awayTeam.teamMorale = updateTeamMorale(awayTeam.teamMorale, awayResult);
-
-                    if (homeTeam.id === gameState.team.id) {
-                        if (homeResult === 'W') confidenceChange += 2;
-                        if (homeResult === 'D') confidenceChange -= 1;
-                        if (homeResult === 'L') confidenceChange -= 4;
-                    }
-                    if (awayTeam.id === gameState.team.id) {
-                        if (awayResult === 'W') confidenceChange += 3;
-                        if (awayResult === 'D') confidenceChange += 1;
-                        if (awayResult === 'L') confidenceChange -= 2;
-                    }
-                } else if (match.isCupMatch) {
-                    let homeWin = result.homeScore > result.awayScore;
-                    if (result.homeScore === result.awayScore && result.penalties) {
-                        homeWin = result.penalties.home > result.penalties.away;
-                    }
-
-                    const homeResult = homeWin ? 'W' : 'L';
-                    const awayResult = homeWin ? 'L' : 'W';
-
-                    homeTeam.teamMorale = updateTeamMorale(homeTeam.teamMorale, homeResult);
-                    awayTeam.teamMorale = updateTeamMorale(awayTeam.teamMorale, awayResult);
-
-                    if (homeTeam.id === gameState.team.id) {
-                        if (homeResult === 'W') confidenceChange += 3;
-                        if (homeResult === 'L') confidenceChange -= 2;
-                    }
-                    if (awayTeam.id === gameState.team.id) {
-                        if (awayResult === 'W') confidenceChange += 3;
-                        if (awayResult === 'L') confidenceChange -= 2;
-                    }
-
-                    const cupId = match.competition === 'FA_Cup' ? 'faCup' : 'carabaoCup';
-                    const currentCup = cupId === 'faCup' ? updatedFaCup : updatedCarabaoCup;
-
-                    const assignGoals = (team: Team, goals: number) => {
-                        const startingXI = team.squad.slice(0, 11);
-                        for (let i = 0; i < goals; i++) {
-                            const scorer = startingXI[Math.floor(Math.random() * startingXI.length)];
-                            const existingScorer = currentCup.statistics.topScorers.find(s => s.playerId === scorer.id);
-                            if (existingScorer) {
-                                existingScorer.goals++;
-                            } else {
-                                currentCup.statistics.topScorers.push({
-                                    playerId: scorer.id,
-                                    playerName: scorer.name,
-                                    teamId: team.id,
-                                    teamName: team.name,
-                                    goals: 1
-                                });
-                            }
-                        }
-                    };
-
-                    assignGoals(homeTeam, result.homeScore);
-                    assignGoals(awayTeam, result.awayScore);
-
-                    if (cupId === 'faCup') {
-                        updatedFaCup = currentCup;
-                    } else {
-                        updatedCarabaoCup = currentCup;
-                    }
-                }
-            });
-        }
-
-        const newDate = new Date(gameState.currentDate);
-        newDate.setDate(newDate.getDate() + 7);
-
-        const newsToAdd: NewsItem[] = [];
-        const playerMatch = newSchedule.find(m => m.week === newWeek && (m.homeTeamId === gameState.team.id || m.awayTeamId === gameState.team.id));
-
-        if (playerMatch && playerMatch.result) {
-            const isHome = playerMatch.homeTeamId === gameState.team.id;
-            const opponent = gameState.allTeams.find(t => t.id === (isHome ? playerMatch.awayTeamId : playerMatch.homeTeamId))!;
-            const myScore = isHome ? playerMatch.result.homeScore : playerMatch.result.awayScore;
-            const oppScore = isHome ? playerMatch.result.awayScore : playerMatch.result.homeScore;
-
-            const isThrashing = (myScore - oppScore) >= 3;
-            const isBadLoss = (oppScore - myScore) >= 3;
-            const isUpset = myScore > oppScore && gameState.team.tier === 'Lower' && opponent.tier === 'Top';
-
-            if (isThrashing || isBadLoss || isUpset) {
-                const context = isUpset ? "Victoria histórica de un equipo pequeño contra un gigante." : isThrashing ? "Una goleada espectacular." : "Una derrota humillante.";
-                const detail = `El ${gameState.team.name} quedó ${myScore}-${oppScore} contra el ${opponent.name}.`;
-                const aiReport = await generateImportantNews(context, detail);
-                newsToAdd.push({ ...aiReport, id: `match_ai_${new Date().toISOString()}`, date: formatDate(newDate) });
             } else {
-                const matchReport = await generateMatchReport(gameState.team.name, opponent.name, playerMatch.result.homeScore, playerMatch.result.awayScore, isHome);
-                newsToAdd.push({ ...matchReport, id: `match_${new Date().toISOString()}`, date: formatDate(newDate) });
+                const generalNews = await generateNews(gameState);
+                newsToAdd.push({ ...generalNews, id: `general_${new Date().toISOString()}`, date: formatDate(newDate) });
             }
-        } else {
-            const generalNews = await generateNews(gameState);
-            newsToAdd.push({ ...generalNews, id: `general_${new Date().toISOString()}`, date: formatDate(newDate) });
-        }
 
-        if (matchesThisWeek.length > 0 && Math.random() < 0.3) {
-            const winningTeamsIds: number[] = [];
-            matchesThisWeek.forEach(match => {
-                if (!match.result) return;
-                if (match.result.homeScore > match.result.awayScore) winningTeamsIds.push(match.homeTeamId);
-                else if (match.result.awayScore > match.result.homeScore) winningTeamsIds.push(match.awayTeamId);
-            });
+            // Player of the week
+            const matchesThisWeek = simulationResult.updatedSchedule.filter(m => m.week === newWeek);
+            if (matchesThisWeek.length > 0 && Math.random() < 0.3) {
+                const winningTeamsIds: number[] = [];
+                matchesThisWeek.forEach(match => {
+                    if (!match.result) return;
+                    if (match.result.homeScore > match.result.awayScore) winningTeamsIds.push(match.homeTeamId);
+                    else if (match.result.awayScore > match.result.homeScore) winningTeamsIds.push(match.awayTeamId);
+                });
 
-            const candidatePlayers = updatedAllTeams
-                .filter(t => winningTeamsIds.includes(t.id))
-                .flatMap(t => t.squad.map(p => ({ player: p, team: t })))
-                .filter(({ player }) => player.rating > 84);
+                const candidatePlayers = simulationResult.updatedAllTeams
+                    .filter(t => winningTeamsIds.includes(t.id))
+                    .flatMap(t => t.squad.map(p => ({ player: p, team: t })))
+                    .filter(({ player }) => player.rating > 84);
 
-            if (candidatePlayers.length > 0) {
-                const { player, team } = candidatePlayers[Math.floor(Math.random() * candidatePlayers.length)];
-                const match = matchesThisWeek.find(m => m.homeTeamId === team.id || m.awayTeamId === team.id)!;
-                const opponent = updatedAllTeams.find(t => t.id === (match.homeTeamId === team.id ? match.awayTeamId : match.homeTeamId))!;
-                const resultString = `${team.name} ${match.result!.homeScore} - ${match.result!.awayScore} ${opponent.name}`;
-                const potwNewsData = await generatePlayerOfTheWeekNews(player, team.name, opponent.name, resultString);
-                newsToAdd.push({ ...potwNewsData, id: `potw_${new Date().toISOString()}`, date: formatDate(newDate) });
-            }
-        }
-
-        const generatedOffers: Offer[] = [];
-        const transferListedPlayers = gameState.team.squad.filter(p => p.isTransferListed);
-        for (const player of transferListedPlayers) {
-            if (Math.random() < 0.3) {
-                const potentialBuyers = gameState.allTeams.filter(t => t.id !== gameState.team.id);
-                const offer = await generateTransferOffer(player, gameState.team, potentialBuyers);
-                if (offer) {
-                    generatedOffers.push({
-                        id: `offer_${new Date().toISOString()}_${player.id}`,
-                        playerId: player.id,
-                        ...offer
-                    });
+                if (candidatePlayers.length > 0) {
+                    const { player, team } = candidatePlayers[Math.floor(Math.random() * candidatePlayers.length)];
+                    const match = matchesThisWeek.find(m => m.homeTeamId === team.id || m.awayTeamId === team.id)!;
+                    const opponent = simulationResult.updatedAllTeams.find(t => t.id === (match.homeTeamId === team.id ? match.awayTeamId : match.homeTeamId))!;
+                    const resultString = `${team.name} ${match.result!.homeScore} - ${match.result!.awayScore} ${opponent.name}`;
+                    const potwNewsData = await generatePlayerOfTheWeekNews(player, team.name, opponent.name, resultString);
+                    newsToAdd.push({ ...potwNewsData, id: `potw_${new Date().toISOString()}`, date: formatDate(newDate) });
                 }
             }
+
+            // Generate transfer offers
+            const generatedOffers: Offer[] = [];
+            const transferListedPlayers = gameState.team.squad.filter(p => p.isTransferListed);
+            for (const player of transferListedPlayers) {
+                if (Math.random() < 0.3) {
+                    const potentialBuyers = gameState.allTeams.filter(t => t.id !== gameState.team.id);
+                    const offer = await generateTransferOffer(player, gameState.team, potentialBuyers);
+                    if (offer) {
+                        generatedOffers.push({
+                            id: `offer_${new Date().toISOString()}_${player.id}`,
+                            playerId: player.id,
+                            ...offer
+                        });
+                    }
+                }
+            }
+
+            // Handle cup progression
+            let updatedCups = simulationResult.updatedCups;
+            const faCupMatches = matchesThisWeek.filter(m => m.competition === 'FA_Cup');
+            if (faCupMatches.length > 0 && faCupMatches.every(m => m.result !== undefined)) {
+                const nextCupWeek = newWeek + 4;
+                updatedCups.faCup = advanceCupRound(updatedCups.faCup, simulationResult.updatedAllTeams, nextCupWeek);
+
+                if (updatedCups.faCup.rounds.length > gameState.cups.faCup.rounds.length) {
+                    const newRound = updatedCups.faCup.rounds[updatedCups.faCup.rounds.length - 1];
+                    simulationResult.updatedSchedule.push(...newRound.fixtures);
+                }
+            }
+
+            const carabaoCupMatches = matchesThisWeek.filter(m => m.competition === 'Carabao_Cup');
+            if (carabaoCupMatches.length > 0 && carabaoCupMatches.every(m => m.result !== undefined)) {
+                const nextCupWeek = newWeek + 3;
+                updatedCups.carabaoCup = advanceCupRound(updatedCups.carabaoCup, simulationResult.updatedAllTeams, nextCupWeek);
+
+                if (updatedCups.carabaoCup.rounds.length > gameState.cups.carabaoCup.rounds.length) {
+                    const newRound = updatedCups.carabaoCup.rounds[updatedCups.carabaoCup.rounds.length - 1];
+                    simulationResult.updatedSchedule.push(...newRound.fixtures);
+                }
+            }
+
+            // Check for random events
+            const triggeredEvent = eventEngine.triggerEvent(gameState);
+            if (triggeredEvent) {
+                setCurrentEvent(triggeredEvent);
+            }
+
+            setPendingResults({
+                newsToAdd,
+                updatedSchedule: simulationResult.updatedSchedule,
+                updatedLeagueTable: simulationResult.updatedLeagueTable,
+                updatedChampionshipTable: simulationResult.updatedChampionshipTable,
+                updatedAllTeams: simulationResult.updatedAllTeams,
+                confidenceChange: simulationResult.confidenceChange,
+                newOffers: generatedOffers,
+                playerMatchResult: simulationResult.playerMatchResult,
+                updatedCups
+            });
+
+        } catch (error) {
+            console.error('Simulation error:', error);
+            showNotification('Error al simular la semana', 'error');
+            setMatchPhase('PRE');
+        } finally {
+            setIsSimulating(false);
         }
 
-        const faCupMatches = matchesThisWeek.filter(m => m.competition === 'FA_Cup');
-        if (faCupMatches.length > 0 && faCupMatches.every(m => m.result !== undefined)) {
-            const nextCupWeek = newWeek + 4;
-            updatedFaCup = advanceCupRound(updatedFaCup, updatedAllTeams, nextCupWeek);
-
-            if (updatedFaCup.rounds.length > gameState.cups.faCup.rounds.length) {
-                const newRound = updatedFaCup.rounds[updatedFaCup.rounds.length - 1];
-                newSchedule.push(...newRound.fixtures);
-            }
-        }
-
-        const carabaoCupMatches = matchesThisWeek.filter(m => m.competition === 'Carabao_Cup');
-        if (carabaoCupMatches.length > 0 && carabaoCupMatches.every(m => m.result !== undefined)) {
-            const nextCupWeek = newWeek + 3;
-            updatedCarabaoCup = advanceCupRound(updatedCarabaoCup, updatedAllTeams, nextCupWeek);
-
-            if (updatedCarabaoCup.rounds.length > gameState.cups.carabaoCup.rounds.length) {
-                const newRound = updatedCarabaoCup.rounds[updatedCarabaoCup.rounds.length - 1];
-                newSchedule.push(...newRound.fixtures);
-            }
-        }
-
-        setPendingResults({
-            newsToAdd,
-            updatedSchedule: newSchedule,
-            updatedLeagueTable: Array.from(updatedLeagueTable.values()),
-            updatedChampionshipTable: Array.from(updatedChampionshipTable.values()),
-            updatedAllTeams,
-            confidenceChange,
-            newOffers: generatedOffers,
-            playerMatchResult,
-            updatedCups: {
-                faCup: updatedFaCup,
-                carabaoCup: updatedCarabaoCup
-            }
-        });
-
-        setMatchPhase('LIVE');
-
-    }, [gameState]);
+    }, [gameState, isSimulating, showNotification]);
 
     const handleWeekComplete = useCallback(() => {
         if (!gameState || !pendingResults) return;
@@ -502,6 +384,33 @@ function AppLogic() {
         showNotification('¡Reelección exitosa! Nuevo mandato comenzado');
     };
 
+    const handleEventChoice = useCallback((choiceIndex: number, effects: any) => {
+        if (!gameState || !currentEvent) return;
+
+        // Apply event effects to game state
+        const updates = eventEngine.applyEffects(effects, gameState);
+
+        // Dispatch updates
+        if (updates.finances) {
+            dispatch({ type: 'UPDATE_FINANCES', payload: updates.finances });
+        }
+        if (updates.team) {
+            dispatch({ type: 'UPDATE_TEAM', payload: updates.team });
+        }
+        if (updates.fanApproval) {
+            dispatch({ type: 'UPDATE_FAN_APPROVAL', payload: updates.fanApproval });
+        }
+        if (updates.chairmanConfidence !== undefined) {
+            dispatch({ type: 'UPDATE_CHAIRMAN_CONFIDENCE', payload: updates.chairmanConfidence });
+        }
+        if (updates.stadium) {
+            dispatch({ type: 'UPDATE_STADIUM', payload: updates.stadium });
+        }
+
+        showNotification(`Evento: ${currentEvent.event.title} - Decisión tomada`);
+        setCurrentEvent(null);
+    }, [gameState, currentEvent, showNotification]);
+
     return (
         <>
             <Notification
@@ -516,6 +425,13 @@ function AppLogic() {
                     onClose={closeSaveModal}
                     defaultName={saveMode === 'overwrite' ? (currentSaveName || `${gameState.team.name} Carrera`) : `${gameState.team.name} Carrera (Nueva)`}
                     mode={saveMode}
+                />
+            )}
+            {currentEvent && (
+                <EventModal
+                    event={currentEvent.event}
+                    onChoice={handleEventChoice}
+                    onClose={() => setCurrentEvent(null)}
                 />
             )}
 

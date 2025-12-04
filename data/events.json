@@ -1,0 +1,249 @@
+{
+    "events": [
+        {
+            "id": "sponsor_scandal",
+            "type": "scandal",
+            "title": "Escándalo de Patrocinador",
+            "description": "Tu patrocinador principal ha sido vinculado a un escándalo de corrupción. Los medios te presionan para que tomes una posición.",
+            "conditions": {
+                "minWeek": 10,
+                "maxWeek": 35,
+                "hasSponsors": true,
+                "probability": 0.08
+            },
+            "choices": [
+                {
+                    "text": "Terminar el contrato inmediatamente",
+                    "effects": {
+                        "sponsorRevenue": -0.5,
+                        "fanApproval": 5,
+                        "chairmanConfidence": -3
+                    }
+                },
+                {
+                    "text": "Mantener la relación y esperar",
+                    "effects": {
+                        "fanApproval": -10,
+                        "chairmanConfidence": -5
+                    }
+                },
+                {
+                    "text": "Renegociar términos del contrato",
+                    "effects": {
+                        "sponsorRevenue": -0.25,
+                        "fanApproval": 2
+                    }
+                }
+            ]
+        },
+        {
+            "id": "star_player_demand",
+            "type": "dilemma",
+            "title": "Demanda de Jugador Estrella",
+            "description": "Tu mejor jugador exige un aumento salarial significativo o amenaza con irse en la próxima ventana de transferencias.",
+            "conditions": {
+                "minWeek": 15,
+                "maxWeek": 30,
+                "hasStarPlayer": true,
+                "probability": 0.12
+            },
+            "choices": [
+                {
+                    "text": "Aceptar el aumento salarial",
+                    "effects": {
+                        "weeklyWages": 0.15,
+                        "teamMorale": 5,
+                        "chairmanConfidence": -5
+                    }
+                },
+                {
+                    "text": "Rechazar y arriesgarse a perderlo",
+                    "effects": {
+                        "teamMorale": -10,
+                        "fanApproval": -5
+                    }
+                },
+                {
+                    "text": "Ofrecer bonos por rendimiento",
+                    "effects": {
+                        "weeklyWages": 0.05,
+                        "teamMorale": 2
+                    }
+                }
+            ]
+        },
+        {
+            "id": "youth_academy_talent",
+            "type": "opportunity",
+            "title": "Talento de la Cantera",
+            "description": "Un joven de la academia ha impresionado en los entrenamientos. El entrenador sugiere darle minutos en el primer equipo.",
+            "conditions": {
+                "minWeek": 8,
+                "maxWeek": 25,
+                "probability": 0.15
+            },
+            "choices": [
+                {
+                    "text": "Promoverlo al primer equipo",
+                    "effects": {
+                        "teamMorale": 3,
+                        "fanApproval": 5,
+                        "addYouthPlayer": true
+                    }
+                },
+                {
+                    "text": "Mantenerlo en la academia",
+                    "effects": {
+                        "fanApproval": -2
+                    }
+                }
+            ]
+        },
+        {
+            "id": "stadium_expansion_offer",
+            "type": "opportunity",
+            "title": "Propuesta de Expansión del Estadio",
+            "description": "La junta directiva ha aprobado fondos para expandir el estadio. Esto aumentará los ingresos pero requerirá inversión.",
+            "conditions": {
+                "minWeek": 20,
+                "minBalance": 10,
+                "probability": 0.06
+            },
+            "choices": [
+                {
+                    "text": "Aprobar la expansión",
+                    "effects": {
+                        "balance": -8,
+                        "stadiumCapacity": 5000,
+                        "matchdayRevenue": 0.2
+                    }
+                },
+                {
+                    "text": "Rechazar la propuesta",
+                    "effects": {
+                        "chairmanConfidence": -3
+                    }
+                }
+            ]
+        },
+        {
+            "id": "injury_crisis",
+            "type": "crisis",
+            "title": "Crisis de Lesiones",
+            "description": "Una ola de lesiones ha dejado al equipo con el plantel mínimo. Los médicos sugieren contratar fisioterapeutas adicionales.",
+            "conditions": {
+                "minWeek": 12,
+                "maxWeek": 32,
+                "probability": 0.10
+            },
+            "choices": [
+                {
+                    "text": "Contratar personal médico adicional",
+                    "effects": {
+                        "balance": -2,
+                        "weeklyWages": 0.05,
+                        "teamMorale": 5
+                    }
+                },
+                {
+                    "text": "Continuar con el personal actual",
+                    "effects": {
+                        "teamMorale": -5
+                    }
+                }
+            ]
+        },
+        {
+            "id": "media_controversy",
+            "type": "scandal",
+            "title": "Controversia en Redes Sociales",
+            "description": "Un jugador ha publicado comentarios polémicos en redes sociales. Los medios piden tu respuesta.",
+            "conditions": {
+                "minWeek": 5,
+                "probability": 0.09
+            },
+            "choices": [
+                {
+                    "text": "Sancionar al jugador públicamente",
+                    "effects": {
+                        "teamMorale": -8,
+                        "fanApproval": 3
+                    }
+                },
+                {
+                    "text": "Manejar el asunto internamente",
+                    "effects": {
+                        "fanApproval": -3
+                    }
+                },
+                {
+                    "text": "Defender al jugador públicamente",
+                    "effects": {
+                        "teamMorale": 5,
+                        "fanApproval": -5
+                    }
+                }
+            ]
+        },
+        {
+            "id": "rival_poaching_attempt",
+            "type": "dilemma",
+            "title": "Intento de Fichaje Rival",
+            "description": "Un equipo rival está intentando fichar a tu entrenador asistente clave con una oferta lucrativa.",
+            "conditions": {
+                "minWeek": 18,
+                "probability": 0.07
+            },
+            "choices": [
+                {
+                    "text": "Igualar la oferta para retenerlo",
+                    "effects": {
+                        "weeklyWages": 0.08,
+                        "teamMorale": 3
+                    }
+                },
+                {
+                    "text": "Dejarlo ir y buscar reemplazo",
+                    "effects": {
+                        "teamMorale": -5,
+                        "balance": -1.5
+                    }
+                }
+            ]
+        },
+        {
+            "id": "fan_protest",
+            "type": "crisis",
+            "title": "Protesta de Aficionados",
+            "description": "Los aficionados están protestando fuera del estadio por los malos resultados. Exigen cambios inmediatos.",
+            "conditions": {
+                "minWeek": 10,
+                "maxFanApproval": 40,
+                "probability": 0.12
+            },
+            "choices": [
+                {
+                    "text": "Reunirse con representantes de aficionados",
+                    "effects": {
+                        "fanApproval": 8,
+                        "chairmanConfidence": -2
+                    }
+                },
+                {
+                    "text": "Ignorar las protestas",
+                    "effects": {
+                        "fanApproval": -10,
+                        "chairmanConfidence": -5
+                    }
+                },
+                {
+                    "text": "Prometer fichajes en enero",
+                    "effects": {
+                        "fanApproval": 5,
+                        "transferBudget": -2
+                    }
+                }
+            ]
+        }
+    ]
+}
