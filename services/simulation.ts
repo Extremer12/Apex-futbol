@@ -1,5 +1,6 @@
 
 import { Team, Match, LeagueTableRow, Morale, Player, CupCompetition, CupRound } from '../types';
+import { getTacticalMatchup } from './coaching';
 import { generateRandomName } from '../utils';
 
 // Calcula estadísticas detalladas del equipo basadas en las posiciones de los jugadores
@@ -48,23 +49,19 @@ export const generateYouthPlayer = (tier: Team['tier'] = 'Lower'): Player => {
     };
 };
 
-const getTacticalBonus = (myTactic: Team['tactics'], oppTactic: Team['tactics']): number => {
-    if (myTactic === 'Attacking' && oppTactic === 'Defensive') return -5; // Countered
-    if (myTactic === 'Attacking' && oppTactic === 'Balanced') return 5; // Overwhelm
-    if (myTactic === 'Defensive' && oppTactic === 'Attacking') return 5; // Counter-attack
-    if (myTactic === 'Defensive' && oppTactic === 'Balanced') return -2; // Too passive
-    if (myTactic === 'Balanced' && oppTactic === 'Defensive') return 2; // Control
-    if (myTactic === 'Balanced' && oppTactic === 'Attacking') return -2; // Overwhelmed
-    return 0; // Same tactic
-};
+
 
 export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: LeagueTableRow, awayTableRow: LeagueTableRow, isCupMatch: boolean = false): { homeScore: number; awayScore: number, events: string[], penalties?: { home: number, away: number } } => {
     const homeStats = getTeamStats(homeTeam);
     const awayStats = getTeamStats(awayTeam);
 
-    // Tactical Influence
-    const homeTacticalBonus = getTacticalBonus(homeTeam.tactics, awayTeam.tactics);
-    const awayTacticalBonus = getTacticalBonus(awayTeam.tactics, homeTeam.tactics);
+    // Tactical Influence (Coach Style)
+    const homeStyle = homeTeam.coach?.style || 'Balanced';
+    const awayStyle = awayTeam.coach?.style || 'Balanced';
+
+    const tacticalMatchup = getTacticalMatchup(homeStyle, awayStyle);
+    const homeTacticalBonus = tacticalMatchup.homeAdvantage;
+    const awayTacticalBonus = -tacticalMatchup.homeAdvantage;
 
     // 1. Factor de Control (Centro del campo + Localía + Táctica)
     const homeControl = homeStats.midfield * 1.1 + (Math.random() * 10) + homeTacticalBonus;
@@ -83,11 +80,16 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
     let homeChances = 4 + (homePossession * 6) + (homeStats.attack - awayStats.defense) / 5 + (homeMomentum / 3);
     let awayChances = 4 + ((1 - homePossession) * 6) + (awayStats.attack - homeStats.defense) / 5 + (awayMomentum / 3);
 
-    // Adjust chances based on tactics
-    if (homeTeam.tactics === 'Attacking') homeChances += 2;
-    if (homeTeam.tactics === 'Defensive') homeChances -= 2;
-    if (awayTeam.tactics === 'Attacking') awayChances += 2;
-    if (awayTeam.tactics === 'Defensive') awayChances -= 2;
+    // Adjust chances based on tactics (Risk vs Reward)
+    if (homeStyle === 'Attacking') { homeChances += 2; awayChances += 1; } // Attack more, expose defense
+    if (homeStyle === 'Defensive') { homeChances -= 2; awayChances -= 2; } // Park the bus
+    if (homeStyle === 'Possession') { homeChances += 1; awayChances -= 1; } // Control game
+    if (homeStyle === 'Counter') { homeChances += 1; awayChances += 1; } // Open game
+
+    if (awayStyle === 'Attacking') { awayChances += 2; homeChances += 1; }
+    if (awayStyle === 'Defensive') { awayChances -= 2; homeChances -= 2; }
+    if (awayStyle === 'Possession') { awayChances += 1; homeChances -= 1; }
+    if (awayStyle === 'Counter') { awayChances += 1; homeChances += 1; }
 
     homeChances = Math.max(0, homeChances + (Math.random() * 4) - 2);
     awayChances = Math.max(0, awayChances + (Math.random() * 4) - 2);

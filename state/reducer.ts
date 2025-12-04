@@ -4,6 +4,8 @@ import React from 'react';
 import { GameState, Team, PlayerProfile, NewsItem, Player, Match, LeagueTableRow, Offer } from '../types';
 import { TEAMS } from '../constants';
 import { generateSeasonSchedule, createInitialLeagueTable, simulateMatch, generateCupDraw, advanceCupRound, determineCupWinner, handlePromotionRelegation, generateYouthPlayer } from '../services/simulation';
+import { generateRandomCoach, generateCoachMarket } from '../services/coaching';
+import { generateStadium, generateSponsorMarket, calculateFinancialBreakdown, getNetWeeklyIncome } from '../services/economy';
 import { formatDate, formatCurrency } from '../utils';
 
 // ... (imports remain the same)
@@ -18,6 +20,9 @@ export type GameAction =
     | { type: 'ADVANCE_WEEK_START' }
     | { type: 'ADVANCE_WEEK_SUCCESS'; payload: { newsItems: NewsItem[]; newSchedule: Match[]; newLeagueTable: LeagueTableRow[]; newChampionshipTable: LeagueTableRow[]; newAllTeams: Team[]; newConfidence: number; newOffers: Offer[]; newCups?: { faCup: any; carabaoCup: any } } }
     | { type: 'START_NEW_SEASON' }
+    | { type: 'TRIGGER_ELECTION' }
+    | { type: 'ELECTION_RESULT'; payload: { won: boolean; newApproval: number } }
+    | { type: 'UPDATE_FAN_APPROVAL'; payload: { delta: number; reason: string } }
     | { type: 'ADD_NEWS'; payload: NewsItem }
     | { type: 'ADD_OFFER'; payload: Offer }
     | { type: 'ACCEPT_OFFER'; payload: { offerId: string } }
@@ -25,7 +30,11 @@ export type GameAction =
     | { type: 'SIGN_PLAYER'; payload: { player: Player; fee: number } }
     | { type: 'PROMOTE_PLAYER'; payload: Player }
     | { type: 'TOGGLE_TRANSFER_LIST'; payload: Player }
-    | { type: 'SET_VIEWING_PLAYER'; payload: Player | null };
+    | { type: 'SET_VIEWING_PLAYER'; payload: Player | null }
+    | { type: 'HIRE_COACH'; payload: { coachId: string } }
+    | { type: 'FIRE_COACH' }
+    | { type: 'ACCEPT_SPONSOR'; payload: { sponsorId: string } }
+    | { type: 'EXPAND_STADIUM' };
 
 export const initialState: GameState | null = null;
 
@@ -44,6 +53,8 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                     // Assign random age between 18 and 33 weighted towards 24-28
                     age: Math.floor(18 + Math.random() * 16)
                 })),
+                // Assign initial random coach
+                coach: generateRandomCoach(t.tier)
             }));
 
             const playerTeamCopy = allTeamsCopy.find(t => t.id === team.id)!;
@@ -89,7 +100,29 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 leagueTable: createInitialLeagueTable(plTeams),
                 championshipTable: createInitialLeagueTable(chTeams),
                 finances: { balance: team.budget, transferBudget: team.transferBudget, weeklyIncome, weeklyWages: totalWages, balanceHistory: [team.budget] },
-                chairmanConfidence: initialConfidence[team.tier],
+
+                // Political System
+                boardConfidence: initialConfidence[team.tier],
+                fanApproval: {
+                    rating: 60,
+                    trend: 'stable' as const,
+                    factors: {
+                        results: 0,
+                        transfers: 0,
+                        finances: 0,
+                        promises: 0
+                    }
+                },
+                mandate: {
+                    startYear: 1,
+                    currentYear: 1,
+                    nextElectionSeason: 4,
+                    isElectionYear: false,
+                    totalMandates: 1
+                },
+                electoralPromises: [],
+                chairmanConfidence: initialConfidence[team.tier], // Legacy field for compatibility
+
                 viewingPlayer: null,
                 incomingOffers: [],
                 youthAcademy: initialYouthAcademy,
@@ -108,11 +141,129 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                         currentRoundIndex: 0,
                         statistics: { topScorers: [], championsHistory: [] }
                     }
-                }
+                },
+                availableCoaches: generateCoachMarket(5), // Initial market of 5 coaches
+
+                // Economy System
+                stadium: generateStadium(playerTeamCopy),
+                sponsors: [], // Start with no sponsors, offers come at season start
+                availableSponsors: generateSponsorMarket(team.tier)
             };
         }
 
-        // ... (LOAD_GAME, RESET_GAME, ADVANCE_WEEK_START, ADVANCE_WEEK_SUCCESS remain same)
+        case 'LOAD_GAME': {
+            const loadedState = action.payload;
+
+            // MIGRATION: Ensure all new fields exist for legacy saves
+
+            // 1. Political System Migration
+            const mandate = loadedState.mandate || {
+                startYear: loadedState.season || 2024,
+                currentYear: 1,
+                nextElectionSeason: (loadedState.season || 2024) + 3,
+                isElectionYear: false,
+                totalMandates: 1
+            };
+
+            const fanApproval = loadedState.fanApproval || {
+                rating: 60,
+                trend: 'stable',
+                factors: { results: 0, transfers: 0, finances: 0, promises: 0 }
+            };
+
+            const electoralPromises = loadedState.electoralPromises || [];
+            const boardConfidence = loadedState.boardConfidence !== undefined ? loadedState.boardConfidence : (loadedState.chairmanConfidence || 50);
+
+            // 2. Coach System Migration
+            const availableCoaches = loadedState.availableCoaches || generateCoachMarket(5);
+            // Ensure all teams have a coach
+            const allTeamsWithCoaches = loadedState.allTeams.map(t => ({
+                ...t,
+                coach: t.coach || generateRandomCoach(t.tier)
+            }));
+            const playerTeamWithCoach = allTeamsWithCoaches.find(t => t.id === loadedState.team.id)!;
+
+            // 3. Economy System Migration
+            const stadium = loadedState.stadium || generateStadium(playerTeamWithCoach);
+            const sponsors = loadedState.sponsors || [];
+            const availableSponsors = loadedState.availableSponsors || generateSponsorMarket(playerTeamWithCoach.tier);
+
+            // Ensure finances has breakdown if missing (will be calculated next week)
+            const finances = {
+                ...loadedState.finances,
+                breakdown: loadedState.finances.breakdown || undefined
+            };
+
+            return {
+                ...loadedState,
+                team: playerTeamWithCoach,
+                allTeams: allTeamsWithCoaches,
+                mandate,
+                fanApproval,
+                electoralPromises,
+                boardConfidence,
+                availableCoaches,
+                stadium,
+                sponsors,
+                availableSponsors,
+                finances
+            };
+        }
+
+        case 'RESET_GAME':
+            return null;
+
+        case 'ADVANCE_WEEK_START':
+            return state;
+
+        case 'ADVANCE_WEEK_SUCCESS': {
+            if (!state) return null;
+            const { newsItems, newSchedule, newLeagueTable, newChampionshipTable, newAllTeams, newConfidence, newOffers, newCups } = action.payload;
+
+            // Update player team from newAllTeams
+            const updatedPlayerTeam = newAllTeams.find(t => t.id === state.team.id)!;
+
+            // Calculate financial breakdown for the week
+            // We need to estimate transfers sold/bought this week. 
+            // For now, we'll assume 0 unless we track it in payload.
+            // Ideally, this should be passed in payload, but we can calculate it roughly or leave it 0 for this tick.
+            const playerPosition = newLeagueTable.find(row => row.teamId === state.team.id)?.position || 10;
+
+            const breakdown = calculateFinancialBreakdown(
+                updatedPlayerTeam,
+                state.stadium,
+                state.sponsors,
+                playerPosition,
+                { bought: 0, sold: 0 }
+            );
+
+            // Update balance based on breakdown
+            const netIncome = getNetWeeklyIncome(breakdown);
+            const newBalance = state.finances.balance + netIncome;
+
+            return {
+                ...state,
+                currentDate: new Date(state.currentDate.getTime() + 7 * 24 * 60 * 60 * 1000),
+                currentWeek: state.currentWeek + 1,
+                newsFeed: [...newsItems, ...state.newsFeed].slice(0, 50),
+                schedule: newSchedule,
+                leagueTable: newLeagueTable,
+                championshipTable: newChampionshipTable,
+                allTeams: newAllTeams,
+                team: updatedPlayerTeam,
+                boardConfidence: newConfidence,
+                incomingOffers: [...state.incomingOffers, ...newOffers],
+                cups: newCups || state.cups,
+                finances: {
+                    ...state.finances,
+                    balance: newBalance,
+                    weeklyIncome: breakdown.matchdayRevenue + breakdown.sponsorshipRevenue + breakdown.prizeMoneyRevenue + breakdown.transferRevenue,
+                    weeklyWages: breakdown.wageExpenses + breakdown.coachExpenses + breakdown.stadiumExpenses + breakdown.operationalExpenses + breakdown.transferExpenses,
+                    balanceHistory: [...state.finances.balanceHistory, newBalance],
+                    breakdown
+                }
+            };
+        }
 
         case 'START_NEW_SEASON': {
             if (!state) return null;
@@ -214,6 +365,35 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 leagueTable: newLeagueTable,
                 championshipTable: newChampionshipTable,
                 newsFeed: [proRelNews, seasonNews, ...state.newsFeed].slice(0, 20),
+                // Update Mandate Year and Check for Elections
+                mandate: {
+                    ...state.mandate,
+                    currentYear: state.mandate.currentYear >= 4 ? state.mandate.currentYear : state.mandate.currentYear + 1,
+                    isElectionYear: state.mandate.currentYear + 1 > 4,
+                    nextElectionSeason: state.mandate.currentYear + 1 > 4 ? newSeasonYear : state.mandate.nextElectionSeason
+                },
+                // Update Fan Approval based on season performance
+                fanApproval: (() => {
+                    const playerPosition = sortedPL.find(row => row.teamId === updatedPlayerTeam.id)?.position ||
+                        sortedCH.find(row => row.teamId === updatedPlayerTeam.id)?.position || 10;
+
+                    let approvalDelta = 0;
+                    if (playerPosition <= 4) approvalDelta = 15;
+                    else if (playerPosition <= 6) approvalDelta = 10;
+                    else if (playerPosition >= 18) approvalDelta = -20;
+                    else if (playerPosition <= 10) approvalDelta = 5;
+                    else approvalDelta = -5;
+
+                    const newRating = Math.max(0, Math.min(100, state.fanApproval.rating + approvalDelta));
+                    const trend: 'rising' | 'stable' | 'falling' =
+                        approvalDelta > 5 ? 'rising' : approvalDelta < -5 ? 'falling' : 'stable';
+
+                    return {
+                        ...state.fanApproval,
+                        rating: newRating,
+                        trend
+                    };
+                })(),
                 cups: {
                     faCup: {
                         id: 'fa_cup',
@@ -233,108 +413,6 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
             };
         }
         // ...
-
-
-        case 'LOAD_GAME': {
-            const rehydratedGameState = action.payload;
-            const teamsMap = new Map(TEAMS.map(t => [t.id, t]));
-
-            const rehydratedAllTeams = rehydratedGameState.allTeams.map(savedTeam => {
-                const originalTeam = teamsMap.get(savedTeam.id);
-                return {
-                    ...savedTeam,
-                    logo: originalTeam ? originalTeam.logo : React.createElement('div', { className: 'w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center font-bold' }, '?')
-                };
-            });
-
-            const rehydratedPlayerTeam = rehydratedAllTeams.find(t => t.id === rehydratedGameState.team.id)!;
-
-            return {
-                ...rehydratedGameState,
-                allTeams: rehydratedAllTeams,
-                team: rehydratedPlayerTeam,
-                incomingOffers: rehydratedGameState.incomingOffers || [],
-                youthAcademy: rehydratedGameState.youthAcademy || [], // Fallback for old saves
-                season: rehydratedGameState.season || 2024, // Fallback for old saves
-                championshipTable: rehydratedGameState.championshipTable || [],
-                cups: rehydratedGameState.cups ? {
-                    faCup: {
-                        ...rehydratedGameState.cups.faCup,
-                        statistics: rehydratedGameState.cups.faCup.statistics || { topScorers: [], championsHistory: [] }
-                    },
-                    carabaoCup: {
-                        ...rehydratedGameState.cups.carabaoCup,
-                        statistics: rehydratedGameState.cups.carabaoCup.statistics || { topScorers: [], championsHistory: [] }
-                    }
-                } : {
-                    faCup: { id: 'fa_cup', name: 'FA Cup', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
-                    carabaoCup: { id: 'carabao_cup', name: 'Carabao Cup', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } }
-                }
-            };
-        }
-
-        case 'RESET_GAME':
-            return initialState;
-
-        case 'ADVANCE_WEEK_START': {
-            if (!state) return null;
-            const newDate = new Date(state.currentDate);
-            newDate.setDate(newDate.getDate() + 7);
-            const weeklyNet = (state.finances.weeklyIncome - state.finances.weeklyWages) / 1_000_000;
-            const newBalance = state.finances.balance + weeklyNet;
-            return {
-                ...state,
-                currentDate: newDate,
-                currentWeek: state.currentWeek + 1,
-                finances: {
-                    ...state.finances,
-                    balance: newBalance,
-                    balanceHistory: [...state.finances.balanceHistory, newBalance],
-                }
-            };
-        }
-
-        case 'ADVANCE_WEEK_SUCCESS': {
-            if (!state) return null;
-            const { newsItems, newSchedule, newLeagueTable, newChampionshipTable, newAllTeams, newConfidence, newOffers, newCups } = action.payload;
-
-            // Helper to sort tables
-            const sortTable = (table: LeagueTableRow[], teams: Team[]) => {
-                const teamsMap = new Map(teams.map(t => [t.id, t]));
-                return table.sort((a, b) => {
-                    if (b.points !== a.points) return b.points - a.points;
-                    const aGD = a.goalsFor - a.goalsAgainst;
-                    const bGD = b.goalsFor - b.goalsAgainst;
-                    if (bGD !== aGD) return bGD - aGD;
-                    if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor;
-                    const aTeamName = teamsMap.get(a.teamId)?.name || '';
-                    const bTeamName = teamsMap.get(b.teamId)?.name || '';
-                    return aTeamName.localeCompare(bTeamName);
-                }).map((row, index) => ({
-                    ...row,
-                    position: index + 1,
-                    goalDifference: row.goalsFor - row.goalsAgainst,
-                }));
-            }
-
-            const sortedLeagueTable = sortTable(newLeagueTable, newAllTeams);
-            const sortedChampionshipTable = sortTable(newChampionshipTable, newAllTeams);
-
-            const updatedPlayerTeam = newAllTeams.find(t => t.id === state.team.id)!;
-
-            return {
-                ...state,
-                team: updatedPlayerTeam,
-                allTeams: newAllTeams,
-                schedule: newSchedule,
-                leagueTable: sortedLeagueTable,
-                championshipTable: sortedChampionshipTable,
-                chairmanConfidence: newConfidence,
-                newsFeed: [...newsItems, ...state.newsFeed].slice(0, 20),
-                incomingOffers: [...state.incomingOffers, ...(newOffers || [])],
-                cups: newCups || state.cups
-            };
-        }
 
 
         case 'ADD_NEWS': {
@@ -502,6 +580,226 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
         case 'SET_VIEWING_PLAYER': {
             if (!state) return null;
             return { ...state, viewingPlayer: action.payload };
+        }
+
+        case 'TRIGGER_ELECTION': {
+            if (!state) return null;
+            // This action just flags that elections should be shown
+            // The actual election logic happens in the UI
+            return state;
+        }
+
+        case 'ELECTION_RESULT': {
+            if (!state) return null;
+            const { won, newApproval } = action.payload;
+
+            if (won) {
+                // President won re-election
+                return {
+                    ...state,
+                    mandate: {
+                        ...state.mandate,
+                        currentYear: 1,
+                        startYear: state.season,
+                        totalMandates: state.mandate.totalMandates + 1,
+                        isElectionYear: false,
+                        nextElectionSeason: state.season + 4
+                    },
+                    fanApproval: {
+                        ...state.fanApproval,
+                        rating: newApproval
+                    },
+                    newsFeed: [{
+                        id: `election_won_${state.season}`,
+                        headline: '🎉 ¡Reelección Exitosa!',
+                        body: `Los socios han hablado y confían en tu gestión. Comenzarás tu mandato número ${state.mandate.totalMandates + 1} con ${newApproval}% de aprobación.`,
+                        date: formatDate(state.currentDate)
+                    }, ...state.newsFeed].slice(0, 20)
+                };
+            } else {
+                // President lost election - this should trigger game over in UI
+                return {
+                    ...state,
+                    mandate: {
+                        ...state.mandate,
+                        isElectionYear: false
+                    },
+                    fanApproval: {
+                        ...state.fanApproval,
+                        rating: newApproval
+                    }
+                };
+            }
+        }
+
+        case 'UPDATE_FAN_APPROVAL': {
+            if (!state) return null;
+            const { delta, reason } = action.payload;
+
+            const newRating = Math.max(0, Math.min(100, state.fanApproval.rating + delta));
+            const trend: 'rising' | 'stable' | 'falling' =
+                delta > 5 ? 'rising' : delta < -5 ? 'falling' : 'stable';
+
+            return {
+                ...state,
+                fanApproval: {
+                    ...state.fanApproval,
+                    rating: newRating,
+                    trend
+                },
+                newsFeed: delta !== 0 ? [{
+                    id: `approval_${Date.now()}`,
+                    headline: delta > 0 ? '📈 Aprobación en Alza' : '📉 Aprobación Baja',
+                    body: `${reason}. Tu aprobación ${delta > 0 ? 'sube' : 'baja'} a ${newRating}%.`,
+                    date: formatDate(state.currentDate)
+                }, ...state.newsFeed].slice(0, 20) : state.newsFeed
+            };
+        }
+
+        case 'HIRE_COACH': {
+            if (!state) return null;
+            const { coachId } = action.payload;
+            const coachToHire = state.availableCoaches.find(c => c.id === coachId);
+
+            if (!coachToHire) return state;
+
+            // Check budget
+            if (state.finances.balance < coachToHire.signingBonus) {
+                return state;
+            }
+
+            const newBalance = state.finances.balance - coachToHire.signingBonus;
+
+            // Update team
+            const newTeam = { ...state.team, coach: coachToHire };
+            const newAllTeams = state.allTeams.map(t => t.id === newTeam.id ? newTeam : t);
+
+            // Remove from market
+            const newMarket = state.availableCoaches.filter(c => c.id !== coachId);
+
+            return {
+                ...state,
+                team: newTeam,
+                allTeams: newAllTeams,
+                availableCoaches: newMarket,
+                finances: {
+                    ...state.finances,
+                    balance: newBalance,
+                    balanceHistory: [...state.finances.balanceHistory, newBalance]
+                },
+                newsFeed: [{
+                    id: `hire_coach_${Date.now()}`,
+                    headline: '👔 Nuevo Director Técnico',
+                    body: `El club ha contratado a ${coachToHire.name}. Su estilo ${coachToHire.style} promete cambiar la dinámica del equipo.`,
+                    date: formatDate(state.currentDate)
+                }, ...state.newsFeed].slice(0, 20)
+            };
+        }
+
+        case 'FIRE_COACH': {
+            if (!state || !state.team.coach) return state;
+
+            const severancePay = state.team.coach.salary * 4; // 1 month severance
+            const newBalance = state.finances.balance - severancePay;
+
+            const newTeam = { ...state.team, coach: undefined };
+            const newAllTeams = state.allTeams.map(t => t.id === newTeam.id ? newTeam : t);
+
+            return {
+                ...state,
+                team: newTeam,
+                allTeams: newAllTeams,
+                finances: {
+                    ...state.finances,
+                    balance: newBalance,
+                    balanceHistory: [...state.finances.balanceHistory, newBalance]
+                },
+                newsFeed: [{
+                    id: `fire_coach_${Date.now()}`,
+                    headline: '👋 Entrenador Despedido',
+                    body: `El club ha decidido prescindir de los servicios de su Director Técnico. El puesto está vacante.`,
+                    date: formatDate(state.currentDate)
+                }, ...state.newsFeed].slice(0, 20)
+            };
+        }
+
+        case 'ACCEPT_SPONSOR': {
+            if (!state) return null;
+            const { sponsorId } = action.payload;
+            const sponsor = state.availableSponsors.find(s => s.id === sponsorId);
+
+            if (!sponsor) return state;
+
+            // Check if already have sponsor of this type
+            const existingSponsor = state.sponsors.find(s => s.type === sponsor.type);
+            if (existingSponsor) {
+                // Replace existing sponsor
+                const newSponsors = state.sponsors.map(s =>
+                    s.type === sponsor.type ? sponsor : s
+                );
+                const newMarket = state.availableSponsors.filter(s => s.id !== sponsorId);
+
+                return {
+                    ...state,
+                    sponsors: newSponsors,
+                    availableSponsors: newMarket,
+                    newsFeed: [{
+                        id: `sponsor_${Date.now()}`,
+                        headline: '🤝 Nuevo Acuerdo de Patrocinio',
+                        body: `${sponsor.name} es ahora nuestro nuevo patrocinador ${sponsor.type === 'shirt' ? 'de camiseta' : sponsor.type === 'stadium' ? 'del estadio' : sponsor.type === 'training' ? 'de entrenamiento' : 'de equipación'}. Ingresos: ${formatCurrency(sponsor.weeklyIncome)}/semana.`,
+                        date: formatDate(state.currentDate)
+                    }, ...state.newsFeed].slice(0, 20)
+                };
+            }
+
+            // Add new sponsor
+            const newMarket = state.availableSponsors.filter(s => s.id !== sponsorId);
+
+            return {
+                ...state,
+                sponsors: [...state.sponsors, sponsor],
+                availableSponsors: newMarket,
+                newsFeed: [{
+                    id: `sponsor_${Date.now()}`,
+                    headline: '🤝 Nuevo Acuerdo de Patrocinio',
+                    body: `${sponsor.name} es ahora nuestro patrocinador ${sponsor.type === 'shirt' ? 'de camiseta' : sponsor.type === 'stadium' ? 'del estadio' : sponsor.type === 'training' ? 'de entrenamiento' : 'de equipación'}. Ingresos: ${formatCurrency(sponsor.weeklyIncome)}/semana.`,
+                    date: formatDate(state.currentDate)
+                }, ...state.newsFeed].slice(0, 20)
+            };
+        }
+
+        case 'EXPAND_STADIUM': {
+            if (!state) return null;
+
+            const expansionCost = state.stadium.expansionCost || 0;
+            if (state.finances.balance < expansionCost) {
+                return state; // Not enough funds
+            }
+
+            const newCapacity = state.stadium.expansionCapacity || state.stadium.capacity;
+            const newBalance = state.finances.balance - expansionCost;
+
+            return {
+                ...state,
+                stadium: {
+                    ...state.stadium,
+                    capacity: newCapacity,
+                    maintenanceCost: state.stadium.maintenanceCost * 1.2, // 20% more maintenance
+                    expansionCost: newCapacity * 1000,
+                    expansionCapacity: Math.floor(newCapacity * 1.2)
+                },
+                finances: {
+                    ...state.finances,
+                    balance: newBalance,
+                    balanceHistory: [...state.finances.balanceHistory, newBalance]
+                },
+                newsFeed: [{
+                    id: `stadium_expansion_${Date.now()}`,
+                    headline: '🏟️ Expansión del Estadio Completada',
+                    body: `El estadio ha sido expandido a ${newCapacity.toLocaleString()} asientos. Esto aumentará nuestros ingresos por entradas.`,
+                    date: formatDate(state.currentDate)
+                }, ...state.newsFeed].slice(0, 20)
+            };
         }
 
         default:

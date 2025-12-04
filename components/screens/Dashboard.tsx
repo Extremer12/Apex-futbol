@@ -208,24 +208,52 @@ const QuickStats: React.FC<{ gameState: GameState }> = ({ gameState }) => {
 
     const positionZone = getPositionZone(playerTeamRow?.position);
 
+    // Use boardConfidence if available, fallback to chairmanConfidence for compatibility
+    const boardConf = gameState.boardConfidence ?? gameState.chairmanConfidence ?? 75;
+    const fanApp = gameState.fanApproval?.rating ?? 60;
+
     return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Confidence Card */}
-            <div className="bg-gradient-to-br from-purple-900/40 to-pink-900/40 border-2 border-purple-500/30 rounded-xl p-5 hover:scale-105 hover:border-purple-500/50 transition-all duration-300 shadow-lg hover:shadow-purple-500/20">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Board Confidence Card */}
+            <div className="bg-gradient-to-br from-orange-900/40 to-red-900/40 border-2 border-orange-500/30 rounded-xl p-5 hover:scale-105 hover:border-orange-500/50 transition-all duration-300 shadow-lg hover:shadow-orange-500/20">
                 <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center shadow-lg">
+                    <div className="w-10 h-10 bg-gradient-to-br from-orange-600 to-red-600 rounded-lg flex items-center justify-center shadow-lg">
                         <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                         </svg>
                     </div>
-                    <span className="text-slate-300 text-sm font-semibold">Confianza</span>
+                    <span className="text-slate-300 text-sm font-semibold">Junta Directiva</span>
                 </div>
                 <div className="text-4xl font-bold text-white mb-3">
-                    {gameState.chairmanConfidence}%
+                    {boardConf}%
                 </div>
-                <ConfidenceMeter value={gameState.chairmanConfidence} />
-                <div className={`text-xs mt-2 ${gameState.chairmanConfidence >= 70 ? 'text-green-400' : gameState.chairmanConfidence >= 40 ? 'text-yellow-400' : 'text-red-400'}`}>
-                    {gameState.chairmanConfidence >= 70 ? '↑ Excelente' : gameState.chairmanConfidence >= 40 ? '→ Estable' : '↓ En riesgo'}
+                <ConfidenceMeter value={boardConf} />
+                <div className={`text-xs mt-2 ${boardConf >= 70 ? 'text-green-400' : boardConf >= 40 ? 'text-yellow-400' : 'text-red-400'}`}>
+                    {boardConf >= 70 ? '✓ Confianza Alta' : boardConf >= 40 ? '⚠ Vigilancia' : '⚠ Riesgo de Despido'}
+                </div>
+            </div>
+
+            {/* Fan Approval Card */}
+            <div className="bg-gradient-to-br from-blue-900/40 to-cyan-900/40 border-2 border-blue-500/30 rounded-xl p-5 hover:scale-105 hover:border-blue-500/50 transition-all duration-300 shadow-lg hover:shadow-blue-500/20">
+                <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-lg flex items-center justify-center shadow-lg">
+                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                    </div>
+                    <span className="text-slate-300 text-sm font-semibold">Socios</span>
+                </div>
+                <div className="text-4xl font-bold text-white mb-3">
+                    {fanApp}%
+                </div>
+                <div className="h-2 bg-slate-800 rounded-full overflow-hidden mb-2">
+                    <div
+                        className={`h-full bg-gradient-to-r ${fanApp >= 60 ? 'from-blue-500 to-cyan-500' : fanApp >= 40 ? 'from-yellow-500 to-orange-500' : 'from-red-500 to-red-600'}`}
+                        style={{ width: `${fanApp}%` }}
+                    />
+                </div>
+                <div className={`text-xs ${fanApp >= 60 ? 'text-blue-400' : fanApp >= 40 ? 'text-yellow-400' : 'text-red-400'}`}>
+                    {gameState.mandate ? `Elecciones en ${4 - gameState.mandate.currentYear + 1} años` : 'Aprobación Popular'}
                 </div>
             </div>
 

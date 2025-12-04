@@ -35,6 +35,18 @@ export interface Team {
   primaryColor: string;
   secondaryColor: string;
   tactics: 'Attacking' | 'Balanced' | 'Defensive';
+  coach?: Coach; // Added for Phase 2: Sports Delegation
+}
+
+export interface Coach {
+  id: string;
+  name: string;
+  age: number;
+  nationality: string;
+  style: 'Attacking' | 'Defensive' | 'Possession' | 'Counter' | 'Balanced';
+  prestige: number; // 1-100, affects signing cost and team morale
+  salary: number; // Weekly salary
+  signingBonus: number; // Cost to hire
 }
 
 export interface PlayerProfile {
@@ -115,6 +127,74 @@ export interface CupCompetition {
   statistics: CupStatistics;
 }
 
+// Presidential System Types
+export interface PresidentialMandate {
+  startYear: number;           // Año en que comenzó el mandato
+  currentYear: number;          // Año actual del mandato (1-4)
+  nextElectionSeason: number;   // Temporada en que habrá elecciones
+  isElectionYear: boolean;      // Flag para año electoral
+  totalMandates: number;        // Cuántos mandatos ha tenido el presidente
+}
+
+export interface FanApproval {
+  rating: number;               // 0-100 (votos en elecciones)
+  trend: 'rising' | 'stable' | 'falling';
+  factors: {
+    results: number;            // -20 a +20 (basado en posición liga)
+    transfers: number;          // -10 a +10 (fichajes galácticos vs ventas)
+    finances: number;           // -10 a +10 (deuda vs superávit)
+    promises: number;           // -20 a +20 (promesas cumplidas)
+  };
+}
+
+export interface ElectoralPromise {
+  id: string;
+  description: string;
+  type: 'league_position' | 'trophy' | 'stadium' | 'transfer';
+  target: string | number;      // Ej: "Champions League" o 3 (top 3)
+  deadline: number;              // Temporada límite
+  fulfilled: boolean;
+  impact: number;                // +/- puntos de aprobación si se cumple/falla
+}
+
+// Advanced Economy Types
+export interface Stadium {
+  name: string;
+  capacity: number;
+  ticketPrice: number;          // Precio promedio por entrada
+  maintenanceCost: number;      // Coste semanal de mantenimiento
+  expansionCost?: number;       // Coste de expansión (si disponible)
+  expansionCapacity?: number;   // Nueva capacidad tras expansión
+}
+
+export interface Sponsor {
+  id: string;
+  name: string;
+  type: 'shirt' | 'stadium' | 'training' | 'kit';
+  weeklyIncome: number;
+  duration: number;             // Semanas restantes
+  bonus?: {                     // Bonos por rendimiento
+    condition: 'top4' | 'top6' | 'win_cup' | 'promotion';
+    amount: number;
+  };
+}
+
+export interface FinancialBreakdown {
+  // Ingresos
+  matchdayRevenue: number;      // Entradas
+  sponsorshipRevenue: number;   // Sponsors
+  prizeMoneyRevenue: number;    // Premios de liga/copa
+  transferRevenue: number;      // Ventas de jugadores
+
+  // Gastos
+  wageExpenses: number;         // Salarios jugadores
+  coachExpenses: number;        // Salario DT
+  stadiumExpenses: number;      // Mantenimiento estadio
+  operationalExpenses: number;  // Gastos operativos generales
+  transferExpenses: number;     // Compras de jugadores
+}
+
+
 export interface GameState {
   team: Team;
   allTeams: Team[];
@@ -130,14 +210,27 @@ export interface GameState {
     weeklyIncome: number;
     weeklyWages: number;
     balanceHistory: number[];
+    breakdown?: FinancialBreakdown; // Detailed breakdown
   };
-  chairmanConfidence: number; // 0-100
+  stadium: Stadium;
+  sponsors: Sponsor[];
+  availableSponsors: Sponsor[];  // Market of sponsor offers
+  // Political System (Separated from tactical management)
+  boardConfidence: number;      // 0-100 (Junta Directiva - despido inmediato)
+  fanApproval: FanApproval;     // Aprobación de socios (elecciones)
+  mandate: PresidentialMandate; // Sistema de mandato presidencial
+  electoralPromises: ElectoralPromise[]; // Promesas electorales
+
+  // Legacy field for backward compatibility (will be removed)
+  chairmanConfidence?: number;  // Deprecated: use boardConfidence instead
+
   viewingPlayer: Player | null;
   incomingOffers: Offer[];
   cups: {
     faCup: CupCompetition;
     carabaoCup: CupCompetition;
   };
+  availableCoaches: Coach[]; // Market of available coaches
   // New Fields for Academy & Regens
   playerProfile?: PlayerProfile;
   youthAcademy: Player[];
@@ -153,5 +246,6 @@ export enum Screen {
   Statistics = 'ESTADÍSTICAS',
   Calendar = 'CALENDARIO',
   Settings = 'AJUSTES',
+  Staff = 'PERSONAL',
 }
 

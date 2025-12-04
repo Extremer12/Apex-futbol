@@ -1,43 +1,28 @@
 import React, { useState, useCallback, useEffect, useMemo, useReducer } from 'react';
-import { GameState, Team, Screen, Player, PlayerProfile, NewsItem, Offer, LeagueTableRow, Match } from './types';
-import { TEAMS } from './constants';
+import { GameState, Team, Screen, PlayerProfile, NewsItem, Offer, LeagueTableRow, Match } from './types';
 import { gameReducer, initialState } from './state/reducer';
 import { saveGame, loadGame, SavedGameData } from './services/db';
 
-// Game Flow Components
-import { StartScreen } from './components/gameflow/StartScreen';
-import { ProfileCreation } from './components/gameflow/ProfileCreation';
-import { TeamSelection } from './components/gameflow/TeamSelection';
-import { ElectionPitch } from './components/gameflow/ElectionPitch';
-import { ElectionResult } from './components/gameflow/ElectionResult';
-import { GameOverScreen } from './components/gameflow/GameOverScreen';
-import { LoadGameScreen } from './components/gameflow/LoadGameScreen';
+// Contexts
+import { NotificationProvider, useNotification } from './contexts/NotificationContext';
+import { ModalProvider, useModal } from './contexts/ModalContext';
+
+// Router and Layout
+import { AppRouter } from './components/AppRouter';
+import { MainLayout } from './components/MainLayout';
 
 // UI Components
-import { Header } from './components/ui/Header';
-import { BottomNav } from './components/ui/BottomNav';
 import { PlayerDetailModal } from './components/ui/PlayerDetailModal';
 import { SaveGameModal } from './components/ui/SaveGameModal';
 import { Notification } from './components/ui/Notification';
-import { LoadingSpinner } from './components/icons';
-
-// Screen Components
-import { Dashboard } from './components/screens/Dashboard';
-import { SquadScreen } from './components/screens/SquadScreen';
-import { TransfersScreen } from './components/screens/TransfersScreen';
-import { FinancesScreen } from './components/screens/FinancesScreen';
-import { LeagueScreen } from './components/screens/LeagueScreen';
-import { CalendarScreen } from './components/screens/CalendarScreen';
-import { StatisticsScreen } from './components/screens/StatisticsScreen';
-import { SettingsScreen } from './components/screens/SettingsScreen';
 
 // Services
-import { evaluateElectionPitch, ElectionResponse, generateNews, generateMatchReport, generateTransferOffer, generatePlayerOfTheWeekNews, generateImportantNews } from './services/gameLogic';
+import { ElectionResponse, generateNews, generateMatchReport, generateTransferOffer, generatePlayerOfTheWeekNews, generateImportantNews } from './services/gameLogic';
 import { updateTeamMorale, simulateMatch, advanceCupRound } from './services/simulation';
 import { formatDate } from './utils';
 
 
-type AppState = 'START_SCREEN' | 'LOAD_GAME' | 'PROFILE_CREATION' | 'TEAM_SELECTION' | 'ELECTION_PITCH' | 'ELECTION_RESULT' | 'GAME_ACTIVE' | 'GAME_OVER';
+type AppStateType = 'START_SCREEN' | 'LOAD_GAME' | 'PROFILE_CREATION' | 'TEAM_SELECTION' | 'ELECTION_PITCH' | 'ELECTION_RESULT' | 'GAME_ACTIVE' | 'GAME_OVER';
 export type MatchPhase = 'PRE' | 'LIVE' | 'POST';
 
 // Data structure to hold simulation results before committing to state
@@ -53,9 +38,9 @@ interface PendingSimulationResults {
     updatedCups?: { faCup: any, carabaoCup: any };
 }
 
-// --- Main App Component ---
-function App() {
-    const [appState, setAppState] = useState<AppState>('START_SCREEN');
+// --- Main App Logic Component ---
+function AppLogic() {
+    const [appState, setAppState] = useState<AppStateType>('START_SCREEN');
     const [playerProfile, setPlayerProfile] = useState<PlayerProfile | null>(null);
     const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
     const [electionResult, setElectionResult] = useState<ElectionResponse | null>(null);
@@ -69,21 +54,14 @@ function App() {
     const [currentSaveId, setCurrentSaveId] = useState<string | null>(null);
     const [currentSaveName, setCurrentSaveName] = useState<string | null>(null);
     const [lastSaved, setLastSaved] = useState<Date | null>(null);
-    const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
-    const [saveMode, setSaveMode] = useState<'overwrite' | 'new'>('overwrite');
-
-    // Notification State
-    const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
 
     const [gameState, dispatch] = useReducer(gameReducer, initialState);
 
-    const allPlayers = useMemo(() => gameState ? gameState.allTeams.flatMap(t => t.squad) : [], [gameState]);
-    const viewingPlayer = useMemo(() => (gameState && gameState.viewingPlayer) || null, [gameState]);
+    // Use contexts
+    const { showNotification } = useNotification();
+    const { viewingPlayer, isSaveModalOpen, saveMode, openSaveModal, closeSaveModal, closePlayerModal } = useModal();
 
-    const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
-        setNotification({ message, type });
-        setTimeout(() => setNotification(null), 3000);
-    };
+    const allPlayers = useMemo(() => gameState ? gameState.allTeams.flatMap(t => t.squad) : [], [gameState]);
 
     // Auto-saving effect
     useEffect(() => {
@@ -142,7 +120,7 @@ function App() {
             showNotification("Error al cargar la partida", "error");
             setAppState('START_SCREEN');
         }
-    }, []);
+    }, [showNotification]);
 
     const handleProfileCreate = (profile: PlayerProfile) => {
         setPlayerProfile(profile);
@@ -157,8 +135,6 @@ function App() {
     const handlePitchSubmit = useCallback(async (debateSummary: string) => {
         if (!selectedTeam || !playerProfile) return;
 
-        // The debate component already evaluated and passed a summary
-        // We just need to parse it and show results
         const isSuccess = debateSummary.includes('Won');
 
         const result = {
@@ -199,8 +175,6 @@ function App() {
     const handleConfirmSave = useCallback(async (saveName: string) => {
         if (!gameState || !playerProfile) return;
 
-        // Determine ID: If explicit "new" mode OR no current ID exists, create new ID.
-        // Otherwise (overwrite mode AND ID exists), use current ID.
         const saveId = (saveMode === 'overwrite' && currentSaveId)
             ? currentSaveId
             : `save_${Date.now()}`;
@@ -227,26 +201,20 @@ function App() {
             showNotification("Error al guardar la partida", "error");
         }
 
-        setIsSaveModalOpen(false);
-    }, [gameState, playerProfile, currentSaveId, saveMode]);
+        closeSaveModal();
+    }, [gameState, playerProfile, currentSaveId, saveMode, showNotification, closeSaveModal]);
 
     const handleQuitToMenu = useCallback(() => {
-        // The confirmation is now handled by the UI modal in SettingsScreen.
-        // If we reach here, the user has already confirmed.
         resetGameData();
         setAppState('START_SCREEN');
     }, [resetGameData]);
 
-
-    // Step 1: Calculate results and Start Animation
     const handlePlayMatch = useCallback(async () => {
         if (!gameState) return;
 
-        // Create calculation context
         const newWeek = gameState.currentWeek + 1;
         const newSchedule = [...gameState.schedule];
 
-        // Clone both tables
         const updatedLeagueTable = new Map<number, LeagueTableRow>(
             gameState.leagueTable.map(row => [row.teamId, { ...row, form: [...row.form] }] as [number, LeagueTableRow])
         );
@@ -257,7 +225,6 @@ function App() {
         let updatedAllTeams = gameState.allTeams.map(t => ({ ...t }));
         const matchesThisWeek = newSchedule.filter(m => m.week === newWeek);
 
-        // Initialize cup variables BEFORE they are used in the loop
         let updatedFaCup = gameState.cups.faCup;
         let updatedCarabaoCup = gameState.cups.carabaoCup;
 
@@ -266,7 +233,6 @@ function App() {
 
         let playerMatchResult: { homeScore: number, awayScore: number, penalties?: { home: number, away: number } } | null = null;
 
-        // Simulate all matches
         if (matchesThisWeek.length > 0) {
             matchesThisWeek.forEach(match => {
                 if (match.result) return;
@@ -274,7 +240,6 @@ function App() {
                 const homeTeam = updatedAllTeams.find(t => t.id === match.homeTeamId)!;
                 const awayTeam = updatedAllTeams.find(t => t.id === match.awayTeamId)!;
 
-                // Determine which table to use based on competition or team league
                 let homeRow: LeagueTableRow | undefined;
                 let awayRow: LeagueTableRow | undefined;
 
@@ -288,7 +253,6 @@ function App() {
                     }
                 }
 
-                // If rows are missing (e.g. cup match against non-league team, or error), create dummy rows for simulation
                 const dummyRow: LeagueTableRow = { teamId: 0, position: 0, played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0, form: [] };
 
                 const result = simulateMatch(homeTeam, awayTeam, homeRow || dummyRow, awayRow || dummyRow, match.isCupMatch);
@@ -300,7 +264,6 @@ function App() {
                     penalties: result.penalties
                 };
 
-                // Store player match result specifically for UI
                 if (match.homeTeamId === gameState.team.id || match.awayTeamId === gameState.team.id) {
                     playerMatchResult = {
                         homeScore: result.homeScore,
@@ -309,7 +272,6 @@ function App() {
                     };
                 }
 
-                // Update League Tables ONLY if it's a league match
                 if (!match.isCupMatch && homeRow && awayRow) {
                     homeRow.played++; awayRow.played++;
                     homeRow.goalsFor += result.homeScore; awayRow.goalsFor += result.awayScore;
@@ -330,11 +292,9 @@ function App() {
                     homeRow.form.unshift(homeResult);
                     awayRow.form.unshift(awayResult);
 
-                    // Update Morale
                     homeTeam.teamMorale = updateTeamMorale(homeTeam.teamMorale, homeResult);
                     awayTeam.teamMorale = updateTeamMorale(awayTeam.teamMorale, awayResult);
 
-                    // Update Confidence
                     if (homeTeam.id === gameState.team.id) {
                         if (homeResult === 'W') confidenceChange += 2;
                         if (homeResult === 'D') confidenceChange -= 1;
@@ -346,8 +306,6 @@ function App() {
                         if (awayResult === 'L') confidenceChange -= 2;
                     }
                 } else if (match.isCupMatch) {
-                    // Cup Match Logic (Morale only, no points)
-                    // Determine winner including penalties
                     let homeWin = result.homeScore > result.awayScore;
                     if (result.homeScore === result.awayScore && result.penalties) {
                         homeWin = result.penalties.home > result.penalties.away;
@@ -360,7 +318,7 @@ function App() {
                     awayTeam.teamMorale = updateTeamMorale(awayTeam.teamMorale, awayResult);
 
                     if (homeTeam.id === gameState.team.id) {
-                        if (homeResult === 'W') confidenceChange += 3; // Cup wins are good
+                        if (homeResult === 'W') confidenceChange += 3;
                         if (homeResult === 'L') confidenceChange -= 2;
                     }
                     if (awayTeam.id === gameState.team.id) {
@@ -368,11 +326,9 @@ function App() {
                         if (awayResult === 'L') confidenceChange -= 2;
                     }
 
-                    // Track Cup Goals for Statistics
                     const cupId = match.competition === 'FA_Cup' ? 'faCup' : 'carabaoCup';
                     const currentCup = cupId === 'faCup' ? updatedFaCup : updatedCarabaoCup;
 
-                    // Assign goals to random players from starting XI
                     const assignGoals = (team: Team, goals: number) => {
                         const startingXI = team.squad.slice(0, 11);
                         for (let i = 0; i < goals; i++) {
@@ -395,7 +351,6 @@ function App() {
                     assignGoals(homeTeam, result.homeScore);
                     assignGoals(awayTeam, result.awayScore);
 
-                    // Update the cup reference
                     if (cupId === 'faCup') {
                         updatedFaCup = currentCup;
                     } else {
@@ -405,7 +360,6 @@ function App() {
             });
         }
 
-        // Prepare News and Offers (Async parts)
         const newDate = new Date(gameState.currentDate);
         newDate.setDate(newDate.getDate() + 7);
 
@@ -436,7 +390,6 @@ function App() {
             newsToAdd.push({ ...generalNews, id: `general_${new Date().toISOString()}`, date: formatDate(newDate) });
         }
 
-        // Player of the week
         if (matchesThisWeek.length > 0 && Math.random() < 0.3) {
             const winningTeamsIds: number[] = [];
             matchesThisWeek.forEach(match => {
@@ -460,7 +413,6 @@ function App() {
             }
         }
 
-        // Offers
         const generatedOffers: Offer[] = [];
         const transferListedPlayers = gameState.team.squad.filter(p => p.isTransferListed);
         for (const player of transferListedPlayers) {
@@ -477,30 +429,22 @@ function App() {
             }
         }
 
-        // Cup Progression Logic
-        // Check if any cup rounds are complete and advance them
-
-        // Check FA Cup progression
         const faCupMatches = matchesThisWeek.filter(m => m.competition === 'FA_Cup');
         if (faCupMatches.length > 0 && faCupMatches.every(m => m.result !== undefined)) {
-            // Determine next week for cup fixtures (e.g., 4 weeks from now)
             const nextCupWeek = newWeek + 4;
             updatedFaCup = advanceCupRound(updatedFaCup, updatedAllTeams, nextCupWeek);
 
-            // Add new round fixtures to schedule if a new round was created
             if (updatedFaCup.rounds.length > gameState.cups.faCup.rounds.length) {
                 const newRound = updatedFaCup.rounds[updatedFaCup.rounds.length - 1];
                 newSchedule.push(...newRound.fixtures);
             }
         }
 
-        // Check Carabao Cup progression
         const carabaoCupMatches = matchesThisWeek.filter(m => m.competition === 'Carabao_Cup');
         if (carabaoCupMatches.length > 0 && carabaoCupMatches.every(m => m.result !== undefined)) {
             const nextCupWeek = newWeek + 3;
             updatedCarabaoCup = advanceCupRound(updatedCarabaoCup, updatedAllTeams, nextCupWeek);
 
-            // Add new round fixtures to schedule
             if (updatedCarabaoCup.rounds.length > gameState.cups.carabaoCup.rounds.length) {
                 const newRound = updatedCarabaoCup.rounds[updatedCarabaoCup.rounds.length - 1];
                 newSchedule.push(...newRound.fixtures);
@@ -522,12 +466,10 @@ function App() {
             }
         });
 
-        // Transition state to LIVE simulation
         setMatchPhase('LIVE');
 
     }, [gameState]);
 
-    // Step 2: Commit results after animation
     const handleWeekComplete = useCallback(() => {
         if (!gameState || !pendingResults) return;
 
@@ -556,72 +498,72 @@ function App() {
         setPendingResults(null);
     }, [gameState, pendingResults]);
 
-
-    // --- RENDER LOGIC ---
-    if (appState === 'START_SCREEN') return <StartScreen onNewGame={handleNewGame} onLoadGameScreen={() => setAppState('LOAD_GAME')} />;
-    if (appState === 'LOAD_GAME') return <LoadGameScreen onLoadGame={handleLoadGame} onBack={() => setAppState('START_SCREEN')} />;
-    if (appState === 'GAME_OVER') return <GameOverScreen onNewGame={handleNewGame} />;
-    if (appState === 'PROFILE_CREATION') return <ProfileCreation onProfileCreate={handleProfileCreate} />;
-    if (appState === 'TEAM_SELECTION' && playerProfile) return <TeamSelection player={playerProfile} onSelectTeam={handleTeamSelect} />;
-    if (appState === 'ELECTION_PITCH' && selectedTeam && playerProfile) return <ElectionPitch team={selectedTeam} player={playerProfile} onSubmitPitch={handlePitchSubmit} onBack={handleRetryElection} isLoading={appState === 'ELECTION_RESULT'} />;
-    if (appState === 'ELECTION_RESULT' && electionResult) return <ElectionResult result={electionResult} onContinue={handleStartGame} onRetry={handleRetryElection} />;
-
-    if (!gameState || appState !== 'GAME_ACTIVE') {
-        return <div className="min-h-screen bg-slate-950 flex items-center justify-center"><LoadingSpinner /></div>;
-    }
-
-    const renderContent = () => {
-        switch (activeScreen) {
-            case Screen.Dashboard:
-                return <Dashboard
-                    gameState={gameState}
-                    onPlayMatch={handlePlayMatch}
-                    matchPhase={matchPhase}
-                    pendingResults={pendingResults}
-                    onWeekComplete={handleWeekComplete}
-                    allPlayers={allPlayers}
-                    dispatch={dispatch}
-                />;
-            case Screen.Squad: return <SquadScreen gameState={gameState} dispatch={dispatch} />;
-            case Screen.Transfers: return <TransfersScreen gameState={gameState} dispatch={dispatch} />;
-            case Screen.Finances: return <FinancesScreen gameState={gameState} />;
-            case Screen.League: return <LeagueScreen gameState={gameState} />;
-            case Screen.Calendar: return <CalendarScreen gameState={gameState} />;
-            case Screen.Statistics: return <StatisticsScreen gameState={gameState} />;
-            case Screen.Settings: return (
-                <SettingsScreen
-                    onSaveGame={(mode) => { setSaveMode(mode); setIsSaveModalOpen(true); }}
-                    onQuitToMenu={handleQuitToMenu}
-                    currentSaveName={currentSaveName}
-                    lastSaved={lastSaved}
-                />
-            );
-            default: return <Dashboard gameState={gameState} onPlayMatch={handlePlayMatch} matchPhase={matchPhase} pendingResults={pendingResults} onWeekComplete={handleWeekComplete} allPlayers={allPlayers} dispatch={dispatch} />;
-        }
+    const handleElectionComplete = () => {
+        showNotification('¡Reelección exitosa! Nuevo mandato comenzado');
     };
 
     return (
-        <div className="bg-slate-900 min-h-screen text-slate-200 font-sans relative">
-            {notification && <Notification message={notification.message} type={notification.type} onClose={() => setNotification(null)} />}
+        <>
+            <Notification
+                message={useNotification().notification?.message || ''}
+                type={useNotification().notification?.type || 'success'}
+                onClose={() => { }}
+            />
             {viewingPlayer && <PlayerDetailModal player={viewingPlayer} dispatch={dispatch} />}
             {isSaveModalOpen && (
                 <SaveGameModal
                     onSave={handleConfirmSave}
-                    onClose={() => setIsSaveModalOpen(false)}
+                    onClose={closeSaveModal}
                     defaultName={saveMode === 'overwrite' ? (currentSaveName || `${gameState.team.name} Carrera`) : `${gameState.team.name} Carrera (Nueva)`}
                     mode={saveMode}
                 />
             )}
-            <div className="max-w-7xl mx-auto">
-                <Header gameState={gameState} />
-                <main className="pb-24">
-                    <div key={activeScreen} className="content-fade-in">
-                        {renderContent()}
-                    </div>
-                </main>
-                <BottomNav activeScreen={activeScreen} onNavigate={setActiveScreen} />
-            </div>
-        </div>
+
+            <AppRouter
+                appState={appState}
+                playerProfile={playerProfile}
+                selectedTeam={selectedTeam}
+                electionResult={electionResult}
+                onNewGame={handleNewGame}
+                onLoadGameScreen={() => setAppState('LOAD_GAME')}
+                onLoadGame={handleLoadGame}
+                onProfileCreate={handleProfileCreate}
+                onTeamSelect={handleTeamSelect}
+                onPitchSubmit={handlePitchSubmit}
+                onStartGame={handleStartGame}
+                onRetryElection={handleRetryElection}
+            >
+                {gameState && (
+                    <MainLayout
+                        gameState={gameState}
+                        activeScreen={activeScreen}
+                        setActiveScreen={setActiveScreen}
+                        matchPhase={matchPhase}
+                        pendingResults={pendingResults}
+                        onPlayMatch={handlePlayMatch}
+                        onWeekComplete={handleWeekComplete}
+                        allPlayers={allPlayers}
+                        dispatch={dispatch}
+                        onSaveGame={openSaveModal}
+                        onQuitToMenu={handleQuitToMenu}
+                        currentSaveName={currentSaveName}
+                        lastSaved={lastSaved}
+                        onElectionComplete={handleElectionComplete}
+                    />
+                )}
+            </AppRouter>
+        </>
+    );
+}
+
+// --- Main App Component with Providers ---
+function App() {
+    return (
+        <NotificationProvider>
+            <ModalProvider>
+                <AppLogic />
+            </ModalProvider>
+        </NotificationProvider>
     );
 }
 

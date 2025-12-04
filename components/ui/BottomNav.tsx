@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Screen } from '../../types';
-import { DashboardIcon, SquadIcon, TransfersIcon, FinancesIcon, LeagueIcon, ChartBarIcon, SettingsIcon, CalendarIcon } from '../icons';
+import { DashboardIcon, SquadIcon, TransfersIcon, FinancesIcon, LeagueIcon, ChartBarIcon, SettingsIcon, CalendarIcon, BriefcaseIcon } from '../icons';
 
 interface BottomNavProps {
     activeScreen: Screen;
@@ -23,6 +23,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeScreen, onNavigate }
         { screen: Screen.Calendar, icon: CalendarIcon, label: 'Calendario' },
         { screen: Screen.Statistics, icon: ChartBarIcon, label: 'Estadísticas' },
         { screen: Screen.Finances, icon: FinancesIcon, label: 'Finanzas' },
+        { screen: Screen.Staff, icon: BriefcaseIcon, label: 'Personal' },
         { screen: Screen.Settings, icon: SettingsIcon, label: 'Ajustes' },
     ];
 
