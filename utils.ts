@@ -1,8 +1,8 @@
 
 // --- Helper Functions ---
 export const formatDate = (date: Date): string => date.toLocaleString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
-export const formatCurrency = (amount: number, decimals = 1): string => `£${amount.toFixed(decimals)}M`;
-export const formatWeeklyWage = (amount: number): string => `£${(amount / 1000).toFixed(0)}k`;
+export const formatCurrency = (amount: number | undefined | null, decimals = 1): string => `£${(amount || 0).toFixed(decimals)}M`;
+export const formatWeeklyWage = (amount: number | undefined | null): string => `£${((amount || 0) / 1000).toFixed(0)}k`;
 
 // --- Name Generation for Regens ---
 const FIRST_NAMES = [

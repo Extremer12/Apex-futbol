@@ -1,14 +1,14 @@
 import React, { useRef, useEffect } from 'react';
 
-export const AnimatedNumber: React.FC<{ value: number, formatter: (n: number) => string, className?: string }> = React.memo(({ value, formatter, className }) => {
+export const AnimatedNumber: React.FC<{ value: number | undefined | null, formatter: (n: number) => string, className?: string }> = React.memo(({ value, formatter, className }) => {
     const ref = useRef<HTMLSpanElement>(null);
     const prevValueRef = useRef(value);
     const frameRef = useRef<number | null>(null);
 
     useEffect(() => {
-        const startValue = prevValueRef.current;
-        const endValue = value;
-        prevValueRef.current = value;
+        const startValue = prevValueRef.current || 0;
+        const endValue = value || 0;
+        prevValueRef.current = value || 0;
         let startTime: number | null = null;
 
         const animate = (timestamp: number) => {
@@ -29,5 +29,5 @@ export const AnimatedNumber: React.FC<{ value: number, formatter: (n: number) =>
         };
     }, [value, formatter]);
 
-    return <span ref={ref} className={className}>{formatter(value)}</span>;
+    return <span ref={ref} className={className}>{formatter(value || 0)}</span>;
 });
