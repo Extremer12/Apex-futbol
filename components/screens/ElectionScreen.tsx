@@ -26,7 +26,7 @@ export const ElectionScreen: React.FC<ElectionScreenProps> = ({ gameState, dispa
         else if (playerPosition >= 18) probability -= 15;
 
         // Bonus for good finances
-        if (gameState.finances.balance > 0) probability += 5;
+        if ((gameState.finances?.balance || 0) > 0) probability += 5;
         else probability -= 10;
 
         return Math.max(10, Math.min(95, probability));
@@ -215,8 +215,8 @@ export const ElectionScreen: React.FC<ElectionScreenProps> = ({ gameState, dispa
                         </div>
                         <div>
                             <div className="text-slate-400 text-sm">Balance Financiero</div>
-                            <div className={`text-2xl font-bold ${gameState.finances.balance > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                {gameState.finances.balance > 0 ? '+' : ''}{gameState.finances.balance.toFixed(1)}M
+                            <div className={`text-2xl font-bold ${(gameState.finances?.balance || 0) > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                {(gameState.finances?.balance || 0) > 0 ? '+' : ''}{(gameState.finances?.balance || 0).toFixed(1)}M
                             </div>
                         </div>
                     </div>

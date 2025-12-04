@@ -413,11 +413,13 @@ function AppLogic() {
 
     return (
         <>
-            <Notification
-                message={useNotification().notification?.message || ''}
-                type={useNotification().notification?.type || 'success'}
-                onClose={() => { }}
-            />
+            {useNotification().notification && (
+                <Notification
+                    message={useNotification().notification.message}
+                    type={useNotification().notification.type}
+                    onClose={useNotification().hideNotification}
+                />
+            )}
             {viewingPlayer && <PlayerDetailModal player={viewingPlayer} dispatch={dispatch} />}
             {isSaveModalOpen && (
                 <SaveGameModal
