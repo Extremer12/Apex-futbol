@@ -1,6 +1,32 @@
+import React, { useState, useCallback, useEffect, useMemo, useReducer } from 'react';
 import { GameState, Team, Screen, PlayerProfile, NewsItem, Offer, LeagueTableRow, Match, LeagueId } from './types';
+import { gameReducer, initialState } from './state/reducer';
+import { saveGame, loadGame, SavedGameData } from './services/db';
 
-// ... (imports)
+// Contexts
+import { NotificationProvider, useNotification } from './contexts/NotificationContext';
+import { ModalProvider, useModal } from './contexts/ModalContext';
+
+// Router and Layout
+import { AppRouter } from './components/AppRouter';
+import { MainLayout } from './components/MainLayout';
+
+// UI Components
+import { PlayerDetailModal } from './components/ui/PlayerDetailModal';
+import { SaveGameModal } from './components/ui/SaveGameModal';
+import { Notification } from './components/ui/Notification';
+import { EventModal } from './components/ui/EventModal';
+
+// Services
+import { ElectionResponse, generateNews, generateMatchReport, generateTransferOffer, generatePlayerOfTheWeekNews, generateImportantNews } from './services/gameLogic';
+import { advanceCupRound } from './services/simulation';
+import { formatDate } from './utils';
+import { simulationWorker } from './services/simulationWorker';
+import { eventEngine, TriggeredEvent } from './services/eventEngine';
+
+
+type AppStateType = 'START_SCREEN' | 'LOAD_GAME' | 'PROFILE_CREATION' | 'TEAM_SELECTION' | 'ELECTION_PITCH' | 'ELECTION_RESULT' | 'GAME_ACTIVE' | 'GAME_OVER';
+export type MatchPhase = 'PRE' | 'LIVE' | 'POST';
 
 // Data structure to hold simulation results before committing to state
 interface PendingSimulationResults {
@@ -13,81 +39,6 @@ interface PendingSimulationResults {
     playerMatchResult: { homeScore: number; awayScore: number, penalties?: { home: number, away: number }, events?: string[] } | null;
     updatedCups?: { faCup: any, carabaoCup: any };
 }
-
-// ... (AppLogic)
-
-const handlePlayMatch = useCallback(async () => {
-    if (!gameState || isSimulating) return;
-
-    try {
-        setIsSimulating(true);
-        setMatchPhase('LIVE');
-
-        // Use Web Worker for heavy simulation
-        const simulationResult = await simulationWorker.simulateWeek(gameState);
-
-        // ... (news generation logic remains same)
-
-        // ... (potw logic remains same)
-
-        // ... (transfer offers logic remains same)
-
-        // Handle cup progression
-        let updatedCups = simulationResult.updatedCups;
-        // ... (cup logic remains same)
-
-        // Check for random events
-        const triggeredEvent = eventEngine.triggerEvent(gameState);
-        if (triggeredEvent) {
-            setCurrentEvent(triggeredEvent);
-        }
-
-        setPendingResults({
-            newsToAdd,
-            updatedSchedule: simulationResult.updatedSchedule,
-            updatedLeagueTables: simulationResult.updatedLeagueTables,
-            updatedAllTeams: simulationResult.updatedAllTeams,
-            confidenceChange: simulationResult.confidenceChange,
-            newOffers: generatedOffers,
-            playerMatchResult: simulationResult.playerMatchResult,
-            updatedCups
-        });
-
-    } catch (error) {
-        console.error('Simulation error:', error);
-        showNotification('Error al simular la semana', 'error');
-        setMatchPhase('PRE');
-    } finally {
-        setIsSimulating(false);
-    }
-}, [gameState, isSimulating, showNotification]);
-
-const handleWeekComplete = useCallback(() => {
-    if (!gameState || !pendingResults) return;
-
-    const newConfidence = Math.max(0, Math.min(100, gameState.chairmanConfidence + pendingResults.confidenceChange));
-
-    dispatch({ type: 'ADVANCE_WEEK_START' });
-    dispatch({
-        type: 'ADVANCE_WEEK_SUCCESS',
-        payload: {
-            newsItems: pendingResults.newsToAdd,
-            newSchedule: pendingResults.updatedSchedule,
-            newLeagueTables: pendingResults.updatedLeagueTables,
-            newAllTeams: pendingResults.updatedAllTeams,
-            newConfidence,
-            newOffers: pendingResults.newOffers,
-            newCups: pendingResults.updatedCups
-        }
-    });
-
-    if (newConfidence <= 0) {
-        setAppState('GAME_OVER');
-    } else {
-        setMatchPhase('PRE');
-    }
-    setPendingResults(null);
-}, [gameState, pendingResults]);
 
 // --- Main App Logic Component ---
 function AppLogic() {
@@ -381,8 +332,7 @@ function AppLogic() {
             setPendingResults({
                 newsToAdd,
                 updatedSchedule: simulationResult.updatedSchedule,
-                updatedLeagueTable: simulationResult.updatedLeagueTable,
-                updatedChampionshipTable: simulationResult.updatedChampionshipTable,
+                updatedLeagueTables: simulationResult.updatedLeagueTables,
                 updatedAllTeams: simulationResult.updatedAllTeams,
                 confidenceChange: simulationResult.confidenceChange,
                 newOffers: generatedOffers,
@@ -411,8 +361,7 @@ function AppLogic() {
             payload: {
                 newsItems: pendingResults.newsToAdd,
                 newSchedule: pendingResults.updatedSchedule,
-                newLeagueTable: pendingResults.updatedLeagueTable,
-                newChampionshipTable: pendingResults.updatedChampionshipTable,
+                newLeagueTables: pendingResults.updatedLeagueTables,
                 newAllTeams: pendingResults.updatedAllTeams,
                 newConfidence,
                 newOffers: pendingResults.newOffers,
