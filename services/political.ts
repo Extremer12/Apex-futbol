@@ -4,7 +4,8 @@ import { GameState, FanApproval } from '../types';
  * Calculate fan approval based on team performance
  */
 export const calculateFanApproval = (gameState: GameState): FanApproval => {
-    const playerPosition = gameState.leagueTable.find(
+    const playerTable = gameState.leagueTables[gameState.team.leagueId] || [];
+    const playerPosition = playerTable.find(
         row => row.teamId === gameState.team.id
     )?.position || 10;
 
@@ -81,7 +82,8 @@ export const updateFanApprovalAfterMatch = (
  * Update fan approval at end of season
  */
 export const updateFanApprovalEndOfSeason = (gameState: GameState): { delta: number; reason: string } => {
-    const playerPosition = gameState.leagueTable.find(
+    const playerTable = gameState.leagueTables[gameState.team.leagueId] || [];
+    const playerPosition = playerTable.find(
         row => row.teamId === gameState.team.id
     )?.position || 10;
 

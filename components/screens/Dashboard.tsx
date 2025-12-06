@@ -195,7 +195,7 @@ const MatchDayCard: React.FC<{
 
 // --- Bloques Laterales (Inbox, Stats rápidas) ---
 const QuickStats: React.FC<{ gameState: GameState }> = ({ gameState }) => {
-    const playerTeamRow = gameState.leagueTable.find(row => row.teamId === gameState.team.id);
+    const playerTeamRow = gameState.leagueTables[gameState.team.leagueId]?.find(row => row.teamId === gameState.team.id);
 
     // Determine position zone
     const getPositionZone = (position: number | undefined) => {

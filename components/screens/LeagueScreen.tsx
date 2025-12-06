@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { GameState, CupCompetition, LeagueTableRow } from '../../types';
+import React, { useState, useMemo } from 'react';
+import { GameState, CupCompetition, LeagueTableRow, LeagueId } from '../../types';
+import { LEAGUE_COUNTRY, CountryCode } from '../../types';
 import { TeamForm } from '../ui/TeamForm';
 import { TrophyIcon } from '../icons';
 
@@ -7,14 +8,21 @@ interface LeagueScreenProps {
     gameState: GameState;
 }
 
-type Tab = 'PREMIER_LEAGUE' | 'CHAMPIONSHIP' | 'LA_LIGA' | 'FA_CUP' | 'CARABAO_CUP';
+type Tab = 'LOCAL_LEAGUE_1' | 'LOCAL_LEAGUE_2' | 'LOCAL_CUP_1' | 'LOCAL_CUP_2' | 'WORLD';
+type WorldTab = 'PREMIER_LEAGUE' | 'CHAMPIONSHIP' | 'LA_LIGA' | null;
 
 export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
-    const [activeTab, setActiveTab] = useState<Tab>('PREMIER_LEAGUE');
-    const [cupTab, setCupTab] = useState<'ROUNDS' | 'STATS'>('ROUNDS'); // Add cup tab state here
+    const playerTeamLeague = gameState.team.leagueId;
+    const playerCountry = LEAGUE_COUNTRY[playerTeamLeague];
+
+    // Determine default tab based on country
+    const [activeTab, setActiveTab] = useState<Tab>('LOCAL_LEAGUE_1');
+    const [cupTab, setCupTab] = useState<'ROUNDS' | 'STATS'>('ROUNDS');
+    const [worldLeagueSelected, setWorldLeagueSelected] = useState<WorldTab>(null);
 
     const getTeamById = (id: number) => gameState.allTeams.find(t => t.id === id);
 
+    // Helper to render table (reused)
     const renderLeagueTable = (table: LeagueTableRow[], title: string, logoPath: string, isPremier: boolean) => (
         <div className="bg-gradient-to-br from-purple-950/30 via-slate-900 to-slate-900 border-2 border-purple-500/30 rounded-2xl shadow-2xl overflow-hidden animate-fade-in">
             {/* Header */}
@@ -320,49 +328,132 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
         );
     };
 
+    const renderWorldView = () => {
+        if (!worldLeagueSelected) {
+            return (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
+                    {/* Show leagues NOT in current country */}
+                    {playerCountry !== 'ENG' && (
+                        <>
+                            <button
+                                onClick={() => setWorldLeagueSelected('PREMIER_LEAGUE')}
+                                className="bg-slate-800/50 hover:bg-slate-800 border border-slate-700 hover:border-purple-500 p-6 rounded-xl transition-all group"
+                            >
+                                <div className="w-16 h-16 mx-auto mb-4">
+                                    <img src="/logos/Premier League.png" alt="Premier League" className="w-full h-full object-contain group-hover:scale-110 transition-transform" />
+                                </div>
+                                <h3 className="text-xl font-bold text-white text-center">Premier League</h3>
+                                <p className="text-slate-400 text-center text-sm">Inglaterra</p>
+                            </button>
+                            <button
+                                onClick={() => setWorldLeagueSelected('CHAMPIONSHIP')}
+                                className="bg-slate-800/50 hover:bg-slate-800 border border-slate-700 hover:border-sky-500 p-6 rounded-xl transition-all group"
+                            >
+                                <div className="w-16 h-16 mx-auto mb-4">
+                                    <img src="/logos/Sky Bet Championship.png" alt="Championship" className="w-full h-full object-contain group-hover:scale-110 transition-transform" />
+                                </div>
+                                <h3 className="text-xl font-bold text-white text-center">Championship</h3>
+                                <p className="text-slate-400 text-center text-sm">Inglaterra (2ª Div)</p>
+                            </button>
+                        </>
+                    )}
+
+                    {playerCountry !== 'ESP' && (
+                        <button
+                            onClick={() => setWorldLeagueSelected('LA_LIGA')}
+                            className="bg-slate-800/50 hover:bg-slate-800 border border-slate-700 hover:border-orange-500 p-6 rounded-xl transition-all group"
+                        >
+                            <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                                <span className="text-4xl">🇪🇸</span>
+                            </div>
+                            <h3 className="text-xl font-bold text-white text-center">La Liga</h3>
+                            <p className="text-slate-400 text-center text-sm">España</p>
+                        </button>
+                    )}
+                </div>
+            );
+        }
+
+        // Render selected world league
+        return (
+            <div className="space-y-4 animate-fade-in">
+                <button
+                    onClick={() => setWorldLeagueSelected(null)}
+                    className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+                >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Volver a Competiciones Mundiales
+                </button>
+
+                {worldLeagueSelected === 'PREMIER_LEAGUE' && renderLeagueTable(gameState.leagueTables.PREMIER_LEAGUE, 'Premier League', '/logos/Premier League.png', true)}
+                {worldLeagueSelected === 'CHAMPIONSHIP' && renderLeagueTable(gameState.leagueTables.CHAMPIONSHIP, 'EFL Championship', '/logos/Sky Bet Championship.png', false)}
+                {worldLeagueSelected === 'LA_LIGA' && renderLeagueTable(gameState.leagueTables.LA_LIGA, 'La Liga', '', false)}
+            </div>
+        );
+    };
+
     return (
         <div className="p-4 md:p-6 space-y-6">
             {/* Tabs Navigation */}
             <div className="flex flex-wrap gap-2 bg-slate-900/50 p-1 rounded-xl backdrop-blur-sm border border-slate-800/50">
+                {playerCountry === 'ENG' && (
+                    <>
+                        <button
+                            onClick={() => { setActiveTab('LOCAL_LEAGUE_1'); setWorldLeagueSelected(null); }}
+                            className={`flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all duration-200 ${activeTab === 'LOCAL_LEAGUE_1' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                        >
+                            Premier League
+                        </button>
+                        <button
+                            onClick={() => { setActiveTab('LOCAL_LEAGUE_2'); setWorldLeagueSelected(null); }}
+                            className={`flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all duration-200 ${activeTab === 'LOCAL_LEAGUE_2' ? 'bg-sky-600 text-white shadow-lg shadow-sky-600/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                        >
+                            Championship
+                        </button>
+                        <button
+                            onClick={() => { setActiveTab('LOCAL_CUP_1'); setWorldLeagueSelected(null); }}
+                            className={`flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all duration-200 ${activeTab === 'LOCAL_CUP_1' ? 'bg-yellow-600 text-white shadow-lg shadow-yellow-600/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                        >
+                            FA Cup
+                        </button>
+                        <button
+                            onClick={() => { setActiveTab('LOCAL_CUP_2'); setWorldLeagueSelected(null); }}
+                            className={`flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all duration-200 ${activeTab === 'LOCAL_CUP_2' ? 'bg-green-600 text-white shadow-lg shadow-green-600/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                        >
+                            Carabao Cup
+                        </button>
+                    </>
+                )}
+
+                {playerCountry === 'ESP' && (
+                    <button
+                        onClick={() => { setActiveTab('LOCAL_LEAGUE_1'); setWorldLeagueSelected(null); }}
+                        className={`flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all duration-200 ${activeTab === 'LOCAL_LEAGUE_1' ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                    >
+                        La Liga
+                    </button>
+                )}
+
                 <button
-                    onClick={() => setActiveTab('PREMIER_LEAGUE')}
-                    className={`flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all duration-200 ${activeTab === 'PREMIER_LEAGUE' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                    onClick={() => setActiveTab('WORLD')}
+                    className={`flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all duration-200 ${activeTab === 'WORLD' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
                 >
-                    Premier League
-                </button>
-                <button
-                    onClick={() => setActiveTab('CHAMPIONSHIP')}
-                    className={`flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all duration-200 ${activeTab === 'CHAMPIONSHIP' ? 'bg-sky-600 text-white shadow-lg shadow-sky-600/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
-                >
-                    Championship
-                </button>
-                <button
-                    onClick={() => setActiveTab('LA_LIGA')}
-                    className={`flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all duration-200 ${activeTab === 'LA_LIGA' ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
-                >
-                    La Liga
-                </button>
-                <button
-                    onClick={() => setActiveTab('FA_CUP')}
-                    className={`flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all duration-200 ${activeTab === 'FA_CUP' ? 'bg-yellow-600 text-white shadow-lg shadow-yellow-600/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
-                >
-                    FA Cup
-                </button>
-                <button
-                    onClick={() => setActiveTab('CARABAO_CUP')}
-                    className={`flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all duration-200 ${activeTab === 'CARABAO_CUP' ? 'bg-green-600 text-white shadow-lg shadow-green-600/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
-                >
-                    Carabao Cup
+                    🌍 Mundo
                 </button>
             </div>
 
             {/* Content Area */}
             <div className="min-h-[500px]">
-                {activeTab === 'PREMIER_LEAGUE' && renderLeagueTable(gameState.leagueTable, 'Premier League', '/logos/Premier League.png', true)}
-                {activeTab === 'CHAMPIONSHIP' && renderLeagueTable(gameState.championshipTable, 'EFL Championship', '/logos/Sky Bet Championship.png', false)}
-                {activeTab === 'LA_LIGA' && renderLeagueTable(gameState.laLigaTable, 'La Liga', '', false)}
-                {activeTab === 'FA_CUP' && renderCupView(gameState.cups.faCup, '/logos/The Emirates FA Cup.png')}
-                {activeTab === 'CARABAO_CUP' && renderCupView(gameState.cups.carabaoCup, '/logos/carabao_cup_logo.png')}
+                {activeTab === 'LOCAL_LEAGUE_1' && playerCountry === 'ENG' && renderLeagueTable(gameState.leagueTables.PREMIER_LEAGUE, 'Premier League', '/logos/Premier League.png', true)}
+                {activeTab === 'LOCAL_LEAGUE_2' && playerCountry === 'ENG' && renderLeagueTable(gameState.leagueTables.CHAMPIONSHIP, 'EFL Championship', '/logos/Sky Bet Championship.png', false)}
+                {activeTab === 'LOCAL_CUP_1' && playerCountry === 'ENG' && renderCupView(gameState.cups.faCup, '/logos/The Emirates FA Cup.png')}
+                {activeTab === 'LOCAL_CUP_2' && playerCountry === 'ENG' && renderCupView(gameState.cups.carabaoCup, '/logos/carabao_cup_logo.png')}
+
+                {activeTab === 'LOCAL_LEAGUE_1' && playerCountry === 'ESP' && renderLeagueTable(gameState.leagueTables.LA_LIGA, 'La Liga', '', false)}
+
+                {activeTab === 'WORLD' && renderWorldView()}
             </div>
         </div>
     );

@@ -1,13 +1,11 @@
 // Worker manager for simulation
 // Provides a clean API to communicate with the simulation worker
 
-import { GameState, LeagueTableRow, Match, Team } from '../types';
+import { GameState, LeagueTableRow, Match, Team, LeagueId } from '../types';
 
 interface SimulationResult {
     updatedSchedule: Match[];
-    updatedLeagueTable: LeagueTableRow[];
-    updatedChampionshipTable: LeagueTableRow[];
-    updatedLaLigaTable: LeagueTableRow[];
+    updatedLeagueTables: Record<LeagueId, LeagueTableRow[]>;
     updatedAllTeams: Team[];
     confidenceChange: number;
     playerMatchResult: { homeScore: number; awayScore: number; penalties?: { home: number; away: number } } | null;
@@ -55,9 +53,7 @@ class SimulationWorkerManager {
                 payload: {
                     currentWeek: gameState.currentWeek,
                     schedule: gameState.schedule,
-                    leagueTable: gameState.leagueTable,
-                    championshipTable: gameState.championshipTable || [],
-                    laLigaTable: gameState.laLigaTable || [],
+                    leagueTables: gameState.leagueTables,
                     allTeams: gameState.allTeams.map(t => ({ ...t, logo: undefined })),
                     playerTeamId: gameState.team.id,
                     cups: gameState.cups,

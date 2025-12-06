@@ -18,7 +18,7 @@ export type GameAction =
     | { type: 'LOAD_GAME'; payload: GameState }
     | { type: 'RESET_GAME' }
     | { type: 'ADVANCE_WEEK_START' }
-    | { type: 'ADVANCE_WEEK_SUCCESS'; payload: { newsItems: NewsItem[]; newSchedule: Match[]; newLeagueTable: LeagueTableRow[]; newChampionshipTable: LeagueTableRow[]; newLaLigaTable: LeagueTableRow[]; newAllTeams: Team[]; newConfidence: number; newOffers: Offer[]; newCups?: { faCup: any; carabaoCup: any } } }
+    | { type: 'ADVANCE_WEEK_SUCCESS'; payload: { newsItems: NewsItem[]; newSchedule: Match[]; newLeagueTables: Record<LeagueId, LeagueTableRow[]>; newAllTeams: Team[]; newConfidence: number; newOffers: Offer[]; newCups?: { faCup: any; carabaoCup: any } } }
     | { type: 'START_NEW_SEASON' }
     | { type: 'TRIGGER_ELECTION' }
     | { type: 'ELECTION_RESULT'; payload: { won: boolean; newApproval: number } }
@@ -98,9 +98,11 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 season: 2024,
                 newsFeed: TUTORIAL_NEWS,
                 schedule: initialSchedule,
-                leagueTable: createInitialLeagueTable(plTeams),
-                championshipTable: createInitialLeagueTable(chTeams),
-                laLigaTable: createInitialLeagueTable(laTeams),
+                leagueTables: {
+                    PREMIER_LEAGUE: createInitialLeagueTable(plTeams),
+                    CHAMPIONSHIP: createInitialLeagueTable(chTeams),
+                    LA_LIGA: createInitialLeagueTable(laTeams)
+                },
                 finances: { balance: team.budget, transferBudget: team.transferBudget, weeklyIncome, weeklyWages: totalWages, balanceHistory: [team.budget] },
 
                 // Political System
@@ -196,6 +198,14 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 breakdown: loadedState.finances.breakdown || undefined
             };
 
+            // 4. League Tables Migration
+            // @ts-ignore - Handling legacy migration where these properties might exist on loadedState but not on GameState type
+            const leagueTables = loadedState.leagueTables || {
+                PREMIER_LEAGUE: loadedState.leagueTable || [],
+                CHAMPIONSHIP: loadedState.championshipTable || [],
+                LA_LIGA: loadedState.laLigaTable || []
+            };
+
             return {
                 ...loadedState,
                 team: playerTeamWithCoach,
@@ -208,7 +218,8 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 stadium,
                 sponsors,
                 availableSponsors,
-                finances
+                finances,
+                leagueTables
             };
         }
 
@@ -220,7 +231,7 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
 
         case 'ADVANCE_WEEK_SUCCESS': {
             if (!state) return null;
-            const { newsItems, newSchedule, newLeagueTable, newChampionshipTable, newLaLigaTable, newAllTeams, newConfidence, newOffers, newCups } = action.payload;
+            const { newsItems, newSchedule, newLeagueTables, newAllTeams, newConfidence, newOffers, newCups } = action.payload;
 
             // Update player team from newAllTeams
             const updatedPlayerTeam = newAllTeams.find(t => t.id === state.team.id)!;
@@ -229,7 +240,9 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
             // We need to estimate transfers sold/bought this week. 
             // For now, we'll assume 0 unless we track it in payload.
             // Ideally, this should be passed in payload, but we can calculate it roughly or leave it 0 for this tick.
-            const playerPosition = newLeagueTable.find(row => row.teamId === state.team.id)?.position || 10;
+            const playerLeagueId = state.team.leagueId;
+            const playerTable = newLeagueTables[playerLeagueId] || [];
+            const playerPosition = playerTable.find(row => row.teamId === state.team.id)?.position || 10;
 
             const breakdown = calculateFinancialBreakdown(
                 updatedPlayerTeam,
@@ -249,9 +262,7 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 currentWeek: state.currentWeek + 1,
                 newsFeed: [...newsItems, ...state.newsFeed].slice(0, 50),
                 schedule: newSchedule,
-                leagueTable: newLeagueTable,
-                championshipTable: newChampionshipTable,
-                laLigaTable: newLaLigaTable,
+                leagueTables: newLeagueTables,
                 allTeams: newAllTeams,
                 team: updatedPlayerTeam,
                 boardConfidence: newConfidence,
@@ -314,8 +325,8 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
             // 3. Reset Competition & Process Promotion/Relegation
             // We need the FINAL tables from the previous season to determine promotion/relegation
             // Identify teams before changes for news
-            const sortedPL = [...state.leagueTable].sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference);
-            const sortedCH = [...state.championshipTable].sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference);
+            const sortedPL = [...state.leagueTables.PREMIER_LEAGUE].sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference);
+            const sortedCH = [...state.leagueTables.CHAMPIONSHIP].sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference);
 
             const relegatedIds = sortedPL.slice(-3).map(row => row.teamId);
             const promotedIds = sortedCH.slice(0, 3).map(row => row.teamId);
@@ -323,16 +334,18 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
             const relegatedTeams = relegatedIds.map(id => processedTeams.find(t => t.id === id)?.name || 'Unknown').filter(Boolean);
             const promotedTeams = promotedIds.map(id => processedTeams.find(t => t.id === id)?.name || 'Unknown').filter(Boolean);
 
-            const teamsAfterProRel = handlePromotionRelegation(processedTeams, state.leagueTable, state.championshipTable);
+            const teamsAfterProRel = handlePromotionRelegation(processedTeams, state.leagueTables.PREMIER_LEAGUE, state.leagueTables.CHAMPIONSHIP);
 
             const newSeasonSchedule = generateSeasonSchedule(teamsAfterProRel);
             const newPlTeams = teamsAfterProRel.filter(t => t.leagueId === 'PREMIER_LEAGUE');
             const newChTeams = teamsAfterProRel.filter(t => t.leagueId === 'CHAMPIONSHIP');
             const newLaTeams = teamsAfterProRel.filter(t => t.leagueId === 'LA_LIGA');
 
-            const newLeagueTable = createInitialLeagueTable(newPlTeams);
-            const newChampionshipTable = createInitialLeagueTable(newChTeams);
-            const newLaLigaTable = createInitialLeagueTable(newLaTeams);
+            const newLeagueTables = {
+                PREMIER_LEAGUE: createInitialLeagueTable(newPlTeams),
+                CHAMPIONSHIP: createInitialLeagueTable(newChTeams),
+                LA_LIGA: createInitialLeagueTable(newLaTeams)
+            };
 
             // Generate New Cup Draws
             const faCupRound1 = generateCupDraw(teamsAfterProRel, 'Round 1', 'FA_Cup');
@@ -367,9 +380,7 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 currentDate: newDate,
                 currentWeek: 0,
                 schedule: fullSchedule,
-                leagueTable: newLeagueTable,
-                championshipTable: newChampionshipTable,
-                laLigaTable: newLaLigaTable,
+                leagueTables: newLeagueTables,
                 newsFeed: [proRelNews, seasonNews, ...state.newsFeed].slice(0, 20),
                 // Update Mandate Year and Check for Elections
                 mandate: {

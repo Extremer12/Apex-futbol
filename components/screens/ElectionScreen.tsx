@@ -20,7 +20,9 @@ export const ElectionScreen: React.FC<ElectionScreenProps> = ({ gameState, dispa
         let probability = fanRating;
 
         // Bonus for being in top positions
-        const playerPosition = gameState.leagueTable.find(row => row.teamId === gameState.team.id)?.position || 10;
+        // Bonus for being in top positions
+        const playerTable = gameState.leagueTables[gameState.team.leagueId] || [];
+        const playerPosition = playerTable.find(row => row.teamId === gameState.team.id)?.position || 10;
         if (playerPosition <= 4) probability += 15;
         else if (playerPosition <= 6) probability += 10;
         else if (playerPosition >= 18) probability -= 15;
@@ -210,7 +212,7 @@ export const ElectionScreen: React.FC<ElectionScreenProps> = ({ gameState, dispa
                         <div>
                             <div className="text-slate-400 text-sm">Posición Final</div>
                             <div className="text-2xl font-bold text-white">
-                                {gameState.leagueTable.find(row => row.teamId === gameState.team.id)?.position || '-'}º
+                                {(gameState.leagueTables[gameState.team.leagueId] || []).find(row => row.teamId === gameState.team.id)?.position || '-'}º
                             </div>
                         </div>
                         <div>

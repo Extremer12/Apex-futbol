@@ -211,7 +211,9 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ gameState })
                         <div className="bg-gradient-to-br from-green-900/20 to-green-800/10 border border-green-500/30 rounded-xl p-4">
                             <div className="text-green-400 text-sm font-semibold mb-2">🔥 Mejor Ataque</div>
                             {(() => {
-                                const bestAttack = [...gameState.leagueTable].sort((a, b) => b.goalsFor - a.goalsFor)[0];
+                                const playerLeagueId = gameState.team.leagueId;
+                                const currentTable = gameState.leagueTables[playerLeagueId] || [];
+                                const bestAttack = [...currentTable].sort((a, b) => b.goalsFor - a.goalsFor)[0];
                                 const team = gameState.allTeams.find(t => t.id === bestAttack?.teamId);
                                 return team ? (
                                     <div className="flex items-center gap-3">
@@ -229,7 +231,9 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ gameState })
                         <div className="bg-gradient-to-br from-blue-900/20 to-blue-800/10 border border-blue-500/30 rounded-xl p-4">
                             <div className="text-blue-400 text-sm font-semibold mb-2">🛡️ Mejor Defensa</div>
                             {(() => {
-                                const bestDefense = [...gameState.leagueTable].sort((a, b) => a.goalsAgainst - b.goalsAgainst)[0];
+                                const playerLeagueId = gameState.team.leagueId;
+                                const currentTable = gameState.leagueTables[playerLeagueId] || [];
+                                const bestDefense = [...currentTable].sort((a, b) => a.goalsAgainst - b.goalsAgainst)[0];
                                 const team = gameState.allTeams.find(t => t.id === bestDefense?.teamId);
                                 return team ? (
                                     <div className="flex items-center gap-3">
@@ -247,7 +251,9 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ gameState })
                         <div className="bg-gradient-to-br from-purple-900/20 to-purple-800/10 border border-purple-500/30 rounded-xl p-4">
                             <div className="text-purple-400 text-sm font-semibold mb-2">📈 Mejor Forma</div>
                             {(() => {
-                                const bestForm = [...gameState.leagueTable].sort((a, b) => {
+                                const playerLeagueId = gameState.team.leagueId;
+                                const currentTable = gameState.leagueTables[playerLeagueId] || [];
+                                const bestForm = [...currentTable].sort((a, b) => {
                                     const aWins = a.form.filter(f => f === 'W').length;
                                     const bWins = b.form.filter(f => f === 'W').length;
                                     return bWins - aWins;

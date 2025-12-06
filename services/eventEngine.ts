@@ -66,7 +66,8 @@ class EventEngine {
         const currentWeek = gameState.currentWeek;
         const balance = gameState.finances.balance;
         const fanApproval = gameState.fanApproval.rating;
-        const position = gameState.leagueTable.find(row => row.teamId === gameState.team.id)?.position || 10;
+        const playerTable = gameState.leagueTables[gameState.team.leagueId] || [];
+        const position = playerTable.find(row => row.teamId === gameState.team.id)?.position || 10;
 
         // Check week range
         if (conditions.minWeek && currentWeek < conditions.minWeek) return false;

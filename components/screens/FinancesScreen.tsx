@@ -10,10 +10,11 @@ interface FinancesScreenProps {
 }
 
 export const FinancesScreen: React.FC<FinancesScreenProps> = ({ gameState, dispatch }) => {
-    const { finances, stadium, sponsors, availableSponsors, team, leagueTable } = gameState;
+    const { finances, stadium, sponsors, availableSponsors, team, leagueTables } = gameState;
 
     // Calculate current position
-    const playerPosition = leagueTable.find(row => row.teamId === team.id)?.position || 10;
+    const playerTable = leagueTables[team.leagueId] || [];
+    const playerPosition = playerTable.find(row => row.teamId === team.id)?.position || 10;
 
     // Calculate detailed breakdown
     const breakdown = calculateFinancialBreakdown(
@@ -156,8 +157,8 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = ({ gameState, dispa
                                 onClick={handleExpandStadium}
                                 disabled={finances.balance < stadium.expansionCost}
                                 className={`px-6 py-3 rounded-lg font-semibold transition-colors ${finances.balance >= stadium.expansionCost
-                                        ? 'bg-blue-600 hover:bg-blue-500 text-white'
-                                        : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                                    ? 'bg-blue-600 hover:bg-blue-500 text-white'
+                                    : 'bg-slate-700 text-slate-500 cursor-not-allowed'
                                     }`}
                             >
                                 Expandir a {stadium.expansionCapacity?.toLocaleString()} asientos

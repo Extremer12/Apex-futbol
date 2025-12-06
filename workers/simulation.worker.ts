@@ -1,16 +1,14 @@
 // Web Worker for match simulation
 // This runs in a separate thread to prevent UI freezing
 
-import { Team, LeagueTableRow, Match, Morale } from '../types';
+import { Team, LeagueTableRow, Match, Morale, LeagueId } from '../types';
 
 interface SimulationInput {
     type: 'SIMULATE_WEEK';
     payload: {
         currentWeek: number;
         schedule: Match[];
-        leagueTable: LeagueTableRow[];
-        championshipTable: LeagueTableRow[];
-        laLigaTable: LeagueTableRow[];
+        leagueTables: Record<LeagueId, LeagueTableRow[]>;
         allTeams: Team[];
         playerTeamId: number;
         cups: {
@@ -28,9 +26,7 @@ interface SimulationOutput {
     type: 'SIMULATION_COMPLETE';
     payload: {
         updatedSchedule: Match[];
-        updatedLeagueTable: LeagueTableRow[];
-        updatedChampionshipTable: LeagueTableRow[];
-        updatedLaLigaTable: LeagueTableRow[];
+        updatedLeagueTables: Record<LeagueId, LeagueTableRow[]>;
         updatedAllTeams: Team[];
         confidenceChange: number;
         playerMatchResult: { homeScore: number; awayScore: number; penalties?: { home: number; away: number } } | null;
@@ -78,7 +74,6 @@ function simulateMatch(
     const homeAdvantage = 5;
     const adjustedHomeStrength = homeStrength + homeAdvantage;
 
-    // Morale impact
     // Morale impact
     const homeMoraleBonus = (getMoraleValue(homeTeam.teamMorale) - 50) / 10;
     const awayMoraleBonus = (getMoraleValue(awayTeam.teamMorale) - 50) / 10;
@@ -140,9 +135,7 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
         const {
             currentWeek,
             schedule,
-            leagueTable,
-            championshipTable,
-            laLigaTable,
+            leagueTables,
             allTeams,
             playerTeamId,
             cups,
@@ -152,15 +145,13 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
         const newWeek = currentWeek + 1;
         const newSchedule = [...schedule];
 
-        const updatedLeagueTable = new Map<number, LeagueTableRow>(
-            leagueTable.map(row => [row.teamId, { ...row, form: [...row.form] }])
-        );
-        const updatedChampionshipTable = new Map<number, LeagueTableRow>(
-            championshipTable.map(row => [row.teamId, { ...row, form: [...row.form] }])
-        );
-        const updatedLaLigaTable = new Map<number, LeagueTableRow>(
-            laLigaTable.map(row => [row.teamId, { ...row, form: [...row.form] }])
-        );
+        // Create Maps for easier update
+        const leagueMaps: Record<string, Map<number, LeagueTableRow>> = {};
+        Object.keys(leagueTables).forEach(leagueId => {
+            leagueMaps[leagueId] = new Map<number, LeagueTableRow>(
+                leagueTables[leagueId as LeagueId].map(row => [row.teamId, { ...row, form: [...row.form] }])
+            );
+        });
 
         let updatedAllTeams = allTeams.map(t => ({ ...t }));
         const matchesThisWeek = newSchedule.filter(m => m.week === newWeek);
@@ -184,15 +175,10 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                 let awayRow: LeagueTableRow | undefined;
 
                 if (!match.isCupMatch) {
-                    if (homeTeam.leagueId === 'PREMIER_LEAGUE') {
-                        homeRow = updatedLeagueTable.get(match.homeTeamId);
-                        awayRow = updatedLeagueTable.get(match.awayTeamId);
-                    } else if (homeTeam.leagueId === 'LA_LIGA') {
-                        homeRow = updatedLaLigaTable.get(match.homeTeamId);
-                        awayRow = updatedLaLigaTable.get(match.awayTeamId);
-                    } else {
-                        homeRow = updatedChampionshipTable.get(match.homeTeamId);
-                        awayRow = updatedChampionshipTable.get(match.awayTeamId);
+                    const leagueId = homeTeam.leagueId;
+                    if (leagueMaps[leagueId]) {
+                        homeRow = leagueMaps[leagueId].get(match.homeTeamId);
+                        awayRow = leagueMaps[leagueId].get(match.awayTeamId);
                     }
                 }
 
@@ -303,13 +289,28 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
             });
         }
 
+        // Convert maps back to arrays and sort
+        const updatedLeagueTables: Record<LeagueId, LeagueTableRow[]> = {} as any;
+        Object.keys(leagueMaps).forEach(leagueId => {
+            const table = Array.from(leagueMaps[leagueId].values());
+            // Sort by points, then goal diff, then goals for
+            table.sort((a, b) => {
+                if (b.points !== a.points) return b.points - a.points;
+                if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
+                return b.goalsFor - a.goalsFor;
+            });
+            // Update positions
+            table.forEach((row, index) => {
+                row.position = index + 1;
+            });
+            updatedLeagueTables[leagueId as LeagueId] = table;
+        });
+
         const output: SimulationOutput = {
             type: 'SIMULATION_COMPLETE',
             payload: {
                 updatedSchedule: newSchedule,
-                updatedLeagueTable: Array.from(updatedLeagueTable.values()),
-                updatedChampionshipTable: Array.from(updatedChampionshipTable.values()),
-                updatedLaLigaTable: Array.from(updatedLaLigaTable.values()),
+                updatedLeagueTables,
                 updatedAllTeams,
                 confidenceChange,
                 playerMatchResult,

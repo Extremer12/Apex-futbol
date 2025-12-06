@@ -23,6 +23,14 @@ export enum LeagueId {
   LA_LIGA = 'LA_LIGA',
 }
 
+export type CountryCode = 'ENG' | 'ESP';
+
+export const LEAGUE_COUNTRY: Record<LeagueId, CountryCode> = {
+  [LeagueId.PREMIER_LEAGUE]: 'ENG',
+  [LeagueId.CHAMPIONSHIP]: 'ENG',
+  [LeagueId.LA_LIGA]: 'ESP',
+};
+
 export interface Team {
   id: number;
   name: string;
@@ -203,9 +211,7 @@ export interface GameState {
   currentWeek: number;
   newsFeed: NewsItem[]; // Kept as newsFeed to match App.tsx
   schedule: Match[];
-  leagueTable: LeagueTableRow[]; // Premier League
-  championshipTable: LeagueTableRow[]; // Championship
-  laLigaTable: LeagueTableRow[]; // La Liga
+  leagueTables: Record<LeagueId, LeagueTableRow[]>; // Unified league tables
   finances: {
     balance: number;
     transferBudget: number;
