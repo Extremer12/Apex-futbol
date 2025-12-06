@@ -29,7 +29,7 @@ interface SimulationOutput {
         updatedLeagueTables: Record<LeagueId, LeagueTableRow[]>;
         updatedAllTeams: Team[];
         confidenceChange: number;
-        playerMatchResult: { homeScore: number; awayScore: number; penalties?: { home: number; away: number } } | null;
+        playerMatchResult: { homeScore: number; awayScore: number; penalties?: { home: number; away: number }; events?: string[] } | null;
         updatedCups: {
             faCup: any;
             carabaoCup: any;
@@ -153,7 +153,7 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
             );
         });
 
-        let updatedAllTeams = allTeams.map(t => ({ ...t }));
+        let updatedAllTeams = allTeams.map(t => ({ ...t, squad: [...t.squad] }));
         const matchesThisWeek = newSchedule.filter(m => m.week === newWeek);
 
         let updatedFaCup = cups.faCup;
@@ -189,11 +189,17 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                 const matchIndex = newSchedule.findIndex(m => m.week === newWeek && m.homeTeamId === match.homeTeamId);
                 newSchedule[matchIndex] = {
                     ...newSchedule[matchIndex],
-                    result: { homeScore: result.homeScore, awayScore: result.awayScore },
+                    result: { homeScore: result.homeScore, awayScore: result.awayScore, events: result.events },
                     penalties: result.penalties
                 };
 
                 if (match.homeTeamId === playerTeamId || match.awayTeamId === playerTeamId) {
+                    console.log('[WORKER] Player match result:', {
+                        homeScore: result.homeScore,
+                        awayScore: result.awayScore,
+                        eventsCount: result.events?.length || 0,
+                        events: result.events
+                    });
                     playerMatchResult = {
                         homeScore: result.homeScore,
                         awayScore: result.awayScore,

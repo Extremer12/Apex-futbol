@@ -111,6 +111,12 @@ const MatchDayCard: React.FC<{
     if (!opponent) return null;
 
     if (matchPhase === 'LIVE' && pendingResults?.playerMatchResult) {
+        console.log('[DASHBOARD] Rendering MatchEngine with:', {
+            eventsCount: pendingResults.playerMatchResult.events?.length || 0,
+            events: pendingResults.playerMatchResult.events,
+            homeScore: pendingResults.playerMatchResult.homeScore,
+            awayScore: pendingResults.playerMatchResult.awayScore
+        });
         return (
             <MatchEngine
                 homeTeam={isHome ? gameState.team : opponent}

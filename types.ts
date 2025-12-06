@@ -74,7 +74,7 @@ export interface Match {
   week: number;
   homeTeamId: number;
   awayTeamId: number;
-  result?: { homeScore: number; awayScore: number; };
+  result?: { homeScore: number; awayScore: number; events?: string[] };
   competition?: 'League' | 'FA_Cup' | 'Carabao_Cup'; // Added to distinguish match types
   isCupMatch?: boolean;
   penalties?: { home: number; away: number; };
