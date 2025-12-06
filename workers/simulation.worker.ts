@@ -162,7 +162,7 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
         const weeklyNet = (finances.weeklyIncome - finances.weeklyWages) / 1_000_000;
         let confidenceChange = weeklyNet > 0 ? 1 : -1;
 
-        let playerMatchResult: { homeScore: number; awayScore: number; penalties?: { home: number; away: number } } | null = null;
+        let playerMatchResult: { homeScore: number; awayScore: number; penalties?: { home: number; away: number }; events?: string[] } | null = null;
 
         if (matchesThisWeek.length > 0) {
             matchesThisWeek.forEach(match => {
@@ -197,7 +197,8 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                     playerMatchResult = {
                         homeScore: result.homeScore,
                         awayScore: result.awayScore,
-                        penalties: result.penalties
+                        penalties: result.penalties,
+                        events: result.events
                     };
                 }
 
