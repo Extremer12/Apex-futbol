@@ -329,11 +329,20 @@ function AppLogic() {
                 setCurrentEvent(triggeredEvent);
             }
 
+            // Restore logos from original state (JSX cannot be passed through worker)
+            const restoredTeams = simulationResult.updatedAllTeams.map(updatedTeam => {
+                const originalTeam = gameState.allTeams.find(t => t.id === updatedTeam.id);
+                return {
+                    ...updatedTeam,
+                    logo: originalTeam?.logo || updatedTeam.logo
+                };
+            });
+
             setPendingResults({
                 newsToAdd,
                 updatedSchedule: simulationResult.updatedSchedule,
                 updatedLeagueTables: simulationResult.updatedLeagueTables,
-                updatedAllTeams: simulationResult.updatedAllTeams,
+                updatedAllTeams: restoredTeams,
                 confidenceChange: simulationResult.confidenceChange,
                 newOffers: generatedOffers,
                 playerMatchResult: simulationResult.playerMatchResult,

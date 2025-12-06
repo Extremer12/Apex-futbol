@@ -113,7 +113,7 @@ export const MatchEngine: React.FC<MatchEngineProps> = ({ homeTeam, awayTeam, ma
             </div>
 
             {/* Scoreboard */}
-            <div className="relative h-72 bg-gradient-to-b from-slate-800 via-slate-850 to-slate-900 flex items-center justify-center overflow-hidden">
+            <div className="relative min-h-[16rem] md:h-72 bg-gradient-to-b from-slate-800 via-slate-850 to-slate-900 flex items-center justify-center overflow-hidden py-6 md:py-0">
                 {/* Background Logos Faded */}
                 <div className="absolute left-0 top-0 w-1/2 h-full opacity-5 flex items-center justify-center transform -translate-x-1/4">
                     <div className="scale-[5] grayscale [&>svg]:max-w-full [&>svg]:max-h-full">{homeTeam.logo}</div>
@@ -122,30 +122,30 @@ export const MatchEngine: React.FC<MatchEngineProps> = ({ homeTeam, awayTeam, ma
                     <div className="scale-[5] grayscale [&>svg]:max-w-full [&>svg]:max-h-full">{awayTeam.logo}</div>
                 </div>
 
-                <div className="relative z-10 flex items-center gap-8 md:gap-16 w-full px-8">
+                <div className="relative z-10 flex items-center justify-center gap-2 md:gap-16 w-full px-2 md:px-8">
                     {/* Home */}
                     <div className="flex-1 flex flex-col items-center text-center">
-                        <div className="w-20 h-20 flex items-center justify-center mb-4 transform hover:scale-110 transition-transform duration-300">
+                        <div className="w-12 h-12 md:w-20 md:h-20 flex items-center justify-center mb-2 md:mb-4 transform hover:scale-110 transition-transform duration-300">
                             <div className="w-full h-full flex items-center justify-center [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:object-contain [&>svg]:drop-shadow-2xl">
                                 {homeTeam.logo}
                             </div>
                         </div>
-                        <h2 className="text-xl md:text-3xl font-black text-white tracking-tight drop-shadow-lg">{homeTeam.name}</h2>
-                        <div className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider">{homeTeam.tactics}</div>
+                        <h2 className="text-sm md:text-3xl font-black text-white tracking-tight drop-shadow-lg truncate w-full px-1">{homeTeam.name}</h2>
+                        <div className="text-[10px] md:text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider hidden md:block">{homeTeam.tactics}</div>
                     </div>
 
                     {/* Score */}
-                    <div className="flex flex-col items-center">
-                        <div className={`bg-gradient-to-br from-slate-950 to-slate-900 px-8 py-4 rounded-xl border-2 ${showingFinalScore ? 'border-yellow-500 shadow-2xl shadow-yellow-500/30' : 'border-slate-700'} flex items-center gap-4 backdrop-blur-sm transition-all duration-500`}>
-                            <span className={`text-6xl md:text-8xl font-mono font-bold bg-gradient-to-br from-white to-slate-300 bg-clip-text text-transparent drop-shadow-lg ${showingFinalScore ? 'animate-pulse' : ''}`}>
+                    <div className="flex flex-col items-center shrink-0">
+                        <div className={`bg-gradient-to-br from-slate-950 to-slate-900 px-4 md:px-8 py-2 md:py-4 rounded-xl border-2 ${showingFinalScore ? 'border-yellow-500 shadow-2xl shadow-yellow-500/30' : 'border-slate-700'} flex items-center gap-2 md:gap-4 backdrop-blur-sm transition-all duration-500`}>
+                            <span className={`text-4xl md:text-8xl font-mono font-bold bg-gradient-to-br from-white to-slate-300 bg-clip-text text-transparent drop-shadow-lg ${showingFinalScore ? 'animate-pulse' : ''}`}>
                                 {displayScore.home}
                             </span>
-                            <span className="text-slate-600 text-4xl font-bold">-</span>
-                            <span className={`text-6xl md:text-8xl font-mono font-bold bg-gradient-to-br from-white to-slate-300 bg-clip-text text-transparent drop-shadow-lg ${showingFinalScore ? 'animate-pulse' : ''}`}>
+                            <span className="text-slate-600 text-2xl md:text-4xl font-bold">-</span>
+                            <span className={`text-4xl md:text-8xl font-mono font-bold bg-gradient-to-br from-white to-slate-300 bg-clip-text text-transparent drop-shadow-lg ${showingFinalScore ? 'animate-pulse' : ''}`}>
                                 {displayScore.away}
                             </span>
                         </div>
-                        <div className={`mt-3 ${minute >= 90 ? 'bg-gradient-to-r from-green-600 to-green-500' : 'bg-gradient-to-r from-red-600 to-red-500'} text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-lg ${minute >= 90 ? 'shadow-green-500/50' : 'shadow-red-500/50 animate-pulse'}`}>
+                        <div className={`mt-3 ${minute >= 90 ? 'bg-gradient-to-r from-green-600 to-green-500' : 'bg-gradient-to-r from-red-600 to-red-500'} text-white px-3 py-1 md:px-4 md:py-1.5 rounded-full text-xs md:text-sm font-bold shadow-lg ${minute >= 90 ? 'shadow-green-500/50' : 'shadow-red-500/50 animate-pulse'}`}>
                             {minute >= 90 ? 'FINAL' : `${minute}'`}
                         </div>
                     </div>
@@ -223,16 +223,16 @@ export const MatchEngine: React.FC<MatchEngineProps> = ({ homeTeam, awayTeam, ma
                                 >
                                     {/* Timeline dot */}
                                     <div className={`absolute left-0 top-0 w-4 h-4 rounded-full border-2 ${isFinal ? 'bg-yellow-500 border-yellow-400 shadow-lg shadow-yellow-500/50 animate-pulse' :
-                                            isGoal ? 'bg-green-500 border-green-400 shadow-lg shadow-green-500/50' :
-                                                isCard ? 'bg-yellow-500 border-yellow-400' :
-                                                    'bg-slate-700 border-slate-600'
+                                        isGoal ? 'bg-green-500 border-green-400 shadow-lg shadow-green-500/50' :
+                                            isCard ? 'bg-yellow-500 border-yellow-400' :
+                                                'bg-slate-700 border-slate-600'
                                         } transform -translate-x-[9px]`} />
 
                                     {/* Commentary text */}
                                     <div className={`text-sm p-3 rounded-lg ${isFinal ? 'bg-yellow-900/30 text-yellow-300 font-bold border-l-4 border-yellow-500 shadow-lg' :
-                                            isGoal ? 'bg-green-900/30 text-green-300 font-bold border-l-4 border-green-500 shadow-lg' :
-                                                isCard ? 'bg-yellow-900/20 text-yellow-200 border-l-4 border-yellow-500' :
-                                                    'bg-slate-800/50 text-slate-300'
+                                        isGoal ? 'bg-green-900/30 text-green-300 font-bold border-l-4 border-green-500 shadow-lg' :
+                                            isCard ? 'bg-yellow-900/20 text-yellow-200 border-l-4 border-yellow-500' :
+                                                'bg-slate-800/50 text-slate-300'
                                         }`}>
                                         {line}
                                     </div>
