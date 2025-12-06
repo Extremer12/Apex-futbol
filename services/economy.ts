@@ -156,3 +156,20 @@ export const getNetWeeklyIncome = (breakdown: FinancialBreakdown): number => {
         breakdown.transferExpenses;
     return income - expenses;
 };
+
+/**
+ * Calculate base weekly income based on league
+ * Premier League teams earn more than Championship, which earn more than La Liga (in this game)
+ */
+export const getBaseWeeklyIncome = (leagueId: string): number => {
+    switch (leagueId) {
+        case 'PREMIER_LEAGUE':
+            return 2_500_000; // £2.5M per week (TV rights + base income)
+        case 'CHAMPIONSHIP':
+            return 800_000;   // £800K per week
+        case 'LA_LIGA':
+            return 2_000_000; // £2M per week
+        default:
+            return 1_000_000; // Default fallback
+    }
+};

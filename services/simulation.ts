@@ -63,8 +63,9 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
     const homeTacticalBonus = tacticalMatchup.homeAdvantage;
     const awayTacticalBonus = -tacticalMatchup.homeAdvantage;
 
-    // 1. Factor de Control (Centro del campo + Localía + Táctica)
-    const homeControl = homeStats.midfield * 1.1 + (Math.random() * 10) + homeTacticalBonus;
+    // 1. Factor de Control (Centro del campo + Localía MEJORADA + Táctica)
+    // Ventaja local aumentada de 1.1 a 1.25 (~25% más control)
+    const homeControl = homeStats.midfield * 1.25 + (Math.random() * 10) + homeTacticalBonus;
     const awayControl = awayStats.midfield + (Math.random() * 10) + awayTacticalBonus;
     const totalControl = homeControl + awayControl;
     const homePossession = homeControl / totalControl;
@@ -76,7 +77,7 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
     const homeMomentum = getMoralBonus(homeTeam.teamMorale) + getFormBonus(homeTableRow?.form || []);
     const awayMomentum = getMoralBonus(awayTeam.teamMorale) + getFormBonus(awayTableRow?.form || []);
 
-    // 3. Calcular Oportunidades (Chances)
+    // 3. Calcular Oportunidades (Chances) - BALANCEADAS
     let homeChances = 4 + (homePossession * 6) + (homeStats.attack - awayStats.defense) / 5 + (homeMomentum / 3);
     let awayChances = 4 + ((1 - homePossession) * 6) + (awayStats.attack - homeStats.defense) / 5 + (awayMomentum / 3);
 
@@ -91,16 +92,23 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
     if (awayStyle === 'Possession') { awayChances += 1; homeChances -= 1; }
     if (awayStyle === 'Counter') { awayChances += 1; homeChances += 1; }
 
-    homeChances = Math.max(0, homeChances + (Math.random() * 4) - 2);
-    awayChances = Math.max(0, awayChances + (Math.random() * 4) - 2);
+    // Balancear chances para evitar extremos (mínimo 2, máximo 12)
+    homeChances = Math.max(2, Math.min(12, homeChances + (Math.random() * 4) - 2));
+    awayChances = Math.max(2, Math.min(12, awayChances + (Math.random() * 4) - 2));
 
     // 4. Simulación de Eventos
     let homeScore = 0;
     let awayScore = 0;
     const events: string[] = [];
 
-    const homeConversionRate = 0.15 + ((homeStats.attack - awayStats.defense) / 200);
-    const awayConversionRate = 0.15 + ((awayStats.attack - homeStats.defense) / 200);
+    // MEJORADO: Tasa de conversión basada en calidad del ataque
+    // Rating promedio de delanteros influye más
+    const homeAttackerRating = homeStats.attack;
+    const awayAttackerRating = awayStats.attack;
+
+    // Base 12% + bonus por calidad (hasta +8% para equipos top)
+    const homeConversionRate = 0.12 + ((homeAttackerRating - 70) / 250) + ((homeStats.attack - awayStats.defense) / 300);
+    const awayConversionRate = 0.12 + ((awayAttackerRating - 70) / 250) + ((awayStats.attack - homeStats.defense) / 300);
 
     // Helper to get scorer
     const getScorer = (team: Team): string => {

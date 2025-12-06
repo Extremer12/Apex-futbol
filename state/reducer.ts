@@ -1,4 +1,5 @@
 
+
 // FIX: Import React to enable JSX, which is used for the team logo fallback when rehydrating game state.
 import React from 'react';
 import { GameState, Team, PlayerProfile, NewsItem, Player, Match, LeagueTableRow, Offer } from '../types';
@@ -6,6 +7,8 @@ import { TEAMS } from '../constants';
 import { generateSeasonSchedule, createInitialLeagueTable, simulateMatch, generateCupDraw, advanceCupRound, determineCupWinner, handlePromotionRelegation, generateYouthPlayer } from '../services/simulation';
 import { generateRandomCoach, generateCoachMarket } from '../services/coaching';
 import { generateStadium, generateSponsorMarket, calculateFinancialBreakdown, getNetWeeklyIncome } from '../services/economy';
+import { initializeGame } from '../services/gameFactory';
+import { startNewSeason } from '../services/seasonManager';
 import { formatDate, formatCurrency } from '../utils';
 
 // ... (imports remain the same)
@@ -42,117 +45,9 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
     switch (action.type) {
         case 'INITIALIZE_GAME': {
             const { team, playerProfile } = action.payload;
-            const now = new Date('2024-07-01');
 
-            // Clone teams and ASSIGN AGES (Since constants don't have them)
-            const allTeamsCopy = TEAMS.map(t => ({
-                ...t,
-                logo: t.logo,
-                squad: t.squad.map(player => ({
-                    ...player,
-                    // Assign random age between 18 and 33 weighted towards 24-28
-                    age: Math.floor(18 + Math.random() * 16)
-                })),
-                // Assign initial random coach
-                coach: generateRandomCoach(t.tier)
-            }));
-
-            const playerTeamCopy = allTeamsCopy.find(t => t.id === team.id)!;
-
-            // Create Initial Youth Academy
-            const initialYouthAcademy: Player[] = Array.from({ length: 4 }, () => generateYouthPlayer(playerTeamCopy.tier));
-
-            const totalWages = playerTeamCopy.squad.reduce((sum, player) => sum + player.wage, 0);
-            const weeklyIncome = 2_500_000;
-
-            const TUTORIAL_NEWS: NewsItem[] = [
-                { id: 'tutorial-4', headline: 'La Cantera te Espera', body: 'Hemos ojeado a jóvenes promesas. Revisa la pestaña "Cantera" en tu Plantilla para ver a las futuras estrellas.', date: formatDate(now) },
-                { id: 'tutorial-3', headline: '¡Comienza la Temporada!', body: 'La nueva temporada está sobre nosotros. ¡Es hora de llevar a este club a la gloria! Buena suerte, Presidente.', date: formatDate(now) },
-                { id: 'tutorial-2', headline: 'Consejo del Día: Mercado de Fichajes', body: `Utiliza la pantalla de 'Fichajes' para ojear jugadores y fortalecer tu equipo. Un buen fichaje puede cambiar tu temporada.`, date: formatDate(now) },
-                { id: 'tutorial-1', headline: `Bienvenido a ${team.name}`, body: `¡Felicidades por tu elección, ${playerProfile && playerProfile.name}! La junta y los aficionados confían en ti. El primer paso es revisar tu 'Plantilla' actual.`, date: formatDate(now) },
-            ];
-
-            const initialConfidence = { 'Top': 65, 'Mid': 75, 'Lower': 80 };
-
-            // Separate teams by league for initial tables
-            const plTeams = allTeamsCopy.filter(t => t.leagueId === 'PREMIER_LEAGUE');
-            const chTeams = allTeamsCopy.filter(t => t.leagueId === 'CHAMPIONSHIP');
-            const laTeams = allTeamsCopy.filter(t => t.leagueId === 'LA_LIGA');
-
-            // Generate Initial Cup Draws
-            const faCupRound1 = generateCupDraw(allTeamsCopy, 'Round 1', 'FA_Cup');
-            const carabaoCupRound1 = generateCupDraw(allTeamsCopy, 'Round 1', 'Carabao_Cup');
-
-            // Add cup fixtures to schedule
-            // We need to assign them to specific weeks. Let's say Week 5 and Week 8 for now.
-            const faCupFixtures = faCupRound1.map(m => ({ ...m, week: 5 }));
-            const carabaoCupFixtures = carabaoCupRound1.map(m => ({ ...m, week: 2 }));
-
-            const initialSchedule = [...generateSeasonSchedule(allTeamsCopy), ...faCupFixtures, ...carabaoCupFixtures];
-
-            return {
-                team: playerTeamCopy,
-                allTeams: allTeamsCopy,
-                currentDate: now,
-                currentWeek: 0,
-                season: 2024,
-                newsFeed: TUTORIAL_NEWS,
-                schedule: initialSchedule,
-                leagueTables: {
-                    PREMIER_LEAGUE: createInitialLeagueTable(plTeams),
-                    CHAMPIONSHIP: createInitialLeagueTable(chTeams),
-                    LA_LIGA: createInitialLeagueTable(laTeams)
-                },
-                finances: { balance: team.budget, transferBudget: team.transferBudget, weeklyIncome, weeklyWages: totalWages, balanceHistory: [team.budget] },
-
-                // Political System
-                boardConfidence: initialConfidence[team.tier],
-                fanApproval: {
-                    rating: 60,
-                    trend: 'stable' as const,
-                    factors: {
-                        results: 0,
-                        transfers: 0,
-                        finances: 0,
-                        promises: 0
-                    }
-                },
-                mandate: {
-                    startYear: 1,
-                    currentYear: 1,
-                    nextElectionSeason: 4,
-                    isElectionYear: false,
-                    totalMandates: 1
-                },
-                electoralPromises: [],
-                chairmanConfidence: initialConfidence[team.tier], // Legacy field for compatibility
-
-                viewingPlayer: null,
-                incomingOffers: [],
-                youthAcademy: initialYouthAcademy,
-                cups: {
-                    faCup: {
-                        id: 'fa_cup',
-                        name: 'FA Cup',
-                        rounds: [{ name: 'Round 1', fixtures: faCupFixtures, completed: false }],
-                        currentRoundIndex: 0,
-                        statistics: { topScorers: [], championsHistory: [] }
-                    },
-                    carabaoCup: {
-                        id: 'carabao_cup',
-                        name: 'Carabao Cup',
-                        rounds: [{ name: 'Round 1', fixtures: carabaoCupFixtures, completed: false }],
-                        currentRoundIndex: 0,
-                        statistics: { topScorers: [], championsHistory: [] }
-                    }
-                },
-                availableCoaches: generateCoachMarket(5), // Initial market of 5 coaches
-
-                // Economy System
-                stadium: generateStadium(playerTeamCopy),
-                sponsors: [], // Start with no sponsors, offers come at season start
-                availableSponsors: generateSponsorMarket(team.tier)
-            };
+            // Delegate initialization to the game factory service
+            return initializeGame({ selectedTeam: team, playerProfile });
         }
 
         case 'LOAD_GAME': {
@@ -347,9 +242,10 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 LA_LIGA: createInitialLeagueTable(newLaTeams)
             };
 
-            // Generate New Cup Draws
-            const faCupRound1 = generateCupDraw(teamsAfterProRel, 'Round 1', 'FA_Cup');
-            const carabaoCupRound1 = generateCupDraw(teamsAfterProRel, 'Round 1', 'Carabao_Cup');
+            // Generate New Cup Draws (ONLY English teams for English cups)
+            const englishTeamsNewSeason = [...newPlTeams, ...newChTeams];
+            const faCupRound1 = generateCupDraw(englishTeamsNewSeason, 'Round 1', 'FA_Cup');
+            const carabaoCupRound1 = generateCupDraw(englishTeamsNewSeason, 'Round 1', 'Carabao_Cup');
 
             const faCupFixtures = faCupRound1.map(m => ({ ...m, week: 5 }));
             const carabaoCupFixtures = carabaoCupRound1.map(m => ({ ...m, week: 2 }));
