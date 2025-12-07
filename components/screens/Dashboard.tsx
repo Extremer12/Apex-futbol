@@ -214,9 +214,11 @@ const QuickStats: React.FC<{ gameState: GameState }> = ({ gameState }) => {
 
     const positionZone = getPositionZone(playerTeamRow?.position);
 
-    // Use boardConfidence if available, fallback to chairmanConfidence for compatibility
-    const boardConf = gameState.boardConfidence ?? gameState.chairmanConfidence ?? 75;
-    const fanApp = gameState.fanApproval?.rating ?? 60;
+    // Use boardConfidence if available, fallback to chairmanConfidence for compatibility, ensure number
+    const boardConf = !isNaN(Number(gameState.boardConfidence)) ? Number(gameState.boardConfidence) :
+        !isNaN(Number(gameState.chairmanConfidence)) ? Number(gameState.chairmanConfidence) : 75;
+
+    const fanApp = !isNaN(Number(gameState.fanApproval?.rating)) ? Number(gameState.fanApproval.rating) : 60;
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -301,12 +303,12 @@ const QuickStats: React.FC<{ gameState: GameState }> = ({ gameState }) => {
                     {formatCurrency(gameState.finances.transferBudget)}
                 </div>
                 <div className="text-xs text-slate-400">
-                    de {formatCurrency(gameState.finances.budget)} total
+                    de {formatCurrency(gameState.finances.balance)} total
                 </div>
                 <div className="h-1 bg-slate-800 rounded-full overflow-hidden mt-2">
                     <div
                         className="h-full bg-gradient-to-r from-green-500 to-emerald-500"
-                        style={{ width: `${(gameState.finances.transferBudget / gameState.finances.budget) * 100}%` }}
+                        style={{ width: `${Math.min(100, Math.max(0, (gameState.finances.transferBudget / (gameState.finances.balance || 1)) * 100))}%` }}
                     />
                 </div>
             </div>

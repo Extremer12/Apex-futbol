@@ -349,6 +349,8 @@ function AppLogic() {
                 updatedCups
             });
 
+            setMatchPhase('LIVE');
+
         } catch (error) {
             console.error('Simulation error:', error);
             showNotification('Error al simular la semana', 'error');

@@ -56,6 +56,15 @@ export const MatchEngine: React.FC<MatchEngineProps> = ({ homeTeam, awayTeam, ma
                                 : e;
                             setCommentary(prev => [...prev, hiddenEvent]);
                             setCurrentEvent(hiddenEvent);
+
+                            // Update score if it's a goal
+                            if (e.includes('GOOOOL')) {
+                                if (e.includes(homeTeam.name)) {
+                                    setDisplayScore(prev => ({ ...prev, home: prev.home + 1 }));
+                                } else {
+                                    setDisplayScore(prev => ({ ...prev, away: prev.away + 1 }));
+                                }
+                            }
                         }
                     });
                 }
