@@ -120,11 +120,14 @@ export const calculateFinancialBreakdown = (
     stadium: Stadium,
     sponsors: Sponsor[],
     leaguePosition: number,
-    transfersThisWeek: { bought: number; sold: number }
+    transfersThisWeek: { bought: number; sold: number },
+    wasHomeMatch: boolean,
+    leagueId: string
 ): FinancialBreakdown => {
     // Ingresos
-    const matchdayRevenue = calculateMatchdayRevenue(stadium, leaguePosition);
+    const matchdayRevenue = wasHomeMatch ? calculateMatchdayRevenue(stadium, leaguePosition) : 0;
     const sponsorshipRevenue = sponsors.reduce((sum, s) => sum + s.weeklyIncome, 0);
+    const tvRevenue = getBaseWeeklyIncome(leagueId);
     const prizeMoneyRevenue = 0; // Calculated at end of season
     const transferRevenue = transfersThisWeek.sold;
 
@@ -138,6 +141,7 @@ export const calculateFinancialBreakdown = (
     return {
         matchdayRevenue,
         sponsorshipRevenue,
+        tvRevenue,
         prizeMoneyRevenue,
         transferRevenue,
         wageExpenses,
@@ -150,7 +154,7 @@ export const calculateFinancialBreakdown = (
 
 export const getNetWeeklyIncome = (breakdown: FinancialBreakdown): number => {
     const income = breakdown.matchdayRevenue + breakdown.sponsorshipRevenue +
-        breakdown.prizeMoneyRevenue + breakdown.transferRevenue;
+        breakdown.tvRevenue + breakdown.prizeMoneyRevenue + breakdown.transferRevenue;
     const expenses = breakdown.wageExpenses + breakdown.coachExpenses +
         breakdown.stadiumExpenses + breakdown.operationalExpenses +
         breakdown.transferExpenses;

@@ -192,6 +192,7 @@ export interface FinancialBreakdown {
   // Ingresos
   matchdayRevenue: number;      // Entradas
   sponsorshipRevenue: number;   // Sponsors
+  tvRevenue: number;            // Derechos de TV
   prizeMoneyRevenue: number;    // Premios de liga/copa
   transferRevenue: number;      // Ventas de jugadores
 

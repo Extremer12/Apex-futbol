@@ -6,6 +6,7 @@ import { saveGame, loadGame, SavedGameData } from './services/db';
 // Contexts
 import { NotificationProvider, useNotification } from './contexts/NotificationContext';
 import { ModalProvider, useModal } from './contexts/ModalContext';
+import { ToastProvider } from './components/common/ToastProvider';
 
 // Router and Layout
 import { AppRouter } from './components/AppRouter';
@@ -406,7 +407,7 @@ function AppLogic() {
             dispatch({ type: 'UPDATE_TEAM', payload: updates.team });
         }
         if (updates.fanApproval) {
-            dispatch({ type: 'UPDATE_FAN_APPROVAL', payload: updates.fanApproval });
+            dispatch({ type: 'SET_FAN_APPROVAL', payload: updates.fanApproval });
         }
         if (updates.chairmanConfidence !== undefined) {
             dispatch({ type: 'UPDATE_CHAIRMAN_CONFIDENCE', payload: updates.chairmanConfidence });
@@ -487,7 +488,9 @@ function App() {
     return (
         <NotificationProvider>
             <ModalProvider>
-                <AppLogic />
+                <ToastProvider>
+                    <AppLogic />
+                </ToastProvider>
             </ModalProvider>
         </NotificationProvider>
     );

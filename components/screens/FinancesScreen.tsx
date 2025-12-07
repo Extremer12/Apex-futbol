@@ -17,12 +17,15 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = ({ gameState, dispa
     const playerPosition = playerTable.find(row => row.teamId === team.id)?.position || 10;
 
     // Calculate detailed breakdown
+    // For display purposes, assume there was a home match (to show potential revenue)
     const breakdown = calculateFinancialBreakdown(
         team,
         stadium,
         sponsors,
         playerPosition,
-        { bought: 0, sold: 0 } // Weekly transfers (would need to track this)
+        { bought: 0, sold: 0 }, // Weekly transfers (would need to track this)
+        true, // wasHomeMatch - showing potential with home match
+        team.leagueId
     );
 
     const netIncome = getNetWeeklyIncome(breakdown);
@@ -71,28 +74,45 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = ({ gameState, dispa
                 </div>
             </div>
 
+            {/* Negative Balance Warning */}
+            {finances.balance < 0 && (
+                <div className="bg-red-900/40 border-2 border-red-500 rounded-xl p-4 flex items-center gap-3">
+                    <svg className="w-6 h-6 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div>
+                        <p className="text-red-200 font-semibold">⚠️ Balance Negativo</p>
+                        <p className="text-red-300 text-sm">Tu club está en números rojos. Considera vender jugadores o reducir gastos.</p>
+                    </div>
+                </div>
+            )}
+
             {/* Detailed Breakdown */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Income */}
                 <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
                     <h3 className="text-xl font-bold text-green-400 mb-4">💰 Ingresos Semanales</h3>
                     <div className="space-y-3">
-                        <div className="flex justify-between">
+                        <div className="flex justify-between items-center">
                             <span className="text-slate-300">Entradas (Día de Partido)</span>
                             <span className="text-green-400 font-semibold">{formatCurrency(breakdown.matchdayRevenue)}</span>
                         </div>
-                        <div className="flex justify-between">
+                        <div className="flex justify-between items-center">
                             <span className="text-slate-300">Patrocinadores</span>
                             <span className="text-green-400 font-semibold">{formatCurrency(breakdown.sponsorshipRevenue)}</span>
                         </div>
-                        <div className="flex justify-between">
+                        <div className="flex justify-between items-center">
+                            <span className="text-slate-300">Derechos de TV</span>
+                            <span className="text-green-400 font-semibold">{formatCurrency(breakdown.tvRevenue)}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
                             <span className="text-slate-300">Premios de Liga/Copa</span>
                             <span className="text-green-400 font-semibold">{formatCurrency(breakdown.prizeMoneyRevenue)}</span>
                         </div>
                         <div className="border-t border-slate-700 pt-3 flex justify-between font-bold">
                             <span className="text-white">Total Ingresos</span>
                             <span className="text-green-400 text-xl">
-                                {formatCurrency(breakdown.matchdayRevenue + breakdown.sponsorshipRevenue + breakdown.prizeMoneyRevenue)}
+                                {formatCurrency(breakdown.matchdayRevenue + breakdown.sponsorshipRevenue + breakdown.tvRevenue + breakdown.prizeMoneyRevenue)}
                             </span>
                         </div>
                     </div>

@@ -4,6 +4,8 @@ import { GameAction } from '../../state/reducer';
 import { formatCurrency } from '../../utils';
 import { BriefcaseIcon, SparklesIcon, UsersIcon } from '../icons';
 import { TrendingUpIcon, FilterIcon, StarIcon } from 'lucide-react';
+import { ConfirmationModal } from '../common/ConfirmationModal';
+import { useToast } from '../common/ToastProvider';
 
 interface SquadScreenProps {
     gameState: GameState;
@@ -17,6 +19,8 @@ export const SquadScreen: React.FC<SquadScreenProps> = ({ gameState, dispatch })
     const [activeTab, setActiveTab] = useState<'FIRST_TEAM' | 'ACADEMY'>('FIRST_TEAM');
     const [sortOption, setSortOption] = useState<SortOption>('rating');
     const [filterPosition, setFilterPosition] = useState<FilterPosition>('ALL');
+    const [playerToPromote, setPlayerToPromote] = useState<Player | null>(null);
+    const { showToast } = useToast();
 
     const onViewPlayer = (player: Player) => {
         dispatch({ type: 'SET_VIEWING_PLAYER', payload: player });
@@ -24,10 +28,18 @@ export const SquadScreen: React.FC<SquadScreenProps> = ({ gameState, dispatch })
 
     const handlePromote = (player: Player) => {
         if (gameState.team.squad.length >= 25) {
-            alert("La plantilla está llena (Máx 25). Vende jugadores antes de subir canteranos.");
+            showToast("La plantilla está llena (Máx 25). Vende jugadores antes de subir canteranos.", 'warning');
             return;
         }
-        dispatch({ type: 'PROMOTE_PLAYER', payload: player });
+        setPlayerToPromote(player);
+    }
+
+    const confirmPromote = () => {
+        if (playerToPromote) {
+            dispatch({ type: 'PROMOTE_PLAYER', payload: playerToPromote });
+            showToast(`${playerToPromote.name} ha sido promovido al primer equipo!`, 'success');
+            setPlayerToPromote(null);
+        }
     }
 
     const getPositionColor = (pos: string) => {
@@ -42,12 +54,37 @@ export const SquadScreen: React.FC<SquadScreenProps> = ({ gameState, dispatch })
 
     const getMoraleColor = (morale: string) => {
         switch (morale) {
-            case 'Feliz': return 'text-green-400';
-            case 'Contento': return 'text-blue-400';
-            case 'Normal': return 'text-slate-400';
-            case 'Descontento': return 'text-orange-400';
-            case 'Enojado': return 'text-red-400';
-            default: return 'text-slate-400';
+            case 'Feliz': return 'text-green-400 bg-green-400/10';
+            case 'Contento': return 'text-blue-400 bg-blue-400/10';
+            case 'Normal': return 'text-slate-400 bg-slate-400/10';
+            case 'Descontento': return 'text-orange-400 bg-orange-400/10';
+            case 'Enojado': return 'text-red-400 bg-red-400/10';
+            default: return 'text-slate-400 bg-slate-400/10';
+        }
+    };
+
+    const getMoraleIcon = (morale: string) => {
+        switch (morale) {
+            case 'Feliz':
+                return (
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 100-2 1 1 0 000 2zm7-1a1 1 0 11-2 0 1 1 0 012 0zm-.464 5.535a1 1 0 10-1.415-1.414 3 3 0 01-4.242 0 1 1 0 00-1.415 1.414 5 5 0 007.072 0z" clipRule="evenodd" />
+                    </svg>
+                );
+            case 'Contento':
+                return (
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 100-2 1 1 0 000 2zm7-1a1 1 0 11-2 0 1 1 0 012 0zm-3 6a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                    </svg>
+                );
+            case 'Enojado':
+                return (
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 100-2 1 1 0 000 2zm7-1a1 1 0 11-2 0 1 1 0 012 0zm-7.536 5.879a1 1 0 001.415 0 3 3 0 014.242 0 1 1 0 001.415-1.415 5 5 0 00-7.072 0 1 1 0 000 1.415z" clipRule="evenodd" />
+                    </svg>
+                );
+            default:
+                return null;
         }
     };
 
@@ -169,8 +206,11 @@ export const SquadScreen: React.FC<SquadScreenProps> = ({ gameState, dispatch })
                                     <div className="col-span-2 text-right text-green-400 font-mono hidden md:block">
                                         {formatCurrency(player.value)}
                                     </div>
-                                    <div className={`col-span-2 md:col-span-1 text-right text-xs font-bold ${getMoraleColor(player.morale)}`}>
-                                        {player.morale}
+                                    <div className={`col-span-2 md:col-span-1 text-right`}>
+                                        <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold ${getMoraleColor(player.morale)}`}>
+                                            {getMoraleIcon(player.morale)}
+                                            <span>{player.morale}</span>
+                                        </div>
                                     </div>
                                 </button>
                             ))}
@@ -242,6 +282,18 @@ export const SquadScreen: React.FC<SquadScreenProps> = ({ gameState, dispatch })
                     </div>
                 </div>
             )}
+
+            {/* Confirmation Modal for Promoting Player */}
+            <ConfirmationModal
+                isOpen={playerToPromote !== null}
+                title="Promover Jugador"
+                message={`¿Estás seguro de que quieres promover a ${playerToPromote?.name} al primer equipo?`}
+                confirmText="Promover"
+                cancelText="Cancelar"
+                confirmVariant="success"
+                onConfirm={confirmPromote}
+                onCancel={() => setPlayerToPromote(null)}
+            />
         </div>
     );
 };

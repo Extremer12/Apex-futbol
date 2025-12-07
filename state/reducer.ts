@@ -37,7 +37,12 @@ export type GameAction =
     | { type: 'HIRE_COACH'; payload: { coachId: string } }
     | { type: 'FIRE_COACH' }
     | { type: 'ACCEPT_SPONSOR'; payload: { sponsorId: string } }
-    | { type: 'EXPAND_STADIUM' };
+    | { type: 'EXPAND_STADIUM' }
+    | { type: 'SET_FAN_APPROVAL'; payload: any } // Using any to avoid circular dependency with types if FanApproval is not exported, but it is.
+    | { type: 'UPDATE_FINANCES'; payload: any }
+    | { type: 'UPDATE_TEAM'; payload: Team }
+    | { type: 'UPDATE_CHAIRMAN_CONFIDENCE'; payload: number }
+    | { type: 'UPDATE_STADIUM'; payload: any };
 
 export const initialState: GameState | null = null;
 
@@ -139,12 +144,18 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
             const playerTable = newLeagueTables[playerLeagueId] || [];
             const playerPosition = playerTable.find(row => row.teamId === state.team.id)?.position || 10;
 
+            // Check if there was a home match this week
+            const currentMatch = state.schedule.find(m => m.week === state.currentWeek && (m.homeTeamId === state.team.id || m.awayTeamId === state.team.id));
+            const wasHomeMatch = currentMatch?.homeTeamId === state.team.id;
+
             const breakdown = calculateFinancialBreakdown(
                 updatedPlayerTeam,
                 state.stadium,
                 state.sponsors,
                 playerPosition,
-                { bought: 0, sold: 0 }
+                { bought: 0, sold: 0 },
+                wasHomeMatch,
+                playerLeagueId
             );
 
             // Update balance based on breakdown
@@ -166,7 +177,7 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 finances: {
                     ...state.finances,
                     balance: newBalance,
-                    weeklyIncome: breakdown.matchdayRevenue + breakdown.sponsorshipRevenue + breakdown.prizeMoneyRevenue + breakdown.transferRevenue,
+                    weeklyIncome: breakdown.matchdayRevenue + breakdown.sponsorshipRevenue + breakdown.tvRevenue + breakdown.prizeMoneyRevenue + breakdown.transferRevenue,
                     weeklyWages: breakdown.wageExpenses + breakdown.coachExpenses + breakdown.stadiumExpenses + breakdown.operationalExpenses + breakdown.transferExpenses,
                     balanceHistory: [...state.finances.balanceHistory, newBalance],
                     breakdown
@@ -670,52 +681,70 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
 
             return {
                 ...state,
-                sponsors: [...state.sponsors, sponsor],
-                availableSponsors: newMarket,
-                newsFeed: [{
-                    id: `sponsor_${Date.now()}`,
-                    headline: '🤝 Nuevo Acuerdo de Patrocinio',
-                    body: `${sponsor.name} es ahora nuestro patrocinador ${sponsor.type === 'shirt' ? 'de camiseta' : sponsor.type === 'stadium' ? 'del estadio' : sponsor.type === 'training' ? 'de entrenamiento' : 'de equipación'}. Ingresos: ${formatCurrency(sponsor.weeklyIncome)}/semana.`,
-                    date: formatDate(state.currentDate)
-                }, ...state.newsFeed].slice(0, 20)
-            };
+            } else {
+                // Add new sponsor
+                return {
+                    ...state,
+                    sponsors: [...state.sponsors, sponsor],
+                    availableSponsors: state.availableSponsors.filter(s => s.id !== sponsorId),
+                    newsFeed: [{
+                        id: `sponsor_${Date.now()}`,
+                        headline: '🤝 Nuevo Acuerdo de Patrocinio',
+                        body: `${sponsor.name} es ahora nuestro patrocinador ${sponsor.type === 'shirt' ? 'de camiseta' : sponsor.type === 'stadium' ? 'del estadio' : sponsor.type === 'training' ? 'de entrenamiento' : 'de equipación'}. Ingresos: ${formatCurrency(sponsor.weeklyIncome)}/semana.`,
+                        date: formatDate(state.currentDate)
+                    }, ...state.newsFeed].slice(0, 20)
+                };
+            }
         }
 
         case 'EXPAND_STADIUM': {
-            if (!state) return null;
+            if (!state || !state.stadium.expansionCost || !state.stadium.expansionCapacity) return state;
 
-            const expansionCost = state.stadium.expansionCost || 0;
-            if (state.finances.balance < expansionCost) {
-                return state; // Not enough funds
-            }
-
-            const newCapacity = state.stadium.expansionCapacity || state.stadium.capacity;
-            const newBalance = state.finances.balance - expansionCost;
+            if (state.finances.balance < state.stadium.expansionCost) return state;
 
             return {
                 ...state,
-                stadium: {
-                    ...state.stadium,
-                    capacity: newCapacity,
-                    maintenanceCost: state.stadium.maintenanceCost * 1.2, // 20% more maintenance
-                    expansionCost: newCapacity * 1000,
-                    expansionCapacity: Math.floor(newCapacity * 1.2)
-                },
                 finances: {
                     ...state.finances,
-                    balance: newBalance,
-                    balanceHistory: [...state.finances.balanceHistory, newBalance]
+                    balance: state.finances.balance - state.stadium.expansionCost,
+                    balanceHistory: [...state.finances.balanceHistory, state.finances.balance - state.stadium.expansionCost]
+                },
+                stadium: {
+                    ...state.stadium,
+                    capacity: state.stadium.expansionCapacity,
+                    expansionCost: undefined,
+                    expansionCapacity: undefined
                 },
                 newsFeed: [{
                     id: `stadium_expansion_${Date.now()}`,
-                    headline: '🏟️ Expansión del Estadio Completada',
-                    body: `El estadio ha sido expandido a ${newCapacity.toLocaleString()} asientos. Esto aumentará nuestros ingresos por entradas.`,
+                    headline: '🏟️ Estadio Ampliado',
+                    body: `Las obras de ampliación del ${state.stadium.name} han finalizado. La nueva capacidad es de ${state.stadium.expansionCapacity} espectadores.`,
                     date: formatDate(state.currentDate)
                 }, ...state.newsFeed].slice(0, 20)
             };
         }
+
+        case 'SET_FAN_APPROVAL':
+            return state ? { ...state, fanApproval: action.payload } : null;
+
+        case 'UPDATE_FINANCES':
+            return state ? { ...state, finances: { ...state.finances, ...action.payload } } : null;
+
+        case 'UPDATE_TEAM':
+            return state ? {
+                ...state,
+                team: action.payload,
+                allTeams: state.allTeams.map(t => t.id === action.payload.id ? action.payload : t)
+            } : null;
+
+        case 'UPDATE_CHAIRMAN_CONFIDENCE':
+            return state ? { ...state, boardConfidence: action.payload } : null;
+
+        case 'UPDATE_STADIUM':
+            return state ? { ...state, stadium: action.payload } : null;
 
         default:
             return state;
     }
 }
+```
