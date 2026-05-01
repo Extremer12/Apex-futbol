@@ -13,17 +13,17 @@ import { StatisticsScreen } from './screens/StatisticsScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { StaffScreen } from './screens/StaffScreen';
 import { ElectionScreen } from './screens/ElectionScreen';
+import { ClubHubScreen } from './screens/ClubHubScreen';
 import { MatchPhase } from '../App';
 
 interface PendingSimulationResults {
     newsToAdd: any[];
     updatedSchedule: any[];
-    updatedLeagueTable: any[];
-    updatedChampionshipTable: any[];
+    updatedLeagueTables: Record<string, any[]>;
     updatedAllTeams: Team[];
     confidenceChange: number;
     newOffers: any[];
-    playerMatchResult: { homeScore: number; awayScore: number, penalties?: { home: number, away: number } } | null;
+    playerMatchResult: { homeScore: number; awayScore: number, penalties?: { home: number, away: number }, events?: string[] } | null;
     updatedCups?: { faCup: any, carabaoCup: any };
 }
 
@@ -87,6 +87,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                     lastSaved={lastSaved}
                 />
             );
+            case Screen.Club: return <ClubHubScreen gameState={gameState} dispatch={dispatch} />;
             default: return <Dashboard gameState={gameState} onPlayMatch={onPlayMatch} matchPhase={matchPhase} pendingResults={pendingResults} onWeekComplete={onWeekComplete} allPlayers={allPlayers} dispatch={dispatch} />;
         }
     };

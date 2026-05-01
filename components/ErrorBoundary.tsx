@@ -13,11 +13,16 @@ interface State {
 /**
  * Error Boundary component to catch and handle React errors gracefully
  */
-export class ErrorBoundary extends Component<Props, State> {
+export class ErrorBoundary extends React.Component<Props, State> {
+    public props!: Props;
     public state: State = {
         hasError: false,
         error: null
     };
+
+    constructor(props: Props) {
+        super(props);
+    }
 
     public static getDerivedStateFromError(error: Error): State {
         return { hasError: true, error };

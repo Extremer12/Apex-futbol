@@ -77,6 +77,7 @@ export const generateSponsor = (
         id: `sponsor_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         name,
         type,
+        logo: type === 'shirt' ? '👕' : type === 'stadium' ? '🏟️' : type === 'training' ? '🥤' : '👟',
         weeklyIncome: Math.floor(weeklyIncome),
         duration,
         bonus
@@ -135,7 +136,10 @@ export const calculateFinancialBreakdown = (
     const wageExpenses = team.squad.reduce((sum, p) => sum + p.wage, 0);
     const coachExpenses = team.coach?.salary || 0;
     const stadiumExpenses = stadium.maintenanceCost;
-    const operationalExpenses = 50000; // Fixed weekly operational costs
+    
+    // Scale operational expenses by tier
+    const operationalExpenses = team.tier === 'Top' ? 250000 : team.tier === 'Mid' ? 100000 : 40000;
+    
     const transferExpenses = transfersThisWeek.bought;
 
     return {
@@ -168,12 +172,30 @@ export const getNetWeeklyIncome = (breakdown: FinancialBreakdown): number => {
 export const getBaseWeeklyIncome = (leagueId: string): number => {
     switch (leagueId) {
         case 'PREMIER_LEAGUE':
-            return 2_500_000; // £2.5M per week (TV rights + base income)
+            return 2_200_000; // £2.2M per week (Slightly reduced from £2.5M for challenge)
         case 'CHAMPIONSHIP':
-            return 800_000;   // £800K per week
+            return 650_000;   // £650K per week (Reduced from £800K)
         case 'LA_LIGA':
-            return 2_000_000; // £2M per week
+            return 1_800_000; // £1.8M per week (Reduced from £2M)
         default:
-            return 1_000_000; // Default fallback
+            return 1_000_000;
     }
+};
+
+/**
+ * Calculate end-of-season prize money based on position and league
+ */
+export const calculatePrizeMoney = (leagueId: string, position: number): number => {
+    let baseAmount = 0;
+    switch (leagueId) {
+        case 'PREMIER_LEAGUE': baseAmount = 150_000_000; break; // £150M pool
+        case 'CHAMPIONSHIP': baseAmount = 50_000_000; break;   // £50M pool
+        case 'LA_LIGA': baseAmount = 120_000_000; break;       // £120M pool
+        default: baseAmount = 40_000_000;
+    }
+
+    // Distribute based on position (roughly)
+    // 1st gets ~25% of pool, decreasing down to 20th
+    const multiplier = Math.max(0.05, 0.25 - (position - 1) * 0.01);
+    return Math.floor(baseAmount * multiplier);
 };

@@ -68,6 +68,7 @@ export interface NewsItem {
   headline: string;
   body: string;
   date: string;
+  type?: 'standard' | 'transfer' | 'achievement' | 'warning';
 }
 
 export interface Match {
@@ -159,7 +160,7 @@ export interface FanApproval {
 export interface ElectoralPromise {
   id: string;
   description: string;
-  type: 'league_position' | 'trophy' | 'stadium' | 'transfer';
+  type: 'league_position' | 'trophy' | 'stadium' | 'transfer' | 'finances';
   target: string | number;      // Ej: "Champions League" o 3 (top 3)
   deadline: number;              // Temporada límite
   fulfilled: boolean;
@@ -180,6 +181,7 @@ export interface Sponsor {
   id: string;
   name: string;
   type: 'shirt' | 'stadium' | 'training' | 'kit';
+  logo?: string;
   weeklyIncome: number;
   duration: number;             // Semanas restantes
   bonus?: {                     // Bonos por rendimiento
@@ -230,8 +232,6 @@ export interface GameState {
   mandate: PresidentialMandate; // Sistema de mandato presidencial
   electoralPromises: ElectoralPromise[]; // Promesas electorales
 
-  // Legacy field for backward compatibility (will be removed)
-  chairmanConfidence?: number;  // Deprecated: use boardConfidence instead
 
   viewingPlayer: Player | null;
   incomingOffers: Offer[];
@@ -256,5 +256,18 @@ export enum Screen {
   Calendar = 'CALENDARIO',
   Settings = 'AJUSTES',
   Staff = 'PERSONAL',
+  Club = 'CLUB',
 }
 
+export type MatchPhase = 'PRE' | 'LIVE' | 'POST';
+
+export interface PendingSimulationResults {
+    newsToAdd: NewsItem[];
+    updatedSchedule: Match[];
+    updatedLeagueTables: Record<LeagueId, LeagueTableRow[]>;
+    updatedAllTeams: Team[];
+    confidenceChange: number;
+    newOffers: Offer[];
+    playerMatchResult: { homeScore: number; awayScore: number, penalties?: { home: number, away: number }, events?: string[] } | null;
+    updatedCups?: { faCup: any, carabaoCup: any };
+}

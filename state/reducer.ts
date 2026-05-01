@@ -2,7 +2,7 @@
 
 // FIX: Import React to enable JSX, which is used for the team logo fallback when rehydrating game state.
 import React from 'react';
-import { GameState, Team, PlayerProfile, NewsItem, Player, Match, LeagueTableRow, Offer } from '../types';
+import { GameState, Team, PlayerProfile, NewsItem, Player, Match, LeagueTableRow, Offer, LeagueId, CupCompetition, FanApproval, Stadium } from '../types';
 import { TEAMS } from '../constants';
 import { generateSeasonSchedule, createInitialLeagueTable, simulateMatch, generateCupDraw, advanceCupRound, determineCupWinner, handlePromotionRelegation, generateYouthPlayer } from '../services/simulation';
 import { generateRandomCoach, generateCoachMarket } from '../services/coaching';
@@ -11,9 +11,7 @@ import { initializeGame } from '../services/gameFactory';
 import { startNewSeason } from '../services/seasonManager';
 import { formatDate, formatCurrency } from '../utils';
 
-// ... (imports remain the same)
 
-// ... (imports remain the same)
 
 // Define all possible action types
 export type GameAction =
@@ -21,7 +19,7 @@ export type GameAction =
     | { type: 'LOAD_GAME'; payload: GameState }
     | { type: 'RESET_GAME' }
     | { type: 'ADVANCE_WEEK_START' }
-    | { type: 'ADVANCE_WEEK_SUCCESS'; payload: { newsItems: NewsItem[]; newSchedule: Match[]; newLeagueTables: Record<LeagueId, LeagueTableRow[]>; newAllTeams: Team[]; newConfidence: number; newOffers: Offer[]; newCups?: { faCup: any; carabaoCup: any } } }
+    | { type: 'ADVANCE_WEEK_SUCCESS'; payload: { newsItems: NewsItem[]; newSchedule: Match[]; newLeagueTables: Record<LeagueId, LeagueTableRow[]>; newAllTeams: Team[]; newConfidence: number; newOffers: Offer[]; newCups?: { faCup: CupCompetition; carabaoCup: CupCompetition } } }
     | { type: 'START_NEW_SEASON' }
     | { type: 'TRIGGER_ELECTION' }
     | { type: 'ELECTION_RESULT'; payload: { won: boolean; newApproval: number } }
@@ -38,11 +36,11 @@ export type GameAction =
     | { type: 'FIRE_COACH' }
     | { type: 'ACCEPT_SPONSOR'; payload: { sponsorId: string } }
     | { type: 'EXPAND_STADIUM' }
-    | { type: 'SET_FAN_APPROVAL'; payload: any } // Using any to avoid circular dependency with types if FanApproval is not exported, but it is.
-    | { type: 'UPDATE_FINANCES'; payload: any }
+    | { type: 'SET_FAN_APPROVAL'; payload: FanApproval }
+    | { type: 'UPDATE_FINANCES'; payload: GameState['finances'] }
     | { type: 'UPDATE_TEAM'; payload: Team }
-    | { type: 'UPDATE_CHAIRMAN_CONFIDENCE'; payload: number }
-    | { type: 'UPDATE_STADIUM'; payload: any };
+    | { type: 'UPDATE_BOARD_CONFIDENCE'; payload: number }
+    | { type: 'UPDATE_STADIUM'; payload: Stadium };
 
 export const initialState: GameState | null = null;
 
@@ -76,7 +74,7 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
             };
 
             const electoralPromises = loadedState.electoralPromises || [];
-            const boardConfidence = loadedState.boardConfidence !== undefined ? loadedState.boardConfidence : (loadedState.chairmanConfidence || 50);
+            const boardConfidence = loadedState.boardConfidence !== undefined ? loadedState.boardConfidence : ((loadedState as any).chairmanConfidence || 50);
 
             // 2. Coach System Migration
             const availableCoaches = loadedState.availableCoaches || generateCoachMarket(5);
@@ -101,9 +99,9 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
             // 4. League Tables Migration
             // @ts-ignore - Handling legacy migration where these properties might exist on loadedState but not on GameState type
             const leagueTables = loadedState.leagueTables || {
-                PREMIER_LEAGUE: loadedState.leagueTable || [],
-                CHAMPIONSHIP: loadedState.championshipTable || [],
-                LA_LIGA: loadedState.laLigaTable || []
+                PREMIER_LEAGUE: (loadedState as any).leagueTable || [],
+                CHAMPIONSHIP: (loadedState as any).championshipTable || [],
+                LA_LIGA: (loadedState as any).laLigaTable || []
             };
 
             return {
@@ -187,154 +185,7 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
 
         case 'START_NEW_SEASON': {
             if (!state) return null;
-
-            const newSeasonYear = state.season + 1;
-            const newDate = new Date(`${newSeasonYear}-07-01`);
-
-            // 1. Process Aging & Retirements & Regens
-            const processedTeams = state.allTeams.map(team => {
-                let updatedSquad: Player[] = team.squad
-                    .map(p => ({
-                        ...p,
-                        age: (p.age || 25) + 1,
-                        contractYears: Math.max(0, p.contractYears - 1)
-                    }))
-                    .filter(p => {
-                        // Retirement logic
-                        if (p.age && p.age > 38) return false; // Force retire
-                        if (p.age && p.age > 34 && Math.random() < 0.3) return false; // Chance to retire
-                        return true;
-                    });
-
-                // Regen Logic: If team is too small, add youths
-                while (updatedSquad.length < 18) {
-                    updatedSquad.push(generateYouthPlayer(team.tier));
-                }
-
-                return { ...team, squad: updatedSquad };
-            });
-
-            const updatedPlayerTeam = processedTeams.find(t => t.id === state.team.id)!;
-
-            // 2. Refresh Player Academy
-            // Remove players who got too old in academy (19+) or randomly replace some
-            let updatedAcademy: Player[] = state.youthAcademy
-                .map(p => ({ ...p, age: (p.age || 16) + 1 }))
-                .filter(p => p.age !== undefined && p.age <= 19);
-
-            // Add new talent
-            const newProspectsCount = 3 + Math.floor(Math.random() * 3); // 3-5 new players
-            for (let i = 0; i < newProspectsCount; i++) {
-                updatedAcademy.push(generateYouthPlayer(updatedPlayerTeam.tier));
-            }
-
-            // 3. Reset Competition & Process Promotion/Relegation
-            // We need the FINAL tables from the previous season to determine promotion/relegation
-            // Identify teams before changes for news
-            const sortedPL = [...state.leagueTables.PREMIER_LEAGUE].sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference);
-            const sortedCH = [...state.leagueTables.CHAMPIONSHIP].sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference);
-
-            const relegatedIds = sortedPL.slice(-3).map(row => row.teamId);
-            const promotedIds = sortedCH.slice(0, 3).map(row => row.teamId);
-
-            const relegatedTeams = relegatedIds.map(id => processedTeams.find(t => t.id === id)?.name || 'Unknown').filter(Boolean);
-            const promotedTeams = promotedIds.map(id => processedTeams.find(t => t.id === id)?.name || 'Unknown').filter(Boolean);
-
-            const teamsAfterProRel = handlePromotionRelegation(processedTeams, state.leagueTables.PREMIER_LEAGUE, state.leagueTables.CHAMPIONSHIP);
-
-            const newSeasonSchedule = generateSeasonSchedule(teamsAfterProRel);
-            const newPlTeams = teamsAfterProRel.filter(t => t.leagueId === 'PREMIER_LEAGUE');
-            const newChTeams = teamsAfterProRel.filter(t => t.leagueId === 'CHAMPIONSHIP');
-            const newLaTeams = teamsAfterProRel.filter(t => t.leagueId === 'LA_LIGA');
-
-            const newLeagueTables = {
-                PREMIER_LEAGUE: createInitialLeagueTable(newPlTeams),
-                CHAMPIONSHIP: createInitialLeagueTable(newChTeams),
-                LA_LIGA: createInitialLeagueTable(newLaTeams)
-            };
-
-            // Generate New Cup Draws (ONLY English teams for English cups)
-            const englishTeamsNewSeason = [...newPlTeams, ...newChTeams];
-            const faCupRound1 = generateCupDraw(englishTeamsNewSeason, 'Round 1', 'FA_Cup');
-            const carabaoCupRound1 = generateCupDraw(englishTeamsNewSeason, 'Round 1', 'Carabao_Cup');
-
-            const faCupFixtures = faCupRound1.map(m => ({ ...m, week: 5 }));
-            const carabaoCupFixtures = carabaoCupRound1.map(m => ({ ...m, week: 2 }));
-
-            const fullSchedule = [...newSeasonSchedule, ...faCupFixtures, ...carabaoCupFixtures];
-
-            // 4. News - Promotion/Relegation and Season Start
-            const proRelNews: NewsItem = {
-                id: `pro_rel_${newSeasonYear}`,
-                headline: `🔄 Cambios en las Ligas - Temporada ${newSeasonYear}`,
-                body: `⬆️ ASCENSOS: ${promotedTeams.join(', ')} suben a la Premier League.\n⬇️ DESCENSOS: ${relegatedTeams.join(', ')} descienden al Championship. ¡La nueva temporada promete emociones!`,
-                date: formatDate(newDate)
-            };
-
-            const seasonNews: NewsItem = {
-                id: `season_start_${newSeasonYear}`,
-                headline: `Temporada ${newSeasonYear}-${newSeasonYear + 1}`,
-                body: `La pretemporada ha terminado. Los veteranos se han retirado y nuevas caras llegan desde la cantera. ¡Objetivo: Ganar!`,
-                date: formatDate(newDate)
-            };
-
-            return {
-                ...state,
-                team: updatedPlayerTeam,
-                allTeams: processedTeams,
-                youthAcademy: updatedAcademy,
-                season: newSeasonYear,
-                currentDate: newDate,
-                currentWeek: 0,
-                schedule: fullSchedule,
-                leagueTables: newLeagueTables,
-                newsFeed: [proRelNews, seasonNews, ...state.newsFeed].slice(0, 20),
-                // Update Mandate Year and Check for Elections
-                mandate: {
-                    ...state.mandate,
-                    currentYear: state.mandate.currentYear >= 4 ? state.mandate.currentYear : state.mandate.currentYear + 1,
-                    isElectionYear: state.mandate.currentYear + 1 > 4,
-                    nextElectionSeason: state.mandate.currentYear + 1 > 4 ? newSeasonYear : state.mandate.nextElectionSeason
-                },
-                // Update Fan Approval based on season performance
-                fanApproval: (() => {
-                    const playerPosition = sortedPL.find(row => row.teamId === updatedPlayerTeam.id)?.position ||
-                        sortedCH.find(row => row.teamId === updatedPlayerTeam.id)?.position || 10;
-
-                    let approvalDelta = 0;
-                    if (playerPosition <= 4) approvalDelta = 15;
-                    else if (playerPosition <= 6) approvalDelta = 10;
-                    else if (playerPosition >= 18) approvalDelta = -20;
-                    else if (playerPosition <= 10) approvalDelta = 5;
-                    else approvalDelta = -5;
-
-                    const newRating = Math.max(0, Math.min(100, state.fanApproval.rating + approvalDelta));
-                    const trend: 'rising' | 'stable' | 'falling' =
-                        approvalDelta > 5 ? 'rising' : approvalDelta < -5 ? 'falling' : 'stable';
-
-                    return {
-                        ...state.fanApproval,
-                        rating: newRating,
-                        trend
-                    };
-                })(),
-                cups: {
-                    faCup: {
-                        id: 'fa_cup',
-                        name: 'FA Cup',
-                        rounds: [{ name: 'Round 1', fixtures: faCupFixtures, completed: false }],
-                        currentRoundIndex: 0,
-                        statistics: { topScorers: [], championsHistory: state.cups.faCup.statistics?.championsHistory || [] }
-                    },
-                    carabaoCup: {
-                        id: 'carabao_cup',
-                        name: 'Carabao Cup',
-                        rounds: [{ name: 'Round 1', fixtures: carabaoCupFixtures, completed: false }],
-                        currentRoundIndex: 0,
-                        statistics: { topScorers: [], championsHistory: state.cups.carabaoCup.statistics?.championsHistory || [] }
-                    }
-                }
-            };
+            return startNewSeason(state);
         }
         // ...
 
@@ -677,24 +528,17 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
             }
 
             // Add new sponsor
-            const newMarket = state.availableSponsors.filter(s => s.id !== sponsorId && s.type !== sponsor.type);
-
             return {
                 ...state,
-            } else {
-                // Add new sponsor
-                return {
-                    ...state,
-                    sponsors: [...state.sponsors, sponsor],
-                    availableSponsors: state.availableSponsors.filter(s => s.id !== sponsorId),
-                    newsFeed: [{
-                        id: `sponsor_${Date.now()}`,
-                        headline: '🤝 Nuevo Acuerdo de Patrocinio',
-                        body: `${sponsor.name} es ahora nuestro patrocinador ${sponsor.type === 'shirt' ? 'de camiseta' : sponsor.type === 'stadium' ? 'del estadio' : sponsor.type === 'training' ? 'de entrenamiento' : 'de equipación'}. Ingresos: ${formatCurrency(sponsor.weeklyIncome)}/semana.`,
-                        date: formatDate(state.currentDate)
-                    }, ...state.newsFeed].slice(0, 20)
-                };
-            }
+                sponsors: [...state.sponsors, sponsor],
+                availableSponsors: state.availableSponsors.filter(s => s.id !== sponsorId),
+                newsFeed: [{
+                    id: `sponsor_${Date.now()}`,
+                    headline: '🤝 Nuevo Acuerdo de Patrocinio',
+                    body: `${sponsor.name} es ahora nuestro patrocinador ${sponsor.type === 'shirt' ? 'de camiseta' : sponsor.type === 'stadium' ? 'del estadio' : sponsor.type === 'training' ? 'de entrenamiento' : 'de equipación'}. Ingresos: ${formatCurrency(sponsor.weeklyIncome)}/semana.`,
+                    date: formatDate(state.currentDate)
+                }, ...state.newsFeed].slice(0, 20)
+            };
         }
 
         case 'EXPAND_STADIUM': {
@@ -737,7 +581,7 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 allTeams: state.allTeams.map(t => t.id === action.payload.id ? action.payload : t)
             } : null;
 
-        case 'UPDATE_CHAIRMAN_CONFIDENCE':
+        case 'UPDATE_BOARD_CONFIDENCE':
             return state ? { ...state, boardConfidence: action.payload } : null;
 
         case 'UPDATE_STADIUM':
@@ -747,4 +591,3 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
             return state;
     }
 }
-```

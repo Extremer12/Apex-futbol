@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Screen } from '../../types';
-import { DashboardIcon, SquadIcon, TransfersIcon, FinancesIcon, LeagueIcon, ChartBarIcon, SettingsIcon, CalendarIcon, BriefcaseIcon } from '../icons';
+import { DashboardIcon, SquadIcon, TransfersIcon, FinancesIcon, LeagueIcon, ChartBarIcon, SettingsIcon, CalendarIcon, BriefcaseIcon, TrophyIcon } from '../icons';
 
 interface BottomNavProps {
     activeScreen: Screen;
@@ -20,6 +20,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeScreen, onNavigate }
 
     // Secondary navigation items (in menu)
     const secondaryItems = [
+        { screen: Screen.Club, icon: TrophyIcon, label: 'Club' },
         { screen: Screen.Calendar, icon: CalendarIcon, label: 'Calendario' },
         { screen: Screen.Statistics, icon: ChartBarIcon, label: 'Estadísticas' },
         { screen: Screen.Finances, icon: FinancesIcon, label: 'Finanzas' },

@@ -7,7 +7,7 @@ import { GameState, Team, Player, PlayerProfile, NewsItem } from '../types';
 import { TEAMS } from '../constants';
 import { generateRandomCoach, generateCoachMarket } from './coaching';
 import { generateYouthPlayer, generateSeasonSchedule, generateCupDraw, createInitialLeagueTable } from './simulation';
-import { getBaseWeeklyIncome } from './economy';
+import { getBaseWeeklyIncome, generateStadium, generateSponsor, generateSponsorMarket } from './economy';
 import { formatDate } from '../utils';
 
 interface InitializeGameParams {
@@ -136,7 +136,6 @@ export function initializeGame({ selectedTeam, playerProfile }: InitializeGamePa
             totalMandates: 1
         },
         electoralPromises: [],
-        chairmanConfidence: initialConfidence[selectedTeam.tier], // Legacy compatibility
         viewingPlayer: null,
         incomingOffers: [],
         youthAcademy: initialYouthAcademy,
@@ -157,15 +156,11 @@ export function initializeGame({ selectedTeam, playerProfile }: InitializeGamePa
             }
         },
         availableCoaches: generateCoachMarket(5),
-        stadium: {
-            name: `${selectedTeam.name} Stadium`,
-            capacity: 40000,
-            ticketPrice: 50,
-            maintenanceCost: 50000,
-            expansionCost: 10_000_000,
-            expansionCapacity: 50000
-        },
-        sponsors: [],
-        availableSponsors: []
+        stadium: generateStadium(playerTeamCopy),
+        sponsors: [
+            generateSponsor('shirt', playerTeamCopy.tier),
+            generateSponsor('kit', playerTeamCopy.tier)
+        ],
+        availableSponsors: generateSponsorMarket(playerTeamCopy.tier)
     };
 }

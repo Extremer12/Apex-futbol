@@ -190,58 +190,76 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = ({ gameState, dispa
             </div>
 
             {/* Sponsors */}
-            <div>
-                <h3 className="text-xl font-bold text-white mb-4">🤝 Patrocinadores Actuales</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                    {sponsors.length > 0 ? sponsors.map(sponsor => (
-                        <div key={sponsor.id} className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-                            <div className="text-xs text-slate-400 uppercase mb-1">{getSponsorTypeLabel(sponsor.type)}</div>
-                            <div className="font-bold text-white mb-2">{sponsor.name}</div>
-                            <div className="text-green-400 font-semibold">{formatCurrency(sponsor.weeklyIncome)}/sem</div>
-                            <div className="text-xs text-slate-400 mt-1">{Math.floor(sponsor.duration / 52)} años restantes</div>
-                        </div>
-                    )) : (
-                        <div className="col-span-full text-center text-slate-400 py-8">
-                            No tienes patrocinadores activos. ¡Revisa las ofertas disponibles!
-                        </div>
-                    )}
+            <div className="space-y-8">
+                <div>
+                    <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                        <span className="p-2 bg-slate-800 rounded-lg">🤝</span> Patrocinadores Actuales
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {sponsors.length > 0 ? sponsors.map(sponsor => (
+                            <div key={sponsor.id} className="relative group overflow-hidden bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-5 border border-slate-700 shadow-lg">
+                                <div className="absolute -right-2 -top-2 text-4xl opacity-10 group-hover:scale-110 transition-transform">{sponsor.logo}</div>
+                                <div className="text-[10px] font-black text-sky-400 uppercase tracking-widest mb-1">{getSponsorTypeLabel(sponsor.type)}</div>
+                                <div className="font-bold text-white text-lg mb-2">{sponsor.name}</div>
+                                <div className="flex justify-between items-end">
+                                    <div className="text-green-400 font-black text-xl">{formatCurrency(sponsor.weeklyIncome)}<span className="text-[10px] text-slate-500 font-normal">/sem</span></div>
+                                    <div className="text-[10px] text-slate-500 bg-slate-950 px-2 py-1 rounded-full border border-slate-800">
+                                        {Math.floor(sponsor.duration / 52)} AÑOS
+                                    </div>
+                                </div>
+                            </div>
+                        )) : (
+                            <div className="col-span-full bg-slate-800/20 border-2 border-dashed border-slate-700 rounded-2xl py-12 text-center text-slate-500">
+                                No tienes patrocinadores activos. ¡Revisa las ofertas!
+                            </div>
+                        )}
+                    </div>
                 </div>
 
-                <h3 className="text-xl font-bold text-white mb-4">📋 Ofertas de Patrocinio Disponibles</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {availableSponsors.map(sponsor => (
-                        <div key={sponsor.id} className="bg-slate-800/50 rounded-xl p-5 border border-slate-700 hover:border-slate-600 transition-all">
-                            <div className="flex justify-between items-start mb-3">
-                                <div>
-                                    <div className="text-xs text-slate-400 uppercase">{getSponsorTypeLabel(sponsor.type)}</div>
-                                    <div className="font-bold text-white text-lg">{sponsor.name}</div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-2 mb-4">
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-slate-400">Ingresos</span>
-                                    <span className="text-green-400 font-semibold">{formatCurrency(sponsor.weeklyIncome)}/sem</span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-slate-400">Duración</span>
-                                    <span className="text-white">{Math.floor(sponsor.duration / 52)} años</span>
-                                </div>
-                                {sponsor.bonus && (
-                                    <div className="text-xs text-blue-400 bg-blue-900/30 p-2 rounded">
-                                        Bonus: +{formatCurrency(sponsor.bonus.amount)} si {sponsor.bonus.condition === 'top4' ? 'Top 4' : sponsor.bonus.condition === 'top6' ? 'Top 6' : 'Promoción'}
+                <div>
+                    <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                        <span className="p-2 bg-sky-500/20 rounded-lg">📋</span> Ofertas de Patrocinio
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {availableSponsors.map(sponsor => (
+                            <div key={sponsor.id} className="bg-slate-900/50 rounded-2xl p-6 border border-slate-800 hover:border-sky-500/30 transition-all duration-300 group shadow-xl">
+                                <div className="flex justify-between items-start mb-6">
+                                    <div>
+                                        <div className="text-[10px] font-black text-sky-400 uppercase tracking-widest mb-1">{getSponsorTypeLabel(sponsor.type)}</div>
+                                        <div className="font-black text-white text-2xl group-hover:text-sky-300 transition-colors">{sponsor.name}</div>
                                     </div>
-                                )}
-                            </div>
+                                    <div className="text-4xl bg-slate-800 p-3 rounded-2xl group-hover:scale-110 transition-transform duration-500">{sponsor.logo}</div>
+                                </div>
 
-                            <button
-                                onClick={() => handleAcceptSponsor(sponsor.id)}
-                                className="w-full py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg font-medium transition-colors"
-                            >
-                                Aceptar Oferta
-                            </button>
-                        </div>
-                    ))}
+                                <div className="space-y-4 mb-6">
+                                    <div className="flex justify-between items-center bg-slate-800/30 p-3 rounded-xl">
+                                        <span className="text-sm text-slate-400">Ingresos Semanales</span>
+                                        <span className="text-green-400 font-black text-lg">{formatCurrency(sponsor.weeklyIncome)}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center px-3">
+                                        <span className="text-sm text-slate-400">Duración Contrato</span>
+                                        <span className="text-white font-bold">{Math.floor(sponsor.duration / 52)} años</span>
+                                    </div>
+                                    {sponsor.bonus && (
+                                        <div className="relative overflow-hidden bg-sky-900/20 border border-sky-500/20 p-4 rounded-xl">
+                                            <div className="absolute right-0 top-0 p-1 opacity-10">✨</div>
+                                            <div className="text-[10px] font-black text-sky-400 uppercase mb-1">Bono por Rendimiento</div>
+                                            <div className="text-sm text-sky-200">
+                                                <span className="font-bold text-white">{formatCurrency(sponsor.bonus.amount)}</span> si el equipo queda en <span className="font-bold text-white">{sponsor.bonus.condition === 'top4' ? 'Top 4' : sponsor.bonus.condition === 'top6' ? 'Top 6' : 'Ascenso'}</span>.
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <button
+                                    onClick={() => handleAcceptSponsor(sponsor.id)}
+                                    className="w-full py-4 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white rounded-xl font-black shadow-lg shadow-sky-600/20 transform hover:-translate-y-1 transition-all duration-200"
+                                >
+                                    FIRMAR CONTRATO
+                                </button>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
         </div>

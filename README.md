@@ -1,140 +1,104 @@
 <div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+<img width="1200" height="475" alt="Apex AI Banner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+
+# Apex AI: Football President ⚽💼
+
+**El simulador de gestión futbolística definitivo donde el poder reside en la presidencia.**
+Construido con React 19, TypeScript y un motor de simulación local de alto rendimiento.
+
+[![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://apex-futbol.vercel.app)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://react.dev/)
+
 </div>
 
-# Apex AI - Football Manager Game
+---
 
-Un juego de gestión de fútbol completo y totalmente funcional sin dependencias de IA, construido con React, TypeScript y Vite.
+## 🏛️ El Sistema Presidencial (Core del Juego)
 
-## 🎮 Características
+A diferencia de otros managers, en **Apex AI** no eres solo un entrenador; eres el **Presidente**. Tu éxito se mide por tu capacidad para mantener el control político y financiero del club.
 
-### Gestión Completa
-- **Sistema de Plantilla**: Administra hasta 25 jugadores con estadísticas detalladas
-- **Cantera Juvenil**: Desarrolla jóvenes talentos y promociónales al primer equipo
-- **Mercado de Fichajes**: Negocia fichajes con lógica determinista inteligente
-- **Gestión Financiera**: Control de presupuesto, salarios e ingresos semanales
+### 🗳️ Mandato de 4 Años
+- **Elecciones Democráticas**: Cada 4 temporadas debes enfrentarte a las urnas. Tu gestión determinará si los socios te reeligen o te expulsan del club.
+- **Debate Presidencial**: Antes de empezar, define tu visión respondiendo a preguntas críticas que marcarán tus **Promesas Electorales**.
+- **Aprobación de los Socios**: Un indicador dinámico basado en resultados deportivos, salud financiera y cumplimiento de promesas.
 
-### Competiciones
-- **Multi-Liga**: Premier League (20 equipos) y Championship (24 equipos) con calendarios independientes
-- **FA Cup**: Competición de copa con eliminación directa, extra time y penales
-- **Carabao Cup**: Segunda copa con progresión automática de rondas
-- **Sistema de Copas**: Avance automático a siguientes rondas tras completar partidos
+### 🏰 Club Hub: El Despacho del Presidente
+- Gestiona la **infraestructura del estadio** y autoriza proyectos de expansión millonarios.
+- Monitorea la **confianza de la junta directiva** y el progreso de tus promesas en tiempo real.
+- Analiza los factores de aprobación para ajustar tu estrategia política.
 
-### Experiencia de Juego
-- **Debate Presidencial Interactivo**: Sistema de elección mediante 6 preguntas de opción múltiple con oponentes virtuales
-- **Simulación de Partidos**: Motor de simulación realista con animaciones en vivo
-- **Partidos de Copa**: Extra time y penales en caso de empate
-- **Sistema de Temporadas**: Envejecimiento de jugadores, retiros y regeneración automática
+---
 
-### Características Técnicas
-- **Guardado Local**: Sistema de guardado/carga con IndexedDB
-- **Sin Dependencias de IA**: Lógica de juego 100% determinista y local
-- **PWA**: Instalable como aplicación web progresiva
-- **Interfaz Moderna**: UI responsive con Tailwind CSS y animaciones fluidas
+## 👔 Delegación Deportiva
 
-## 🚀 Ejecutar Localmente
+Como presidente, tú eliges el camino:
+- **Director Técnico**: Contrata entrenadores con diferentes estilos (Atacante, Defensivo, Posesión) que gestionarán la táctica por ti.
+- **Mercado Galáctico**: Decide si invertir en superestrellas para aumentar el marketing o apostar por la cantera.
+- **La Academia**: Desarrolla jóvenes talentos y promociónalos al primer equipo para asegurar el futuro del club.
 
-**Prerequisitos:** Node.js (v16 o superior)
+---
 
-1. **Clonar el repositorio:**
-   ```bash
-   git clone https://github.com/Extremer12/Apex-futbol.git
-   cd Apex-futbol
-   ```
+## 💰 Economía 2.0 y Patrocinios
 
-2. **Instalar dependencias:**
-   ```bash
-   npm install
-   ```
+- **Marketplace de Sponsors**: Firma acuerdos con marcas de ropa, patrocinadores de camiseta y derechos de nombre del estadio.
+- **Bonos por Rendimiento**: Elige entre contratos seguros o apuestas arriesgadas con grandes bonos si alcanzas el Top 4 o el ascenso.
+- **Premios de Liga**: Recibe inyecciones de capital masivas según tu posición final en la tabla.
+- **Gastos Operativos**: Gestiona el balance semanal controlando salarios, mantenimiento y marketing.
 
-3. **Ejecutar la aplicación:**
-   ```bash
-   npm run dev
-   ```
+---
 
-4. **Abrir en el navegador:**
-   - Navega a `http://localhost:3000`
+## 🎮 Características Técnicas
 
-## 🏗️ Compilar para Producción
+- **Arquitectura Robusta**: Lógica de simulación desacoplada mediante Custom Hooks (`useSimulation`, `useGameSave`).
+- **Web Workers**: Motor de simulación asíncrono para mantener la UI fluida incluso durante cálculos pesados.
+- **Offline First**: Persistencia total mediante IndexedDB. Juega sin conexión en cualquier momento.
+- **Diseño Premium**: Interfaz moderna con animaciones de micro-interacciones, modo oscuro y gradientes dinámicos.
 
-```bash
-npm run build
-npm run preview
-```
+---
 
 ## 📁 Estructura del Proyecto
 
 ```
 Apex-ai/
-├── components/          # Componentes React
-│   ├── gameflow/       # Flujo del juego (inicio, selección, debate)
-│   ├── screens/        # Pantallas principales (Dashboard, Plantilla, etc.)
-│   └── ui/             # Componentes UI reutilizables
-├── services/           # Servicios
-│   ├── gameLogic.ts    # Lógica de noticias y negociaciones
-│   ├── electionDebate.ts # Sistema de debate presidencial
-│   ├── simulation.ts   # Motor de simulación de partidos
-│   └── db.ts           # Persistencia con IndexedDB
-├── state/              # Gestión de estado (reducer)
-├── App.tsx             # Componente principal
-├── types.ts            # Definiciones TypeScript
-├── constants.tsx       # Datos de equipos y constantes
-└── utils.ts            # Funciones auxiliares
+├── components/          # Componentes React (ClubHub, Dashboard, etc.)
+├── services/           # Lógica de Negocio (Economy, Simulation, Political)
+├── state/              # Reducer y gestión de estado centralizada
+├── hooks/              # Lógica de hooks personalizados
+├── data/               # Bases de datos de equipos (Premier, La Liga, etc.)
+├── workers/            # Simulación en hilos secundarios
+└── types.ts            # Definiciones de tipos estrictos
 ```
 
-## 🎯 Cómo Jugar
+---
 
-1. **Crea tu Perfil**: Ingresa tu nombre como presidente
-2. **Elige un Equipo**: Selecciona entre 20 equipos de diferentes niveles
-3. **Gana las Elecciones**: Responde 6 preguntas estratégicas para convencer a la junta
-4. **Gestiona tu Club**: 
-   - Juega partidos semanales
-   - Ficha y vende jugadores
-   - Administra finanzas
-   - Desarrolla tu cantera
-5. **Compite por el Título**: Lleva a tu equipo a la cima de la liga
+## 🚀 Instalación y Desarrollo
 
-## 🛠️ Tecnologías
+1. **Clonar y Acceder**:
+   ```bash
+   git clone https://github.com/Extremer12/Apex-futbol.git
+   cd Apex-futbol
+   ```
 
-- **React 19** - Framework UI
-- **TypeScript** - Tipado estático
-- **Vite** - Build tool y dev server
-- **Tailwind CSS 4** - Estilos modernos
-- **IndexedDB** - Almacenamiento local persistente
+2. **Dependencias**:
+   ```bash
+   npm install
+   ```
 
-## 🎨 Características Destacadas
+3. **Lanzar**:
+   ```bash
+   npm run dev
+   ```
 
-### Sistema de Debate Presidencial
-- 8 preguntas únicas con 3 opciones cada una
-- Dificultad adaptativa según el tier del equipo
-- Oponentes virtuales con IA simulada
-- Feedback visual inmediato
-
-### Motor de Simulación
-- Cálculo basado en estadísticas de jugadores por posición
-- Factores de moral, forma y localía
-- Animación en vivo con eventos del partido
-- Sistema de goles realista
-
-### Gestión de Plantilla
-- Sistema de moral de jugadores (5 niveles)
-- Contratos y edades
-- Retiros automáticos por edad
-- Regeneración de jugadores (regens)
-
-## 📝 Licencia
-
-Este proyecto está bajo la licencia MIT.
-
-## 🤝 Contribuir
-
-Las contribuciones son bienvenidas. Por favor, abre un issue o pull request.
+---
 
 ## 👨‍💻 Autor
 
-Desarrollado por [Extremer12](https://github.com/Extremer12)
+Desarrollado por **[Extremer12](https://github.com/Extremer12)**. 
+*Llevando la gestión deportiva al siguiente nivel.*
 
-## 🔗 Links
-
-- **Demo en Vivo**: [Apex AI en Vercel](https://apex-futbol.vercel.app)
-- **Repositorio**: [GitHub](https://github.com/Extremer12/Apex-futbol)
+---
+<div align="center">
+  <p>¿Tienes lo que hay que tener para ser el presidente más exitoso de la historia?</p>
+  <a href="https://apex-futbol.vercel.app"><strong>JUGAR AHORA</strong></a>
+</div>

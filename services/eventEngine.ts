@@ -2,6 +2,7 @@
 // Allows adding new events without modifying code
 
 import { GameState } from '../types';
+import { getMoraleValue, getMoraleLabel } from '../utils';
 import eventsData from '../data/events.json';
 
 export interface GameEvent {
@@ -40,7 +41,7 @@ export interface EventEffects {
     matchdayRevenue?: number;
     teamMorale?: number;
     fanApproval?: number;
-    chairmanConfidence?: number;
+    boardConfidence?: number;
     stadiumCapacity?: number;
     addYouthPlayer?: boolean;
 }
@@ -175,9 +176,11 @@ class EventEngine {
 
         // Team morale
         if (effects.teamMorale !== undefined) {
+            const currentMoraleValue = getMoraleValue(gameState.team.teamMorale);
+            const newMoraleValue = Math.max(0, Math.min(100, currentMoraleValue + effects.teamMorale));
             updates.team = {
                 ...gameState.team,
-                teamMorale: Math.max(0, Math.min(100, gameState.team.teamMorale + effects.teamMorale))
+                teamMorale: getMoraleLabel(newMoraleValue)
             };
         }
 
@@ -190,9 +193,9 @@ class EventEngine {
         }
 
         // Chairman confidence
-        if (effects.chairmanConfidence !== undefined) {
-            updates.chairmanConfidence = Math.max(0, Math.min(100,
-                gameState.chairmanConfidence + effects.chairmanConfidence
+        if (effects.boardConfidence !== undefined) {
+            updates.boardConfidence = Math.max(0, Math.min(100,
+                gameState.boardConfidence + effects.boardConfidence
             ));
         }
 

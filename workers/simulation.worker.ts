@@ -2,6 +2,41 @@
 // This runs in a separate thread to prevent UI freezing
 
 import { Team, LeagueTableRow, Match, Morale, LeagueId } from '../types';
+import { simulateMatch } from '../services/simulation';
+
+// Helper to convert Morale string to number
+function getMoraleValue(morale: Morale): number {
+    switch (morale) {
+        case 'Feliz': return 90;
+        case 'Contento': return 75;
+        case 'Normal': return 50;
+        case 'Descontento': return 25;
+        case 'Enojado': return 10;
+        default: return 50;
+    }
+}
+
+// Helper to convert number to Morale string
+function getMoraleLabel(value: number): Morale {
+    if (value >= 85) return 'Feliz';
+    if (value >= 65) return 'Contento';
+    if (value >= 40) return 'Normal';
+    if (value >= 20) return 'Descontento';
+    return 'Enojado';
+}
+
+function updateTeamMorale(currentMorale: Morale, result: 'W' | 'D' | 'L'): Morale {
+    let change = 0;
+    if (result === 'W') change = 5;
+    else if (result === 'D') change = 0;
+    else change = -5;
+
+    const currentValue = getMoraleValue(currentMorale);
+    const newValue = Math.max(0, Math.min(100, currentValue + change));
+
+    return getMoraleLabel(newValue);
+}
+
 
 interface SimulationInput {
     type: 'SIMULATE_WEEK';
@@ -37,95 +72,6 @@ interface SimulationOutput {
     };
 }
 
-// Helper to convert Morale string to number
-function getMoraleValue(morale: Morale): number {
-    switch (morale) {
-        case 'Feliz': return 90;
-        case 'Contento': return 75;
-        case 'Normal': return 50;
-        case 'Descontento': return 25;
-        case 'Enojado': return 10;
-        default: return 50;
-    }
-}
-
-// Helper to convert number to Morale string
-function getMoraleLabel(value: number): Morale {
-    if (value >= 85) return 'Feliz';
-    if (value >= 65) return 'Contento';
-    if (value >= 40) return 'Normal';
-    if (value >= 20) return 'Descontento';
-    return 'Enojado';
-}
-
-// Simple match simulation logic (extracted from App.tsx)
-function simulateMatch(
-    homeTeam: Team,
-    awayTeam: Team,
-    homeRow: LeagueTableRow,
-    awayRow: LeagueTableRow,
-    isCupMatch: boolean
-): { homeScore: number; awayScore: number; penalties?: { home: number; away: number } } {
-    // Calculate team strengths
-    const homeStrength = homeTeam.squad.reduce((sum, p) => sum + p.rating, 0) / homeTeam.squad.length;
-    const awayStrength = awayTeam.squad.reduce((sum, p) => sum + p.rating, 0) / awayTeam.squad.length;
-
-    // Home advantage
-    const homeAdvantage = 5;
-    const adjustedHomeStrength = homeStrength + homeAdvantage;
-
-    // Morale impact
-    const homeMoraleBonus = (getMoraleValue(homeTeam.teamMorale) - 50) / 10;
-    const awayMoraleBonus = (getMoraleValue(awayTeam.teamMorale) - 50) / 10;
-
-    // Form impact
-    const homeFormBonus = homeRow.form.slice(0, 5).filter(r => r === 'W').length * 2;
-    const awayFormBonus = awayRow.form.slice(0, 5).filter(r => r === 'W').length * 2;
-
-    const finalHomeStrength = adjustedHomeStrength + homeMoraleBonus + homeFormBonus;
-    const finalAwayStrength = awayStrength + awayMoraleBonus + awayFormBonus;
-
-    // Simulate goals
-    const homeGoalChance = finalHomeStrength / (finalHomeStrength + finalAwayStrength);
-    const awayGoalChance = 1 - homeGoalChance;
-
-    let homeScore = 0;
-    let awayScore = 0;
-
-    // Simulate 10 goal opportunities
-    for (let i = 0; i < 10; i++) {
-        if (Math.random() < homeGoalChance * 0.3) homeScore++;
-        if (Math.random() < awayGoalChance * 0.3) awayScore++;
-    }
-
-    // Cup matches: handle extra time and penalties
-    if (isCupMatch && homeScore === awayScore) {
-        // Extra time
-        if (Math.random() < 0.3) {
-            if (Math.random() < homeGoalChance) homeScore++;
-            else awayScore++;
-        } else {
-            // Penalties
-            const homePenalties = Math.floor(Math.random() * 3) + 3;
-            const awayPenalties = Math.floor(Math.random() * 3) + 3;
-            return { homeScore, awayScore, penalties: { home: homePenalties, away: awayPenalties } };
-        }
-    }
-
-    return { homeScore, awayScore };
-}
-
-function updateTeamMorale(currentMorale: Morale, result: 'W' | 'D' | 'L'): Morale {
-    let change = 0;
-    if (result === 'W') change = 5;
-    else if (result === 'D') change = 0;
-    else change = -5;
-
-    const currentValue = getMoraleValue(currentMorale);
-    const newValue = Math.max(0, Math.min(100, currentValue + change));
-
-    return getMoraleLabel(newValue);
-}
 
 // Worker message handler
 self.onmessage = (e: MessageEvent<SimulationInput>) => {

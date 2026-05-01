@@ -5,7 +5,8 @@
 
 import { GameState, Team, Player, NewsItem } from '../types';
 import { generateYouthPlayer, generateSeasonSchedule, generateCupDraw, createInitialLeagueTable, handlePromotionRelegation } from './simulation';
-import { formatDate } from '../utils';
+import { calculatePrizeMoney, generateSponsorMarket } from './economy';
+import { formatDate, formatCurrency } from '../utils';
 
 /**
  * Processes the transition to a new season
@@ -102,17 +103,19 @@ export function startNewSeason(currentState: GameState): GameState {
         id: `pro_rel_${newSeasonYear}`,
         headline: `🔄 Cambios en las Ligas - Temporada ${newSeasonYear}`,
         body: `⬆️ ASCENSOS: ${promotedTeams.join(', ')} suben a la Premier League.\n⬇️ DESCENSOS: ${relegatedTeams.join(', ')} descienden al Championship. ¡La nueva temporada promete emociones!`,
-        date: formatDate(newDate)
+        date: formatDate(newDate),
+        type: 'standard'
     };
 
     const seasonNews: NewsItem = {
         id: `season_start_${newSeasonYear}`,
         headline: `Temporada ${newSeasonYear}-${newSeasonYear + 1}`,
         body: `La pretemporada ha terminado. Los veteranos se han retirado y nuevas caras llegan desde la cantera. ¡Objetivo: Ganar!`,
-        date: formatDate(newDate)
+        date: formatDate(newDate),
+        type: 'standard'
     };
 
-    // 7. Calculate fan approval changes based on season performance
+    // 7. Calculate fan approval changes based on season performance and promises
     const playerPosition = sortedPL.find(row => row.teamId === updatedPlayerTeam.id)?.position ||
         sortedCH.find(row => row.teamId === updatedPlayerTeam.id)?.position || 10;
 
@@ -122,6 +125,75 @@ export function startNewSeason(currentState: GameState): GameState {
     else if (playerPosition >= 18) approvalDelta = -20;
     else if (playerPosition <= 10) approvalDelta = 5;
     else approvalDelta = -5;
+
+    // Evaluate Electoral Promises
+    let promisesDelta = 0;
+    let promiseNewsBody = '';
+    const updatedPromises = currentState.electoralPromises.map(promise => {
+        if (promise.fulfilled) return promise; // Already fulfilled
+
+        let newlyFulfilled = false;
+        
+        if (promise.type === 'league_position') {
+            const targetPos = parseInt(String(promise.target), 10);
+            if (!isNaN(targetPos) && playerPosition <= targetPos) {
+                newlyFulfilled = true;
+            }
+        } else if (promise.type === 'trophy') {
+            const wonFaCup = currentState.cups.faCup.winnerId === updatedPlayerTeam.id;
+            const wonCarabaoCup = currentState.cups.carabaoCup.winnerId === updatedPlayerTeam.id;
+            const wonLeague = playerPosition === 1;
+            
+            if (String(promise.target).includes('Cup') && (wonFaCup || wonCarabaoCup)) newlyFulfilled = true;
+            if (String(promise.target).includes('League') && wonLeague) newlyFulfilled = true;
+            if (promise.target === 'Any' && (wonFaCup || wonCarabaoCup || wonLeague)) newlyFulfilled = true;
+        } else if (promise.type === 'finances') {
+             // Let's assume a generic finance target logic if it existed, for now just skip or resolve based on balance
+             if (currentState.finances.balance > Number(promise.target)) newlyFulfilled = true;
+        }
+
+        if (newlyFulfilled) {
+            promisesDelta += promise.impact;
+            promiseNewsBody += `✅ Promesa cumplida: ${promise.description} (+${promise.impact} aprobación)\\n`;
+            return { ...promise, fulfilled: true };
+        } else if (currentState.season >= promise.deadline) {
+            // Failed to fulfill by deadline
+            promisesDelta -= promise.impact;
+            promiseNewsBody += `❌ Promesa incumplida: ${promise.description} (-${promise.impact} aprobación)\\n`;
+            // Keep it as unfulfilled but maybe mark as failed or just leave it. The impact is applied once.
+            // We should ideally remove it or mark it failed, but let's just leave it and increase the season deadline to avoid double penalty next year if not removed.
+            return { ...promise, deadline: promise.deadline + 100 }; // hack to not penalize again
+        }
+        
+        return promise;
+    });
+    
+    // Add Promise News if any
+    let finalNewsFeed = [proRelNews, seasonNews, ...currentState.newsFeed];
+    if (promiseNewsBody) {
+        finalNewsFeed.unshift({
+            id: `promises_${newSeasonYear}`,
+            headline: `📊 Evaluación de Promesas Electorales`,
+            body: promiseNewsBody,
+            date: formatDate(newDate),
+            type: promisesDelta >= 0 ? 'achievement' : 'warning'
+        });
+    }
+
+    approvalDelta += promisesDelta;
+
+    // 8. Calculate Prize Money
+    const prizeMoney = calculatePrizeMoney(currentState.team.leagueId, playerPosition);
+    const newBalance = currentState.finances.balance + prizeMoney;
+
+    const prizeNews: NewsItem = {
+        id: `prize_${newSeasonYear}`,
+        headline: `💰 Premios de la Temporada`,
+        body: `Tu equipo ha recibido ${formatCurrency(prizeMoney)} por terminar en la posición ${playerPosition}º.`,
+        date: formatDate(newDate),
+        type: 'achievement'
+    };
+    finalNewsFeed.unshift(prizeNews);
 
     const newRating = Math.max(0, Math.min(100, currentState.fanApproval.rating + approvalDelta));
     const trend: 'rising' | 'stable' | 'falling' =
@@ -138,7 +210,8 @@ export function startNewSeason(currentState: GameState): GameState {
         currentWeek: 0,
         schedule: fullSchedule,
         leagueTables: newLeagueTables,
-        newsFeed: [proRelNews, seasonNews, ...currentState.newsFeed].slice(0, 20),
+        newsFeed: finalNewsFeed.slice(0, 20),
+        electoralPromises: updatedPromises,
         mandate: {
             ...currentState.mandate,
             currentYear: currentState.mandate.currentYear >= 4
@@ -176,6 +249,10 @@ export function startNewSeason(currentState: GameState): GameState {
                 }
             }
         },
-        availableSponsors: [] // Reset sponsor market (will be regenerated)
+        finances: {
+            ...currentState.finances,
+            balance: newBalance
+        },
+        availableSponsors: generateSponsorMarket(updatedPlayerTeam.tier)
     };
 }

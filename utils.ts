@@ -1,3 +1,4 @@
+import { Morale } from './types';
 
 // --- Helper Functions ---
 export const formatDate = (date: Date): string => date.toLocaleString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -26,3 +27,23 @@ export const generateRandomName = (): string => {
     const last = SURNAMES[Math.floor(Math.random() * SURNAMES.length)];
     return `${first} ${last}`;
 };
+
+// --- Morale Helpers ---
+export function getMoraleValue(morale: Morale): number {
+    switch (morale) {
+        case 'Feliz': return 90;
+        case 'Contento': return 75;
+        case 'Normal': return 50;
+        case 'Descontento': return 25;
+        case 'Enojado': return 10;
+        default: return 50;
+    }
+}
+
+export function getMoraleLabel(value: number): Morale {
+    if (value >= 85) return 'Feliz';
+    if (value >= 65) return 'Contento';
+    if (value >= 40) return 'Normal';
+    if (value >= 20) return 'Descontento';
+    return 'Enojado';
+}

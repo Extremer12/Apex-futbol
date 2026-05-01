@@ -11,7 +11,7 @@ import { formatCurrency } from '../../utils';
 import { MatchPhase } from '../../App';
 
 interface PendingSimulationResults {
-    playerMatchResult: { homeScore: number; awayScore: number } | null;
+    playerMatchResult: { homeScore: number; awayScore: number; events?: string[] } | null;
 }
 
 interface DashboardProps {
@@ -214,9 +214,8 @@ const QuickStats: React.FC<{ gameState: GameState }> = ({ gameState }) => {
 
     const positionZone = getPositionZone(playerTeamRow?.position);
 
-    // Use boardConfidence if available, fallback to chairmanConfidence for compatibility, ensure number
-    const boardConf = !isNaN(Number(gameState.boardConfidence)) ? Number(gameState.boardConfidence) :
-        !isNaN(Number(gameState.chairmanConfidence)) ? Number(gameState.chairmanConfidence) : 75;
+    // Use boardConfidence if available
+    const boardConf = !isNaN(Number(gameState.boardConfidence)) ? Number(gameState.boardConfidence) : 75;
 
     const fanApp = !isNaN(Number(gameState.fanApproval?.rating)) ? Number(gameState.fanApproval.rating) : 60;
 
@@ -415,17 +414,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ gameState, onPlayMatch, ma
                         {gameState.newsFeed.map((item, idx) => (
                             <div
                                 key={item.id}
-                                className="group relative bg-gradient-to-br from-slate-800/50 to-slate-800/30 hover:from-slate-800/80 hover:to-slate-800/60 border border-slate-700/50 hover:border-sky-500/50 rounded-lg p-4 transition-all duration-300 hover:shadow-lg hover:shadow-sky-500/10 cursor-pointer"
+                                className={`group relative bg-gradient-to-br from-slate-800/50 to-slate-800/30 hover:from-slate-800/80 hover:to-slate-800/60 border ${item.type === 'achievement' ? 'border-green-500/30' : item.type === 'warning' ? 'border-red-500/30' : item.type === 'transfer' ? 'border-purple-500/30' : 'border-slate-700/50'} hover:border-sky-500/50 rounded-lg p-4 transition-all duration-300 hover:shadow-lg hover:shadow-sky-500/10 cursor-pointer`}
                             >
-                                {/* Breaking news badge for first item */}
-                                {idx === 0 && (
+                                {/* Category Badge */}
+                                {item.type && item.type !== 'standard' && (
+                                    <div className={`absolute -top-2 left-2 text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-tighter shadow-lg ${item.type === 'achievement' ? 'bg-green-600 text-white' : item.type === 'warning' ? 'bg-red-600 text-white' : 'bg-purple-600 text-white'}`}>
+                                        {item.type === 'achievement' ? 'Logro' : item.type === 'warning' ? 'Urgente' : 'Fichaje'}
+                                    </div>
+                                )}
+
+                                {/* Breaking news badge for first item if no specific type or as extra indicator */}
+                                {idx === 0 && !item.type && (
                                     <div className="absolute -top-2 -right-2 bg-gradient-to-r from-red-600 to-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg animate-pulse">
                                         🔥 NUEVO
                                     </div>
                                 )}
 
                                 <div className="flex justify-between items-start mb-2">
-                                    <p className="text-sm font-bold text-white group-hover:text-sky-300 transition-colors leading-tight pr-2">{item.headline}</p>
+                                    <p className={`text-sm font-bold group-hover:text-sky-300 transition-colors leading-tight pr-2 ${item.type === 'achievement' ? 'text-green-400' : item.type === 'warning' ? 'text-red-400' : 'text-white'}`}>{item.headline}</p>
                                     <span className="text-[10px] text-slate-500 whitespace-nowrap bg-slate-900/50 px-2 py-1 rounded">{item.date}</span>
                                 </div>
                                 <p className="text-xs text-slate-400 group-hover:text-slate-300 line-clamp-2 transition-colors">
@@ -433,7 +439,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ gameState, onPlayMatch, ma
                                 </p>
 
                                 {/* Decorative gradient line */}
-                                <div className="h-px bg-gradient-to-r from-transparent via-sky-500/30 to-transparent mt-3 group-hover:via-sky-500/60 transition-all"></div>
+                                <div className={`h-px bg-gradient-to-r from-transparent via-${item.type === 'achievement' ? 'green' : item.type === 'warning' ? 'red' : 'sky'}-500/30 to-transparent mt-3 group-hover:via-sky-500/60 transition-all`}></div>
                             </div>
                         ))}
                     </div>
