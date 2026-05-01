@@ -1,7 +1,7 @@
 import React from 'react';
 import { GameState, Sponsor } from '../../types';
 import { GameAction } from '../../state/reducer';
-import { formatCurrency } from '../../utils';
+import { formatCurrency, formatCurrencyShort } from '../../utils';
 import { calculateFinancialBreakdown, getNetWeeklyIncome } from '../../services/economy';
 
 interface FinancesScreenProps {
@@ -58,18 +58,18 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = ({ gameState, dispa
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-gradient-to-br from-green-900/40 to-emerald-900/40 border-2 border-green-500/30 rounded-xl p-6">
                     <h3 className="text-sm font-semibold text-green-300 uppercase mb-2">Balance Total</h3>
-                    <div className="text-4xl font-bold text-white">{formatCurrency(finances.balance)}</div>
+                    <div className="text-4xl font-bold text-white">{formatCurrencyShort(finances.balance)}</div>
                 </div>
 
                 <div className="bg-gradient-to-br from-blue-900/40 to-cyan-900/40 border-2 border-blue-500/30 rounded-xl p-6">
                     <h3 className="text-sm font-semibold text-blue-300 uppercase mb-2">Presupuesto Fichajes</h3>
-                    <div className="text-4xl font-bold text-white">{formatCurrency(finances.transferBudget)}</div>
+                    <div className="text-4xl font-bold text-white">{formatCurrencyShort(finances.transferBudget)}</div>
                 </div>
 
                 <div className={`bg-gradient-to-br ${netIncome >= 0 ? 'from-green-900/40 to-emerald-900/40 border-green-500/30' : 'from-red-900/40 to-orange-900/40 border-red-500/30'} border-2 rounded-xl p-6`}>
                     <h3 className="text-sm font-semibold text-slate-300 uppercase mb-2">Balance Semanal</h3>
                     <div className={`text-4xl font-bold ${netIncome >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                        {netIncome >= 0 ? '+' : ''}{formatCurrency(netIncome)}
+                        {netIncome >= 0 ? '+' : ''}{formatCurrencyShort(netIncome)}
                     </div>
                 </div>
             </div>

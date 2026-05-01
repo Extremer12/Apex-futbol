@@ -1,7 +1,7 @@
 import React from 'react';
 import { GameState } from '../../types';
 import { AnimatedNumber } from './AnimatedNumber';
-import { formatDate, formatCurrency } from '../../utils';
+import { formatDate, formatCurrencyShort } from '../../utils';
 
 interface HeaderProps {
     gameState: GameState;
@@ -41,7 +41,7 @@ export const Header: React.FC<HeaderProps> = ({ gameState }) => (
                         <p className="text-xs text-slate-400 uppercase font-semibold tracking-wider">Balance</p>
                         <AnimatedNumber
                             value={gameState.finances.balance}
-                            formatter={(n) => formatCurrency(n, 1)}
+                            formatter={(n) => formatCurrencyShort(n)}
                             className="text-lg font-black bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent"
                         />
                     </div>

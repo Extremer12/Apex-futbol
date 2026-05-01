@@ -2,8 +2,33 @@ import { Morale } from './types';
 
 // --- Helper Functions ---
 export const formatDate = (date: Date): string => date.toLocaleString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
-export const formatCurrency = (amount: number | undefined | null, decimals = 1): string => `£${(amount || 0).toFixed(decimals)}M`;
-export const formatWeeklyWage = (amount: number | undefined | null): string => `£${((amount || 0) / 1000).toFixed(0)}k`;
+
+export const formatCurrency = (amount: number | undefined | null): string => {
+    return new Intl.NumberFormat('en-GB', {
+        style: 'currency',
+        currency: 'GBP',
+        maximumFractionDigits: 0,
+    }).format(amount || 0);
+};
+
+export const formatCurrencyShort = (amount: number | undefined | null): string => {
+    const val = amount || 0;
+    if (Math.abs(val) >= 1000000) {
+        return `£${(val / 1000000).toFixed(1)}M`;
+    }
+    if (Math.abs(val) >= 1000) {
+        return `£${(val / 1000).toFixed(0)}K`;
+    }
+    return `£${val}`;
+};
+
+export const formatWeeklyWage = (amount: number | undefined | null): string => {
+    return new Intl.NumberFormat('en-GB', {
+        style: 'currency',
+        currency: 'GBP',
+        maximumFractionDigits: 0,
+    }).format(amount || 0);
+};
 
 // --- Name Generation for Regens ---
 const FIRST_NAMES = [

@@ -7,7 +7,7 @@ import { ConfidenceMeter } from '../ui/ConfidenceMeter';
 import { AnimatedNumber } from '../ui/AnimatedNumber';
 import { WeeklyFixtures } from '../ui/WeeklyFixtures';
 import { LinkedText } from '../ui/LinkedText';
-import { formatCurrency } from '../../utils';
+import { formatCurrency, formatCurrencyShort, formatDate } from '../../utils';
 import { MatchPhase } from '../../App';
 
 interface PendingSimulationResults {
@@ -299,10 +299,10 @@ const QuickStats: React.FC<{ gameState: GameState }> = ({ gameState }) => {
                     <span className="text-slate-300 text-sm font-semibold">Fondos</span>
                 </div>
                 <div className="text-3xl font-bold text-white mb-1">
-                    {formatCurrency(gameState.finances.transferBudget)}
+                    {formatCurrencyShort(gameState.finances.transferBudget)}
                 </div>
                 <div className="text-xs text-slate-400">
-                    de {formatCurrency(gameState.finances.balance)} total
+                    de {formatCurrencyShort(gameState.finances.balance)} total
                 </div>
                 <div className="h-1 bg-slate-800 rounded-full overflow-hidden mt-2">
                     <div

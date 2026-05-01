@@ -2,16 +2,31 @@ import React from 'react';
 import { Player } from '../../types';
 
 // Premier League Team Logos
-export const createTeamLogo = (logoPath: string, teamName: string) => {
+const TeamLogo: React.FC<{ logoPath: string, teamName: string }> = ({ logoPath, teamName }) => {
+  const [error, setError] = React.useState(false);
+
   return (
-    <div className="w-12 h-12 relative flex items-center justify-center">
-      <img
-        src={logoPath}
-        alt={`${teamName} logo`}
-        className="w-full h-full object-contain drop-shadow-lg hover:scale-110 transition-transform duration-300"
-      />
+    <div className="w-full h-full relative flex items-center justify-center">
+      {!error ? (
+        <img
+          src={logoPath}
+          alt={`${teamName} logo`}
+          onError={() => setError(true)}
+          className="w-full h-full object-contain drop-shadow-lg"
+        />
+      ) : (
+        <div className="w-full h-full rounded-full bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 flex items-center justify-center shadow-lg">
+          <span className="text-[10px] font-black text-slate-400">
+            {teamName.substring(0, 2).toUpperCase()}
+          </span>
+        </div>
+      )}
     </div>
   );
+};
+
+export const createTeamLogo = (logoPath: string, teamName: string) => {
+  return <TeamLogo logoPath={logoPath} teamName={teamName} />;
 };
 
 // Logo paths for all teams
