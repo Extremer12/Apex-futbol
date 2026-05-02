@@ -507,6 +507,8 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
             if (!sponsorOffer) return state;
             
             const sponsor = { ...sponsorOffer, weeklyIncome: negotiatedIncome || sponsorOffer.weeklyIncome };
+            const signingBonus = Math.floor(sponsor.weeklyIncome * 4);
+            const newBalance = state.finances.balance + signingBonus;
 
             // Check if already have sponsor of this type
             const existingSponsor = state.sponsors.find(s => s.type === sponsor.type);
@@ -521,6 +523,11 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                     ...state,
                     sponsors: newSponsors,
                     availableSponsors: newMarket,
+                    finances: {
+                        ...state.finances,
+                        balance: newBalance,
+                        balanceHistory: [...state.finances.balanceHistory, newBalance]
+                    },
                     newsFeed: [{
                         id: `sponsor_${Date.now()}`,
                         headline: '🤝 Nuevo Acuerdo de Patrocinio',
@@ -535,6 +542,11 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 ...state,
                 sponsors: [...state.sponsors, sponsor],
                 availableSponsors: state.availableSponsors.filter(s => s.id !== sponsorId),
+                finances: {
+                    ...state.finances,
+                    balance: newBalance,
+                    balanceHistory: [...state.finances.balanceHistory, newBalance]
+                },
                 newsFeed: [{
                     id: `sponsor_${Date.now()}`,
                     headline: '🤝 Nuevo Acuerdo de Patrocinio',

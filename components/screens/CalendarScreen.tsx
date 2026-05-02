@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { GameState, Match, Team } from '../../types';
+import { GameState, Match, Team, LeagueId } from '../../types';
 import { CalendarIcon } from '../icons';
 import { TeamLogo } from '../../data/teams/helpers';
 

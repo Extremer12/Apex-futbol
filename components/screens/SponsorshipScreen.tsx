@@ -45,17 +45,7 @@ export const SponsorshipScreen: React.FC<SponsorshipScreenProps> = ({ gameState,
             // Actually dispatch the accept action (updated to support custom income)
             dispatch({ type: 'ACCEPT_SPONSOR', payload: { sponsorId: sponsor.id, negotiatedIncome: finalIncome } });
             
-            // Add signing bonus immediately
             const signingBonus = Math.floor(finalIncome * 4);
-            dispatch({ 
-                type: 'UPDATE_FINANCES', 
-                payload: { 
-                    ...finances, 
-                    balance: finances.balance + signingBonus, 
-                    balanceHistory: [...finances.balanceHistory, finances.balance + signingBonus] 
-                } 
-            });
-
             showToast(`¡Contrato firmado con ${sponsor.name}! Ingresos: ${formatCurrencyShort(finalIncome)}/sem. Bono: ${formatCurrencyShort(signingBonus)}`, 'success');
         } else {
             // Failed negotiation: sponsor walks away

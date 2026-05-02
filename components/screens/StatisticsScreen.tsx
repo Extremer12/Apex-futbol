@@ -135,7 +135,7 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ gameState })
                 <div className="relative flex flex-col md:flex-row items-center gap-8">
                     <div className="w-24 h-24 p-3 bg-white/5 rounded-3xl backdrop-blur-md border border-white/10 flex items-center justify-center transform rotate-3 shadow-xl">
                         <img 
-                            src={LEAGUE_LOGOS[playerLeagueId]} 
+                            src={LEAGUE_LOGOS[selectedLeague]} 
                             alt="League" 
                             className="w-full h-full object-contain drop-shadow-lg" 
                         />
