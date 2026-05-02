@@ -34,7 +34,7 @@ export const LEAGUE_COUNTRY: Record<LeagueId, CountryCode> = {
 export interface Team {
   id: number;
   name: string;
-  logo: React.ReactNode;
+  logo: string;
   leagueId: LeagueId; // Added for multi-league support
   budget: number; // Main budget in millions
   transferBudget: number; // Transfer budget in millions

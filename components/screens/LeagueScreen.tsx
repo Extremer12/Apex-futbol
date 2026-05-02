@@ -3,6 +3,7 @@ import { GameState, CupCompetition, LeagueTableRow, LeagueId } from '../../types
 import { LEAGUE_COUNTRY, CountryCode } from '../../types';
 import { TeamForm } from '../ui/TeamForm';
 import { TrophyIcon } from '../icons';
+import { TeamLogo } from '../../data/teams/helpers';
 
 interface LeagueScreenProps {
     gameState: GameState;
@@ -93,7 +94,7 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
                                             <div className="transform hover:scale-110 transition-transform duration-200 w-8 h-8 flex items-center justify-center">
-                                                {team?.logo}
+                                                <TeamLogo team={team} />
                                             </div>
                                             <span className={`font-semibold text-base ${isPlayerTeam ? 'text-sky-300 font-bold' : 'text-white'}`}>
                                                 {team?.name}
@@ -210,9 +211,7 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                                                     <div className={`flex items-center gap-3 flex-1 justify-end ${winnerId === match.homeTeamId ? 'font-bold text-white' : 'text-slate-400'}`}>
                                                         <span className="truncate">{homeTeam?.name}</span>
                                                         <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
-                                                            <div className="w-full h-full flex items-center justify-center [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:object-contain">
-                                                                {homeTeam?.logo}
-                                                            </div>
+                                                            <TeamLogo team={homeTeam} />
                                                         </div>
                                                     </div>
 
@@ -235,9 +234,7 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
 
                                                     <div className={`flex items-center gap-3 flex-1 ${winnerId === match.awayTeamId ? 'font-bold text-white' : 'text-slate-400'}`}>
                                                         <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
-                                                            <div className="w-full h-full flex items-center justify-center [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:object-contain">
-                                                                {awayTeam?.logo}
-                                                            </div>
+                                                            <TeamLogo team={awayTeam} />
                                                         </div>
                                                         <span className="truncate">{awayTeam?.name}</span>
                                                     </div>

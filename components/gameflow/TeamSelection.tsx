@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { TEAMS } from '../../constants';
 import { Team, PlayerProfile, LeagueId, CountryCode } from '../../types';
+import { TeamLogo } from '../../data/teams/helpers';
 
 interface TeamSelectionProps {
     player: PlayerProfile;
@@ -227,8 +228,8 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                                         onClick={() => onSelectTeam(team)}
                                         className="group bg-gradient-to-br from-slate-900 to-slate-800 p-6 rounded-xl flex flex-col items-center justify-center space-y-3 border-2 border-slate-700 hover:border-purple-500 hover:shadow-xl hover:shadow-purple-500/20 hover:scale-105 transition-all duration-300"
                                     >
-                                        <div className="transform group-hover:scale-110 transition-transform duration-300">
-                                            {team.logo}
+                                        <div className="w-12 h-12 md:w-16 md:h-16 transform group-hover:scale-110 transition-transform duration-300">
+                                            <TeamLogo team={team} />
                                         </div>
                                         <span className="font-semibold text-center text-sm text-white group-hover:text-purple-300 transition-colors">
                                             {team.name}

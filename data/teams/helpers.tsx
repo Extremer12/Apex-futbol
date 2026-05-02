@@ -1,23 +1,25 @@
 import React from 'react';
 import { Player } from '../../types';
 
-// Premier League Team Logos
-const TeamLogo: React.FC<{ logoPath: string, teamName: string }> = ({ logoPath, teamName }) => {
+// Team Logo Component (Used for rendering)
+export const TeamLogo: React.FC<{ team?: { logo: string, name: string }, className?: string }> = ({ team, className = "w-full h-full" }) => {
   const [error, setError] = React.useState(false);
+  
+  if (!team) return <div className={className} />;
 
   return (
-    <div className="w-full h-full relative flex items-center justify-center">
-      {!error ? (
+    <div className={className + " relative flex items-center justify-center"}>
+      {!error && team.logo ? (
         <img
-          src={logoPath}
-          alt={`${teamName} logo`}
+          src={team.logo}
+          alt={`${team.name} logo`}
           onError={() => setError(true)}
           className="w-full h-full object-contain drop-shadow-lg"
         />
       ) : (
         <div className="w-full h-full rounded-full bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 flex items-center justify-center shadow-lg">
           <span className="text-[10px] font-black text-slate-400">
-            {teamName.substring(0, 2).toUpperCase()}
+            {team.name.substring(0, 2).toUpperCase()}
           </span>
         </div>
       )}
@@ -26,7 +28,7 @@ const TeamLogo: React.FC<{ logoPath: string, teamName: string }> = ({ logoPath, 
 };
 
 export const createTeamLogo = (logoPath: string, teamName: string) => {
-  return <TeamLogo logoPath={logoPath} teamName={teamName} />;
+  return logoPath;
 };
 
 // Logo paths for all teams

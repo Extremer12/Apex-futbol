@@ -9,6 +9,7 @@ import { WeeklyFixtures } from '../ui/WeeklyFixtures';
 import { LinkedText } from '../ui/LinkedText';
 import { formatCurrency, formatCurrencyShort, formatDate } from '../../utils';
 import { MatchPhase } from '../../App';
+import { TeamLogo } from '../../data/teams/helpers';
 
 interface PendingSimulationResults {
     playerMatchResult: { homeScore: number; awayScore: number; events?: string[] } | null;
@@ -149,8 +150,8 @@ const MatchDayCard: React.FC<{
                 <div className="flex items-center justify-between px-2 md:px-10 py-4">
                     {/* Home Team */}
                     <div className="flex flex-col items-center w-1/3">
-                        <div className={`transform transition-transform duration-500 scale-100`}>
-                            {isHome ? gameState.team.logo : opponent.logo}
+                        <div className={`transform transition-transform duration-500 scale-100 w-16 h-16 md:w-24 md:h-24`}>
+                            <TeamLogo team={isHome ? gameState.team : opponent} />
                         </div>
                         <h2 className="text-lg md:text-2xl font-bold mt-3 text-center leading-tight">
                             {isHome ? gameState.team.name : opponent.name}
@@ -172,8 +173,8 @@ const MatchDayCard: React.FC<{
 
                     {/* Away Team */}
                     <div className="flex flex-col items-center w-1/3">
-                        <div className={`transform transition-transform duration-500 scale-100`}>
-                            {!isHome ? gameState.team.logo : opponent.logo}
+                        <div className={`transform transition-transform duration-500 scale-100 w-16 h-16 md:w-24 md:h-24`}>
+                            <TeamLogo team={!isHome ? gameState.team : opponent} />
                         </div>
                         <h2 className="text-lg md:text-2xl font-bold mt-3 text-center leading-tight">
                             {!isHome ? gameState.team.name : opponent.name}

@@ -3,6 +3,7 @@ import { getSavedGames, deleteGame, SavedGameSummary } from '../../services/db';
 import { TEAMS } from '../../constants';
 import { LoadingSpinner, TrashIcon } from '../icons';
 import { StartupScreenContainer } from './StartupScreenContainer';
+import { TeamLogo } from '../../data/teams/helpers';
 
 interface LoadGameScreenProps {
     onLoadGame: (id: string) => void;
@@ -11,7 +12,7 @@ interface LoadGameScreenProps {
 
 const getTeamLogo = (teamId: number) => {
     const team = TEAMS.find(t => t.id === teamId);
-    return team ? team.logo : <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center">?</div>;
+    return <div className="w-10 h-10"><TeamLogo team={team} /></div>;
 };
 
 export const LoadGameScreen: React.FC<LoadGameScreenProps> = ({ onLoadGame, onBack }) => {

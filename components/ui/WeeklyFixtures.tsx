@@ -1,5 +1,6 @@
 import React from 'react';
 import { Match, Team } from '../../types';
+import { TeamLogo } from '../../data/teams/helpers';
 
 interface WeeklyFixturesProps {
     week: number;
@@ -55,8 +56,8 @@ export const WeeklyFixtures: React.FC<WeeklyFixturesProps> = ({ week, matches, a
                             <span className={`font-bold text-right sm:hidden ${isPlayerMatch ? 'text-sky-300' : 'text-white'}`}>
                                 {homeTeam?.name.substring(0, 3).toUpperCase()}
                             </span>
-                            <div className="transform hover:scale-110 transition-transform duration-200">
-                                {homeTeam?.logo}
+                            <div className="transform hover:scale-110 transition-transform duration-200 w-8 h-8 flex items-center justify-center">
+                                <TeamLogo team={homeTeam} />
                             </div>
                         </div>
 
@@ -87,8 +88,8 @@ export const WeeklyFixtures: React.FC<WeeklyFixturesProps> = ({ week, matches, a
 
                         {/* Away Team */}
                         <div className="flex items-center gap-3 w-2/5 justify-start">
-                            <div className="transform hover:scale-110 transition-transform duration-200">
-                                {awayTeam?.logo}
+                            <div className="transform hover:scale-110 transition-transform duration-200 w-8 h-8 flex items-center justify-center">
+                                <TeamLogo team={awayTeam} />
                             </div>
                             <span className={`font-bold text-left hidden sm:inline ${isPlayerMatch ? 'text-sky-300' : 'text-white'}`}>
                                 {awayTeam?.name}

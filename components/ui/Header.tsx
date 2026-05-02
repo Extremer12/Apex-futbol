@@ -2,6 +2,7 @@ import React from 'react';
 import { GameState } from '../../types';
 import { AnimatedNumber } from './AnimatedNumber';
 import { formatDate, formatCurrencyShort } from '../../utils';
+import { TeamLogo } from '../../data/teams/helpers';
 
 interface HeaderProps {
     gameState: GameState;
@@ -14,9 +15,7 @@ export const Header: React.FC<HeaderProps> = ({ gameState }) => (
                 {/* Team Info */}
                 <div className="flex items-center gap-4">
                     <div className="w-12 h-12 flex items-center justify-center bg-slate-800/50 rounded-xl p-2 border border-slate-700">
-                        <div className="w-full h-full flex items-center justify-center [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:object-contain">
-                            {gameState.team.logo}
-                        </div>
+                        <TeamLogo team={gameState.team} />
                     </div>
                     <div>
                         <h1 className="text-xl md:text-2xl font-black tracking-tight bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">

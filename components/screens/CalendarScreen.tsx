@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { GameState, Match, Team } from '../../types';
 import { CalendarIcon } from '../icons';
+import { TeamLogo } from '../../data/teams/helpers';
 
 interface CalendarScreenProps {
     gameState: GameState;
@@ -150,7 +151,7 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ gameState }) => 
                                             {homeTeam?.name}
                                         </span>
                                         <div className="w-10 h-10 md:w-12 md:h-12 flex-shrink-0 bg-slate-950/50 p-1.5 rounded-xl border border-slate-800 shadow-inner group-hover:scale-110 transition-transform duration-500">
-                                            {homeTeam?.logo}
+                                            <TeamLogo team={homeTeam} />
                                         </div>
                                     </div>
 
@@ -182,7 +183,7 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ gameState }) => 
                                     {/* Away Team */}
                                     <div className="flex-1 flex items-center justify-start gap-3 md:gap-5 min-w-0">
                                         <div className="w-10 h-10 md:w-12 md:h-12 flex-shrink-0 bg-slate-950/50 p-1.5 rounded-xl border border-slate-800 shadow-inner group-hover:scale-110 transition-transform duration-500">
-                                            {awayTeam?.logo}
+                                            <TeamLogo team={awayTeam} />
                                         </div>
                                         <span className={`text-sm md:text-lg truncate transition-colors duration-300 ${isPlayerMatch && match.awayTeamId === gameState.team.id ? 'font-black text-sky-400' : 'font-bold text-slate-300 group-hover:text-white'}`}>
                                             {awayTeam?.name}

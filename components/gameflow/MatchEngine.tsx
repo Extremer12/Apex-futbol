@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Team, Match } from '../../types';
 import { MatchPhase } from '../../App';
+import { TeamLogo } from '../../data/teams/helpers';
 
 interface MatchEngineProps {
     homeTeam: Team;
@@ -125,19 +126,21 @@ export const MatchEngine: React.FC<MatchEngineProps> = ({ homeTeam, awayTeam, ma
             <div className="relative min-h-[16rem] md:h-72 bg-gradient-to-b from-slate-800 via-slate-850 to-slate-900 flex items-center justify-center overflow-hidden py-6 md:py-0">
                 {/* Background Logos Faded */}
                 <div className="absolute left-0 top-0 w-1/2 h-full opacity-5 flex items-center justify-center transform -translate-x-1/4">
-                    <div className="scale-[5] grayscale [&>svg]:max-w-full [&>svg]:max-h-full">{homeTeam.logo}</div>
+                    <div className="scale-[5] grayscale">
+                        <TeamLogo team={homeTeam} />
+                    </div>
                 </div>
                 <div className="absolute right-0 top-0 w-1/2 h-full opacity-5 flex items-center justify-center transform translate-x-1/4">
-                    <div className="scale-[5] grayscale [&>svg]:max-w-full [&>svg]:max-h-full">{awayTeam.logo}</div>
+                    <div className="scale-[5] grayscale">
+                        <TeamLogo team={awayTeam} />
+                    </div>
                 </div>
 
                 <div className="relative z-10 flex items-center justify-center gap-2 md:gap-16 w-full px-2 md:px-8">
                     {/* Home */}
                     <div className="flex-1 flex flex-col items-center text-center">
                         <div className="w-12 h-12 md:w-20 md:h-20 flex items-center justify-center mb-2 md:mb-4 transform hover:scale-110 transition-transform duration-300">
-                            <div className="w-full h-full flex items-center justify-center [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:object-contain [&>svg]:drop-shadow-2xl">
-                                {homeTeam.logo}
-                            </div>
+                            <TeamLogo team={homeTeam} />
                         </div>
                         <h2 className="text-sm md:text-3xl font-black text-white tracking-tight drop-shadow-lg truncate w-full px-1">{homeTeam.name}</h2>
                         <div className="text-[10px] md:text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider hidden md:block">{homeTeam.tactics}</div>
@@ -162,9 +165,7 @@ export const MatchEngine: React.FC<MatchEngineProps> = ({ homeTeam, awayTeam, ma
                     {/* Away */}
                     <div className="flex-1 flex flex-col items-center text-center">
                         <div className="w-20 h-20 flex items-center justify-center mb-4 transform hover:scale-110 transition-transform duration-300">
-                            <div className="w-full h-full flex items-center justify-center [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:object-contain [&>svg]:drop-shadow-2xl">
-                                {awayTeam.logo}
-                            </div>
+                            <TeamLogo team={awayTeam} />
                         </div>
                         <h2 className="text-xl md:text-3xl font-black text-white tracking-tight drop-shadow-lg">{awayTeam.name}</h2>
                         <div className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider">{awayTeam.tactics}</div>
