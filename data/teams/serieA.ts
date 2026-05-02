@@ -1,4 +1,5 @@
 import { Team, LeagueId } from '../../types';
+import { createGenericSquad } from './helpers';
 
 export const serieATeams: Team[] = [
     {
@@ -90,5 +91,20 @@ export const serieATeams: Team[] = [
             { id: 50501, name: 'Khvicha Kvaratskhelia', position: 'DEL', rating: 86, value: 80000000, wage: 150000, morale: 'Contento' },
             { id: 50502, name: 'Victor Osimhen', position: 'DEL', rating: 88, value: 110000000, wage: 250000, morale: 'Contento' }
         ]
-    }
+    },
+    { id: 506, name: 'Atalanta', logo: '', leagueId: LeagueId.SERIE_A, budget: 50000000, transferBudget: 20000000, tier: 'Top', teamMorale: 'Normal', primaryColor: '#12549E', secondaryColor: '#000000', tactics: 'Attacking', squad: createGenericSquad(50600, 'Atalanta') },
+    { id: 507, name: 'Lazio', logo: '', leagueId: LeagueId.SERIE_A, budget: 45000000, transferBudget: 15000000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#87D8F7', secondaryColor: '#FFFFFF', tactics: 'Balanced', squad: createGenericSquad(50700, 'Lazio') },
+    { id: 508, name: 'Fiorentina', logo: '', leagueId: LeagueId.SERIE_A, budget: 40000000, transferBudget: 15000000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#4A2583', secondaryColor: '#FFFFFF', tactics: 'Balanced', squad: createGenericSquad(50800, 'Fiorentina') },
+    { id: 509, name: 'Torino', logo: '', leagueId: LeagueId.SERIE_A, budget: 30000000, transferBudget: 10000000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#8A1538', secondaryColor: '#FFFFFF', tactics: 'Defensive', squad: createGenericSquad(50900, 'Torino') },
+    { id: 510, name: 'Bologna', logo: '', leagueId: LeagueId.SERIE_A, budget: 35000000, transferBudget: 12000000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#1A2F48', secondaryColor: '#A01D21', tactics: 'Balanced', squad: createGenericSquad(51000, 'Bologna') },
+    { id: 511, name: 'Genoa', logo: '', leagueId: LeagueId.SERIE_A, budget: 20000000, transferBudget: 8000000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#CF0A2C', secondaryColor: '#00254C', tactics: 'Defensive', squad: createGenericSquad(51100, 'Genoa') },
+    { id: 512, name: 'Monza', logo: '', leagueId: LeagueId.SERIE_A, budget: 25000000, transferBudget: 10000000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#E2001A', secondaryColor: '#FFFFFF', tactics: 'Balanced', squad: createGenericSquad(51200, 'Monza') },
+    { id: 513, name: 'Lecce', logo: '', leagueId: LeagueId.SERIE_A, budget: 15000000, transferBudget: 5000000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#FFD700', secondaryColor: '#E2001A', tactics: 'Defensive', squad: createGenericSquad(51300, 'Lecce') },
+    { id: 514, name: 'Udinese', logo: '', leagueId: LeagueId.SERIE_A, budget: 20000000, transferBudget: 8000000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#000000', secondaryColor: '#FFFFFF', tactics: 'Defensive', squad: createGenericSquad(51400, 'Udinese') },
+    { id: 515, name: 'Hellas Verona', logo: '', leagueId: LeagueId.SERIE_A, budget: 15000000, transferBudget: 5000000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#002B5C', secondaryColor: '#FFD100', tactics: 'Defensive', squad: createGenericSquad(51500, 'Verona') },
+    { id: 516, name: 'Empoli', logo: '', leagueId: LeagueId.SERIE_A, budget: 15000000, transferBudget: 4000000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#005CA9', secondaryColor: '#FFFFFF', tactics: 'Defensive', squad: createGenericSquad(51600, 'Empoli') },
+    { id: 517, name: 'Cagliari', logo: '', leagueId: LeagueId.SERIE_A, budget: 18000000, transferBudget: 6000000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#002649', secondaryColor: '#C4122E', tactics: 'Balanced', squad: createGenericSquad(51700, 'Cagliari') },
+    { id: 518, name: 'Como', logo: '', leagueId: LeagueId.SERIE_A, budget: 20000000, transferBudget: 10000000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#005CA9', secondaryColor: '#FFFFFF', tactics: 'Balanced', squad: createGenericSquad(51800, 'Como') },
+    { id: 519, name: 'Parma', logo: '', leagueId: LeagueId.SERIE_A, budget: 18000000, transferBudget: 8000000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#FFCC00', secondaryColor: '#0033A0', tactics: 'Balanced', squad: createGenericSquad(51900, 'Parma') },
+    { id: 520, name: 'Venezia', logo: '', leagueId: LeagueId.SERIE_A, budget: 15000000, transferBudget: 5000000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#F26122', secondaryColor: '#009051', tactics: 'Defensive', squad: createGenericSquad(52000, 'Venezia') }
 ];

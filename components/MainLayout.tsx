@@ -15,6 +15,7 @@ const StadiumScreen = React.lazy(() => import('./screens/StadiumScreen').then(m 
 const SponsorshipScreen = React.lazy(() => import('./screens/SponsorshipScreen').then(m => ({ default: m.SponsorshipScreen })));
 const ElectionScreen = React.lazy(() => import('./screens/ElectionScreen').then(m => ({ default: m.ElectionScreen })));
 const ClubHubScreen = React.lazy(() => import('./screens/ClubHubScreen').then(m => ({ default: m.ClubHubScreen })));
+const StaffScreen = React.lazy(() => import('./screens/StaffScreen').then(m => ({ default: m.StaffScreen })));
 
 import { LoadingSpinner } from './icons';
 import { MatchPhase } from '../App';

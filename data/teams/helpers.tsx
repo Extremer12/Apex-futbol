@@ -79,9 +79,9 @@ export const TEAM_LOGOS = {
   'Derby County': '/logos/Derby County FC.png',
   'Oxford United': '/logos/Oxford United FC.png',
   // La Liga
-  'Real Madrid': '/logos/Real Madrid.png',
-  'FC Barcelona': '/logos/FC Barcelona.png',
-  'Atletico Madrid': '/logos/Atletico Madrid.png',
+  'Real Madrid': 'https://tmssl.akamaized.net/images/wappen/head/418.png',
+  'FC Barcelona': 'https://tmssl.akamaized.net/images/wappen/head/131.png',
+  'Atletico Madrid': 'https://tmssl.akamaized.net/images/wappen/head/13.png',
   'Athletic Club': '/logos/Athletic Club.png',
   'Real Sociedad': '/logos/Real Sociedad.png',
   'Real Betis': '/logos/Real Betis.png',

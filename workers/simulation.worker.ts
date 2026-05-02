@@ -58,6 +58,7 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
             leagueTables,
             allTeams,
             playerTeamId,
+            cups,
             finances,
             scouts,
             scoutedPlayerIds
