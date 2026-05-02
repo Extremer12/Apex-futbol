@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { GameState, Player, LeagueId } from '../../types';
 import { TeamLogo } from '../../data/teams/helpers';
 
@@ -17,12 +17,15 @@ interface PlayerStats {
 }
 
 export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ gameState }) => {
+    const [selectedLeague, setSelectedLeague] = useState<LeagueId>(gameState.team.leagueId);
+
     // Calculate player statistics from match results
     const playerStats = useMemo(() => {
         const stats: Map<number, PlayerStats> = new Map();
 
-        // Initialize stats for all players
+        // Initialize stats for all players in the selected league
         gameState.allTeams.forEach(team => {
+            if (team.leagueId !== selectedLeague) return;
             team.squad.forEach(player => {
                 stats.set(player.id, {
                     player,
@@ -57,7 +60,7 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ gameState })
         });
 
         return Array.from(stats.values());
-    }, [gameState]);
+    }, [gameState, selectedLeague]);
 
     const topScorers = useMemo(() => {
         return [...playerStats]
@@ -97,14 +100,38 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ gameState })
         SERIE_A: 'emerald'
     };
 
-    const playerLeagueId = gameState.team.leagueId;
-    const themeColor = LEAGUE_THEMES[playerLeagueId] || 'purple';
+    const themeColor = LEAGUE_THEMES[selectedLeague] || 'purple';
+
+    const AVAILABLE_LEAGUES = [
+        LeagueId.PREMIER_LEAGUE,
+        LeagueId.CHAMPIONSHIP,
+        LeagueId.LA_LIGA,
+        LeagueId.BUNDESLIGA,
+        LeagueId.SERIE_A
+    ];
 
     return (
         <div className="p-4 md:p-6 space-y-8 max-w-7xl mx-auto animate-fade-in">
+            {/* League Selector */}
+            <div className="flex overflow-x-auto gap-2 pb-2 custom-scrollbar hide-scrollbar-mobile">
+                {AVAILABLE_LEAGUES.map(league => (
+                    <button
+                        key={league}
+                        onClick={() => setSelectedLeague(league)}
+                        className={`whitespace-nowrap px-6 py-3 rounded-full font-bold text-sm transition-all duration-300 border ${
+                            selectedLeague === league 
+                            ? \`bg-\${LEAGUE_THEMES[league]}-600 text-white border-\${LEAGUE_THEMES[league]}-500 shadow-lg shadow-\${LEAGUE_THEMES[league]}-500/30\` 
+                            : 'bg-slate-900/50 text-slate-400 border-white/5 hover:bg-slate-800 hover:text-white'
+                        }`}
+                    >
+                        {LEAGUE_NAMES[league]}
+                    </button>
+                ))}
+            </div>
+
             {/* Header Section */}
-            <div className={`relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-${themeColor}-500/30 p-8 shadow-2xl`}>
-                <div className={`absolute top-0 right-0 w-64 h-64 bg-${themeColor}-500/5 blur-[80px] rounded-full translate-x-1/3 -translate-y-1/3`}></div>
+            <div className={`relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-${themeColor}-500/30 p-8 shadow-2xl transition-colors duration-500`}>
+                <div className={`absolute top-0 right-0 w-64 h-64 bg-${themeColor}-500/5 blur-[80px] rounded-full translate-x-1/3 -translate-y-1/3 transition-colors duration-500`}></div>
                 <div className="relative flex flex-col md:flex-row items-center gap-8">
                     <div className="w-24 h-24 p-3 bg-white/5 rounded-3xl backdrop-blur-md border border-white/10 flex items-center justify-center transform rotate-3 shadow-xl">
                         <img 
@@ -115,10 +142,10 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ gameState })
                     </div>
                     <div className="text-center md:text-left">
                         <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter uppercase italic leading-none mb-2">
-                            Estadísticas <span className={`text-${themeColor}-400 underline decoration-4 underline-offset-8`}>Elite</span>
+                            Estadísticas <span className={`text-${themeColor}-400 underline decoration-4 underline-offset-8 transition-colors duration-500`}>Elite</span>
                         </h1>
                         <p className="text-slate-400 font-bold uppercase tracking-[0.3em] text-xs">
-                            {LEAGUE_NAMES[playerLeagueId]} • Temporada 2024/25
+                            {LEAGUE_NAMES[selectedLeague]} • Temporada 2024/25
                         </p>
                     </div>
                 </div>
@@ -183,7 +210,7 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ gameState })
                             Potencia Ofensiva
                         </h3>
                         {(() => {
-                            const currentTable = gameState.leagueTables[playerLeagueId] || [];
+                            const currentTable = gameState.leagueTables[selectedLeague] || [];
                             const bestAttack = [...currentTable].sort((a, b) => b.goalsFor - a.goalsFor)[0];
                             const team = gameState.allTeams.find(t => t.id === bestAttack?.teamId);
                             return team ? (
@@ -208,7 +235,7 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ gameState })
                             Muro Defensivo
                         </h3>
                         {(() => {
-                            const currentTable = gameState.leagueTables[playerLeagueId] || [];
+                            const currentTable = gameState.leagueTables[selectedLeague] || [];
                             const bestDefense = [...currentTable].sort((a, b) => a.goalsAgainst - b.goalsAgainst)[0];
                             const team = gameState.allTeams.find(t => t.id === bestDefense?.teamId);
                             return team ? (

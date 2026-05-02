@@ -34,7 +34,8 @@ export type GameAction =
     | { type: 'SET_VIEWING_PLAYER'; payload: Player | null }
     | { type: 'HIRE_COACH'; payload: { coachId: string } }
     | { type: 'FIRE_COACH' }
-    | { type: 'ACCEPT_SPONSOR'; payload: { sponsorId: string } }
+    | { type: 'ACCEPT_SPONSOR'; payload: { sponsorId: string; negotiatedIncome?: number } }
+    | { type: 'REMOVE_SPONSOR_OFFER'; payload: { sponsorId: string } }
     | { type: 'EXPAND_STADIUM' }
     | { type: 'SET_FAN_APPROVAL'; payload: FanApproval }
     | { type: 'UPDATE_FINANCES'; payload: GameState['finances'] }
@@ -500,10 +501,12 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
 
         case 'ACCEPT_SPONSOR': {
             if (!state) return null;
-            const { sponsorId } = action.payload;
-            const sponsor = state.availableSponsors.find(s => s.id === sponsorId);
+            const { sponsorId, negotiatedIncome } = action.payload;
+            const sponsorOffer = state.availableSponsors.find(s => s.id === sponsorId);
 
-            if (!sponsor) return state;
+            if (!sponsorOffer) return state;
+            
+            const sponsor = { ...sponsorOffer, weeklyIncome: negotiatedIncome || sponsorOffer.weeklyIncome };
 
             // Check if already have sponsor of this type
             const existingSponsor = state.sponsors.find(s => s.type === sponsor.type);
@@ -538,6 +541,15 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                     body: `${sponsor.name} es ahora nuestro patrocinador ${sponsor.type === 'shirt' ? 'de camiseta' : sponsor.type === 'stadium' ? 'del estadio' : sponsor.type === 'training' ? 'de entrenamiento' : 'de equipación'}. Ingresos: ${formatCurrency(sponsor.weeklyIncome)}/semana.`,
                     date: formatDate(state.currentDate)
                 }, ...state.newsFeed].slice(0, 20)
+            };
+        }
+
+        case 'REMOVE_SPONSOR_OFFER': {
+            if (!state) return null;
+            const { sponsorId } = action.payload;
+            return {
+                ...state,
+                availableSponsors: state.availableSponsors.filter(s => s.id !== sponsorId)
             };
         }
 

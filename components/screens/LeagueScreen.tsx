@@ -18,6 +18,7 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
 
     const [activeTab, setActiveTab] = useState<Tab>('LOCAL_LEAGUE_1');
     const [worldLeagueSelected, setWorldLeagueSelected] = useState<WorldTab>(null);
+    const [worldSearch, setWorldSearch] = useState('');
     const [cupTab, setCupTab] = useState<'ROUNDS' | 'STATS'>('ROUNDS');
 
     const LEAGUE_THEMES: Record<string, string> = {
@@ -269,47 +270,79 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
 
     const renderWorldView = () => {
         if (!worldLeagueSelected) {
+            const allLeagues = [
+                { id: LeagueId.PREMIER_LEAGUE, name: 'Premier League', logo: LEAGUE_LOGOS.PREMIER_LEAGUE, country: 'Inglaterra', theme: 'purple', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+                { id: LeagueId.CHAMPIONSHIP, name: 'Championship', logo: LEAGUE_LOGOS.CHAMPIONSHIP, country: 'Inglaterra', theme: 'sky', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+                { id: LeagueId.LA_LIGA, name: 'La Liga', logo: LEAGUE_LOGOS.LA_LIGA, country: 'España', theme: 'orange', flag: '🇪🇸' },
+                { id: LeagueId.BUNDESLIGA, name: 'Bundesliga', logo: LEAGUE_LOGOS.BUNDESLIGA, country: 'Alemania', theme: 'red', flag: '🇩🇪' },
+                { id: LeagueId.SERIE_A, name: 'Serie A', logo: LEAGUE_LOGOS.SERIE_A, country: 'Italia', theme: 'emerald', flag: '🇮🇹' }
+            ].filter(l => l.id !== playerTeamLeague);
+
+            const filteredLeagues = allLeagues.filter(l => 
+                l.name.toLowerCase().includes(worldSearch.toLowerCase()) || 
+                l.country.toLowerCase().includes(worldSearch.toLowerCase())
+            );
+
             return (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-scale-in">
-                    {/* Render all leagues EXCEPT the player's country */}
-                    {/* Render all leagues EXCEPT the player's current league */}
-                    {[
-                        { id: LeagueId.PREMIER_LEAGUE, name: 'Premier League', logo: LEAGUE_LOGOS.PREMIER_LEAGUE, country: 'Inglaterra', theme: 'purple' },
-                        { id: LeagueId.CHAMPIONSHIP, name: 'Championship', logo: LEAGUE_LOGOS.CHAMPIONSHIP, country: 'Inglaterra', theme: 'sky' },
-                        { id: LeagueId.LA_LIGA, name: 'La Liga', logo: LEAGUE_LOGOS.LA_LIGA, country: 'España', theme: 'orange' },
-                        { id: LeagueId.BUNDESLIGA, name: 'Bundesliga', logo: LEAGUE_LOGOS.BUNDESLIGA, country: 'Alemania', theme: 'red' },
-                        { id: LeagueId.SERIE_A, name: 'Serie A', logo: LEAGUE_LOGOS.SERIE_A, country: 'Italia', theme: 'emerald' }
-                    ].map((l) => {
-                        if (l.id === playerTeamLeague) return null;
-                        
-                        return (
-                            <button
-                                key={l.id}
-                                onClick={() => setWorldLeagueSelected(l.id as WorldTab)}
-                                className={`bg-slate-800/40 hover:bg-slate-800 border border-slate-700/50 hover:border-${l.theme}-500/50 p-10 rounded-[2.5rem] transition-all duration-500 group relative overflow-hidden shadow-2xl flex flex-col items-center justify-center gap-6`}
-                            >
-                                <div className={`absolute inset-0 bg-gradient-to-br from-${l.theme}-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity`}></div>
-                                <div className={`absolute -top-12 -right-12 w-32 h-32 bg-${l.theme}-500/10 blur-[50px] rounded-full group-hover:scale-150 transition-transform duration-700`}></div>
-                                
-                                <div className="w-24 h-24 flex items-center justify-center transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-700 ease-out">
-                                    <img src={l.logo} alt={l.name} className="w-full h-full object-contain drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]" />
-                                </div>
-                                
-                                <div className="text-center relative z-10">
-                                    <h3 className="text-3xl font-black text-white uppercase tracking-tighter italic leading-none mb-2">
-                                        {l.name}
-                                    </h3>
-                                    <span className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] group-hover:text-white transition-colors">
-                                        {l.country}
-                                    </span>
-                                </div>
-                                
-                                <div className="mt-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-500">
-                                    <span className="text-[10px] font-black text-white uppercase tracking-widest">Ver Clasificación</span>
-                                </div>
-                            </button>
-                        );
-                    })}
+                <div className="space-y-6 animate-fade-in">
+                    {/* Search Header */}
+                    <div className="bg-slate-900/50 border border-white/5 p-6 rounded-3xl flex flex-col md:flex-row gap-6 items-center justify-between">
+                        <div>
+                            <h2 className="text-2xl font-black text-white uppercase tracking-tight flex items-center gap-3">
+                                <svg className="w-6 h-6 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                Explorador Global
+                            </h2>
+                            <p className="text-slate-400 text-sm font-medium mt-1">Busca y analiza las clasificaciones de otras ligas.</p>
+                        </div>
+                        <div className="relative w-full md:w-96">
+                            <input 
+                                type="text" 
+                                placeholder="Buscar país o competición..."
+                                value={worldSearch}
+                                onChange={e => setWorldSearch(e.target.value)}
+                                className="w-full bg-slate-950/50 border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-sky-500/50 transition-colors"
+                            />
+                            <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                        </div>
+                    </div>
+
+                    {/* League List */}
+                    <div className="bg-slate-900/30 border border-white/5 rounded-3xl overflow-hidden">
+                        {filteredLeagues.length > 0 ? (
+                            <div className="divide-y divide-white/5">
+                                {filteredLeagues.map((l) => (
+                                    <button
+                                        key={l.id}
+                                        onClick={() => setWorldLeagueSelected(l.id as WorldTab)}
+                                        className={`w-full group relative flex items-center justify-between p-4 md:p-6 hover:bg-white/5 transition-all duration-300 text-left`}
+                                    >
+                                        <div className="flex items-center gap-6">
+                                            <div className="text-4xl w-12 text-center drop-shadow-md opacity-60 group-hover:opacity-100 transition-opacity">
+                                                {l.flag}
+                                            </div>
+                                            <div className={`w-12 h-12 p-1 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-${l.theme}-500/10 group-hover:border-${l.theme}-500/30 transition-all`}>
+                                                <img src={l.logo} alt={l.name} className="w-full h-full object-contain" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-xl font-black text-white uppercase tracking-wider">{l.name}</h3>
+                                                <span className="text-slate-500 text-xs font-bold uppercase tracking-[0.2em]">{l.country}</span>
+                                            </div>
+                                        </div>
+                                        <div className={`hidden sm:flex items-center gap-2 px-4 py-2 rounded-full bg-slate-950/50 border border-white/5 text-slate-400 text-xs font-black uppercase tracking-widest group-hover:bg-${l.theme}-500/20 group-hover:text-${l.theme}-400 group-hover:border-${l.theme}-500/30 transition-all`}>
+                                            Ver Tabla
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="p-12 text-center">
+                                <span className="text-4xl mb-4 block">🔍</span>
+                                <h3 className="text-xl font-black text-white uppercase">Sin Resultados</h3>
+                                <p className="text-slate-500 mt-2">No se encontraron ligas que coincidan con tu búsqueda.</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
             );
         }

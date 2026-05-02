@@ -14,23 +14,56 @@ export const SponsorshipScreen: React.FC<SponsorshipScreenProps> = ({ gameState,
     const { sponsors, availableSponsors, finances, team } = gameState;
     const { showToast } = useToast();
 
-    const handleAcceptSponsor = (newSponsor: Sponsor) => {
+    const [negotiatingSponsor, setNegotiatingSponsor] = useState<Sponsor | null>(null);
+
+    const handleExecuteNegotiation = (sponsor: Sponsor, riskLevel: 'safe' | 'moderate' | 'high') => {
         // Check if we already have this type
-        const existingOfType = sponsors.find(s => s.type === newSponsor.type);
+        const existingOfType = sponsors.find(s => s.type === sponsor.type);
         if (existingOfType) {
-            if (!confirm(`Ya tienes un contrato con ${existingOfType.name}. ¿Quieres rescindirlo y aceptar a ${newSponsor.name}? Podría haber penalizaciones.`)) {
+            if (!confirm(`Ya tienes un contrato con ${existingOfType.name}. ¿Quieres rescindirlo y firmar con ${sponsor.name}? Podría haber penalizaciones con la directiva.`)) {
+                setNegotiatingSponsor(null);
                 return;
             }
         }
 
-        const updatedSponsors = sponsors.filter(s => s.type !== newSponsor.type);
-        dispatch({ type: 'UPDATE_SPONSORS', payload: [...updatedSponsors, newSponsor] });
-        
-        // Bonus for signing
-        const signingBonus = Math.floor(newSponsor.weeklyIncome * 4);
-        dispatch({ type: 'UPDATE_FINANCES', payload: { ...finances, balance: finances.balance + signingBonus, balanceHistory: [...finances.balanceHistory, finances.balance + signingBonus] } });
-        
-        showToast(`¡Contrato firmado con ${newSponsor.name}! Bono de firma: ${formatCurrencyShort(signingBonus)}`, 'success');
+        let successChance = 1.0;
+        let bonusMultiplier = 1.0;
+
+        if (riskLevel === 'moderate') {
+            successChance = 0.65;
+            bonusMultiplier = 1.15;
+        } else if (riskLevel === 'high') {
+            successChance = 0.30;
+            bonusMultiplier = 1.30;
+        }
+
+        const isSuccess = Math.random() <= successChance;
+
+        if (isSuccess) {
+            const finalIncome = Math.floor(sponsor.weeklyIncome * bonusMultiplier);
+            
+            // Actually dispatch the accept action (updated to support custom income)
+            dispatch({ type: 'ACCEPT_SPONSOR', payload: { sponsorId: sponsor.id, negotiatedIncome: finalIncome } });
+            
+            // Add signing bonus immediately
+            const signingBonus = Math.floor(finalIncome * 4);
+            dispatch({ 
+                type: 'UPDATE_FINANCES', 
+                payload: { 
+                    ...finances, 
+                    balance: finances.balance + signingBonus, 
+                    balanceHistory: [...finances.balanceHistory, finances.balance + signingBonus] 
+                } 
+            });
+
+            showToast(`¡Contrato firmado con ${sponsor.name}! Ingresos: ${formatCurrencyShort(finalIncome)}/sem. Bono: ${formatCurrencyShort(signingBonus)}`, 'success');
+        } else {
+            // Failed negotiation: sponsor walks away
+            dispatch({ type: 'REMOVE_SPONSOR_OFFER', payload: { sponsorId: sponsor.id } });
+            showToast(`La directiva de ${sponsor.name} ha rechazado tus exigencias y ha retirado la oferta.`, 'error');
+        }
+
+        setNegotiatingSponsor(null);
     };
 
     const getBonusLabel = (condition: string) => {
@@ -154,15 +187,75 @@ export const SponsorshipScreen: React.FC<SponsorshipScreenProps> = ({ gameState,
                             </div>
 
                             <button 
-                                onClick={() => handleAcceptSponsor(offer)}
-                                className="mt-8 w-full py-4 bg-white text-slate-950 font-black rounded-2xl hover:bg-sky-400 transition-all uppercase tracking-tighter shadow-lg shadow-white/5"
+                                onClick={() => setNegotiatingSponsor(offer)}
+                                className="mt-8 w-full py-4 bg-slate-800 text-white font-black rounded-2xl hover:bg-sky-500 hover:text-white transition-all uppercase tracking-tighter shadow-lg shadow-black/20 border border-slate-700 hover:border-sky-400"
                             >
-                                Aceptar Contrato
+                                Negociar Contrato
                             </button>
                         </div>
                     ))}
                 </div>
-            </div>
+        </div>
+
+            {/* Negotiation Modal */}
+            {negotiatingSponsor && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-slate-900 border border-white/10 rounded-3xl p-8 max-w-lg w-full shadow-2xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-sky-500/10 blur-[80px] rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
+                        
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-2xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
+                                <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center text-2xl border border-white/10 shadow-inner">
+                                    {negotiatingSponsor.logo}
+                                </div>
+                                Negociación
+                            </h3>
+                            <button onClick={() => setNegotiatingSponsor(null)} className="text-slate-500 hover:text-white p-2">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+
+                        <p className="text-slate-400 text-sm mb-8 leading-relaxed">
+                            <span className="text-white font-bold">{negotiatingSponsor.name}</span> ha puesto sobre la mesa <span className="text-emerald-400 font-bold">{formatCurrencyShort(negotiatingSponsor.weeklyIncome)}/sem</span>. Puedes aceptar la oferta inicial, o presionar por más dinero corriendo el riesgo de que retiren la oferta por completo.
+                        </p>
+
+                        <div className="space-y-3">
+                            <button 
+                                onClick={() => handleExecuteNegotiation(negotiatingSponsor, 'safe')}
+                                className="w-full flex items-center justify-between p-4 bg-emerald-500/10 border border-emerald-500/20 hover:border-emerald-500/50 hover:bg-emerald-500/20 rounded-2xl transition-all group"
+                            >
+                                <div className="text-left">
+                                    <div className="text-white font-black uppercase text-sm group-hover:text-emerald-400 transition-colors">Aceptar Oferta Base</div>
+                                    <div className="text-slate-400 text-xs mt-0.5">100% Seguro</div>
+                                </div>
+                                <div className="text-emerald-400 font-black">{formatCurrencyShort(negotiatingSponsor.weeklyIncome)}</div>
+                            </button>
+
+                            <button 
+                                onClick={() => handleExecuteNegotiation(negotiatingSponsor, 'moderate')}
+                                className="w-full flex items-center justify-between p-4 bg-amber-500/10 border border-amber-500/20 hover:border-amber-500/50 hover:bg-amber-500/20 rounded-2xl transition-all group"
+                            >
+                                <div className="text-left">
+                                    <div className="text-white font-black uppercase text-sm group-hover:text-amber-400 transition-colors">Pedir 15% Más</div>
+                                    <div className="text-slate-400 text-xs mt-0.5">Riesgo Moderado (65% Éxito)</div>
+                                </div>
+                                <div className="text-amber-400 font-black">{formatCurrencyShort(Math.floor(negotiatingSponsor.weeklyIncome * 1.15))}</div>
+                            </button>
+
+                            <button 
+                                onClick={() => handleExecuteNegotiation(negotiatingSponsor, 'high')}
+                                className="w-full flex items-center justify-between p-4 bg-red-500/10 border border-red-500/20 hover:border-red-500/50 hover:bg-red-500/20 rounded-2xl transition-all group"
+                            >
+                                <div className="text-left">
+                                    <div className="text-white font-black uppercase text-sm group-hover:text-red-400 transition-colors">Pedir 30% Más</div>
+                                    <div className="text-slate-400 text-xs mt-0.5">Alto Riesgo (30% Éxito)</div>
+                                </div>
+                                <div className="text-red-400 font-black">{formatCurrencyShort(Math.floor(negotiatingSponsor.weeklyIncome * 1.30))}</div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
