@@ -211,7 +211,7 @@ export const evaluateDebate = (
         : feedbacks.failure[Math.floor(Math.random() * feedbacks.failure.length)];
 
     return {
-        playerScore: score,
+        playerScore: playerScore,
         opponents,
         success,
         feedback
