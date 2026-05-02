@@ -55,10 +55,13 @@ export const MatchEngine: React.FC<MatchEngineProps> = ({ homeTeam, awayTeam, ma
                         if (!processedEventsRef.current.has(e)) {
                             processedEventsRef.current.add(e);
                             // Add to commentary but hide goal info
-                            const isGoal = e.includes('GOOOOL') || e.includes('¡GOL EN PRÓRROGA!');
+                            const isGoal = e.includes('⚽');
+                            const isShot = isGoal || e.includes('🧤') || e.includes('🏟️');
+                            
                             const hiddenEvent = isGoal
                                 ? `${e.split("'")[0]}' ¡Ocasión de gol! El balón entra en la red...`
                                 : e;
+                                
                             setCommentary(prev => [...prev, hiddenEvent]);
                             setCurrentEvent(hiddenEvent);
 
@@ -70,6 +73,15 @@ export const MatchEngine: React.FC<MatchEngineProps> = ({ homeTeam, awayTeam, ma
                                     setDisplayScore(prev => ({ ...prev, away: prev.away + 1 }));
                                 }
                             }
+                            
+                            // Update shots
+                            if (isShot) {
+                                if (e.includes(homeTeam.name)) {
+                                    setStats(prev => ({ ...prev, homeShots: prev.homeShots + 1 }));
+                                } else {
+                                    setStats(prev => ({ ...prev, awayShots: prev.awayShots + 1 }));
+                                }
+                            }
                         }
                     });
                 }
@@ -79,8 +91,8 @@ export const MatchEngine: React.FC<MatchEngineProps> = ({ homeTeam, awayTeam, ma
                     setStats(prev => ({
                         homePossession: Math.min(75, Math.max(25, prev.homePossession + (Math.random() * 4 - 2))),
                         awayPossession: 100 - (Math.min(75, Math.max(25, prev.homePossession + (Math.random() * 4 - 2)))),
-                        homeShots: prev.homeShots + (Math.random() < 0.02 ? 1 : 0),
-                        awayShots: prev.awayShots + (Math.random() < 0.02 ? 1 : 0),
+                        homeShots: prev.homeShots + (Math.random() < 0.4 ? 1 : 0),
+                        awayShots: prev.awayShots + (Math.random() < 0.4 ? 1 : 0),
                     }));
 
                     // Update momentum
@@ -132,7 +144,7 @@ export const MatchEngine: React.FC<MatchEngineProps> = ({ homeTeam, awayTeam, ma
                     <div className="text-xs font-bold text-slate-500 uppercase tracking-widest">En Vivo</div>
                     <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse"></div>
                 </div>
-                <div className="text-slate-400 font-mono text-sm">PREMIER LEAGUE</div>
+                <div className="text-slate-400 font-mono text-sm uppercase italic tracking-tighter">Apex Sports Live</div>
             </div>
 
             {/* Scoreboard */}

@@ -128,26 +128,36 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
     // Simulate Home Chances
     for (let i = 0; i < Math.round(homeChances); i++) {
         const minute = Math.floor(Math.random() * 90) + 1;
-        if (Math.random() < homeConversionRate) {
+        const rand = Math.random();
+        if (rand < homeConversionRate) {
             homeScore++;
             const scorer = getScorer(homeTeam);
             scorers.push({ playerId: scorer.id, playerName: scorer.name, minute });
             events.push(`${minute}' ⚽ GOOOOL de ${homeTeam.name}! ${scorer.name} marca con un remate espectacular.`);
-        } else if (Math.random() < 0.05) {
+        } else if (rand < 0.4) {
+            events.push(`${minute}' 🧤 ¡Gran parada! El portero del ${awayTeam.name} evita el gol tras un disparo de ${getScorer(homeTeam).name}.`);
+        } else if (rand < 0.5) {
             events.push(`${minute}' 🟨 Tarjeta amarilla para un jugador de ${homeTeam.name} por falta táctica.`);
+        } else {
+            events.push(`${minute}' 🏟️ Ocasión para el ${homeTeam.name}, pero el balón se va fuera.`);
         }
     }
 
     // Simulate Away Chances
     for (let i = 0; i < Math.round(awayChances); i++) {
         const minute = Math.floor(Math.random() * 90) + 1;
-        if (Math.random() < awayConversionRate) {
+        const rand = Math.random();
+        if (rand < awayConversionRate) {
             awayScore++;
             const scorer = getScorer(awayTeam);
             scorers.push({ playerId: scorer.id, playerName: scorer.name, minute });
             events.push(`${minute}' ⚽ GOOOOL de ${awayTeam.name}! ${scorer.name} anota para la visita.`);
-        } else if (Math.random() < 0.05) {
+        } else if (rand < 0.4) {
+            events.push(`${minute}' 🧤 ¡Increíble reflejo! El portero del ${homeTeam.name} desvía el balón al córner.`);
+        } else if (rand < 0.5) {
             events.push(`${minute}' 🟨 Tarjeta amarilla para un jugador de ${awayTeam.name}.`);
+        } else {
+            events.push(`${minute}' 🏟️ El ${awayTeam.name} presiona, pero el remate sale desviado.`);
         }
     }
 
@@ -158,8 +168,32 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
         return minA - minB;
     });
 
-    if (homeScore > 8) homeScore = 8; // Cap unrealistic scores
-    if (awayScore > 8) awayScore = 8;
+    // Helper to trim goals if capped
+    const trimGoals = (score: number, teamName: string, teamSquad: Player[]) => {
+        if (score > 8) {
+            let goalsToRemove = score - 8;
+            // Remove the LAST goal events for this team
+            for (let i = events.length - 1; i >= 0 && goalsToRemove > 0; i--) {
+                if (events[i].includes('⚽') && events[i].includes(teamName)) {
+                    events.splice(i, 1);
+                    goalsToRemove--;
+                }
+            }
+            // Sync scorers
+            let scorersToRemove = score - 8;
+            for (let i = scorers.length - 1; i >= 0 && scorersToRemove > 0; i--) {
+                if (teamSquad.some(p => p.id === scorers[i].playerId)) {
+                    scorers.splice(i, 1);
+                    scorersToRemove--;
+                }
+            }
+            return 8;
+        }
+        return score;
+    };
+
+    homeScore = trimGoals(homeScore, homeTeam.name, homeTeam.squad);
+    awayScore = trimGoals(awayScore, awayTeam.name, awayTeam.squad);
 
     // Cup Logic: Extra Time & Penalties
     let penaltiesResult;
@@ -253,14 +287,16 @@ export const generateSeasonSchedule = (allTeams: Team[]): Match[] => {
     const premierLeagueTeams = allTeams.filter(t => t.leagueId === 'PREMIER_LEAGUE');
     const championshipTeams = allTeams.filter(t => t.leagueId === 'CHAMPIONSHIP');
     const laLigaTeams = allTeams.filter(t => t.leagueId === 'LA_LIGA');
+    const bundesligaTeams = allTeams.filter(t => t.leagueId === 'BUNDESLIGA');
+    const serieATeams = allTeams.filter(t => t.leagueId === 'SERIE_A');
 
     const plSchedule = generateLeagueSchedule(premierLeagueTeams, 'PREMIER_LEAGUE');
     const chSchedule = generateLeagueSchedule(championshipTeams, 'CHAMPIONSHIP');
     const laSchedule = generateLeagueSchedule(laLigaTeams, 'LA_LIGA');
+    const gerSchedule = generateLeagueSchedule(bundesligaTeams, 'BUNDESLIGA');
+    const itaSchedule = generateLeagueSchedule(serieATeams, 'SERIE_A');
 
-    // Merge schedules. Since Championship has more games (46 rounds vs 38), 
-    // we just append them. The game loop handles weeks globally.
-    return [...plSchedule, ...chSchedule, ...laSchedule];
+    return [...plSchedule, ...chSchedule, ...laSchedule, ...gerSchedule, ...itaSchedule];
 };
 
 export const generateCupDraw = (teams: Team[], roundName: string, competition: 'FA_Cup' | 'Carabao_Cup' = 'FA_Cup'): Match[] => {

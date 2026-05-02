@@ -25,23 +25,24 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ gameState }) => 
         // Filter by the player's competitions
         matches = matches.filter(m => {
             const homeTeamObj = getTeamById(m.homeTeamId);
-            if (!homeTeamObj) return false;
+            const awayTeamObj = getTeamById(m.awayTeamId);
+            if (!homeTeamObj || !awayTeamObj) return false;
 
+            const isPlayerTeamInvolved = m.homeTeamId === gameState.team.id || m.awayTeamId === gameState.team.id;
+            
             if (m.isCupMatch) {
-                // For cups, check if it's in the player's country
-                // We assume getTeamById(m.homeTeamId) is sufficient to determine the country of the cup
-                const LEAGUE_COUNTRY: Record<string, string> = {
-                    PREMIER_LEAGUE: 'ENG',
-                    CHAMPIONSHIP: 'ENG',
-                    LA_LIGA: 'ESP',
-                    BUNDESLIGA: 'GER',
-                    SERIE_A: 'ITA'
-                };
-                const playerCountry = LEAGUE_COUNTRY[gameState.team.leagueId];
-                const matchCountry = LEAGUE_COUNTRY[homeTeamObj.leagueId];
-                return playerCountry === matchCountry;
+                // If it's a cup match, only show if the player's team is still in that cup's country
+                // (or more specifically, only show matches from the cups the player participates in)
+                const playerLeagueId = gameState.team.leagueId;
+                const isEnglishPlayer = playerLeagueId === LeagueId.PREMIER_LEAGUE || playerLeagueId === LeagueId.CHAMPIONSHIP;
+                
+                // Currently only English cups are implemented
+                if (isEnglishPlayer && (m.competition === 'FA_Cup' || m.competition === 'Carabao_Cup')) {
+                    return true;
+                }
+                return isPlayerTeamInvolved;
             } else {
-                // For league matches, must be exactly the same league
+                // For league matches, strictly show ONLY the player's own league
                 return homeTeamObj.leagueId === gameState.team.leagueId;
             }
         });

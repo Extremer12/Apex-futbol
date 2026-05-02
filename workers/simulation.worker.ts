@@ -140,6 +140,8 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                     homeRow.played++; awayRow.played++;
                     homeRow.goalsFor += result.homeScore; awayRow.goalsFor += result.awayScore;
                     homeRow.goalsAgainst += result.awayScore; awayRow.goalsAgainst += result.homeScore;
+                    homeRow.goalDifference = homeRow.goalsFor - homeRow.goalsAgainst;
+                    awayRow.goalDifference = awayRow.goalsFor - awayRow.goalsAgainst;
 
                     let homeResult: 'W' | 'D' | 'L', awayResult: 'W' | 'D' | 'L';
 
