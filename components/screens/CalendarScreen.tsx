@@ -84,8 +84,40 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ gameState }) => 
                 </div>
             </div>
 
-            {/* Week Selector */}
-            <div className="relative group">
+            {/* Matchday Navigation */}
+            <div className="flex items-center justify-between bg-slate-800/40 p-4 rounded-2xl border border-slate-800">
+                <button 
+                    onClick={() => setSelectedWeek(prev => Math.max(1, prev - 1))}
+                    disabled={selectedWeek === 1}
+                    className="p-3 rounded-xl bg-slate-900 border border-slate-700 hover:border-sky-500 hover:text-sky-400 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+                >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" /></svg>
+                </button>
+
+                <div className="flex flex-col items-center">
+                    <span className="text-[10px] font-black text-sky-500 uppercase tracking-[0.2em] mb-1">Seleccionar Jornada</span>
+                    <select 
+                        value={selectedWeek}
+                        onChange={(e) => setSelectedWeek(parseInt(e.target.value))}
+                        className="bg-slate-900 text-white font-black text-xl px-4 py-1 rounded-xl border border-slate-700 focus:border-sky-500 focus:outline-none cursor-pointer"
+                    >
+                        {weeks.map(w => (
+                            <option key={w} value={w}>JORNADA {w}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <button 
+                    onClick={() => setSelectedWeek(prev => Math.min(maxWeek, prev + 1))}
+                    disabled={selectedWeek === maxWeek}
+                    className="p-3 rounded-xl bg-slate-900 border border-slate-700 hover:border-sky-500 hover:text-sky-400 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+                >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" /></svg>
+                </button>
+            </div>
+
+            {/* Horizontal Selector (kept for quick access but improved) */}
+            <div className="relative group px-2">
                 <div 
                     ref={scrollRef}
                     className="flex gap-2 overflow-x-auto pb-4 pt-2 no-scrollbar scroll-smooth"
@@ -95,22 +127,18 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ gameState }) => 
                             key={week}
                             id={`week-btn-${week}`}
                             onClick={() => setSelectedWeek(week)}
-                            className={`flex-shrink-0 w-14 h-14 flex flex-col items-center justify-center rounded-2xl border-2 transition-all duration-300 ${
+                            className={`flex-shrink-0 w-12 h-12 flex flex-col items-center justify-center rounded-xl border-2 transition-all duration-300 ${
                                 selectedWeek === week 
-                                ? 'bg-sky-600 border-sky-400 text-white shadow-xl shadow-sky-600/40 scale-110 z-10' 
+                                ? 'bg-sky-600 border-sky-400 text-white shadow-lg shadow-sky-600/40 scale-105 z-10' 
                                 : week === gameState.currentWeek
                                 ? 'bg-slate-800 border-sky-500/50 text-sky-400'
                                 : 'bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-600 hover:text-slate-300'
                             }`}
                         >
-                            <span className="text-[10px] font-black uppercase leading-none mb-1">Jorn</span>
-                            <span className="text-xl font-black leading-none">{week}</span>
+                            <span className="text-sm font-black leading-none">{week}</span>
                         </button>
                     ))}
                 </div>
-                {/* Fade overlays for scrolling */}
-                <div className="absolute left-0 top-0 bottom-4 w-12 bg-gradient-to-r from-slate-950 to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <div className="absolute right-0 top-0 bottom-4 w-12 bg-gradient-to-l from-slate-950 to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"></div>
             </div>
 
             {/* Matches List */}
@@ -147,10 +175,10 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ gameState }) => 
                                 >
                                     {/* Home Team */}
                                     <div className="flex-1 flex items-center justify-end gap-3 md:gap-5 min-w-0">
-                                        <span className={`text-sm md:text-lg text-right truncate transition-colors duration-300 ${isPlayerMatch && match.homeTeamId === gameState.team.id ? 'font-black text-sky-400' : 'font-bold text-slate-300 group-hover:text-white'}`}>
+                                        <span className={`text-sm md:text-base text-right truncate transition-colors duration-300 ${isPlayerMatch && match.homeTeamId === gameState.team.id ? 'font-black text-sky-400' : 'font-bold text-slate-300 group-hover:text-white'}`}>
                                             {homeTeam?.name}
                                         </span>
-                                        <div className="w-10 h-10 md:w-12 md:h-12 flex-shrink-0 bg-slate-950/50 p-1.5 rounded-xl border border-slate-800 shadow-inner group-hover:scale-110 transition-transform duration-500">
+                                        <div className="w-8 h-8 md:w-10 md:h-10 flex-shrink-0 bg-slate-950/50 p-1.5 rounded-lg border border-slate-800 shadow-inner group-hover:scale-110 transition-transform duration-500 flex items-center justify-center">
                                             <TeamLogo team={homeTeam} />
                                         </div>
                                     </div>
@@ -182,10 +210,10 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ gameState }) => 
 
                                     {/* Away Team */}
                                     <div className="flex-1 flex items-center justify-start gap-3 md:gap-5 min-w-0">
-                                        <div className="w-10 h-10 md:w-12 md:h-12 flex-shrink-0 bg-slate-950/50 p-1.5 rounded-xl border border-slate-800 shadow-inner group-hover:scale-110 transition-transform duration-500">
+                                        <div className="w-8 h-8 md:w-10 md:h-10 flex-shrink-0 bg-slate-950/50 p-1.5 rounded-lg border border-slate-800 shadow-inner group-hover:scale-110 transition-transform duration-500 flex items-center justify-center">
                                             <TeamLogo team={awayTeam} />
                                         </div>
-                                        <span className={`text-sm md:text-lg truncate transition-colors duration-300 ${isPlayerMatch && match.awayTeamId === gameState.team.id ? 'font-black text-sky-400' : 'font-bold text-slate-300 group-hover:text-white'}`}>
+                                        <span className={`text-sm md:text-base truncate transition-colors duration-300 ${isPlayerMatch && match.awayTeamId === gameState.team.id ? 'font-black text-sky-400' : 'font-bold text-slate-300 group-hover:text-white'}`}>
                                             {awayTeam?.name}
                                         </span>
                                     </div>

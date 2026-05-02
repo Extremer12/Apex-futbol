@@ -21,14 +21,18 @@ export enum LeagueId {
   PREMIER_LEAGUE = 'PREMIER_LEAGUE',
   CHAMPIONSHIP = 'CHAMPIONSHIP',
   LA_LIGA = 'LA_LIGA',
+  BUNDESLIGA = 'BUNDESLIGA',
+  SERIE_A = 'SERIE_A',
 }
 
-export type CountryCode = 'ENG' | 'ESP';
+export type CountryCode = 'ENG' | 'ESP' | 'GER' | 'ITA';
 
 export const LEAGUE_COUNTRY: Record<LeagueId, CountryCode> = {
   [LeagueId.PREMIER_LEAGUE]: 'ENG',
   [LeagueId.CHAMPIONSHIP]: 'ENG',
   [LeagueId.LA_LIGA]: 'ESP',
+  [LeagueId.BUNDESLIGA]: 'GER',
+  [LeagueId.SERIE_A]: 'ITA',
 };
 
 export interface Team {
@@ -58,6 +62,16 @@ export interface Coach {
   signingBonus: number; // Cost to hire
 }
 
+export interface Scout {
+  id: string;
+  name: string;
+  efficiency: number; // 1-100, how fast they scout
+  accuracy: number;   // 1-100, how narrow the rating range is
+  specialty?: 'POR' | 'DEF' | 'CEN' | 'DEL' | 'Youth';
+  salary: number;
+  hiringFee: number;
+}
+
 export interface PlayerProfile {
   name: string;
   experience: number; // Starts at 0
@@ -71,11 +85,22 @@ export interface NewsItem {
   type?: 'standard' | 'transfer' | 'achievement' | 'warning';
 }
 
+export interface MatchScorer {
+  playerId: number;
+  playerName: string;
+  minute: number;
+}
+
 export interface Match {
   week: number;
   homeTeamId: number;
   awayTeamId: number;
-  result?: { homeScore: number; awayScore: number; events?: string[] };
+  result?: { 
+    homeScore: number; 
+    awayScore: number; 
+    events?: string[];
+    scorers?: MatchScorer[];
+  };
   competition?: 'League' | 'FA_Cup' | 'Carabao_Cup'; // Added to distinguish match types
   isCupMatch?: boolean;
   penalties?: { home: number; away: number; };
@@ -244,6 +269,9 @@ export interface GameState {
   playerProfile?: PlayerProfile;
   youthAcademy: Player[];
   season: number;
+  // Scouting System
+  scouts: Scout[];
+  scoutedPlayerIds: Record<number, number>; // playerId -> scoutingLevel (0-100)
 }
 
 export enum Screen {
@@ -270,4 +298,5 @@ export interface PendingSimulationResults {
     newOffers: Offer[];
     playerMatchResult: { homeScore: number; awayScore: number, penalties?: { home: number, away: number }, events?: string[] } | null;
     updatedCups?: { faCup: any, carabaoCup: any };
+    updatedScoutedPlayerIds?: Record<number, number>;
 }

@@ -9,8 +9,10 @@ import { TeamSelection } from './gameflow/TeamSelection';
 import { ElectionPitch } from './gameflow/ElectionPitch';
 import { ElectionResult } from './gameflow/ElectionResult';
 import { LoadingSpinner } from './icons';
+import { PromiseSelection } from './gameflow/PromiseSelection';
+import { ElectoralPromise } from '../types';
 
-export type AppState = 'START_SCREEN' | 'LOAD_GAME' | 'PROFILE_CREATION' | 'TEAM_SELECTION' | 'ELECTION_PITCH' | 'ELECTION_RESULT' | 'GAME_ACTIVE' | 'GAME_OVER';
+export type AppState = 'START_SCREEN' | 'LOAD_GAME' | 'PROFILE_CREATION' | 'TEAM_SELECTION' | 'ELECTION_PITCH' | 'ELECTION_RESULT' | 'PROMISE_SELECTION' | 'GAME_ACTIVE' | 'GAME_OVER';
 
 interface AppRouterProps {
     appState: AppState;
@@ -23,6 +25,7 @@ interface AppRouterProps {
     onProfileCreate: (profile: PlayerProfile) => void;
     onTeamSelect: (team: Team) => void;
     onPitchSubmit: (debateSummary: string) => Promise<void>;
+    onPromisesSubmit: (promises: ElectoralPromise[]) => void;
     onStartGame: () => void;
     onRetryElection: () => void;
     children?: React.ReactNode;
@@ -73,6 +76,12 @@ export const AppRouter: React.FC<AppRouterProps> = ({
                 return <div className="min-h-screen bg-slate-950 flex items-center justify-center"><LoadingSpinner /></div>;
             }
             return <ElectionResult result={electionResult} onContinue={onStartGame} onRetry={onRetryElection} />;
+
+        case 'PROMISE_SELECTION':
+            if (!selectedTeam) {
+                return <div className="min-h-screen bg-slate-950 flex items-center justify-center"><LoadingSpinner /></div>;
+            }
+            return <PromiseSelection team={selectedTeam} onSelectionComplete={onPromisesSubmit} />;
 
         case 'GAME_ACTIVE':
             return <>{children}</>;

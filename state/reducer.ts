@@ -2,7 +2,7 @@
 
 // FIX: Import React to enable JSX, which is used for the team logo fallback when rehydrating game state.
 import React from 'react';
-import { GameState, Team, PlayerProfile, NewsItem, Player, Match, LeagueTableRow, Offer, LeagueId, CupCompetition, FanApproval, Stadium } from '../types';
+import { GameState, Team, PlayerProfile, NewsItem, Player, Match, LeagueTableRow, Offer, LeagueId, CupCompetition, FanApproval, Stadium, Scout } from '../types';
 import { TEAMS } from '../constants';
 import { generateSeasonSchedule, createInitialLeagueTable, simulateMatch, generateCupDraw, advanceCupRound, determineCupWinner, handlePromotionRelegation, generateYouthPlayer } from '../services/simulation';
 import { generateRandomCoach, generateCoachMarket } from '../services/coaching';
@@ -15,7 +15,7 @@ import { formatDate, formatCurrency } from '../utils';
 
 // Define all possible action types
 export type GameAction =
-    | { type: 'INITIALIZE_GAME'; payload: { team: Team; playerProfile: PlayerProfile } }
+    | { type: 'INITIALIZE_GAME'; payload: { team: Team; playerProfile: PlayerProfile; initialPromises?: any[] } }
     | { type: 'LOAD_GAME'; payload: GameState }
     | { type: 'RESET_GAME' }
     | { type: 'ADVANCE_WEEK_START' }
@@ -40,17 +40,16 @@ export type GameAction =
     | { type: 'UPDATE_FINANCES'; payload: GameState['finances'] }
     | { type: 'UPDATE_TEAM'; payload: Team }
     | { type: 'UPDATE_BOARD_CONFIDENCE'; payload: number }
-    | { type: 'UPDATE_STADIUM'; payload: Stadium };
+    | { type: 'UPDATE_STADIUM'; payload: Stadium }
+    | { type: 'HIRE_SCOUT'; payload: Scout };
 
 export const initialState: GameState | null = null;
 
 export function gameReducer(state: GameState | null, action: GameAction): GameState | null {
     switch (action.type) {
         case 'INITIALIZE_GAME': {
-            const { team, playerProfile } = action.payload;
-
-            // Delegate initialization to the game factory service
-            return initializeGame({ selectedTeam: team, playerProfile });
+            const { team, playerProfile, initialPromises } = action.payload;
+            return initializeGame({ selectedTeam: team, playerProfile, initialPromises });
         }
 
         case 'LOAD_GAME': {
@@ -129,7 +128,7 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
 
         case 'ADVANCE_WEEK_SUCCESS': {
             if (!state) return null;
-            const { newsItems, newSchedule, newLeagueTables, newAllTeams, newConfidence, newOffers, newCups } = action.payload;
+            const { newsItems, newSchedule, newLeagueTables, newAllTeams, newConfidence, newOffers, newCups, newScoutedPlayerIds } = action.payload;
 
             // Update player team from newAllTeams
             const updatedPlayerTeam = newAllTeams.find(t => t.id === state.team.id)!;
@@ -179,7 +178,8 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                     weeklyWages: breakdown.wageExpenses + breakdown.coachExpenses + breakdown.stadiumExpenses + breakdown.operationalExpenses + breakdown.transferExpenses,
                     balanceHistory: [...state.finances.balanceHistory, newBalance],
                     breakdown
-                }
+                },
+                scoutedPlayerIds: newScoutedPlayerIds || state.scoutedPlayerIds
             };
         }
 
@@ -586,6 +586,29 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
 
         case 'UPDATE_STADIUM':
             return state ? { ...state, stadium: action.payload } : null;
+
+        case 'HIRE_SCOUT': {
+            if (!state) return null;
+            const scout = action.payload;
+
+            if (state.finances.balance < scout.hiringFee) return state;
+
+            return {
+                ...state,
+                scouts: [...state.scouts, scout],
+                finances: {
+                    ...state.finances,
+                    balance: state.finances.balance - scout.hiringFee,
+                    balanceHistory: [...state.finances.balanceHistory, state.finances.balance - scout.hiringFee]
+                },
+                newsFeed: [{
+                    id: `hire_scout_${Date.now()}`,
+                    headline: '🔍 Nuevo Scout Contratado',
+                    body: `${scout.name} se une al equipo para expandir nuestra red de ojeo.`,
+                    date: formatDate(state.currentDate)
+                }, ...state.newsFeed].slice(0, 20)
+            };
+        }
 
         default:
             return state;

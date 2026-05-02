@@ -13,6 +13,8 @@ interface SimulationResult {
         faCup: any;
         carabaoCup: any;
     };
+    updatedScoutedPlayerIds: Record<number, number>;
+    newsToAdd?: any[];
 }
 
 class SimulationWorkerManager {
@@ -57,7 +59,9 @@ class SimulationWorkerManager {
                     allTeams: gameState.allTeams.map(t => ({ ...t, logo: undefined })),
                     playerTeamId: gameState.team.id,
                     cups: gameState.cups,
-                    finances: gameState.finances
+                    finances: gameState.finances,
+                    scouts: gameState.scouts,
+                    scoutedPlayerIds: gameState.scoutedPlayerIds
                 }
             });
         });

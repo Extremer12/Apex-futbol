@@ -148,7 +148,8 @@ export function useSimulation(
                 confidenceChange: simulationResult.confidenceChange,
                 newOffers: generatedOffers,
                 playerMatchResult: simulationResult.playerMatchResult,
-                updatedCups
+                updatedCups,
+                updatedScoutedPlayerIds: simulationResult.updatedScoutedPlayerIds
             });
 
             setMatchPhase('LIVE');
@@ -178,7 +179,8 @@ export function useSimulation(
                 newAllTeams: pendingResults.updatedAllTeams,
                 newConfidence,
                 newOffers: pendingResults.newOffers,
-                newCups: pendingResults.updatedCups
+                newCups: pendingResults.updatedCups,
+                newScoutedPlayerIds: (pendingResults as any).updatedScoutedPlayerIds
             }
         });
 

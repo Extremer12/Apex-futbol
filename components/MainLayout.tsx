@@ -3,17 +3,19 @@ import { GameState, Screen, PlayerProfile, Team } from '../types';
 import { GameAction } from '../state/reducer';
 import { Header } from './ui/Header';
 import { BottomNav } from './ui/BottomNav';
-import { Dashboard } from './screens/Dashboard';
-import { SquadScreen } from './screens/SquadScreen';
-import { TransfersScreen } from './screens/TransfersScreen';
-import { FinancesScreen } from './screens/FinancesScreen';
-import { LeagueScreen } from './screens/LeagueScreen';
-import { CalendarScreen } from './screens/CalendarScreen';
-import { StatisticsScreen } from './screens/StatisticsScreen';
-import { SettingsScreen } from './screens/SettingsScreen';
-import { StaffScreen } from './screens/StaffScreen';
-import { ElectionScreen } from './screens/ElectionScreen';
-import { ClubHubScreen } from './screens/ClubHubScreen';
+const Dashboard = React.lazy(() => import('./screens/Dashboard').then(m => ({ default: m.Dashboard })));
+const SquadScreen = React.lazy(() => import('./screens/SquadScreen').then(m => ({ default: m.SquadScreen })));
+const TransfersScreen = React.lazy(() => import('./screens/TransfersScreen').then(m => ({ default: m.TransfersScreen })));
+const FinancesScreen = React.lazy(() => import('./screens/FinancesScreen').then(m => ({ default: m.FinancesScreen })));
+const LeagueScreen = React.lazy(() => import('./screens/LeagueScreen').then(m => ({ default: m.LeagueScreen })));
+const CalendarScreen = React.lazy(() => import('./screens/CalendarScreen').then(m => ({ default: m.CalendarScreen })));
+const StatisticsScreen = React.lazy(() => import('./screens/StatisticsScreen').then(m => ({ default: m.StatisticsScreen })));
+const SettingsScreen = React.lazy(() => import('./screens/SettingsScreen').then(m => ({ default: m.SettingsScreen })));
+const StaffScreen = React.lazy(() => import('./screens/StaffScreen').then(m => ({ default: m.StaffScreen })));
+const ElectionScreen = React.lazy(() => import('./screens/ElectionScreen').then(m => ({ default: m.ElectionScreen })));
+const ClubHubScreen = React.lazy(() => import('./screens/ClubHubScreen').then(m => ({ default: m.ClubHubScreen })));
+
+import { LoadingSpinner } from './icons';
 import { MatchPhase } from '../App';
 
 interface PendingSimulationResults {
@@ -107,7 +109,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                 <Header gameState={gameState} />
                 <main className="pb-24">
                     <div key={activeScreen} className="content-fade-in">
-                        {renderContent()}
+                        <React.Suspense fallback={<div className="flex items-center justify-center py-20"><LoadingSpinner /></div>}>
+                            {renderContent()}
+                        </React.Suspense>
                     </div>
                 </main>
                 <BottomNav activeScreen={activeScreen} onNavigate={setActiveScreen} />

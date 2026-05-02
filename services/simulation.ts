@@ -51,7 +51,7 @@ export const generateYouthPlayer = (tier: Team['tier'] = 'Lower'): Player => {
 
 
 
-export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: LeagueTableRow, awayTableRow: LeagueTableRow, isCupMatch: boolean = false): { homeScore: number; awayScore: number, events: string[], penalties?: { home: number, away: number } } => {
+export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: LeagueTableRow, awayTableRow: LeagueTableRow, isCupMatch: boolean = false): { homeScore: number; awayScore: number, events: string[], scorers: { playerId: number, playerName: string, minute: number }[], penalties?: { home: number, away: number } } => {
     const homeStats = getTeamStats(homeTeam);
     const awayStats = getTeamStats(awayTeam);
 
@@ -100,6 +100,7 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
     let homeScore = 0;
     let awayScore = 0;
     const events: string[] = [];
+    const scorers: { playerId: number, playerName: string, minute: number }[] = [];
 
     // MEJORADO: Tasa de conversión basada en calidad del ataque
     // Rating promedio de delanteros influye más
@@ -111,17 +112,17 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
     const awayConversionRate = 0.12 + ((awayAttackerRating - 70) / 250) + ((awayStats.attack - homeStats.defense) / 300);
 
     // Helper to get scorer
-    const getScorer = (team: Team): string => {
-        const scorers = team.squad.filter(p => p.position === 'DEL' || p.position === 'CEN');
-        if (scorers.length === 0) return team.squad[0].name;
+    const getScorer = (team: Team): Player => {
+        const potentialScorers = team.squad.filter(p => p.position === 'DEL' || p.position === 'CEN');
+        if (potentialScorers.length === 0) return team.squad[0];
         // Weighted random: higher rating = higher chance
-        const totalRating = scorers.reduce((sum, p) => sum + p.rating, 0);
+        const totalRating = potentialScorers.reduce((sum, p) => sum + p.rating, 0);
         let random = Math.random() * totalRating;
-        for (const player of scorers) {
+        for (const player of potentialScorers) {
             random -= player.rating;
-            if (random <= 0) return player.name;
+            if (random <= 0) return player;
         }
-        return scorers[0].name;
+        return potentialScorers[0];
     };
 
     // Simulate Home Chances
@@ -129,7 +130,9 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
         const minute = Math.floor(Math.random() * 90) + 1;
         if (Math.random() < homeConversionRate) {
             homeScore++;
-            events.push(`${minute}' ⚽ GOOOOL de ${homeTeam.name}! ${getScorer(homeTeam)} marca con un remate espectacular.`);
+            const scorer = getScorer(homeTeam);
+            scorers.push({ playerId: scorer.id, playerName: scorer.name, minute });
+            events.push(`${minute}' ⚽ GOOOOL de ${homeTeam.name}! ${scorer.name} marca con un remate espectacular.`);
         } else if (Math.random() < 0.05) {
             events.push(`${minute}' 🟨 Tarjeta amarilla para un jugador de ${homeTeam.name} por falta táctica.`);
         }
@@ -140,7 +143,9 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
         const minute = Math.floor(Math.random() * 90) + 1;
         if (Math.random() < awayConversionRate) {
             awayScore++;
-            events.push(`${minute}' ⚽ GOOOOL de ${awayTeam.name}! ${getScorer(awayTeam)} anota para la visita.`);
+            const scorer = getScorer(awayTeam);
+            scorers.push({ playerId: scorer.id, playerName: scorer.name, minute });
+            events.push(`${minute}' ⚽ GOOOOL de ${awayTeam.name}! ${scorer.name} anota para la visita.`);
         } else if (Math.random() < 0.05) {
             events.push(`${minute}' 🟨 Tarjeta amarilla para un jugador de ${awayTeam.name}.`);
         }
@@ -168,13 +173,19 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
         for (let i = 0; i < Math.round(etHomeChances); i++) {
             if (Math.random() < homeConversionRate) {
                 homeScore++;
-                events.push(`${90 + Math.floor(Math.random() * 30)}' ⚽ ¡GOL EN PRÓRROGA! ${homeTeam.name} se pone en ventaja.`);
+                const minute = 90 + Math.floor(Math.random() * 30);
+                const scorer = getScorer(homeTeam);
+                scorers.push({ playerId: scorer.id, playerName: scorer.name, minute });
+                events.push(`${minute}' ⚽ ¡GOL EN PRÓRROGA! ${homeTeam.name} se pone en ventaja con un tanto de ${scorer.name}.`);
             }
         }
         for (let i = 0; i < Math.round(etAwayChances); i++) {
             if (Math.random() < awayConversionRate) {
                 awayScore++;
-                events.push(`${90 + Math.floor(Math.random() * 30)}' ⚽ ¡GOL EN PRÓRROGA! ${awayTeam.name} empata el partido.`);
+                const minute = 90 + Math.floor(Math.random() * 30);
+                const scorer = getScorer(awayTeam);
+                scorers.push({ playerId: scorer.id, playerName: scorer.name, minute });
+                events.push(`${minute}' ⚽ ¡GOL EN PRÓRROGA! ${awayTeam.name} empata el partido con un tanto de ${scorer.name}.`);
             }
         }
 
@@ -199,7 +210,7 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
         }
     }
 
-    return { homeScore, awayScore, events, penalties: penaltiesResult };
+    return { homeScore, awayScore, events, scorers, penalties: penaltiesResult };
 };
 
 // Helper to generate a round-robin schedule for a single league

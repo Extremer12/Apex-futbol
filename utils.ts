@@ -12,14 +12,13 @@ export const formatCurrency = (amount: number | undefined | null): string => {
 };
 
 export const formatCurrencyShort = (amount: number | undefined | null): string => {
-    const val = amount || 0;
-    if (Math.abs(val) >= 1000000) {
-        return `£${(val / 1000000).toFixed(1)}M`;
-    }
-    if (Math.abs(val) >= 1000) {
-        return `£${(val / 1000).toFixed(0)}K`;
-    }
-    return `£${val}`;
+    return new Intl.NumberFormat('en-GB', {
+        style: 'currency',
+        currency: 'GBP',
+        notation: 'compact',
+        compactDisplay: 'short',
+        maximumFractionDigits: 1,
+    }).format(amount || 0);
 };
 
 export const formatWeeklyWage = (amount: number | undefined | null): string => {
@@ -53,22 +52,4 @@ export const generateRandomName = (): string => {
     return `${first} ${last}`;
 };
 
-// --- Morale Helpers ---
-export function getMoraleValue(morale: Morale): number {
-    switch (morale) {
-        case 'Feliz': return 90;
-        case 'Contento': return 75;
-        case 'Normal': return 50;
-        case 'Descontento': return 25;
-        case 'Enojado': return 10;
-        default: return 50;
-    }
-}
-
-export function getMoraleLabel(value: number): Morale {
-    if (value >= 85) return 'Feliz';
-    if (value >= 65) return 'Contento';
-    if (value >= 40) return 'Normal';
-    if (value >= 20) return 'Descontento';
-    return 'Enojado';
-}
+// Morale Helpers removed as they are now in services/morale.ts

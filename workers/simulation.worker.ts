@@ -3,39 +3,9 @@
 
 import { Team, LeagueTableRow, Match, Morale, LeagueId } from '../types';
 import { simulateMatch } from '../services/simulation';
+import { updateTeamMorale } from '../services/morale';
 
-// Helper to convert Morale string to number
-function getMoraleValue(morale: Morale): number {
-    switch (morale) {
-        case 'Feliz': return 90;
-        case 'Contento': return 75;
-        case 'Normal': return 50;
-        case 'Descontento': return 25;
-        case 'Enojado': return 10;
-        default: return 50;
-    }
-}
-
-// Helper to convert number to Morale string
-function getMoraleLabel(value: number): Morale {
-    if (value >= 85) return 'Feliz';
-    if (value >= 65) return 'Contento';
-    if (value >= 40) return 'Normal';
-    if (value >= 20) return 'Descontento';
-    return 'Enojado';
-}
-
-function updateTeamMorale(currentMorale: Morale, result: 'W' | 'D' | 'L'): Morale {
-    let change = 0;
-    if (result === 'W') change = 5;
-    else if (result === 'D') change = 0;
-    else change = -5;
-
-    const currentValue = getMoraleValue(currentMorale);
-    const newValue = Math.max(0, Math.min(100, currentValue + change));
-
-    return getMoraleLabel(newValue);
-}
+// Helpers removed as they are now imported from services/morale.ts
 
 
 interface SimulationInput {
@@ -54,6 +24,8 @@ interface SimulationInput {
             weeklyIncome: number;
             weeklyWages: number;
         };
+        scouts: any[];
+        scoutedPlayerIds: Record<number, number>;
     };
 }
 
@@ -64,11 +36,13 @@ interface SimulationOutput {
         updatedLeagueTables: Record<LeagueId, LeagueTableRow[]>;
         updatedAllTeams: Team[];
         confidenceChange: number;
-        playerMatchResult: { homeScore: number; awayScore: number; penalties?: { home: number; away: number }; events?: string[] } | null;
+        playerMatchResult: { homeScore: number; awayScore: number; penalties?: { home: number; away: number }; events?: string[]; scorers?: any[] } | null;
         updatedCups: {
             faCup: any;
             carabaoCup: any;
         };
+        updatedScoutedPlayerIds: Record<number, number>;
+        newsToAdd?: any[];
     };
 }
 
@@ -84,8 +58,9 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
             leagueTables,
             allTeams,
             playerTeamId,
-            cups,
-            finances
+            finances,
+            scouts,
+            scoutedPlayerIds
         } = payload;
 
         const newWeek = currentWeek + 1;
@@ -108,7 +83,7 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
         const weeklyNet = (finances.weeklyIncome - finances.weeklyWages) / 1_000_000;
         let confidenceChange = weeklyNet > 0 ? 1 : -1;
 
-        let playerMatchResult: { homeScore: number; awayScore: number; penalties?: { home: number; away: number }; events?: string[] } | null = null;
+        let playerMatchResult: { homeScore: number; awayScore: number; penalties?: { home: number; away: number }; events?: string[]; scorers?: any[] } | null = null;
 
         if (matchesThisWeek.length > 0) {
             matchesThisWeek.forEach(match => {
@@ -135,7 +110,12 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                 const matchIndex = newSchedule.findIndex(m => m.week === newWeek && m.homeTeamId === match.homeTeamId);
                 newSchedule[matchIndex] = {
                     ...newSchedule[matchIndex],
-                    result: { homeScore: result.homeScore, awayScore: result.awayScore, events: result.events },
+                    result: { 
+                        homeScore: result.homeScore, 
+                        awayScore: result.awayScore, 
+                        events: result.events,
+                        scorers: result.scorers 
+                    },
                     penalties: result.penalties
                 };
 
@@ -150,7 +130,8 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                         homeScore: result.homeScore,
                         awayScore: result.awayScore,
                         penalties: result.penalties,
-                        events: result.events
+                        events: result.events,
+                        scorers: result.scorers
                     };
                 }
 
@@ -242,6 +223,25 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
             });
         }
 
+        // Scouting Progress Logic
+        const updatedScoutedPlayerIds = { ...scoutedPlayerIds };
+        const newsToAdd: any[] = [];
+        
+        if (scouts && scouts.length > 0) {
+            // Scouts advance knowledge on random players in the market
+            const allMarketPlayers = updatedAllTeams.flatMap(t => t.squad);
+            scouts.forEach(scout => {
+                // Find a player that isn't fully scouted yet
+                const potentialTargets = allMarketPlayers.filter(p => (updatedScoutedPlayerIds[p.id] || 0) < 100);
+                if (potentialTargets.length > 0) {
+                    const target = potentialTargets[Math.floor(Math.random() * potentialTargets.length)];
+                    const currentLevel = updatedScoutedPlayerIds[target.id] || 0;
+                    const increment = (scout.efficiency / 5) + (Math.random() * 5);
+                    updatedScoutedPlayerIds[target.id] = Math.min(100, currentLevel + increment);
+                }
+            });
+        }
+
         // Convert maps back to arrays and sort
         const updatedLeagueTables: Record<LeagueId, LeagueTableRow[]> = {} as any;
         Object.keys(leagueMaps).forEach(leagueId => {
@@ -270,7 +270,9 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                 updatedCups: {
                     faCup: updatedFaCup,
                     carabaoCup: updatedCarabaoCup
-                }
+                },
+                updatedScoutedPlayerIds,
+                newsToAdd
             }
         };
 

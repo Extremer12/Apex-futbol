@@ -4,6 +4,8 @@ import { GameAction } from '../../state/reducer';
 import { LoadingSpinner } from '../icons';
 import { generateTransferNegotiationResponse, NegotiationResponse } from '../../services/gameLogic';
 import { Modal } from '../ui/Modal';
+import { TeamLogo } from '../../data/teams/helpers';
+import { formatCurrencyShort } from '../../utils';
 
 interface TransfersScreenProps {
     gameState: GameState;
@@ -25,6 +27,29 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
         .filter(p => !myTeam.squad.some(mp => mp.id === p.id))
         .filter(p => filterName === '' || p.name.toLowerCase().includes(filterName.toLowerCase()))
         .filter(p => filterPos === 'ALL' || p.position === filterPos);
+
+    const getRatingDisplay = (player: Player) => {
+        const scoutingLevel = gameState.scoutedPlayerIds[player.id] || 0;
+        
+        if (scoutingLevel >= 100) {
+            return <span className="font-bold text-purple-400">{player.rating}</span>;
+        }
+
+        // Calculate a range based on scouting level
+        // Level 0: +/- 5, Level 50: +/- 2
+        const range = Math.max(1, Math.ceil(5 * (1 - scoutingLevel / 100)));
+        const min = Math.max(1, player.rating - range);
+        const max = Math.min(99, player.rating + range);
+
+        return (
+            <div className="flex flex-col">
+                <span className="font-bold text-slate-500">{min}-{max}</span>
+                <div className="w-12 h-1 bg-slate-800 rounded-full mt-1 overflow-hidden">
+                    <div className="h-full bg-purple-600/40" style={{ width: `${scoutingLevel}%` }}></div>
+                </div>
+            </div>
+        );
+    };
 
     const startNegotiation = (player: Player) => {
         setNegotiatingPlayer(player);
@@ -99,13 +124,16 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
                             <div key={player.id} className="grid grid-cols-7 p-4 items-center hover:bg-purple-500/10 transition-colors">
                                 <span className="col-span-2 font-semibold text-white">{player.name}</span>
                                 <div className="flex items-center gap-2">
-                                    <div className="transform hover:scale-110 transition-transform duration-200">
-                                        {playerTeam?.logo}
+                                    <div className="w-8 h-8 flex-shrink-0 transform hover:scale-110 transition-transform duration-200">
+                                        <TeamLogo team={playerTeam} />
                                     </div>
+                                    <span className="text-xs text-slate-400 font-bold hidden sm:inline truncate max-w-[80px]">
+                                        {playerTeam?.name}
+                                    </span>
                                 </div>
                                 <span className="text-slate-300 font-medium">{player.position}</span>
-                                <span className="font-bold text-purple-400">{player.rating}</span>
-                                <span className="text-green-400 font-semibold">{`£${player.value}M`}</span>
+                                <div className="flex justify-center">{getRatingDisplay(player)}</div>
+                                <span className="text-green-400 font-semibold">{formatCurrencyShort(player.value * 1_000_000)}</span>
                                 <button
                                     onClick={() => startNegotiation(player)}
                                     className="bg-gradient-to-r from-purple-600 to-purple-500 text-white text-xs font-bold py-2 px-4 rounded-lg hover:from-purple-500 hover:to-purple-400 transition-all shadow-lg shadow-purple-600/30 transform hover:scale-105"

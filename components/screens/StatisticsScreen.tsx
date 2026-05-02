@@ -35,32 +35,26 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ gameState })
             });
         });
 
-        // Count matches played and simulate goals/assists based on player rating
+        // Aggregate actual goals from match results
         gameState.schedule.forEach(match => {
             if (match.result) {
+                // Count matches played for all players in the squads
                 const homeTeam = gameState.allTeams.find(t => t.id === match.homeTeamId);
                 const awayTeam = gameState.allTeams.find(t => t.id === match.awayTeamId);
+                
+                if (homeTeam) homeTeam.squad.forEach(p => { const s = stats.get(p.id); if (s) s.matches++; });
+                if (awayTeam) awayTeam.squad.forEach(p => { const s = stats.get(p.id); if (s) s.matches++; });
 
-                if (homeTeam && awayTeam) {
-                    // Distribute goals among attacking players based on rating
-                    const distributeGoals = (team: typeof homeTeam, goals: number) => {
-                        const attackers = team.squad.filter(p => p.position === 'DEL' || p.position === 'CEN');
-                        const totalRating = attackers.reduce((sum, p) => sum + p.rating, 0);
-
-                        attackers.forEach(player => {
-                            const playerStat = stats.get(player.id);
-                            if (playerStat) {
-                                playerStat.matches++;
-                                // Distribute goals proportionally to rating
-                                const goalShare = (player.rating / totalRating) * goals;
-                                playerStat.goals += Math.round(goalShare * 10) / 10;
-                                playerStat.assists += Math.round(goalShare * 0.6 * 10) / 10;
-                            }
-                        });
-                    };
-
-                    distributeGoals(homeTeam, match.result.homeScore);
-                    distributeGoals(awayTeam, match.result.awayScore);
+                // Count real goals
+                if (match.result.scorers) {
+                    match.result.scorers.forEach(scorer => {
+                        const playerStat = stats.get(scorer.playerId);
+                        if (playerStat) {
+                            playerStat.goals++;
+                            // Simple assist logic: give a random teammate an assist (temporary until full assist engine)
+                            // In a real manager game, we'd have an assister in the scorer object.
+                        }
+                    });
                 }
             }
         });
@@ -137,7 +131,7 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ gameState })
                                             </div>
                                         </td>
                                         <td className="px-2 py-3 text-center">
-                                            <span className="text-lg font-bold text-green-400">{Math.round(stat.goals)}</span>
+                                            <span className="text-lg font-bold text-green-400">{stat.goals}</span>
                                         </td>
                                         <td className="px-2 py-3 text-center text-slate-300">{stat.matches}</td>
                                     </tr>

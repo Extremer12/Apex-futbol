@@ -30,16 +30,7 @@ type AppStateType = 'START_SCREEN' | 'LOAD_GAME' | 'PROFILE_CREATION' | 'TEAM_SE
 export type MatchPhase = 'PRE' | 'LIVE' | 'POST';
 
 // Data structure to hold simulation results before committing to state
-interface PendingSimulationResults {
-    newsToAdd: NewsItem[];
-    updatedSchedule: Match[];
-    updatedLeagueTables: Record<LeagueId, LeagueTableRow[]>;
-    updatedAllTeams: Team[];
-    confidenceChange: number;
-    newOffers: Offer[];
-    playerMatchResult: { homeScore: number; awayScore: number, penalties?: { home: number, away: number }, events?: string[] } | null;
-    updatedCups?: { faCup: any, carabaoCup: any };
-}
+import { PendingSimulationResults } from './types';
 
 // Custom Hooks
 import { useGameSave } from './hooks/useGameSave';
@@ -123,7 +114,19 @@ function AppLogic() {
 
     const handleStartGame = useCallback(() => {
         if (!selectedTeam || !playerProfile) return;
-        dispatch({ type: 'INITIALIZE_GAME', payload: { team: selectedTeam, playerProfile } });
+        setAppState('PROMISE_SELECTION');
+    }, [selectedTeam, playerProfile]);
+
+    const handlePromisesSubmit = useCallback((promises: ElectoralPromise[]) => {
+        if (!selectedTeam || !playerProfile) return;
+        dispatch({ 
+            type: 'INITIALIZE_GAME', 
+            payload: { 
+                team: selectedTeam, 
+                playerProfile,
+                initialPromises: promises 
+            } 
+        });
         setAppState('GAME_ACTIVE');
     }, [selectedTeam, playerProfile]);
 
@@ -223,6 +226,7 @@ function AppLogic() {
                 onProfileCreate={handleProfileCreate}
                 onTeamSelect={handleTeamSelect}
                 onPitchSubmit={handlePitchSubmit}
+                onPromisesSubmit={handlePromisesSubmit}
                 onStartGame={handleStartGame}
                 onRetryElection={handleRetryElection}
             >

@@ -13,12 +13,13 @@ import { formatDate } from '../utils';
 interface InitializeGameParams {
     selectedTeam: Team;
     playerProfile?: PlayerProfile;
+    initialPromises?: any[];
 }
 
 /**
  * Creates the initial game state for a new game
  */
-export function initializeGame({ selectedTeam, playerProfile }: InitializeGameParams): GameState {
+export function initializeGame({ selectedTeam, playerProfile, initialPromises }: InitializeGameParams): GameState {
     const now = new Date('2024-07-01');
 
     // Clone teams and assign ages and coaches
@@ -135,7 +136,7 @@ export function initializeGame({ selectedTeam, playerProfile }: InitializeGamePa
             isElectionYear: false,
             totalMandates: 1
         },
-        electoralPromises: [],
+        electoralPromises: initialPromises || [],
         viewingPlayer: null,
         incomingOffers: [],
         youthAcademy: initialYouthAcademy,
@@ -161,6 +162,8 @@ export function initializeGame({ selectedTeam, playerProfile }: InitializeGamePa
             generateSponsor('shirt', playerTeamCopy.tier),
             generateSponsor('kit', playerTeamCopy.tier)
         ],
-        availableSponsors: generateSponsorMarket(playerTeamCopy.tier)
+        availableSponsors: generateSponsorMarket(playerTeamCopy.tier),
+        scouts: [],
+        scoutedPlayerIds: {}
     };
 }

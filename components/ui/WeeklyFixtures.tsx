@@ -49,49 +49,43 @@ export const WeeklyFixtures: React.FC<WeeklyFixturesProps> = ({ week, matches, a
                         `}
                     >
                         {/* Home Team */}
-                        <div className="flex items-center gap-3 w-2/5 justify-end">
-                            <span className={`font-bold text-right hidden sm:inline ${isPlayerMatch ? 'text-sky-300' : 'text-white'}`}>
+                        <div className="flex items-center gap-3 w-5/12 justify-end min-w-0">
+                            <span className={`font-bold text-right truncate hidden sm:inline ${isPlayerMatch ? 'text-sky-300' : 'text-white'}`}>
                                 {homeTeam?.name}
                             </span>
                             <span className={`font-bold text-right sm:hidden ${isPlayerMatch ? 'text-sky-300' : 'text-white'}`}>
                                 {homeTeam?.name.substring(0, 3).toUpperCase()}
                             </span>
-                            <div className="transform hover:scale-110 transition-transform duration-200 w-8 h-8 flex items-center justify-center">
+                            <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-slate-900/50 p-1 rounded-lg border border-slate-700 transform group-hover:scale-110 transition-transform duration-200">
                                 <TeamLogo team={homeTeam} />
                             </div>
                         </div>
 
                         {/* Score/VS */}
-                        <div className="font-bold text-center w-1/5 text-lg">
+                        <div className="font-bold text-center w-2/12 flex flex-col items-center justify-center">
                             {match.result ? (
-                                <div className="flex items-center justify-center gap-2">
-                                    <span className={`
-                                        text-2xl font-black tracking-wider
-                                        ${match.result.homeScore > match.result.awayScore ? 'text-green-400' :
-                                            match.result.homeScore < match.result.awayScore ? 'text-red-400' : 'text-yellow-400'}
-                                    `}>
+                                <div className="flex items-center justify-center gap-1.5 bg-slate-950 px-3 py-1 rounded-lg border border-slate-700 shadow-inner">
+                                    <span className={`text-xl font-black ${match.result.homeScore > match.result.awayScore ? 'text-white' : 'text-slate-500'}`}>
                                         {match.result.homeScore}
                                     </span>
-                                    <span className="text-slate-500">-</span>
-                                    <span className={`
-                                        text-2xl font-black tracking-wider
-                                        ${match.result.awayScore > match.result.homeScore ? 'text-green-400' :
-                                            match.result.awayScore < match.result.homeScore ? 'text-red-400' : 'text-yellow-400'}
-                                    `}>
+                                    <span className="text-slate-700">-</span>
+                                    <span className={`text-xl font-black ${match.result.awayScore > match.result.homeScore ? 'text-white' : 'text-slate-500'}`}>
                                         {match.result.awayScore}
                                     </span>
                                 </div>
                             ) : (
-                                <span className="text-purple-400 text-sm font-semibold uppercase tracking-wider">vs</span>
+                                <div className="bg-slate-900 px-3 py-0.5 rounded-full border border-slate-700">
+                                    <span className="text-slate-500 text-[10px] font-black uppercase tracking-widest">vs</span>
+                                </div>
                             )}
                         </div>
 
                         {/* Away Team */}
-                        <div className="flex items-center gap-3 w-2/5 justify-start">
-                            <div className="transform hover:scale-110 transition-transform duration-200 w-8 h-8 flex items-center justify-center">
+                        <div className="flex items-center gap-3 w-5/12 justify-start min-w-0">
+                            <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-slate-900/50 p-1 rounded-lg border border-slate-700 transform group-hover:scale-110 transition-transform duration-200">
                                 <TeamLogo team={awayTeam} />
                             </div>
-                            <span className={`font-bold text-left hidden sm:inline ${isPlayerMatch ? 'text-sky-300' : 'text-white'}`}>
+                            <span className={`font-bold text-left truncate hidden sm:inline ${isPlayerMatch ? 'text-sky-300' : 'text-white'}`}>
                                 {awayTeam?.name}
                             </span>
                             <span className={`font-bold text-left sm:hidden ${isPlayerMatch ? 'text-sky-300' : 'text-white'}`}>
