@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo, useReducer } from 'react';
-import { GameState, Team, Screen, PlayerProfile, NewsItem, Offer, LeagueTableRow, Match, LeagueId } from './types';
+import { GameState, Team, Screen, PlayerProfile, NewsItem, Offer, LeagueTableRow, Match, LeagueId, ElectoralPromise } from './types';
 import { gameReducer, initialState } from './state/reducer';
 import { saveGame, loadGame, SavedGameData } from './services/db';
 

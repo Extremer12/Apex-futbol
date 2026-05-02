@@ -81,11 +81,15 @@ export function startNewSeason(currentState: GameState): GameState {
     const newPlTeams = teamsAfterProRel.filter(t => t.leagueId === 'PREMIER_LEAGUE');
     const newChTeams = teamsAfterProRel.filter(t => t.leagueId === 'CHAMPIONSHIP');
     const newLaTeams = teamsAfterProRel.filter(t => t.leagueId === 'LA_LIGA');
+    const newGerTeams = teamsAfterProRel.filter(t => t.leagueId === 'BUNDESLIGA');
+    const newItaTeams = teamsAfterProRel.filter(t => t.leagueId === 'SERIE_A');
 
     const newLeagueTables = {
         PREMIER_LEAGUE: createInitialLeagueTable(newPlTeams),
         CHAMPIONSHIP: createInitialLeagueTable(newChTeams),
-        LA_LIGA: createInitialLeagueTable(newLaTeams)
+        LA_LIGA: createInitialLeagueTable(newLaTeams),
+        BUNDESLIGA: createInitialLeagueTable(newGerTeams),
+        SERIE_A: createInitialLeagueTable(newItaTeams)
     };
 
     // 5. Generate new cup draws (ONLY English teams for English cups)
@@ -182,14 +186,33 @@ export function startNewSeason(currentState: GameState): GameState {
 
     approvalDelta += promisesDelta;
 
-    // 8. Calculate Prize Money
+    // 8. Calculate Prize Money & Sponsorship Bonuses
     const prizeMoney = calculatePrizeMoney(currentState.team.leagueId, playerPosition);
-    const newBalance = currentState.finances.balance + prizeMoney;
+    
+    let sponsorshipBonuses = 0;
+    let bonusMessages: string[] = [];
+    
+    currentState.sponsors.forEach(sponsor => {
+        if (sponsor.bonus) {
+            let achieved = false;
+            if (sponsor.bonus.condition === 'top4' && playerPosition <= 4) achieved = true;
+            else if (sponsor.bonus.condition === 'top6' && playerPosition <= 6) achieved = true;
+            else if (sponsor.bonus.condition === 'promotion' && promotedIds.includes(currentState.team.id)) achieved = true;
+            
+            if (achieved) {
+                sponsorshipBonuses += sponsor.bonus.amount;
+                bonusMessages.push(`Bono por ${sponsor.name}: +${formatCurrency(sponsor.bonus.amount)}`);
+            }
+        }
+    });
+
+    const totalEndSeasonIncome = prizeMoney + sponsorshipBonuses;
+    const newBalance = currentState.finances.balance + totalEndSeasonIncome;
 
     const prizeNews: NewsItem = {
         id: `prize_${newSeasonYear}`,
-        headline: `💰 Premios de la Temporada`,
-        body: `Tu equipo ha recibido ${formatCurrency(prizeMoney)} por terminar en la posición ${playerPosition}º.`,
+        headline: `💰 Balance de Final de Temporada`,
+        body: `Premios de Liga: ${formatCurrency(prizeMoney)} por terminar ${playerPosition}º.\n${bonusMessages.join('\n')}\nTotal ingresado: ${formatCurrency(totalEndSeasonIncome)}`,
         date: formatDate(newDate),
         type: 'achievement'
     };

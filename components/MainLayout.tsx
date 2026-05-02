@@ -11,7 +11,8 @@ const LeagueScreen = React.lazy(() => import('./screens/LeagueScreen').then(m =>
 const CalendarScreen = React.lazy(() => import('./screens/CalendarScreen').then(m => ({ default: m.CalendarScreen })));
 const StatisticsScreen = React.lazy(() => import('./screens/StatisticsScreen').then(m => ({ default: m.StatisticsScreen })));
 const SettingsScreen = React.lazy(() => import('./screens/SettingsScreen').then(m => ({ default: m.SettingsScreen })));
-const StaffScreen = React.lazy(() => import('./screens/StaffScreen').then(m => ({ default: m.StaffScreen })));
+const StadiumScreen = React.lazy(() => import('./screens/StadiumScreen').then(m => ({ default: m.StadiumScreen })));
+const SponsorshipScreen = React.lazy(() => import('./screens/SponsorshipScreen').then(m => ({ default: m.SponsorshipScreen })));
 const ElectionScreen = React.lazy(() => import('./screens/ElectionScreen').then(m => ({ default: m.ElectionScreen })));
 const ClubHubScreen = React.lazy(() => import('./screens/ClubHubScreen').then(m => ({ default: m.ClubHubScreen })));
 
@@ -80,7 +81,12 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
             case Screen.League: return <LeagueScreen gameState={gameState} />;
             case Screen.Calendar: return <CalendarScreen gameState={gameState} />;
             case Screen.Statistics: return <StatisticsScreen gameState={gameState} />;
-            case Screen.Staff: return <StaffScreen gameState={gameState} dispatch={dispatch} />;
+            case Screen.Stadium:
+                return <StadiumScreen gameState={gameState} dispatch={dispatch} />;
+            case Screen.Sponsorships:
+                return <SponsorshipScreen gameState={gameState} dispatch={dispatch} />;
+            case Screen.Staff:
+                return <StaffScreen gameState={gameState} dispatch={dispatch} />;
             case Screen.Settings: return (
                 <SettingsScreen
                     onSaveGame={onSaveGame}

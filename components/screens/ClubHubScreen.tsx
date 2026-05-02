@@ -23,12 +23,14 @@ export const ClubHubScreen: React.FC<ClubHubScreenProps> = ({ gameState, dispatc
         }
     };
 
-    const handleExpandStadium = () => {
-        if (stadium.expansionCost && finances.balance >= stadium.expansionCost) {
-            if (confirm(`¿Expandir el estadio por ${formatCurrency(stadium.expansionCost)}?`)) {
-                dispatch({ type: 'EXPAND_STADIUM' });
-            }
-        }
+    const handleGoToStadium = () => {
+        dispatch({ type: 'SET_SCREEN', payload: Screen.Stadium });
+    };
+
+    const handleGoToSponsorships = () => {
+        // We'll use the ClubHub for now or create a dedicated screen if needed
+        // For Phase 4, let's keep it in a dedicated screen
+        dispatch({ type: 'SET_SCREEN', payload: Screen.Sponsorships });
     };
 
     return (
@@ -180,64 +182,39 @@ export const ClubHubScreen: React.FC<ClubHubScreenProps> = ({ gameState, dispatc
                         )}
                     </div>
 
-                    {/* Stadium Management Card */}
-                    <div className="bg-gradient-to-br from-slate-900 to-green-950/10 border border-slate-800 rounded-xl p-6 shadow-xl">
-                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-                            <h2 className="text-xl font-bold text-white flex items-center gap-3">
-                                <div className="p-2 bg-green-500/20 rounded-lg">
-                                    <span className="text-xl">🏟️</span>
+                    {/* Stadium & Sponsorships Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Stadium Card */}
+                        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 hover:border-sky-500/50 transition-all group cursor-pointer" onClick={handleGoToStadium}>
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="p-3 bg-sky-500/10 rounded-2xl text-sky-400 group-hover:bg-sky-500 group-hover:text-white transition-all">
+                                    <span className="text-2xl">🏟️</span>
                                 </div>
-                                Gestión del Estadio
-                            </h2>
-                            <div className="text-right">
-                                <span className="text-xs text-slate-500 uppercase font-bold tracking-widest block">Estadio Actual</span>
-                                <span className="text-lg font-black text-white">{stadium.name}</span>
+                                <div className="text-right">
+                                    <span className="text-[10px] text-slate-500 uppercase font-black tracking-widest block">Capacidad</span>
+                                    <span className="text-xl font-black text-white">{stadium.capacity.toLocaleString()}</span>
+                                </div>
                             </div>
+                            <h3 className="text-lg font-black text-white uppercase mb-1">Gestión de Sede</h3>
+                            <p className="text-xs text-slate-500 font-bold mb-4">Mejora instalaciones y expande el aforo.</p>
+                            <button className="w-full py-2 bg-slate-800 text-white text-[10px] font-black rounded-xl group-hover:bg-sky-600 transition-all uppercase tracking-widest">Administrar Estadio</button>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                            <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800/50">
-                                <span className="text-xs text-slate-500 uppercase font-bold mb-1 block">Capacidad</span>
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-2xl font-black text-white">{stadium.capacity.toLocaleString()}</span>
-                                    <span className="text-xs text-slate-500">asientos</span>
+                        {/* Sponsorships Card */}
+                        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 hover:border-emerald-500/50 transition-all group cursor-pointer" onClick={handleGoToSponsorships}>
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="p-3 bg-emerald-500/10 rounded-2xl text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition-all">
+                                    <TrendingUpIcon className="w-6 h-6" />
+                                </div>
+                                <div className="text-right">
+                                    <span className="text-[10px] text-slate-500 uppercase font-black tracking-widest block">Ingresos Sem.</span>
+                                    <span className="text-xl font-black text-emerald-400">+{formatCurrency(gameState.sponsors.reduce((s, c) => s + c.weeklyIncome, 0))}</span>
                                 </div>
                             </div>
-                            <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800/50">
-                                <span className="text-xs text-slate-500 uppercase font-bold mb-1 block">Ticket Promedio</span>
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-2xl font-black text-green-400">{formatCurrency(stadium.ticketPrice)}</span>
-                                </div>
-                            </div>
-                            <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800/50">
-                                <span className="text-xs text-slate-500 uppercase font-bold mb-1 block">Mantenimiento</span>
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-2xl font-black text-red-400">{formatCurrency(stadium.maintenanceCost)}</span>
-                                    <span className="text-xs text-slate-500">/sem</span>
-                                </div>
-                            </div>
+                            <h3 className="text-lg font-black text-white uppercase mb-1">Patrocinios</h3>
+                            <p className="text-xs text-slate-500 font-bold mb-4">Negocia contratos y bonos por rendimiento.</p>
+                            <button className="w-full py-2 bg-slate-800 text-white text-[10px] font-black rounded-xl group-hover:bg-emerald-600 transition-all uppercase tracking-widest">Ver Contratos</button>
                         </div>
-
-                        {stadium.expansionCost && (
-                            <div className="bg-slate-800/30 border border-sky-500/20 rounded-2xl p-6 flex flex-col md:flex-row justify-between items-center gap-6">
-                                <div className="space-y-1 text-center md:text-left">
-                                    <h4 className="text-white font-bold text-lg">Proyecto de Expansión</h4>
-                                    <p className="text-sm text-slate-400">Aumentar a <span className="text-sky-400 font-bold">{stadium.expansionCapacity?.toLocaleString()}</span> asientos y mejorar infraestructuras.</p>
-                                </div>
-                                <div className="flex flex-col items-center gap-2">
-                                    <button
-                                        onClick={handleExpandStadium}
-                                        disabled={finances.balance < stadium.expansionCost}
-                                        className={`px-8 py-3 rounded-xl font-black transition-all duration-300 transform ${finances.balance >= stadium.expansionCost ? 'bg-sky-600 hover:bg-sky-500 text-white shadow-lg shadow-sky-600/30 hover:-translate-y-1' : 'bg-slate-700 text-slate-500 cursor-not-allowed opacity-50'}`}
-                                    >
-                                        AUTORIZAR OBRAS
-                                    </button>
-                                    <span className={`text-xs font-bold ${finances.balance >= stadium.expansionCost ? 'text-sky-400' : 'text-red-500'}`}>
-                                        Coste: {formatCurrency(stadium.expansionCost)}
-                                    </span>
-                                </div>
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>

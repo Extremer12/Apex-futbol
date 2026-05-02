@@ -18,6 +18,7 @@ export const MatchEngine: React.FC<MatchEngineProps> = ({ homeTeam, awayTeam, ma
     const [currentEvent, setCurrentEvent] = useState<string>('');
     const [commentary, setCommentary] = useState<string[]>([]);
     const [stats, setStats] = useState({ homePossession: 50, awayPossession: 50, homeShots: 0, awayShots: 0 });
+    const [momentum, setMomentum] = useState<number[]>([]);
 
     const commentaryScrollRef = useRef<HTMLDivElement>(null);
 
@@ -78,6 +79,14 @@ export const MatchEngine: React.FC<MatchEngineProps> = ({ homeTeam, awayTeam, ma
                         homeShots: prev.homeShots + (Math.random() < 0.02 ? 1 : 0),
                         awayShots: prev.awayShots + (Math.random() < 0.02 ? 1 : 0),
                     }));
+
+                    // Update momentum
+                    setMomentum(prev => {
+                        const last = prev.length > 0 ? prev[prev.length - 1] : 0;
+                        const change = (Math.random() * 30 - 15) + (homeTeam.rating - awayTeam.rating) / 10;
+                        const next = Math.min(100, Math.max(-100, last + change));
+                        return [...prev, next].slice(-30); // Keep last 30 data points
+                    });
                 }
 
                 if (step >= totalSteps) {
@@ -200,9 +209,20 @@ export const MatchEngine: React.FC<MatchEngineProps> = ({ homeTeam, awayTeam, ma
                         <div className="text-2xl font-bold text-white">{stats.homeShots}</div>
                         <div className="text-[10px] text-slate-500 uppercase tracking-wider">Tiros</div>
                     </div>
-                    <div className="border-x border-slate-800">
-                        <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Estadísticas</div>
-                        <div className="text-[10px] text-slate-600">En Vivo</div>
+                    <div className="border-x border-slate-800 px-2 flex flex-col justify-center">
+                        <div className="text-[8px] text-slate-500 uppercase tracking-wider mb-1">Presión</div>
+                        <div className="flex items-end justify-center gap-0.5 h-6">
+                            {momentum.map((val, i) => (
+                                <div 
+                                    key={i} 
+                                    className={`w-1 rounded-full transition-all duration-500 ${val > 0 ? 'bg-sky-500' : 'bg-purple-500'}`}
+                                    style={{ 
+                                        height: `${Math.max(2, Math.abs(val) / 4)}px`,
+                                        opacity: 0.3 + (i / momentum.length) * 0.7 
+                                    }}
+                                />
+                            ))}
+                        </div>
                     </div>
                     <div>
                         <div className="text-2xl font-bold text-white">{stats.awayShots}</div>

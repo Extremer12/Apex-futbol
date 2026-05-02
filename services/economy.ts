@@ -36,7 +36,8 @@ export const generateStadium = (team: Team): Stadium => {
         ticketPrice,
         maintenanceCost,
         expansionCost: baseCapacity * 1000, // £1000 per seat
-        expansionCapacity: Math.floor(baseCapacity * 1.2)
+        expansionCapacity: Math.floor(baseCapacity * 1.2),
+        facilityLevel: 1
     };
 };
 
@@ -113,7 +114,11 @@ export const calculateMatchdayRevenue = (
     if (isCupMatch) attendanceRate = Math.min(1, attendanceRate + 0.1);
 
     const attendance = Math.floor(stadium.capacity * attendanceRate);
-    return attendance * stadium.ticketPrice;
+    
+    // Facility Level bonus (Level 1: 1.0x, Level 5: 1.5x)
+    const facilityMultiplier = 1 + (stadium.facilityLevel - 1) * 0.125;
+    
+    return Math.floor(attendance * stadium.ticketPrice * facilityMultiplier);
 };
 
 export const calculateFinancialBreakdown = (
@@ -177,6 +182,10 @@ export const getBaseWeeklyIncome = (leagueId: string): number => {
             return 650_000;   // £650K per week (Reduced from £800K)
         case 'LA_LIGA':
             return 1_800_000; // £1.8M per week (Reduced from £2M)
+        case 'BUNDESLIGA':
+            return 2_000_000; // £2M per week
+        case 'SERIE_A':
+            return 1_900_000; // £1.9M per week
         default:
             return 1_000_000;
     }

@@ -3,7 +3,7 @@
  * Handles the initialization of a new game state
  */
 
-import { GameState, Team, Player, PlayerProfile, NewsItem } from '../types';
+import { GameState, Team, Player, PlayerProfile, NewsItem, LeagueId } from '../types';
 import { TEAMS } from '../constants';
 import { generateRandomCoach, generateCoachMarket } from './coaching';
 import { generateYouthPlayer, generateSeasonSchedule, generateCupDraw, createInitialLeagueTable } from './simulation';
@@ -76,12 +76,14 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
     // Initial board confidence based on team tier
     const initialConfidence = { 'Top': 65, 'Mid': 75, 'Lower': 80 };
 
-    // Separate teams by league
-    const plTeams = allTeamsCopy.filter(t => t.leagueId === 'PREMIER_LEAGUE');
-    const chTeams = allTeamsCopy.filter(t => t.leagueId === 'CHAMPIONSHIP');
-    const laTeams = allTeamsCopy.filter(t => t.leagueId === 'LA_LIGA');
+    // Separate teams by league for schedule and initial tables
+    const plTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.PREMIER_LEAGUE);
+    const chTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.CHAMPIONSHIP);
+    const laTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.LA_LIGA);
+    const gerTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.BUNDESLIGA);
+    const itaTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.SERIE_A);
 
-    // Generate cup draws (ONLY English teams for English cups)
+    // Generate cup draws (ONLY English teams for English cups for now)
     const englishTeams = [...plTeams, ...chTeams];
     const faCupRound1 = generateCupDraw(englishTeams, 'Round 1', 'FA_Cup');
     const carabaoCupRound1 = generateCupDraw(englishTeams, 'Round 1', 'Carabao_Cup');
@@ -107,9 +109,11 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
         newsFeed: tutorialNews,
         schedule: initialSchedule,
         leagueTables: {
-            PREMIER_LEAGUE: createInitialLeagueTable(plTeams),
-            CHAMPIONSHIP: createInitialLeagueTable(chTeams),
-            LA_LIGA: createInitialLeagueTable(laTeams)
+            [LeagueId.PREMIER_LEAGUE]: createInitialLeagueTable(plTeams),
+            [LeagueId.CHAMPIONSHIP]: createInitialLeagueTable(chTeams),
+            [LeagueId.LA_LIGA]: createInitialLeagueTable(laTeams),
+            [LeagueId.BUNDESLIGA]: createInitialLeagueTable(gerTeams),
+            [LeagueId.SERIE_A]: createInitialLeagueTable(itaTeams)
         },
         finances: {
             balance: selectedTeam.budget,
@@ -157,7 +161,13 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
             }
         },
         availableCoaches: generateCoachMarket(5),
-        stadium: generateStadium(playerTeamCopy),
+        stadium: {
+            name: `${playerTeamCopy.name} Arena`,
+            capacity: playerTeamCopy.tier === 'Top' ? 60000 : playerTeamCopy.tier === 'Mid' ? 35000 : 15000,
+            ticketPrice: playerTeamCopy.tier === 'Top' ? 45 : playerTeamCopy.tier === 'Mid' ? 30 : 20,
+            maintenanceCost: playerTeamCopy.tier === 'Top' ? 150000 : playerTeamCopy.tier === 'Mid' ? 80000 : 30000,
+            facilityLevel: 1
+        },
         sponsors: [
             generateSponsor('shirt', playerTeamCopy.tier),
             generateSponsor('kit', playerTeamCopy.tier)

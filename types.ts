@@ -200,6 +200,8 @@ export interface Stadium {
   maintenanceCost: number;      // Coste semanal de mantenimiento
   expansionCost?: number;       // Coste de expansión (si disponible)
   expansionCapacity?: number;   // Nueva capacidad tras expansión
+  constructionWeeksRemaining?: number; // Semanas para terminar obra
+  facilityLevel: number;        // 1-5 (afecta a ingresos VIP y servicios)
 }
 
 export interface Sponsor {
@@ -285,6 +287,8 @@ export enum Screen {
   Settings = 'AJUSTES',
   Staff = 'PERSONAL',
   Club = 'CLUB',
+  Sponsorships = 'PATROCINIOS',
+  Stadium = 'ESTADIO',
 }
 
 export type MatchPhase = 'PRE' | 'LIVE' | 'POST';
