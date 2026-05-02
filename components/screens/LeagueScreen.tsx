@@ -10,7 +10,7 @@ interface LeagueScreenProps {
 }
 
 type Tab = 'LOCAL_LEAGUE_1' | 'LOCAL_LEAGUE_2' | 'LOCAL_CUP_1' | 'LOCAL_CUP_2' | 'WORLD';
-type WorldTab = 'PREMIER_LEAGUE' | 'CHAMPIONSHIP' | 'LA_LIGA' | null;
+type WorldTab = 'PREMIER_LEAGUE' | 'CHAMPIONSHIP' | 'LA_LIGA' | 'BUNDESLIGA' | 'SERIE_A' | null;
 
 export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
     const playerTeamLeague = gameState.team.leagueId;
@@ -361,10 +361,36 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                             className="bg-slate-800/50 hover:bg-slate-800 border border-slate-700 hover:border-orange-500 p-6 rounded-xl transition-all group"
                         >
                             <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                                <span className="text-4xl">🇪🇸</span>
+                                <img src="https://tmssl.akamaized.net/images/logo/header/es1.png" alt="La Liga" className="w-full h-full object-contain group-hover:scale-110 transition-transform" />
                             </div>
                             <h3 className="text-xl font-bold text-white text-center">La Liga</h3>
                             <p className="text-slate-400 text-center text-sm">España</p>
+                        </button>
+                    )}
+
+                    {playerCountry !== 'GER' && (
+                        <button
+                            onClick={() => setWorldLeagueSelected('BUNDESLIGA')}
+                            className="bg-slate-800/50 hover:bg-slate-800 border border-slate-700 hover:border-amber-500 p-6 rounded-xl transition-all group"
+                        >
+                            <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                                <img src="https://tmssl.akamaized.net/images/logo/header/l1.png" alt="Bundesliga" className="w-full h-full object-contain group-hover:scale-110 transition-transform" />
+                            </div>
+                            <h3 className="text-xl font-bold text-white text-center">Bundesliga</h3>
+                            <p className="text-slate-400 text-center text-sm">Alemania</p>
+                        </button>
+                    )}
+
+                    {playerCountry !== 'ITA' && (
+                        <button
+                            onClick={() => setWorldLeagueSelected('SERIE_A')}
+                            className="bg-slate-800/50 hover:bg-slate-800 border border-slate-700 hover:border-emerald-500 p-6 rounded-xl transition-all group"
+                        >
+                            <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                                <img src="https://tmssl.akamaized.net/images/logo/header/it1.png" alt="Serie A" className="w-full h-full object-contain group-hover:scale-110 transition-transform" />
+                            </div>
+                            <h3 className="text-xl font-bold text-white text-center">Serie A</h3>
+                            <p className="text-slate-400 text-center text-sm">Italia</p>
                         </button>
                     )}
                 </div>
@@ -386,7 +412,9 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
 
                 {worldLeagueSelected === 'PREMIER_LEAGUE' && renderLeagueTable(gameState.leagueTables.PREMIER_LEAGUE, 'Premier League', '/logos/Premier League.png', true)}
                 {worldLeagueSelected === 'CHAMPIONSHIP' && renderLeagueTable(gameState.leagueTables.CHAMPIONSHIP, 'EFL Championship', '/logos/Sky Bet Championship.png', false)}
-                {worldLeagueSelected === 'LA_LIGA' && renderLeagueTable(gameState.leagueTables.LA_LIGA, 'La Liga', '', false)}
+                {worldLeagueSelected === 'LA_LIGA' && renderLeagueTable(gameState.leagueTables.LA_LIGA, 'La Liga', 'https://tmssl.akamaized.net/images/logo/header/es1.png', true)}
+                {worldLeagueSelected === 'BUNDESLIGA' && renderLeagueTable(gameState.leagueTables.BUNDESLIGA, 'Bundesliga', 'https://tmssl.akamaized.net/images/logo/header/l1.png', true)}
+                {worldLeagueSelected === 'SERIE_A' && renderLeagueTable(gameState.leagueTables.SERIE_A, 'Serie A', 'https://tmssl.akamaized.net/images/logo/header/it1.png', true)}
             </div>
         );
     };
@@ -448,7 +476,9 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                 {activeTab === 'LOCAL_CUP_1' && playerCountry === 'ENG' && renderCupView(gameState.cups.faCup, '/logos/The Emirates FA Cup.png')}
                 {activeTab === 'LOCAL_CUP_2' && playerCountry === 'ENG' && renderCupView(gameState.cups.carabaoCup, '/logos/carabao_cup_logo.png')}
 
-                {activeTab === 'LOCAL_LEAGUE_1' && playerCountry === 'ESP' && renderLeagueTable(gameState.leagueTables.LA_LIGA, 'La Liga', '', false)}
+                {activeTab === 'LOCAL_LEAGUE_1' && playerCountry === 'ESP' && renderLeagueTable(gameState.leagueTables.LA_LIGA, 'La Liga', 'https://tmssl.akamaized.net/images/logo/header/es1.png', true)}
+                {activeTab === 'LOCAL_LEAGUE_1' && playerCountry === 'GER' && renderLeagueTable(gameState.leagueTables.BUNDESLIGA, 'Bundesliga', 'https://tmssl.akamaized.net/images/logo/header/l1.png', true)}
+                {activeTab === 'LOCAL_LEAGUE_1' && playerCountry === 'ITA' && renderLeagueTable(gameState.leagueTables.SERIE_A, 'Serie A', 'https://tmssl.akamaized.net/images/logo/header/it1.png', true)}
 
                 {activeTab === 'WORLD' && renderWorldView()}
             </div>

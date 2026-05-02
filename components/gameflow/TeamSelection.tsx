@@ -62,7 +62,7 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                             <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
                             <div className="relative flex flex-col items-center">
                                 <div className="text-8xl mb-6 drop-shadow-2xl transform group-hover:scale-110 transition-transform duration-300">
-                                    🇬🇧
+                                    🏴󠁧󠁢󠁥󠁮󠁧󠁿
                                 </div>
                                 <h2 className="text-3xl font-bold text-white mb-2">Inglaterra</h2>
                                 <p className="text-slate-400 text-center">La cuna del fútbol. Premier League y Championship.</p>
@@ -189,8 +189,8 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                             >
                                 <div className="absolute inset-0 bg-gradient-to-br from-orange-600/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
                                 <div className="relative flex flex-col items-center">
-                                    <div className="w-24 h-24 mb-6 flex items-center justify-center text-6xl">
-                                        🇪🇸
+                                    <div className="w-24 h-24 mb-6 flex items-center justify-center">
+                                        <img src="https://tmssl.akamaized.net/images/logo/header/es1.png" alt="La Liga" className="w-full h-full object-contain drop-shadow-2xl" />
                                     </div>
                                     <h2 className="text-2xl font-bold text-white mb-2">La Liga</h2>
                                     <div className="flex items-center gap-2 text-sm text-orange-400">
@@ -207,8 +207,8 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                             >
                                 <div className="absolute inset-0 bg-gradient-to-br from-amber-600/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
                                 <div className="relative flex flex-col items-center">
-                                    <div className="w-24 h-24 mb-6 flex items-center justify-center text-6xl">
-                                        🇩🇪
+                                    <div className="w-24 h-24 mb-6 flex items-center justify-center">
+                                        <img src="https://tmssl.akamaized.net/images/logo/header/l1.png" alt="Bundesliga" className="w-full h-full object-contain drop-shadow-2xl" />
                                     </div>
                                     <h2 className="text-2xl font-bold text-white mb-2">Bundesliga</h2>
                                     <div className="flex items-center gap-2 text-sm text-amber-400">
@@ -225,8 +225,8 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                             >
                                 <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
                                 <div className="relative flex flex-col items-center">
-                                    <div className="w-24 h-24 mb-6 flex items-center justify-center text-6xl">
-                                        🇮🇹
+                                    <div className="w-24 h-24 mb-6 flex items-center justify-center">
+                                        <img src="https://tmssl.akamaized.net/images/logo/header/it1.png" alt="Serie A" className="w-full h-full object-contain drop-shadow-2xl" />
                                     </div>
                                     <h2 className="text-2xl font-bold text-white mb-2">Serie A</h2>
                                     <div className="flex items-center gap-2 text-sm text-emerald-400">
@@ -265,13 +265,11 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                     ) : selectedLeague === LeagueId.CHAMPIONSHIP ? (
                         <img src="/logos/Sky Bet Championship.png" alt="Championship" className="w-20 h-20 object-contain drop-shadow-2xl" />
                     ) : selectedLeague === LeagueId.BUNDESLIGA ? (
-                        <div className="w-20 h-20 flex items-center justify-center text-6xl">🇩🇪</div>
+                        <img src="https://tmssl.akamaized.net/images/logo/header/l1.png" alt="Bundesliga" className="w-20 h-20 object-contain drop-shadow-2xl" />
                     ) : selectedLeague === LeagueId.SERIE_A ? (
-                        <div className="w-20 h-20 flex items-center justify-center text-6xl">🇮🇹</div>
+                        <img src="https://tmssl.akamaized.net/images/logo/header/it1.png" alt="Serie A" className="w-20 h-20 object-contain drop-shadow-2xl" />
                     ) : (
-                        <div className="w-20 h-20 flex items-center justify-center">
-                            <span className="text-5xl">🇪🇸</span>
-                        </div>
+                        <img src="https://tmssl.akamaized.net/images/logo/header/es1.png" alt="La Liga" className="w-20 h-20 object-contain drop-shadow-2xl" />
                     )}
                 </div>
                 <h1 className="text-4xl sm:text-5xl font-bold mb-3 bg-gradient-to-r from-purple-400 via-purple-300 to-white bg-clip-text text-transparent">

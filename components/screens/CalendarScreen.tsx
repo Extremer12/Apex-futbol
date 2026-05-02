@@ -22,6 +22,30 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ gameState }) => 
     const filteredMatches = useMemo(() => {
         let matches = gameState.schedule.filter(m => m.week === selectedWeek);
 
+        // Filter by the player's competitions
+        matches = matches.filter(m => {
+            const homeTeamObj = getTeamById(m.homeTeamId);
+            if (!homeTeamObj) return false;
+
+            if (m.isCupMatch) {
+                // For cups, check if it's in the player's country
+                // We assume getTeamById(m.homeTeamId) is sufficient to determine the country of the cup
+                const LEAGUE_COUNTRY: Record<string, string> = {
+                    PREMIER_LEAGUE: 'ENG',
+                    CHAMPIONSHIP: 'ENG',
+                    LA_LIGA: 'ESP',
+                    BUNDESLIGA: 'GER',
+                    SERIE_A: 'ITA'
+                };
+                const playerCountry = LEAGUE_COUNTRY[gameState.team.leagueId];
+                const matchCountry = LEAGUE_COUNTRY[homeTeamObj.leagueId];
+                return playerCountry === matchCountry;
+            } else {
+                // For league matches, must be exactly the same league
+                return homeTeamObj.leagueId === gameState.team.leagueId;
+            }
+        });
+
         if (filter === 'LEAGUE') {
             matches = matches.filter(m => !m.isCupMatch);
         } else if (filter === 'CUP') {
@@ -29,7 +53,7 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ gameState }) => 
         }
 
         return matches;
-    }, [gameState.schedule, filter, selectedWeek]);
+    }, [gameState.schedule, filter, selectedWeek, gameState.team.leagueId]);
 
     const maxWeek = useMemo(() => {
         return Math.max(...gameState.schedule.map(m => m.week), 1);

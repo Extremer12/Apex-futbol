@@ -21,6 +21,7 @@ export const MatchEngine: React.FC<MatchEngineProps> = ({ homeTeam, awayTeam, ma
     const [momentum, setMomentum] = useState<number[]>([]);
 
     const commentaryScrollRef = useRef<HTMLDivElement>(null);
+    const processedEventsRef = useRef<Set<string>>(new Set());
 
     // Auto-scroll commentary
     useEffect(() => {
@@ -51,16 +52,18 @@ export const MatchEngine: React.FC<MatchEngineProps> = ({ homeTeam, awayTeam, ma
 
                 if (eventsNow.length > 0) {
                     eventsNow.forEach(e => {
-                        if (!commentary.includes(e)) {
+                        if (!processedEventsRef.current.has(e)) {
+                            processedEventsRef.current.add(e);
                             // Add to commentary but hide goal info
-                            const hiddenEvent = e.includes('GOOOOL')
+                            const isGoal = e.includes('GOOOOL') || e.includes('¡GOL EN PRÓRROGA!');
+                            const hiddenEvent = isGoal
                                 ? `${e.split("'")[0]}' ¡Ocasión de gol! El balón entra en la red...`
                                 : e;
                             setCommentary(prev => [...prev, hiddenEvent]);
                             setCurrentEvent(hiddenEvent);
 
                             // Update score if it's a goal
-                            if (e.includes('GOOOOL')) {
+                            if (isGoal) {
                                 if (e.includes(homeTeam.name)) {
                                     setDisplayScore(prev => ({ ...prev, home: prev.home + 1 }));
                                 } else {
@@ -117,8 +120,9 @@ export const MatchEngine: React.FC<MatchEngineProps> = ({ homeTeam, awayTeam, ma
             setShowingFinalScore(false);
             setCommentary([]);
             setCurrentEvent("");
+            processedEventsRef.current.clear();
         }
-    }, [matchPhase, finalResult]);
+    }, [matchPhase, finalResult?.homeScore, finalResult?.awayScore, homeTeam.name, awayTeam.name, onMatchComplete]);
 
     return (
         <div className="w-full max-w-4xl mx-auto bg-slate-900 rounded-xl overflow-hidden shadow-2xl border border-slate-800">
