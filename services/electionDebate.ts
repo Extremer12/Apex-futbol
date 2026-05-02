@@ -11,6 +11,8 @@ export interface DebateOption {
     text: string;
     type: 'conservative' | 'moderate' | 'ambitious';
     icon: string;
+    boardImpact: number; // Impacto en la junta directiva (-20 a +20)
+    fanImpact: number;   // Impacto en los socios/aficionados (-20 a +20)
 }
 
 export interface OpponentCandidate {
@@ -33,79 +35,79 @@ const DEBATE_QUESTIONS: DebateQuestion[] = [
         question: "¿Cuál es tu prioridad principal para la primera temporada?",
         category: 'ambition',
         options: [
-            { text: "Mantener la estabilidad financiera del club", type: 'conservative', icon: '💰' },
-            { text: "Equilibrar resultados deportivos y finanzas", type: 'moderate', icon: '⚖️' },
-            { text: "Ganar trofeos a cualquier costo", type: 'ambitious', icon: '🏆' }
+            { text: "Estabilidad financiera absoluta", type: 'conservative', icon: '💰', boardImpact: 15, fanImpact: -10 },
+            { text: "Equilibrar trofeos y finanzas", type: 'moderate', icon: '⚖️', boardImpact: 5, fanImpact: 5 },
+            { text: "Ganar la liga a cualquier costo", type: 'ambitious', icon: '🏆', boardImpact: -15, fanImpact: 20 }
         ]
     },
     {
         id: 2,
-        question: "Un jugador estrella pide un salario muy alto. ¿Qué harías?",
+        question: "Un jugador estrella exige un aumento salarial masivo. ¿Qué respondes?",
         category: 'financial',
         options: [
-            { text: "Rechazar la oferta, nadie está por encima del club", type: 'conservative', icon: '🚫' },
-            { text: "Negociar un salario justo dentro del presupuesto", type: 'moderate', icon: '🤝' },
-            { text: "Aceptar sus demandas, es clave para el éxito", type: 'ambitious', icon: '⭐' }
+            { text: "Venderlo inmediatamente, el club es lo primero", type: 'conservative', icon: '🚫', boardImpact: 12, fanImpact: -15 },
+            { text: "Negociar dentro de los límites del presupuesto", type: 'moderate', icon: '🤝', boardImpact: 5, fanImpact: -5 },
+            { text: "Pagar lo que pida, las estrellas ganan títulos", type: 'ambitious', icon: '⭐', boardImpact: -12, fanImpact: 18 }
         ]
     },
     {
         id: 3,
-        question: "¿Cómo manejarías la presión de los medios tras una mala racha?",
+        question: "¿Cuál es tu postura ante la prensa tras una derrota dolorosa?",
         category: 'social',
         options: [
-            { text: "Evitar declaraciones y trabajar en silencio", type: 'conservative', icon: '🤐' },
-            { text: "Dar la cara y pedir paciencia a la afición", type: 'moderate', icon: '🎤' },
-            { text: "Prometer cambios inmediatos y resultados", type: 'ambitious', icon: '📢' }
+            { text: "Trabajo en silencio, no dar explicaciones", type: 'conservative', icon: '🤐', boardImpact: 8, fanImpact: -12 },
+            { text: "Asumir la responsabilidad y pedir paciencia", type: 'moderate', icon: '🎤', boardImpact: 2, fanImpact: 8 },
+            { text: "Prometer cambios drásticos y fichajes de invierno", type: 'ambitious', icon: '📢', boardImpact: -10, fanImpact: 15 }
         ]
     },
     {
         id: 4,
-        question: "La cantera tiene un talento prometedor. ¿Cuándo lo subirías al primer equipo?",
+        question: "La cantera tiene un talento de 17 años. ¿Cómo lo gestionas?",
         category: 'tactical',
         options: [
-            { text: "Cuando tenga al menos 20 años y experiencia", type: 'conservative', icon: '⏳' },
-            { text: "Darle minutos progresivamente esta temporada", type: 'moderate', icon: '📈' },
-            { text: "Lanzarlo de titular de inmediato", type: 'ambitious', icon: '🚀' }
+            { text: "Cedido a un club pequeño para que madure", type: 'conservative', icon: '⏳', boardImpact: 10, fanImpact: -8 },
+            { text: "Entrenar con el primer equipo y darle minutos", type: 'moderate', icon: '📈', boardImpact: 4, fanImpact: 12 },
+            { text: "Titular de inmediato, es el futuro del club", type: 'ambitious', icon: '🚀', boardImpact: -5, fanImpact: 20 }
         ]
     },
     {
         id: 5,
-        question: "Un equipo grande ofrece mucho dinero por tu mejor jugador. ¿Qué haces?",
+        question: "Oferta de 100M€ por tu capitán de 30 años. ¿Lo vendes?",
         category: 'financial',
         options: [
-            { text: "Venderlo si la oferta es buena para el club", type: 'conservative', icon: '💵' },
-            { text: "Solo si el jugador lo pide expresamente", type: 'moderate', icon: '🤔' },
-            { text: "Rechazar cualquier oferta, es intransferible", type: 'ambitious', icon: '🛡️' }
+            { text: "Sí, es una oportunidad financiera irrepetible", type: 'conservative', icon: '💵', boardImpact: 20, fanImpact: -20 },
+            { text: "Solo si el jugador desea irse del club", type: 'moderate', icon: '🤔', boardImpact: 5, fanImpact: -5 },
+            { text: "No, la identidad del club no tiene precio", type: 'ambitious', icon: '🛡️', boardImpact: -10, fanImpact: 18 }
         ]
     },
     {
         id: 6,
-        question: "¿Qué estilo de juego implementarías?",
+        question: "¿Qué filosofía de juego definirá tu mandato?",
         category: 'tactical',
         options: [
-            { text: "Defensivo y pragmático, resultados ante todo", type: 'conservative', icon: '🔒' },
-            { text: "Equilibrado, adaptándose al rival", type: 'moderate', icon: '⚡' },
-            { text: "Ofensivo y vistoso, el espectáculo es clave", type: 'ambitious', icon: '🔥' }
+            { text: "Pragmatismo: 1-0 y tres puntos son gloria", type: 'conservative', icon: '🔒', boardImpact: 15, fanImpact: -10 },
+            { text: "Equilibrio táctico y transiciones rápidas", type: 'moderate', icon: '⚡', boardImpact: 8, fanImpact: 8 },
+            { text: "Fútbol total: Ataque constante y espectáculo", type: 'ambitious', icon: '🔥', boardImpact: -10, fanImpact: 20 }
         ]
     },
     {
         id: 7,
-        question: "El equipo está en zona de descenso a mitad de temporada. ¿Cuál es tu plan?",
+        question: "Estamos en zona de descenso en Navidad. ¿Cuál es el plan?",
         category: 'ambition',
         options: [
-            { text: "Reforzar la defensa y jugar conservador", type: 'conservative', icon: '🧱' },
-            { text: "Ajustar táctica y motivar al vestuario", type: 'moderate', icon: '💪' },
-            { text: "Fichar refuerzos de emergencia inmediatamente", type: 'ambitious', icon: '🆘' }
+            { text: "Reforzar la defensa y jugar a no perder", type: 'conservative', icon: '🧱', boardImpact: 12, fanImpact: -15 },
+            { text: "Cambiar el sistema y motivar al grupo", type: 'moderate', icon: '💪', boardImpact: 5, fanImpact: 5 },
+            { text: "Invertir los ahorros en 3 fichajes de impacto", type: 'ambitious', icon: '🆘', boardImpact: -20, fanImpact: 25 }
         ]
     },
     {
         id: 8,
-        question: "¿Cómo gestionarías el vestuario si hay conflictos internos?",
+        question: "¿Cómo manejarás los conflictos en el vestuario?",
         category: 'social',
         options: [
-            { text: "Dejar que los capitanes lo resuelvan internamente", type: 'conservative', icon: '👥' },
-            { text: "Mediar personalmente y buscar consenso", type: 'moderate', icon: '🤲' },
-            { text: "Tomar decisiones drásticas, vender a los problemáticos", type: 'ambitious', icon: '⚔️' }
+            { text: "Mano dura y sanciones internas severas", type: 'conservative', icon: '⚔️', boardImpact: 10, fanImpact: -5 },
+            { text: "Diálogo constante y mediación grupal", type: 'moderate', icon: '🤲', boardImpact: 5, fanImpact: 8 },
+            { text: "Vender a cualquier jugador que rompa el grupo", type: 'ambitious', icon: '🚫', boardImpact: 5, fanImpact: -10 }
         ]
     }
 ];
@@ -157,43 +159,38 @@ export const evaluateDebate = (
     team: Team,
     player: PlayerProfile
 ): DebateResult => {
-    let score = 0;
+    let boardScore = 50;
+    let fanScore = 50;
 
-    // Puntuación base por experiencia
-    score += player.experience * 2;
+    // Puntuación base por experiencia del jugador
+    boardScore += player.experience;
+    fanScore += player.experience;
 
     // Evaluar cada respuesta
     answers.forEach(answer => {
-        // Puntos base por tipo de respuesta
-        if (answer.type === 'conservative') score += 8;
-        if (answer.type === 'moderate') score += 12;
-        if (answer.type === 'ambitious') score += 10;
+        boardScore += answer.boardImpact;
+        fanScore += answer.fanImpact;
 
-        // Bonus según el tier del equipo
+        // Bonus/Penalty según el tier del equipo
         if (team.tier === 'Lower') {
-            // Equipos pequeños prefieren conservadurismo
-            if (answer.type === 'conservative') score += 5;
-            if (answer.type === 'ambitious') score -= 2;
+            // Equipos pequeños prefieren conservadurismo en la directiva
+            if (answer.type === 'conservative') boardScore += 3;
+            if (answer.type === 'ambitious') boardScore -= 5;
         } else if (team.tier === 'Top') {
-            // Equipos grandes prefieren ambición
-            if (answer.type === 'ambitious') score += 5;
-            if (answer.type === 'conservative') score -= 2;
-        } else {
-            // Equipos medianos prefieren moderación
-            if (answer.type === 'moderate') score += 4;
+            // Equipos grandes prefieren ambición en la afición
+            if (answer.type === 'ambitious') fanScore += 5;
+            if (answer.type === 'conservative') fanScore -= 5;
         }
     });
+
+    const playerScore = (boardScore + fanScore) / 2;
 
     // Generar oponentes
     const opponents = generateOpponents(team.tier);
 
     // Determinar umbral de éxito
-    let threshold = 60;
-    if (team.tier === 'Lower') threshold = 50;
-    if (team.tier === 'Mid') threshold = 65;
-    if (team.tier === 'Top') threshold = 75;
-
-    const success = score >= threshold;
+    const threshold = team.tier === 'Top' ? 70 : team.tier === 'Mid' ? 60 : 50;
+    const success = boardScore >= threshold && fanScore >= (threshold - 10);
 
     // Feedback personalizado
     const feedbacks = {
