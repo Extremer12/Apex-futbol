@@ -2,7 +2,7 @@
 // Allows adding new events without modifying code
 
 import { GameState } from '../types';
-import { getMoraleValue, getMoraleLabel } from '../utils';
+import { getMoraleValue, getMoraleLabel } from './morale';
 import eventsData from '../data/events.json';
 
 export interface GameEvent {
