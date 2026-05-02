@@ -42,6 +42,7 @@ export const AppRouter: React.FC<AppRouterProps> = ({
     onProfileCreate,
     onTeamSelect,
     onPitchSubmit,
+    onPromisesSubmit,
     onStartGame,
     onRetryElection,
     children

@@ -83,6 +83,36 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                                 <p className="text-slate-400 text-center">Técnica y pasión. La Liga te espera.</p>
                             </div>
                         </button>
+
+                        {/* Germany Card */}
+                        <button
+                            onClick={() => setSelectedCountry('GER')}
+                            className="group relative bg-gradient-to-br from-amber-900/40 to-slate-900/40 border-2 border-amber-500/30 rounded-2xl p-8 hover:border-amber-500/60 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-amber-500/20"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-br from-amber-600/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <div className="relative flex flex-col items-center">
+                                <div className="text-8xl mb-6 drop-shadow-2xl transform group-hover:scale-110 transition-transform duration-300">
+                                    🇩🇪
+                                </div>
+                                <h2 className="text-3xl font-bold text-white mb-2">Alemania</h2>
+                                <p className="text-slate-400 text-center">Disciplina y poder. La Bundesliga te llama.</p>
+                            </div>
+                        </button>
+
+                        {/* Italy Card */}
+                        <button
+                            onClick={() => setSelectedCountry('ITA')}
+                            className="group relative bg-gradient-to-br from-emerald-900/40 to-slate-900/40 border-2 border-emerald-500/30 rounded-2xl p-8 hover:border-emerald-500/60 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-emerald-500/20"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <div className="relative flex flex-col items-center">
+                                <div className="text-8xl mb-6 drop-shadow-2xl transform group-hover:scale-110 transition-transform duration-300">
+                                    🇮🇹
+                                </div>
+                                <h2 className="text-3xl font-bold text-white mb-2">Italia</h2>
+                                <p className="text-slate-400 text-center">Táctica y gloria. Domina el Calcio.</p>
+                            </div>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -109,7 +139,9 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                             Selecciona la Competición
                         </h1>
                         <p className="text-slate-400 text-lg">
-                            {selectedCountry === 'ENG' ? 'Fútbol Inglés' : 'Fútbol Español'}
+                            {selectedCountry === 'ENG' ? 'Fútbol Inglés' : 
+                             selectedCountry === 'ESP' ? 'Fútbol Español' :
+                             selectedCountry === 'GER' ? 'Fútbol Alemán' : 'Fútbol Italiano'}
                         </p>
                     </div>
 
@@ -167,6 +199,42 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                                 </div>
                             </button>
                         )}
+
+                        {selectedCountry === 'GER' && (
+                            <button
+                                onClick={() => setSelectedLeague(LeagueId.BUNDESLIGA)}
+                                className="group relative bg-gradient-to-br from-amber-900/40 to-slate-900/40 border-2 border-amber-500/30 rounded-2xl p-8 hover:border-amber-500/60 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-amber-500/20 col-span-2 md:col-span-1 md:col-start-1 md:col-end-3 mx-auto w-full max-w-md"
+                            >
+                                <div className="absolute inset-0 bg-gradient-to-br from-amber-600/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <div className="relative flex flex-col items-center">
+                                    <div className="w-24 h-24 mb-6 flex items-center justify-center text-6xl">
+                                        🇩🇪
+                                    </div>
+                                    <h2 className="text-2xl font-bold text-white mb-2">Bundesliga</h2>
+                                    <div className="flex items-center gap-2 text-sm text-amber-400">
+                                        <span className="font-semibold">18 Equipos</span> • <span>1ª División</span>
+                                    </div>
+                                </div>
+                            </button>
+                        )}
+
+                        {selectedCountry === 'ITA' && (
+                            <button
+                                onClick={() => setSelectedLeague(LeagueId.SERIE_A)}
+                                className="group relative bg-gradient-to-br from-emerald-900/40 to-slate-900/40 border-2 border-emerald-500/30 rounded-2xl p-8 hover:border-emerald-500/60 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-emerald-500/20 col-span-2 md:col-span-1 md:col-start-1 md:col-end-3 mx-auto w-full max-w-md"
+                            >
+                                <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <div className="relative flex flex-col items-center">
+                                    <div className="w-24 h-24 mb-6 flex items-center justify-center text-6xl">
+                                        🇮🇹
+                                    </div>
+                                    <h2 className="text-2xl font-bold text-white mb-2">Serie A</h2>
+                                    <div className="flex items-center gap-2 text-sm text-emerald-400">
+                                        <span className="font-semibold">20 Equipos</span> • <span>1ª División</span>
+                                    </div>
+                                </div>
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
@@ -196,6 +264,10 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                         <img src="/logos/Premier League.png" alt="Premier League" className="w-20 h-20 object-contain drop-shadow-2xl" />
                     ) : selectedLeague === LeagueId.CHAMPIONSHIP ? (
                         <img src="/logos/Sky Bet Championship.png" alt="Championship" className="w-20 h-20 object-contain drop-shadow-2xl" />
+                    ) : selectedLeague === LeagueId.BUNDESLIGA ? (
+                        <div className="w-20 h-20 flex items-center justify-center text-6xl">🇩🇪</div>
+                    ) : selectedLeague === LeagueId.SERIE_A ? (
+                        <div className="w-20 h-20 flex items-center justify-center text-6xl">🇮🇹</div>
                     ) : (
                         <div className="w-20 h-20 flex items-center justify-center">
                             <span className="text-5xl">🇪🇸</span>
@@ -203,7 +275,10 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                     )}
                 </div>
                 <h1 className="text-4xl sm:text-5xl font-bold mb-3 bg-gradient-to-r from-purple-400 via-purple-300 to-white bg-clip-text text-transparent">
-                    {selectedLeague === LeagueId.PREMIER_LEAGUE ? 'Premier League' : selectedLeague === LeagueId.CHAMPIONSHIP ? 'Championship' : 'La Liga'}
+                    {selectedLeague === LeagueId.PREMIER_LEAGUE ? 'Premier League' : 
+                     selectedLeague === LeagueId.CHAMPIONSHIP ? 'Championship' : 
+                     selectedLeague === LeagueId.BUNDESLIGA ? 'Bundesliga' :
+                     selectedLeague === LeagueId.SERIE_A ? 'Serie A' : 'La Liga'}
                 </h1>
                 <p className="text-slate-300 text-lg">Elige un club para presentarte a presidente</p>
             </div>
