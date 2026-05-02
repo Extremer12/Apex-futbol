@@ -11,6 +11,7 @@ interface TeamSelectionProps {
 export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTeam }) => {
     const [selectedCountry, setSelectedCountry] = useState<CountryCode | null>(null);
     const [selectedLeague, setSelectedLeague] = useState<LeagueId | null>(null);
+    const [hoveredCountry, setHoveredCountry] = useState<CountryCode | null>(null);
 
     const TIER_COLORS: Record<Team['tier'], string> = {
         Top: 'from-purple-600/20 to-purple-900/40 border-purple-500/50 text-purple-400',
@@ -38,50 +39,124 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
 
     // 1. Country Selection View
     if (!selectedCountry) {
+        const COUNTRIES = [
+            { id: 'ENG' as CountryCode, name: 'Inglaterra', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', desc: 'Intensidad, ritmo frenético y los clubes más históricos del mundo te esperan.', leagues: 'Premier League · Championship', glow: 'rgba(59,130,246,0.5)', borderHover: 'hover:border-blue-500', bgHover: 'hover:bg-blue-900/20', textHover: 'group-hover:text-blue-400', dotColor: 'bg-blue-500' },
+            { id: 'ESP' as CountryCode, name: 'España', flag: '🇪🇸', desc: 'Donde el balón al piso es religión. Domina La Liga con técnica y talento.', leagues: 'La Liga', glow: 'rgba(239,68,68,0.5)', borderHover: 'hover:border-red-500', bgHover: 'hover:bg-red-900/20', textHover: 'group-hover:text-red-400', dotColor: 'bg-red-500' },
+            { id: 'GER' as CountryCode, name: 'Alemania', flag: '🇩🇪', desc: 'Estadios llenos, presión asfixiante y un modelo de desarrollo envidiado por Europa.', leagues: 'Bundesliga', glow: 'rgba(245,158,11,0.5)', borderHover: 'hover:border-amber-500', bgHover: 'hover:bg-amber-900/20', textHover: 'group-hover:text-amber-400', dotColor: 'bg-amber-500' },
+            { id: 'ITA' as CountryCode, name: 'Italia', flag: '🇮🇹', desc: 'Defensa de hierro, táctica impecable y pasión desbordante. El ajedrez del fútbol.', leagues: 'Serie A', glow: 'rgba(16,185,129,0.5)', borderHover: 'hover:border-emerald-500', bgHover: 'hover:bg-emerald-900/20', textHover: 'group-hover:text-emerald-400', dotColor: 'bg-emerald-500' },
+        ];
+        const active = COUNTRIES.find(c => c.id === hoveredCountry);
+
         return (
-            <div className="min-h-screen bg-[#020617] relative overflow-hidden flex items-center justify-center p-4">
-                <div className="absolute top-0 left-0 w-full h-full opacity-20">
-                    <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-purple-600 blur-[120px] rounded-full animate-pulse" />
-                    <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-600 blur-[120px] rounded-full animate-pulse delay-700" />
-                </div>
+            <div className="min-h-screen bg-[#020617] relative overflow-hidden flex flex-col items-center justify-center p-6 md:p-10">
+                {/* Ambient background glow that shifts by country */}
+                <div
+                    className="absolute top-1/2 right-0 w-[600px] h-[600px] rounded-full blur-[160px] pointer-events-none transition-all duration-700 -translate-y-1/2"
+                    style={{ background: active ? active.glow : 'rgba(139,92,246,0.15)', opacity: 0.25 }}
+                />
+                <div className="absolute top-[-5%] left-[-5%] w-[40%] h-[40%] bg-purple-700/20 blur-[120px] rounded-full animate-pulse pointer-events-none" />
 
-                <div className="w-full max-w-6xl relative z-10 animate-fade-in">
-                    <div className="text-center mb-16">
-                        <span className="text-purple-500 font-bold tracking-[0.3em] uppercase text-sm mb-4 block">Comienza tu Legado</span>
-                        <h1 className="text-6xl md:text-7xl font-black mb-6 text-white tracking-tight">
-                            Hola, <span className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">{player.name}</span>
-                        </h1>
-                        <p className="text-slate-400 text-xl max-w-2xl mx-auto leading-relaxed">
-                            El mundo del fútbol te observa. Tu experiencia de <span className="text-white font-bold">{player.experience}</span> te ha traído hasta aquí. ¿En qué nación escribirás tu historia?
-                        </p>
-                    </div>
+                <div className="relative z-10 w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {[
-                            { id: 'ENG', name: 'Inglaterra', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', desc: 'La Premier League y el ascenso frenético.', color: 'blue' },
-                            { id: 'ESP', name: 'España', flag: '🇪🇸', desc: 'Técnica pura y rivalidades legendarias.', color: 'red' },
-                            { id: 'GER', name: 'Alemania', flag: '🇩🇪', desc: 'Disciplina táctica y estadios llenos.', color: 'amber' },
-                            { id: 'ITA', name: 'Italia', flag: '🇮🇹', desc: 'El arte de la defensa y la gloria táctica.', color: 'emerald' }
-                        ].map((c, i) => (
-                            <button
-                                key={c.id}
-                                onClick={() => setSelectedCountry(c.id as CountryCode)}
-                                className="group relative aspect-[3/4] overflow-hidden rounded-3xl border-2 border-white/5 bg-slate-900/40 backdrop-blur-xl transition-all duration-500 hover:border-blue-500/50 hover:scale-[1.02] hover:shadow-2xl animate-scale-in"
-                                style={{ animationDelay: `${i * 100}ms` }}
-                            >
-                                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-slate-950/80 group-hover:to-slate-900/90 transition-all duration-500" />
-                                <div className="absolute inset-0 p-8 flex flex-col items-center justify-end">
-                                    <div className="text-7xl mb-6 transform group-hover:scale-125 group-hover:-translate-y-4 transition-all duration-700 ease-out drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
+                    {/* ─── LEFT: Header + List ─── */}
+                    <div className="flex flex-col gap-8 animate-fade-in">
+                        <div>
+                            <span className="text-purple-400 font-bold tracking-[0.3em] uppercase text-xs mb-3 block">Comienza tu Legado</span>
+                            <h1 className="text-5xl md:text-6xl font-black text-white tracking-tighter leading-none mb-4">
+                                Hola,&nbsp;
+                                <span className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+                                    {player.name}
+                                </span>
+                            </h1>
+                            <p className="text-slate-400 text-base max-w-md leading-relaxed">
+                                Elige el país donde escribirás tu historia. Tu experiencia de&nbsp;
+                                <span className="text-white font-semibold">{player.experience}</span> te ha traído hasta aquí.
+                            </p>
+                        </div>
+
+                        <div className="flex flex-col gap-3">
+                            {COUNTRIES.map((c, i) => (
+                                <button
+                                    key={c.id}
+                                    onMouseEnter={() => setHoveredCountry(c.id)}
+                                    onMouseLeave={() => setHoveredCountry(null)}
+                                    onClick={() => setSelectedCountry(c.id)}
+                                    className={`group flex items-center gap-5 p-4 rounded-2xl border border-white/5 bg-slate-900/50 backdrop-blur-md transition-all duration-300 ${c.bgHover} ${c.borderHover} hover:border-opacity-60 hover:scale-[1.01] hover:shadow-xl w-full animate-scale-in`}
+                                    style={{ animationDelay: `${i * 80}ms` }}
+                                >
+                                    {/* Flag */}
+                                    <div className="w-14 h-14 shrink-0 rounded-xl bg-slate-800/80 border border-white/5 flex items-center justify-center text-3xl transition-transform duration-300 group-hover:scale-110">
                                         {c.flag}
                                     </div>
-                                    <h2 className="text-3xl font-black text-white mb-2 tracking-tight uppercase italic">{c.name}</h2>
-                                    <p className="text-slate-400 text-center text-sm opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-500">
-                                        {c.desc}
-                                    </p>
+
+                                    {/* Text */}
+                                    <div className="text-left flex-1 min-w-0">
+                                        <div className={`text-xl font-black text-white uppercase tracking-wide transition-colors duration-300 ${c.textHover}`}>
+                                            {c.name}
+                                        </div>
+                                        <div className="text-slate-500 text-xs font-semibold mt-0.5 truncate">{c.leagues}</div>
+                                    </div>
+
+                                    {/* Arrow */}
+                                    <div className="opacity-0 group-hover:opacity-100 translate-x-[-8px] group-hover:translate-x-0 transition-all duration-300 shrink-0">
+                                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* ─── RIGHT: Interactive Preview Panel ─── */}
+                    <div className="hidden lg:flex flex-col items-center justify-center relative min-h-[460px]">
+                        {/* Globe ring decoration */}
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div
+                                className="w-[380px] h-[380px] rounded-full border transition-all duration-700"
+                                style={{ borderColor: active ? active.glow : 'rgba(255,255,255,0.04)', boxShadow: active ? `0 0 80px ${active.glow}22` : 'none' }}
+                            />
+                            <div
+                                className="absolute w-[280px] h-[280px] rounded-full border transition-all duration-700"
+                                style={{ borderColor: active ? active.glow : 'rgba(255,255,255,0.03)' }}
+                            />
+                            {/* Orbiting dot */}
+                            <div
+                                className="absolute w-3 h-3 rounded-full top-[10%] left-1/2 transition-all duration-700"
+                                style={{ background: active ? active.glow : '#334155', boxShadow: active ? `0 0 12px ${active.glow}` : 'none' }}
+                            />
+                        </div>
+
+                        {/* Content */}
+                        {active ? (
+                            <div key={active.id} className="relative z-10 flex flex-col items-center text-center gap-6 animate-scale-in">
+                                <div
+                                    className="text-[140px] leading-none select-none animate-scale-in"
+                                    style={{ filter: `drop-shadow(0 0 40px ${active.glow})` }}
+                                >
+                                    {active.flag}
                                 </div>
-                                <div className="absolute top-0 left-0 w-full h-1 bg-purple-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-700 origin-left" />
-                            </button>
-                        ))}
+                                <div>
+                                    <h2 className="text-5xl font-black text-white uppercase tracking-tighter">{active.name}</h2>
+                                    <div
+                                        className="h-1 w-16 rounded-full mx-auto mt-3 mb-5 transition-all duration-500"
+                                        style={{ background: active.glow }}
+                                    />
+                                    <p className="text-slate-300 text-base max-w-xs mx-auto leading-relaxed">{active.desc}</p>
+                                    <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10">
+                                        <span className={`w-2 h-2 rounded-full ${active.dotColor}`} />
+                                        <span className="text-slate-400 text-xs font-bold uppercase tracking-widest">{active.leagues}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="relative z-10 flex flex-col items-center text-slate-700 gap-4">
+                                <svg className="w-20 h-20 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <p className="font-semibold uppercase tracking-[0.25em] text-sm animate-pulse">Pasa el cursor por un país</p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
