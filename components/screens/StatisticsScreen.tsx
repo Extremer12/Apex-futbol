@@ -120,7 +120,7 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ gameState })
                         onClick={() => setSelectedLeague(league)}
                         className={`whitespace-nowrap px-6 py-3 rounded-full font-bold text-sm transition-all duration-300 border ${
                             selectedLeague === league 
-                            ? \`bg-\${LEAGUE_THEMES[league]}-600 text-white border-\${LEAGUE_THEMES[league]}-500 shadow-lg shadow-\${LEAGUE_THEMES[league]}-500/30\` 
+                            ? `bg-${LEAGUE_THEMES[league]}-600 text-white border-${LEAGUE_THEMES[league]}-500 shadow-lg shadow-${LEAGUE_THEMES[league]}-500/30` 
                             : 'bg-slate-900/50 text-slate-400 border-white/5 hover:bg-slate-800 hover:text-white'
                         }`}
                     >
