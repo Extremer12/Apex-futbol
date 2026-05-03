@@ -50,6 +50,8 @@ function AppLogic() {
     const [coachReport, setCoachReport] = useState<CoachReport | null>(null);
     const [isCoachMeetingOpen, setIsCoachMeetingOpen] = useState(false);
 
+    const [currentEvent, setCurrentEvent] = useState<TriggeredEvent | null>(null);
+
     const [gameState, dispatch] = useReducer(gameReducer, initialState);
 
     // Use contexts
