@@ -95,6 +95,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                     onQuitToMenu={onQuitToMenu}
                     currentSaveName={currentSaveName}
                     lastSaved={lastSaved}
+                    preferredCurrency={gameState.preferredCurrency || 'EUR'}
+                    dispatch={dispatch}
                 />
             );
             case Screen.Club: return <ClubHubScreen gameState={gameState} dispatch={dispatch} />;

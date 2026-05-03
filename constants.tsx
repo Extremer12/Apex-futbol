@@ -4,6 +4,10 @@ import { championshipTeams } from './data/teams/championship';
 import { laLigaTeams } from './data/teams/laLiga';
 import { bundesligaTeams } from './data/teams/bundesliga';
 import { serieATeams } from './data/teams/serieA';
+import { ligue1Teams, ligue2Teams } from './data/teams/ligue1';
+import { ligaArgentinaTeams, primeraNacionalTeams } from './data/teams/ligaArgentina';
+import { brasileiraoTeams, serieBBrTeams } from './data/teams/brasileirao';
+import { segundaDivisionTeams, zweiteBundesligaTeams, serieBItaTeams } from './data/teams/secondDivisions';
 
 export * from './data/teams/helpers';
 
@@ -11,8 +15,17 @@ export const TEAMS: Team[] = [
   ...premierLeagueTeams,
   ...championshipTeams,
   ...laLigaTeams,
+  ...segundaDivisionTeams,
   ...bundesligaTeams,
-  ...serieATeams
+  ...zweiteBundesligaTeams,
+  ...serieATeams,
+  ...serieBItaTeams,
+  ...ligue1Teams,
+  ...ligue2Teams,
+  ...ligaArgentinaTeams,
+  ...primeraNacionalTeams,
+  ...brasileiraoTeams,
+  ...serieBBrTeams,
 ];
 
 // By separating the sort from the array declaration, TypeScript can correctly

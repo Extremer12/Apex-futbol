@@ -161,25 +161,30 @@ export function startNewSeason(currentState: GameState): GameState {
 
     const teamsAfterProRel = handlePromotionRelegation(
         processedTeams,
-        currentState.leagueTables.PREMIER_LEAGUE,
-        currentState.leagueTables.CHAMPIONSHIP
+        currentState.leagueTables
     );
 
     // 4. Generate new season schedule and tables
     const newSeasonSchedule = generateSeasonSchedule(teamsAfterProRel);
-    const newPlTeams = teamsAfterProRel.filter(t => t.leagueId === 'PREMIER_LEAGUE');
-    const newChTeams = teamsAfterProRel.filter(t => t.leagueId === 'CHAMPIONSHIP');
-    const newLaTeams = teamsAfterProRel.filter(t => t.leagueId === 'LA_LIGA');
-    const newGerTeams = teamsAfterProRel.filter(t => t.leagueId === 'BUNDESLIGA');
-    const newItaTeams = teamsAfterProRel.filter(t => t.leagueId === 'SERIE_A');
 
-    const newLeagueTables = {
-        PREMIER_LEAGUE: createInitialLeagueTable(newPlTeams),
-        CHAMPIONSHIP: createInitialLeagueTable(newChTeams),
-        LA_LIGA: createInitialLeagueTable(newLaTeams),
-        BUNDESLIGA: createInitialLeagueTable(newGerTeams),
-        SERIE_A: createInitialLeagueTable(newItaTeams)
-    };
+    const getLeagueTeams = (id: string) => teamsAfterProRel.filter(t => t.leagueId === id);
+
+    const newLeagueTables: Record<string, any[]> = {};
+    [
+        'PREMIER_LEAGUE', 'CHAMPIONSHIP',
+        'LA_LIGA', 'SEGUNDA_DIVISION_ESP',
+        'BUNDESLIGA', 'ZWEITE_BUNDESLIGA',
+        'SERIE_A', 'SERIE_B_ITA',
+        'LIGUE_1', 'LIGUE_2',
+        'LIGA_ARGENTINA', 'PRIMERA_NACIONAL',
+        'BRASILEIRAO', 'SERIE_B_BR'
+    ].forEach(lid => {
+        const teams = getLeagueTeams(lid);
+        newLeagueTables[lid] = createInitialLeagueTable(teams);
+    });
+
+    const newPlTeams = getLeagueTeams('PREMIER_LEAGUE');
+    const newChTeams = getLeagueTeams('CHAMPIONSHIP');
 
     // 5. Generate new cup draws (National Cups)
     const englishTeamsNewSeason = [...newPlTeams, ...newChTeams];

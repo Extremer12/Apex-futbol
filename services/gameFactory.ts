@@ -84,8 +84,23 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
     const plTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.PREMIER_LEAGUE);
     const chTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.CHAMPIONSHIP);
     const laTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.LA_LIGA);
+    const seg2EspTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.SEGUNDA_DIVISION_ESP);
     const gerTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.BUNDESLIGA);
+    const zweiteTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.ZWEITE_BUNDESLIGA);
     const itaTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.SERIE_A);
+    const serieBItaTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.SERIE_B_ITA);
+    const ligue1Teams = allTeamsCopy.filter(t => t.leagueId === LeagueId.LIGUE_1);
+    const ligue2Teams = allTeamsCopy.filter(t => t.leagueId === LeagueId.LIGUE_2);
+    const ligaArgTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.LIGA_ARGENTINA);
+    const primeraNacTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.PRIMERA_NACIONAL);
+    const brasileiraoTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.BRASILEIRAO);
+    const serieBBrTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.SERIE_B_BR);
+
+    // Copa Libertadores participants: top 5 from ARG + top 5 from BRA by rating
+    const libertadoresParticipants = [
+        ...ligaArgTeams.slice(0, 5),
+        ...brasileiraoTeams.slice(0, 5)
+    ];
 
     // Generate cup draws (ONLY English teams for English cups for now)
     const englishTeams = [...plTeams, ...chTeams];
@@ -116,8 +131,17 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
             [LeagueId.PREMIER_LEAGUE]: createInitialLeagueTable(plTeams),
             [LeagueId.CHAMPIONSHIP]: createInitialLeagueTable(chTeams),
             [LeagueId.LA_LIGA]: createInitialLeagueTable(laTeams),
+            [LeagueId.SEGUNDA_DIVISION_ESP]: createInitialLeagueTable(seg2EspTeams),
             [LeagueId.BUNDESLIGA]: createInitialLeagueTable(gerTeams),
-            [LeagueId.SERIE_A]: createInitialLeagueTable(itaTeams)
+            [LeagueId.ZWEITE_BUNDESLIGA]: createInitialLeagueTable(zweiteTeams),
+            [LeagueId.SERIE_A]: createInitialLeagueTable(itaTeams),
+            [LeagueId.SERIE_B_ITA]: createInitialLeagueTable(serieBItaTeams),
+            [LeagueId.LIGUE_1]: createInitialLeagueTable(ligue1Teams),
+            [LeagueId.LIGUE_2]: createInitialLeagueTable(ligue2Teams),
+            [LeagueId.LIGA_ARGENTINA]: createInitialLeagueTable(ligaArgTeams),
+            [LeagueId.PRIMERA_NACIONAL]: createInitialLeagueTable(primeraNacTeams),
+            [LeagueId.BRASILEIRAO]: createInitialLeagueTable(brasileiraoTeams),
+            [LeagueId.SERIE_B_BR]: createInitialLeagueTable(serieBBrTeams),
         },
         finances: {
             balance: selectedTeam.budget,
@@ -162,7 +186,29 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
                 rounds: [{ name: 'Round 1', fixtures: carabaoCupFixtures, completed: false }],
                 currentRoundIndex: 0,
                 statistics: { topScorers: [], championsHistory: [] }
-            }
+            },
+            copaDelRey: { id: 'copa_del_rey', name: 'Copa del Rey', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
+            dfbPokal: { id: 'dfb_pokal', name: 'DFB-Pokal', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
+            coppaItalia: { id: 'coppa_italia', name: 'Coppa Italia', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
+            championsLeague: { id: 'champions_league', name: 'UEFA Champions League', participants: [], leagueTable: [], leagueFixtures: [], knockoutRounds: [], currentPhase: 'league', currentRoundIndex: 0 },
+            europaLeague: { id: 'europa_league', name: 'UEFA Europa League', participants: [], leagueTable: [], leagueFixtures: [], knockoutRounds: [], currentPhase: 'league', currentRoundIndex: 0 },
+            copaLibertadores: {
+                id: 'copa_libertadores',
+                name: 'Copa Libertadores',
+                participants: libertadoresParticipants.map(t => t.id),
+                leagueTable: libertadoresParticipants.map((t, i) => ({ teamId: t.id, position: i + 1, played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0 })),
+                leagueFixtures: [],
+                knockoutRounds: [],
+                currentPhase: 'league',
+                currentRoundIndex: 0
+            },
+            copaIntercontinental: {
+                id: 'copa_intercontinental',
+                name: 'Copa Intercontinental',
+                rounds: [],
+                currentRoundIndex: 0,
+                statistics: { topScorers: [], championsHistory: [] }
+            },
         },
         availableCoaches: generateCoachMarket(5),
         stadium: {
@@ -178,6 +224,8 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
         ],
         availableSponsors: generateSponsorMarket(playerTeamCopy.tier),
         scouts: [],
-        scoutedPlayerIds: {}
+        scoutedPlayerIds: {},
+        cinematicQueue: [],
+        preferredCurrency: 'EUR',
     };
 }

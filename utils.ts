@@ -3,18 +3,24 @@ import { Morale } from './types';
 // --- Helper Functions ---
 export const formatDate = (date: Date): string => date.toLocaleString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
 
+export let GLOBAL_CURRENCY: 'EUR' | 'USD' = 'EUR';
+
+export const setGlobalCurrency = (currency: 'EUR' | 'USD') => {
+    GLOBAL_CURRENCY = currency;
+};
+
 export const formatCurrency = (amount: number | undefined | null): string => {
-    return new Intl.NumberFormat('en-GB', {
+    return new Intl.NumberFormat(GLOBAL_CURRENCY === 'EUR' ? 'es-ES' : 'en-US', {
         style: 'currency',
-        currency: 'GBP',
+        currency: GLOBAL_CURRENCY,
         maximumFractionDigits: 0,
     }).format(amount || 0);
 };
 
 export const formatCurrencyShort = (amount: number | undefined | null): string => {
-    return new Intl.NumberFormat('en-GB', {
+    return new Intl.NumberFormat(GLOBAL_CURRENCY === 'EUR' ? 'es-ES' : 'en-US', {
         style: 'currency',
-        currency: 'GBP',
+        currency: GLOBAL_CURRENCY,
         notation: 'compact',
         compactDisplay: 'short',
         maximumFractionDigits: 1,
@@ -22,9 +28,9 @@ export const formatCurrencyShort = (amount: number | undefined | null): string =
 };
 
 export const formatWeeklyWage = (amount: number | undefined | null): string => {
-    return new Intl.NumberFormat('en-GB', {
+    return new Intl.NumberFormat(GLOBAL_CURRENCY === 'EUR' ? 'es-ES' : 'en-US', {
         style: 'currency',
-        currency: 'GBP',
+        currency: GLOBAL_CURRENCY,
         maximumFractionDigits: 0,
     }).format(amount || 0);
 };

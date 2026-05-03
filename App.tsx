@@ -24,7 +24,7 @@ import { CinematicOverlay } from './components/cinematics/CinematicOverlay';
 // Services
 import { ElectionResponse, generateNews, generateMatchReport, generateTransferOffer, generatePlayerOfTheWeekNews, generateImportantNews } from './services/gameLogic';
 import { advanceCupRound } from './services/simulation';
-import { formatDate } from './utils';
+import { formatDate, setGlobalCurrency } from './utils';
 import { simulationWorker } from './services/simulationWorker';
 import { eventEngine, TriggeredEvent } from './services/eventEngine';
 
@@ -53,6 +53,13 @@ function AppLogic() {
     const [currentEvent, setCurrentEvent] = useState<TriggeredEvent | null>(null);
 
     const [gameState, dispatch] = useReducer(gameReducer, initialState);
+
+    // Sync global currency formatters
+    useEffect(() => {
+        if (gameState?.preferredCurrency) {
+            setGlobalCurrency(gameState.preferredCurrency);
+        }
+    }, [gameState?.preferredCurrency]);
 
     // Use contexts
     const { showNotification } = useNotification();

@@ -45,7 +45,8 @@ export type GameAction =
     | { type: 'UPDATE_TEAM'; payload: Team }
     | { type: 'UPDATE_BOARD_CONFIDENCE'; payload: number }
     | { type: 'UPDATE_STADIUM'; payload: Stadium }
-    | { type: 'HIRE_SCOUT'; payload: Scout };
+    | { type: 'HIRE_SCOUT'; payload: Scout }
+    | { type: 'SET_CURRENCY'; payload: 'EUR' | 'USD' };
 
 export const initialState: GameState | null = null;
 
@@ -126,6 +127,8 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 coppaItalia: cups.coppaItalia || { id: 'coppa_italia', name: 'Coppa Italia', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
                 championsLeague: cups.championsLeague || { id: 'champions_league', name: 'Champions League', participants: [], leagueTable: [], leagueFixtures: [], knockoutRounds: [], currentPhase: 'finished', currentRoundIndex: 0 },
                 europaLeague: cups.europaLeague || { id: 'europa_league', name: 'Europa League', participants: [], leagueTable: [], leagueFixtures: [], knockoutRounds: [], currentPhase: 'finished', currentRoundIndex: 0 },
+                copaLibertadores: cups.copaLibertadores || { id: 'copa_libertadores', name: 'Copa Libertadores', participants: [], leagueTable: [], leagueFixtures: [], knockoutRounds: [], currentPhase: 'finished', currentRoundIndex: 0 },
+                copaIntercontinental: cups.copaIntercontinental || { id: 'copa_intercontinental', name: 'Copa Intercontinental', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
             };
 
             const cinematicQueue = loadedState.cinematicQueue || [];
@@ -146,7 +149,8 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 finances,
                 leagueTables,
                 cups: fullCups,
-                cinematicQueue
+                cinematicQueue,
+                preferredCurrency: loadedState.preferredCurrency || 'EUR',
             };
         }
 
@@ -706,6 +710,11 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                     squad: [...state.team.squad, playerToPromote]
                 }
             };
+        }
+
+        case 'SET_CURRENCY': {
+            if (!state) return null;
+            return { ...state, preferredCurrency: action.payload };
         }
 
         default:

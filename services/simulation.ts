@@ -586,34 +586,46 @@ export const generateSwissDraw = (teams: Team[], competition: Match['competition
 };
 
 
-export const handlePromotionRelegation = (allTeams: Team[], plTable: LeagueTableRow[], chTable: LeagueTableRow[]): Team[] => {
-    // Sort tables by points (descending), then goal difference, then goals for
-    const sortedPL = [...plTable].sort((a, b) => {
-        if (b.points !== a.points) return b.points - a.points;
-        if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
-        return b.goalsFor - a.goalsFor;
-    });
+// Map of all promotion/relegation pairs: [First Division, Second Division]
+const PROMOTION_RELEGATION_PAIRS: [LeagueId, LeagueId][] = [
+    [LeagueId.PREMIER_LEAGUE, LeagueId.CHAMPIONSHIP],
+    [LeagueId.LA_LIGA, LeagueId.SEGUNDA_DIVISION_ESP],
+    [LeagueId.BUNDESLIGA, LeagueId.ZWEITE_BUNDESLIGA],
+    [LeagueId.SERIE_A, LeagueId.SERIE_B_ITA],
+    [LeagueId.LIGUE_1, LeagueId.LIGUE_2],
+    [LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL],
+    [LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR],
+];
 
-    const sortedCH = [...chTable].sort((a, b) => {
-        if (b.points !== a.points) return b.points - a.points;
-        if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
-        return b.goalsFor - a.goalsFor;
-    });
+export const handlePromotionRelegation = (allTeams: Team[], leagueTables: Record<LeagueId, LeagueTableRow[]>): Team[] => {
+    let updatedTeams = [...allTeams];
 
-    // Identify teams to move
-    const relegatedTeamIds = sortedPL.slice(-3).map(row => row.teamId);
-    const promotedTeamIds = sortedCH.slice(0, 3).map(row => row.teamId);
+    for (const [div1, div2] of PROMOTION_RELEGATION_PAIRS) {
+        const div1Table = leagueTables[div1] || [];
+        const div2Table = leagueTables[div2] || [];
 
-    // Create new teams array with updated leagueIds
-    return allTeams.map(team => {
-        if (relegatedTeamIds.includes(team.id)) {
-            return { ...team, leagueId: 'CHAMPIONSHIP' as any }; // Cast to avoid type issues if enum is strict
-        }
-        if (promotedTeamIds.includes(team.id)) {
-            return { ...team, leagueId: 'PREMIER_LEAGUE' as any };
-        }
-        return team;
-    });
+        if (!div1Table.length || !div2Table.length) continue;
+
+        const sortTable = (table: LeagueTableRow[]) => [...table].sort((a, b) => {
+            if (b.points !== a.points) return b.points - a.points;
+            if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
+            return b.goalsFor - a.goalsFor;
+        });
+
+        const sortedDiv1 = sortTable(div1Table);
+        const sortedDiv2 = sortTable(div2Table);
+
+        const relegatedIds = sortedDiv1.slice(-3).map(r => r.teamId);
+        const promotedIds = sortedDiv2.slice(0, 3).map(r => r.teamId);
+
+        updatedTeams = updatedTeams.map(team => {
+            if (relegatedIds.includes(team.id)) return { ...team, leagueId: div2 };
+            if (promotedIds.includes(team.id)) return { ...team, leagueId: div1 };
+            return team;
+        });
+    }
+
+    return updatedTeams;
 };
 
 export const updateTeamMorale = (currentMorale: Morale, result: 'W' | 'D' | 'L'): Morale => {

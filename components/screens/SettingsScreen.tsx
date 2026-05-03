@@ -4,14 +4,18 @@ import { QuestionMarkCircleIcon, TrashIcon } from '../icons';
 import { clearAllData } from '../../services/db';
 import { Modal } from '../ui/Modal';
 
+import { GameAction } from '../../state/reducer';
+
 interface SettingsScreenProps {
     onSaveGame: (mode: 'overwrite' | 'new') => void;
     onQuitToMenu: () => void;
     currentSaveName: string | null;
     lastSaved: Date | null;
+    preferredCurrency: 'EUR' | 'USD';
+    dispatch: React.Dispatch<GameAction>;
 }
 
-export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onSaveGame, onQuitToMenu, currentSaveName, lastSaved }) => {
+export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onSaveGame, onQuitToMenu, currentSaveName, lastSaved, preferredCurrency, dispatch }) => {
     const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
     const [isQuitModalOpen, setIsQuitModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -162,6 +166,38 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onSaveGame, onQu
                         </div>
                         <p className="text-xs text-slate-400">Vuelve a la pantalla de inicio. ¡Guarda antes!</p>
                     </button>
+                </div>
+            </div>
+
+            {/* Currency Settings */}
+            <div className="space-y-4">
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Moneda</h3>
+                <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                    <p className="text-slate-400 text-sm mb-4">Elige la moneda que se usa para mostrar valores, salarios y presupuestos en todo el juego.</p>
+                    <div className="grid grid-cols-2 gap-3">
+                        <button
+                            id="currency-eur"
+                            onClick={() => dispatch({ type: 'SET_CURRENCY', payload: 'EUR' })}
+                            className={`flex items-center justify-center gap-3 p-4 rounded-xl border-2 font-black text-lg transition-all ${
+                                preferredCurrency === 'EUR'
+                                    ? 'border-sky-500 bg-sky-500/10 text-sky-400'
+                                    : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600'
+                            }`}
+                        >
+                            <span className="text-2xl">€</span> Euro (EUR)
+                        </button>
+                        <button
+                            id="currency-usd"
+                            onClick={() => dispatch({ type: 'SET_CURRENCY', payload: 'USD' })}
+                            className={`flex items-center justify-center gap-3 p-4 rounded-xl border-2 font-black text-lg transition-all ${
+                                preferredCurrency === 'USD'
+                                    ? 'border-sky-500 bg-sky-500/10 text-sky-400'
+                                    : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600'
+                            }`}
+                        >
+                            <span className="text-2xl">$</span> Dólar (USD)
+                        </button>
+                    </div>
                 </div>
             </div>
 

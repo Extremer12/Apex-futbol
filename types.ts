@@ -45,18 +45,36 @@ export enum LeagueId {
   PREMIER_LEAGUE = 'PREMIER_LEAGUE',
   CHAMPIONSHIP = 'CHAMPIONSHIP',
   LA_LIGA = 'LA_LIGA',
+  SEGUNDA_DIVISION_ESP = 'SEGUNDA_DIVISION_ESP',
   BUNDESLIGA = 'BUNDESLIGA',
+  ZWEITE_BUNDESLIGA = 'ZWEITE_BUNDESLIGA',
   SERIE_A = 'SERIE_A',
+  SERIE_B_ITA = 'SERIE_B_ITA',
+  LIGUE_1 = 'LIGUE_1',
+  LIGUE_2 = 'LIGUE_2',
+  LIGA_ARGENTINA = 'LIGA_ARGENTINA',
+  PRIMERA_NACIONAL = 'PRIMERA_NACIONAL',
+  BRASILEIRAO = 'BRASILEIRAO',
+  SERIE_B_BR = 'SERIE_B_BR'
 }
 
-export type CountryCode = 'ENG' | 'ESP' | 'GER' | 'ITA';
+export type CountryCode = 'ENG' | 'ESP' | 'GER' | 'ITA' | 'FRA' | 'ARG' | 'BRA';
 
 export const LEAGUE_COUNTRY: Record<LeagueId, CountryCode> = {
   [LeagueId.PREMIER_LEAGUE]: 'ENG',
   [LeagueId.CHAMPIONSHIP]: 'ENG',
   [LeagueId.LA_LIGA]: 'ESP',
+  [LeagueId.SEGUNDA_DIVISION_ESP]: 'ESP',
   [LeagueId.BUNDESLIGA]: 'GER',
+  [LeagueId.ZWEITE_BUNDESLIGA]: 'GER',
   [LeagueId.SERIE_A]: 'ITA',
+  [LeagueId.SERIE_B_ITA]: 'ITA',
+  [LeagueId.LIGUE_1]: 'FRA',
+  [LeagueId.LIGUE_2]: 'FRA',
+  [LeagueId.LIGA_ARGENTINA]: 'ARG',
+  [LeagueId.PRIMERA_NACIONAL]: 'ARG',
+  [LeagueId.BRASILEIRAO]: 'BRA',
+  [LeagueId.SERIE_B_BR]: 'BRA'
 };
 
 export interface Team {
@@ -143,7 +161,7 @@ export interface Match {
     events?: string[];
     scorers?: MatchScorer[];
   };
-  competition?: 'League' | 'FA_Cup' | 'Carabao_Cup' | 'Copa_Del_Rey' | 'DFB_Pokal' | 'Coppa_Italia' | 'Champions_League' | 'Europa_League'; // Added to distinguish match types
+  competition?: 'League' | 'FA_Cup' | 'Carabao_Cup' | 'Copa_Del_Rey' | 'DFB_Pokal' | 'Coppa_Italia' | 'Champions_League' | 'Europa_League' | 'Copa_Libertadores' | 'Copa_Intercontinental'; // Added to distinguish match types
   isCupMatch?: boolean;
   isMidweek?: boolean; // True for matches played on a midweek turn
   penalties?: { home: number; away: number; };
@@ -347,6 +365,8 @@ export interface GameState {
     coppaItalia: CupCompetition;
     championsLeague: EuropeanCompetition;
     europaLeague: EuropeanCompetition;
+    copaLibertadores: EuropeanCompetition; // using EuropeanCompetition structure for continental cups
+    copaIntercontinental: CupCompetition;
   };
   availableCoaches: Coach[]; // Market of available coaches
   // New Fields for Academy & Regens
@@ -357,6 +377,7 @@ export interface GameState {
   scouts: Scout[];
   scoutedPlayerIds: Record<number, number>; // playerId -> scoutingLevel (0-100)
   cinematicQueue: CinematicEvent[];
+  preferredCurrency: 'EUR' | 'USD'; // Added for Phase 7
 }
 
 export enum Screen {
