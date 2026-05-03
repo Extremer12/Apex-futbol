@@ -95,6 +95,7 @@ const MatchDayCard: React.FC<{
                         <InboxIcon className="w-8 h-8 text-slate-400" />
                     </div>
                     <h2 className="text-3xl font-bold text-white mb-2">Jornada de Descanso</h2>
+                    <p className="text-slate-400 mb-6 max-w-md mx-auto">
                         Tu equipo no tiene partido programado para esta jornada (Semana {nextWeek} {isMidweek ? 'Entre Semana' : 'Fin de Semana'}).
                     </p>
                     <button
