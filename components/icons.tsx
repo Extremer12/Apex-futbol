@@ -53,6 +53,12 @@ export const TrendingUpIcon = ({ className }: { className?: string }) => (
     </svg>
 );
 
+export const TrendingDownIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6 9 12.75l4.306-4.306a11.95 11.95 0 0 1 5.814 5.518l2.74 1.22m0 0-5.94 2.281m5.94-2.28 2.28-5.941" />
+    </svg>
+);
+
 export const UsersIcon = ({ className }: { className?: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m-7.5-2.962a3.75 3.75 0 1 0-7.5 0 3.75 3.75 0 0 0 7.5 0ZM10.5 1.5a9 9 0 1 0 18 0 9 9 0 0 0-18 0Z" />
@@ -65,6 +71,12 @@ export const TrophyIcon = ({ className }: { className?: string }) => (
         <path strokeLinecap="round" strokeLinejoin="round" d="M18.375 18.75c.934 0 1.688-.753 1.688-1.688V11.25c0-1.573-1.277-2.85-2.85-2.85S15.525 9.677 15.525 11.25v5.812c0 .935.754 1.688 1.688 1.688Z M5.625 18.75c-.934 0-1.688-.753-1.688-1.688V11.25c0-1.573 1.277-2.85 2.85-2.85s2.85 1.277 2.85 2.85v5.812c0 .935-.754 1.688-1.688 1.688Z" />
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 1.5a5.25 5.25 0 0 1 5.25 5.25v1.875c0 .54.435.975.975.975h.05a.975.975 0 0 1 .975.975v3.375c0 .54-.435.975-.975.975h-.05a.975.975 0 0 1-.975-.975V12a5.25 5.25 0 0 1-5.25-5.25V1.5Z M15 1.5a5.25 5.25 0 0 0-5.25 5.25v1.875c0 .54-.435.975-.975.975h-.05a.975.975 0 0 0-.975.975v3.375c0 .54.435.975.975.975h.05a.975.975 0 0 0 .975.975V12a5.25 5.25 0 0 0 5.25-5.25V1.5Z" />
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 21.75v-1.5" />
+    </svg>
+);
+
+export const AwardIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 15a6 6 0 1 0 0-12 6 6 0 0 0 0 12Zm0 0v6M9 18l3 3 3-3" />
     </svg>
 );
 
