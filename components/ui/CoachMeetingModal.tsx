@@ -2,7 +2,7 @@
 import React from 'react';
 import { Player, CoachRequest } from '../../types';
 import { CoachReport } from '../../services/gameLogic';
-import { Modal } from '../common/Modal';
+import { Modal } from './Modal';
 import { UsersIcon, SparklesIcon, TrendingUpIcon, AwardIcon } from '../icons';
 import { formatCurrencyShort } from '../../utils';
 

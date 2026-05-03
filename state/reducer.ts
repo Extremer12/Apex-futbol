@@ -197,7 +197,13 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 schedule: newSchedule,
                 leagueTables: newLeagueTables,
                 allTeams: newAllTeams,
-                team: updatedPlayerTeam,
+                team: {
+                    ...updatedPlayerTeam,
+                    coach: action.payload.coachReport ? {
+                        ...updatedPlayerTeam.coach!,
+                        satisfactionLevel: action.payload.coachReport.satisfaction
+                    } : updatedPlayerTeam.coach
+                },
                 boardConfidence: newConfidence,
                 incomingOffers: [...state.incomingOffers, ...newOffers],
                 cups: newCups || state.cups,
@@ -210,13 +216,6 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                     breakdown
                 },
                 scoutedPlayerIds: newScoutedPlayerIds || state.scoutedPlayerIds,
-                team: {
-                    ...updatedPlayerTeam,
-                    coach: action.payload.coachReport ? {
-                        ...updatedPlayerTeam.coach!,
-                        satisfactionLevel: action.payload.coachReport.satisfaction
-                    } : updatedPlayerTeam.coach
-                }
             };
         }
 
