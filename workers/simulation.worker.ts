@@ -71,7 +71,35 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
             );
         });
 
-        let updatedAllTeams = allTeams.map(t => ({ ...t, squad: [...t.squad] }));
+        // Deep clone teams and squad, and handle weekly condition/injury updates
+        let updatedAllTeams = allTeams.map(t => {
+            const updatedSquad = t.squad.map(p => {
+                const newP = { ...p, stats: { ...p.stats! } }; // Deep clone stats
+                
+                // Heal injuries / suspensions if week advances
+                if (newP.isInjured && newP.injuryWeeksRemaining) {
+                    newP.injuryWeeksRemaining -= 1;
+                    if (newP.injuryWeeksRemaining <= 0) {
+                        newP.isInjured = false;
+                        newP.injuryWeeksRemaining = 0;
+                    }
+                }
+                if (newP.isSuspended && newP.suspensionWeeksRemaining) {
+                    newP.suspensionWeeksRemaining -= 1;
+                    if (newP.suspensionWeeksRemaining <= 0) {
+                        newP.isSuspended = false;
+                        newP.suspensionWeeksRemaining = 0;
+                    }
+                }
+
+                // Recover condition slightly for all players at the start of the week
+                // (Matches will reduce it later if they play)
+                newP.condition = Math.min(100, (newP.condition || 100) + 15);
+                
+                return newP;
+            });
+            return { ...t, squad: updatedSquad };
+        });
         
         // Filter matches by currentWeek AND currentTurn
         const isMidweek = currentTurn === 'midweek';

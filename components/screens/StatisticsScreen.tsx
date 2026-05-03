@@ -19,47 +19,28 @@ interface PlayerStats {
 export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ gameState }) => {
     const [selectedLeague, setSelectedLeague] = useState<LeagueId>(gameState.team.leagueId);
 
-    // Calculate player statistics from match results
+    // Calculate player statistics directly from player.stats
     const playerStats = useMemo(() => {
-        const stats: Map<number, PlayerStats> = new Map();
+        const stats: PlayerStats[] = [];
 
-        // Initialize stats for all players in the selected league
         gameState.allTeams.forEach(team => {
             if (team.leagueId !== selectedLeague) return;
             team.squad.forEach(player => {
-                stats.set(player.id, {
-                    player,
-                    teamId: team.id,
-                    teamName: team.name,
-                    teamLogo: team.logo,
-                    goals: 0,
-                    assists: 0,
-                    matches: 0
-                });
+                if (player.stats && (player.stats.goals > 0 || player.stats.assists > 0 || player.stats.appearances > 0)) {
+                    stats.push({
+                        player,
+                        teamId: team.id,
+                        teamName: team.name,
+                        teamLogo: team.logo,
+                        goals: player.stats.goals,
+                        assists: player.stats.assists,
+                        matches: player.stats.appearances
+                    });
+                }
             });
         });
 
-        // Aggregate actual goals from match results
-        gameState.schedule.forEach(match => {
-            if (match.result) {
-                const homeTeam = gameState.allTeams.find(t => t.id === match.homeTeamId);
-                const awayTeam = gameState.allTeams.find(t => t.id === match.awayTeamId);
-                
-                if (homeTeam) homeTeam.squad.forEach(p => { const s = stats.get(p.id); if (s) s.matches++; });
-                if (awayTeam) awayTeam.squad.forEach(p => { const s = stats.get(p.id); if (s) s.matches++; });
-
-                if (match.result.scorers) {
-                    match.result.scorers.forEach(scorer => {
-                        const playerStat = stats.get(scorer.playerId);
-                        if (playerStat) {
-                            playerStat.goals++;
-                        }
-                    });
-                }
-            }
-        });
-
-        return Array.from(stats.values());
+        return stats;
     }, [gameState, selectedLeague]);
 
     const topScorers = useMemo(() => {
@@ -201,8 +182,57 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ gameState })
                     </div>
                 </div>
 
+                {/* Assists Card */}
+                <div className={`bg-slate-900/50 border border-white/5 rounded-[2rem] overflow-hidden shadow-xl`}>
+                    <div className={`bg-gradient-to-r from-slate-800 to-slate-900 px-8 py-5 border-b border-white/5 flex items-center justify-between`}>
+                        <h3 className="text-white font-black text-lg uppercase tracking-wider italic flex items-center gap-3">
+                            <span className="text-2xl">👟</span> Asistentes
+                        </h3>
+                    </div>
+                    <div className="p-2">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] border-b border-white/5">
+                                    <th className="px-6 py-4 text-left">Jugador</th>
+                                    <th className="px-6 py-4 text-center">Club</th>
+                                    <th className="px-6 py-4 text-right">Asis.</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5">
+                                {topAssists.length > 0 ? topAssists.map((stat, idx) => (
+                                    <tr key={stat.player.id} className="group hover:bg-white/5 transition-all duration-300">
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-4">
+                                                <span className={`text-lg font-black ${idx === 0 ? 'text-yellow-400' : idx === 1 ? 'text-slate-300' : idx === 2 ? 'text-orange-400' : 'text-slate-600'}`}>
+                                                    {idx + 1}
+                                                </span>
+                                                <div>
+                                                    <div className="font-bold text-white group-hover:text-sky-400 transition-colors">{stat.player.name}</div>
+                                                    <div className="text-[10px] text-slate-500 font-black uppercase">{stat.player.position}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex justify-center group-hover:scale-110 transition-transform">
+                                                <div className="w-8 h-8">
+                                                    <TeamLogo team={{ logo: stat.teamLogo, name: stat.teamName }} />
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-right font-black text-2xl text-white italic">{stat.assists}</td>
+                                    </tr>
+                                )) : (
+                                    <tr>
+                                        <td colSpan={3} className="px-6 py-12 text-center text-slate-500 font-bold italic">No hay datos registrados</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 {/* Team Performance Card */}
-                <div className="space-y-6">
+                <div className="space-y-6 lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className={`bg-gradient-to-br from-slate-900 to-slate-800 border border-white/5 rounded-[2rem] p-8 shadow-xl relative overflow-hidden`}>
                         <div className={`absolute top-0 right-0 w-32 h-32 bg-green-500/5 blur-[40px] rounded-full`}></div>
                         <h3 className="text-white font-black text-xl uppercase italic mb-8 flex items-center gap-3">

@@ -11,6 +11,15 @@ export interface Trophy {
   type: 'league' | 'cup';
 }
 
+export interface PlayerStats {
+  goals: number;
+  assists: number;
+  minutes: number;
+  appearances: number;
+  yellowCards: number;
+  redCards: number;
+}
+
 export interface Player {
   id: number;
   name: string;
@@ -22,6 +31,14 @@ export interface Player {
   contractYears: number; // years remaining
   isTransferListed?: boolean;
   age?: number; // Added for Regens system
+  
+  // FASE 6: Stats & Realismo
+  stats?: PlayerStats;
+  condition?: number; // 0-100 (Energía/Fatiga)
+  isInjured?: boolean;
+  injuryWeeksRemaining?: number;
+  isSuspended?: boolean;
+  suspensionWeeksRemaining?: number;
 }
 
 export enum LeagueId {

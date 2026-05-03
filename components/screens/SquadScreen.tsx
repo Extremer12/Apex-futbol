@@ -185,6 +185,8 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
                                         <th className="px-4 py-4 text-center">Edad</th>
                                         <th className="px-4 py-4 text-center">Rat</th>
                                         <th className="px-4 py-4 text-center">Valor</th>
+                                        <th className="px-4 py-4 text-center">Estado</th>
+                                        <th className="px-4 py-4 text-center">G/A</th>
                                         <th className="px-4 py-4 text-center">Moral</th>
                                     </tr>
                                 </thead>
@@ -230,6 +232,29 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
                                                 </span>
                                             </td>
                                             <td className="px-4 py-4 text-center font-bold text-slate-300 font-mono">{formatCurrencyShort(player.value)}</td>
+                                            <td className="px-4 py-4">
+                                                <div className="flex flex-col items-center gap-1">
+                                                    {player.isInjured ? (
+                                                        <span className="text-[10px] font-black bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5 rounded flex items-center gap-1">
+                                                            🚑 {player.injuryWeeksRemaining} sem
+                                                        </span>
+                                                    ) : player.isSuspended ? (
+                                                        <span className="text-[10px] font-black bg-red-500/10 text-red-500 border border-red-500/20 px-2 py-0.5 rounded flex items-center gap-1">
+                                                            🟥 {player.suspensionWeeksRemaining} ptd
+                                                        </span>
+                                                    ) : (
+                                                        <div className="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                                                            <div 
+                                                                className={`h-full ${ (player.condition || 100) > 70 ? 'bg-green-500' : (player.condition || 100) > 40 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                                                                style={{ width: `${player.condition || 100}%` }}
+                                                            />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-4 text-center text-slate-400 font-bold font-mono">
+                                                {player.stats?.goals || 0}/{player.stats?.assists || 0}
+                                            </td>
                                             <td className="px-4 py-4 text-center">
                                                 <span className={`text-[10px] font-black uppercase px-3 py-1 rounded-full border transition-colors ${getMoraleColor(player.morale)}`}>
                                                     {player.morale}

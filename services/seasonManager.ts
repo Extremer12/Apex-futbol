@@ -101,6 +101,44 @@ export function startNewSeason(currentState: GameState): GameState {
 
     // Re-assign processedTeams so the rest of the flow uses teams with updated trophies
     processedTeams.splice(0, processedTeams.length, ...teamsWithTrophies);
+
+    // 2.6 Process Player Awards & Stats Reset
+    let ballonDorWinner: Player | null = null;
+    let goldenBootWinner: Player | null = null;
+    let maxGoals = 0;
+    let bestScore = 0;
+
+    const allPlayers = processedTeams.flatMap(t => t.squad);
+
+    allPlayers.forEach(p => {
+        if (!p.stats) return;
+
+        // Golden Boot
+        if (p.stats.goals > maxGoals) {
+            maxGoals = p.stats.goals;
+            goldenBootWinner = p;
+        }
+
+        // Ballon d'Or score (Goals * 2 + Assists * 1 + Rating / 10 + Apps / 2)
+        const score = (p.stats.goals * 2) + p.stats.assists + (p.rating / 10) + (p.stats.appearances / 2);
+        if (score > bestScore) {
+            bestScore = score;
+            ballonDorWinner = p;
+        }
+
+        // Dynamic Value Update
+        const performanceBonus = (p.stats.goals * 0.5) + (p.stats.assists * 0.2);
+        const ageMultiplier = p.age && p.age < 23 ? 1.5 : p.age && p.age > 30 ? 0.8 : 1.0;
+        p.value = Math.max(0.1, p.value + (performanceBonus * ageMultiplier) - (p.age && p.age > 32 ? 2 : 0));
+        
+        // Dynamic Rating Update
+        if (p.age && p.age < 25 && p.stats.appearances > 10) p.rating = Math.min(99, p.rating + Math.floor(Math.random() * 3));
+        if (p.age && p.age > 32) p.rating = Math.max(40, p.rating - Math.floor(Math.random() * 3));
+
+        // Reset stats
+        p.stats = { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 };
+    });
+
     const updatedPlayerTeamWithTrophies = processedTeams.find(t => t.id === currentState.team.id)!;
 
     // 3. Process Promotion/Relegation (English leagues only)
@@ -200,6 +238,26 @@ export function startNewSeason(currentState: GameState): GameState {
         type: 'standard'
     };
 
+    const awardNewsItems: NewsItem[] = [];
+    if (ballonDorWinner) {
+        awardNewsItems.push({
+            id: `ballondor_${newSeasonYear}`,
+            headline: `🏆 Balón de Oro ${newSeasonYear}`,
+            body: `¡${ballonDorWinner.name} ha sido galardonado con el Balón de Oro tras una temporada estelar!`,
+            date: formatDate(newDate),
+            type: 'standard'
+        });
+    }
+    if (goldenBootWinner) {
+        awardNewsItems.push({
+            id: `goldenboot_${newSeasonYear}`,
+            headline: `👟 Bota de Oro ${newSeasonYear}`,
+            body: `¡${goldenBootWinner.name} gana la Bota de Oro con ${maxGoals} goles en la liga!`,
+            date: formatDate(newDate),
+            type: 'standard'
+        });
+    }
+
     // 7. Calculate fan approval changes based on season performance and promises
     const playerPosition = sortedPL.find(row => row.teamId === updatedPlayerTeam.id)?.position ||
         sortedCH.find(row => row.teamId === updatedPlayerTeam.id)?.position || 10;
@@ -254,7 +312,7 @@ export function startNewSeason(currentState: GameState): GameState {
     });
     
     // Add Promise News if any
-    let finalNewsFeed = [proRelNews, seasonNews, ...currentState.newsFeed];
+    let finalNewsFeed = [proRelNews, seasonNews, ...awardNewsItems, ...currentState.newsFeed];
     if (promiseNewsBody) {
         finalNewsFeed.unshift({
             id: `promises_${newSeasonYear}`,

@@ -28,7 +28,11 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
         logo: t.logo,
         squad: t.squad.map(player => ({
             ...player,
-            age: Math.floor(18 + Math.random() * 16) // Random age 18-33
+            age: Math.floor(18 + Math.random() * 16), // Random age 18-33
+            stats: { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 },
+            condition: 100,
+            isInjured: false,
+            isSuspended: false
         })),
         coach: generateRandomCoach(t.tier)
     }));

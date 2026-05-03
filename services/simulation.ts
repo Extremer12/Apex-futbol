@@ -11,48 +11,98 @@ const FORMATION_CONFIG: Record<string, Record<Player['position'], number>> = {
     '5-3-2': { 'POR': 1, 'DEF': 5, 'CEN': 3, 'DEL': 2 },
 };
 
-const getTeamStats = (team: Team) => {
+// --- NEW LOGIC: Match Squad Selection ---
+const selectMatchSquad = (team: Team) => {
     const formation = team.coach?.preferredFormation || '4-4-2';
     const config = FORMATION_CONFIG[formation];
-    const satisfactionBonus = (team.coach?.satisfactionLevel || 80) / 100; // 0.8 to 1.0 roughly
+    
+    // Filter available players (not injured, not suspended, condition > 30 to avoid automatic injury unless forced)
+    let availablePlayers = team.squad.filter(p => !p.isInjured && !p.isSuspended);
+    
+    // Fallback if not enough players (very rare, but we must handle it by allowing low condition or even injured if desperate)
+    if (availablePlayers.length < 11) {
+        availablePlayers = team.squad.filter(p => !p.isSuspended); // allow injured if desperate
+    }
+    if (availablePlayers.length < 11) {
+        availablePlayers = team.squad; // allow suspended if absolutely desperate (game logic safety)
+    }
 
-    const getRatingForLine = (pos: Player['position'], count: number) => {
-        const players = [...team.squad]
+    const starters: Player[] = [];
+    const availablePool = [...availablePlayers];
+
+    const pickForPosition = (pos: Player['position'], count: number) => {
+        // Sort by effective rating: rating * (condition/100)
+        const playersForPos = availablePool
             .filter(p => p.position === pos)
-            .sort((a, b) => b.rating - a.rating)
-            .slice(0, count);
-        
-        if (players.length === 0) return 40; // Heavy penalty if no players in line
-        
-        const avgRating = players.reduce((sum, p) => sum + p.rating, 0) / players.length;
-        
-        // Penalty if squad is short in this position
-        const shortagePenalty = players.length < count ? (1 - (count - players.length) * 0.1) : 1;
-        
-        return avgRating * shortagePenalty * satisfactionBonus;
+            .sort((a, b) => {
+                const effA = a.rating * ((a.condition ?? 100) / 100);
+                const effB = b.rating * ((b.condition ?? 100) / 100);
+                return effB - effA;
+            });
+
+        for (let i = 0; i < count; i++) {
+            if (playersForPos.length > i) {
+                const p = playersForPos[i];
+                starters.push(p);
+                // Remove from available pool
+                const idx = availablePool.findIndex(poolP => poolP.id === p.id);
+                if (idx > -1) availablePool.splice(idx, 1);
+            } else {
+                // If we run out of players for a position, pick the best available regardless of position
+                if (availablePool.length > 0) {
+                    availablePool.sort((a, b) => {
+                        const effA = a.rating * ((a.condition ?? 100) / 100);
+                        const effB = b.rating * ((b.condition ?? 100) / 100);
+                        return effB - effA;
+                    });
+                    const p = availablePool[0];
+                    starters.push(p);
+                    availablePool.splice(0, 1);
+                }
+            }
+        }
     };
 
-    const attack = getRatingForLine('DEL', config['DEL']);
-    const midfield = getRatingForLine('CEN', config['CEN']);
-    const defense = (getRatingForLine('DEF', config['DEF']) + getRatingForLine('POR', config['POR'])) / 2;
+    pickForPosition('POR', config['POR']);
+    pickForPosition('DEF', config['DEF']);
+    pickForPosition('CEN', config['CEN']);
+    pickForPosition('DEL', config['DEL']);
 
-    return { attack, midfield, defense };
+    // Pick 3 subs randomly from the remaining available
+    const subs = availablePool
+        .sort((a, b) => (b.rating * ((b.condition ?? 100) / 100)) - (a.rating * ((a.condition ?? 100) / 100)))
+        .slice(0, 3);
+
+    return { starters, subs };
+};
+
+const getTeamStatsFromSquad = (starters: Player[], coach: Team['coach']) => {
+    const satisfactionBonus = (coach?.satisfactionLevel || 80) / 100; // 0.8 to 1.0 roughly
+
+    const getLineRating = (pos: Player['position']) => {
+        const line = starters.filter(p => p.position === pos);
+        if (line.length === 0) return 40;
+        const avg = line.reduce((sum, p) => sum + (p.rating * ((p.condition ?? 100) / 100)), 0) / line.length;
+        return avg * satisfactionBonus;
+    };
+
+    return {
+        attack: getLineRating('DEL'),
+        midfield: getLineRating('CEN'),
+        defense: (getLineRating('DEF') + getLineRating('POR')) / 2
+    };
 };
 
 export const generateYouthPlayer = (tier: Team['tier'] = 'Lower'): Player => {
     const positions: Player['position'][] = ['POR', 'DEF', 'CEN', 'DEL'];
     const position = positions[Math.floor(Math.random() * positions.length)];
 
-    // Base rating based on tier (better academies produce better players)
     let baseRating = 55;
     if (tier === 'Mid') baseRating = 60;
     if (tier === 'Top') baseRating = 64;
 
-    // Random variance (-5 to +8)
     const rating = Math.min(85, Math.max(45, baseRating + Math.floor(Math.random() * 13) - 5));
-
-    // Value calculation based on rating
-    const value = Math.round((rating * rating * rating) / 8000) / 10; // Exponential value curve
+    const value = Math.round((rating * rating * rating) / 8000) / 10;
 
     return {
         id: Date.now() + Math.floor(Math.random() * 100000) + Math.floor(performance.now()),
@@ -60,21 +110,47 @@ export const generateYouthPlayer = (tier: Team['tier'] = 'Lower'): Player => {
         position,
         rating,
         value: Math.max(0.1, value),
-        wage: Math.round(value * 1000) + 500, // Cheap wages
+        wage: Math.round(value * 1000) + 500,
         morale: 'Contento',
         contractYears: 3,
-        age: 15 + Math.floor(Math.random() * 3), // 15-17 years old
-        isTransferListed: false
+        age: 15 + Math.floor(Math.random() * 3),
+        isTransferListed: false,
+        stats: { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 },
+        condition: 100,
+        isInjured: false,
+        isSuspended: false
     };
 };
 
-
-
 export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: LeagueTableRow, awayTableRow: LeagueTableRow, isCupMatch: boolean = false): { homeScore: number; awayScore: number, events: string[], scorers: { playerId: number, playerName: string, minute: number }[], penalties?: { home: number, away: number } } => {
-    const homeStats = getTeamStats(homeTeam);
-    const awayStats = getTeamStats(awayTeam);
+    
+    // Select squads
+    const homeSquad = selectMatchSquad(homeTeam);
+    const awaySquad = selectMatchSquad(awayTeam);
 
-    // Tactical Influence (Coach Style)
+    const homeStats = getTeamStatsFromSquad(homeSquad.starters, homeTeam.coach);
+    const awayStats = getTeamStatsFromSquad(awaySquad.starters, awayTeam.coach);
+
+    // Apply match effects to players (minutes, appearances, fatigue)
+    const processMatchParticipation = (squad: { starters: Player[], subs: Player[] }) => {
+        squad.starters.forEach(p => {
+            if (!p.stats) p.stats = { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 };
+            p.stats.appearances += 1;
+            p.stats.minutes += 90;
+            p.condition = Math.max(10, (p.condition ?? 100) - (15 + Math.random() * 15)); // Reduce condition by 15-30
+        });
+        squad.subs.forEach(p => {
+            if (!p.stats) p.stats = { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 };
+            p.stats.appearances += 1;
+            p.stats.minutes += 30; // Average sub minutes
+            p.condition = Math.max(10, (p.condition ?? 100) - (5 + Math.random() * 10)); // Reduce condition by 5-15
+        });
+    };
+
+    processMatchParticipation(homeSquad);
+    processMatchParticipation(awaySquad);
+
+    // Tactical Influence
     const homeStyle = homeTeam.coach?.style || 'Balanced';
     const awayStyle = awayTeam.coach?.style || 'Balanced';
 
@@ -82,67 +158,90 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
     const homeTacticalBonus = tacticalMatchup.homeAdvantage;
     const awayTacticalBonus = -tacticalMatchup.homeAdvantage;
 
-    // 1. Factor de Control (Centro del campo + Localía MEJORADA + Táctica)
-    // Ventaja local aumentada de 1.1 a 1.25 (~25% más control)
     const homeControl = homeStats.midfield * 1.25 + (Math.random() * 10) + homeTacticalBonus;
     const awayControl = awayStats.midfield + (Math.random() * 10) + awayTacticalBonus;
     const totalControl = homeControl + awayControl;
     const homePossession = homeControl / totalControl;
 
-    // 2. Factor de Moral y Forma
     const getMoralBonus = (m: Morale) => ({ 'Feliz': 3, 'Contento': 1, 'Normal': 0, 'Descontento': -2, 'Enojado': -5 }[m]);
     const getFormBonus = (f: string[]) => f.slice(0, 3).reduce((acc, v) => acc + (v === 'W' ? 2 : v === 'L' ? -1 : 0), 0);
 
     const homeMomentum = getMoralBonus(homeTeam.teamMorale) + getFormBonus(homeTableRow?.form || []);
     const awayMomentum = getMoralBonus(awayTeam.teamMorale) + getFormBonus(awayTableRow?.form || []);
 
-    // 3. Calcular Oportunidades (Chances) - BALANCEADAS
     let homeChances = 4 + (homePossession * 6) + (homeStats.attack - awayStats.defense) / 5 + (homeMomentum / 3);
     let awayChances = 4 + ((1 - homePossession) * 6) + (awayStats.attack - homeStats.defense) / 5 + (awayMomentum / 3);
 
-    // Adjust chances based on tactics (Risk vs Reward)
-    if (homeStyle === 'Attacking') { homeChances += 2; awayChances += 1; } // Attack more, expose defense
-    if (homeStyle === 'Defensive') { homeChances -= 2; awayChances -= 2; } // Park the bus
-    if (homeStyle === 'Possession') { homeChances += 1; awayChances -= 1; } // Control game
-    if (homeStyle === 'Counter') { homeChances += 1; awayChances += 1; } // Open game
+    if (homeStyle === 'Attacking') { homeChances += 2; awayChances += 1; }
+    if (homeStyle === 'Defensive') { homeChances -= 2; awayChances -= 2; }
+    if (homeStyle === 'Possession') { homeChances += 1; awayChances -= 1; }
+    if (homeStyle === 'Counter') { homeChances += 1; awayChances += 1; }
 
     if (awayStyle === 'Attacking') { awayChances += 2; homeChances += 1; }
     if (awayStyle === 'Defensive') { awayChances -= 2; homeChances -= 2; }
     if (awayStyle === 'Possession') { awayChances += 1; homeChances -= 1; }
     if (awayStyle === 'Counter') { awayChances += 1; homeChances += 1; }
 
-    // Balancear chances para evitar extremos (mínimo 2, máximo 12)
     homeChances = Math.max(2, Math.min(12, homeChances + (Math.random() * 4) - 2));
     awayChances = Math.max(2, Math.min(12, awayChances + (Math.random() * 4) - 2));
 
-    // 4. Simulación de Eventos
     let homeScore = 0;
     let awayScore = 0;
     const events: string[] = [];
     const scorers: { playerId: number, playerName: string, minute: number }[] = [];
 
-    // MEJORADO: Tasa de conversión basada en calidad del ataque
-    // Rating promedio de delanteros influye más
     const homeAttackerRating = homeStats.attack;
     const awayAttackerRating = awayStats.attack;
 
-    // Base 12% + bonus por calidad (hasta +8% para equipos top)
     const homeConversionRate = 0.12 + ((homeAttackerRating - 70) / 250) + ((homeStats.attack - awayStats.defense) / 300);
     const awayConversionRate = 0.12 + ((awayAttackerRating - 70) / 250) + ((awayStats.attack - homeStats.defense) / 300);
 
-    // Helper to get scorer
-    const getScorer = (team: Team): Player => {
-        const potentialScorers = team.squad.filter(p => p.position === 'DEL' || p.position === 'CEN');
-        if (potentialScorers.length === 0) return team.squad[0];
-        // Weighted random: higher rating = higher chance
-        const totalRating = potentialScorers.reduce((sum, p) => sum + p.rating, 0);
+    // Helpers for Goal/Assist assignment
+    const getScorer = (squad: { starters: Player[], subs: Player[] }): Player => {
+        const potential = squad.starters.filter(p => p.position === 'DEL' || p.position === 'CEN');
+        if (potential.length === 0) return squad.starters[0] || squad.subs[0];
+        const totalRating = potential.reduce((sum, p) => sum + p.rating, 0);
         let random = Math.random() * totalRating;
-        for (const player of potentialScorers) {
-            random -= player.rating;
-            if (random <= 0) return player;
+        for (const p of potential) {
+            random -= p.rating;
+            if (random <= 0) return p;
         }
-        return potentialScorers[0];
+        return potential[0];
     };
+
+    const getAssister = (squad: { starters: Player[], subs: Player[] }, scorer: Player): Player | null => {
+        // 70% chance of an assist
+        if (Math.random() > 0.7) return null;
+        const potential = squad.starters.filter(p => p.id !== scorer.id && (p.position === 'CEN' || p.position === 'DEF' || p.position === 'DEL'));
+        if (potential.length === 0) return null;
+        return potential[Math.floor(Math.random() * potential.length)];
+    };
+
+    // Random injuries and cards
+    const processRandomEvents = (squad: { starters: Player[], subs: Player[] }, teamName: string) => {
+        squad.starters.forEach(p => {
+            // Injury chance: increases with low condition
+            const injuryChance = p.condition && p.condition < 60 ? 0.03 : 0.01;
+            if (Math.random() < injuryChance && !p.isInjured) {
+                p.isInjured = true;
+                p.injuryWeeksRemaining = 1 + Math.floor(Math.random() * 4);
+                events.push(`🚑 ¡Malas noticias para ${teamName}! ${p.name} ha sufrido una lesión muscular y estará fuera ${p.injuryWeeksRemaining} semanas.`);
+            }
+
+            // Cards
+            if (Math.random() < 0.15) { // Yellow card
+                if (p.stats) p.stats.yellowCards++;
+            } else if (Math.random() < 0.01) { // Red card
+                if (p.stats) p.stats.redCards++;
+                p.isSuspended = true;
+                p.suspensionWeeksRemaining = 1 + Math.floor(Math.random() * 3);
+                events.push(`🟥 ¡Expulsión en el ${teamName}! ${p.name} recibe tarjeta roja directa y se perderá ${p.suspensionWeeksRemaining} partidos.`);
+            }
+        });
+    };
+
+    processRandomEvents(homeSquad, homeTeam.name);
+    processRandomEvents(awaySquad, awayTeam.name);
 
     // Simulate Home Chances
     for (let i = 0; i < Math.round(homeChances); i++) {
@@ -150,11 +249,18 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
         const rand = Math.random();
         if (rand < homeConversionRate) {
             homeScore++;
-            const scorer = getScorer(homeTeam);
+            const scorer = getScorer(homeSquad);
+            const assister = getAssister(homeSquad, scorer);
+            
+            if (scorer.stats) scorer.stats.goals++;
+            if (assister && assister.stats) assister.stats.assists++;
+            
             scorers.push({ playerId: scorer.id, playerName: scorer.name, minute });
-            events.push(`${minute}' ⚽ GOOOOL de ${homeTeam.name}! ${scorer.name} marca con un remate espectacular.`);
+            let msg = `${minute}' ⚽ GOOOOL de ${homeTeam.name}! ${scorer.name} marca con un remate espectacular.`;
+            if (assister) msg += ` (Asistencia de ${assister.name})`;
+            events.push(msg);
         } else if (rand < 0.4) {
-            events.push(`${minute}' 🧤 ¡Gran parada! El portero del ${awayTeam.name} evita el gol tras un disparo de ${getScorer(homeTeam).name}.`);
+            events.push(`${minute}' 🧤 ¡Gran parada! El portero del ${awayTeam.name} evita el gol tras un disparo de ${getScorer(homeSquad).name}.`);
         } else if (rand < 0.5) {
             events.push(`${minute}' 🟨 Tarjeta amarilla para un jugador de ${homeTeam.name} por falta táctica.`);
         } else {
@@ -168,9 +274,16 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
         const rand = Math.random();
         if (rand < awayConversionRate) {
             awayScore++;
-            const scorer = getScorer(awayTeam);
+            const scorer = getScorer(awaySquad);
+            const assister = getAssister(awaySquad, scorer);
+            
+            if (scorer.stats) scorer.stats.goals++;
+            if (assister && assister.stats) assister.stats.assists++;
+
             scorers.push({ playerId: scorer.id, playerName: scorer.name, minute });
-            events.push(`${minute}' ⚽ GOOOOL de ${awayTeam.name}! ${scorer.name} anota para la visita.`);
+            let msg = `${minute}' ⚽ GOOOOL de ${awayTeam.name}! ${scorer.name} anota para la visita.`;
+            if (assister) msg += ` (Asistencia de ${assister.name})`;
+            events.push(msg);
         } else if (rand < 0.4) {
             events.push(`${minute}' 🧤 ¡Increíble reflejo! El portero del ${homeTeam.name} desvía el balón al córner.`);
         } else if (rand < 0.5) {
@@ -180,28 +293,26 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
         }
     }
 
-    // Sort events by minute
     events.sort((a, b) => {
         const minA = parseInt(a.split("'")[0]);
         const minB = parseInt(b.split("'")[0]);
         return minA - minB;
     });
 
-    // Helper to trim goals if capped
     const trimGoals = (score: number, teamName: string, teamSquad: Player[]) => {
         if (score > 8) {
             let goalsToRemove = score - 8;
-            // Remove the LAST goal events for this team
             for (let i = events.length - 1; i >= 0 && goalsToRemove > 0; i--) {
                 if (events[i].includes('⚽') && events[i].includes(teamName)) {
                     events.splice(i, 1);
                     goalsToRemove--;
                 }
             }
-            // Sync scorers
             let scorersToRemove = score - 8;
             for (let i = scorers.length - 1; i >= 0 && scorersToRemove > 0; i--) {
-                if (teamSquad.some(p => p.id === scorers[i].playerId)) {
+                const scorer = teamSquad.find(p => p.id === scorers[i].playerId);
+                if (scorer) {
+                    if (scorer.stats && scorer.stats.goals > 0) scorer.stats.goals--; // Retract goal from stats
                     scorers.splice(i, 1);
                     scorersToRemove--;
                 }
@@ -214,12 +325,9 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
     homeScore = trimGoals(homeScore, homeTeam.name, homeTeam.squad);
     awayScore = trimGoals(awayScore, awayTeam.name, awayTeam.squad);
 
-    // Cup Logic: Extra Time & Penalties
     let penaltiesResult;
     if (isCupMatch && homeScore === awayScore) {
         events.push(`90' ⏱️ Final del tiempo reglamentario. ¡Nos vamos a la prórroga!`);
-
-        // Extra Time Simulation (Reduced chances)
         const etHomeChances = Math.max(1, homeChances / 4);
         const etAwayChances = Math.max(1, awayChances / 4);
 
@@ -227,7 +335,8 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
             if (Math.random() < homeConversionRate) {
                 homeScore++;
                 const minute = 90 + Math.floor(Math.random() * 30);
-                const scorer = getScorer(homeTeam);
+                const scorer = getScorer(homeSquad);
+                if (scorer.stats) scorer.stats.goals++;
                 scorers.push({ playerId: scorer.id, playerName: scorer.name, minute });
                 events.push(`${minute}' ⚽ ¡GOL EN PRÓRROGA! ${homeTeam.name} se pone en ventaja con un tanto de ${scorer.name}.`);
             }
@@ -236,7 +345,8 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
             if (Math.random() < awayConversionRate) {
                 awayScore++;
                 const minute = 90 + Math.floor(Math.random() * 30);
-                const scorer = getScorer(awayTeam);
+                const scorer = getScorer(awaySquad);
+                if (scorer.stats) scorer.stats.goals++;
                 scorers.push({ playerId: scorer.id, playerName: scorer.name, minute });
                 events.push(`${minute}' ⚽ ¡GOL EN PRÓRROGA! ${awayTeam.name} empata el partido con un tanto de ${scorer.name}.`);
             }
@@ -244,14 +354,12 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
 
         if (homeScore === awayScore) {
             events.push(`120' ⏱️ Final de la prórroga. ¡El partido se decidirá en los penales!`);
-            // Penalties Simulation
             let homePens = 0;
             let awayPens = 0;
             for (let k = 0; k < 5; k++) {
                 if (Math.random() > 0.2) homePens++;
                 if (Math.random() > 0.2) awayPens++;
             }
-            // Sudden death if needed
             while (homePens === awayPens) {
                 if (Math.random() > 0.2) homePens++;
                 if (Math.random() > 0.2) awayPens++;

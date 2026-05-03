@@ -80,13 +80,20 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
             const electoralPromises = loadedState.electoralPromises || [];
             const boardConfidence = loadedState.boardConfidence !== undefined ? loadedState.boardConfidence : ((loadedState as any).chairmanConfidence || 50);
 
-            // 2. Coach System Migration
+            // 2. Coach & Player Stats System Migration
             const availableCoaches = loadedState.availableCoaches || generateCoachMarket(5);
-            // Ensure all teams have a coach and trophyCabinet
+            // Ensure all teams have a coach, trophyCabinet, and all players have stats/condition
             const allTeamsWithCoaches = loadedState.allTeams.map(t => ({
                 ...t,
                 coach: t.coach || generateRandomCoach(t.tier),
-                trophyCabinet: t.trophyCabinet || []
+                trophyCabinet: t.trophyCabinet || [],
+                squad: t.squad.map(p => ({
+                    ...p,
+                    stats: p.stats || { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 },
+                    condition: p.condition ?? 100,
+                    isInjured: p.isInjured || false,
+                    isSuspended: p.isSuspended || false
+                }))
             }));
             const playerTeamWithCoach = allTeamsWithCoaches.find(t => t.id === loadedState.team.id)!;
 
