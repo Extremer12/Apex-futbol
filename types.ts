@@ -4,6 +4,13 @@ import React from 'react';
 
 export type Morale = 'Feliz' | 'Contento' | 'Normal' | 'Descontento' | 'Enojado';
 
+export interface Trophy {
+  id: string;
+  name: string; // Ej: "Premier League", "FA Cup"
+  season: number;
+  type: 'league' | 'cup';
+}
+
 export interface Player {
   id: number;
   name: string;
@@ -47,8 +54,8 @@ export interface Team {
   teamMorale: Morale;
   primaryColor: string;
   secondaryColor: string;
-  tactics: 'Attacking' | 'Balanced' | 'Defensive';
   coach?: Coach; // Added for Phase 2: Sports Delegation
+  trophyCabinet?: Trophy[]; // Added for Phase 3: Trophies
 }
 
 export interface Coach {
@@ -60,6 +67,24 @@ export interface Coach {
   prestige: number; // 1-100, affects signing cost and team morale
   salary: number; // Weekly salary
   signingBonus: number; // Cost to hire
+  
+  // Tactical Profile
+  preferredFormation: '4-3-3' | '4-4-2' | '3-5-2' | '4-2-3-1' | '5-3-2';
+  youthDevelopment: number; // 1-100 (affects academy usage)
+  riskTolerance: number; // 1-100 (affects rotations)
+  
+  // DT AI & Satisfaction
+  satisfactionLevel: number; // 1-100
+  requestedSignings: CoachRequest[];
+  tacticalNotes: string;
+}
+
+export interface CoachRequest {
+  id: string;
+  position: Player['position'];
+  minRating: number;
+  reason: string;
+  priority: 'critical' | 'important' | 'nice_to_have';
 }
 
 export interface Scout {
@@ -101,8 +126,9 @@ export interface Match {
     events?: string[];
     scorers?: MatchScorer[];
   };
-  competition?: 'League' | 'FA_Cup' | 'Carabao_Cup'; // Added to distinguish match types
+  competition?: 'League' | 'FA_Cup' | 'Carabao_Cup' | 'Copa_Del_Rey' | 'DFB_Pokal' | 'Coppa_Italia' | 'Champions_League' | 'Europa_League'; // Added to distinguish match types
   isCupMatch?: boolean;
+  isMidweek?: boolean; // True for matches played on a midweek turn
   penalties?: { home: number; away: number; };
 }
 
@@ -160,6 +186,31 @@ export interface CupCompetition {
   currentRoundIndex: number;
   winnerId?: number;
   statistics: CupStatistics;
+}
+
+export interface EuropeanTableRow {
+  teamId: number;
+  position: number;
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
+  points: number;
+}
+
+export interface EuropeanCompetition {
+  id: string;
+  name: string;
+  participants: number[]; // team IDs
+  leagueTable: EuropeanTableRow[];
+  leagueFixtures: Match[]; // Swiss format matches
+  knockoutRounds: CupRound[];
+  currentPhase: 'league' | 'playoff' | 'knockout' | 'finished';
+  currentRoundIndex: number; // for knockouts
+  winnerId?: number;
 }
 
 // Presidential System Types
@@ -234,11 +285,20 @@ export interface FinancialBreakdown {
 }
 
 
+export interface CinematicEvent {
+  id: string;
+  type: 'LEAGUE_WIN' | 'CUP_WIN' | 'PROMOTION' | 'RELEGATION' | 'SEASON_SUMMARY';
+  title: string;
+  subtitle: string;
+  metadata?: any;
+}
+
 export interface GameState {
   team: Team;
   allTeams: Team[];
   currentDate: Date;
   currentWeek: number;
+  currentTurn: 'weekend' | 'midweek'; // New time structure
   newsFeed: NewsItem[]; // Kept as newsFeed to match App.tsx
   schedule: Match[];
   leagueTables: Record<LeagueId, LeagueTableRow[]>; // Unified league tables
@@ -265,6 +325,11 @@ export interface GameState {
   cups: {
     faCup: CupCompetition;
     carabaoCup: CupCompetition;
+    copaDelRey: CupCompetition;
+    dfbPokal: CupCompetition;
+    coppaItalia: CupCompetition;
+    championsLeague: EuropeanCompetition;
+    europaLeague: EuropeanCompetition;
   };
   availableCoaches: Coach[]; // Market of available coaches
   // New Fields for Academy & Regens
@@ -274,6 +339,7 @@ export interface GameState {
   // Scouting System
   scouts: Scout[];
   scoutedPlayerIds: Record<number, number>; // playerId -> scoutingLevel (0-100)
+  cinematicQueue: CinematicEvent[];
 }
 
 export enum Screen {
@@ -289,9 +355,18 @@ export enum Screen {
   Club = 'CLUB',
   Sponsorships = 'PATROCINIOS',
   Stadium = 'ESTADIO',
+  Trophies = 'TROFEOS',
 }
 
 export type MatchPhase = 'PRE' | 'LIVE' | 'POST';
+
+export interface CoachReport {
+    summary: string;
+    satisfaction: number;
+    requests: CoachRequest[];
+    tacticalUpdate: string;
+    promotions: Player[]; 
+}
 
 export interface PendingSimulationResults {
     newsToAdd: NewsItem[];
@@ -303,4 +378,5 @@ export interface PendingSimulationResults {
     playerMatchResult: { homeScore: number; awayScore: number, penalties?: { home: number, away: number }, events?: string[] } | null;
     updatedCups?: { faCup: any, carabaoCup: any };
     updatedScoutedPlayerIds?: Record<number, number>;
+    coachReport?: CoachReport;
 }

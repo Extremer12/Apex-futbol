@@ -17,6 +17,9 @@ import { PlayerDetailModal } from './components/ui/PlayerDetailModal';
 import { SaveGameModal } from './components/ui/SaveGameModal';
 import { Notification } from './components/ui/Notification';
 import { EventModal } from './components/ui/EventModal';
+import { CoachMeetingModal } from './components/ui/CoachMeetingModal';
+import { CoachReport, Player } from './types';
+import { CinematicOverlay } from './components/cinematics/CinematicOverlay';
 
 // Services
 import { ElectionResponse, generateNews, generateMatchReport, generateTransferOffer, generatePlayerOfTheWeekNews, generateImportantNews } from './services/gameLogic';
@@ -26,8 +29,7 @@ import { simulationWorker } from './services/simulationWorker';
 import { eventEngine, TriggeredEvent } from './services/eventEngine';
 
 
-type AppStateType = 'START_SCREEN' | 'LOAD_GAME' | 'PROFILE_CREATION' | 'TEAM_SELECTION' | 'ELECTION_PITCH' | 'ELECTION_RESULT' | 'GAME_ACTIVE' | 'GAME_OVER';
-export type MatchPhase = 'PRE' | 'LIVE' | 'POST';
+type AppStateType = 'START_SCREEN' | 'LOAD_GAME' | 'PROFILE_CREATION' | 'TEAM_SELECTION' | 'ELECTION_PITCH' | 'ELECTION_RESULT' | 'PROMISE_SELECTION' | 'GAME_ACTIVE' | 'GAME_OVER';
 
 // Data structure to hold simulation results before committing to state
 import { PendingSimulationResults } from './types';
@@ -44,8 +46,9 @@ function AppLogic() {
     const [electionResult, setElectionResult] = useState<ElectionResponse | null>(null);
     const [activeScreen, setActiveScreen] = useState<Screen>(Screen.Dashboard);
 
-    // Event System State
-    const [currentEvent, setCurrentEvent] = useState<TriggeredEvent | null>(null);
+    // Coach Meeting State
+    const [coachReport, setCoachReport] = useState<CoachReport | null>(null);
+    const [isCoachMeetingOpen, setIsCoachMeetingOpen] = useState(false);
 
     const [gameState, dispatch] = useReducer(gameReducer, initialState);
 
@@ -189,13 +192,35 @@ function AppLogic() {
         setCurrentEvent(null);
     }, [gameState, currentEvent, showNotification]);
 
+    const handleApprovePromotion = useCallback((player: Player) => {
+        dispatch({ type: 'PROMOTE_YOUTH', payload: player.id });
+        showNotification(`${player.name} ha sido promovido al primer equipo`, 'success');
+        if (coachReport) {
+            setCoachReport({
+                ...coachReport,
+                promotions: coachReport.promotions.filter(p => p.id !== player.id)
+            });
+        }
+    }, [dispatch, showNotification, coachReport]);
+
+    const onWeekCompleteWithCoach = useCallback(() => {
+        const report = pendingResults?.coachReport;
+        handleWeekComplete();
+        if (report && (report.requests.length > 0 || report.promotions.length > 0 || Math.random() < 0.3)) {
+            setCoachReport(report);
+            setIsCoachMeetingOpen(true);
+        }
+    }, [handleWeekComplete, pendingResults]);
+
+    const { notification, hideNotification } = useNotification();
+
     return (
         <>
-            {useNotification().notification && (
+            {notification && (
                 <Notification
-                    message={useNotification().notification.message}
-                    type={useNotification().notification.type}
-                    onClose={useNotification().hideNotification}
+                    message={notification.message}
+                    type={notification.type}
+                    onClose={hideNotification}
                 />
             )}
             {viewingPlayer && <PlayerDetailModal player={viewingPlayer} dispatch={dispatch} />}
@@ -212,6 +237,23 @@ function AppLogic() {
                     event={currentEvent.event}
                     onChoice={handleEventChoice}
                     onClose={() => setCurrentEvent(null)}
+                />
+            )}
+            {coachReport && gameState && (
+                <CoachMeetingModal
+                    isOpen={isCoachMeetingOpen}
+                    onClose={() => setIsCoachMeetingOpen(false)}
+                    report={coachReport}
+                    coachName={gameState.team.coach?.name || 'el Míster'}
+                    onApprovePromotion={handleApprovePromotion}
+                />
+            )}
+            
+            {/* Cinematic Overlay System */}
+            {gameState && gameState.cinematicQueue?.length > 0 && (
+                <CinematicOverlay 
+                    event={gameState.cinematicQueue[0]} 
+                    onContinue={() => dispatch({ type: 'POP_CINEMATIC' })} 
                 />
             )}
 
@@ -238,7 +280,7 @@ function AppLogic() {
                         matchPhase={matchPhase}
                         pendingResults={pendingResults}
                         onPlayMatch={handlePlayMatch}
-                        onWeekComplete={handleWeekComplete}
+                        onWeekComplete={onWeekCompleteWithCoach}
                         allPlayers={allPlayers}
                         dispatch={dispatch}
                         onSaveGame={openSaveModal}

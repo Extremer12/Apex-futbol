@@ -28,9 +28,11 @@ export const ClubHubScreen: React.FC<ClubHubScreenProps> = ({ gameState, dispatc
     };
 
     const handleGoToSponsorships = () => {
-        // We'll use the ClubHub for now or create a dedicated screen if needed
-        // For Phase 4, let's keep it in a dedicated screen
         dispatch({ type: 'SET_SCREEN', payload: Screen.Sponsorships });
+    };
+
+    const handleGoToTrophies = () => {
+        dispatch({ type: 'SET_SCREEN', payload: Screen.Trophies });
     };
 
     return (
@@ -182,8 +184,8 @@ export const ClubHubScreen: React.FC<ClubHubScreenProps> = ({ gameState, dispatc
                         )}
                     </div>
 
-                    {/* Stadium & Sponsorships Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Stadium, Sponsorships & Trophies Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {/* Stadium Card */}
                         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 hover:border-sky-500/50 transition-all group cursor-pointer" onClick={handleGoToStadium}>
                             <div className="flex justify-between items-start mb-4">
@@ -214,6 +216,22 @@ export const ClubHubScreen: React.FC<ClubHubScreenProps> = ({ gameState, dispatc
                             <h3 className="text-lg font-black text-white uppercase mb-1">Patrocinios</h3>
                             <p className="text-xs text-slate-500 font-bold mb-4">Negocia contratos y bonos por rendimiento.</p>
                             <button className="w-full py-2 bg-slate-800 text-white text-[10px] font-black rounded-xl group-hover:bg-emerald-600 transition-all uppercase tracking-widest">Ver Contratos</button>
+                        </div>
+
+                        {/* Trophies Card */}
+                        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 hover:border-yellow-500/50 transition-all group cursor-pointer" onClick={handleGoToTrophies}>
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="p-3 bg-yellow-500/10 rounded-2xl text-yellow-400 group-hover:bg-yellow-500 group-hover:text-white transition-all">
+                                    <TrophyIcon className="w-6 h-6" />
+                                </div>
+                                <div className="text-right">
+                                    <span className="text-[10px] text-slate-500 uppercase font-black tracking-widest block">Títulos</span>
+                                    <span className="text-xl font-black text-yellow-400">{team.trophyCabinet?.length || 0}</span>
+                                </div>
+                            </div>
+                            <h3 className="text-lg font-black text-white uppercase mb-1">Palmarés</h3>
+                            <p className="text-xs text-slate-500 font-bold mb-4">Visita la vitrina histórica del club.</p>
+                            <button className="w-full py-2 bg-slate-800 text-white text-[10px] font-black rounded-xl group-hover:bg-yellow-600 transition-all uppercase tracking-widest">Ver Vitrina</button>
                         </div>
                     </div>
                 </div>

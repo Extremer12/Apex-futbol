@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { GameState, MatchPhase, PendingSimulationResults, NewsItem, Offer } from '../types';
 import { simulationWorker } from '../services/simulationWorker';
-import { generateNews, generateMatchReport, generateTransferOffer, generatePlayerOfTheWeekNews, generateImportantNews } from '../services/gameLogic';
+import { generateNews, generateMatchReport, generateTransferOffer, generatePlayerOfTheWeekNews, generateImportantNews, generateCoachReport } from '../services/gameLogic';
 import { advanceCupRound } from '../services/simulation';
 import { eventEngine, TriggeredEvent } from '../services/eventEngine';
 import { formatDate } from '../utils';
@@ -140,6 +140,9 @@ export function useSimulation(
                 };
             });
 
+            // Generate Coach Report
+            const coachReport = generateCoachReport(gameState);
+
             setPendingResults({
                 newsToAdd,
                 updatedSchedule: simulationResult.updatedSchedule,
@@ -149,7 +152,8 @@ export function useSimulation(
                 newOffers: generatedOffers,
                 playerMatchResult: simulationResult.playerMatchResult,
                 updatedCups,
-                updatedScoutedPlayerIds: simulationResult.updatedScoutedPlayerIds
+                updatedScoutedPlayerIds: simulationResult.updatedScoutedPlayerIds,
+                coachReport
             });
 
             setMatchPhase('LIVE');
@@ -180,7 +184,8 @@ export function useSimulation(
                 newConfidence,
                 newOffers: pendingResults.newOffers,
                 newCups: pendingResults.updatedCups,
-                newScoutedPlayerIds: (pendingResults as any).updatedScoutedPlayerIds
+                newScoutedPlayerIds: (pendingResults as any).updatedScoutedPlayerIds,
+                coachReport: pendingResults.coachReport
             }
         });
 

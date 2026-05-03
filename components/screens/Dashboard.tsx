@@ -8,7 +8,7 @@ import { AnimatedNumber } from '../ui/AnimatedNumber';
 import { WeeklyFixtures } from '../ui/WeeklyFixtures';
 import { LinkedText } from '../ui/LinkedText';
 import { formatCurrency, formatCurrencyShort, formatDate } from '../../utils';
-import { MatchPhase } from '../../App';
+import { MatchPhase } from '../../types';
 import { TeamLogo } from '../../data/teams/helpers';
 
 interface PendingSimulationResults {
@@ -38,8 +38,9 @@ const MatchDayCard: React.FC<{
     dispatch: React.Dispatch<GameAction>
 }> = ({ gameState, matchPhase, onPlayMatch, pendingResults, onWeekComplete, dispatch }) => {
 
-    const nextWeek = gameState.currentWeek + 1;
-    const nextMatch = gameState.schedule.find(m => m.week === nextWeek && (m.homeTeamId === gameState.team.id || m.awayTeamId === gameState.team.id));
+    const nextWeek = gameState.currentTurn === 'midweek' ? gameState.currentWeek + 1 : gameState.currentWeek;
+    const isMidweek = gameState.currentTurn === 'midweek';
+    const nextMatch = gameState.schedule.find(m => m.week === nextWeek && !!m.isMidweek === isMidweek && (m.homeTeamId === gameState.team.id || m.awayTeamId === gameState.team.id));
 
     const opponentId = nextMatch ? (nextMatch.homeTeamId === gameState.team.id ? nextMatch.awayTeamId : nextMatch.homeTeamId) : 0;
     const opponent = gameState.allTeams.find(t => t.id === opponentId);
@@ -94,8 +95,7 @@ const MatchDayCard: React.FC<{
                         <InboxIcon className="w-8 h-8 text-slate-400" />
                     </div>
                     <h2 className="text-3xl font-bold text-white mb-2">Jornada de Descanso</h2>
-                    <p className="text-slate-400 mb-8 max-w-md">
-                        Tu equipo no tiene partido programado para esta jornada (Semana {nextWeek}).
+                        Tu equipo no tiene partido programado para esta jornada (Semana {nextWeek} {isMidweek ? 'Entre Semana' : 'Fin de Semana'}).
                     </p>
                     <button
                         onClick={onPlayMatch}
@@ -142,7 +142,9 @@ const MatchDayCard: React.FC<{
             <div className="relative z-10 p-6">
                 {/* Header: Competición */}
                 <div className="text-center mb-6">
-                    <h3 className="text-sky-400 font-bold tracking-widest text-sm uppercase">Temporada {gameState.season} - Jornada {nextMatch.week}</h3>
+                    <h3 className="text-sky-400 font-bold tracking-widest text-sm uppercase">
+                        Temporada {gameState.season} - Jornada {nextWeek} {isMidweek ? '(Entre Semana)' : ''} {nextMatch.competition && nextMatch.competition !== 'League' ? `- ${nextMatch.competition.replace(/_/g, ' ')}` : ''}
+                    </h3>
                     <div className="h-1 w-16 bg-sky-500 mx-auto mt-2 rounded-full"></div>
                 </div>
 

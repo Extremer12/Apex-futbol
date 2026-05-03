@@ -102,6 +102,35 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
 
             {activeTab === 'FIRST_TEAM' && (
                 <div className="space-y-6">
+                    {/* Coach Status Card */}
+                    <div className="bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 rounded-3xl p-6 flex flex-col md:flex-row justify-between items-center gap-6 shadow-xl">
+                        <div className="flex items-center gap-4">
+                            <div className="w-16 h-16 bg-gradient-to-br from-sky-600 to-blue-700 rounded-2xl flex items-center justify-center shadow-lg transform -rotate-3 group-hover:rotate-0 transition-transform">
+                                <UsersIcon className="w-8 h-8 text-white" />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-black text-white uppercase tracking-tight">{gameState.team.coach?.name || 'Sin Entrenador'}</h3>
+                                <div className="flex gap-2 mt-1">
+                                    <span className="text-[10px] font-black bg-sky-500/20 text-sky-400 px-2 py-0.5 rounded uppercase tracking-widest">{gameState.team.coach?.style || 'Balanced'}</span>
+                                    <span className="text-[10px] font-black bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded uppercase tracking-widest">{gameState.team.coach?.preferredFormation || '4-4-2'}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className="flex flex-col items-center md:items-end gap-2">
+                            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Satisfacción del DT</div>
+                            <div className="flex items-center gap-3">
+                                <div className="w-32 h-2 bg-slate-700 rounded-full overflow-hidden">
+                                    <div 
+                                        className={`h-full bg-gradient-to-r ${ (gameState.team.coach?.satisfactionLevel || 0) >= 70 ? 'from-green-500 to-emerald-500' : (gameState.team.coach?.satisfactionLevel || 0) >= 40 ? 'from-yellow-500 to-orange-500' : 'from-red-500 to-red-600'}`} 
+                                        style={{ width: `${gameState.team.coach?.satisfactionLevel || 0}%` }}
+                                    />
+                                </div>
+                                <span className="text-sm font-black text-white">{gameState.team.coach?.satisfactionLevel || 0}%</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-800/30 p-4 rounded-2xl border border-slate-800">
                         <div className="flex items-center gap-4">
                             <div className="bg-sky-500/20 p-2 rounded-xl">

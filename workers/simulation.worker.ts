@@ -12,14 +12,12 @@ interface SimulationInput {
     type: 'SIMULATE_WEEK';
     payload: {
         currentWeek: number;
+        currentTurn: 'weekend' | 'midweek';
         schedule: Match[];
         leagueTables: Record<LeagueId, LeagueTableRow[]>;
         allTeams: Team[];
         playerTeamId: number;
-        cups: {
-            faCup: any;
-            carabaoCup: any;
-        };
+        cups: any;
         finances: {
             weeklyIncome: number;
             weeklyWages: number;
@@ -37,10 +35,7 @@ interface SimulationOutput {
         updatedAllTeams: Team[];
         confidenceChange: number;
         playerMatchResult: { homeScore: number; awayScore: number; penalties?: { home: number; away: number }; events?: string[]; scorers?: any[] } | null;
-        updatedCups: {
-            faCup: any;
-            carabaoCup: any;
-        };
+        updatedCups: any;
         updatedScoutedPlayerIds: Record<number, number>;
         newsToAdd?: any[];
     };
@@ -54,6 +49,7 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
     if (type === 'SIMULATE_WEEK') {
         const {
             currentWeek,
+            currentTurn,
             schedule,
             leagueTables,
             allTeams,
@@ -64,7 +60,7 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
             scoutedPlayerIds
         } = payload;
 
-        const newWeek = currentWeek + 1;
+        const nextWeek = currentTurn === 'midweek' ? currentWeek + 1 : currentWeek;
         const newSchedule = [...schedule];
 
         // Create Maps for easier update
@@ -76,10 +72,12 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
         });
 
         let updatedAllTeams = allTeams.map(t => ({ ...t, squad: [...t.squad] }));
-        const matchesThisWeek = newSchedule.filter(m => m.week === newWeek);
+        
+        // Filter matches by currentWeek AND currentTurn
+        const isMidweek = currentTurn === 'midweek';
+        const matchesThisWeek = newSchedule.filter(m => m.week === nextWeek && !!m.isMidweek === isMidweek);
 
-        let updatedFaCup = cups.faCup;
-        let updatedCarabaoCup = cups.carabaoCup;
+        let updatedCups = { ...cups };
 
         const weeklyNet = (finances.weeklyIncome - finances.weeklyWages) / 1_000_000;
         let confidenceChange = weeklyNet > 0 ? 1 : -1;
@@ -108,7 +106,7 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
 
                 const result = simulateMatch(homeTeam, awayTeam, homeRow || dummyRow, awayRow || dummyRow, match.isCupMatch || false);
 
-                const matchIndex = newSchedule.findIndex(m => m.week === newWeek && m.homeTeamId === match.homeTeamId);
+                const matchIndex = newSchedule.findIndex(m => m.week === nextWeek && !!m.isMidweek === isMidweek && m.homeTeamId === match.homeTeamId && m.awayTeamId === match.awayTeamId);
                 newSchedule[matchIndex] = {
                     ...newSchedule[matchIndex],
                     result: { 
@@ -192,35 +190,59 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                         if (awayResult === 'L') confidenceChange -= 2;
                     }
 
-                    const cupId = match.competition === 'FA_Cup' ? 'faCup' : 'carabaoCup';
-                    const currentCup = cupId === 'faCup' ? updatedFaCup : updatedCarabaoCup;
+                    let cupId = 'faCup';
+                    if (match.competition === 'Carabao_Cup') cupId = 'carabaoCup';
+                    if (match.competition === 'Copa_Del_Rey') cupId = 'copaDelRey';
+                    if (match.competition === 'DFB_Pokal') cupId = 'dfbPokal';
+                    if (match.competition === 'Coppa_Italia') cupId = 'coppaItalia';
+                    if (match.competition === 'Champions_League') cupId = 'championsLeague';
+                    if (match.competition === 'Europa_League') cupId = 'europaLeague';
 
-                    const assignGoals = (team: Team, goals: number) => {
-                        const startingXI = team.squad.slice(0, 11);
-                        for (let i = 0; i < goals; i++) {
-                            const scorer = startingXI[Math.floor(Math.random() * startingXI.length)];
-                            const existingScorer = currentCup.statistics.topScorers.find((s: any) => s.playerId === scorer.id);
-                            if (existingScorer) {
-                                existingScorer.goals++;
-                            } else {
-                                currentCup.statistics.topScorers.push({
-                                    playerId: scorer.id,
-                                    playerName: scorer.name,
-                                    teamId: team.id,
-                                    teamName: team.name,
-                                    goals: 1
-                                });
+                    const currentCup = updatedCups[cupId];
+
+                    if (currentCup) {
+                        const assignGoals = (team: Team, goals: number) => {
+                            const startingXI = team.squad.slice(0, 11);
+                            for (let i = 0; i < goals; i++) {
+                                const scorer = startingXI[Math.floor(Math.random() * startingXI.length)];
+                                if (!currentCup.statistics) currentCup.statistics = { topScorers: [], championsHistory: [] };
+                                const existingScorer = currentCup.statistics.topScorers.find((s: any) => s.playerId === scorer.id);
+                                if (existingScorer) {
+                                    existingScorer.goals++;
+                                } else {
+                                    currentCup.statistics.topScorers.push({
+                                        playerId: scorer.id,
+                                        playerName: scorer.name,
+                                        teamId: team.id,
+                                        teamName: team.name,
+                                        goals: 1
+                                    });
+                                }
+                            }
+                        };
+
+                        assignGoals(homeTeam, result.homeScore);
+                        assignGoals(awayTeam, result.awayScore);
+                        
+                        // European League Table Update
+                        if (match.competition === 'Champions_League' || match.competition === 'Europa_League') {
+                            if (currentCup.currentPhase === 'league') {
+                                const homeEuRow = currentCup.leagueTable.find((r: any) => r.teamId === match.homeTeamId);
+                                const awayEuRow = currentCup.leagueTable.find((r: any) => r.teamId === match.awayTeamId);
+                                if (homeEuRow && awayEuRow) {
+                                    homeEuRow.played++; awayEuRow.played++;
+                                    homeEuRow.goalsFor += result.homeScore; awayEuRow.goalsFor += result.awayScore;
+                                    homeEuRow.goalsAgainst += result.awayScore; awayEuRow.goalsAgainst += result.homeScore;
+                                    homeEuRow.goalDifference = homeEuRow.goalsFor - homeEuRow.goalsAgainst;
+                                    awayEuRow.goalDifference = awayEuRow.goalsFor - awayEuRow.goalsAgainst;
+                                    if (result.homeScore > result.awayScore) { homeEuRow.won++; homeEuRow.points += 3; awayEuRow.lost++; }
+                                    else if (result.awayScore > result.homeScore) { awayEuRow.won++; awayEuRow.points += 3; homeEuRow.lost++; }
+                                    else { homeEuRow.drawn++; homeEuRow.points += 1; awayEuRow.drawn++; awayEuRow.points += 1; }
+                                }
                             }
                         }
-                    };
 
-                    assignGoals(homeTeam, result.homeScore);
-                    assignGoals(awayTeam, result.awayScore);
-
-                    if (cupId === 'faCup') {
-                        updatedFaCup = currentCup;
-                    } else {
-                        updatedCarabaoCup = currentCup;
+                        updatedCups[cupId] = currentCup;
                     }
                 }
             });
@@ -270,10 +292,7 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                 updatedAllTeams,
                 confidenceChange,
                 playerMatchResult,
-                updatedCups: {
-                    faCup: updatedFaCup,
-                    carabaoCup: updatedCarabaoCup
-                },
+                updatedCups,
                 updatedScoutedPlayerIds,
                 newsToAdd
             }

@@ -9,7 +9,7 @@ interface LeagueScreenProps {
     gameState: GameState;
 }
 
-type Tab = 'LOCAL_LEAGUE_1' | 'LOCAL_LEAGUE_2' | 'LOCAL_CUP_1' | 'LOCAL_CUP_2' | 'WORLD';
+type Tab = 'LOCAL_LEAGUE_1' | 'LOCAL_LEAGUE_2' | 'LOCAL_CUP_1' | 'LOCAL_CUP_2' | 'LOCAL_CUP' | 'WORLD' | 'CHAMPIONS_LEAGUE' | 'EUROPA_LEAGUE';
 type WorldTab = 'PREMIER_LEAGUE' | 'CHAMPIONSHIP' | 'LA_LIGA' | 'BUNDESLIGA' | 'SERIE_A' | null;
 
 export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
@@ -127,6 +127,74 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                                                 <TeamForm form={row.form} />
                                             </div>
                                         </td>
+                                        <td className={`px-3 py-4 text-center font-bold ${row.goalDifference > 0 ? 'text-green-400' : row.goalDifference < 0 ? 'text-red-400' : 'text-slate-400'}`}>
+                                            {row.goalDifference > 0 ? `+${row.goalDifference}` : row.goalDifference}
+                                        </td>
+                                        <td className="px-4 py-4 text-center font-black text-white">{row.points}</td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        );
+    };
+
+    const renderEuropeanTable = (table: any[], title: string, logoUrl: string, theme: string) => {
+        return (
+            <div className={`bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 border-2 border-${theme}-500/30 rounded-2xl shadow-2xl overflow-hidden animate-fade-in`}>
+                <div className={`bg-gradient-to-r from-${theme}-600 via-${theme}-500 to-${theme}-600 px-6 py-4 flex items-center gap-4`}>
+                    <div className="w-10 h-10 p-1 bg-white/10 rounded-lg flex items-center justify-center">
+                        {logoUrl ? <img src={logoUrl} alt={title} className="w-full h-full object-contain drop-shadow-md" /> : <TrophyIcon className="w-6 h-6 text-white" />}
+                    </div>
+                    <h3 className="text-white font-bold text-lg uppercase tracking-wider">{title} (Fase de Liga Suiza)</h3>
+                </div>
+
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                        <thead>
+                            <tr className={`bg-slate-800/50 text-slate-400 uppercase text-[10px] font-black tracking-widest border-b border-white/5`}>
+                                <th className="px-4 py-4 text-center">Pos</th>
+                                <th className="px-6 py-4 text-left">Club</th>
+                                <th className="px-3 py-4 text-center">PJ</th>
+                                <th className="px-3 py-4 text-center">G</th>
+                                <th className="px-3 py-4 text-center">E</th>
+                                <th className="px-3 py-4 text-center">P</th>
+                                <th className="px-3 py-4 text-center">DG</th>
+                                <th className="px-4 py-4 text-center">Pts</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                            {table.slice().sort((a,b) => b.points - a.points || b.goalDifference - a.goalDifference).map((row, index) => {
+                                const team = getTeamById(row.teamId);
+                                const isPlayerTeam = team?.id === gameState.team.id;
+                                const pos = index + 1;
+
+                                let zoneColor = '';
+                                let zoneLabel = '';
+                                if (pos <= 8) { zoneColor = 'bg-green-500'; zoneLabel = 'Clasificación Directa (Octavos)'; }
+                                else if (pos >= 9 && pos <= 24) { zoneColor = 'bg-blue-500'; zoneLabel = 'Play-offs'; }
+                                else { zoneColor = 'bg-red-500'; zoneLabel = 'Eliminado'; }
+
+                                return (
+                                    <tr key={row.teamId} className={`transition-all duration-200 ${isPlayerTeam ? 'bg-white/10' : 'hover:bg-white/5'}`}>
+                                        <td className="px-4 py-4 text-center relative">
+                                            <div className="flex items-center justify-center gap-2">
+                                                <span className={`font-bold ${isPlayerTeam ? 'text-white' : 'text-slate-400'}`}>{pos}</span>
+                                                {zoneColor && <div className={`w-1 h-6 ${zoneColor} rounded-full absolute left-2`} title={zoneLabel}></div>}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 flex items-center justify-center"><TeamLogo team={team} /></div>
+                                                <span className={`font-bold ${isPlayerTeam ? 'text-white' : 'text-slate-200'}`}>{team?.name}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-3 py-4 text-center text-slate-400">{row.played}</td>
+                                        <td className="px-3 py-4 text-center text-slate-400">{row.won}</td>
+                                        <td className="px-3 py-4 text-center text-slate-400">{row.drawn}</td>
+                                        <td className="px-3 py-4 text-center text-slate-400">{row.lost}</td>
                                         <td className={`px-3 py-4 text-center font-bold ${row.goalDifference > 0 ? 'text-green-400' : row.goalDifference < 0 ? 'text-red-400' : 'text-slate-400'}`}>
                                             {row.goalDifference > 0 ? `+${row.goalDifference}` : row.goalDifference}
                                         </td>
@@ -404,31 +472,69 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                 )}
 
                 {playerCountry === 'ESP' && (
-                    <button
-                        onClick={() => { setActiveTab('LOCAL_LEAGUE_1'); setWorldLeagueSelected(null); }}
-                        className={`flex-1 py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-500 ${activeTab === 'LOCAL_LEAGUE_1' ? 'bg-orange-600 text-white shadow-xl scale-[1.02]' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
-                    >
-                        La Liga
-                    </button>
+                    <>
+                        <button
+                            onClick={() => { setActiveTab('LOCAL_LEAGUE_1'); setWorldLeagueSelected(null); }}
+                            className={`flex-1 py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-500 ${activeTab === 'LOCAL_LEAGUE_1' ? 'bg-orange-600 text-white shadow-xl scale-[1.02]' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+                        >
+                            La Liga
+                        </button>
+                        <button
+                            onClick={() => { setActiveTab('LOCAL_CUP'); setWorldLeagueSelected(null); }}
+                            className={`flex-1 py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-500 ${activeTab === 'LOCAL_CUP' ? 'bg-amber-600 text-white shadow-xl scale-[1.02]' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+                        >
+                            Copa del Rey
+                        </button>
+                    </>
                 )}
 
                 {playerCountry === 'GER' && (
-                    <button
-                        onClick={() => { setActiveTab('LOCAL_LEAGUE_1'); setWorldLeagueSelected(null); }}
-                        className={`flex-1 py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-500 ${activeTab === 'LOCAL_LEAGUE_1' ? 'bg-red-600 text-white shadow-xl scale-[1.02]' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
-                    >
-                        Bundesliga
-                    </button>
+                    <>
+                        <button
+                            onClick={() => { setActiveTab('LOCAL_LEAGUE_1'); setWorldLeagueSelected(null); }}
+                            className={`flex-1 py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-500 ${activeTab === 'LOCAL_LEAGUE_1' ? 'bg-red-600 text-white shadow-xl scale-[1.02]' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+                        >
+                            Bundesliga
+                        </button>
+                        <button
+                            onClick={() => { setActiveTab('LOCAL_CUP'); setWorldLeagueSelected(null); }}
+                            className={`flex-1 py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-500 ${activeTab === 'LOCAL_CUP' ? 'bg-amber-600 text-white shadow-xl scale-[1.02]' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+                        >
+                            DFB-Pokal
+                        </button>
+                    </>
                 )}
 
                 {playerCountry === 'ITA' && (
-                    <button
-                        onClick={() => { setActiveTab('LOCAL_LEAGUE_1'); setWorldLeagueSelected(null); }}
-                        className={`flex-1 py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-500 ${activeTab === 'LOCAL_LEAGUE_1' ? 'bg-emerald-600 text-white shadow-xl scale-[1.02]' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
-                    >
-                        Serie A
-                    </button>
+                    <>
+                        <button
+                            onClick={() => { setActiveTab('LOCAL_LEAGUE_1'); setWorldLeagueSelected(null); }}
+                            className={`flex-1 py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-500 ${activeTab === 'LOCAL_LEAGUE_1' ? 'bg-emerald-600 text-white shadow-xl scale-[1.02]' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+                        >
+                            Serie A
+                        </button>
+                        <button
+                            onClick={() => { setActiveTab('LOCAL_CUP'); setWorldLeagueSelected(null); }}
+                            className={`flex-1 py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-500 ${activeTab === 'LOCAL_CUP' ? 'bg-amber-600 text-white shadow-xl scale-[1.02]' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+                        >
+                            Coppa Italia
+                        </button>
+                    </>
                 )}
+
+                <button
+                    onClick={() => setActiveTab('CHAMPIONS_LEAGUE')}
+                    className={`flex-1 py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-500 ${activeTab === 'CHAMPIONS_LEAGUE' ? 'bg-indigo-900 text-white shadow-xl scale-[1.02] border border-indigo-500' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+                >
+                    Champions League
+                </button>
+
+                <button
+                    onClick={() => setActiveTab('EUROPA_LEAGUE')}
+                    className={`flex-1 py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-500 ${activeTab === 'EUROPA_LEAGUE' ? 'bg-orange-600 text-white shadow-xl scale-[1.02]' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+                >
+                    Europa League
+                </button>
 
                 <button
                     onClick={() => setActiveTab('WORLD')}
@@ -445,8 +551,16 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                 {activeTab === 'LOCAL_CUP_2' && playerCountry === 'ENG' && renderCupView(gameState.cups.carabaoCup, '/logos/carabao_cup_logo.png')}
 
                 {activeTab === 'LOCAL_LEAGUE_1' && playerCountry === 'ESP' && renderLeagueTable(gameState.leagueTables.LA_LIGA, 'La Liga', LEAGUE_LOGOS.LA_LIGA, true)}
+                {activeTab === 'LOCAL_CUP' && playerCountry === 'ESP' && renderCupView(gameState.cups.copaDelRey, '')}
+                
                 {activeTab === 'LOCAL_LEAGUE_1' && playerCountry === 'GER' && renderLeagueTable(gameState.leagueTables.BUNDESLIGA, 'Bundesliga', LEAGUE_LOGOS.BUNDESLIGA, true)}
+                {activeTab === 'LOCAL_CUP' && playerCountry === 'GER' && renderCupView(gameState.cups.dfbPokal, '')}
+
                 {activeTab === 'LOCAL_LEAGUE_1' && playerCountry === 'ITA' && renderLeagueTable(gameState.leagueTables.SERIE_A, 'Serie A', LEAGUE_LOGOS.SERIE_A, true)}
+                {activeTab === 'LOCAL_CUP' && playerCountry === 'ITA' && renderCupView(gameState.cups.coppaItalia, '')}
+
+                {activeTab === 'CHAMPIONS_LEAGUE' && gameState.cups.championsLeague && renderEuropeanTable(gameState.cups.championsLeague.leagueTable, 'Champions League', 'https://tmssl.akamaized.net/images/logo/header/CL.png', 'indigo')}
+                {activeTab === 'EUROPA_LEAGUE' && gameState.cups.europaLeague && renderEuropeanTable(gameState.cups.europaLeague.leagueTable, 'Europa League', 'https://tmssl.akamaized.net/images/logo/header/EL.png', 'orange')}
 
                 {activeTab === 'WORLD' && renderWorldView()}
             </div>

@@ -16,9 +16,10 @@ const SponsorshipScreen = React.lazy(() => import('./screens/SponsorshipScreen')
 const ElectionScreen = React.lazy(() => import('./screens/ElectionScreen').then(m => ({ default: m.ElectionScreen })));
 import { StaffScreen } from './screens/StaffScreen';
 const ClubHubScreen = React.lazy(() => import('./screens/ClubHubScreen').then(m => ({ default: m.ClubHubScreen })));
+const TrophyRoomScreen = React.lazy(() => import('./screens/TrophyRoomScreen').then(m => ({ default: m.TrophyRoomScreen })));
 
 import { LoadingSpinner } from './icons';
-import { MatchPhase } from '../App';
+import { MatchPhase } from '../types';
 
 interface PendingSimulationResults {
     newsToAdd: any[];
@@ -97,6 +98,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                 />
             );
             case Screen.Club: return <ClubHubScreen gameState={gameState} dispatch={dispatch} />;
+            case Screen.Trophies: return <TrophyRoomScreen gameState={gameState} />;
             default: return <Dashboard gameState={gameState} onPlayMatch={onPlayMatch} matchPhase={matchPhase} pendingResults={pendingResults} onWeekComplete={onWeekComplete} allPlayers={allPlayers} dispatch={dispatch} />;
         }
     };

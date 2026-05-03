@@ -3,6 +3,7 @@ import { Coach, Team } from '../types';
 const FIRST_NAMES = ['John', 'David', 'Michael', 'James', 'Robert', 'William', 'Jose', 'Antonio', 'Manuel', 'Francisco', 'Jurgen', 'Pep', 'Carlo', 'Zinedine', 'Diego', 'Jose', 'Luis', 'Mikel', 'Unai', 'Xabi'];
 const LAST_NAMES = ['Smith', 'Johnson', 'Williams', 'Brown', 'Garcia', 'Rodriguez', 'Martinez', 'Hernandez', 'Klopp', 'Guardiola', 'Ancelotti', 'Zidane', 'Simeone', 'Mourinho', 'Enrique', 'Arteta', 'Emery', 'Alonso'];
 const STYLES: Coach['style'][] = ['Attacking', 'Defensive', 'Possession', 'Counter', 'Balanced'];
+const FORMATIONS: Coach['preferredFormation'][] = ['4-3-3', '4-4-2', '3-5-2', '4-2-3-1', '5-3-2'];
 
 export const generateRandomCoach = (tier: 'Top' | 'Mid' | 'Lower'): Coach => {
     const firstName = FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)];
@@ -42,7 +43,13 @@ export const generateRandomCoach = (tier: 'Top' | 'Mid' | 'Lower'): Coach => {
         style: STYLES[Math.floor(Math.random() * STYLES.length)],
         prestige,
         salary,
-        signingBonus
+        signingBonus,
+        preferredFormation: FORMATIONS[Math.floor(Math.random() * FORMATIONS.length)],
+        youthDevelopment: Math.floor(Math.random() * 100),
+        riskTolerance: Math.floor(Math.random() * 100),
+        satisfactionLevel: 80, // Start with good satisfaction
+        requestedSignings: [],
+        tacticalNotes: 'Listo para comenzar el proyecto.'
     };
 };
 

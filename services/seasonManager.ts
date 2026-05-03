@@ -3,8 +3,8 @@
  * Handles season transitions, aging, retirements, and promotion/relegation
  */
 
-import { GameState, Team, Player, NewsItem } from '../types';
-import { generateYouthPlayer, generateSeasonSchedule, generateCupDraw, createInitialLeagueTable, handlePromotionRelegation } from './simulation';
+import { GameState, Team, Player, NewsItem, EuropeanCompetition, EuropeanTableRow } from '../types';
+import { generateYouthPlayer, generateSeasonSchedule, generateCupDraw, createInitialLeagueTable, handlePromotionRelegation, generateSwissDraw, createInitialEuropeanTable } from './simulation';
 import { calculatePrizeMoney, generateSponsorMarket } from './economy';
 import { formatDate, formatCurrency } from '../utils';
 
@@ -52,6 +52,57 @@ export function startNewSeason(currentState: GameState): GameState {
         updatedAcademy.push(generateYouthPlayer(updatedPlayerTeam.tier));
     }
 
+    // 2.5 Process Trophies
+    const currentSeason = currentState.season;
+    const trophiesToAward: { teamId: number, name: string, type: 'league' | 'cup' }[] = [];
+
+    // Leagues
+    Object.entries(currentState.leagueTables).forEach(([leagueId, table]) => {
+        if (table.length > 0) {
+            const sortedTable = [...table].sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference);
+            const winnerId = sortedTable[0].teamId;
+            let leagueName = leagueId;
+            switch(leagueId) {
+                case 'PREMIER_LEAGUE': leagueName = 'Premier League'; break;
+                case 'CHAMPIONSHIP': leagueName = 'Championship'; break;
+                case 'LA_LIGA': leagueName = 'La Liga'; break;
+                case 'BUNDESLIGA': leagueName = 'Bundesliga'; break;
+                case 'SERIE_A': leagueName = 'Serie A'; break;
+            }
+            trophiesToAward.push({ teamId: winnerId, name: leagueName, type: 'league' });
+        }
+    });
+
+    // Cups
+    if (currentState.cups.faCup.winnerId) {
+        trophiesToAward.push({ teamId: currentState.cups.faCup.winnerId, name: 'FA Cup', type: 'cup' });
+    }
+    if (currentState.cups.carabaoCup.winnerId) {
+        trophiesToAward.push({ teamId: currentState.cups.carabaoCup.winnerId, name: 'Carabao Cup', type: 'cup' });
+    }
+
+    // Apply Trophies to processedTeams
+    const teamsWithTrophies = processedTeams.map(team => {
+        const teamTrophies = trophiesToAward.filter(t => t.teamId === team.id).map((t, idx) => ({
+            id: `trophy_${currentSeason}_${team.id}_${idx}`,
+            name: t.name,
+            season: currentSeason,
+            type: t.type
+        }));
+        
+        if (teamTrophies.length > 0) {
+            return {
+                ...team,
+                trophyCabinet: [...(team.trophyCabinet || []), ...teamTrophies]
+            };
+        }
+        return team;
+    });
+
+    // Re-assign processedTeams so the rest of the flow uses teams with updated trophies
+    processedTeams.splice(0, processedTeams.length, ...teamsWithTrophies);
+    const updatedPlayerTeamWithTrophies = processedTeams.find(t => t.id === currentState.team.id)!;
+
     // 3. Process Promotion/Relegation (English leagues only)
     const sortedPL = [...currentState.leagueTables.PREMIER_LEAGUE].sort(
         (a, b) => b.points - a.points || b.goalDifference - a.goalDifference
@@ -92,15 +143,45 @@ export function startNewSeason(currentState: GameState): GameState {
         SERIE_A: createInitialLeagueTable(newItaTeams)
     };
 
-    // 5. Generate new cup draws (ONLY English teams for English cups)
+    // 5. Generate new cup draws (National Cups)
     const englishTeamsNewSeason = [...newPlTeams, ...newChTeams];
     const faCupRound1 = generateCupDraw(englishTeamsNewSeason, 'Round 1', 'FA_Cup');
     const carabaoCupRound1 = generateCupDraw(englishTeamsNewSeason, 'Round 1', 'Carabao_Cup');
+    const copaDelReyRound1 = generateCupDraw(newLaTeams, 'Round 1', 'Copa_Del_Rey');
+    const dfbPokalRound1 = generateCupDraw(newGerTeams, 'Round 1', 'DFB_Pokal');
+    const coppaItaliaRound1 = generateCupDraw(newItaTeams, 'Round 1', 'Coppa_Italia');
 
     const faCupFixtures = faCupRound1.map(m => ({ ...m, week: 5 }));
     const carabaoCupFixtures = carabaoCupRound1.map(m => ({ ...m, week: 2 }));
+    const copaDelReyFixtures = copaDelReyRound1.map(m => ({ ...m, week: 3 }));
+    const dfbPokalFixtures = dfbPokalRound1.map(m => ({ ...m, week: 4 }));
+    const coppaItaliaFixtures = coppaItaliaRound1.map(m => ({ ...m, week: 5 }));
 
-    const fullSchedule = [...newSeasonSchedule, ...faCupFixtures, ...carabaoCupFixtures];
+    // 5.5 Generate European Competitions
+    // Get top 8 from each league for Champions League (32 teams)
+    const clTeams = [
+        ...[...currentState.leagueTables.PREMIER_LEAGUE].sort((a,b)=>b.points-a.points).slice(0, 8),
+        ...[...currentState.leagueTables.LA_LIGA].sort((a,b)=>b.points-a.points).slice(0, 8),
+        ...[...currentState.leagueTables.BUNDESLIGA].sort((a,b)=>b.points-a.points).slice(0, 8),
+        ...[...currentState.leagueTables.SERIE_A].sort((a,b)=>b.points-a.points).slice(0, 8)
+    ].map(row => teamsAfterProRel.find(t => t.id === row.teamId)).filter(Boolean) as Team[];
+
+    // Next 8 from each league for Europa League (32 teams)
+    const elTeams = [
+        ...[...currentState.leagueTables.PREMIER_LEAGUE].sort((a,b)=>b.points-a.points).slice(8, 16),
+        ...[...currentState.leagueTables.LA_LIGA].sort((a,b)=>b.points-a.points).slice(8, 16),
+        ...[...currentState.leagueTables.BUNDESLIGA].sort((a,b)=>b.points-a.points).slice(8, 16),
+        ...[...currentState.leagueTables.SERIE_A].sort((a,b)=>b.points-a.points).slice(8, 16)
+    ].map(row => teamsAfterProRel.find(t => t.id === row.teamId)).filter(Boolean) as Team[];
+
+    const clFixtures = generateSwissDraw(clTeams, 'Champions_League').map(m => ({ ...m, week: 2, isMidweek: true })); // They will be distributed in simulation
+    const elFixtures = generateSwissDraw(elTeams, 'Europa_League').map(m => ({ ...m, week: 3, isMidweek: true }));
+
+    const fullSchedule = [
+        ...newSeasonSchedule, 
+        ...faCupFixtures, ...carabaoCupFixtures, ...copaDelReyFixtures, ...dfbPokalFixtures, ...coppaItaliaFixtures,
+        ...clFixtures, ...elFixtures
+    ];
 
     // 6. Create news items
     const proRelNews: NewsItem = {
@@ -222,11 +303,56 @@ export function startNewSeason(currentState: GameState): GameState {
     const trend: 'rising' | 'stable' | 'falling' =
         approvalDelta > 5 ? 'rising' : approvalDelta < -5 ? 'falling' : 'stable';
 
+    // 7.5 Generar Eventos Cinematográficos
+    const newCinematicQueue = [...(currentState.cinematicQueue || [])];
+    
+    // Check if player won league
+    const playerLeagueWin = trophiesToAward.find(t => t.teamId === updatedPlayerTeam.id && t.type === 'league');
+    if (playerLeagueWin) {
+        newCinematicQueue.push({
+            id: `cinematic_league_win_${newSeasonYear}`,
+            type: 'LEAGUE_WIN',
+            title: `¡CAMPEONES!`,
+            subtitle: `Has ganado la ${playerLeagueWin.name}`
+        });
+    }
+
+    // Check promotion/relegation for player
+    if (promotedIds.includes(updatedPlayerTeam.id)) {
+        newCinematicQueue.push({
+            id: `cinematic_promotion_${newSeasonYear}`,
+            type: 'PROMOTION',
+            title: `¡ASCENSO CONSEGUIDO!`,
+            subtitle: `El ${updatedPlayerTeam.name} jugará en la Primera División`
+        });
+    } else if (relegatedIds.includes(updatedPlayerTeam.id)) {
+        newCinematicQueue.push({
+            id: `cinematic_relegation_${newSeasonYear}`,
+            type: 'RELEGATION',
+            title: `DESCENSO...`,
+            subtitle: `Temporada para el olvido. Volvemos a Segunda.`
+        });
+    }
+
+    // Season summary (always at the end of the queue)
+    newCinematicQueue.push({
+        id: `cinematic_summary_${newSeasonYear}`,
+        type: 'SEASON_SUMMARY',
+        title: `Resumen de Temporada ${currentSeason}`,
+        subtitle: `Resultados finales y premios`,
+        metadata: {
+            position: playerPosition,
+            promoted: promotedTeams,
+            relegated: relegatedTeams,
+            balance: newBalance
+        }
+    });
+
     // 8. Return updated state
     return {
         ...currentState,
-        team: updatedPlayerTeam,
-        allTeams: processedTeams,
+        team: updatedPlayerTeamWithTrophies,
+        allTeams: teamsAfterProRel,
         youthAcademy: updatedAcademy,
         season: newSeasonYear,
         currentDate: newDate,
@@ -252,30 +378,39 @@ export function startNewSeason(currentState: GameState): GameState {
         },
         cups: {
             faCup: {
-                id: 'fa_cup',
-                name: 'FA Cup',
-                rounds: [{ name: 'Round 1', fixtures: faCupFixtures, completed: false }],
-                currentRoundIndex: 0,
-                statistics: {
-                    topScorers: [],
-                    championsHistory: currentState.cups.faCup.statistics?.championsHistory || []
-                }
+                id: 'fa_cup', name: 'FA Cup', rounds: [{ name: 'Round 1', fixtures: faCupFixtures, completed: false }],
+                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.faCup.statistics?.championsHistory || [] }
             },
             carabaoCup: {
-                id: 'carabao_cup',
-                name: 'Carabao Cup',
-                rounds: [{ name: 'Round 1', fixtures: carabaoCupFixtures, completed: false }],
-                currentRoundIndex: 0,
-                statistics: {
-                    topScorers: [],
-                    championsHistory: currentState.cups.carabaoCup.statistics?.championsHistory || []
-                }
+                id: 'carabao_cup', name: 'Carabao Cup', rounds: [{ name: 'Round 1', fixtures: carabaoCupFixtures, completed: false }],
+                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.carabaoCup.statistics?.championsHistory || [] }
+            },
+            copaDelRey: {
+                id: 'copa_del_rey', name: 'Copa del Rey', rounds: [{ name: 'Round 1', fixtures: copaDelReyFixtures, completed: false }],
+                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.copaDelRey?.statistics?.championsHistory || [] }
+            },
+            dfbPokal: {
+                id: 'dfb_pokal', name: 'DFB-Pokal', rounds: [{ name: 'Round 1', fixtures: dfbPokalFixtures, completed: false }],
+                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.dfbPokal?.statistics?.championsHistory || [] }
+            },
+            coppaItalia: {
+                id: 'coppa_italia', name: 'Coppa Italia', rounds: [{ name: 'Round 1', fixtures: coppaItaliaFixtures, completed: false }],
+                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.coppaItalia?.statistics?.championsHistory || [] }
+            },
+            championsLeague: {
+                id: 'champions_league', name: 'Champions League', participants: clTeams.map(t => t.id),
+                leagueTable: createInitialEuropeanTable(clTeams.map(t => t.id)), leagueFixtures: clFixtures, knockoutRounds: [], currentPhase: 'league', currentRoundIndex: 0
+            },
+            europaLeague: {
+                id: 'europa_league', name: 'Europa League', participants: elTeams.map(t => t.id),
+                leagueTable: createInitialEuropeanTable(elTeams.map(t => t.id)), leagueFixtures: elFixtures, knockoutRounds: [], currentPhase: 'league', currentRoundIndex: 0
             }
         },
         finances: {
             ...currentState.finances,
             balance: newBalance
         },
-        availableSponsors: generateSponsorMarket(updatedPlayerTeam.tier)
+        availableSponsors: generateSponsorMarket(updatedPlayerTeam.tier),
+        cinematicQueue: newCinematicQueue
     };
 }

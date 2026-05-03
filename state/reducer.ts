@@ -19,8 +19,11 @@ export type GameAction =
     | { type: 'LOAD_GAME'; payload: GameState }
     | { type: 'RESET_GAME' }
     | { type: 'ADVANCE_WEEK_START' }
-    | { type: 'ADVANCE_WEEK_SUCCESS'; payload: { newsItems: NewsItem[]; newSchedule: Match[]; newLeagueTables: Record<LeagueId, LeagueTableRow[]>; newAllTeams: Team[]; newConfidence: number; newOffers: Offer[]; newCups?: { faCup: CupCompetition; carabaoCup: CupCompetition } } }
+    | { type: 'ADVANCE_WEEK_SUCCESS'; payload: { newsItems: NewsItem[]; newSchedule: Match[]; newLeagueTables: Record<LeagueId, LeagueTableRow[]>; newAllTeams: Team[]; newConfidence: number; newOffers: Offer[]; newCups?: GameState['cups']; coachReport?: any; newScoutedPlayerIds?: any } }
+    | { type: 'PROMOTE_YOUTH'; payload: number }
     | { type: 'START_NEW_SEASON' }
+    | { type: 'POP_CINEMATIC' }
+    | { type: 'PUSH_CINEMATIC'; payload: import('../types').CinematicEvent }
     | { type: 'TRIGGER_ELECTION' }
     | { type: 'ELECTION_RESULT'; payload: { won: boolean; newApproval: number } }
     | { type: 'UPDATE_FAN_APPROVAL'; payload: { delta: number; reason: string } }
@@ -57,6 +60,7 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
             const loadedState = action.payload;
 
             // MIGRATION: Ensure all new fields exist for legacy saves
+            const currentTurn = loadedState.currentTurn || 'weekend';
 
             // 1. Political System Migration
             const mandate = loadedState.mandate || {
@@ -78,10 +82,11 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
 
             // 2. Coach System Migration
             const availableCoaches = loadedState.availableCoaches || generateCoachMarket(5);
-            // Ensure all teams have a coach
+            // Ensure all teams have a coach and trophyCabinet
             const allTeamsWithCoaches = loadedState.allTeams.map(t => ({
                 ...t,
-                coach: t.coach || generateRandomCoach(t.tier)
+                coach: t.coach || generateRandomCoach(t.tier),
+                trophyCabinet: t.trophyCabinet || []
             }));
             const playerTeamWithCoach = allTeamsWithCoaches.find(t => t.id === loadedState.team.id)!;
 
@@ -104,8 +109,23 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 LA_LIGA: (loadedState as any).laLigaTable || []
             };
 
+            // 5. Cups Migration
+            const cups = loadedState.cups || {} as any;
+            const fullCups: GameState['cups'] = {
+                faCup: cups.faCup || { id: 'fa_cup', name: 'FA Cup', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
+                carabaoCup: cups.carabaoCup || { id: 'carabao_cup', name: 'Carabao Cup', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
+                copaDelRey: cups.copaDelRey || { id: 'copa_del_rey', name: 'Copa del Rey', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
+                dfbPokal: cups.dfbPokal || { id: 'dfb_pokal', name: 'DFB-Pokal', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
+                coppaItalia: cups.coppaItalia || { id: 'coppa_italia', name: 'Coppa Italia', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
+                championsLeague: cups.championsLeague || { id: 'champions_league', name: 'Champions League', participants: [], leagueTable: [], leagueFixtures: [], knockoutRounds: [], currentPhase: 'finished', currentRoundIndex: 0 },
+                europaLeague: cups.europaLeague || { id: 'europa_league', name: 'Europa League', participants: [], leagueTable: [], leagueFixtures: [], knockoutRounds: [], currentPhase: 'finished', currentRoundIndex: 0 },
+            };
+
+            const cinematicQueue = loadedState.cinematicQueue || [];
+
             return {
                 ...loadedState,
+                currentTurn,
                 team: playerTeamWithCoach,
                 allTeams: allTeamsWithCoaches,
                 mandate,
@@ -117,7 +137,9 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 sponsors,
                 availableSponsors,
                 finances,
-                leagueTables
+                leagueTables,
+                cups: fullCups,
+                cinematicQueue
             };
         }
 
@@ -158,13 +180,20 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
 
             // Update balance based on breakdown
             const netIncome = getNetWeeklyIncome(breakdown);
-            const newBalance = state.finances.balance + netIncome;
+            // Solo cobrar salarios el fin de semana (una vez por semana)
+            const incomeToApply = state.currentTurn === 'weekend' ? netIncome : breakdown.matchdayRevenue + breakdown.sponsorshipRevenue + breakdown.tvRevenue + breakdown.prizeMoneyRevenue + breakdown.transferRevenue; // Only apply positive revenue midweek, no wage deduction
+            const newBalance = state.finances.balance + incomeToApply;
+
+            const nextTurn = state.currentTurn === 'weekend' ? 'midweek' : 'weekend';
+            const nextWeek = state.currentTurn === 'midweek' ? state.currentWeek + 1 : state.currentWeek;
+            const daysToAdd = state.currentTurn === 'weekend' ? 3 : 4; // Sat -> Wed (3), Wed -> Sat (4)
 
             return {
                 ...state,
-                currentDate: new Date(state.currentDate.getTime() + 7 * 24 * 60 * 60 * 1000),
-                currentWeek: state.currentWeek + 1,
-                newsFeed: [...newsItems, ...state.newsFeed].slice(0, 50),
+                currentDate: new Date(state.currentDate.getTime() + daysToAdd * 24 * 60 * 60 * 1000),
+                currentWeek: nextWeek,
+                currentTurn: nextTurn,
+                newsFeed: [...newsItems, ...state.newsFeed].slice(0, 30),
                 schedule: newSchedule,
                 leagueTables: newLeagueTables,
                 allTeams: newAllTeams,
@@ -177,10 +206,17 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                     balance: newBalance,
                     weeklyIncome: breakdown.matchdayRevenue + breakdown.sponsorshipRevenue + breakdown.tvRevenue + breakdown.prizeMoneyRevenue + breakdown.transferRevenue,
                     weeklyWages: breakdown.wageExpenses + breakdown.coachExpenses + breakdown.stadiumExpenses + breakdown.operationalExpenses + breakdown.transferExpenses,
-                    balanceHistory: [...state.finances.balanceHistory, newBalance],
+                    balanceHistory: [...state.finances.balanceHistory, newBalance].slice(-52),
                     breakdown
                 },
-                scoutedPlayerIds: newScoutedPlayerIds || state.scoutedPlayerIds
+                scoutedPlayerIds: newScoutedPlayerIds || state.scoutedPlayerIds,
+                team: {
+                    ...updatedPlayerTeam,
+                    coach: action.payload.coachReport ? {
+                        ...updatedPlayerTeam.coach!,
+                        satisfactionLevel: action.payload.coachReport.satisfaction
+                    } : updatedPlayerTeam.coach
+                }
             };
         }
 
@@ -188,14 +224,29 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
             if (!state) return null;
             return startNewSeason(state);
         }
-        // ...
+        
+        case 'POP_CINEMATIC': {
+            if (!state) return null;
+            return {
+                ...state,
+                cinematicQueue: state.cinematicQueue.slice(1)
+            };
+        }
+
+        case 'PUSH_CINEMATIC': {
+            if (!state) return null;
+            return {
+                ...state,
+                cinematicQueue: [...state.cinematicQueue, action.payload]
+            };
+        }
 
 
         case 'ADD_NEWS': {
             if (!state) return null;
             return {
                 ...state,
-                newsFeed: [action.payload, ...state.newsFeed].slice(0, 20),
+                newsFeed: [action.payload, ...state.newsFeed].slice(0, 30),
             }
         }
 
@@ -631,6 +682,23 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                     body: `${scout.name} se une al equipo para expandir nuestra red de ojeo.`,
                     date: formatDate(state.currentDate)
                 }, ...state.newsFeed].slice(0, 20)
+            };
+        }
+
+        case 'PROMOTE_YOUTH': {
+            if (!state) return null;
+            const playerId = action.payload;
+            const playerToPromote = state.youthAcademy.find(p => p.id === playerId);
+            
+            if (!playerToPromote) return state;
+            
+            return {
+                ...state,
+                youthAcademy: state.youthAcademy.filter(p => p.id !== playerId),
+                team: {
+                    ...state.team,
+                    squad: [...state.team.squad, playerToPromote]
+                }
             };
         }
 

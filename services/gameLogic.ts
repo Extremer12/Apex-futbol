@@ -1,4 +1,4 @@
-import { GameState, Player, PlayerProfile, Team } from '../types';
+import { GameState, Player, PlayerProfile, Team, CoachReport } from '../types';
 import { formatCurrency } from '../utils';
 
 // --- INTERFACES ---
@@ -257,5 +257,80 @@ export const generatePlayerOfTheWeekNews = async (player: Player, teamName: stri
     return {
         headline: `¡${player.name} deslumbra!`,
         body: `Actuación estelar de ${player.name} (Val: ${formatCurrency(player.value)}) en el partido contra ${opponentName}. Los aficionados del ${teamName} corearon su nombre tras el ${resultString}.`
+    };
+};
+
+// --- COACH REPORT SYSTEM ---
+
+const COACH_SATISFACTION_MESSAGES = [
+    "Estoy muy satisfecho con el rendimiento del equipo y el apoyo de la directiva.",
+    "El equipo está trabajando bien, aunque siempre hay margen de mejora.",
+    "Me preocupa la falta de profundidad en ciertas posiciones clave.",
+    "La moral está baja y necesitamos resultados urgentes para revertir la situación.",
+    "Siento que mis peticiones no están siendo escuchadas. La relación con la junta es tensa."
+];
+
+export const generateCoachReport = (gameState: GameState): CoachReport => {
+    const coach = gameState.team.coach;
+    if (!coach) {
+        return {
+            summary: "No hay director técnico contratado.",
+            satisfaction: 0,
+            requests: [],
+            tacticalUpdate: "Sin dirección táctica.",
+            promotions: []
+        };
+    }
+
+    // 1. Calculate satisfaction based on league position and board confidence
+    const playerTeamRow = gameState.leagueTables[gameState.team.leagueId]?.find(row => row.teamId === gameState.team.id);
+    const position = playerTeamRow?.position || 10;
+    
+    // Simple logic: lower position = lower satisfaction (expectations)
+    let satisfaction = coach.satisfactionLevel;
+    if (position <= 3) satisfaction += 2;
+    if (position >= 15) satisfaction -= 3;
+    
+    // 2. Tactical update based on style
+    const tacticalUpdate = `Estamos implementando un sistema de ${coach.style} con formación ${coach.preferredFormation}. El equipo se está adaptando a la intensidad solicitada.`;
+
+    // 3. Requests based on squad holes (Simplificado)
+    const requests: any[] = [];
+    const positions: Player['position'][] = ['POR', 'DEF', 'CEN', 'DEL'];
+    
+    positions.forEach(pos => {
+        const count = gameState.team.squad.filter(p => p.position === pos).length;
+        const avgRating = gameState.team.squad.filter(p => p.position === pos).reduce((s, p) => s + p.rating, 0) / (count || 1);
+        
+        if (count < 3 || (count < 5 && pos !== 'POR' && avgRating < 70)) {
+            requests.push({
+                id: `req_${Date.now()}_${pos}`,
+                position: pos,
+                minRating: Math.floor(avgRating + 5),
+                reason: count < 3 ? `Falta de efectivos en la línea ${pos}.` : `Necesitamos más calidad en ${pos}.`,
+                priority: count < 2 ? 'critical' : 'important'
+            });
+        }
+    });
+
+    // 4. Academy Promotions (Random chance based on youthDevelopment)
+    const promotions: Player[] = [];
+    if (gameState.youthAcademy.length > 0 && Math.random() * 100 < coach.youthDevelopment / 2) {
+        const candidate = gameState.youthAcademy[Math.floor(Math.random() * gameState.youthAcademy.length)];
+        if (candidate.rating > 65) {
+            promotions.push(candidate);
+        }
+    }
+
+    // 5. Summary message
+    const satisfactionIdx = Math.max(0, Math.min(4, Math.floor((100 - satisfaction) / 20)));
+    const summary = COACH_SATISFACTION_MESSAGES[satisfactionIdx];
+
+    return {
+        summary,
+        satisfaction: Math.max(0, Math.min(100, satisfaction)),
+        requests: requests.slice(0, 2), // Max 2 requests per week
+        tacticalUpdate,
+        promotions
     };
 };

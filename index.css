@@ -110,4 +110,29 @@
   animation: scale-in 0.3s ease-out;
 }
 
+/* Cinematic Animations */
+@keyframes confetti-fall {
+  0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+
+@keyframes screen-shake {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  10%, 30%, 50%, 70%, 90% { transform: translate(-2px, 2px) rotate(-1deg); }
+  20%, 40%, 60%, 80% { transform: translate(2px, -2px) rotate(1deg); }
+}
+
+.animate-screen-shake {
+  animation: screen-shake 0.5s ease-in-out;
+}
+
+@keyframes trophy-rise {
+  0% { transform: translateY(50px) scale(0.8); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.animate-trophy-rise {
+  animation: trophy-rise 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
 /* Custom global styles can be added below */

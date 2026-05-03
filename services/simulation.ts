@@ -3,19 +3,38 @@ import { Team, Match, LeagueTableRow, Morale, Player, CupCompetition, CupRound }
 import { getTacticalMatchup } from './coaching';
 import { generateRandomName } from '../utils';
 
-// Calcula estadísticas detalladas del equipo basadas en las posiciones de los jugadores
+const FORMATION_CONFIG: Record<string, Record<Player['position'], number>> = {
+    '4-3-3': { 'POR': 1, 'DEF': 4, 'CEN': 3, 'DEL': 3 },
+    '4-4-2': { 'POR': 1, 'DEF': 4, 'CEN': 4, 'DEL': 2 },
+    '3-5-2': { 'POR': 1, 'DEF': 3, 'CEN': 5, 'DEL': 2 },
+    '4-2-3-1': { 'POR': 1, 'DEF': 4, 'CEN': 5, 'DEL': 1 },
+    '5-3-2': { 'POR': 1, 'DEF': 5, 'CEN': 3, 'DEL': 2 },
+};
+
 const getTeamStats = (team: Team) => {
-    const getRating = (pos: Player['position']) => {
-        const players = team.squad.filter(p => p.position === pos);
-        if (players.length === 0) return 60; // Fallback si no hay jugadores en esa posición
-        // Top 3 jugadores definen la fuerza de la línea
-        const topPlayers = players.sort((a, b) => b.rating - a.rating).slice(0, 3);
-        return topPlayers.reduce((sum, p) => sum + p.rating, 0) / topPlayers.length;
+    const formation = team.coach?.preferredFormation || '4-4-2';
+    const config = FORMATION_CONFIG[formation];
+    const satisfactionBonus = (team.coach?.satisfactionLevel || 80) / 100; // 0.8 to 1.0 roughly
+
+    const getRatingForLine = (pos: Player['position'], count: number) => {
+        const players = [...team.squad]
+            .filter(p => p.position === pos)
+            .sort((a, b) => b.rating - a.rating)
+            .slice(0, count);
+        
+        if (players.length === 0) return 40; // Heavy penalty if no players in line
+        
+        const avgRating = players.reduce((sum, p) => sum + p.rating, 0) / players.length;
+        
+        // Penalty if squad is short in this position
+        const shortagePenalty = players.length < count ? (1 - (count - players.length) * 0.1) : 1;
+        
+        return avgRating * shortagePenalty * satisfactionBonus;
     };
 
-    const attack = getRating('DEL');
-    const midfield = getRating('CEN');
-    const defense = (getRating('DEF') + getRating('POR')) / 2;
+    const attack = getRatingForLine('DEL', config['DEL']);
+    const midfield = getRatingForLine('CEN', config['CEN']);
+    const defense = (getRatingForLine('DEF', config['DEF']) + getRatingForLine('POR', config['POR'])) / 2;
 
     return { attack, midfield, defense };
 };
@@ -299,7 +318,7 @@ export const generateSeasonSchedule = (allTeams: Team[]): Match[] => {
     return [...plSchedule, ...chSchedule, ...laSchedule, ...gerSchedule, ...itaSchedule];
 };
 
-export const generateCupDraw = (teams: Team[], roundName: string, competition: 'FA_Cup' | 'Carabao_Cup' = 'FA_Cup'): Match[] => {
+export const generateCupDraw = (teams: Team[], roundName: string, competition: Match['competition'] = 'FA_Cup'): Match[] => {
     const shuffled = [...teams].sort(() => 0.5 - Math.random());
     const fixtures: Match[] = [];
 
@@ -422,6 +441,42 @@ export const createInitialLeagueTable = (teams: Team[]): LeagueTableRow[] => {
         goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0, form: [],
     })).sort((a, b) => teams.find(t => t.id === a.teamId)!.name.localeCompare(teams.find(t => t.id === b.teamId)!.name));
 };
+
+export const createInitialEuropeanTable = (teamIds: number[]): any[] => { // using any[] to avoid circular dependency if types are complex, but we can type it.
+    return teamIds.map(id => ({
+        teamId: id, position: 0, played: 0, won: 0, drawn: 0, lost: 0,
+        goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0
+    }));
+};
+
+export const generateSwissDraw = (teams: Team[], competition: Match['competition'] = 'Champions_League'): Match[] => {
+    const fixtures: Match[] = [];
+    const teamIds = teams.map(t => t.id);
+    
+    // Simplificado: Para 32 equipos, necesitamos 8 rondas.
+    // Vamos a rotar los arrays de una forma simple para asegurar que no se repitan
+    // En un escenario real es un algoritmo de emparejamiento complejo (grafos).
+    // Aquí haremos un emparejamiento determinista "offset".
+    
+    for (let round = 0; round < 8; round++) {
+        for (let i = 0; i < teamIds.length / 2; i++) {
+            const home = teamIds[i];
+            const away = teamIds[(teamIds.length / 2 + i + round) % (teamIds.length / 2) + (teamIds.length / 2)];
+            
+            fixtures.push({
+                week: 0, // Assigned later in seasonManager
+                homeTeamId: round % 2 === 0 ? home : away,
+                awayTeamId: round % 2 === 0 ? away : home,
+                competition: competition,
+                isCupMatch: false,
+                isMidweek: true
+            });
+        }
+    }
+    
+    return fixtures;
+};
+
 
 export const handlePromotionRelegation = (allTeams: Team[], plTable: LeagueTableRow[], chTable: LeagueTableRow[]): Team[] => {
     // Sort tables by points (descending), then goal difference, then goals for

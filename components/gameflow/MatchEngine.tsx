@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Team, Match } from '../../types';
-import { MatchPhase } from '../../App';
+import { MatchPhase } from '../../types';
 import { TeamLogo } from '../../data/teams/helpers';
 
 interface MatchEngineProps {
@@ -19,6 +19,8 @@ export const MatchEngine: React.FC<MatchEngineProps> = ({ homeTeam, awayTeam, ma
     const [commentary, setCommentary] = useState<string[]>([]);
     const [stats, setStats] = useState({ homePossession: 50, awayPossession: 50, homeShots: 0, awayShots: 0 });
     const [momentum, setMomentum] = useState<number[]>([]);
+    const [isShaking, setIsShaking] = useState(false);
+    const [bigPopup, setBigPopup] = useState<string | null>(null);
 
     const commentaryScrollRef = useRef<HTMLDivElement>(null);
     const processedEventsRef = useRef<Set<string>>(new Set());
@@ -67,6 +69,13 @@ export const MatchEngine: React.FC<MatchEngineProps> = ({ homeTeam, awayTeam, ma
 
                             // Update score if it's a goal
                             if (isGoal) {
+                                setIsShaking(true);
+                                setBigPopup('¡GOOOOOL!');
+                                setTimeout(() => {
+                                    setIsShaking(false);
+                                    setBigPopup(null);
+                                }, 2000);
+
                                 if (e.includes(homeTeam.name)) {
                                     setDisplayScore(prev => ({ ...prev, home: prev.home + 1 }));
                                 } else {
@@ -98,7 +107,9 @@ export const MatchEngine: React.FC<MatchEngineProps> = ({ homeTeam, awayTeam, ma
                     // Update momentum
                     setMomentum(prev => {
                         const last = prev.length > 0 ? prev[prev.length - 1] : 0;
-                        const change = (Math.random() * 30 - 15) + (homeTeam.rating - awayTeam.rating) / 10;
+                        const homeAvgRating = homeTeam.squad.reduce((sum, p) => sum + p.rating, 0) / (homeTeam.squad.length || 1);
+                        const awayAvgRating = awayTeam.squad.reduce((sum, p) => sum + p.rating, 0) / (awayTeam.squad.length || 1);
+                        const change = (Math.random() * 30 - 15) + (homeAvgRating - awayAvgRating) / 10;
                         const next = Math.min(100, Math.max(-100, last + change));
                         return [...prev, next].slice(-30); // Keep last 30 data points
                     });
@@ -137,7 +148,16 @@ export const MatchEngine: React.FC<MatchEngineProps> = ({ homeTeam, awayTeam, ma
     }, [matchPhase, finalResult?.homeScore, finalResult?.awayScore, homeTeam.name, awayTeam.name, onMatchComplete]);
 
     return (
-        <div className="w-full max-w-4xl mx-auto bg-slate-900 rounded-xl overflow-hidden shadow-2xl border border-slate-800">
+        <div className={`w-full max-w-4xl mx-auto bg-slate-900 rounded-xl overflow-hidden shadow-2xl border border-slate-800 relative ${isShaking ? 'animate-screen-shake' : ''}`}>
+            {/* Pop-up para GOLES */}
+            {bigPopup && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in pointer-events-none">
+                    <h1 className="text-6xl md:text-8xl font-black text-white italic drop-shadow-[0_0_30px_rgba(34,197,94,0.8)] animate-scale-in">
+                        {bigPopup}
+                    </h1>
+                </div>
+            )}
+            
             {/* TV Header */}
             <div className="bg-slate-950 p-4 border-b border-slate-800 flex justify-between items-center">
                 <div className="flex items-center gap-4">
@@ -168,7 +188,9 @@ export const MatchEngine: React.FC<MatchEngineProps> = ({ homeTeam, awayTeam, ma
                             <TeamLogo team={homeTeam} />
                         </div>
                         <h2 className="text-sm md:text-3xl font-black text-white tracking-tight drop-shadow-lg truncate w-full px-1">{homeTeam.name}</h2>
-                        <div className="text-[10px] md:text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider hidden md:block">{homeTeam.tactics}</div>
+                        <div className="text-[10px] md:text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider hidden md:block">
+                            {homeTeam.coach?.style || 'Balanced'} • {homeTeam.coach?.preferredFormation || '4-4-2'}
+                        </div>
                     </div>
 
                     {/* Score */}
@@ -189,11 +211,13 @@ export const MatchEngine: React.FC<MatchEngineProps> = ({ homeTeam, awayTeam, ma
 
                     {/* Away */}
                     <div className="flex-1 flex flex-col items-center text-center">
-                        <div className="w-20 h-20 flex items-center justify-center mb-4 transform hover:scale-110 transition-transform duration-300">
+                        <div className="w-12 h-12 md:w-20 md:h-20 flex items-center justify-center mb-2 md:mb-4 transform hover:scale-110 transition-transform duration-300">
                             <TeamLogo team={awayTeam} />
                         </div>
-                        <h2 className="text-xl md:text-3xl font-black text-white tracking-tight drop-shadow-lg">{awayTeam.name}</h2>
-                        <div className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider">{awayTeam.tactics}</div>
+                        <h2 className="text-sm md:text-3xl font-black text-white tracking-tight drop-shadow-lg truncate w-full px-1">{awayTeam.name}</h2>
+                        <div className="text-[10px] md:text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider hidden md:block">
+                            {awayTeam.coach?.style || 'Balanced'} • {awayTeam.coach?.preferredFormation || '4-4-2'}
+                        </div>
                     </div>
                 </div>
             </div>

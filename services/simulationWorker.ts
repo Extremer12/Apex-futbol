@@ -9,10 +9,7 @@ interface SimulationResult {
     updatedAllTeams: Team[];
     confidenceChange: number;
     playerMatchResult: { homeScore: number; awayScore: number; penalties?: { home: number; away: number } } | null;
-    updatedCups: {
-        faCup: any;
-        carabaoCup: any;
-    };
+    updatedCups: GameState['cups'];
     updatedScoutedPlayerIds: Record<number, number>;
     newsToAdd?: any[];
 }
@@ -54,6 +51,7 @@ class SimulationWorkerManager {
                 type: 'SIMULATE_WEEK',
                 payload: {
                     currentWeek: gameState.currentWeek,
+                    currentTurn: gameState.currentTurn,
                     schedule: gameState.schedule,
                     leagueTables: gameState.leagueTables,
                     allTeams: gameState.allTeams.map(t => ({ ...t, logo: undefined })),
