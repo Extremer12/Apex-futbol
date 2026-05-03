@@ -14,7 +14,7 @@ import { formatDate, formatCurrency } from '../utils';
  */
 export function startNewSeason(currentState: GameState): GameState {
     const newSeasonYear = currentState.season + 1;
-    const newDate = new Date(`${newSeasonYear}-07-01`);
+    const newDate = new Date(`${newSeasonYear}-08-10`);
 
     // 1. Process Aging & Retirements & Regens
     const processedTeams = currentState.allTeams.map(team => {

@@ -20,7 +20,7 @@ interface InitializeGameParams {
  * Creates the initial game state for a new game
  */
 export function initializeGame({ selectedTeam, playerProfile, initialPromises }: InitializeGameParams): GameState {
-    const now = new Date('2024-07-01');
+    const now = new Date('2024-08-10');
 
     // Clone teams and assign ages and coaches
     const allTeamsCopy = TEAMS.map(t => ({

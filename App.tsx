@@ -208,7 +208,8 @@ function AppLogic() {
     const onWeekCompleteWithCoach = useCallback(() => {
         const report = pendingResults?.coachReport;
         handleWeekComplete();
-        if (report && (report.requests.length > 0 || report.promotions.length > 0 || Math.random() < 0.3)) {
+        // Solo abrimos si hay ascensos (crítico) o con un 5% de probabilidad para revisión táctica
+        if (report && (report.promotions.length > 0 || Math.random() < 0.05)) {
             setCoachReport(report);
             setIsCoachMeetingOpen(true);
         }
