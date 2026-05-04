@@ -48,16 +48,16 @@ const MatchDayCard: React.FC<{
             <div className="bg-black/40 backdrop-blur-xl rounded-2xl p-10 text-center border border-white/10 flex flex-col items-center justify-center min-h-[400px] animate-fade-in-up shadow-2xl relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-t from-sky-900/20 to-transparent z-0"></div>
                 <div className="relative z-10 flex flex-col items-center">
-                    <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6 border border-white/10 shadow-[0_0_30px_rgba(56,189,248,0.2)]">
-                        <TrendingUpIcon className="w-10 h-10 text-sky-400" />
+                    <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-4 border border-white/10 shadow-xl">
+                        <TrendingUpIcon className="w-8 h-8 text-sky-400" />
                     </div>
-                    <h2 className="text-4xl font-black text-white mb-4 tracking-tight">Jornada Simulada</h2>
-                    <p className="text-slate-400 mb-10 max-w-lg text-lg">
-                        Los partidos de la jornada han finalizado. Tu equipo tuvo descanso esta semana.
+                    <h2 className="text-2xl font-black text-white mb-2 tracking-tight uppercase italic">Jornada Completada</h2>
+                    <p className="text-slate-400 mb-6 text-sm">
+                        La jornada ha finalizado. Tu equipo tuvo descanso esta semana.
                     </p>
                     <button
                         onClick={onWeekComplete}
-                        className="bg-white/10 hover:bg-white/20 text-white font-bold py-4 px-12 rounded-full border border-white/20 backdrop-blur-md transition-all duration-300 text-lg uppercase tracking-widest hover:shadow-[0_0_30px_rgba(255,255,255,0.1)]"
+                        className="bg-white text-black font-black py-3 px-8 rounded-xl transition-all duration-300 text-xs uppercase tracking-widest hover:scale-105"
                     >
                         Continuar
                     </button>
@@ -94,24 +94,23 @@ const MatchDayCard: React.FC<{
                     
                     <div className="relative z-10 flex items-center gap-6">
                         <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 shadow-xl group-hover:scale-110 transition-transform duration-500">
-                            <InboxIcon className="w-8 h-8 text-sky-400" />
+                            <svg className="w-8 h-8 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         </div>
                         <div>
                             <div className="flex items-center gap-2 mb-1">
                                 <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse"></span>
-                                <span className="text-[10px] font-black tracking-[0.2em] text-sky-400 uppercase">Semana {nextWeek} · Descanso</span>
+                                <span className="text-[10px] font-black tracking-[0.2em] text-sky-400 uppercase">Semana {nextWeek} · Preparación</span>
                             </div>
-                            <h2 className="text-2xl font-black text-white tracking-tight uppercase italic">Jornada de Descanso</h2>
-                            <p className="text-slate-400 text-xs font-medium max-w-md">Tu equipo no tiene partidos programados. Aprovecha para revisar fichajes o tácticas antes de avanzar.</p>
+                            <h2 className="text-2xl font-black text-white tracking-tight uppercase italic">Semana de Entrenamiento</h2>
+                            <p className="text-slate-400 text-xs font-medium max-w-md">No hay partidos programados para esta semana. El equipo se mantiene en forma para el próximo encuentro.</p>
                         </div>
                     </div>
 
                     <button
                         onClick={onPlayMatch}
-                        className="relative overflow-hidden group/btn bg-white text-black font-black py-4 px-10 rounded-xl transition-all duration-300 text-sm uppercase tracking-[0.2em] hover:scale-105 shadow-[0_0_30px_rgba(255,255,255,0.1)] z-10"
+                        className="relative overflow-hidden group/btn bg-sky-600 text-white font-black py-4 px-10 rounded-xl transition-all duration-300 text-sm uppercase tracking-[0.2em] hover:bg-sky-500 shadow-xl z-10"
                     >
                         <span className="relative z-10">Simular Semana</span>
-                        <div className="absolute inset-0 bg-gradient-to-r from-sky-400 to-blue-500 opacity-0 group-hover/btn:opacity-10 transition-opacity duration-300"></div>
                     </button>
                 </div>
             );

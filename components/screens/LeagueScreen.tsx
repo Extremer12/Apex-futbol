@@ -45,14 +45,17 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
         BUNDESLIGA: 'https://tmssl.akamaized.net/images/logo/header/l1.png',
         SERIE_A: 'https://tmssl.akamaized.net/images/logo/header/it1.png',
         LIGUE_1: 'https://tmssl.akamaized.net/images/logo/header/fr1.png',
+        LIGUE_2: 'https://tmssl.akamaized.net/images/logo/header/fr2.png',
         LIGA_ARGENTINA: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Liga_Profesional_de_F%C3%BAtbol_logo.svg/200px-Liga_Profesional_de_F%C3%BAtbol_logo.svg.png',
+        PRIMERA_NACIONAL: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Primera_Nacional_logo.png/200px-Primera_Nacional_logo.png',
         BRASILEIRAO: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Brasileirao_Serie_A_logo.png/200px-Brasileirao_Serie_A_logo.png',
+        SERIE_B_BR: 'https://upload.wikimedia.org/wikipedia/en/thumb/f/f6/Brasileir%C3%A3o_S%C3%A9rie_B_logo.png/200px-Brasileir%C3%A3o_S%C3%A9rie_B_logo.png',
     };
 
     const CUP_LOGOS: Record<string, string> = {
-        champions_league: 'https://tmssl.akamaized.net/images/logo/header/CL.png',
-        copa_libertadores: 'https://upload.wikimedia.org/wikipedia/en/thumb/a/ac/Copa_Libertadores_logo.svg/200px-Copa_Libertadores_logo.svg.png',
-        copa_intercontinental: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/Intercontinental_Cup_%28football%29_logo.svg/200px-Intercontinental_Cup_%28football%29_logo.svg.png',
+        champions_league: 'https://tmssl.akamaized.net/images/logo/header/cl.png',
+        copa_libertadores: 'https://tmssl.akamaized.net/images/logo/header/cli.png',
+        copa_intercontinental: 'https://tmssl.akamaized.net/images/logo/header/cwc.png',
         fa_cup: '/logos/The Emirates FA Cup.png',
         carabao_cup: '/logos/carabao_cup_logo.png',
     };

@@ -149,28 +149,30 @@ export function startNewSeason(currentState: GameState): GameState {
 
     const updatedPlayerTeamWithTrophies = processedTeams.find(t => t.id === currentState.team.id)!;
 
-    // 3. Process Promotion/Relegation (English leagues only)
-    const sortedPL = [...currentState.leagueTables.PREMIER_LEAGUE].sort(
-        (a, b) => b.points - a.points || b.goalDifference - a.goalDifference
-    );
-    const sortedCH = [...currentState.leagueTables.CHAMPIONSHIP].sort(
-        (a, b) => b.points - a.points || b.goalDifference - a.goalDifference
-    );
-
-    const relegatedIds = sortedPL.slice(-3).map(row => row.teamId);
-    const promotedIds = sortedCH.slice(0, 3).map(row => row.teamId);
-
-    const relegatedTeams = relegatedIds
-        .map(id => processedTeams.find(t => t.id === id)?.name || 'Unknown')
-        .filter(Boolean);
-    const promotedTeams = promotedIds
-        .map(id => processedTeams.find(t => t.id === id)?.name || 'Unknown')
-        .filter(Boolean);
-
+    // 3. Process Promotion/Relegation (All leagues)
     const teamsAfterProRel = handlePromotionRelegation(
         processedTeams,
         currentState.leagueTables
     );
+
+    // Identify which teams actually moved for the news feed
+    const allMovementNews: string[] = [];
+    PROMOTION_RELEGATION_PAIRS.forEach(([div1, div2]) => {
+        const div1Table = currentState.leagueTables[div1] || [];
+        const div2Table = currentState.leagueTables[div2] || [];
+        if (div1Table.length > 0 && div2Table.length > 0) {
+            const sorted1 = [...div1Table].sort((a,b) => b.points - a.points || b.goalDifference - a.goalDifference);
+            const sorted2 = [...div2Table].sort((a,b) => b.points - a.points || b.goalDifference - a.goalDifference);
+            
+            const relegatedNames = sorted1.slice(-3).map(r => processedTeams.find(t => t.id === r.teamId)?.name).filter(Boolean);
+            const promotedNames = sorted2.slice(0, 3).map(p => processedTeams.find(t => t.id === p.id)?.name).filter(Boolean);
+            
+            if (relegatedNames.length > 0 || promotedNames.length > 0) {
+                const leagueName = div1.replace(/_/g, ' ');
+                allMovementNews.push(`${leagueName}: ⬆️ ${promotedNames.join(', ')} | ⬇️ ${relegatedNames.join(', ')}`);
+            }
+        }
+    });
 
     // 4. Generate new season schedule and tables
     const newSeasonSchedule = generateSeasonSchedule(teamsAfterProRel);
@@ -211,24 +213,47 @@ export function startNewSeason(currentState: GameState): GameState {
     const dfbPokalFixtures = dfbPokalRound1.map(m => ({ ...m, week: 4 }));
     const coppaItaliaFixtures = coppaItaliaRound1.map(m => ({ ...m, week: 5 }));
 
-    // 5.5 Generate European & South American Competitions
-    // Get top 8 from Europe for Champions League (Knockout)
+    // 5.5 Generate European & South American Competitions (Dynamic Qualification)
+    const getTopTeams = (lid: LeagueId, count: number) => {
+        const table = currentState.leagueTables[lid];
+        if (!table) return [];
+        return [...table].sort((a,b) => b.points - a.points || b.goalDifference - a.goalDifference)
+            .slice(0, count)
+            .map(row => teamsAfterProRel.find(t => t.id === row.teamId))
+            .filter(Boolean) as Team[];
+    };
+
+    // Champions League Qualification (36 teams for 2026 format)
     const clTeams = [
-        ...[...currentState.leagueTables.PREMIER_LEAGUE].sort((a,b)=>b.points-a.points).slice(0, 2),
-        ...[...currentState.leagueTables.LA_LIGA].sort((a,b)=>b.points-a.points).slice(0, 2),
-        ...[...currentState.leagueTables.BUNDESLIGA].sort((a,b)=>b.points-a.points).slice(0, 2),
-        ...[...currentState.leagueTables.SERIE_A].sort((a,b)=>b.points-a.points).slice(0, 1),
-        ...[...currentState.leagueTables.LIGUE_1].sort((a,b)=>b.points-a.points).slice(0, 1)
-    ].map(row => teamsAfterProRel.find(t => t.id === row.teamId)).filter(Boolean) as Team[];
+        ...getTopTeams(LeagueId.PREMIER_LEAGUE, 7),
+        ...getTopTeams(LeagueId.LA_LIGA, 7),
+        ...getTopTeams(LeagueId.BUNDESLIGA, 7),
+        ...getTopTeams(LeagueId.SERIE_A, 7),
+        ...getTopTeams(LeagueId.LIGUE_1, 6),
+        ...getTopTeams(LeagueId.LIGA_ARGENTINA, 1), // Wildcards or prestige
+        ...getTopTeams(LeagueId.BRASILEIRAO, 1)
+    ].slice(0, 36);
 
-    // Top 4 ARG, Top 4 BRA
+    // Copa Libertadores Qualification (32 teams)
     const libTeams = [
-        ...[...currentState.leagueTables.LIGA_ARGENTINA].sort((a,b)=>b.points-a.points).slice(0, 4),
-        ...[...currentState.leagueTables.BRASILEIRAO].sort((a,b)=>b.points-a.points).slice(0, 4)
-    ].map(row => teamsAfterProRel.find(t => t.id === row.teamId)).filter(Boolean) as Team[];
+        ...getTopTeams(LeagueId.LIGA_ARGENTINA, 12),
+        ...getTopTeams(LeagueId.BRASILEIRAO, 12),
+        ...getTopTeams(LeagueId.LIGA_ARGENTINA, 4), // Extra spots from lower ranks
+        ...getTopTeams(LeagueId.BRASILEIRAO, 4)
+    ].slice(0, 32);
 
-    const clFixtures = generateCupDraw(clTeams, 'Quarter-Final', 'Champions_League').map(m => ({ ...m, week: 12, isMidweek: true }));
-    const libFixtures = generateCupDraw(libTeams, 'Quarter-Final', 'Copa_Libertadores').map(m => ({ ...m, week: 10, isMidweek: true }));
+    const clSwiss = generateSwissPhase(clTeams, 'Champions_League', 8); // 8 matches as per real 2026 format
+    const libGroups = generateGroupPhase(libTeams, 'Copa_Libertadores'); 
+
+    const clFixtures = clSwiss.fixtures.map(m => ({ ...m, week: m.week + 5, isMidweek: true }));
+    
+    // Libertadores group fixtures
+    const libGroupFixtures: Match[] = [];
+    libGroups.forEach(g => {
+        g.fixtures.forEach(f => {
+            libGroupFixtures.push({ ...f, week: f.week + 4, isMidweek: true });
+        });
+    });
 
     // Intercontinental Cup
     const lastLibertadoresWinner = currentState.cups.copaLibertadores.winnerId;
@@ -253,14 +278,14 @@ export function startNewSeason(currentState: GameState): GameState {
     const fullSchedule = [
         ...newSeasonSchedule, 
         ...faCupFixtures, ...carabaoCupFixtures, ...copaDelReyFixtures, ...dfbPokalFixtures, ...coppaItaliaFixtures,
-        ...clFixtures, ...libFixtures, ...intercontinentalFixtures
+        ...clFixtures, ...libGroupFixtures, ...intercontinentalFixtures
     ];
 
     // 6. Create news items
     const proRelNews: NewsItem = {
         id: `pro_rel_${newSeasonYear}`,
-        headline: `🔄 Cambios en las Ligas - Temporada ${newSeasonYear}`,
-        body: `⬆️ ASCENSOS: ${promotedTeams.join(', ')} suben a la Premier League.\n⬇️ DESCENSOS: ${relegatedTeams.join(', ')} descienden al Championship. ¡La nueva temporada promete emociones!`,
+        headline: `🔄 Ascensos y Descensos Globales - Temporada ${newSeasonYear}`,
+        body: `Resumen de movimientos en las ligas:\n${allMovementNews.join('\n')}`,
         date: formatDate(newDate),
         type: 'standard'
     };
@@ -399,32 +424,54 @@ export function startNewSeason(currentState: GameState): GameState {
     // 7.5 Generar Eventos Cinematográficos
     const newCinematicQueue = [...(currentState.cinematicQueue || [])];
     
-    // Check if player won league
-    const playerLeagueWin = trophiesToAward.find(t => t.teamId === updatedPlayerTeam.id && t.type === 'league');
-    if (playerLeagueWin) {
+    // Check if player qualified for Champions League
+    const playerInCL = clTeams.find(t => t.id === updatedPlayerTeam.id);
+    if (playerInCL) {
+        const playerOpponents = clFixtures
+            .filter(m => m.homeTeamId === updatedPlayerTeam.id || m.awayTeamId === updatedPlayerTeam.id)
+            .map(m => {
+                const isHome = m.homeTeamId === updatedPlayerTeam.id;
+                const opponentId = isHome ? m.awayTeamId : m.homeTeamId;
+                return {
+                    name: teamsAfterProRel.find(t => t.id === opponentId)?.name || 'Desconocido',
+                    venue: isHome ? 'home' : 'away'
+                };
+            });
+
         newCinematicQueue.push({
-            id: `cinematic_league_win_${newSeasonYear}`,
-            type: 'LEAGUE_WIN',
-            title: `¡CAMPEONES!`,
-            subtitle: `Has ganado la ${playerLeagueWin.name}`
+            id: `cinematic_cl_draw_${newSeasonYear}`,
+            type: 'GROUP_DRAW',
+            title: `UEFA Champions League`,
+            subtitle: `Sorteo de Fase de Liga 2026`,
+            metadata: {
+                accentColor: '#3b82f6',
+                swissOpponents: playerOpponents
+            }
         });
     }
 
-    // Check promotion/relegation for player
-    if (promotedIds.includes(updatedPlayerTeam.id)) {
-        newCinematicQueue.push({
-            id: `cinematic_promotion_${newSeasonYear}`,
-            type: 'PROMOTION',
-            title: `¡ASCENSO CONSEGUIDO!`,
-            subtitle: `El ${updatedPlayerTeam.name} jugará en la Primera División`
-        });
-    } else if (relegatedIds.includes(updatedPlayerTeam.id)) {
-        newCinematicQueue.push({
-            id: `cinematic_relegation_${newSeasonYear}`,
-            type: 'RELEGATION',
-            title: `DESCENSO...`,
-            subtitle: `Temporada para el olvido. Volvemos a Segunda.`
-        });
+    // Check if player qualified for Libertadores
+    const playerInLib = libTeams.find(t => t.id === updatedPlayerTeam.id);
+    if (playerInLib) {
+        const playerGroup = libGroups.find(g => g.teams.includes(updatedPlayerTeam.id));
+        if (playerGroup) {
+            newCinematicQueue.push({
+                id: `cinematic_lib_draw_${newSeasonYear}`,
+                type: 'GROUP_DRAW',
+                title: `Copa Libertadores`,
+                subtitle: `Sorteo de Fase de Grupos`,
+                metadata: {
+                    accentColor: '#facc15',
+                    groups: [{
+                        name: playerGroup.name,
+                        teams: playerGroup.teams.map(tid => ({
+                            name: teamsAfterProRel.find(t => t.id === tid)?.name || 'Desconocido',
+                            isPlayer: tid === updatedPlayerTeam.id
+                        }))
+                    }]
+                }
+            });
+        }
     }
 
     // Season summary (always at the end of the queue)
@@ -503,7 +550,8 @@ export function startNewSeason(currentState: GameState): GameState {
             championsLeague: {
                 id: 'champions_league', name: 'Champions League', 
                 type: 'swiss', phase: 'swiss',
-                swissTable: [], swissFixtures: [], // Should be generated with new participants
+                swissTable: clSwiss.table, 
+                swissFixtures: clFixtures,
                 rounds: [],
                 currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.championsLeague?.statistics?.championsHistory || [] }
             },
@@ -516,7 +564,7 @@ export function startNewSeason(currentState: GameState): GameState {
             copaLibertadores: {
                 id: 'copa_libertadores', name: 'Copa Libertadores', 
                 type: 'groups', phase: 'groups',
-                groups: [], // Should be generated with new participants
+                groups: libGroups,
                 rounds: [],
                 currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.copaLibertadores?.statistics?.championsHistory || [] }
             },

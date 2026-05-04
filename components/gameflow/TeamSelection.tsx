@@ -292,6 +292,9 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                             selectedLeague === LeagueId.CHAMPIONSHIP ? '/logos/Sky Bet Championship.png' : 
                             selectedLeague === LeagueId.BUNDESLIGA ? 'https://tmssl.akamaized.net/images/logo/header/l1.png' :
                             selectedLeague === LeagueId.SERIE_A ? 'https://tmssl.akamaized.net/images/logo/header/it1.png' : 
+                            selectedLeague === LeagueId.LIGUE_1 ? 'https://tmssl.akamaized.net/images/logo/header/fr1.png' :
+                            selectedLeague === LeagueId.LIGA_ARGENTINA ? 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Liga_Profesional_de_F%C3%BAtbol_logo.svg/200px-Liga_Profesional_de_F%C3%BAtbol_logo.svg.png' :
+                            selectedLeague === LeagueId.BRASILEIRAO ? 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Brasileirao_Serie_A_logo.png/200px-Brasileirao_Serie_A_logo.png' :
                             'https://tmssl.akamaized.net/images/logo/header/es1.png'
                         } 
                         alt="League" 
@@ -302,7 +305,10 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                     {selectedLeague === LeagueId.PREMIER_LEAGUE ? 'Premier League' : 
                      selectedLeague === LeagueId.CHAMPIONSHIP ? 'Championship' : 
                      selectedLeague === LeagueId.BUNDESLIGA ? 'Bundesliga' :
-                     selectedLeague === LeagueId.SERIE_A ? 'Serie A' : 'La Liga'}
+                     selectedLeague === LeagueId.SERIE_A ? 'Serie A' : 
+                     selectedLeague === LeagueId.LIGUE_1 ? 'Ligue 1' :
+                     selectedLeague === LeagueId.LIGA_ARGENTINA ? 'Liga Argentina' :
+                     selectedLeague === LeagueId.BRASILEIRAO ? 'Brasileirão' : 'La Liga'}
                 </h1>
                 <p className="text-slate-400 text-xl font-medium tracking-wide">Toma el control del club y forja tu propio destino</p>
             </div>
