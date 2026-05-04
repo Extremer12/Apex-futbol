@@ -25,8 +25,17 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
         PREMIER_LEAGUE: 'purple',
         CHAMPIONSHIP: 'sky',
         LA_LIGA: 'orange',
+        SEGUNDA_DIVISION_ESP: 'orange',
         BUNDESLIGA: 'red',
-        SERIE_A: 'emerald'
+        ZWEITE_BUNDESLIGA: 'red',
+        SERIE_A: 'emerald',
+        SERIE_B_ITA: 'emerald',
+        LIGUE_1: 'blue',
+        LIGUE_2: 'blue',
+        LIGA_ARGENTINA: 'cyan',
+        PRIMERA_NACIONAL: 'cyan',
+        BRASILEIRAO: 'green',
+        SERIE_B_BR: 'green',
     };
 
     const LEAGUE_LOGOS: Record<string, string> = {
@@ -34,7 +43,26 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
         CHAMPIONSHIP: '/logos/Sky Bet Championship.png',
         LA_LIGA: 'https://tmssl.akamaized.net/images/logo/header/es1.png',
         BUNDESLIGA: 'https://tmssl.akamaized.net/images/logo/header/l1.png',
-        SERIE_A: 'https://tmssl.akamaized.net/images/logo/header/it1.png'
+        SERIE_A: 'https://tmssl.akamaized.net/images/logo/header/it1.png',
+        LIGUE_1: 'https://tmssl.akamaized.net/images/logo/header/fr1.png',
+        LIGA_ARGENTINA: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Liga_Profesional_de_F%C3%BAtbol_logo.svg/200px-Liga_Profesional_de_F%C3%BAtbol_logo.svg.png',
+        BRASILEIRAO: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Brasileirao_Serie_A_logo.png/200px-Brasileirao_Serie_A_logo.png',
+    };
+
+    const CUP_LOGOS: Record<string, string> = {
+        champions_league: 'https://tmssl.akamaized.net/images/logo/header/CL.png',
+        copa_libertadores: 'https://upload.wikimedia.org/wikipedia/en/thumb/a/ac/Copa_Libertadores_logo.svg/200px-Copa_Libertadores_logo.svg.png',
+        copa_intercontinental: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/Intercontinental_Cup_%28football%29_logo.svg/200px-Intercontinental_Cup_%28football%29_logo.svg.png',
+        fa_cup: '/logos/The Emirates FA Cup.png',
+        carabao_cup: '/logos/carabao_cup_logo.png',
+    };
+
+    const CUP_THEMES: Record<string, { accent: string; bg: string; border: string }> = {
+        champions_league: { accent: 'text-indigo-400', bg: 'from-indigo-950 via-slate-950 to-slate-950', border: 'border-indigo-500/40' },
+        copa_libertadores: { accent: 'text-amber-400', bg: 'from-amber-950 via-slate-950 to-slate-950', border: 'border-amber-500/40' },
+        copa_intercontinental: { accent: 'text-emerald-400', bg: 'from-emerald-950 via-slate-950 to-slate-950', border: 'border-emerald-500/40' },
+        fa_cup: { accent: 'text-red-400', bg: 'from-red-950 via-slate-950 to-slate-950', border: 'border-red-500/40' },
+        carabao_cup: { accent: 'text-green-400', bg: 'from-green-950 via-slate-950 to-slate-950', border: 'border-green-500/40' },
     };
 
     const getTeamById = (id: number) => gameState.allTeams.find(t => t.id === id);
@@ -42,14 +70,20 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
     const getLeagueIdFromTitle = (title: string): LeagueId => {
         if (title.includes('Premier')) return LeagueId.PREMIER_LEAGUE;
         if (title.includes('Championship')) return LeagueId.CHAMPIONSHIP;
-        if (title.includes('Liga')) return LeagueId.LA_LIGA;
+        if (title === 'La Liga') return LeagueId.LA_LIGA;
         if (title.includes('Bundesliga')) return LeagueId.BUNDESLIGA;
-        if (title.includes('Serie A')) return LeagueId.SERIE_A;
+        if (title === 'Serie A') return LeagueId.SERIE_A;
+        if (title.includes('Ligue 1')) return LeagueId.LIGUE_1;
+        if (title.includes('Ligue 2')) return LeagueId.LIGUE_2;
+        if (title.includes('Liga Argentina') || title.includes('Liga Prof')) return LeagueId.LIGA_ARGENTINA;
+        if (title.includes('Primera Nacional')) return LeagueId.PRIMERA_NACIONAL;
+        if (title.includes('Brasileirao') || title.includes('Brasileirão')) return LeagueId.BRASILEIRAO;
+        if (title.includes('Série B BR') || title.includes('Serie B BR')) return LeagueId.SERIE_B_BR;
         return LeagueId.PREMIER_LEAGUE;
     };
 
-    const renderLeagueTable = (table: LeagueTableRow[], title: string, logoPath: string, isFirstDiv: boolean) => {
-        const leagueId = getLeagueIdFromTitle(title);
+    const renderLeagueTable = (table: LeagueTableRow[], title: string, logoPath: string, isFirstDiv: boolean, leagueIdOverride?: string) => {
+        const leagueId = leagueIdOverride || getLeagueIdFromTitle(title);
         const theme = LEAGUE_THEMES[leagueId] || 'purple';
 
         return (
@@ -209,132 +243,115 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
         );
     };
 
-    const renderCupView = (cup: CupCompetition, logoPath: string) => (
-        <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 border-2 border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden animate-fade-in">
-            <div className="bg-gradient-to-r from-slate-800 to-slate-900 px-6 py-8 border-b border-slate-700/50 relative overflow-hidden">
-                <div className="relative flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div className="flex items-center gap-6">
-                        <div className="w-20 h-20 p-2 bg-white/5 rounded-2xl backdrop-blur-sm border border-white/10 flex items-center justify-center shadow-xl">
-                            <img src={logoPath} alt={cup.name} className="w-full h-full object-contain" />
-                        </div>
-                        <div>
-                            <h2 className="text-3xl font-black text-white tracking-tight uppercase italic">{cup.name}</h2>
-                            <div className="flex items-center gap-3 mt-1">
-                                <span className="text-yellow-400 font-bold uppercase tracking-widest text-xs">Torneo Eliminatorio</span>
-                                <div className="w-1 h-1 rounded-full bg-slate-600"></div>
-                                <span className="text-slate-400 text-sm font-medium">Temporada 2024/25</span>
+    const renderCupView = (cup: CupCompetition) => {
+        const theme = CUP_THEMES[cup.id] || CUP_THEMES.fa_cup;
+        const logo = CUP_LOGOS[cup.id] || '';
+        const currentRound = cup.rounds[cup.currentRoundIndex];
+        const fixtures = currentRound?.fixtures || [];
+        const isFinished = !!cup.winnerId;
+        const winner = cup.winnerId ? getTeamById(cup.winnerId) : null;
+
+        return (
+            <div className={`bg-gradient-to-br ${theme.bg} border-2 ${theme.border} rounded-3xl shadow-2xl overflow-hidden animate-fade-in`}>
+                {/* Header */}
+                <div className="relative px-6 py-8 border-b border-white/5 overflow-hidden">
+                    <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'repeating-linear-gradient(45deg, white 0, white 1px, transparent 0, transparent 50%)' , backgroundSize: '20px 20px' }} />
+                    <div className="relative flex flex-col md:flex-row items-center justify-between gap-6">
+                        <div className="flex items-center gap-5">
+                            <div className="w-20 h-20 p-2 bg-white/10 rounded-2xl border border-white/10 flex items-center justify-center shadow-xl backdrop-blur-sm">
+                                {logo ? (
+                                    <img src={logo} alt={cup.name} className="w-full h-full object-contain drop-shadow-lg" />
+                                ) : (
+                                    <TrophyIcon className={`w-10 h-10 ${theme.accent}`} />
+                                )}
+                            </div>
+                            <div>
+                                <h2 className="text-3xl font-black text-white tracking-tight uppercase italic">{cup.name}</h2>
+                                <div className="flex items-center gap-3 mt-1">
+                                    <span className={`font-bold uppercase tracking-widest text-xs ${theme.accent}`}>Torneo Eliminatorio</span>
+                                    <span className="text-slate-600">•</span>
+                                    <span className="text-slate-400 text-sm font-medium">{currentRound?.name || 'Finalizada'}</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    
-                    <div className="flex gap-2 bg-black/20 p-1 rounded-xl">
-                        <button 
-                            onClick={() => setCupTab('ROUNDS')}
-                            className={`px-6 py-2 rounded-lg font-bold text-sm transition-all ${cupTab === 'ROUNDS' ? 'bg-white text-slate-950' : 'text-slate-400 hover:text-white'}`}
-                        >
-                            Fases
-                        </button>
-                        <button 
-                            onClick={() => setCupTab('STATS')}
-                            className={`px-6 py-2 rounded-lg font-bold text-sm transition-all ${cupTab === 'STATS' ? 'bg-white text-slate-950' : 'text-slate-400 hover:text-white'}`}
-                        >
-                            Goleadores
-                        </button>
+                        <div className="flex gap-2 bg-black/30 p-1 rounded-xl">
+                            <button onClick={() => setCupTab('ROUNDS')} className={`px-5 py-2 rounded-lg font-bold text-sm transition-all ${cupTab === 'ROUNDS' ? 'bg-white text-slate-950' : 'text-slate-400 hover:text-white'}`}>Llaves</button>
+                            <button onClick={() => setCupTab('STATS')} className={`px-5 py-2 rounded-lg font-bold text-sm transition-all ${cupTab === 'STATS' ? 'bg-white text-slate-950' : 'text-slate-400 hover:text-white'}`}>Historial</button>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div className="p-6">
-                {cupTab === 'ROUNDS' ? (
-                    <div className="space-y-6">
-                        <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-                            <h3 className="text-xl font-black text-white uppercase italic tracking-wider flex items-center gap-3">
-                                <div className="w-2 h-6 bg-yellow-500 rounded-full"></div>
-                                {cup.rounds[cup.currentRoundIndex]?.name || 'Finalizada'}
-                            </h3>
-                        </div>
-
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                            {cup.rounds[cup.currentRoundIndex]?.fixtures.map((fixture, idx) => {
-                                const home = getTeamById(fixture.homeTeamId);
-                                const away = getTeamById(fixture.awayTeamId);
-                                const isPlayerMatch = home?.id === gameState.team.id || away?.id === gameState.team.id;
-                                
-                                return (
-                                    <div 
-                                        key={idx} 
-                                        className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${isPlayerMatch ? 'bg-yellow-500/10 border-yellow-500/50' : 'bg-slate-800/30 border-white/5'}`}
-                                    >
-                                        <div className="flex-1 flex items-center gap-3">
-                                            <div className="w-8 h-8">
-                                                <TeamLogo team={home} />
-                                            </div>
-                                            <span className={`font-bold text-sm truncate ${isPlayerMatch && home?.id === gameState.team.id ? 'text-yellow-400' : 'text-white'}`}>
-                                                {home?.name}
-                                            </span>
-                                        </div>
-
-                                        <div className="flex flex-col items-center justify-center px-4">
-                                            {fixture.result ? (
-                                                <div className="text-lg font-black text-white tabular-nums bg-slate-900 px-3 py-1 rounded-lg border border-white/10">
-                                                    {fixture.result.homeScore} - {fixture.result.awayScore}
-                                                </div>
-                                            ) : (
-                                                <div className="text-xs font-black text-slate-500 uppercase tracking-widest bg-slate-900/50 px-2 py-1 rounded-md border border-white/5">
-                                                    VS
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className="flex-1 flex items-center justify-end gap-3 text-right">
-                                            <span className={`font-bold text-sm truncate ${isPlayerMatch && away?.id === gameState.team.id ? 'text-yellow-400' : 'text-white'}`}>
-                                                {away?.name}
-                                            </span>
-                                            <div className="w-8 h-8">
-                                                <TeamLogo team={away} />
-                                            </div>
-                                        </div>
+                <div className="p-6">
+                    {cupTab === 'ROUNDS' ? (
+                        <div className="space-y-4">
+                            {isFinished && winner && (
+                                <div className={`flex items-center gap-4 p-5 rounded-2xl border ${theme.border} bg-white/5 mb-6`}>
+                                    <div className="w-12 h-12"><TrophyIcon className={`w-full h-full ${theme.accent}`} /></div>
+                                    <div>
+                                        <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Campeón</p>
+                                        <p className="text-white font-black text-2xl">{winner.name}</p>
                                     </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                ) : (
-                    <div className="space-y-6">
-                        <div className="overflow-hidden rounded-2xl border border-white/5 bg-slate-900/30">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="text-slate-500 text-[10px] font-black uppercase tracking-widest bg-slate-800/50">
-                                        <th className="px-6 py-4 text-left">Jugador</th>
-                                        <th className="px-6 py-4 text-left">Club</th>
-                                        <th className="px-6 py-4 text-center">Goles</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-white/5">
-                                    {cup.statistics.topScorers.slice(0, 10).map((s, i) => (
-                                        <tr key={i} className="hover:bg-white/5 transition-colors">
-                                            <td className="px-6 py-4">
-                                                <span className="font-bold text-white">{s.playerName}</span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-6 h-6">
-                                                        <TeamLogo team={getTeamById(s.teamId)} />
+                                </div>
+                            )}
+                            {!currentRound && !isFinished && (
+                                <div className="text-center py-16 text-slate-500">
+                                    <TrophyIcon className="w-16 h-16 mx-auto mb-4 opacity-20" />
+                                    <p className="font-bold uppercase tracking-widest">La competición no ha comenzado</p>
+                                </div>
+                            )}
+                            {/* Bracket-style fixtures */}
+                            {currentRound && (
+                                <>
+                                    <h3 className={`text-xs font-black uppercase tracking-[0.25em] mb-4 ${theme.accent}`}>{currentRound.name}</h3>
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                                        {fixtures.map((fixture, idx) => {
+                                            const home = getTeamById(fixture.homeTeamId);
+                                            const away = getTeamById(fixture.awayTeamId);
+                                            const isPlayerMatch = home?.id === gameState.team.id || away?.id === gameState.team.id;
+                                            const homeWon = fixture.result && fixture.result.homeScore > fixture.result.awayScore;
+                                            const awayWon = fixture.result && fixture.result.awayScore > fixture.result.homeScore;
+                                            return (
+                                                <div key={idx} className={`rounded-2xl border overflow-hidden transition-all ${isPlayerMatch ? `${theme.border} bg-white/5` : 'border-white/5 bg-slate-900/40'}`}>
+                                                    {/* Home row */}
+                                                    <div className={`flex items-center justify-between px-4 py-3 border-b border-white/5 ${homeWon ? 'bg-white/10' : ''}`}>
+                                                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                            <div className="w-8 h-8 shrink-0"><TeamLogo team={home} /></div>
+                                                            <span className={`font-bold text-sm truncate ${isPlayerMatch && home?.id === gameState.team.id ? theme.accent : homeWon ? 'text-white' : 'text-slate-300'}`}>{home?.name}</span>
+                                                        </div>
+                                                        <span className={`font-black text-lg w-8 text-center ${homeWon ? 'text-white' : 'text-slate-500'}`}>{fixture.result ? fixture.result.homeScore : '-'}</span>
                                                     </div>
-                                                    <span className="text-slate-400 font-medium">{s.teamName}</span>
+                                                    {/* Away row */}
+                                                    <div className={`flex items-center justify-between px-4 py-3 ${awayWon ? 'bg-white/10' : ''}`}>
+                                                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                            <div className="w-8 h-8 shrink-0"><TeamLogo team={away} /></div>
+                                                            <span className={`font-bold text-sm truncate ${isPlayerMatch && away?.id === gameState.team.id ? theme.accent : awayWon ? 'text-white' : 'text-slate-300'}`}>{away?.name}</span>
+                                                        </div>
+                                                        <span className={`font-black text-lg w-8 text-center ${awayWon ? 'text-white' : 'text-slate-500'}`}>{fixture.result ? fixture.result.awayScore : '-'}</span>
+                                                    </div>
                                                 </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-center font-black text-white">{s.goals}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                            );
+                                        })}
+                                    </div>
+                                </>
+                            )}
                         </div>
-                    </div>
-                )}
+                    ) : (
+                        <div className="space-y-3">
+                            {cup.statistics.championsHistory.length === 0 ? (
+                                <p className="text-center text-slate-600 py-8 text-sm font-bold uppercase tracking-widest">Sin historial todavía</p>
+                            ) : cup.statistics.championsHistory.map((c, i) => (
+                                <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-slate-900/40 border border-white/5">
+                                    <span className="text-slate-500 font-bold text-sm">{c.season}</span>
+                                    <span className="font-black text-white">{c.winnerName}</span>
+                                    <TrophyIcon className={`w-5 h-5 ${theme.accent}`} />
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
-        </div>
-    );
+        );
+    };
 
     const renderWorldView = () => {
         if (!worldLeagueSelected) {
@@ -343,7 +360,10 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                 { id: LeagueId.CHAMPIONSHIP, name: 'Championship', logo: LEAGUE_LOGOS.CHAMPIONSHIP, country: 'Inglaterra', theme: 'sky', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
                 { id: LeagueId.LA_LIGA, name: 'La Liga', logo: LEAGUE_LOGOS.LA_LIGA, country: 'España', theme: 'orange', flag: '🇪🇸' },
                 { id: LeagueId.BUNDESLIGA, name: 'Bundesliga', logo: LEAGUE_LOGOS.BUNDESLIGA, country: 'Alemania', theme: 'red', flag: '🇩🇪' },
-                { id: LeagueId.SERIE_A, name: 'Serie A', logo: LEAGUE_LOGOS.SERIE_A, country: 'Italia', theme: 'emerald', flag: '🇮🇹' }
+                { id: LeagueId.SERIE_A, name: 'Serie A', logo: LEAGUE_LOGOS.SERIE_A, country: 'Italia', theme: 'emerald', flag: '🇮🇹' },
+                { id: LeagueId.LIGUE_1, name: 'Ligue 1', logo: LEAGUE_LOGOS.LIGUE_1, country: 'Francia', theme: 'blue', flag: '🇫🇷' },
+                { id: LeagueId.LIGA_ARGENTINA, name: 'Liga Argentina', logo: LEAGUE_LOGOS.LIGA_ARGENTINA, country: 'Argentina', theme: 'cyan', flag: '🇦🇷' },
+                { id: LeagueId.BRASILEIRAO, name: 'Brasileirão', logo: LEAGUE_LOGOS.BRASILEIRAO, country: 'Brasil', theme: 'green', flag: '🇧🇷' },
             ].filter(l => l.id !== playerTeamLeague);
 
             const filteredLeagues = allLeagues.filter(l => 
@@ -505,6 +525,57 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                     </>
                 )}
 
+                {playerCountry === 'FRA' && (
+                    <>
+                        <button
+                            onClick={() => { setActiveTab('LOCAL_LEAGUE_1'); setWorldLeagueSelected(null); }}
+                            className={`flex-1 py-3.5 px-4 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-500 ${activeTab === 'LOCAL_LEAGUE_1' ? 'bg-blue-600 text-white shadow-xl scale-[1.02]' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+                        >
+                            Ligue 1
+                        </button>
+                        <button
+                            onClick={() => { setActiveTab('LOCAL_LEAGUE_2'); setWorldLeagueSelected(null); }}
+                            className={`flex-1 py-3.5 px-4 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-500 ${activeTab === 'LOCAL_LEAGUE_2' ? 'bg-blue-700 text-white shadow-xl scale-[1.02]' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+                        >
+                            Ligue 2
+                        </button>
+                    </>
+                )}
+
+                {playerCountry === 'ARG' && (
+                    <>
+                        <button
+                            onClick={() => { setActiveTab('LOCAL_LEAGUE_1'); setWorldLeagueSelected(null); }}
+                            className={`flex-1 py-3.5 px-4 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-500 ${activeTab === 'LOCAL_LEAGUE_1' ? 'bg-cyan-600 text-white shadow-xl scale-[1.02]' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+                        >
+                            Liga Argentina
+                        </button>
+                        <button
+                            onClick={() => { setActiveTab('LOCAL_LEAGUE_2'); setWorldLeagueSelected(null); }}
+                            className={`flex-1 py-3.5 px-4 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-500 ${activeTab === 'LOCAL_LEAGUE_2' ? 'bg-cyan-700 text-white shadow-xl scale-[1.02]' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+                        >
+                            Primera Nacional
+                        </button>
+                    </>
+                )}
+
+                {playerCountry === 'BRA' && (
+                    <>
+                        <button
+                            onClick={() => { setActiveTab('LOCAL_LEAGUE_1'); setWorldLeagueSelected(null); }}
+                            className={`flex-1 py-3.5 px-4 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-500 ${activeTab === 'LOCAL_LEAGUE_1' ? 'bg-green-600 text-white shadow-xl scale-[1.02]' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+                        >
+                            Brasileirão
+                        </button>
+                        <button
+                            onClick={() => { setActiveTab('LOCAL_LEAGUE_2'); setWorldLeagueSelected(null); }}
+                            className={`flex-1 py-3.5 px-4 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-500 ${activeTab === 'LOCAL_LEAGUE_2' ? 'bg-green-700 text-white shadow-xl scale-[1.02]' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+                        >
+                            Série B
+                        </button>
+                    </>
+                )}
+
                 {playerCountry === 'ITA' && (
                     <>
                         <button
@@ -554,21 +625,30 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
             <div className="min-h-[600px]">
                 {activeTab === 'LOCAL_LEAGUE_1' && playerCountry === 'ENG' && renderLeagueTable(gameState.leagueTables.PREMIER_LEAGUE, 'Premier League', LEAGUE_LOGOS.PREMIER_LEAGUE, true)}
                 {activeTab === 'LOCAL_LEAGUE_2' && playerCountry === 'ENG' && renderLeagueTable(gameState.leagueTables.CHAMPIONSHIP, 'Championship', LEAGUE_LOGOS.CHAMPIONSHIP, false)}
-                {activeTab === 'LOCAL_CUP_1' && playerCountry === 'ENG' && renderCupView(gameState.cups.faCup, '/logos/The Emirates FA Cup.png')}
-                {activeTab === 'LOCAL_CUP_2' && playerCountry === 'ENG' && renderCupView(gameState.cups.carabaoCup, '/logos/carabao_cup_logo.png')}
+                {activeTab === 'LOCAL_CUP_1' && playerCountry === 'ENG' && renderCupView(gameState.cups.faCup)}
+                {activeTab === 'LOCAL_CUP_2' && playerCountry === 'ENG' && renderCupView(gameState.cups.carabaoCup)}
 
-                {activeTab === 'LOCAL_LEAGUE_1' && playerCountry === 'ESP' && renderLeagueTable(gameState.leagueTables.LA_LIGA, 'La Liga', LEAGUE_LOGOS.LA_LIGA, true)}
-                {activeTab === 'LOCAL_CUP' && playerCountry === 'ESP' && renderCupView(gameState.cups.copaDelRey, '')}
-                
-                {activeTab === 'LOCAL_LEAGUE_1' && playerCountry === 'GER' && renderLeagueTable(gameState.leagueTables.BUNDESLIGA, 'Bundesliga', LEAGUE_LOGOS.BUNDESLIGA, true)}
-                {activeTab === 'LOCAL_CUP' && playerCountry === 'GER' && renderCupView(gameState.cups.dfbPokal, '')}
+                {activeTab === 'LOCAL_LEAGUE_1' && playerCountry === 'ESP' && renderLeagueTable(gameState.leagueTables.LA_LIGA, 'La Liga', LEAGUE_LOGOS.LA_LIGA, true, 'LA_LIGA')}
+                {activeTab === 'LOCAL_CUP' && playerCountry === 'ESP' && renderCupView(gameState.cups.copaDelRey)}
 
-                {activeTab === 'LOCAL_LEAGUE_1' && playerCountry === 'ITA' && renderLeagueTable(gameState.leagueTables.SERIE_A, 'Serie A', LEAGUE_LOGOS.SERIE_A, true)}
-                {activeTab === 'LOCAL_CUP' && playerCountry === 'ITA' && renderCupView(gameState.cups.coppaItalia, '')}
+                {activeTab === 'LOCAL_LEAGUE_1' && playerCountry === 'GER' && renderLeagueTable(gameState.leagueTables.BUNDESLIGA, 'Bundesliga', LEAGUE_LOGOS.BUNDESLIGA, true, 'BUNDESLIGA')}
+                {activeTab === 'LOCAL_CUP' && playerCountry === 'GER' && renderCupView(gameState.cups.dfbPokal)}
 
-                {activeTab === 'CHAMPIONS_LEAGUE' && gameState.cups.championsLeague && renderCupView(gameState.cups.championsLeague, 'https://tmssl.akamaized.net/images/logo/header/CL.png')}
-                {activeTab === 'COPA_LIBERTADORES' && gameState.cups.copaLibertadores && renderCupView(gameState.cups.copaLibertadores, '')}
-                {activeTab === 'COPA_INTERCONTINENTAL' && gameState.cups.copaIntercontinental && renderCupView(gameState.cups.copaIntercontinental, '')}
+                {activeTab === 'LOCAL_LEAGUE_1' && playerCountry === 'ITA' && renderLeagueTable(gameState.leagueTables.SERIE_A, 'Serie A', LEAGUE_LOGOS.SERIE_A, true, 'SERIE_A')}
+                {activeTab === 'LOCAL_CUP' && playerCountry === 'ITA' && renderCupView(gameState.cups.coppaItalia)}
+
+                {activeTab === 'LOCAL_LEAGUE_1' && playerCountry === 'FRA' && renderLeagueTable(gameState.leagueTables.LIGUE_1, 'Ligue 1', LEAGUE_LOGOS.LIGUE_1, true, 'LIGUE_1')}
+                {activeTab === 'LOCAL_LEAGUE_2' && playerCountry === 'FRA' && renderLeagueTable(gameState.leagueTables.LIGUE_2, 'Ligue 2', LEAGUE_LOGOS.LIGUE_1, false, 'LIGUE_2')}
+
+                {activeTab === 'LOCAL_LEAGUE_1' && playerCountry === 'ARG' && renderLeagueTable(gameState.leagueTables.LIGA_ARGENTINA, 'Liga Argentina', LEAGUE_LOGOS.LIGA_ARGENTINA, true, 'LIGA_ARGENTINA')}
+                {activeTab === 'LOCAL_LEAGUE_2' && playerCountry === 'ARG' && renderLeagueTable(gameState.leagueTables.PRIMERA_NACIONAL, 'Primera Nacional', LEAGUE_LOGOS.LIGA_ARGENTINA, false, 'PRIMERA_NACIONAL')}
+
+                {activeTab === 'LOCAL_LEAGUE_1' && playerCountry === 'BRA' && renderLeagueTable(gameState.leagueTables.BRASILEIRAO, 'Brasileirão', LEAGUE_LOGOS.BRASILEIRAO, true, 'BRASILEIRAO')}
+                {activeTab === 'LOCAL_LEAGUE_2' && playerCountry === 'BRA' && renderLeagueTable(gameState.leagueTables.SERIE_B_BR, 'Série B BR', LEAGUE_LOGOS.BRASILEIRAO, false, 'SERIE_B_BR')}
+
+                {activeTab === 'CHAMPIONS_LEAGUE' && gameState.cups.championsLeague && renderCupView(gameState.cups.championsLeague)}
+                {activeTab === 'COPA_LIBERTADORES' && gameState.cups.copaLibertadores && renderCupView(gameState.cups.copaLibertadores)}
+                {activeTab === 'COPA_INTERCONTINENTAL' && gameState.cups.copaIntercontinental && renderCupView(gameState.cups.copaIntercontinental)}
 
                 {activeTab === 'WORLD' && renderWorldView()}
             </div>

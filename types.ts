@@ -322,7 +322,7 @@ export interface FinancialBreakdown {
 
 export interface CinematicEvent {
   id: string;
-  type: 'LEAGUE_WIN' | 'CUP_WIN' | 'PROMOTION' | 'RELEGATION' | 'SEASON_SUMMARY';
+  type: 'LEAGUE_WIN' | 'CUP_WIN' | 'PROMOTION' | 'RELEGATION' | 'SEASON_SUMMARY' | 'CUP_KICKOFF';
   title: string;
   subtitle: string;
   metadata?: any;

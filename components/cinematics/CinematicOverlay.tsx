@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { CinematicEvent } from '../../types';
 import { Confetti } from '../ui/Confetti';
 import { TrophyIcon, TrendingUpIcon, TrendingDownIcon } from '../icons';
@@ -10,9 +10,74 @@ interface CinematicOverlayProps {
 }
 
 export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({ event, onContinue }) => {
-    
+    const [visible, setVisible] = useState(false);
+    const [logoLoaded, setLogoLoaded] = useState(false);
+
+    useEffect(() => {
+        const t = setTimeout(() => setVisible(true), 100);
+        return () => clearTimeout(t);
+    }, []);
+
     const renderContent = () => {
         switch (event.type) {
+            case 'CUP_KICKOFF': {
+                const accentColor = event.metadata?.accentColor || '#6366F1';
+                const logoUrl = event.metadata?.logoUrl || '';
+                const bgClass = event.metadata?.bgClass || 'from-indigo-900 via-slate-950 to-slate-950';
+                return (
+                    <div className="flex flex-col items-center justify-center relative z-10 w-full max-w-2xl mx-auto">
+                        {/* Radial glow behind logo */}
+                        <div
+                            className="absolute w-96 h-96 rounded-full blur-3xl opacity-30 pointer-events-none"
+                            style={{ background: `radial-gradient(circle, ${accentColor} 0%, transparent 70%)` }}
+                        />
+                        {/* Logo */}
+                        <div
+                            className={`relative w-48 h-48 mb-10 flex items-center justify-center transition-all duration-700 ${visible ? 'scale-100 opacity-100' : 'scale-50 opacity-0'}`}
+                        >
+                            {logoUrl ? (
+                                <img
+                                    src={logoUrl}
+                                    alt={event.metadata?.competition}
+                                    className="w-full h-full object-contain drop-shadow-[0_0_60px_rgba(255,255,255,0.4)]"
+                                    onLoad={() => setLogoLoaded(true)}
+                                />
+                            ) : (
+                                <TrophyIcon className="w-full h-full text-yellow-400" />
+                            )}
+                        </div>
+
+                        {/* Divider line */}
+                        <div
+                            className={`h-0.5 mb-8 transition-all duration-700 delay-300 rounded-full ${visible ? 'w-64 opacity-100' : 'w-0 opacity-0'}`}
+                            style={{ background: `linear-gradient(to right, transparent, ${accentColor}, transparent)` }}
+                        />
+
+                        {/* Title */}
+                        <h1
+                            className={`text-5xl md:text-6xl font-black text-white uppercase tracking-tight text-center drop-shadow-2xl transition-all duration-700 delay-200 ${visible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}
+                        >
+                            {event.title}
+                        </h1>
+
+                        {/* Subtitle */}
+                        <p
+                            className={`text-lg md:text-xl mt-6 font-semibold text-center max-w-lg transition-all duration-700 delay-400 ${visible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}
+                            style={{ color: accentColor }}
+                        >
+                            {event.subtitle}
+                        </p>
+
+                        {/* Tagline */}
+                        <div
+                            className={`mt-8 px-6 py-2 rounded-full border text-xs font-black uppercase tracking-[0.3em] transition-all duration-700 delay-500 ${visible ? 'opacity-100' : 'opacity-0'}`}
+                            style={{ borderColor: `${accentColor}50`, color: accentColor, background: `${accentColor}15` }}
+                        >
+                            Temporada {new Date().getFullYear()}
+                        </div>
+                    </div>
+                );
+            }
             case 'LEAGUE_WIN':
             case 'CUP_WIN':
                 return (
@@ -98,12 +163,36 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({ event, onCon
         }
     };
 
+    // Dynamic background for CUP_KICKOFF
+    const bgGradient = event.type === 'CUP_KICKOFF'
+        ? `bg-gradient-to-br ${event.metadata?.bgClass || 'from-indigo-900 via-slate-950 to-slate-950'}`
+        : '';
+
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden">
-            {/* Fondo oscuro desenfocado */}
-            <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-xl transition-all duration-1000"></div>
+            {/* Background */}
+            <div className={`absolute inset-0 backdrop-blur-xl transition-all duration-1000 ${bgGradient || 'bg-slate-950/90'}`} />
+
+            {/* Animated diagonal lines for CUP_KICKOFF */}
+            {event.type === 'CUP_KICKOFF' && (
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    {[...Array(8)].map((_, i) => (
+                        <div
+                            key={i}
+                            className="absolute h-px opacity-10 animate-pulse"
+                            style={{
+                                top: `${10 + i * 12}%`,
+                                left: '-10%',
+                                right: '-10%',
+                                background: `linear-gradient(to right, transparent, ${event.metadata?.accentColor || '#6366F1'}, transparent)`,
+                                animationDelay: `${i * 0.15}s`
+                            }}
+                        />
+                    ))}
+                </div>
+            )}
             
-            {/* Contenedor principal de la animación */}
+            {/* Main content */}
             <div className="relative z-10 w-full h-full flex flex-col items-center justify-center p-6">
                 {renderContent()}
 

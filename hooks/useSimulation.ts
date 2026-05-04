@@ -153,6 +153,73 @@ export function useSimulation(
                 updatedCups.copaIntercontinental = advanceCupRound(updatedCups.copaIntercontinental, simulationResult.updatedAllTeams, newWeek);
             }
 
+            // Trigger CUP_KICKOFF cinematics for international cups
+            const newCinematicEvents: any[] = [];
+
+            const isFirstLibRound = gameState.cups.copaLibertadores.rounds.length > 0 &&
+                gameState.cups.copaLibertadores.rounds[0].fixtures.every(m => !m.result) &&
+                libertadoresMatches.length > 0;
+            if (isFirstLibRound) {
+                newCinematicEvents.push({
+                    id: `cup_kickoff_libertadores_${newWeek}`,
+                    type: 'CUP_KICKOFF',
+                    title: '🏆 COPA LIBERTADORES',
+                    subtitle: 'El fútbol sudamericano llama. La lucha por la gloria comienza.',
+                    metadata: {
+                        competition: 'Copa Libertadores',
+                        logoUrl: 'https://upload.wikimedia.org/wikipedia/en/a/ac/Copa_Libertadores_logo.svg',
+                        accentColor: '#F59E0B',
+                        bgClass: 'from-amber-900 via-slate-950 to-slate-950'
+                    }
+                });
+            }
+
+            const isFirstCLRound = gameState.cups.championsLeague.rounds.length > 0 &&
+                gameState.cups.championsLeague.rounds[0].fixtures.every(m => !m.result) &&
+                championsLeagueMatches.length > 0;
+            if (isFirstCLRound) {
+                newCinematicEvents.push({
+                    id: `cup_kickoff_champions_${newWeek}`,
+                    type: 'CUP_KICKOFF',
+                    title: '⭐ UEFA CHAMPIONS LEAGUE',
+                    subtitle: 'La noche más importante del fútbol europeo. ¿Quién alzará la Orejona?',
+                    metadata: {
+                        competition: 'Champions League',
+                        logoUrl: 'https://tmssl.akamaized.net/images/logo/header/CL.png',
+                        accentColor: '#6366F1',
+                        bgClass: 'from-indigo-900 via-slate-950 to-slate-950'
+                    }
+                });
+            }
+
+            const isFirstInterRound = gameState.cups.copaIntercontinental.rounds.length > 0 &&
+                gameState.cups.copaIntercontinental.rounds[0].fixtures.every(m => !m.result) &&
+                intercontinentalMatches.length > 0;
+            if (isFirstInterRound) {
+                newCinematicEvents.push({
+                    id: `cup_kickoff_intercontinental_${newWeek}`,
+                    type: 'CUP_KICKOFF',
+                    title: '🌍 COPA INTERCONTINENTAL',
+                    subtitle: 'El campeón de Europa vs el campeón de Sudamérica. El mejor del mundo.',
+                    metadata: {
+                        competition: 'Copa Intercontinental',
+                        logoUrl: 'https://upload.wikimedia.org/wikipedia/en/5/5b/FIFA_Intercontinental_Cup_%28logo%29.png',
+                        accentColor: '#10B981',
+                        bgClass: 'from-emerald-900 via-slate-950 to-slate-950'
+                    }
+                });
+            }
+
+            if (newCinematicEvents.length > 0) {
+                newsToAdd.push({
+                    id: `cup_start_news_${newWeek}`,
+                    headline: newCinematicEvents[0].title,
+                    body: newCinematicEvents[0].subtitle,
+                    date: formatDate(newDate),
+                    type: 'standard'
+                });
+            }
+
             // Check for random events
             const triggeredEvent = eventEngine.triggerEvent(gameState);
             if (triggeredEvent) {
