@@ -214,9 +214,22 @@ export interface CupStatistics {
   championsHistory: CupChampion[];
 }
 
+export interface CupGroup {
+  id: string;
+  name: string;
+  teams: number[]; // team IDs
+  table: LeagueTableRow[];
+  fixtures: Match[];
+}
+
 export interface CupCompetition {
   id: string;
   name: string;
+  type: 'knockout' | 'groups' | 'swiss';
+  phase: 'preliminary' | 'groups' | 'swiss' | 'knockout' | 'finished';
+  groups?: CupGroup[];
+  swissTable?: EuropeanTableRow[];
+  swissFixtures?: Match[];
   rounds: CupRound[];
   currentRoundIndex: number;
   winnerId?: number;
@@ -322,7 +335,7 @@ export interface FinancialBreakdown {
 
 export interface CinematicEvent {
   id: string;
-  type: 'LEAGUE_WIN' | 'CUP_WIN' | 'PROMOTION' | 'RELEGATION' | 'SEASON_SUMMARY' | 'CUP_KICKOFF';
+  type: 'LEAGUE_WIN' | 'CUP_WIN' | 'PROMOTION' | 'RELEGATION' | 'SEASON_SUMMARY' | 'CUP_KICKOFF' | 'GROUP_DRAW';
   title: string;
   subtitle: string;
   metadata?: any;

@@ -39,14 +39,13 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
 
     // 1. Country Selection View
     if (!selectedCountry) {
-        const COUNTRIES = [
-            { id: 'ENG' as CountryCode, name: 'Inglaterra', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', desc: 'Intensidad, ritmo frenético y los clubes históricos del mundo.', leagues: 'Premier · Championship', glow: 'rgba(59,130,246,0.5)', borderHover: 'hover:border-blue-500', bgHover: 'hover:bg-blue-900/20', textHover: 'group-hover:text-blue-400', dotColor: 'bg-blue-500' },
-            { id: 'ESP' as CountryCode, name: 'España', flag: '🇪🇸', desc: 'Donde el balón al piso es religión. Domina La Liga con talento.', leagues: 'La Liga', glow: 'rgba(239,68,68,0.5)', borderHover: 'hover:border-red-500', bgHover: 'hover:bg-red-900/20', textHover: 'group-hover:text-red-400', dotColor: 'bg-red-500' },
-            { id: 'GER' as CountryCode, name: 'Alemania', flag: '🇩🇪', desc: 'Estadios llenos y un modelo de desarrollo envidiado por Europa.', leagues: 'Bundesliga', glow: 'rgba(245,158,11,0.5)', borderHover: 'hover:border-amber-500', bgHover: 'hover:bg-amber-900/20', textHover: 'group-hover:text-amber-400', dotColor: 'bg-amber-500' },
-            { id: 'ITA' as CountryCode, name: 'Italia', flag: '🇮🇹', desc: 'Defensa de hierro y táctica impecable. El ajedrez del fútbol.', leagues: 'Serie A', glow: 'rgba(16,185,129,0.5)', borderHover: 'hover:border-emerald-500', bgHover: 'hover:bg-emerald-900/20', textHover: 'group-hover:text-emerald-400', dotColor: 'bg-emerald-500' },
-            { id: 'FRA' as CountryCode, name: 'Francia', flag: '🇫🇷', desc: 'Talento joven, potencia física y el trampolín a la gloria europea.', leagues: 'Ligue 1 · Ligue 2', glow: 'rgba(99,102,241,0.5)', borderHover: 'hover:border-indigo-500', bgHover: 'hover:bg-indigo-900/20', textHover: 'group-hover:text-indigo-400', dotColor: 'bg-indigo-500' },
-            { id: 'ARG' as CountryCode, name: 'Argentina', flag: '🇦🇷', desc: 'Pasión sin límites, estadios que laten y la cuna del fútbol mundial.', leagues: 'Primera · Nacional', glow: 'rgba(14,165,233,0.5)', borderHover: 'hover:border-sky-500', bgHover: 'hover:bg-sky-900/20', textHover: 'group-hover:text-sky-400', dotColor: 'bg-sky-500' },
-            { id: 'BRA' as CountryCode, name: 'Brasil', flag: '🇧🇷', desc: 'El Jogo Bonito. Talento infinito y el torneo más impredecible.', leagues: 'Brasileirão · Série B', glow: 'rgba(132,204,22,0.5)', borderHover: 'hover:border-lime-500', bgHover: 'hover:bg-lime-900/20', textHover: 'group-hover:text-lime-400', dotColor: 'bg-lime-500' },
+            { id: 'ENG' as CountryCode, name: 'Inglaterra', flagUrl: 'https://flagcdn.com/gb-eng.svg', desc: 'Intensidad, ritmo frenético y los clubes históricos del mundo.', leagues: 'Premier · Championship', glow: 'rgba(59,130,246,0.5)', borderHover: 'hover:border-blue-500', bgHover: 'hover:bg-blue-900/20', textHover: 'group-hover:text-blue-400', dotColor: 'bg-blue-500' },
+            { id: 'ESP' as CountryCode, name: 'España', flagUrl: 'https://flagcdn.com/es.svg', desc: 'Donde el balón al piso es religión. Domina La Liga con talento.', leagues: 'La Liga', glow: 'rgba(239,68,68,0.5)', borderHover: 'hover:border-red-500', bgHover: 'hover:bg-red-900/20', textHover: 'group-hover:text-red-400', dotColor: 'bg-red-500' },
+            { id: 'GER' as CountryCode, name: 'Alemania', flagUrl: 'https://flagcdn.com/de.svg', desc: 'Estadios llenos y un modelo de desarrollo envidiado por Europa.', leagues: 'Bundesliga', glow: 'rgba(245,158,11,0.5)', borderHover: 'hover:border-amber-500', bgHover: 'hover:bg-amber-900/20', textHover: 'group-hover:text-amber-400', dotColor: 'bg-amber-500' },
+            { id: 'ITA' as CountryCode, name: 'Italia', flagUrl: 'https://flagcdn.com/it.svg', desc: 'Defensa de hierro y táctica impecable. El ajedrez del fútbol.', leagues: 'Serie A', glow: 'rgba(16,185,129,0.5)', borderHover: 'hover:border-emerald-500', bgHover: 'hover:bg-emerald-900/20', textHover: 'group-hover:text-emerald-400', dotColor: 'bg-emerald-500' },
+            { id: 'FRA' as CountryCode, name: 'Francia', flagUrl: 'https://flagcdn.com/fr.svg', desc: 'Talento joven, potencia física y el trampolín a la gloria europea.', leagues: 'Ligue 1 · Ligue 2', glow: 'rgba(99,102,241,0.5)', borderHover: 'hover:border-indigo-500', bgHover: 'hover:bg-indigo-900/20', textHover: 'group-hover:text-indigo-400', dotColor: 'bg-indigo-500' },
+            { id: 'ARG' as CountryCode, name: 'Argentina', flagUrl: 'https://flagcdn.com/ar.svg', desc: 'Pasión sin límites, estadios que laten y la cuna del fútbol mundial.', leagues: 'Primera · Nacional', glow: 'rgba(14,165,233,0.5)', borderHover: 'hover:border-sky-500', bgHover: 'hover:bg-sky-900/20', textHover: 'group-hover:text-sky-400', dotColor: 'bg-sky-500' },
+            { id: 'BRA' as CountryCode, name: 'Brasil', flagUrl: 'https://flagcdn.com/br.svg', desc: 'El Jogo Bonito. Talento infinito y el torneo más impredecible.', leagues: 'Brasileirão · Série B', glow: 'rgba(132,204,22,0.5)', borderHover: 'hover:border-lime-500', bgHover: 'hover:bg-lime-900/20', textHover: 'group-hover:text-lime-400', dotColor: 'bg-lime-500' },
         ];
         const active = COUNTRIES.find(c => c.id === hoveredCountry);
 
@@ -88,8 +87,8 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                                     style={{ animationDelay: `${i * 50}ms` }}
                                 >
                                     {/* Flag */}
-                                    <div className="w-12 h-12 shrink-0 rounded-xl bg-slate-800/80 border border-white/5 flex items-center justify-center text-2xl transition-transform duration-300 group-hover:scale-110">
-                                        {c.flag}
+                                    <div className="w-12 h-12 shrink-0 rounded-xl bg-slate-800/80 border border-white/5 flex items-center justify-center transition-transform duration-300 group-hover:scale-110 overflow-hidden p-2">
+                                        <img src={c.flagUrl} alt={c.name} className="w-full h-full object-contain drop-shadow-md" />
                                     </div>
 
                                     {/* Text */}

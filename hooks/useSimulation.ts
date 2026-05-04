@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { GameState, MatchPhase, PendingSimulationResults, NewsItem, Offer } from '../types';
 import { simulationWorker } from '../services/simulationWorker';
 import { generateNews, generateMatchReport, generateTransferOffer, generatePlayerOfTheWeekNews, generateImportantNews, generateCoachReport } from '../services/gameLogic';
-import { advanceCupRound } from '../services/simulation';
+import { advanceCupRound, progressInternationalCup } from '../services/simulation';
 import { eventEngine, TriggeredEvent } from '../services/eventEngine';
 import { formatDate } from '../utils';
 
@@ -128,22 +128,44 @@ export function useSimulation(
             const libertadoresMatches = matchesThisWeek.filter(m => m.competition === 'Copa_Libertadores');
             if (libertadoresMatches.length > 0 && libertadoresMatches.every(m => m.result !== undefined)) {
                 const nextCupWeek = newWeek + 4;
-                updatedCups.copaLibertadores = advanceCupRound(updatedCups.copaLibertadores, simulationResult.updatedAllTeams, nextCupWeek);
+                const result = progressInternationalCup(updatedCups.copaLibertadores, simulationResult.updatedAllTeams, nextCupWeek);
+                updatedCups.copaLibertadores = result;
 
-                if (updatedCups.copaLibertadores.rounds.length > gameState.cups.copaLibertadores.rounds.length) {
-                    const newRound = updatedCups.copaLibertadores.rounds[updatedCups.copaLibertadores.rounds.length - 1];
-                    simulationResult.updatedSchedule.push(...newRound.fixtures);
+                if (result.newFixtures) {
+                    simulationResult.updatedSchedule.push(...result.newFixtures);
+                    // Trigger knockout kickoff cinematic
+                    dispatch({ 
+                        type: 'PUSH_CINEMATIC', 
+                        payload: {
+                            id: `libertadores_ko_${Date.now()}`,
+                            type: 'CUP_KICKOFF',
+                            title: 'Copa Libertadores',
+                            subtitle: '¡Comienzan las eliminatorias!',
+                            metadata: { accentColor: '#FACC15', bgClass: 'from-yellow-900 via-slate-950 to-slate-950' }
+                        }
+                    });
                 }
             }
 
             const championsLeagueMatches = matchesThisWeek.filter(m => m.competition === 'Champions_League');
             if (championsLeagueMatches.length > 0 && championsLeagueMatches.every(m => m.result !== undefined)) {
                 const nextCupWeek = newWeek + 5;
-                updatedCups.championsLeague = advanceCupRound(updatedCups.championsLeague, simulationResult.updatedAllTeams, nextCupWeek);
+                const result = progressInternationalCup(updatedCups.championsLeague, simulationResult.updatedAllTeams, nextCupWeek);
+                updatedCups.championsLeague = result;
 
-                if (updatedCups.championsLeague.rounds.length > gameState.cups.championsLeague.rounds.length) {
-                    const newRound = updatedCups.championsLeague.rounds[updatedCups.championsLeague.rounds.length - 1];
-                    simulationResult.updatedSchedule.push(...newRound.fixtures);
+                if (result.newFixtures) {
+                    simulationResult.updatedSchedule.push(...result.newFixtures);
+                    // Trigger knockout kickoff cinematic
+                    dispatch({ 
+                        type: 'PUSH_CINEMATIC', 
+                        payload: {
+                            id: `champions_ko_${Date.now()}`,
+                            type: 'CUP_KICKOFF',
+                            title: 'Champions League',
+                            subtitle: '¡La elite europea se enfrenta!',
+                            metadata: { accentColor: '#3B82F6', bgClass: 'from-blue-900 via-slate-950 to-slate-950' }
+                        }
+                    });
                 }
             }
 

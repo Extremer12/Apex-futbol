@@ -463,15 +463,88 @@ export const determineCupWinner = (match: Match): number | null => {
 };
 
 // Helper function to advance cup to next round
-export const advanceCupRound = (cup: CupCompetition, allTeams: Team[], nextWeek: number): CupCompetition => {
-    const currentRound = cup.rounds[cup.currentRoundIndex];
+export const progressInternationalCup = (cup: CupCompetition, allTeams: Team[], nextWeek: number): CupCompetition & { newFixtures?: Match[] } => {
+    if (cup.phase === 'swiss') {
+        const fixtures = cup.swissFixtures || [];
+        const allPlayed = fixtures.every(f => f.result !== undefined);
+        if (!allPlayed) return cup;
 
+        // Transition Swiss -> Knockout (Round of 16)
+        const sortedTable = [...(cup.swissTable || [])].sort((a, b) => {
+            if (b.points !== a.points) return b.points - a.points;
+            if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
+            return b.goalsFor - a.goalsFor;
+        });
+
+        const qualifiedIds = sortedTable.slice(0, 16).map(r => r.teamId);
+        const qualifiedTeams = qualifiedIds.map(id => allTeams.find(t => t.id === id)!).filter(Boolean);
+        
+        const knockoutFixtures = generateCupDraw(qualifiedTeams, 'Round of 16', cup.id === 'champions_league' ? 'Champions_League' : 'Europa_League');
+        const fixturesWithWeek = knockoutFixtures.map(f => ({ ...f, week: nextWeek }));
+
+        return {
+            ...cup,
+            phase: 'knockout',
+            rounds: [{ name: 'Round of 16', fixtures: fixturesWithWeek, completed: false }],
+            currentRoundIndex: 0,
+            newFixtures: fixturesWithWeek
+        };
+    }
+
+    if (cup.phase === 'groups') {
+        const groups = cup.groups || [];
+        const allPlayed = groups.every(g => g.fixtures.every(f => f.result !== undefined));
+        if (!allPlayed) return cup;
+
+        // Transition Groups -> Knockout (Round of 16)
+        const qualifiedIds: number[] = [];
+        groups.forEach(group => {
+            const sortedTable = [...group.table].sort((a, b) => {
+                if (b.points !== a.points) return b.points - a.points;
+                if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
+                return b.goalsFor - a.goalsFor;
+            });
+            qualifiedIds.push(sortedTable[0].teamId, sortedTable[1].teamId);
+        });
+
+        const qualifiedTeams = qualifiedIds.map(id => allTeams.find(t => t.id === id)!).filter(Boolean);
+        const knockoutFixtures = generateCupDraw(qualifiedTeams, 'Round of 16', 'Copa_Libertadores');
+        const fixturesWithWeek = knockoutFixtures.map(f => ({ ...f, week: nextWeek }));
+
+        return {
+            ...cup,
+            phase: 'knockout',
+            rounds: [{ name: 'Round of 16', fixtures: fixturesWithWeek, completed: false }],
+            currentRoundIndex: 0,
+            newFixtures: fixturesWithWeek
+        };
+    }
+
+    if (cup.phase === 'knockout') {
+        const updated = advanceCupRound(cup, allTeams, nextWeek);
+        const currentRound = updated.rounds[updated.currentRoundIndex];
+        return {
+            ...updated,
+            newFixtures: (updated.currentRoundIndex > cup.currentRoundIndex) ? currentRound.fixtures : undefined
+        };
+    }
+
+    return cup;
+};
+
+export const advanceCupRound = (cup: CupCompetition, allTeams: Team[], nextWeek: number): CupCompetition => {
+    // Check if there are rounds initialized
+    if (!cup.rounds || cup.rounds.length === 0) return cup;
+
+    const currentRound = cup.rounds[cup.currentRoundIndex];
+    if (!currentRound) return cup;
+    
     // Check if current round is complete
     const allMatchesPlayed = currentRound.fixtures.every(m => m.result !== undefined);
     if (!allMatchesPlayed) {
         return cup; // Round not complete yet
     }
-
+    
     // Determine winners
     const winners: number[] = [];
     currentRound.fixtures.forEach(match => {
@@ -493,7 +566,7 @@ export const advanceCupRound = (cup: CupCompetition, allTeams: Team[], nextWeek:
                     winnerName: winnerTeam?.name || 'Unknown'
                 },
                 ...cup.statistics.championsHistory
-            ].slice(0, 10) // Keep only last 10 champions
+            ].slice(0, 10)
         };
 
         return {
@@ -508,7 +581,7 @@ export const advanceCupRound = (cup: CupCompetition, allTeams: Team[], nextWeek:
 
     // Generate next round
     const winnerTeams = winners.map(id => allTeams.find(t => t.id === id)!).filter(Boolean);
-    const nextRoundName = getNextRoundName(cup.rounds.length - cup.currentRoundIndex - 1);
+    const nextRoundName = getNextRoundName(winners.length); // Use current winners count to determine next round name
     
     let competitionType: Match['competition'] = 'FA_Cup';
     if (cup.id === 'carabao_cup') competitionType = 'Carabao_Cup';
@@ -540,14 +613,12 @@ export const advanceCupRound = (cup: CupCompetition, allTeams: Team[], nextWeek:
     };
 };
 
-// Helper to get round names
-const getNextRoundName = (roundsRemaining: number): string => {
-    if (roundsRemaining === 0) return 'Final';
-    if (roundsRemaining === 1) return 'Semi-Final';
-    if (roundsRemaining === 2) return 'Quarter-Final';
-    if (roundsRemaining === 3) return 'Round of 16';
-    if (roundsRemaining === 4) return 'Round of 32';
-    return `Round ${6 - roundsRemaining}`;
+const getNextRoundName = (teamsRemaining: number): string => {
+    if (teamsRemaining === 2) return 'Final';
+    if (teamsRemaining <= 4) return 'Semi-Final';
+    if (teamsRemaining <= 8) return 'Quarter-Final';
+    if (teamsRemaining <= 16) return 'Round of 16';
+    return 'Round of 32';
 };
 
 export const createInitialLeagueTable = (teams: Team[]): LeagueTableRow[] => {
@@ -564,32 +635,140 @@ export const createInitialEuropeanTable = (teamIds: number[]): any[] => { // usi
     }));
 };
 
-export const generateSwissDraw = (teams: Team[], competition: Match['competition'] = 'Champions_League'): Match[] => {
-    const fixtures: Match[] = [];
+export const generateSwissPhase = (teams: Team[], competition: Match['competition'], numMatches: number = 8): { table: EuropeanTableRow[], fixtures: Match[] } => {
     const teamIds = teams.map(t => t.id);
+    const table = teams.map((t, idx) => ({
+        teamId: t.id,
+        position: idx + 1,
+        played: 0,
+        won: 0,
+        drawn: 0,
+        lost: 0,
+        goalsFor: 0,
+        goalsAgainst: 0,
+        goalDifference: 0,
+        points: 0
+    }));
+
+    const fixtures: Match[] = [];
     
-    // Simplificado: Para 32 equipos, necesitamos 8 rondas.
-    // Vamos a rotar los arrays de una forma simple para asegurar que no se repitan
-    // En un escenario real es un algoritmo de emparejamiento complejo (grafos).
-    // Aquí haremos un emparejamiento determinista "offset".
-    
-    for (let round = 0; round < 8; round++) {
-        for (let i = 0; i < teamIds.length / 2; i++) {
-            const home = teamIds[i];
-            const away = teamIds[(teamIds.length / 2 + i + round) % (teamIds.length / 2) + (teamIds.length / 2)];
-            
+    // Improved Swiss-style pairing (simulated)
+    // Each team plays numMatches unique opponents
+    for (let i = 0; i < teamIds.length; i++) {
+        const homeId = teamIds[i];
+        for (let j = 1; j <= numMatches / 2; j++) {
+            // Home matches
+            const awayId = teamIds[(i + j) % teamIds.length];
             fixtures.push({
-                week: 0, // Assigned later in seasonManager
-                homeTeamId: round % 2 === 0 ? home : away,
-                awayTeamId: round % 2 === 0 ? away : home,
-                competition: competition,
-                isCupMatch: false,
+                week: 0,
+                homeTeamId: homeId,
+                awayTeamId: awayId,
+                competition,
+                isCupMatch: true,
                 isMidweek: true
             });
+
+            // Away matches (we just pick from another part of the circle)
+            const awayId2 = teamIds[(i + j + numMatches / 2) % teamIds.length];
+             // Note: In a real swiss system this is balanced differently, 
+             // but for a game simulation this ensures everyone plays 8 unique games.
         }
     }
     
-    return fixtures;
+    // Balance and deduplicate (simplified for 36 teams / 8 matches)
+    const balancedFixtures: Match[] = [];
+    const teamMatchCount: Record<number, number> = {};
+    const seenPairs = new Set<string>();
+
+    teamIds.forEach(id => teamMatchCount[id] = 0);
+
+    // This is a naive circular scheduler for 8 games
+    for (let j = 1; j <= numMatches; j++) {
+        const usedThisRound = new Set<number>();
+        for (let i = 0; i < teamIds.length; i++) {
+            const home = teamIds[i];
+            if (usedThisRound.has(home)) continue;
+            
+            const away = teamIds[(i + j) % teamIds.length];
+            if (usedThisRound.has(away)) continue;
+
+            balancedFixtures.push({
+                week: j * 2, // Midweek games every 2 weeks roughly
+                homeTeamId: j % 2 === 0 ? home : away,
+                awayTeamId: j % 2 === 0 ? away : home,
+                competition,
+                isCupMatch: true,
+                isMidweek: true
+            });
+
+            usedThisRound.add(home);
+            usedThisRound.add(away);
+        }
+    }
+
+    return { table, fixtures: balancedFixtures };
+};
+
+export const generateGroupPhase = (teams: Team[], competition: Match['competition']): CupGroup[] => {
+    const shuffled = [...teams].sort(() => 0.5 - Math.random());
+    const groups: CupGroup[] = [];
+    const numGroups = Math.floor(teams.length / 4);
+
+    for (let i = 0; i < numGroups; i++) {
+        const groupTeams = shuffled.slice(i * 4, (i + 1) * 4);
+        const teamIds = groupTeams.map(t => t.id);
+        const groupTable = groupTeams.map(t => ({
+            teamId: t.id,
+            position: 0,
+            played: 0,
+            won: 0,
+            drawn: 0,
+            lost: 0,
+            goalsFor: 0,
+            goalsAgainst: 0,
+            goalDifference: 0,
+            points: 0,
+            form: []
+        }));
+
+        // Round robin for 4 teams (6 matches)
+        const fixtures: Match[] = [];
+        const pairings = [
+            [0, 1], [2, 3], // W1
+            [0, 2], [1, 3], // W2
+            [0, 3], [1, 2], // W3
+        ];
+
+        pairings.forEach((p, idx) => {
+            fixtures.push({
+                week: (idx + 1) * 2,
+                homeTeamId: teamIds[p[0]],
+                awayTeamId: teamIds[p[1]],
+                competition,
+                isCupMatch: true,
+                isMidweek: true
+            });
+            // Return match
+            fixtures.push({
+                week: (idx + 4) * 2,
+                homeTeamId: teamIds[p[1]],
+                awayTeamId: teamIds[p[0]],
+                competition,
+                isCupMatch: true,
+                isMidweek: true
+            });
+        });
+
+        groups.push({
+            id: `group_${String.fromCharCode(65 + i)}`,
+            name: `Grupo ${String.fromCharCode(65 + i)}`,
+            teams: teamIds,
+            table: groupTable,
+            fixtures
+        });
+    }
+
+    return groups;
 };
 
 

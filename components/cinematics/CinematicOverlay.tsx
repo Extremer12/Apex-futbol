@@ -78,6 +78,60 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({ event, onCon
                     </div>
                 );
             }
+            case 'GROUP_DRAW': {
+                const accentColor = event.metadata?.accentColor || '#6366F1';
+                const groups = event.metadata?.groups || [];
+                const swissOpponents = event.metadata?.swissOpponents || [];
+                
+                return (
+                    <div className="flex flex-col items-center justify-center relative z-10 w-full max-w-4xl mx-auto">
+                        <div
+                            className={`text-center mb-12 transition-all duration-700 ${visible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}
+                        >
+                            <h1 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tighter mb-2">{event.title}</h1>
+                            <p className="text-lg font-bold uppercase tracking-widest" style={{ color: accentColor }}>{event.subtitle}</p>
+                        </div>
+
+                        <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 w-full transition-all duration-700 delay-300 ${visible ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
+                            {groups.length > 0 ? (
+                                // Group Stage View
+                                groups.map((group: any, idx: number) => (
+                                    <div key={idx} className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md">
+                                        <h3 className="text-xl font-black text-white uppercase mb-4 flex items-center gap-2">
+                                            <span className="w-1.5 h-6 rounded-full" style={{ backgroundColor: accentColor }}></span>
+                                            {group.name}
+                                        </h3>
+                                        <div className="space-y-3">
+                                            {group.teams.map((team: any, tIdx: number) => (
+                                                <div key={tIdx} className="flex items-center gap-3">
+                                                    <span className="text-[10px] font-black text-slate-500 w-4">{tIdx + 1}</span>
+                                                    <span className={`text-sm font-bold ${team.isPlayer ? 'text-yellow-400' : 'text-slate-200'}`}>{team.name}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))
+                            ) : swissOpponents.length > 0 ? (
+                                // Swiss Format View
+                                <div className="md:col-span-2 bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-md">
+                                    <h3 className="text-2xl font-black text-white uppercase mb-6 text-center tracking-widest">Tus 8 Rivales de Fase Regular</h3>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        {swissOpponents.map((opponent: any, idx: number) => (
+                                            <div key={idx} className="flex items-center justify-between p-4 bg-black/40 rounded-xl border border-white/5">
+                                                <div className="flex items-center gap-4">
+                                                    <span className="text-xs font-black text-slate-500">{idx + 1}</span>
+                                                    <span className="text-sm font-bold text-white uppercase italic">{opponent.name}</span>
+                                                </div>
+                                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{opponent.venue === 'home' ? 'Local' : 'Visita'}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : null}
+                        </div>
+                    </div>
+                );
+            }
             case 'LEAGUE_WIN':
             case 'CUP_WIN':
                 return (
@@ -163,8 +217,8 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({ event, onCon
         }
     };
 
-    // Dynamic background for CUP_KICKOFF
-    const bgGradient = event.type === 'CUP_KICKOFF'
+    // Dynamic background for CUP_KICKOFF and GROUP_DRAW
+    const bgGradient = (event.type === 'CUP_KICKOFF' || event.type === 'GROUP_DRAW')
         ? `bg-gradient-to-br ${event.metadata?.bgClass || 'from-indigo-900 via-slate-950 to-slate-950'}`
         : '';
 
@@ -173,8 +227,8 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({ event, onCon
             {/* Background */}
             <div className={`absolute inset-0 backdrop-blur-xl transition-all duration-1000 ${bgGradient || 'bg-slate-950/90'}`} />
 
-            {/* Animated diagonal lines for CUP_KICKOFF */}
-            {event.type === 'CUP_KICKOFF' && (
+            {/* Animated diagonal lines for CUP_KICKOFF and GROUP_DRAW */}
+            {(event.type === 'CUP_KICKOFF' || event.type === 'GROUP_DRAW') && (
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
                     {[...Array(8)].map((_, i) => (
                         <div

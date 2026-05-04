@@ -89,23 +89,30 @@ const MatchDayCard: React.FC<{
             );
         } else {
             return (
-                <div className="bg-black/40 backdrop-blur-xl rounded-2xl p-10 text-center border border-white/10 flex flex-col items-center justify-center min-h-[400px] shadow-2xl relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 to-transparent z-0"></div>
-                    <div className="relative z-10 flex flex-col items-center">
-                        <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6 border border-white/10">
-                            <InboxIcon className="w-10 h-10 text-slate-400" />
+                <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 to-[#0a0a0a] rounded-3xl border border-white/5 shadow-2xl mb-8 p-8 flex flex-col md:flex-row items-center justify-between gap-6 group animate-fade-in-up">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_-20%,_rgba(56,189,248,0.1),_transparent)] z-0"></div>
+                    
+                    <div className="relative z-10 flex items-center gap-6">
+                        <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 shadow-xl group-hover:scale-110 transition-transform duration-500">
+                            <InboxIcon className="w-8 h-8 text-sky-400" />
                         </div>
-                        <h2 className="text-4xl font-black text-white mb-4 tracking-tight">Jornada de Descanso</h2>
-                        <p className="text-slate-400 mb-10 max-w-lg text-lg">
-                            Tu equipo no tiene partido programado para la Semana {nextWeek} {isMidweek ? '(Entre Semana)' : ''}.
-                        </p>
-                        <button
-                            onClick={onPlayMatch}
-                            className="bg-white/10 hover:bg-white/20 text-white font-bold py-4 px-12 rounded-full border border-white/20 backdrop-blur-md transition-all duration-300 text-lg uppercase tracking-widest hover:shadow-[0_0_30px_rgba(255,255,255,0.1)]"
-                        >
-                            Simular Jornada
-                        </button>
+                        <div>
+                            <div className="flex items-center gap-2 mb-1">
+                                <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse"></span>
+                                <span className="text-[10px] font-black tracking-[0.2em] text-sky-400 uppercase">Semana {nextWeek} · Descanso</span>
+                            </div>
+                            <h2 className="text-2xl font-black text-white tracking-tight uppercase italic">Jornada de Descanso</h2>
+                            <p className="text-slate-400 text-xs font-medium max-w-md">Tu equipo no tiene partidos programados. Aprovecha para revisar fichajes o tácticas antes de avanzar.</p>
+                        </div>
                     </div>
+
+                    <button
+                        onClick={onPlayMatch}
+                        className="relative overflow-hidden group/btn bg-white text-black font-black py-4 px-10 rounded-xl transition-all duration-300 text-sm uppercase tracking-[0.2em] hover:scale-105 shadow-[0_0_30px_rgba(255,255,255,0.1)] z-10"
+                    >
+                        <span className="relative z-10">Simular Semana</span>
+                        <div className="absolute inset-0 bg-gradient-to-r from-sky-400 to-blue-500 opacity-0 group-hover/btn:opacity-10 transition-opacity duration-300"></div>
+                    </button>
                 </div>
             );
         }

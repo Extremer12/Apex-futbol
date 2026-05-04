@@ -10,7 +10,7 @@ interface LeagueScreenProps {
 }
 
 type Tab = 'LOCAL_LEAGUE_1' | 'LOCAL_LEAGUE_2' | 'LOCAL_CUP_1' | 'LOCAL_CUP_2' | 'LOCAL_CUP' | 'WORLD' | 'CHAMPIONS_LEAGUE' | 'EUROPA_LEAGUE' | 'COPA_LIBERTADORES' | 'COPA_INTERCONTINENTAL';
-type WorldTab = 'PREMIER_LEAGUE' | 'CHAMPIONSHIP' | 'LA_LIGA' | 'BUNDESLIGA' | 'SERIE_A' | null;
+type WorldTab = 'PREMIER_LEAGUE' | 'CHAMPIONSHIP' | 'LA_LIGA' | 'BUNDESLIGA' | 'SERIE_A' | 'LIGUE_1' | 'LIGA_ARGENTINA' | 'BRASILEIRAO' | null;
 
 export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
     const playerTeamLeague = gameState.team.leagueId;
@@ -246,6 +246,55 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
     const renderCupView = (cup: CupCompetition) => {
         const theme = CUP_THEMES[cup.id] || CUP_THEMES.fa_cup;
         const logo = CUP_LOGOS[cup.id] || '';
+
+        // If it's Champions League in Swiss phase
+        if (cup.type === 'swiss' && cup.phase === 'swiss' && cup.swissTable) {
+            return renderEuropeanTable(cup.swissTable, cup.name, logo, cup.id === 'champions_league' ? 'indigo' : 'slate');
+        }
+
+        // If it's Libertadores in Groups phase
+        if (cup.type === 'groups' && cup.phase === 'groups' && cup.groups) {
+            return (
+                <div className="space-y-8 animate-fade-in">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {cup.groups.map((group, idx) => (
+                            <div key={idx} className="bg-slate-900/50 border border-white/5 rounded-2xl overflow-hidden">
+                                <div className="bg-amber-600/20 px-4 py-3 border-b border-amber-500/30 flex justify-between items-center">
+                                    <h4 className="text-amber-400 font-black text-sm uppercase tracking-tighter">{group.name}</h4>
+                                    <span className="text-[10px] font-bold text-amber-500/50 uppercase">Libertadores</span>
+                                </div>
+                                <table className="w-full text-[11px]">
+                                    <thead>
+                                        <tr className="text-slate-500 border-b border-white/5">
+                                            <th className="px-3 py-2 text-left">Club</th>
+                                            <th className="px-2 py-2 text-center">PJ</th>
+                                            <th className="px-2 py-2 text-center">Pts</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {group.table.sort((a,b) => b.points - a.points || b.goalDifference - a.goalDifference).map((row, rIdx) => {
+                                            const team = getTeamById(row.teamId);
+                                            const isPlayer = team?.id === gameState.team.id;
+                                            return (
+                                                <tr key={rIdx} className={isPlayer ? 'bg-amber-500/10' : ''}>
+                                                    <td className="px-3 py-2 flex items-center gap-2">
+                                                        <span className="text-[10px] text-slate-500 w-3">{rIdx + 1}</span>
+                                                        <span className={`font-bold ${isPlayer ? 'text-white' : 'text-slate-300'}`}>{team?.name}</span>
+                                                    </td>
+                                                    <td className="px-2 py-2 text-center text-slate-400">{row.played}</td>
+                                                    <td className="px-2 py-2 text-center font-black text-white">{row.points}</td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
         const currentRound = cup.rounds[cup.currentRoundIndex];
         const fixtures = currentRound?.fixtures || [];
         const isFinished = !!cup.winnerId;
@@ -356,14 +405,14 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
     const renderWorldView = () => {
         if (!worldLeagueSelected) {
             const allLeagues = [
-                { id: LeagueId.PREMIER_LEAGUE, name: 'Premier League', logo: LEAGUE_LOGOS.PREMIER_LEAGUE, country: 'Inglaterra', theme: 'purple', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
-                { id: LeagueId.CHAMPIONSHIP, name: 'Championship', logo: LEAGUE_LOGOS.CHAMPIONSHIP, country: 'Inglaterra', theme: 'sky', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
-                { id: LeagueId.LA_LIGA, name: 'La Liga', logo: LEAGUE_LOGOS.LA_LIGA, country: 'España', theme: 'orange', flag: '🇪🇸' },
-                { id: LeagueId.BUNDESLIGA, name: 'Bundesliga', logo: LEAGUE_LOGOS.BUNDESLIGA, country: 'Alemania', theme: 'red', flag: '🇩🇪' },
-                { id: LeagueId.SERIE_A, name: 'Serie A', logo: LEAGUE_LOGOS.SERIE_A, country: 'Italia', theme: 'emerald', flag: '🇮🇹' },
-                { id: LeagueId.LIGUE_1, name: 'Ligue 1', logo: LEAGUE_LOGOS.LIGUE_1, country: 'Francia', theme: 'blue', flag: '🇫🇷' },
-                { id: LeagueId.LIGA_ARGENTINA, name: 'Liga Argentina', logo: LEAGUE_LOGOS.LIGA_ARGENTINA, country: 'Argentina', theme: 'cyan', flag: '🇦🇷' },
-                { id: LeagueId.BRASILEIRAO, name: 'Brasileirão', logo: LEAGUE_LOGOS.BRASILEIRAO, country: 'Brasil', theme: 'green', flag: '🇧🇷' },
+                { id: LeagueId.PREMIER_LEAGUE, name: 'Premier League', logo: LEAGUE_LOGOS.PREMIER_LEAGUE, country: 'Inglaterra', theme: 'purple', flagUrl: 'https://flagcdn.com/gb-eng.svg' },
+                { id: LeagueId.CHAMPIONSHIP, name: 'Championship', logo: LEAGUE_LOGOS.CHAMPIONSHIP, country: 'Inglaterra', theme: 'sky', flagUrl: 'https://flagcdn.com/gb-eng.svg' },
+                { id: LeagueId.LA_LIGA, name: 'La Liga', logo: LEAGUE_LOGOS.LA_LIGA, country: 'España', theme: 'orange', flagUrl: 'https://flagcdn.com/es.svg' },
+                { id: LeagueId.BUNDESLIGA, name: 'Bundesliga', logo: LEAGUE_LOGOS.BUNDESLIGA, country: 'Alemania', theme: 'red', flagUrl: 'https://flagcdn.com/de.svg' },
+                { id: LeagueId.SERIE_A, name: 'Serie A', logo: LEAGUE_LOGOS.SERIE_A, country: 'Italia', theme: 'emerald', flagUrl: 'https://flagcdn.com/it.svg' },
+                { id: LeagueId.LIGUE_1, name: 'Ligue 1', logo: LEAGUE_LOGOS.LIGUE_1, country: 'Francia', theme: 'blue', flagUrl: 'https://flagcdn.com/fr.svg' },
+                { id: LeagueId.LIGA_ARGENTINA, name: 'Liga Argentina', logo: LEAGUE_LOGOS.LIGA_ARGENTINA, country: 'Argentina', theme: 'cyan', flagUrl: 'https://flagcdn.com/ar.svg' },
+                { id: LeagueId.BRASILEIRAO, name: 'Brasileirão', logo: LEAGUE_LOGOS.BRASILEIRAO, country: 'Brasil', theme: 'green', flagUrl: 'https://flagcdn.com/br.svg' },
             ].filter(l => l.id !== playerTeamLeague);
 
             const filteredLeagues = allLeagues.filter(l => 
@@ -405,8 +454,8 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                                         className={`w-full group relative flex items-center justify-between p-4 md:p-6 hover:bg-white/5 transition-all duration-300 text-left`}
                                     >
                                         <div className="flex items-center gap-6">
-                                            <div className="text-4xl w-12 text-center drop-shadow-md opacity-60 group-hover:opacity-100 transition-opacity">
-                                                {l.flag}
+                                            <div className="w-10 h-10 shrink-0 rounded-xl bg-slate-800/80 border border-white/5 flex items-center justify-center transition-transform duration-300 group-hover:scale-110 overflow-hidden p-1.5">
+                                                <img src={l.flagUrl} alt={l.country} className="w-full h-full object-contain drop-shadow-md" />
                                             </div>
                                             <div className={`w-12 h-12 p-1 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-${l.theme}-500/10 group-hover:border-${l.theme}-500/30 transition-all`}>
                                                 <img src={l.logo} alt={l.name} className="w-full h-full object-contain" />
@@ -454,6 +503,9 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                 {worldLeagueSelected === 'LA_LIGA' && renderLeagueTable(gameState.leagueTables.LA_LIGA, 'La Liga', LEAGUE_LOGOS.LA_LIGA, true)}
                 {worldLeagueSelected === 'BUNDESLIGA' && renderLeagueTable(gameState.leagueTables.BUNDESLIGA, 'Bundesliga', LEAGUE_LOGOS.BUNDESLIGA, true)}
                 {worldLeagueSelected === 'SERIE_A' && renderLeagueTable(gameState.leagueTables.SERIE_A, 'Serie A', LEAGUE_LOGOS.SERIE_A, true)}
+                {worldLeagueSelected === 'LIGUE_1' && renderLeagueTable(gameState.leagueTables.LIGUE_1, 'Ligue 1', LEAGUE_LOGOS.LIGUE_1, true)}
+                {worldLeagueSelected === 'LIGA_ARGENTINA' && renderLeagueTable(gameState.leagueTables.LIGA_ARGENTINA, 'Liga Argentina', LEAGUE_LOGOS.LIGA_ARGENTINA, true)}
+                {worldLeagueSelected === 'BRASILEIRAO' && renderLeagueTable(gameState.leagueTables.BRASILEIRAO, 'Brasileirão', LEAGUE_LOGOS.BRASILEIRAO, true)}
             </div>
         );
     };
