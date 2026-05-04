@@ -125,6 +125,34 @@ export function useSimulation(
                 }
             }
 
+            const libertadoresMatches = matchesThisWeek.filter(m => m.competition === 'Copa_Libertadores');
+            if (libertadoresMatches.length > 0 && libertadoresMatches.every(m => m.result !== undefined)) {
+                const nextCupWeek = newWeek + 4;
+                updatedCups.copaLibertadores = advanceCupRound(updatedCups.copaLibertadores, simulationResult.updatedAllTeams, nextCupWeek);
+
+                if (updatedCups.copaLibertadores.rounds.length > gameState.cups.copaLibertadores.rounds.length) {
+                    const newRound = updatedCups.copaLibertadores.rounds[updatedCups.copaLibertadores.rounds.length - 1];
+                    simulationResult.updatedSchedule.push(...newRound.fixtures);
+                }
+            }
+
+            const championsLeagueMatches = matchesThisWeek.filter(m => m.competition === 'Champions_League');
+            if (championsLeagueMatches.length > 0 && championsLeagueMatches.every(m => m.result !== undefined)) {
+                const nextCupWeek = newWeek + 5;
+                updatedCups.championsLeague = advanceCupRound(updatedCups.championsLeague, simulationResult.updatedAllTeams, nextCupWeek);
+
+                if (updatedCups.championsLeague.rounds.length > gameState.cups.championsLeague.rounds.length) {
+                    const newRound = updatedCups.championsLeague.rounds[updatedCups.championsLeague.rounds.length - 1];
+                    simulationResult.updatedSchedule.push(...newRound.fixtures);
+                }
+            }
+
+            const intercontinentalMatches = matchesThisWeek.filter(m => m.competition === 'Copa_Intercontinental');
+            if (intercontinentalMatches.length > 0 && intercontinentalMatches.every(m => m.result !== undefined)) {
+                // Since Intercontinental is a single final match, we just advance the cup to calculate the winner.
+                updatedCups.copaIntercontinental = advanceCupRound(updatedCups.copaIntercontinental, simulationResult.updatedAllTeams, newWeek);
+            }
+
             // Check for random events
             const triggeredEvent = eventEngine.triggerEvent(gameState);
             if (triggeredEvent) {

@@ -1,5 +1,5 @@
 
-import { Team, Match, LeagueTableRow, Morale, Player, CupCompetition, CupRound } from '../types';
+import { Team, Match, LeagueTableRow, Morale, Player, CupCompetition, CupRound, LeagueId } from '../types';
 import { getTacticalMatchup } from './coaching';
 import { generateRandomName } from '../utils';
 
@@ -509,7 +509,14 @@ export const advanceCupRound = (cup: CupCompetition, allTeams: Team[], nextWeek:
     // Generate next round
     const winnerTeams = winners.map(id => allTeams.find(t => t.id === id)!).filter(Boolean);
     const nextRoundName = getNextRoundName(cup.rounds.length - cup.currentRoundIndex - 1);
-    const nextRoundFixtures = generateCupDraw(winnerTeams, nextRoundName, cup.id === 'fa_cup' ? 'FA_Cup' : 'Carabao_Cup');
+    
+    let competitionType: Match['competition'] = 'FA_Cup';
+    if (cup.id === 'carabao_cup') competitionType = 'Carabao_Cup';
+    if (cup.id === 'copa_libertadores') competitionType = 'Copa_Libertadores';
+    if (cup.id === 'champions_league') competitionType = 'Champions_League';
+    if (cup.id === 'copa_intercontinental') competitionType = 'Copa_Intercontinental';
+
+    const nextRoundFixtures = generateCupDraw(winnerTeams, nextRoundName, competitionType);
 
     // Assign week to next round fixtures
     const fixturesWithWeek = nextRoundFixtures.map(f => ({ ...f, week: nextWeek }));

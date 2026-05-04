@@ -12,22 +12,21 @@ import { segundaDivisionTeams, zweiteBundesligaTeams, serieBItaTeams } from './d
 export * from './data/teams/helpers';
 
 export const TEAMS: Team[] = [
-  ...premierLeagueTeams,
-  ...championshipTeams,
-  ...laLigaTeams,
-  ...segundaDivisionTeams,
-  ...bundesligaTeams,
-  ...zweiteBundesligaTeams,
-  ...serieATeams,
-  ...serieBItaTeams,
-  ...ligue1Teams,
-  ...ligue2Teams,
-  ...ligaArgentinaTeams,
-  ...primeraNacionalTeams,
-  ...brasileiraoTeams,
-  ...serieBBrTeams,
+  ...(premierLeagueTeams || []),
+  ...(championshipTeams || []),
+  ...(laLigaTeams || []),
+  ...(segundaDivisionTeams || []),
+  ...(bundesligaTeams || []),
+  ...(zweiteBundesligaTeams || []),
+  ...(serieATeams || []),
+  ...(serieBItaTeams || []),
+  ...(ligue1Teams || []),
+  ...(ligue2Teams || []),
+  ...(ligaArgentinaTeams || []),
+  ...(primeraNacionalTeams || []),
+  ...(brasileiraoTeams || []),
+  ...(serieBBrTeams || []),
 ];
 
-// By separating the sort from the array declaration, TypeScript can correctly
-// apply contextual typing to the array literal, avoiding potential type errors.
-TEAMS.sort((a, b) => a.name.localeCompare(b.name));
+// Safety guard for sorting to prevent crashes if any team object is malformed
+TEAMS.sort((a, b) => (a?.name || '').localeCompare(b?.name || ''));

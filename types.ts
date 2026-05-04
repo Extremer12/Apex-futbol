@@ -363,9 +363,9 @@ export interface GameState {
     copaDelRey: CupCompetition;
     dfbPokal: CupCompetition;
     coppaItalia: CupCompetition;
-    championsLeague: EuropeanCompetition;
-    europaLeague: EuropeanCompetition;
-    copaLibertadores: EuropeanCompetition; // using EuropeanCompetition structure for continental cups
+    championsLeague: CupCompetition;
+    europaLeague: CupCompetition;
+    copaLibertadores: CupCompetition;
     copaIntercontinental: CupCompetition;
   };
   availableCoaches: Coach[]; // Market of available coaches

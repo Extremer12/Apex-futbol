@@ -1,5 +1,3 @@
-
-
 // FIX: Import React to enable JSX, which is used for the team logo fallback when rehydrating game state.
 import React from 'react';
 import { GameState, Team, PlayerProfile, NewsItem, Player, Match, LeagueTableRow, Offer, LeagueId, CupCompetition, FanApproval, Stadium, Scout } from '../types';
@@ -10,6 +8,8 @@ import { generateStadium, generateSponsorMarket, calculateFinancialBreakdown, ge
 import { initializeGame } from '../services/gameFactory';
 import { startNewSeason } from '../services/seasonManager';
 import { formatDate, formatCurrency } from '../utils';
+
+
 
 
 
@@ -111,11 +111,22 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
 
             // 4. League Tables Migration
             // @ts-ignore - Handling legacy migration where these properties might exist on loadedState but not on GameState type
-            const leagueTables = loadedState.leagueTables || {
-                PREMIER_LEAGUE: (loadedState as any).leagueTable || [],
-                CHAMPIONSHIP: (loadedState as any).championshipTable || [],
-                LA_LIGA: (loadedState as any).laLigaTable || []
-            };
+            // Ensure all leagues are present in leagueTables for state stability
+            const leagueTables = loadedState.leagueTables || {};
+            Object.values(LeagueId).forEach(leagueId => {
+                if (!leagueTables[leagueId]) {
+                    // Try to recover from legacy fields if it's one of the original 3
+                    if (leagueId === LeagueId.PREMIER_LEAGUE && (loadedState as any).leagueTable) {
+                        leagueTables[leagueId] = (loadedState as any).leagueTable;
+                    } else if (leagueId === LeagueId.CHAMPIONSHIP && (loadedState as any).championshipTable) {
+                        leagueTables[leagueId] = (loadedState as any).championshipTable;
+                    } else if (leagueId === LeagueId.LA_LIGA && (loadedState as any).laLigaTable) {
+                        leagueTables[leagueId] = (loadedState as any).laLigaTable;
+                    } else {
+                        leagueTables[leagueId] = [];
+                    }
+                }
+            });
 
             // 5. Cups Migration
             const cups = loadedState.cups || {} as any;

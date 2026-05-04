@@ -40,15 +40,18 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
     // 1. Country Selection View
     if (!selectedCountry) {
         const COUNTRIES = [
-            { id: 'ENG' as CountryCode, name: 'Inglaterra', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', desc: 'Intensidad, ritmo frenético y los clubes más históricos del mundo te esperan.', leagues: 'Premier League · Championship', glow: 'rgba(59,130,246,0.5)', borderHover: 'hover:border-blue-500', bgHover: 'hover:bg-blue-900/20', textHover: 'group-hover:text-blue-400', dotColor: 'bg-blue-500' },
-            { id: 'ESP' as CountryCode, name: 'España', flag: '🇪🇸', desc: 'Donde el balón al piso es religión. Domina La Liga con técnica y talento.', leagues: 'La Liga', glow: 'rgba(239,68,68,0.5)', borderHover: 'hover:border-red-500', bgHover: 'hover:bg-red-900/20', textHover: 'group-hover:text-red-400', dotColor: 'bg-red-500' },
-            { id: 'GER' as CountryCode, name: 'Alemania', flag: '🇩🇪', desc: 'Estadios llenos, presión asfixiante y un modelo de desarrollo envidiado por Europa.', leagues: 'Bundesliga', glow: 'rgba(245,158,11,0.5)', borderHover: 'hover:border-amber-500', bgHover: 'hover:bg-amber-900/20', textHover: 'group-hover:text-amber-400', dotColor: 'bg-amber-500' },
-            { id: 'ITA' as CountryCode, name: 'Italia', flag: '🇮🇹', desc: 'Defensa de hierro, táctica impecable y pasión desbordante. El ajedrez del fútbol.', leagues: 'Serie A', glow: 'rgba(16,185,129,0.5)', borderHover: 'hover:border-emerald-500', bgHover: 'hover:bg-emerald-900/20', textHover: 'group-hover:text-emerald-400', dotColor: 'bg-emerald-500' },
+            { id: 'ENG' as CountryCode, name: 'Inglaterra', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', desc: 'Intensidad, ritmo frenético y los clubes históricos del mundo.', leagues: 'Premier · Championship', glow: 'rgba(59,130,246,0.5)', borderHover: 'hover:border-blue-500', bgHover: 'hover:bg-blue-900/20', textHover: 'group-hover:text-blue-400', dotColor: 'bg-blue-500' },
+            { id: 'ESP' as CountryCode, name: 'España', flag: '🇪🇸', desc: 'Donde el balón al piso es religión. Domina La Liga con talento.', leagues: 'La Liga', glow: 'rgba(239,68,68,0.5)', borderHover: 'hover:border-red-500', bgHover: 'hover:bg-red-900/20', textHover: 'group-hover:text-red-400', dotColor: 'bg-red-500' },
+            { id: 'GER' as CountryCode, name: 'Alemania', flag: '🇩🇪', desc: 'Estadios llenos y un modelo de desarrollo envidiado por Europa.', leagues: 'Bundesliga', glow: 'rgba(245,158,11,0.5)', borderHover: 'hover:border-amber-500', bgHover: 'hover:bg-amber-900/20', textHover: 'group-hover:text-amber-400', dotColor: 'bg-amber-500' },
+            { id: 'ITA' as CountryCode, name: 'Italia', flag: '🇮🇹', desc: 'Defensa de hierro y táctica impecable. El ajedrez del fútbol.', leagues: 'Serie A', glow: 'rgba(16,185,129,0.5)', borderHover: 'hover:border-emerald-500', bgHover: 'hover:bg-emerald-900/20', textHover: 'group-hover:text-emerald-400', dotColor: 'bg-emerald-500' },
+            { id: 'FRA' as CountryCode, name: 'Francia', flag: '🇫🇷', desc: 'Talento joven, potencia física y el trampolín a la gloria europea.', leagues: 'Ligue 1 · Ligue 2', glow: 'rgba(99,102,241,0.5)', borderHover: 'hover:border-indigo-500', bgHover: 'hover:bg-indigo-900/20', textHover: 'group-hover:text-indigo-400', dotColor: 'bg-indigo-500' },
+            { id: 'ARG' as CountryCode, name: 'Argentina', flag: '🇦🇷', desc: 'Pasión sin límites, estadios que laten y la cuna del fútbol mundial.', leagues: 'Primera · Nacional', glow: 'rgba(14,165,233,0.5)', borderHover: 'hover:border-sky-500', bgHover: 'hover:bg-sky-900/20', textHover: 'group-hover:text-sky-400', dotColor: 'bg-sky-500' },
+            { id: 'BRA' as CountryCode, name: 'Brasil', flag: '🇧🇷', desc: 'El Jogo Bonito. Talento infinito y el torneo más impredecible.', leagues: 'Brasileirão · Série B', glow: 'rgba(132,204,22,0.5)', borderHover: 'hover:border-lime-500', bgHover: 'hover:bg-lime-900/20', textHover: 'group-hover:text-lime-400', dotColor: 'bg-lime-500' },
         ];
         const active = COUNTRIES.find(c => c.id === hoveredCountry);
 
         return (
-            <div className="min-h-screen bg-[#020617] relative overflow-hidden flex flex-col items-center justify-center p-6 md:p-10">
+            <div className="min-h-screen bg-[#020617] relative overflow-hidden flex flex-col items-center justify-center p-4 md:p-8">
                 {/* Ambient background glow that shifts by country */}
                 <div
                     className="absolute top-1/2 right-0 w-[600px] h-[600px] rounded-full blur-[160px] pointer-events-none transition-all duration-700 -translate-y-1/2"
@@ -56,52 +59,45 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                 />
                 <div className="absolute top-[-5%] left-[-5%] w-[40%] h-[40%] bg-purple-700/20 blur-[120px] rounded-full animate-pulse pointer-events-none" />
 
-                <div className="relative z-10 w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+                <div className="relative z-10 w-full max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
 
                     {/* ─── LEFT: Header + List ─── */}
-                    <div className="flex flex-col gap-8 animate-fade-in">
+                    <div className="flex flex-col gap-6 animate-fade-in">
                         <div>
-                            <span className="text-purple-400 font-bold tracking-[0.3em] uppercase text-xs mb-3 block">Comienza tu Legado</span>
-                            <h1 className="text-5xl md:text-6xl font-black text-white tracking-tighter leading-none mb-4">
+                            <span className="text-purple-400 font-bold tracking-[0.3em] uppercase text-xs mb-2 block">Comienza tu Legado</span>
+                            <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter leading-none mb-3">
                                 Hola,&nbsp;
                                 <span className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
                                     {player.name}
                                 </span>
                             </h1>
-                            <p className="text-slate-400 text-base max-w-md leading-relaxed">
+                            <p className="text-slate-400 text-sm max-w-md leading-relaxed">
                                 Elige el país donde escribirás tu historia. Tu experiencia de&nbsp;
                                 <span className="text-white font-semibold">{player.experience}</span> te ha traído hasta aquí.
                             </p>
                         </div>
 
-                        <div className="flex flex-col gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[55vh] overflow-y-auto pr-2 custom-scrollbar">
                             {COUNTRIES.map((c, i) => (
                                 <button
                                     key={c.id}
                                     onMouseEnter={() => setHoveredCountry(c.id)}
                                     onMouseLeave={() => setHoveredCountry(null)}
                                     onClick={() => setSelectedCountry(c.id)}
-                                    className={`group flex items-center gap-5 p-4 rounded-2xl border border-white/5 bg-slate-900/50 backdrop-blur-md transition-all duration-300 ${c.bgHover} ${c.borderHover} hover:border-opacity-60 hover:scale-[1.01] hover:shadow-xl w-full animate-scale-in`}
-                                    style={{ animationDelay: `${i * 80}ms` }}
+                                    className={`group flex items-center gap-4 p-3 rounded-2xl border border-white/5 bg-slate-900/50 backdrop-blur-md transition-all duration-300 ${c.bgHover} ${c.borderHover} hover:border-opacity-60 hover:-translate-y-1 hover:shadow-xl w-full animate-scale-in`}
+                                    style={{ animationDelay: `${i * 50}ms` }}
                                 >
                                     {/* Flag */}
-                                    <div className="w-14 h-14 shrink-0 rounded-xl bg-slate-800/80 border border-white/5 flex items-center justify-center text-3xl transition-transform duration-300 group-hover:scale-110">
+                                    <div className="w-12 h-12 shrink-0 rounded-xl bg-slate-800/80 border border-white/5 flex items-center justify-center text-2xl transition-transform duration-300 group-hover:scale-110">
                                         {c.flag}
                                     </div>
 
                                     {/* Text */}
                                     <div className="text-left flex-1 min-w-0">
-                                        <div className={`text-xl font-black text-white uppercase tracking-wide transition-colors duration-300 ${c.textHover}`}>
+                                        <div className={`text-lg font-black text-white uppercase tracking-wide transition-colors duration-300 ${c.textHover} truncate`}>
                                             {c.name}
                                         </div>
-                                        <div className="text-slate-500 text-xs font-semibold mt-0.5 truncate">{c.leagues}</div>
-                                    </div>
-
-                                    {/* Arrow */}
-                                    <div className="opacity-0 group-hover:opacity-100 translate-x-[-8px] group-hover:translate-x-0 transition-all duration-300 shrink-0">
-                                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-                                        </svg>
+                                        <div className="text-slate-500 text-[10px] font-semibold mt-0.5 truncate">{c.leagues}</div>
                                     </div>
                                 </button>
                             ))}

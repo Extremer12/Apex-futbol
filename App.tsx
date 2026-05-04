@@ -31,9 +31,6 @@ import { eventEngine, TriggeredEvent } from './services/eventEngine';
 
 type AppStateType = 'START_SCREEN' | 'LOAD_GAME' | 'PROFILE_CREATION' | 'TEAM_SELECTION' | 'ELECTION_PITCH' | 'ELECTION_RESULT' | 'PROMISE_SELECTION' | 'GAME_ACTIVE' | 'GAME_OVER';
 
-// Data structure to hold simulation results before committing to state
-import { PendingSimulationResults } from './types';
-
 // Custom Hooks
 import { useGameSave } from './hooks/useGameSave';
 import { useSimulation } from './hooks/useSimulation';

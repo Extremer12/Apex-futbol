@@ -198,14 +198,36 @@ export const evaluateElectionPitch = async (pitch: string, team: Team, player: P
 }
 
 // NUEVA LÓGICA: Negociaciones deterministas
-export const generateTransferNegotiationResponse = async (player: Player, offer: number, buyingTeam: Team, sellingTeam: Team): Promise<NegotiationResponse> => {
+export const generateTransferNegotiationResponse = async (player: Player, offer: number, buyingTeam: Team, sellingTeam: Team, attempts: number = 0): Promise<NegotiationResponse> => {
+    // 1. Validar Interés del Jugador (Estrellas rechazan divisiones inferiores)
+    if (player.rating >= 80 && buyingTeam.tier === 'Lower') {
+        return {
+            decision: 'rejected',
+            message: `El agente de ${player.name} nos ha comunicado que el jugador no tiene intención de jugar en vuestra categoría en este momento de su carrera.`
+        };
+    }
+    if (player.rating >= 86 && buyingTeam.tier === 'Mid') {
+        return {
+            decision: 'rejected',
+            message: `Agradecemos el interés, pero ${player.name} busca competir al más alto nivel y no considera un traspaso a vuestro proyecto deportivo.`
+        };
+    }
+
+    // 2. Paciencia del Club (3 intentos fallidos y se rompen las negociaciones)
+    if (attempts >= 3) {
+        return {
+            decision: 'rejected',
+            message: `La directiva ha perdido la paciencia. Vuestras ofertas previas no demuestran un interés serio. Damos por concluidas las negociaciones por ${player.name}.`
+        };
+    }
+
     // Lógica básica de negociación
     const value = player.value;
     const ratio = offer / value;
 
-    // Factores aleatorios
-    const patience = Math.random(); // 0 a 1. 1 es muy paciente/flexible.
-    const greed = Math.random(); // 0 a 1. 1 es muy codicioso.
+    // Factores aleatorios (Podría expandirse para basarse en rivalidad o finanzas)
+    const patience = Math.random(); 
+    const greed = Math.random();
 
     // Umbrales
     const acceptThreshold = 1.2 + (greed * 0.3) - (patience * 0.2); // Entre 1.0 y 1.5 veces el valor
@@ -222,10 +244,9 @@ export const generateTransferNegotiationResponse = async (player: Player, offer:
             message: NEGOTIATION_REJECTED_MESSAGES[Math.floor(Math.random() * NEGOTIATION_REJECTED_MESSAGES.length)]
         };
     } else {
-        // Counter offer
-        // Queremos algo entre la oferta y el threshold de aceptación, tirando hacia arriba.
+        // Counter offer: Promedio entre oferta y target
         const target = value * acceptThreshold;
-        const counterAmount = Math.round((offer + target) / 2 * 10) / 10; // Promedio entre oferta y target
+        const counterAmount = Math.round((offer + target) / 2 * 10) / 10; 
 
         return {
             decision: 'counter',

@@ -9,7 +9,7 @@ interface LeagueScreenProps {
     gameState: GameState;
 }
 
-type Tab = 'LOCAL_LEAGUE_1' | 'LOCAL_LEAGUE_2' | 'LOCAL_CUP_1' | 'LOCAL_CUP_2' | 'LOCAL_CUP' | 'WORLD' | 'CHAMPIONS_LEAGUE' | 'EUROPA_LEAGUE';
+type Tab = 'LOCAL_LEAGUE_1' | 'LOCAL_LEAGUE_2' | 'LOCAL_CUP_1' | 'LOCAL_CUP_2' | 'LOCAL_CUP' | 'WORLD' | 'CHAMPIONS_LEAGUE' | 'EUROPA_LEAGUE' | 'COPA_LIBERTADORES' | 'COPA_INTERCONTINENTAL';
 type WorldTab = 'PREMIER_LEAGUE' | 'CHAMPIONSHIP' | 'LA_LIGA' | 'BUNDESLIGA' | 'SERIE_A' | null;
 
 export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
@@ -526,14 +526,21 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                     onClick={() => setActiveTab('CHAMPIONS_LEAGUE')}
                     className={`flex-1 py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-500 ${activeTab === 'CHAMPIONS_LEAGUE' ? 'bg-indigo-900 text-white shadow-xl scale-[1.02] border border-indigo-500' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
                 >
-                    Champions League
+                    Champions
                 </button>
 
                 <button
-                    onClick={() => setActiveTab('EUROPA_LEAGUE')}
-                    className={`flex-1 py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-500 ${activeTab === 'EUROPA_LEAGUE' ? 'bg-orange-600 text-white shadow-xl scale-[1.02]' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+                    onClick={() => setActiveTab('COPA_LIBERTADORES')}
+                    className={`flex-1 py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-500 ${activeTab === 'COPA_LIBERTADORES' ? 'bg-amber-600 text-white shadow-xl scale-[1.02] border border-amber-500' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
                 >
-                    Europa League
+                    Libertadores
+                </button>
+
+                <button
+                    onClick={() => setActiveTab('COPA_INTERCONTINENTAL')}
+                    className={`flex-1 py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-500 ${activeTab === 'COPA_INTERCONTINENTAL' ? 'bg-slate-700 text-white shadow-xl scale-[1.02] border border-slate-500' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+                >
+                    Intercontinental
                 </button>
 
                 <button
@@ -559,8 +566,9 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                 {activeTab === 'LOCAL_LEAGUE_1' && playerCountry === 'ITA' && renderLeagueTable(gameState.leagueTables.SERIE_A, 'Serie A', LEAGUE_LOGOS.SERIE_A, true)}
                 {activeTab === 'LOCAL_CUP' && playerCountry === 'ITA' && renderCupView(gameState.cups.coppaItalia, '')}
 
-                {activeTab === 'CHAMPIONS_LEAGUE' && gameState.cups.championsLeague && renderEuropeanTable(gameState.cups.championsLeague.leagueTable, 'Champions League', 'https://tmssl.akamaized.net/images/logo/header/CL.png', 'indigo')}
-                {activeTab === 'EUROPA_LEAGUE' && gameState.cups.europaLeague && renderEuropeanTable(gameState.cups.europaLeague.leagueTable, 'Europa League', 'https://tmssl.akamaized.net/images/logo/header/EL.png', 'orange')}
+                {activeTab === 'CHAMPIONS_LEAGUE' && gameState.cups.championsLeague && renderCupView(gameState.cups.championsLeague, 'https://tmssl.akamaized.net/images/logo/header/CL.png')}
+                {activeTab === 'COPA_LIBERTADORES' && gameState.cups.copaLibertadores && renderCupView(gameState.cups.copaLibertadores, '')}
+                {activeTab === 'COPA_INTERCONTINENTAL' && gameState.cups.copaIntercontinental && renderCupView(gameState.cups.copaIntercontinental, '')}
 
                 {activeTab === 'WORLD' && renderWorldView()}
             </div>

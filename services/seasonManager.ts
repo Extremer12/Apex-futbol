@@ -73,12 +73,20 @@ export function startNewSeason(currentState: GameState): GameState {
         }
     });
 
-    // Cups
     if (currentState.cups.faCup.winnerId) {
         trophiesToAward.push({ teamId: currentState.cups.faCup.winnerId, name: 'FA Cup', type: 'cup' });
     }
     if (currentState.cups.carabaoCup.winnerId) {
         trophiesToAward.push({ teamId: currentState.cups.carabaoCup.winnerId, name: 'Carabao Cup', type: 'cup' });
+    }
+    if (currentState.cups.championsLeague.winnerId) {
+        trophiesToAward.push({ teamId: currentState.cups.championsLeague.winnerId, name: 'Champions League', type: 'cup' });
+    }
+    if (currentState.cups.copaLibertadores.winnerId) {
+        trophiesToAward.push({ teamId: currentState.cups.copaLibertadores.winnerId, name: 'Copa Libertadores', type: 'cup' });
+    }
+    if (currentState.cups.copaIntercontinental.winnerId) {
+        trophiesToAward.push({ teamId: currentState.cups.copaIntercontinental.winnerId, name: 'Copa Intercontinental', type: 'cup' });
     }
 
     // Apply Trophies to processedTeams
@@ -200,30 +208,49 @@ export function startNewSeason(currentState: GameState): GameState {
     const dfbPokalFixtures = dfbPokalRound1.map(m => ({ ...m, week: 4 }));
     const coppaItaliaFixtures = coppaItaliaRound1.map(m => ({ ...m, week: 5 }));
 
-    // 5.5 Generate European Competitions
-    // Get top 8 from each league for Champions League (32 teams)
+    // 5.5 Generate European & South American Competitions
+    // Get top 8 from Europe for Champions League (Knockout)
     const clTeams = [
-        ...[...currentState.leagueTables.PREMIER_LEAGUE].sort((a,b)=>b.points-a.points).slice(0, 8),
-        ...[...currentState.leagueTables.LA_LIGA].sort((a,b)=>b.points-a.points).slice(0, 8),
-        ...[...currentState.leagueTables.BUNDESLIGA].sort((a,b)=>b.points-a.points).slice(0, 8),
-        ...[...currentState.leagueTables.SERIE_A].sort((a,b)=>b.points-a.points).slice(0, 8)
+        ...[...currentState.leagueTables.PREMIER_LEAGUE].sort((a,b)=>b.points-a.points).slice(0, 2),
+        ...[...currentState.leagueTables.LA_LIGA].sort((a,b)=>b.points-a.points).slice(0, 2),
+        ...[...currentState.leagueTables.BUNDESLIGA].sort((a,b)=>b.points-a.points).slice(0, 2),
+        ...[...currentState.leagueTables.SERIE_A].sort((a,b)=>b.points-a.points).slice(0, 1),
+        ...[...currentState.leagueTables.LIGUE_1].sort((a,b)=>b.points-a.points).slice(0, 1)
     ].map(row => teamsAfterProRel.find(t => t.id === row.teamId)).filter(Boolean) as Team[];
 
-    // Next 8 from each league for Europa League (32 teams)
-    const elTeams = [
-        ...[...currentState.leagueTables.PREMIER_LEAGUE].sort((a,b)=>b.points-a.points).slice(8, 16),
-        ...[...currentState.leagueTables.LA_LIGA].sort((a,b)=>b.points-a.points).slice(8, 16),
-        ...[...currentState.leagueTables.BUNDESLIGA].sort((a,b)=>b.points-a.points).slice(8, 16),
-        ...[...currentState.leagueTables.SERIE_A].sort((a,b)=>b.points-a.points).slice(8, 16)
+    // Top 4 ARG, Top 4 BRA
+    const libTeams = [
+        ...[...currentState.leagueTables.LIGA_ARGENTINA].sort((a,b)=>b.points-a.points).slice(0, 4),
+        ...[...currentState.leagueTables.BRASILEIRAO].sort((a,b)=>b.points-a.points).slice(0, 4)
     ].map(row => teamsAfterProRel.find(t => t.id === row.teamId)).filter(Boolean) as Team[];
 
-    const clFixtures = generateSwissDraw(clTeams, 'Champions_League').map(m => ({ ...m, week: 2, isMidweek: true })); // They will be distributed in simulation
-    const elFixtures = generateSwissDraw(elTeams, 'Europa_League').map(m => ({ ...m, week: 3, isMidweek: true }));
+    const clFixtures = generateCupDraw(clTeams, 'Quarter-Final', 'Champions_League').map(m => ({ ...m, week: 12, isMidweek: true }));
+    const libFixtures = generateCupDraw(libTeams, 'Quarter-Final', 'Copa_Libertadores').map(m => ({ ...m, week: 10, isMidweek: true }));
+
+    // Intercontinental Cup
+    const lastLibertadoresWinner = currentState.cups.copaLibertadores.winnerId;
+    const lastChampionsWinner = currentState.cups.championsLeague.winnerId;
+    
+    let intercontinentalFixtures: Match[] = [];
+    if (lastLibertadoresWinner && lastChampionsWinner) {
+        const teamA = teamsAfterProRel.find(t => t.id === lastLibertadoresWinner);
+        const teamB = teamsAfterProRel.find(t => t.id === lastChampionsWinner);
+        if (teamA && teamB) {
+            intercontinentalFixtures = [{
+                week: 2, // Jugar en la semana 2 de la nueva temporada
+                homeTeamId: teamA.id,
+                awayTeamId: teamB.id,
+                competition: 'Copa_Intercontinental',
+                isCupMatch: true,
+                isMidweek: true
+            }];
+        }
+    }
 
     const fullSchedule = [
         ...newSeasonSchedule, 
         ...faCupFixtures, ...carabaoCupFixtures, ...copaDelReyFixtures, ...dfbPokalFixtures, ...coppaItaliaFixtures,
-        ...clFixtures, ...elFixtures
+        ...clFixtures, ...libFixtures, ...intercontinentalFixtures
     ];
 
     // 6. Create news items
@@ -461,12 +488,21 @@ export function startNewSeason(currentState: GameState): GameState {
                 currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.coppaItalia?.statistics?.championsHistory || [] }
             },
             championsLeague: {
-                id: 'champions_league', name: 'Champions League', participants: clTeams.map(t => t.id),
-                leagueTable: createInitialEuropeanTable(clTeams.map(t => t.id)), leagueFixtures: clFixtures, knockoutRounds: [], currentPhase: 'league', currentRoundIndex: 0
+                id: 'champions_league', name: 'Champions League', rounds: [{ name: 'Quarter-Final', fixtures: clFixtures, completed: false }],
+                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.championsLeague?.statistics?.championsHistory || [] }
             },
             europaLeague: {
-                id: 'europa_league', name: 'Europa League', participants: elTeams.map(t => t.id),
-                leagueTable: createInitialEuropeanTable(elTeams.map(t => t.id)), leagueFixtures: elFixtures, knockoutRounds: [], currentPhase: 'league', currentRoundIndex: 0
+                id: 'europa_league', name: 'Europa League', rounds: [],
+                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.europaLeague?.statistics?.championsHistory || [] }
+            },
+            copaLibertadores: {
+                id: 'copa_libertadores', name: 'Copa Libertadores', rounds: [{ name: 'Quarter-Final', fixtures: libFixtures, completed: false }],
+                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.copaLibertadores?.statistics?.championsHistory || [] }
+            },
+            copaIntercontinental: {
+                id: 'copa_intercontinental', name: 'Copa Intercontinental', 
+                rounds: intercontinentalFixtures.length > 0 ? [{ name: 'Final', fixtures: intercontinentalFixtures, completed: false }] : [],
+                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.copaIntercontinental?.statistics?.championsHistory || [] }
             }
         },
         finances: {

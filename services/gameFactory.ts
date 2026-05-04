@@ -96,26 +96,43 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
     const brasileiraoTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.BRASILEIRAO);
     const serieBBrTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.SERIE_B_BR);
 
-    // Copa Libertadores participants: top 5 from ARG + top 5 from BRA by rating
+    // Copa Libertadores participants: top 4 from ARG + top 4 from BRA by rating
     const libertadoresParticipants = [
-        ...ligaArgTeams.slice(0, 5),
-        ...brasileiraoTeams.slice(0, 5)
+        ...ligaArgTeams.slice(0, 4),
+        ...brasileiraoTeams.slice(0, 4)
     ];
 
-    // Generate cup draws (ONLY English teams for English cups for now)
+    // Champions League participants: top 8 from Europe
+    const championsLeagueParticipants = [
+        ...plTeams.slice(0, 2),
+        ...laTeams.slice(0, 2),
+        ...gerTeams.slice(0, 2),
+        ...itaTeams.slice(0, 1),
+        ...ligue1Teams.slice(0, 1)
+    ];
+
+    // Generate cup draws
     const englishTeams = [...plTeams, ...chTeams];
     const faCupRound1 = generateCupDraw(englishTeams, 'Round 1', 'FA_Cup');
     const carabaoCupRound1 = generateCupDraw(englishTeams, 'Round 1', 'Carabao_Cup');
+    
+    // International Cups (8 teams = Quarter-Finals)
+    const libertadoresQF = generateCupDraw(libertadoresParticipants, 'Quarter-Final', 'Copa_Libertadores');
+    const championsLeagueQF = generateCupDraw(championsLeagueParticipants, 'Quarter-Final', 'Champions_League');
 
     // Assign cup fixtures to specific weeks
     const faCupFixtures = faCupRound1.map(m => ({ ...m, week: 5 }));
     const carabaoCupFixtures = carabaoCupRound1.map(m => ({ ...m, week: 2 }));
+    const libertadoresFixtures = libertadoresQF.map(m => ({ ...m, week: 10 }));
+    const championsLeagueFixtures = championsLeagueQF.map(m => ({ ...m, week: 12 }));
 
     // Generate full season schedule
     const initialSchedule = [
         ...generateSeasonSchedule(allTeamsCopy),
         ...faCupFixtures,
-        ...carabaoCupFixtures
+        ...carabaoCupFixtures,
+        ...libertadoresFixtures,
+        ...championsLeagueFixtures
     ];
 
     // Build and return the initial game state
@@ -190,17 +207,26 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
             copaDelRey: { id: 'copa_del_rey', name: 'Copa del Rey', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
             dfbPokal: { id: 'dfb_pokal', name: 'DFB-Pokal', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
             coppaItalia: { id: 'coppa_italia', name: 'Coppa Italia', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
-            championsLeague: { id: 'champions_league', name: 'UEFA Champions League', participants: [], leagueTable: [], leagueFixtures: [], knockoutRounds: [], currentPhase: 'league', currentRoundIndex: 0 },
-            europaLeague: { id: 'europa_league', name: 'UEFA Europa League', participants: [], leagueTable: [], leagueFixtures: [], knockoutRounds: [], currentPhase: 'league', currentRoundIndex: 0 },
+            championsLeague: { 
+                id: 'champions_league', 
+                name: 'UEFA Champions League', 
+                rounds: [{ name: 'Quarter-Final', fixtures: championsLeagueFixtures, completed: false }],
+                currentRoundIndex: 0, 
+                statistics: { topScorers: [], championsHistory: [] } 
+            },
+            europaLeague: { 
+                id: 'europa_league', 
+                name: 'UEFA Europa League', 
+                rounds: [], 
+                currentRoundIndex: 0, 
+                statistics: { topScorers: [], championsHistory: [] } 
+            },
             copaLibertadores: {
                 id: 'copa_libertadores',
                 name: 'Copa Libertadores',
-                participants: libertadoresParticipants.map(t => t.id),
-                leagueTable: libertadoresParticipants.map((t, i) => ({ teamId: t.id, position: i + 1, played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0 })),
-                leagueFixtures: [],
-                knockoutRounds: [],
-                currentPhase: 'league',
-                currentRoundIndex: 0
+                rounds: [{ name: 'Quarter-Final', fixtures: libertadoresFixtures, completed: false }],
+                currentRoundIndex: 0,
+                statistics: { topScorers: [], championsHistory: [] }
             },
             copaIntercontinental: {
                 id: 'copa_intercontinental',
