@@ -225,6 +225,7 @@ export interface CupGroup {
 export interface CupCompetition {
   id: string;
   name: string;
+  logo?: string;
   type: 'knockout' | 'groups' | 'swiss';
   phase: 'preliminary' | 'groups' | 'swiss' | 'knockout' | 'finished';
   groups?: CupGroup[];

@@ -216,6 +216,7 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
             copaLibertadores: {
                 id: 'copa_libertadores',
                 name: 'Copa Libertadores',
+                logo: 'https://tmssl.akamaized.net/images/logo/header/cli.png',
                 type: 'groups',
                 phase: 'groups',
                 groups: libertadoresGroups,
@@ -226,6 +227,7 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
             championsLeague: {
                 id: 'champions_league',
                 name: 'UEFA Champions League',
+                logo: 'https://tmssl.akamaized.net/images/logo/header/cl.png',
                 type: 'swiss',
                 phase: 'swiss',
                 swissTable: championsLeagueSwiss.table,
@@ -237,6 +239,7 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
             europaLeague: {
                 id: 'europa_league',
                 name: 'UEFA Europa League',
+                logo: 'https://tmssl.akamaized.net/images/logo/header/el.png',
                 type: 'swiss',
                 phase: 'finished',
                 rounds: [],
@@ -246,6 +249,7 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
             copaIntercontinental: {
                 id: 'copa_intercontinental',
                 name: 'Copa Intercontinental',
+                logo: 'https://tmssl.akamaized.net/images/logo/header/cwc.png',
                 type: 'knockout',
                 phase: 'knockout',
                 rounds: [],

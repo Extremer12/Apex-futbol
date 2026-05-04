@@ -182,7 +182,10 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                         <h1 className="text-5xl font-black text-white mb-4 tracking-tighter uppercase italic">
                             {selectedCountry === 'ENG' ? 'The English Game' : 
                              selectedCountry === 'ESP' ? 'La Pasión Española' :
-                             selectedCountry === 'GER' ? 'Deutsche Fußball' : 'Il Calcio Italiano'}
+                             selectedCountry === 'GER' ? 'Deutsche Fußball' : 
+                             selectedCountry === 'FRA' ? 'Ligue de Talent' :
+                             selectedCountry === 'ARG' ? 'Pasión Argentina' :
+                             selectedCountry === 'BRA' ? 'Samba do Futebol' : 'Il Calcio Italiano'}
                         </h1>
                         <div className="w-24 h-1 bg-gradient-to-r from-transparent via-purple-500 to-transparent mx-auto" />
                     </div>
@@ -216,7 +219,10 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                             <button
                                 onClick={() => setSelectedLeague(
                                     selectedCountry === 'ESP' ? LeagueId.LA_LIGA : 
-                                    selectedCountry === 'GER' ? LeagueId.BUNDESLIGA : LeagueId.SERIE_A
+                                    selectedCountry === 'GER' ? LeagueId.BUNDESLIGA : 
+                                    selectedCountry === 'FRA' ? LeagueId.LIGUE_1 :
+                                    selectedCountry === 'ARG' ? LeagueId.LIGA_ARGENTINA :
+                                    selectedCountry === 'BRA' ? LeagueId.BRASILEIRAO : LeagueId.SERIE_A
                                 )}
                                 className="group relative bg-slate-900/60 border border-white/5 rounded-[2.5rem] p-12 hover:border-white/20 transition-all duration-500 hover:-translate-y-2 overflow-hidden shadow-2xl animate-scale-in col-span-2 max-w-xl mx-auto w-full"
                             >
@@ -227,6 +233,9 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                                             src={
                                                 selectedCountry === 'ESP' ? 'https://tmssl.akamaized.net/images/logo/header/es1.png' : 
                                                 selectedCountry === 'GER' ? 'https://tmssl.akamaized.net/images/logo/header/l1.png' : 
+                                                selectedCountry === 'FRA' ? 'https://tmssl.akamaized.net/images/logo/header/fr1.png' :
+                                                selectedCountry === 'ARG' ? 'https://tmssl.akamaized.net/images/logo/header/ar1n.png' :
+                                                selectedCountry === 'BRA' ? 'https://tmssl.akamaized.net/images/logo/header/bra1.png' :
                                                 'https://tmssl.akamaized.net/images/logo/header/it1.png'
                                             } 
                                             alt="League" 
@@ -234,10 +243,15 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                                         />
                                     </div>
                                     <h2 className="text-4xl font-black text-white mb-4 tracking-tighter uppercase">
-                                        {selectedCountry === 'ESP' ? 'La Liga' : selectedCountry === 'GER' ? 'Bundesliga' : 'Serie A'}
+                                        {selectedCountry === 'ESP' ? 'La Liga' : 
+                                         selectedCountry === 'GER' ? 'Bundesliga' : 
+                                         selectedCountry === 'FRA' ? 'Ligue 1' :
+                                         selectedCountry === 'ARG' ? 'Liga Argentina' :
+                                         selectedCountry === 'BRA' ? 'Brasileirão' : 'Serie A'}
                                     </h2>
                                     <div className="px-8 py-3 rounded-full bg-white/5 border border-white/10 text-slate-300 text-md font-bold uppercase tracking-[0.2em]">
-                                        {selectedCountry === 'GER' ? '18' : '20'} Equipos • Máxima Categoría
+                                        {selectedCountry === 'GER' ? '18' : 
+                                         selectedCountry === 'ARG' ? '28' : '20'} Equipos • Máxima Categoría
                                     </div>
                                 </div>
                             </button>
