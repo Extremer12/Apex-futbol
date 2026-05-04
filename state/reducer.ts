@@ -112,7 +112,7 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
             // 4. League Tables Migration
             // @ts-ignore - Handling legacy migration where these properties might exist on loadedState but not on GameState type
             // Ensure all leagues are present in leagueTables for state stability
-            const leagueTables = loadedState.leagueTables || {};
+            const leagueTables = (loadedState.leagueTables || {}) as GameState['leagueTables'];
             Object.values(LeagueId).forEach(leagueId => {
                 if (!leagueTables[leagueId]) {
                     // Try to recover from legacy fields if it's one of the original 3
@@ -131,15 +131,15 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
             // 5. Cups Migration
             const cups = loadedState.cups || {} as any;
             const fullCups: GameState['cups'] = {
-                faCup: cups.faCup || { id: 'fa_cup', name: 'FA Cup', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
-                carabaoCup: cups.carabaoCup || { id: 'carabao_cup', name: 'Carabao Cup', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
-                copaDelRey: cups.copaDelRey || { id: 'copa_del_rey', name: 'Copa del Rey', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
-                dfbPokal: cups.dfbPokal || { id: 'dfb_pokal', name: 'DFB-Pokal', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
-                coppaItalia: cups.coppaItalia || { id: 'coppa_italia', name: 'Coppa Italia', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
-                championsLeague: cups.championsLeague || { id: 'champions_league', name: 'Champions League', participants: [], leagueTable: [], leagueFixtures: [], knockoutRounds: [], currentPhase: 'finished', currentRoundIndex: 0 },
-                europaLeague: cups.europaLeague || { id: 'europa_league', name: 'Europa League', participants: [], leagueTable: [], leagueFixtures: [], knockoutRounds: [], currentPhase: 'finished', currentRoundIndex: 0 },
-                copaLibertadores: cups.copaLibertadores || { id: 'copa_libertadores', name: 'Copa Libertadores', participants: [], leagueTable: [], leagueFixtures: [], knockoutRounds: [], currentPhase: 'finished', currentRoundIndex: 0 },
-                copaIntercontinental: cups.copaIntercontinental || { id: 'copa_intercontinental', name: 'Copa Intercontinental', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
+                faCup: cups.faCup || { id: 'fa_cup', name: 'FA Cup', type: 'knockout', phase: 'knockout', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
+                carabaoCup: cups.carabaoCup || { id: 'carabao_cup', name: 'Carabao Cup', type: 'knockout', phase: 'knockout', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
+                copaDelRey: cups.copaDelRey || { id: 'copa_del_rey', name: 'Copa del Rey', type: 'knockout', phase: 'knockout', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
+                dfbPokal: cups.dfbPokal || { id: 'dfb_pokal', name: 'DFB-Pokal', type: 'knockout', phase: 'knockout', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
+                coppaItalia: cups.coppaItalia || { id: 'coppa_italia', name: 'Coppa Italia', type: 'knockout', phase: 'knockout', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
+                championsLeague: cups.championsLeague || { id: 'champions_league', name: 'Champions League', type: 'swiss', phase: 'finished', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
+                europaLeague: cups.europaLeague || { id: 'europa_league', name: 'Europa League', type: 'swiss', phase: 'finished', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
+                copaLibertadores: cups.copaLibertadores || { id: 'copa_libertadores', name: 'Copa Libertadores', type: 'groups', phase: 'finished', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
+                copaIntercontinental: cups.copaIntercontinental || { id: 'copa_intercontinental', name: 'Copa Intercontinental', type: 'knockout', phase: 'finished', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
             };
 
             const cinematicQueue = loadedState.cinematicQueue || [];

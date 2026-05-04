@@ -18,7 +18,6 @@ export const CHAMPIONSHIP_TEAMS: Team[] = [
         teamMorale: 'Normal',
         primaryColor: '#FFFFFF',
         secondaryColor: '#FFCD00',
-        tactics: 'Attacking',
         squad: createGenericSquad(10100, 'Leeds')
     },
     {
@@ -32,7 +31,6 @@ export const CHAMPIONSHIP_TEAMS: Team[] = [
         teamMorale: 'Normal',
         primaryColor: '#6C1D45',
         secondaryColor: '#99D6EA',
-        tactics: 'Defensive',
         squad: createGenericSquad(10200, 'Burnley')
     },
     {
@@ -46,7 +44,6 @@ export const CHAMPIONSHIP_TEAMS: Team[] = [
         teamMorale: 'Contento',
         primaryColor: '#F78F1E',
         secondaryColor: '#002D56',
-        tactics: 'Balanced',
         squad: createGenericSquad(10300, 'Luton')
     },
     {
@@ -60,7 +57,6 @@ export const CHAMPIONSHIP_TEAMS: Team[] = [
         teamMorale: 'Normal',
         primaryColor: '#EE2737',
         secondaryColor: '#000000',
-        tactics: 'Defensive',
         squad: createGenericSquad(10400, 'Sheffield Utd')
     },
     {
@@ -74,7 +70,6 @@ export const CHAMPIONSHIP_TEAMS: Team[] = [
         teamMorale: 'Normal',
         primaryColor: '#122F67',
         secondaryColor: '#FFFFFF',
-        tactics: 'Balanced',
         squad: createGenericSquad(10500, 'West Brom')
     },
     {
@@ -88,7 +83,6 @@ export const CHAMPIONSHIP_TEAMS: Team[] = [
         teamMorale: 'Normal',
         primaryColor: '#FFF200',
         secondaryColor: '#00A650',
-        tactics: 'Attacking',
         squad: createGenericSquad(10600, 'Norwich')
     },
     {
@@ -102,7 +96,6 @@ export const CHAMPIONSHIP_TEAMS: Team[] = [
         teamMorale: 'Normal',
         primaryColor: '#F5A12D',
         secondaryColor: '#000000',
-        tactics: 'Attacking',
         squad: createGenericSquad(10700, 'Hull')
     },
     {
@@ -116,7 +109,6 @@ export const CHAMPIONSHIP_TEAMS: Team[] = [
         teamMorale: 'Contento',
         primaryColor: '#CC0000',
         secondaryColor: '#FFFFFF',
-        tactics: 'Balanced',
         squad: createGenericSquad(10800, 'Coventry')
     },
     {
@@ -130,7 +122,6 @@ export const CHAMPIONSHIP_TEAMS: Team[] = [
         teamMorale: 'Normal',
         primaryColor: '#E03A3E',
         secondaryColor: '#FFFFFF',
-        tactics: 'Balanced',
         squad: createGenericSquad(10900, 'Middlesbrough')
     },
     {
@@ -144,7 +135,6 @@ export const CHAMPIONSHIP_TEAMS: Team[] = [
         teamMorale: 'Normal',
         primaryColor: '#FFFFFF',
         secondaryColor: '#003399',
-        tactics: 'Defensive',
         squad: createGenericSquad(11000, 'Preston')
     },
     {
@@ -158,7 +148,6 @@ export const CHAMPIONSHIP_TEAMS: Team[] = [
         teamMorale: 'Normal',
         primaryColor: '#0070B5',
         secondaryColor: '#FFFFFF',
-        tactics: 'Defensive',
         squad: createGenericSquad(11100, 'Cardiff')
     },
     {
@@ -172,7 +161,6 @@ export const CHAMPIONSHIP_TEAMS: Team[] = [
         teamMorale: 'Normal',
         primaryColor: '#E30613',
         secondaryColor: '#FFFFFF',
-        tactics: 'Balanced',
         squad: createGenericSquad(11200, 'Bristol City')
     },
     {
@@ -186,7 +174,6 @@ export const CHAMPIONSHIP_TEAMS: Team[] = [
         teamMorale: 'Contento',
         primaryColor: '#FF0000',
         secondaryColor: '#FFFFFF',
-        tactics: 'Attacking',
         squad: createGenericSquad(11300, 'Sunderland')
     },
     {
@@ -200,7 +187,6 @@ export const CHAMPIONSHIP_TEAMS: Team[] = [
         teamMorale: 'Normal',
         primaryColor: '#FFFFFF',
         secondaryColor: '#000000',
-        tactics: 'Attacking',
         squad: createGenericSquad(11400, 'Swansea')
     },
     {
@@ -214,7 +200,6 @@ export const CHAMPIONSHIP_TEAMS: Team[] = [
         teamMorale: 'Descontento',
         primaryColor: '#FBEE23',
         secondaryColor: '#ED2127',
-        tactics: 'Attacking',
         squad: createGenericSquad(11500, 'Watford')
     },
     {
@@ -228,7 +213,6 @@ export const CHAMPIONSHIP_TEAMS: Team[] = [
         teamMorale: 'Normal',
         primaryColor: '#001F5B',
         secondaryColor: '#FFFFFF',
-        tactics: 'Defensive',
         squad: createGenericSquad(11600, 'Millwall')
     },
     {
@@ -242,7 +226,6 @@ export const CHAMPIONSHIP_TEAMS: Team[] = [
         teamMorale: 'Normal',
         primaryColor: '#0054A6',
         secondaryColor: '#FFFFFF',
-        tactics: 'Balanced',
         squad: createGenericSquad(11700, 'QPR')
     },
     {
@@ -256,7 +239,6 @@ export const CHAMPIONSHIP_TEAMS: Team[] = [
         teamMorale: 'Normal',
         primaryColor: '#E03A3E',
         secondaryColor: '#FFFFFF',
-        tactics: 'Balanced',
         squad: createGenericSquad(11800, 'Stoke')
     },
     {
@@ -270,7 +252,6 @@ export const CHAMPIONSHIP_TEAMS: Team[] = [
         teamMorale: 'Normal',
         primaryColor: '#009EE0',
         secondaryColor: '#FFFFFF',
-        tactics: 'Attacking',
         squad: createGenericSquad(11900, 'Blackburn')
     },
     {
@@ -284,7 +265,6 @@ export const CHAMPIONSHIP_TEAMS: Team[] = [
         teamMorale: 'Normal',
         primaryColor: '#0E00F7',
         secondaryColor: '#FFFFFF',
-        tactics: 'Defensive',
         squad: createGenericSquad(12000, 'Sheffield Wed')
     },
     {
@@ -298,7 +278,6 @@ export const CHAMPIONSHIP_TEAMS: Team[] = [
         teamMorale: 'Contento',
         primaryColor: '#1B4835',
         secondaryColor: '#FFFFFF',
-        tactics: 'Defensive',
         squad: createGenericSquad(12100, 'Plymouth')
     },
     {
@@ -312,7 +291,6 @@ export const CHAMPIONSHIP_TEAMS: Team[] = [
         teamMorale: 'Feliz',
         primaryColor: '#001489',
         secondaryColor: '#FFFFFF',
-        tactics: 'Balanced',
         squad: createGenericSquad(12200, 'Portsmouth')
     },
     {
@@ -326,7 +304,6 @@ export const CHAMPIONSHIP_TEAMS: Team[] = [
         teamMorale: 'Feliz',
         primaryColor: '#FFFFFF',
         secondaryColor: '#000000',
-        tactics: 'Balanced',
         squad: createGenericSquad(12300, 'Derby')
     },
     {
@@ -340,7 +317,6 @@ export const CHAMPIONSHIP_TEAMS: Team[] = [
         teamMorale: 'Feliz',
         primaryColor: '#F3A530',
         secondaryColor: '#002F5F',
-        tactics: 'Defensive',
         squad: createGenericSquad(12400, 'Oxford')
     },
 ];

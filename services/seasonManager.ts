@@ -3,8 +3,8 @@
  * Handles season transitions, aging, retirements, and promotion/relegation
  */
 
-import { GameState, Team, Player, NewsItem, EuropeanCompetition, EuropeanTableRow } from '../types';
-import { generateYouthPlayer, generateSeasonSchedule, generateCupDraw, createInitialLeagueTable, handlePromotionRelegation, generateSwissDraw, createInitialEuropeanTable } from './simulation';
+import { GameState, Team, Player, NewsItem, EuropeanCompetition, EuropeanTableRow, Match, CupCompetition, CupChampion, LeagueId } from '../types';
+import { generateYouthPlayer, generateSeasonSchedule, generateCupDraw, createInitialLeagueTable, handlePromotionRelegation, generateSwissPhase, generateGroupPhase, createInitialEuropeanTable } from './simulation';
 import { calculatePrizeMoney, generateSponsorMarket } from './economy';
 import { formatDate, formatCurrency } from '../utils';
 
@@ -193,6 +193,9 @@ export function startNewSeason(currentState: GameState): GameState {
 
     const newPlTeams = getLeagueTeams('PREMIER_LEAGUE');
     const newChTeams = getLeagueTeams('CHAMPIONSHIP');
+    const newLaTeams = getLeagueTeams('LA_LIGA');
+    const newGerTeams = getLeagueTeams('BUNDESLIGA');
+    const newItaTeams = getLeagueTeams('SERIE_A');
 
     // 5. Generate new cup draws (National Cups)
     const englishTeamsNewSeason = [...newPlTeams, ...newChTeams];
@@ -468,39 +471,58 @@ export function startNewSeason(currentState: GameState): GameState {
         },
         cups: {
             faCup: {
-                id: 'fa_cup', name: 'FA Cup', rounds: [{ name: 'Round 1', fixtures: faCupFixtures, completed: false }],
+                id: 'fa_cup', name: 'FA Cup', 
+                type: 'knockout', phase: 'knockout',
+                rounds: [{ name: 'Round 1', fixtures: faCupFixtures, completed: false }],
                 currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.faCup.statistics?.championsHistory || [] }
             },
             carabaoCup: {
-                id: 'carabao_cup', name: 'Carabao Cup', rounds: [{ name: 'Round 1', fixtures: carabaoCupFixtures, completed: false }],
+                id: 'carabao_cup', name: 'Carabao Cup', 
+                type: 'knockout', phase: 'knockout',
+                rounds: [{ name: 'Round 1', fixtures: carabaoCupFixtures, completed: false }],
                 currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.carabaoCup.statistics?.championsHistory || [] }
             },
             copaDelRey: {
-                id: 'copa_del_rey', name: 'Copa del Rey', rounds: [{ name: 'Round 1', fixtures: copaDelReyFixtures, completed: false }],
+                id: 'copa_del_rey', name: 'Copa del Rey', 
+                type: 'knockout', phase: 'knockout',
+                rounds: [{ name: 'Round 1', fixtures: copaDelReyFixtures, completed: false }],
                 currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.copaDelRey?.statistics?.championsHistory || [] }
             },
             dfbPokal: {
-                id: 'dfb_pokal', name: 'DFB-Pokal', rounds: [{ name: 'Round 1', fixtures: dfbPokalFixtures, completed: false }],
+                id: 'dfb_pokal', name: 'DFB-Pokal', 
+                type: 'knockout', phase: 'knockout',
+                rounds: [{ name: 'Round 1', fixtures: dfbPokalFixtures, completed: false }],
                 currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.dfbPokal?.statistics?.championsHistory || [] }
             },
             coppaItalia: {
-                id: 'coppa_italia', name: 'Coppa Italia', rounds: [{ name: 'Round 1', fixtures: coppaItaliaFixtures, completed: false }],
+                id: 'coppa_italia', name: 'Coppa Italia', 
+                type: 'knockout', phase: 'knockout',
+                rounds: [{ name: 'Round 1', fixtures: coppaItaliaFixtures, completed: false }],
                 currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.coppaItalia?.statistics?.championsHistory || [] }
             },
             championsLeague: {
-                id: 'champions_league', name: 'Champions League', rounds: [{ name: 'Quarter-Final', fixtures: clFixtures, completed: false }],
+                id: 'champions_league', name: 'Champions League', 
+                type: 'swiss', phase: 'swiss',
+                swissTable: [], swissFixtures: [], // Should be generated with new participants
+                rounds: [],
                 currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.championsLeague?.statistics?.championsHistory || [] }
             },
             europaLeague: {
-                id: 'europa_league', name: 'Europa League', rounds: [],
+                id: 'europa_league', name: 'Europa League', 
+                type: 'swiss', phase: 'swiss',
+                rounds: [],
                 currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.europaLeague?.statistics?.championsHistory || [] }
             },
             copaLibertadores: {
-                id: 'copa_libertadores', name: 'Copa Libertadores', rounds: [{ name: 'Quarter-Final', fixtures: libFixtures, completed: false }],
+                id: 'copa_libertadores', name: 'Copa Libertadores', 
+                type: 'groups', phase: 'groups',
+                groups: [], // Should be generated with new participants
+                rounds: [],
                 currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.copaLibertadores?.statistics?.championsHistory || [] }
             },
             copaIntercontinental: {
                 id: 'copa_intercontinental', name: 'Copa Intercontinental', 
+                type: 'knockout', phase: 'knockout',
                 rounds: intercontinentalFixtures.length > 0 ? [{ name: 'Final', fixtures: intercontinentalFixtures, completed: false }] : [],
                 currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.copaIntercontinental?.statistics?.championsHistory || [] }
             }

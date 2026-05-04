@@ -6,7 +6,7 @@
 import { GameState, Team, Player, PlayerProfile, NewsItem, LeagueId } from '../types';
 import { TEAMS } from '../constants';
 import { generateRandomCoach, generateCoachMarket } from './coaching';
-import { generateYouthPlayer, generateSeasonSchedule, generateCupDraw, createInitialLeagueTable } from './simulation';
+import { generateYouthPlayer, generateSeasonSchedule, generateCupDraw, createInitialLeagueTable, generateSwissPhase, generateGroupPhase, createInitialEuropeanTable } from './simulation';
 import { getBaseWeeklyIncome, generateStadium, generateSponsor, generateSponsorMarket } from './economy';
 import { formatDate } from '../utils';
 
@@ -138,6 +138,7 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
 
     // Build and return the initial game state
     return {
+        currentTurn: 'weekend',
         team: playerTeamCopy,
         allTeams: allTeamsCopy,
         currentDate: now,
@@ -194,6 +195,8 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
             faCup: {
                 id: 'fa_cup',
                 name: 'FA Cup',
+                type: 'knockout',
+                phase: 'knockout',
                 rounds: [{ name: 'Round 1', fixtures: faCupFixtures, completed: false }],
                 currentRoundIndex: 0,
                 statistics: { topScorers: [], championsHistory: [] }
@@ -201,13 +204,15 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
             carabaoCup: {
                 id: 'carabao_cup',
                 name: 'Carabao Cup',
+                type: 'knockout',
+                phase: 'knockout',
                 rounds: [{ name: 'Round 1', fixtures: carabaoCupFixtures, completed: false }],
                 currentRoundIndex: 0,
                 statistics: { topScorers: [], championsHistory: [] }
             },
-            copaDelRey: { id: 'copa_del_rey', name: 'Copa del Rey', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
-            dfbPokal: { id: 'dfb_pokal', name: 'DFB-Pokal', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
-            coppaItalia: { id: 'coppa_italia', name: 'Coppa Italia', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
+            copaDelRey: { id: 'copa_del_rey', name: 'Copa del Rey', type: 'knockout', phase: 'knockout', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
+            dfbPokal: { id: 'dfb_pokal', name: 'DFB-Pokal', type: 'knockout', phase: 'knockout', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
+            coppaItalia: { id: 'coppa_italia', name: 'Coppa Italia', type: 'knockout', phase: 'knockout', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
             copaLibertadores: {
                 id: 'copa_libertadores',
                 name: 'Copa Libertadores',
@@ -225,6 +230,15 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
                 phase: 'swiss',
                 swissTable: championsLeagueSwiss.table,
                 swissFixtures: championsLeagueFixtures,
+                rounds: [],
+                currentRoundIndex: 0,
+                statistics: { topScorers: [], championsHistory: [] }
+            },
+            europaLeague: {
+                id: 'europa_league',
+                name: 'UEFA Europa League',
+                type: 'swiss',
+                phase: 'finished',
                 rounds: [],
                 currentRoundIndex: 0,
                 statistics: { topScorers: [], championsHistory: [] }

@@ -1,5 +1,5 @@
 
-import { Team, Match, LeagueTableRow, Morale, Player, CupCompetition, CupRound, LeagueId } from '../types';
+import { Team, Match, LeagueTableRow, Morale, Player, CupCompetition, CupRound, LeagueId, EuropeanTableRow, CupGroup } from '../types';
 import { getTacticalMatchup } from './coaching';
 import { generateRandomName } from '../utils';
 

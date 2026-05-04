@@ -39,6 +39,7 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
 
     // 1. Country Selection View
     if (!selectedCountry) {
+        const COUNTRIES = [
             { id: 'ENG' as CountryCode, name: 'Inglaterra', flagUrl: 'https://flagcdn.com/gb-eng.svg', desc: 'Intensidad, ritmo frenético y los clubes históricos del mundo.', leagues: 'Premier · Championship', glow: 'rgba(59,130,246,0.5)', borderHover: 'hover:border-blue-500', bgHover: 'hover:bg-blue-900/20', textHover: 'group-hover:text-blue-400', dotColor: 'bg-blue-500' },
             { id: 'ESP' as CountryCode, name: 'España', flagUrl: 'https://flagcdn.com/es.svg', desc: 'Donde el balón al piso es religión. Domina La Liga con talento.', leagues: 'La Liga', glow: 'rgba(239,68,68,0.5)', borderHover: 'hover:border-red-500', bgHover: 'hover:bg-red-900/20', textHover: 'group-hover:text-red-400', dotColor: 'bg-red-500' },
             { id: 'GER' as CountryCode, name: 'Alemania', flagUrl: 'https://flagcdn.com/de.svg', desc: 'Estadios llenos y un modelo de desarrollo envidiado por Europa.', leagues: 'Bundesliga', glow: 'rgba(245,158,11,0.5)', borderHover: 'hover:border-amber-500', bgHover: 'hover:bg-amber-900/20', textHover: 'group-hover:text-amber-400', dotColor: 'bg-amber-500' },
@@ -125,12 +126,12 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                         {/* Content */}
                         {active ? (
                             <div key={active.id} className="relative z-10 flex flex-col items-center text-center gap-6 animate-scale-in">
-                                <div
-                                    className="text-[140px] leading-none select-none animate-scale-in"
-                                    style={{ filter: `drop-shadow(0 0 40px ${active.glow})` }}
-                                >
-                                    {active.flag}
-                                </div>
+                                    <img 
+                                        src={active.flagUrl} 
+                                        alt={active.name}
+                                        className="w-48 h-32 object-cover rounded-2xl shadow-2xl animate-scale-in"
+                                        style={{ filter: `drop-shadow(0 0 40px ${active.glow})` }}
+                                    />
                                 <div>
                                     <h2 className="text-5xl font-black text-white uppercase tracking-tighter">{active.name}</h2>
                                     <div

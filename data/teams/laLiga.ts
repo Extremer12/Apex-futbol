@@ -4,7 +4,7 @@ import { createTeamLogo, TEAM_LOGOS, createGenericSquad } from './helpers';
 export const laLigaTeams: Team[] = [
 {
     id: 201, name: 'Real Madrid', logo: createTeamLogo(TEAM_LOGOS['Real Madrid'], 'Real Madrid'), leagueId: LeagueId.LA_LIGA, budget: 800, transferBudget: 200, tier: 'Top', teamMorale: 'Feliz',
-    primaryColor: '#FFFFFF', secondaryColor: '#FEBE10', tactics: 'Attacking',
+    primaryColor: '#FFFFFF', secondaryColor: '#FEBE10',
     squad: [
       { id: 20101, name: 'V. Junior', position: 'DEL', rating: 90, value: 150, wage: 350000, morale: 'Feliz', contractYears: 5 },
       { id: 20102, name: 'J. Bellingham', position: 'CEN', rating: 90, value: 150, wage: 300000, morale: 'Feliz', contractYears: 5 },
@@ -26,7 +26,7 @@ export const laLigaTeams: Team[] = [
   },
   {
     id: 202, name: 'FC Barcelona', logo: createTeamLogo(TEAM_LOGOS['FC Barcelona'], 'FC Barcelona'), leagueId: LeagueId.LA_LIGA, budget: 200, transferBudget: 50, tier: 'Top', teamMorale: 'Contento',
-    primaryColor: '#A50044', secondaryColor: '#004D98', tactics: 'Attacking',
+    primaryColor: '#A50044', secondaryColor: '#004D98',
     squad: [
       { id: 20201, name: 'R. Lewandowski', position: 'DEL', rating: 88, value: 40, wage: 300000, morale: 'Contento', contractYears: 2 },
       { id: 20202, name: 'Pedri', position: 'CEN', rating: 87, value: 100, wage: 180000, morale: 'Feliz', contractYears: 4 },
@@ -48,7 +48,7 @@ export const laLigaTeams: Team[] = [
   },
   {
     id: 203, name: 'Atlético Madrid', logo: createTeamLogo(TEAM_LOGOS['Atletico Madrid'], 'Atletico Madrid'), leagueId: LeagueId.LA_LIGA, budget: 150, transferBudget: 40, tier: 'Top', teamMorale: 'Contento',
-    primaryColor: '#CB3524', secondaryColor: '#272E61', tactics: 'Defensive',
+    primaryColor: '#CB3524', secondaryColor: '#272E61',
     squad: [
       { id: 20301, name: 'A. Griezmann', position: 'DEL', rating: 88, value: 50, wage: 280000, morale: 'Feliz', contractYears: 2 },
       { id: 20302, name: 'J. Oblak', position: 'POR', rating: 88, value: 45, wage: 250000, morale: 'Contento', contractYears: 3 },
@@ -68,21 +68,21 @@ export const laLigaTeams: Team[] = [
       { id: 20316, name: 'H. Moldovan', position: 'POR', rating: 75, value: 5, wage: 30000, morale: 'Normal', contractYears: 3 },
     ]
   },
-  { id: 204, name: 'Athletic Club', logo: createTeamLogo(TEAM_LOGOS['Athletic Club'], 'Athletic Club'), leagueId: LeagueId.LA_LIGA, budget: 80, transferBudget: 30, tier: 'Mid', teamMorale: 'Contento', primaryColor: '#EE2523', secondaryColor: '#FFFFFF', tactics: 'Attacking', squad: createGenericSquad(20400, 'Athletic') },
-  { id: 205, name: 'Real Sociedad', logo: createTeamLogo(TEAM_LOGOS['Real Sociedad'], 'Real Sociedad'), leagueId: LeagueId.LA_LIGA, budget: 70, transferBudget: 25, tier: 'Mid', teamMorale: 'Contento', primaryColor: '#0067B1', secondaryColor: '#FFFFFF', tactics: 'Balanced', squad: createGenericSquad(20500, 'Real Sociedad') },
-  { id: 206, name: 'Real Betis', logo: createTeamLogo(TEAM_LOGOS['Real Betis'], 'Real Betis'), leagueId: LeagueId.LA_LIGA, budget: 60, transferBudget: 15, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#00954C', secondaryColor: '#FFFFFF', tactics: 'Balanced', squad: createGenericSquad(20600, 'Betis') },
-  { id: 207, name: 'Girona FC', logo: createTeamLogo(TEAM_LOGOS['Girona FC'], 'Girona FC'), leagueId: LeagueId.LA_LIGA, budget: 50, transferBudget: 20, tier: 'Mid', teamMorale: 'Feliz', primaryColor: '#CE1126', secondaryColor: '#FFFFFF', tactics: 'Attacking', squad: createGenericSquad(20700, 'Girona') },
-  { id: 208, name: 'Villarreal CF', logo: createTeamLogo(TEAM_LOGOS['Villarreal CF'], 'Villarreal CF'), leagueId: LeagueId.LA_LIGA, budget: 65, transferBudget: 20, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#FEEE00', secondaryColor: '#00519E', tactics: 'Balanced', squad: createGenericSquad(20800, 'Villarreal') },
-  { id: 209, name: 'Valencia CF', logo: createTeamLogo(TEAM_LOGOS['Valencia CF'], 'Valencia CF'), leagueId: LeagueId.LA_LIGA, budget: 40, transferBudget: 10, tier: 'Mid', teamMorale: 'Descontento', primaryColor: '#FFFFFF', secondaryColor: '#000000', tactics: 'Defensive', squad: createGenericSquad(20900, 'Valencia') },
-  { id: 210, name: 'Sevilla FC', logo: createTeamLogo(TEAM_LOGOS['Sevilla FC'], 'Sevilla FC'), leagueId: LeagueId.LA_LIGA, budget: 55, transferBudget: 15, tier: 'Mid', teamMorale: 'Descontento', primaryColor: '#FFFFFF', secondaryColor: '#D4001F', tactics: 'Balanced', squad: createGenericSquad(21000, 'Sevilla') },
-  { id: 211, name: 'Celta Vigo', logo: createTeamLogo(TEAM_LOGOS['Celta Vigo'], 'Celta Vigo'), leagueId: LeagueId.LA_LIGA, budget: 30, transferBudget: 8, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#8AC3EE', secondaryColor: '#FFFFFF', tactics: 'Attacking', squad: createGenericSquad(21100, 'Celta') },
-  { id: 212, name: 'Osasuna', logo: createTeamLogo(TEAM_LOGOS['Osasuna'], 'Osasuna'), leagueId: LeagueId.LA_LIGA, budget: 25, transferBudget: 5, tier: 'Lower', teamMorale: 'Contento', primaryColor: '#DA291C', secondaryColor: '#002F6C', tactics: 'Defensive', squad: createGenericSquad(21200, 'Osasuna') },
-  { id: 213, name: 'Getafe CF', logo: createTeamLogo(TEAM_LOGOS['Getafe CF'], 'Getafe CF'), leagueId: LeagueId.LA_LIGA, budget: 25, transferBudget: 5, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#005999', secondaryColor: '#FFFFFF', tactics: 'Defensive', squad: createGenericSquad(21300, 'Getafe') },
-  { id: 214, name: 'Mallorca', logo: createTeamLogo(TEAM_LOGOS['Mallorca'], 'Mallorca'), leagueId: LeagueId.LA_LIGA, budget: 25, transferBudget: 5, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#E20613', secondaryColor: '#000000', tactics: 'Defensive', squad: createGenericSquad(21400, 'Mallorca') },
-  { id: 215, name: 'Rayo Vallecano', logo: createTeamLogo(TEAM_LOGOS['Rayo Vallecano'], 'Rayo Vallecano'), leagueId: LeagueId.LA_LIGA, budget: 20, transferBudget: 4, tier: 'Lower', teamMorale: 'Contento', primaryColor: '#FFFFFF', secondaryColor: '#CE1126', tactics: 'Attacking', squad: createGenericSquad(21500, 'Rayo') },
-  { id: 216, name: 'Las Palmas', logo: createTeamLogo(TEAM_LOGOS['Las Palmas'], 'Las Palmas'), leagueId: LeagueId.LA_LIGA, budget: 20, transferBudget: 4, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#FCD116', secondaryColor: '#0072CE', tactics: 'Balanced', squad: createGenericSquad(21600, 'Las Palmas') },
-  { id: 217, name: 'Alavés', logo: createTeamLogo(TEAM_LOGOS['Alavés'], 'Alavés'), leagueId: LeagueId.LA_LIGA, budget: 18, transferBudget: 3, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#0058A8', secondaryColor: '#FFFFFF', tactics: 'Defensive', squad: createGenericSquad(21700, 'Alavés') },
-  { id: 218, name: 'Leganés', logo: createTeamLogo(TEAM_LOGOS['Leganés'], 'Leganés'), leagueId: LeagueId.LA_LIGA, budget: 15, transferBudget: 2, tier: 'Lower', teamMorale: 'Feliz', primaryColor: '#005DAA', secondaryColor: '#FFFFFF', tactics: 'Defensive', squad: createGenericSquad(21800, 'Leganés') },
-  { id: 219, name: 'Valladolid', logo: createTeamLogo(TEAM_LOGOS['Valladolid'], 'Valladolid'), leagueId: LeagueId.LA_LIGA, budget: 15, transferBudget: 2, tier: 'Lower', teamMorale: 'Feliz', primaryColor: '#5E278E', secondaryColor: '#FFFFFF', tactics: 'Balanced', squad: createGenericSquad(21900, 'Valladolid') },
-  { id: 220, name: 'Espanyol', logo: createTeamLogo(TEAM_LOGOS['Espanyol'], 'Espanyol'), leagueId: LeagueId.LA_LIGA, budget: 20, transferBudget: 5, tier: 'Lower', teamMorale: 'Feliz', primaryColor: '#007FC8', secondaryColor: '#FFFFFF', tactics: 'Balanced', squad: createGenericSquad(22000, 'Espanyol') },
+  { id: 204, name: 'Athletic Club', logo: createTeamLogo(TEAM_LOGOS['Athletic Club'], 'Athletic Club'), leagueId: LeagueId.LA_LIGA, budget: 80, transferBudget: 30, tier: 'Mid', teamMorale: 'Contento', primaryColor: '#EE2523', secondaryColor: '#FFFFFF', squad: createGenericSquad(20400, 'Athletic') },
+  { id: 205, name: 'Real Sociedad', logo: createTeamLogo(TEAM_LOGOS['Real Sociedad'], 'Real Sociedad'), leagueId: LeagueId.LA_LIGA, budget: 70, transferBudget: 25, tier: 'Mid', teamMorale: 'Contento', primaryColor: '#0067B1', secondaryColor: '#FFFFFF', squad: createGenericSquad(20500, 'Real Sociedad') },
+  { id: 206, name: 'Real Betis', logo: createTeamLogo(TEAM_LOGOS['Real Betis'], 'Real Betis'), leagueId: LeagueId.LA_LIGA, budget: 60, transferBudget: 15, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#00954C', secondaryColor: '#FFFFFF', squad: createGenericSquad(20600, 'Betis') },
+  { id: 207, name: 'Girona FC', logo: createTeamLogo(TEAM_LOGOS['Girona FC'], 'Girona FC'), leagueId: LeagueId.LA_LIGA, budget: 50, transferBudget: 20, tier: 'Mid', teamMorale: 'Feliz', primaryColor: '#CE1126', secondaryColor: '#FFFFFF', squad: createGenericSquad(20700, 'Girona') },
+  { id: 208, name: 'Villarreal CF', logo: createTeamLogo(TEAM_LOGOS['Villarreal CF'], 'Villarreal CF'), leagueId: LeagueId.LA_LIGA, budget: 65, transferBudget: 20, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#FEEE00', secondaryColor: '#00519E', squad: createGenericSquad(20800, 'Villarreal') },
+  { id: 209, name: 'Valencia CF', logo: createTeamLogo(TEAM_LOGOS['Valencia CF'], 'Valencia CF'), leagueId: LeagueId.LA_LIGA, budget: 40, transferBudget: 10, tier: 'Mid', teamMorale: 'Descontento', primaryColor: '#FFFFFF', secondaryColor: '#000000', squad: createGenericSquad(20900, 'Valencia') },
+  { id: 210, name: 'Sevilla FC', logo: createTeamLogo(TEAM_LOGOS['Sevilla FC'], 'Sevilla FC'), leagueId: LeagueId.LA_LIGA, budget: 55, transferBudget: 15, tier: 'Mid', teamMorale: 'Descontento', primaryColor: '#FFFFFF', secondaryColor: '#D4001F', squad: createGenericSquad(21000, 'Sevilla') },
+  { id: 211, name: 'Celta Vigo', logo: createTeamLogo(TEAM_LOGOS['Celta Vigo'], 'Celta Vigo'), leagueId: LeagueId.LA_LIGA, budget: 30, transferBudget: 8, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#8AC3EE', secondaryColor: '#FFFFFF', squad: createGenericSquad(21100, 'Celta') },
+  { id: 212, name: 'Osasuna', logo: createTeamLogo(TEAM_LOGOS['Osasuna'], 'Osasuna'), leagueId: LeagueId.LA_LIGA, budget: 25, transferBudget: 5, tier: 'Lower', teamMorale: 'Contento', primaryColor: '#DA291C', secondaryColor: '#002F6C', squad: createGenericSquad(21200, 'Osasuna') },
+  { id: 213, name: 'Getafe CF', logo: createTeamLogo(TEAM_LOGOS['Getafe CF'], 'Getafe CF'), leagueId: LeagueId.LA_LIGA, budget: 25, transferBudget: 5, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#005999', secondaryColor: '#FFFFFF', squad: createGenericSquad(21300, 'Getafe') },
+  { id: 214, name: 'Mallorca', logo: createTeamLogo(TEAM_LOGOS['Mallorca'], 'Mallorca'), leagueId: LeagueId.LA_LIGA, budget: 25, transferBudget: 5, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#E20613', secondaryColor: '#000000', squad: createGenericSquad(21400, 'Mallorca') },
+  { id: 215, name: 'Rayo Vallecano', logo: createTeamLogo(TEAM_LOGOS['Rayo Vallecano'], 'Rayo Vallecano'), leagueId: LeagueId.LA_LIGA, budget: 20, transferBudget: 4, tier: 'Lower', teamMorale: 'Contento', primaryColor: '#FFFFFF', secondaryColor: '#CE1126', squad: createGenericSquad(21500, 'Rayo') },
+  { id: 216, name: 'Las Palmas', logo: createTeamLogo(TEAM_LOGOS['Las Palmas'], 'Las Palmas'), leagueId: LeagueId.LA_LIGA, budget: 20, transferBudget: 4, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#FCD116', secondaryColor: '#0072CE', squad: createGenericSquad(21600, 'Las Palmas') },
+  { id: 217, name: 'Alavés', logo: createTeamLogo(TEAM_LOGOS['Alavés'], 'Alavés'), leagueId: LeagueId.LA_LIGA, budget: 18, transferBudget: 3, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#0058A8', secondaryColor: '#FFFFFF', squad: createGenericSquad(21700, 'Alavés') },
+  { id: 218, name: 'Leganés', logo: createTeamLogo(TEAM_LOGOS['Leganés'], 'Leganés'), leagueId: LeagueId.LA_LIGA, budget: 15, transferBudget: 2, tier: 'Lower', teamMorale: 'Feliz', primaryColor: '#005DAA', secondaryColor: '#FFFFFF', squad: createGenericSquad(21800, 'Leganés') },
+  { id: 219, name: 'Valladolid', logo: createTeamLogo(TEAM_LOGOS['Valladolid'], 'Valladolid'), leagueId: LeagueId.LA_LIGA, budget: 15, transferBudget: 2, tier: 'Lower', teamMorale: 'Feliz', primaryColor: '#5E278E', secondaryColor: '#FFFFFF', squad: createGenericSquad(21900, 'Valladolid') },
+  { id: 220, name: 'Espanyol', logo: createTeamLogo(TEAM_LOGOS['Espanyol'], 'Espanyol'), leagueId: LeagueId.LA_LIGA, budget: 20, transferBudget: 5, tier: 'Lower', teamMorale: 'Feliz', primaryColor: '#007FC8', secondaryColor: '#FFFFFF', squad: createGenericSquad(22000, 'Espanyol') },
 ];
