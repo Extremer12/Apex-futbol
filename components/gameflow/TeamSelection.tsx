@@ -13,6 +13,67 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
     const [selectedLeague, setSelectedLeague] = useState<LeagueId | null>(null);
     const [hoveredCountry, setHoveredCountry] = useState<CountryCode | null>(null);
 
+    const COUNTRY_CONFIG: Record<CountryCode, {
+        title: string;
+        leagues: {
+            id: LeagueId;
+            name: string;
+            logo: string;
+            teams: string;
+            div: string;
+        }[];
+    }> = {
+        ENG: {
+            title: 'The English Game',
+            leagues: [
+                { id: LeagueId.PREMIER_LEAGUE, name: 'Premier League', logo: '/logos/Premier League.png', teams: '20', div: '1ª División' },
+                { id: LeagueId.CHAMPIONSHIP, name: 'Championship', logo: '/logos/Sky Bet Championship.png', teams: '24', div: '2ª División' }
+            ]
+        },
+        ARG: {
+            title: 'Pasión Argentina',
+            leagues: [
+                { id: LeagueId.LIGA_ARGENTINA, name: 'Liga Argentina', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Liga_Profesional_de_F%C3%BAtbol_logo.svg/200px-Liga_Profesional_de_F%C3%BAtbol_logo.svg.png', teams: '28', div: '1ª División' },
+                { id: LeagueId.PRIMERA_NACIONAL, name: 'Primera Nacional', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Logo_Primera_Nacional.png/200px-Logo_Primera_Nacional.png', teams: '38', div: '2ª División' }
+            ]
+        },
+        BRA: {
+            title: 'Samba do Futebol',
+            leagues: [
+                { id: LeagueId.BRASILEIRAO, name: 'Brasileirão', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Brasileirao_Serie_A_logo.png/200px-Brasileirao_Serie_A_logo.png', teams: '20', div: '1ª División' },
+                { id: LeagueId.SERIE_B_BR, name: 'Série B', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Logo_S%C3%A9rie_B_2023.png/200px-Logo_S%C3%A9rie_B_2023.png', teams: '20', div: '2ª División' }
+            ]
+        },
+        ESP: {
+            title: 'La Pasión Española',
+            leagues: [
+                { id: LeagueId.LA_LIGA, name: 'La Liga', logo: 'https://tmssl.akamaized.net/images/logo/header/es1.png', teams: '20', div: '1ª División' },
+                { id: LeagueId.SEGUNDA_DIVISION_ESP, name: 'Segunda División', logo: 'https://tmssl.akamaized.net/images/logo/header/es2.png', teams: '22', div: '2ª División' }
+            ]
+        },
+        GER: {
+            title: 'Deutsche Fußball',
+            leagues: [
+                { id: LeagueId.BUNDESLIGA, name: 'Bundesliga', logo: 'https://tmssl.akamaized.net/images/logo/header/l1.png', teams: '18', div: '1ª División' },
+                { id: LeagueId.ZWEITE_BUNDESLIGA, name: '2. Bundesliga', logo: 'https://tmssl.akamaized.net/images/logo/header/l2.png', teams: '18', div: '2ª División' }
+            ]
+        },
+        ITA: {
+            title: 'Il Calcio Italiano',
+            leagues: [
+                { id: LeagueId.SERIE_A, name: 'Serie A', logo: 'https://tmssl.akamaized.net/images/logo/header/it1.png', teams: '20', div: '1ª División' },
+                { id: LeagueId.SERIE_B_ITA, name: 'Serie B', logo: 'https://tmssl.akamaized.net/images/logo/header/it2.png', teams: '20', div: '2ª División' }
+            ]
+        },
+        FRA: {
+            title: 'Ligue de Talent',
+            leagues: [
+                { id: LeagueId.LIGUE_1, name: 'Ligue 1', logo: 'https://tmssl.akamaized.net/images/logo/header/fr1.png', teams: '18', div: '1ª División' },
+                { id: LeagueId.LIGUE_2, name: 'Ligue 2', logo: 'https://tmssl.akamaized.net/images/logo/header/fr2.png', teams: '20', div: '2ª División' }
+            ]
+        }
+    };
+
     const TIER_COLORS: Record<Team['tier'], string> = {
         Top: 'from-purple-600/20 to-purple-900/40 border-purple-500/50 text-purple-400',
         Mid: 'from-amber-600/20 to-amber-900/40 border-amber-500/50 text-amber-400',
@@ -191,71 +252,25 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-                        {selectedCountry === 'ENG' ? (
-                            <>
-                                {[
-                                    { id: LeagueId.PREMIER_LEAGUE, name: 'Premier League', logo: '/logos/Premier League.png', teams: '20', div: '1ª División' },
-                                    { id: LeagueId.CHAMPIONSHIP, name: 'Championship', logo: '/logos/Sky Bet Championship.png', teams: '24', div: '2ª División' }
-                                ].map((l, i) => (
-                                    <button
-                                        key={l.id}
-                                        onClick={() => setSelectedLeague(l.id)}
-                                        className="group relative bg-slate-900/60 border border-white/5 rounded-[2rem] p-10 hover:border-white/20 transition-all duration-500 hover:-translate-y-2 overflow-hidden shadow-2xl animate-scale-in"
-                                        style={{ animationDelay: `${i * 150}ms` }}
-                                    >
-                                        <div className="relative flex flex-col items-center">
-                                            <div className="w-32 h-32 mb-8 transform group-hover:scale-110 transition-transform duration-700 ease-out">
-                                                <img src={l.logo} alt={l.name} className="w-full h-full object-contain drop-shadow-[0_0_20px_rgba(255,255,255,0.1)]" />
-                                            </div>
-                                            <h2 className="text-3xl font-black text-white mb-3 tracking-tight">{l.name}</h2>
-                                            <div className="px-6 py-2 rounded-full bg-white/5 border border-white/10 text-slate-300 text-sm font-bold uppercase tracking-widest">
-                                                {l.teams} Clubes • {l.div}
-                                            </div>
-                                        </div>
-                                    </button>
-                                ))}
-                            </>
-                        ) : (
+                        {selectedCountry && COUNTRY_CONFIG[selectedCountry].leagues.map((l, i) => (
                             <button
-                                onClick={() => setSelectedLeague(
-                                    selectedCountry === 'ESP' ? LeagueId.LA_LIGA : 
-                                    selectedCountry === 'GER' ? LeagueId.BUNDESLIGA : 
-                                    selectedCountry === 'FRA' ? LeagueId.LIGUE_1 :
-                                    selectedCountry === 'ARG' ? LeagueId.LIGA_ARGENTINA :
-                                    selectedCountry === 'BRA' ? LeagueId.BRASILEIRAO : LeagueId.SERIE_A
-                                )}
-                                className="group relative bg-slate-900/60 border border-white/5 rounded-[2.5rem] p-12 hover:border-white/20 transition-all duration-500 hover:-translate-y-2 overflow-hidden shadow-2xl animate-scale-in col-span-2 max-w-xl mx-auto w-full"
+                                key={l.id}
+                                onClick={() => setSelectedLeague(l.id)}
+                                className={`group relative bg-slate-900/60 border border-white/5 rounded-[2rem] p-10 hover:border-white/20 transition-all duration-500 hover:-translate-y-2 overflow-hidden shadow-2xl animate-scale-in ${COUNTRY_CONFIG[selectedCountry].leagues.length === 1 ? 'col-span-2 max-w-xl mx-auto w-full' : ''}`}
+                                style={{ animationDelay: `${i * 150}ms` }}
                             >
                                 <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent" />
                                 <div className="relative flex flex-col items-center">
-                                    <div className="w-40 h-40 mb-8 transform group-hover:scale-110 transition-transform duration-700 ease-out">
-                                        <img 
-                                            src={
-                                                selectedCountry === 'ESP' ? 'https://tmssl.akamaized.net/images/logo/header/es1.png' : 
-                                                selectedCountry === 'GER' ? 'https://tmssl.akamaized.net/images/logo/header/l1.png' : 
-                                                selectedCountry === 'FRA' ? 'https://tmssl.akamaized.net/images/logo/header/fr1.png' :
-                                                selectedCountry === 'ARG' ? 'https://tmssl.akamaized.net/images/logo/header/ar1n.png' :
-                                                selectedCountry === 'BRA' ? 'https://tmssl.akamaized.net/images/logo/header/bra1.png' :
-                                                'https://tmssl.akamaized.net/images/logo/header/it1.png'
-                                            } 
-                                            alt="League" 
-                                            className="w-full h-full object-contain drop-shadow-[0_0_25px_rgba(255,255,255,0.2)]" 
-                                        />
+                                    <div className="w-32 h-32 mb-8 transform group-hover:scale-110 transition-transform duration-700 ease-out">
+                                        <img src={l.logo} alt={l.name} className="w-full h-full object-contain drop-shadow-[0_0_20px_rgba(255,255,255,0.1)]" />
                                     </div>
-                                    <h2 className="text-4xl font-black text-white mb-4 tracking-tighter uppercase">
-                                        {selectedCountry === 'ESP' ? 'La Liga' : 
-                                         selectedCountry === 'GER' ? 'Bundesliga' : 
-                                         selectedCountry === 'FRA' ? 'Ligue 1' :
-                                         selectedCountry === 'ARG' ? 'Liga Argentina' :
-                                         selectedCountry === 'BRA' ? 'Brasileirão' : 'Serie A'}
-                                    </h2>
-                                    <div className="px-8 py-3 rounded-full bg-white/5 border border-white/10 text-slate-300 text-md font-bold uppercase tracking-[0.2em]">
-                                        {selectedCountry === 'GER' ? '18' : 
-                                         selectedCountry === 'ARG' ? '28' : '20'} Equipos • Máxima Categoría
+                                    <h2 className="text-3xl font-black text-white mb-3 tracking-tight">{l.name}</h2>
+                                    <div className="px-6 py-2 rounded-full bg-white/5 border border-white/10 text-slate-300 text-sm font-bold uppercase tracking-widest">
+                                        {l.teams} Clubes • {l.div}
                                     </div>
                                 </div>
                             </button>
-                        )}
+                        ))}
                     </div>
                 </div>
             </div>
@@ -291,10 +306,16 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                             selectedLeague === LeagueId.PREMIER_LEAGUE ? '/logos/Premier League.png' : 
                             selectedLeague === LeagueId.CHAMPIONSHIP ? '/logos/Sky Bet Championship.png' : 
                             selectedLeague === LeagueId.BUNDESLIGA ? 'https://tmssl.akamaized.net/images/logo/header/l1.png' :
+                            selectedLeague === LeagueId.ZWEITE_BUNDESLIGA ? 'https://tmssl.akamaized.net/images/logo/header/l2.png' :
                             selectedLeague === LeagueId.SERIE_A ? 'https://tmssl.akamaized.net/images/logo/header/it1.png' : 
+                            selectedLeague === LeagueId.SERIE_B_ITA ? 'https://tmssl.akamaized.net/images/logo/header/it2.png' : 
                             selectedLeague === LeagueId.LIGUE_1 ? 'https://tmssl.akamaized.net/images/logo/header/fr1.png' :
+                            selectedLeague === LeagueId.LIGUE_2 ? 'https://tmssl.akamaized.net/images/logo/header/fr2.png' :
                             selectedLeague === LeagueId.LIGA_ARGENTINA ? 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Liga_Profesional_de_F%C3%BAtbol_logo.svg/200px-Liga_Profesional_de_F%C3%BAtbol_logo.svg.png' :
+                            selectedLeague === LeagueId.PRIMERA_NACIONAL ? 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Logo_Primera_Nacional.png/200px-Logo_Primera_Nacional.png' :
                             selectedLeague === LeagueId.BRASILEIRAO ? 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Brasileirao_Serie_A_logo.png/200px-Brasileirao_Serie_A_logo.png' :
+                            selectedLeague === LeagueId.SERIE_B_BR ? 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Logo_S%C3%A9rie_B_2023.png/200px-Logo_S%C3%A9rie_B_2023.png' :
+                            selectedLeague === LeagueId.SEGUNDA_DIVISION_ESP ? 'https://tmssl.akamaized.net/images/logo/header/es2.png' :
                             'https://tmssl.akamaized.net/images/logo/header/es1.png'
                         } 
                         alt="League" 
@@ -305,10 +326,16 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                     {selectedLeague === LeagueId.PREMIER_LEAGUE ? 'Premier League' : 
                      selectedLeague === LeagueId.CHAMPIONSHIP ? 'Championship' : 
                      selectedLeague === LeagueId.BUNDESLIGA ? 'Bundesliga' :
+                     selectedLeague === LeagueId.ZWEITE_BUNDESLIGA ? '2. Bundesliga' :
                      selectedLeague === LeagueId.SERIE_A ? 'Serie A' : 
+                     selectedLeague === LeagueId.SERIE_B_ITA ? 'Serie B' : 
                      selectedLeague === LeagueId.LIGUE_1 ? 'Ligue 1' :
+                     selectedLeague === LeagueId.LIGUE_2 ? 'Ligue 2' :
                      selectedLeague === LeagueId.LIGA_ARGENTINA ? 'Liga Argentina' :
-                     selectedLeague === LeagueId.BRASILEIRAO ? 'Brasileirão' : 'La Liga'}
+                     selectedLeague === LeagueId.PRIMERA_NACIONAL ? 'Primera Nacional' :
+                     selectedLeague === LeagueId.BRASILEIRAO ? 'Brasileirão' : 
+                     selectedLeague === LeagueId.SERIE_B_BR ? 'Série B' :
+                     selectedLeague === LeagueId.SEGUNDA_DIVISION_ESP ? 'Segunda División' : 'La Liga'}
                 </h1>
                 <p className="text-slate-400 text-xl font-medium tracking-wide">Toma el control del club y forja tu propio destino</p>
             </div>
