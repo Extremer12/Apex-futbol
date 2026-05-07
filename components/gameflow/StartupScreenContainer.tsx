@@ -1,8 +1,8 @@
 import React from 'react';
 
 export const StartupScreenContainer: React.FC<{children: React.ReactNode}> = ({ children }) => (
-     <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
-        <div className="w-full max-w-md bg-slate-900 p-8 rounded-2xl shadow-2xl border border-slate-800/50">
+    <div className="min-h-screen flex flex-col items-center justify-center p-5" style={{ background: 'var(--apex-dark)' }}>
+        <div className="w-full max-w-md apex-card p-8">
             {children}
         </div>
     </div>

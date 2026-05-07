@@ -34,8 +34,8 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
         
         if (scoutingLevel >= 100) {
             return (
-                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-800 border-2 border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
-                    <span className="font-black text-emerald-400">{player.rating}</span>
+                <div className="flex items-center justify-center w-10 h-10 rounded-xl" style={{ background: 'rgba(200,168,78,0.1)', border: '1px solid var(--apex-gold)' }}>
+                    <span className="font-black text-[var(--apex-gold)]">{player.rating}</span>
                 </div>
             );
         }
@@ -46,9 +46,9 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
 
         return (
             <div className="flex flex-col items-center">
-                <span className="font-bold text-slate-400 text-sm">{min}-{max}</span>
-                <div className="w-10 h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden">
-                    <div className="h-full bg-slate-500" style={{ width: `${scoutingLevel}%` }}></div>
+                <span className="font-bold text-white/50 text-xs">{min}-{max}</span>
+                <div className="w-10 h-1 bg-black/50 rounded-full mt-1.5 overflow-hidden border border-white/5">
+                    <div className="h-full bg-white/30" style={{ width: `${scoutingLevel}%` }}></div>
                 </div>
             </div>
         );
@@ -68,7 +68,7 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
         
         const newAttempts = attempts + 1;
         setAttempts(newAttempts);
-        setNegotiationHistory(prev => [...prev, `Oferta formal: £${offer}M`]);
+        setNegotiationHistory(prev => [...prev, `Formal offer: £${offer}M`]);
         
         const response = await generateTransferNegotiationResponse(negotiatingPlayer, offer, myTeam, sellingTeam, newAttempts);
         setNegotiationHistory(prev => [...prev, response]);
@@ -82,11 +82,11 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
     const handleAcceptDeal = () => {
         if (!negotiatingPlayer) return;
         if (offer > finances.transferBudget) {
-            setNegotiationHistory(prev => [...prev, { type: 'error', message: "Fichaje cancelado. Supera el presupuesto." }]);
+            setNegotiationHistory(prev => [...prev, { type: 'error', message: "Transfer cancelled. Exceeds budget." }]);
             return;
         }
         if (offer > finances.balance) {
-            setNegotiationHistory(prev => [...prev, { type: 'error', message: "Fichaje cancelado. Balance insuficiente." }]);
+            setNegotiationHistory(prev => [...prev, { type: 'error', message: "Transfer cancelled. Insufficient balance." }]);
             return;
         }
         dispatch({ type: 'SIGN_PLAYER', payload: { player: negotiatingPlayer, fee: offer } });
@@ -99,84 +99,87 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
     const isNegotiationDead = !!(lastHistoryItem && typeof lastHistoryItem === 'object' && 'decision' in lastHistoryItem && lastHistoryItem.decision === 'rejected');
 
     return (
-        <div className="min-h-screen bg-[#020617] p-4 md:p-8 space-y-6">
+        <div className="p-4 md:p-6 space-y-6 pb-24 animate-fade-in">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-6">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-4">
                 <div>
-                    <h2 className="text-sm font-black text-blue-500 tracking-[0.3em] uppercase mb-1">Global Transfer Network</h2>
-                    <h1 className="text-4xl font-black text-white uppercase italic tracking-tighter">Mercado de Fichajes</h1>
+                    <h2 className="text-[10px] font-black text-gold-gradient tracking-[0.3em] uppercase mb-1">Global Transfer Network</h2>
+                    <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter">Transfers</h1>
                 </div>
-                <div className="bg-slate-900/80 border border-white/10 rounded-2xl p-4 flex gap-6">
+                <div className="apex-card px-4 py-2 flex items-center gap-6">
                     <div>
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Presupuesto</p>
-                        <p className="text-xl font-black text-emerald-400">£{formatCurrencyShort(finances.transferBudget * 1000000)}</p>
+                        <p className="text-[9px] text-white/50 font-bold uppercase tracking-widest mb-0.5">Transfer Budget</p>
+                        <p className="text-lg font-black text-[var(--apex-gold)]">£{formatCurrencyShort(finances.transferBudget * 1000000)}</p>
                     </div>
-                    <div className="w-px bg-white/10" />
+                    <div className="w-px h-8 bg-white/10" />
                     <div>
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Balance Total</p>
-                        <p className="text-xl font-black text-white">£{formatCurrencyShort(finances.balance * 1000000)}</p>
+                        <p className="text-[9px] text-white/50 font-bold uppercase tracking-widest mb-0.5">Total Balance</p>
+                        <p className="text-lg font-black text-white">£{formatCurrencyShort(finances.balance * 1000000)}</p>
                     </div>
                 </div>
             </div>
 
             {/* Filters */}
-            <div className="bg-slate-900/50 border border-white/5 p-4 rounded-2xl flex flex-col sm:flex-row gap-4">
+            <div className="apex-card p-3 flex flex-col sm:flex-row gap-3">
                 <div className="flex-1 relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    </span>
                     <input 
                         type="text" 
-                        placeholder="Buscar jugador por nombre..." 
+                        placeholder="Search player by name..." 
                         value={filterName} 
                         onChange={e => setFilterName(e.target.value)} 
-                        className="w-full pl-12 pr-4 py-3 bg-slate-950 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors" 
+                        className="w-full pl-10 pr-4 py-3 bg-black/30 border border-white/10 rounded-xl text-white text-xs placeholder-white/30 focus:outline-none focus:border-[var(--apex-gold)] transition-colors" 
                     />
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                     {(['ALL', 'POR', 'DEF', 'CEN', 'DEL'] as const).map(pos => (
                         <button
                             key={pos}
                             onClick={() => setFilterPos(pos)}
-                            className={`px-4 py-3 rounded-xl font-bold text-sm transition-all ${
+                            className={`px-4 py-2.5 rounded-xl font-bold text-[10px] tracking-widest uppercase transition-all flex-1 sm:flex-none ${
                                 filterPos === pos 
-                                    ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]' 
-                                    : 'bg-slate-950 text-slate-400 border border-white/10 hover:bg-slate-800'
+                                    ? 'bg-[var(--apex-gold)]/10 text-[var(--apex-gold)] border border-[var(--apex-gold)]/50 shadow-[0_0_15px_rgba(200,168,78,0.2)]' 
+                                    : 'bg-black/20 text-white/50 border border-white/5 hover:bg-white/5 hover:text-white'
                             }`}
                         >
-                            {pos === 'ALL' ? 'Todos' : pos}
+                            {pos === 'ALL' ? 'All' : pos}
                         </button>
                     ))}
                 </div>
             </div>
 
             {/* Player Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-[65vh] overflow-y-auto pr-2 custom-scrollbar">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {availablePlayers.sort((a, b) => b.rating - a.rating).slice(0, 50).map(player => {
                     const playerTeam = allTeams.find(t => t.squad.some(p => p.id === player.id));
                     return (
-                        <div key={player.id} className="group bg-slate-900/60 border border-white/5 rounded-2xl p-5 hover:bg-slate-800/80 hover:border-white/20 transition-all duration-300">
-                            <div className="flex justify-between items-start mb-4">
+                        <div key={player.id} className="group apex-card p-5 hover:border-[var(--apex-border-active)] transition-all duration-300">
+                            <div className="flex justify-between items-start mb-5">
                                 <div>
-                                    <h3 className="font-black text-lg text-white leading-tight group-hover:text-blue-400 transition-colors">{player.name}</h3>
-                                    <span className="text-[10px] font-bold text-slate-500 tracking-widest uppercase">{player.position}</span>
+                                    <h3 className="font-black text-base text-white leading-tight group-hover:text-[var(--apex-gold)] transition-colors mb-1">{player.name}</h3>
+                                    <span className="text-[9px] font-bold text-white/50 tracking-widest uppercase">{player.position}</span>
                                 </div>
-                                <div className="w-10 h-10 flex-shrink-0 bg-white/5 rounded-lg p-1.5 border border-white/10">
+                                <div className="w-10 h-10 flex-shrink-0 bg-white/5 rounded-lg p-1.5 border border-white/10 group-hover:scale-105 transition-transform">
                                     <TeamLogo team={playerTeam} />
                                 </div>
                             </div>
                             
-                            <div className="flex items-center justify-between mt-6">
-                                <div className="flex items-center gap-3">
+                            <div className="flex items-center justify-between mt-auto">
+                                <div className="flex items-center gap-4">
                                     {getRatingDisplay(player)}
                                     <div className="flex flex-col">
-                                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Valor</span>
-                                        <span className="font-black text-emerald-400">£{player.value}M</span>
+                                        <span className="text-[9px] text-white/40 font-bold uppercase tracking-wider mb-0.5">Value</span>
+                                        <span className="font-black text-white text-sm">£{player.value}M</span>
                                     </div>
                                 </div>
                                 <button
                                     onClick={() => startNegotiation(player)}
-                                    className="w-10 h-10 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all shadow-lg"
+                                    className="w-10 h-10 rounded-full bg-[var(--apex-gold)]/10 text-[var(--apex-gold)] flex items-center justify-center hover:bg-[var(--apex-gold)] hover:text-black transition-all"
+                                    title="Start Negotiation"
                                 >
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                                 </button>
                             </div>
                         </div>
@@ -184,23 +187,23 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
                 })}
             </div>
 
-            {/* Negotiation Modal (Chat Style) */}
+            {/* Negotiation Modal */}
             {negotiatingPlayer && (
-                <Modal title={`Negociación: ${negotiatingPlayer.name}`} onClose={() => setNegotiatingPlayer(null)}>
-                    <div className="flex flex-col h-[60vh] max-h-[600px] bg-slate-950 rounded-xl overflow-hidden border border-white/10">
+                <Modal title={`Transfer Talks: ${negotiatingPlayer.name}`} onClose={() => setNegotiatingPlayer(null)}>
+                    <div className="flex flex-col h-[65vh] max-h-[600px] bg-gradient-to-b from-[#0f1423] to-[#0a0e17] rounded-xl overflow-hidden border border-white/10">
                         {/* Chat History */}
                         <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
                             <div className="text-center">
-                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-slate-900 px-3 py-1 rounded-full">Inicio de negociaciones</span>
+                                <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest bg-white/5 border border-white/10 px-3 py-1 rounded-full">Negotiations Opened</span>
                             </div>
                             
                             {negotiationHistory.map((item, index) => {
                                 if (typeof item === 'string') {
                                     // Our offer (Right side)
                                     return (
-                                        <div key={index} className="flex justify-end">
-                                            <div className="bg-blue-600 text-white p-3 rounded-2xl rounded-tr-sm max-w-[80%] shadow-md">
-                                                <p className="text-sm font-medium">{item}</p>
+                                        <div key={index} className="flex justify-end animate-slide-up">
+                                            <div className="bg-[var(--apex-gold)]/20 border border-[var(--apex-gold)]/30 text-white p-3 rounded-2xl rounded-tr-sm max-w-[80%] shadow-lg">
+                                                <p className="text-xs font-bold">{item}</p>
                                             </div>
                                         </div>
                                     );
@@ -208,8 +211,8 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
                                 if ('type' in item && item.type === 'error') {
                                     // System Error
                                     return (
-                                        <div key={index} className="flex justify-center">
-                                            <div className="bg-red-950/50 border border-red-500/50 text-red-400 p-2 rounded-lg text-xs font-bold text-center">
+                                        <div key={index} className="flex justify-center animate-fade-in">
+                                            <div className="bg-[var(--apex-red)]/20 border border-[var(--apex-red)]/50 text-[var(--apex-red)] p-2 rounded-lg text-[10px] font-bold text-center uppercase tracking-wider">
                                                 ⚠️ {item.message}
                                             </div>
                                         </div>
@@ -222,22 +225,22 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
                                 const isRejected = negotiationItem.decision === 'rejected';
                                 
                                 return (
-                                    <div key={index} className="flex justify-start">
-                                        <div className={`p-3.5 rounded-2xl rounded-tl-sm max-w-[85%] shadow-md border ${
-                                            isAccepted ? 'bg-emerald-950/50 border-emerald-500/30' : 
-                                            isRejected ? 'bg-red-950/50 border-red-500/30' : 
-                                            'bg-slate-800 border-white/10'
+                                    <div key={index} className="flex justify-start animate-slide-up">
+                                        <div className={`p-4 rounded-2xl rounded-tl-sm max-w-[85%] shadow-lg border ${
+                                            isAccepted ? 'bg-[var(--apex-green)]/10 border-[var(--apex-green)]/30' : 
+                                            isRejected ? 'bg-[var(--apex-red)]/10 border-[var(--apex-red)]/30' : 
+                                            'bg-white/5 border-white/10'
                                         }`}>
-                                            <p className="text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">
-                                                Director Deportivo Rival
+                                            <p className="text-[9px] font-bold text-white/50 mb-1.5 uppercase tracking-widest">
+                                                Rival Director
                                             </p>
-                                            <p className={`text-sm ${isAccepted ? 'text-emerald-300' : isRejected ? 'text-red-300' : 'text-slate-200'}`}>
+                                            <p className={`text-xs leading-relaxed font-medium ${isAccepted ? 'text-[var(--apex-green)]' : isRejected ? 'text-[var(--apex-red)]' : 'text-white/90'}`}>
                                                 "{negotiationItem.message}"
                                             </p>
                                             {negotiationItem.decision === 'counter' && (
-                                                <div className="mt-2 inline-block bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-700">
-                                                    <span className="text-xs text-slate-400">Contraoferta: </span>
-                                                    <span className="font-black text-amber-400">£{negotiationItem.counterOffer}M</span>
+                                                <div className="mt-3 inline-block bg-black/40 px-3 py-1.5 rounded-lg border border-white/5">
+                                                    <span className="text-[10px] text-white/50 font-bold uppercase tracking-wider">Counter Offer: </span>
+                                                    <span className="font-black text-[var(--apex-gold)] text-sm">£{negotiationItem.counterOffer}M</span>
                                                 </div>
                                             )}
                                         </div>
@@ -247,38 +250,38 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
                         </div>
 
                         {/* Input Area */}
-                        <div className="bg-slate-900 border-t border-white/10 p-4">
+                        <div className="bg-black/50 border-t border-white/10 p-5">
                             {isOfferAccepted ? (
-                                <button onClick={handleAcceptDeal} className="w-full bg-emerald-600 text-white font-black py-3 rounded-xl hover:bg-emerald-500 transition-colors shadow-[0_0_20px_rgba(16,185,129,0.3)]">
-                                    FICHAR JUGADOR AHORA
+                                <button onClick={handleAcceptDeal} className="w-full bg-[var(--apex-green)] text-black font-black py-4 rounded-xl hover:bg-[#1f965d] transition-colors shadow-[0_0_20px_rgba(46,204,113,0.3)] text-xs uppercase tracking-widest">
+                                    SIGN PLAYER NOW
                                 </button>
                             ) : isNegotiationDead ? (
-                                <button onClick={() => setNegotiatingPlayer(null)} className="w-full bg-slate-800 text-slate-400 font-bold py-3 rounded-xl hover:bg-slate-700 transition-colors">
-                                    Cerrar Mesa de Negociación
+                                <button onClick={() => setNegotiatingPlayer(null)} className="w-full bg-white/5 text-white/50 font-bold py-4 rounded-xl hover:bg-white/10 transition-colors text-xs uppercase tracking-widest border border-white/10">
+                                    Close Negotiations
                                 </button>
                             ) : (
                                 <div className="space-y-3">
                                     <div className="flex gap-3 items-center">
                                         <div className="flex-1 relative">
-                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">£</span>
+                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--apex-gold)] font-black">£</span>
                                             <input 
                                                 type="number" 
                                                 value={offer} 
                                                 onChange={e => setOffer(Number(e.target.value))} 
-                                                className="w-full pl-8 pr-12 py-3 bg-slate-950 border border-white/10 rounded-xl text-white font-black focus:outline-none focus:border-blue-500" 
+                                                className="w-full pl-8 pr-12 py-3.5 bg-black/50 border border-white/10 rounded-xl text-white font-black text-sm focus:outline-none focus:border-[var(--apex-gold)] transition-colors" 
                                                 disabled={isNegotiating}
                                             />
-                                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">M</span>
+                                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--apex-gold)] font-black">M</span>
                                         </div>
                                         <button 
                                             onClick={handleSendOffer} 
                                             disabled={isNegotiating || isOfferInvalid} 
-                                            className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                            className="apex-btn-gold px-6 py-3.5 !w-auto"
                                         >
-                                            {isNegotiating ? <LoadingSpinner /> : 'Enviar'}
+                                            {isNegotiating ? <LoadingSpinner /> : 'SEND'}
                                         </button>
                                     </div>
-                                    {offer > finances.transferBudget && <p className="text-xs text-red-400 text-center font-bold">Presupuesto excedido. Máximo: £{finances.transferBudget.toFixed(1)}M</p>}
+                                    {offer > finances.transferBudget && <p className="text-[10px] text-[var(--apex-red)] text-center font-bold uppercase tracking-widest">Budget exceeded. Max: £{finances.transferBudget.toFixed(1)}M</p>}
                                 </div>
                             )}
                         </div>

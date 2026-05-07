@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Screen } from '../../types';
 import { DashboardIcon, SquadIcon, TransfersIcon, FinancesIcon, LeagueIcon, ChartBarIcon, SettingsIcon, CalendarIcon, BriefcaseIcon, TrophyIcon } from '../icons';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface BottomNavProps {
     activeScreen: Screen;
@@ -10,22 +11,20 @@ interface BottomNavProps {
 export const BottomNav: React.FC<BottomNavProps> = ({ activeScreen, onNavigate }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-    // Primary navigation items (always visible)
     const primaryItems = [
-        { screen: Screen.Dashboard, icon: DashboardIcon, label: 'Panel' },
-        { screen: Screen.Squad, icon: SquadIcon, label: 'Plantilla' },
-        { screen: Screen.Transfers, icon: TransfersIcon, label: 'Fichajes' },
-        { screen: Screen.League, icon: LeagueIcon, label: 'Competiciones' },
+        { screen: Screen.Dashboard, icon: DashboardIcon, label: 'Dashboard' },
+        { screen: Screen.Squad, icon: SquadIcon, label: 'Squad' },
+        { screen: Screen.Transfers, icon: TransfersIcon, label: 'Transfers' },
+        { screen: Screen.League, icon: LeagueIcon, label: 'Comps' },
     ];
 
-    // Secondary navigation items (in menu)
     const secondaryItems = [
         { screen: Screen.Club, icon: TrophyIcon, label: 'Club' },
-        { screen: Screen.Calendar, icon: CalendarIcon, label: 'Calendario' },
-        { screen: Screen.Statistics, icon: ChartBarIcon, label: 'Estadísticas' },
-        { screen: Screen.Finances, icon: FinancesIcon, label: 'Finanzas' },
-        { screen: Screen.Staff, icon: BriefcaseIcon, label: 'Personal' },
-        { screen: Screen.Settings, icon: SettingsIcon, label: 'Ajustes' },
+        { screen: Screen.Calendar, icon: CalendarIcon, label: 'Calendar' },
+        { screen: Screen.Statistics, icon: ChartBarIcon, label: 'Stats' },
+        { screen: Screen.Finances, icon: FinancesIcon, label: 'Finances' },
+        { screen: Screen.Staff, icon: BriefcaseIcon, label: 'Staff' },
+        { screen: Screen.Settings, icon: SettingsIcon, label: 'Settings' },
     ];
 
     const handleNavigate = (screen: Screen) => {
@@ -35,73 +34,133 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeScreen, onNavigate }
 
     return (
         <>
-            {/* Overlay when menu is open */}
-            {isMenuOpen && (
-                <div
-                    className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 animate-fade-in"
-                    onClick={() => setIsMenuOpen(false)}
-                />
-            )}
+            {/* Overlay with Framer Motion */}
+            <AnimatePresence>
+                {isMenuOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-30"
+                        style={{ background: 'rgba(6,10,18,0.7)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}
+                        onClick={() => setIsMenuOpen(false)}
+                    />
+                )}
+            </AnimatePresence>
 
-            {/* Secondary Menu (slides up from bottom) */}
-            <div className={`fixed bottom-20 left-0 right-0 z-40 transition-transform duration-300 ${isMenuOpen ? 'translate-y-0' : 'translate-y-full'}`}>
-                <div className="max-w-7xl mx-auto px-4">
-                    <div className="bg-slate-800/95 backdrop-blur-lg rounded-t-2xl border-t-2 border-x-2 border-sky-500/30 shadow-2xl">
-                        <div className="grid grid-cols-2 gap-2 p-4">
-                            {secondaryItems.map(item => (
-                                <button
-                                    key={item.screen}
-                                    onClick={() => handleNavigate(item.screen)}
-                                    className={`flex items-center gap-3 p-4 rounded-xl transition-all duration-200 ${activeScreen === item.screen
-                                        ? 'bg-sky-600 text-white shadow-lg shadow-sky-600/20'
-                                        : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700 hover:text-white'
-                                        }`}
-                                >
-                                    <item.icon className="h-6 w-6" />
-                                    <span className="font-semibold text-sm">{item.label}</span>
-                                </button>
-                            ))}
+            {/* Secondary Menu with Framer Motion */}
+            <AnimatePresence>
+                {isMenuOpen && (
+                    <motion.div 
+                        initial={{ y: '100%', opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: '100%', opacity: 0 }}
+                        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                        className="fixed bottom-20 left-0 right-0 z-40"
+                    >
+                        <div className="max-w-md mx-auto px-4 mb-2">
+                            <div className="rounded-2xl shadow-2xl p-4"
+                                 style={{ background: 'rgba(15,20,35,0.95)', backdropFilter: 'blur(20px)', border: '1px solid var(--apex-border)', borderBottom: 'none' }}>
+                                <div className="grid grid-cols-3 gap-3">
+                                    {secondaryItems.map(item => {
+                                        const isActive = activeScreen === item.screen;
+                                        return (
+                                            <motion.button
+                                                whileTap={{ scale: 0.92 }}
+                                                whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
+                                                key={item.screen}
+                                                onClick={() => handleNavigate(item.screen)}
+                                                className="flex flex-col items-center justify-center gap-2 p-3 rounded-xl transition-colors duration-200"
+                                                style={{
+                                                    background: isActive ? 'rgba(200,168,78,0.1)' : 'rgba(255,255,255,0.03)',
+                                                    border: `1px solid ${isActive ? 'var(--apex-gold)' : 'var(--apex-border)'}`
+                                                }}
+                                            >
+                                                <item.icon className="h-5 w-5" style={{ color: isActive ? 'var(--apex-gold)' : 'var(--apex-text)' }} />
+                                                <span className="font-bold text-[9px] uppercase tracking-wider"
+                                                      style={{ color: isActive ? 'var(--apex-gold)' : 'var(--apex-text-secondary)' }}>
+                                                    {item.label}
+                                                </span>
+                                            </motion.button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
-            </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Primary Navigation Bar */}
-            <nav className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-lg border-t-2 border-slate-800 z-40 shadow-2xl">
-                <div className="max-w-7xl mx-auto flex items-center justify-around px-2">
-                    {primaryItems.map(item => (
-                        <button
-                            key={item.screen}
-                            onClick={() => handleNavigate(item.screen)}
-                            className={`relative flex flex-col items-center justify-center w-full py-3 transition-all duration-200 ${activeScreen === item.screen ? 'text-sky-400' : 'text-slate-400 hover:text-white'
-                                }`}
-                        >
-                            {activeScreen === item.screen && (
-                                <div className="absolute top-0 h-1 w-12 bg-gradient-to-r from-sky-500 to-purple-500 rounded-full" />
-                            )}
-                            <item.icon className="h-7 w-7 mb-1" />
-                            <span className="text-xs font-semibold">{item.label}</span>
-                        </button>
-                    ))}
+            <nav className="fixed bottom-0 left-0 right-0 z-40 pb-safe"
+                 style={{ background: 'rgba(10,14,23,0.95)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderTop: '1px solid var(--apex-border)' }}>
+                <div className="max-w-md mx-auto flex items-center justify-between px-2">
+                    {primaryItems.map(item => {
+                        const isActive = activeScreen === item.screen;
+                        return (
+                            <motion.button
+                                whileTap={{ scale: 0.9 }}
+                                key={item.screen}
+                                onClick={() => handleNavigate(item.screen)}
+                                className="relative flex flex-col items-center justify-center flex-1 py-3"
+                            >
+                                {isActive && (
+                                    <motion.div 
+                                        layoutId="activeTab"
+                                        className="absolute top-0 h-[2px] w-8 rounded-b-full shadow-[0_0_10px_rgba(200,168,78,0.5)]"
+                                        style={{ background: 'var(--apex-gold)' }} 
+                                    />
+                                )}
+                                <div className="relative mb-1">
+                                    <item.icon className="h-6 w-6" style={{ color: isActive ? 'var(--apex-gold)' : 'var(--apex-text-muted)' }} />
+                                    {isActive && (
+                                        <motion.div 
+                                            initial={{ opacity: 0, scale: 0.5 }}
+                                            animate={{ opacity: 0.2, scale: 1 }}
+                                            className="absolute inset-0 bg-yellow-500 blur-md" 
+                                        />
+                                    )}
+                                </div>
+                                <span className="text-[9px] font-bold uppercase tracking-wider"
+                                      style={{ color: isActive ? 'var(--apex-gold)' : 'var(--apex-text-muted)' }}>
+                                    {item.label}
+                                </span>
+                            </motion.button>
+                        );
+                    })}
 
                     {/* Menu Toggle Button */}
-                    <button
+                    <motion.button
+                        whileTap={{ scale: 0.9 }}
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className={`relative flex flex-col items-center justify-center w-full py-3 transition-all duration-200 ${isMenuOpen ? 'text-sky-400' : 'text-slate-400 hover:text-white'
-                            }`}
+                        className="relative flex flex-col items-center justify-center flex-1 py-3"
                     >
                         {isMenuOpen && (
-                            <div className="absolute top-0 h-1 w-12 bg-gradient-to-r from-sky-500 to-purple-500 rounded-full" />
+                            <div className="absolute top-0 h-[2px] w-8 rounded-b-full shadow-[0_0_10px_rgba(200,168,78,0.5)]"
+                                 style={{ background: 'var(--apex-gold)' }} />
                         )}
-                        <svg className="h-7 w-7 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            {isMenuOpen ? (
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            ) : (
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                        <div className="relative mb-1">
+                            <motion.div
+                                animate={{ rotate: isMenuOpen ? 90 : 0 }}
+                                transition={{ type: 'spring', damping: 20 }}
+                            >
+                                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: isMenuOpen ? 'var(--apex-gold)' : 'var(--apex-text-muted)' }}>
+                                    {isMenuOpen ? (
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    ) : (
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                                    )}
+                                </svg>
+                            </motion.div>
+                            {isMenuOpen && (
+                                <div className="absolute inset-0 bg-yellow-500 blur-md opacity-20" />
                             )}
-                        </svg>
-                        <span className="text-xs font-semibold">Más</span>
-                    </button>
+                        </div>
+                        <span className="text-[9px] font-bold uppercase tracking-wider"
+                              style={{ color: isMenuOpen ? 'var(--apex-gold)' : 'var(--apex-text-muted)' }}>
+                            More
+                        </span>
+                    </motion.button>
                 </div>
             </nav>
         </>

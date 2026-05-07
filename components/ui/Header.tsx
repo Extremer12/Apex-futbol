@@ -9,39 +9,40 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ gameState }) => (
-    <header className="sticky top-0 z-30 bg-gradient-to-r from-slate-900 via-slate-900 to-slate-800 backdrop-blur-lg border-b-2 border-slate-800 shadow-xl">
-        <div className="max-w-7xl mx-auto px-4 py-3">
+    <header className="sticky top-0 z-30 pt-safe" style={{ background: 'rgba(10,14,23,0.85)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderBottom: '1px solid var(--apex-border)' }}>
+        <div className="max-w-7xl mx-auto px-5 py-3">
             <div className="flex justify-between items-center">
                 {/* Team Info */}
-                <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 flex items-center justify-center bg-slate-800/50 rounded-xl p-2 border border-slate-700">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 flex items-center justify-center rounded-xl p-1.5"
+                         style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--apex-border)' }}>
                         <TeamLogo team={gameState.team} />
                     </div>
                     <div>
-                        <h1 className="text-xl md:text-2xl font-black tracking-tight bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
+                        <h1 className="text-base font-extrabold tracking-tight text-white uppercase leading-none mb-1">
                             {gameState.team.name}
                         </h1>
-                        <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">
-                            Temporada {gameState.season}
+                        <p className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: 'var(--apex-text-secondary)' }}>
+                            Season {gameState.season}
                         </p>
                     </div>
                 </div>
 
                 {/* Info Cards */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                     {/* Date & Week */}
-                    <div className="hidden sm:block bg-slate-800/50 px-4 py-2 rounded-lg border border-slate-700">
-                        <p className="text-xs text-slate-400 uppercase font-semibold tracking-wider">Jornada {gameState.currentWeek}</p>
-                        <p className="text-sm font-bold text-sky-400">{formatDate(gameState.currentDate)}</p>
+                    <div className="hidden sm:flex flex-col items-end px-3 py-1.5 rounded-lg" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--apex-border)' }}>
+                        <p className="text-[8px] font-bold uppercase tracking-[0.15em]" style={{ color: 'var(--apex-text-muted)' }}>Week {gameState.currentWeek}</p>
+                        <p className="text-[10px] font-extrabold text-white">{formatDate(gameState.currentDate)}</p>
                     </div>
 
                     {/* Balance */}
-                    <div className="bg-gradient-to-br from-slate-800/80 to-slate-800/50 px-4 py-2 rounded-lg border border-slate-700 shadow-lg">
-                        <p className="text-xs text-slate-400 uppercase font-semibold tracking-wider">Balance</p>
+                    <div className="flex flex-col items-end px-3 py-1.5 rounded-lg" style={{ background: 'rgba(200,168,78,0.05)', border: '1px solid var(--apex-border)' }}>
+                        <p className="text-[8px] font-bold uppercase tracking-[0.15em]" style={{ color: 'var(--apex-text-muted)' }}>Balance</p>
                         <AnimatedNumber
                             value={gameState.finances.balance}
                             formatter={(n) => formatCurrencyShort(n)}
-                            className="text-lg font-black bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent"
+                            className="text-[11px] font-extrabold text-gold-gradient uppercase"
                         />
                     </div>
                 </div>

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Team, PlayerProfile } from '../../types';
 import { LoadingSpinner } from '../icons';
-import { StartupScreenContainer } from './StartupScreenContainer';
 import { selectDebateQuestions, evaluateDebate, DebateQuestion, DebateOption, OpponentCandidate, generateOpponents } from '../../services/electionDebate';
 
 interface ElectionPitchProps {
@@ -33,6 +32,7 @@ export const ElectionPitch: React.FC<ElectionPitchProps> = ({ team, player, onSu
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     const currentQuestion: DebateQuestion | undefined = questions[currentIndex];
+    const playerAvgScore = Math.round((boardScore + fanScore) / 2);
 
     const handlePick = (option: DebateOption) => {
         if (picked) return;
@@ -43,11 +43,11 @@ export const ElectionPitch: React.FC<ElectionPitchProps> = ({ team, player, onSu
         setBoardScore(newBoard);
         setFanScore(newFan);
 
-        if (option.boardImpact > 0 && option.fanImpact < 0) setHeadline('LA DIRECTIVA APLAUDE MIENTRAS LAS GRADAS GUARDAN SILENCIO');
-        else if (option.fanImpact >= 15) setHeadline('¡EUFORIA TOTAL! EL PÚBLICO ENLOQUECE CON LA PROPUESTA');
-        else if (option.boardImpact <= -10) setHeadline('ALERTA: LA MESA DIRECTIVA MUESTRA CLARO DESCONTENTO');
-        else if (option.boardImpact > 0 && option.fanImpact > 0) setHeadline('MAGISTRAL: CONVIENCE A SOCIOS Y DIRECTIVOS POR IGUAL');
-        else setHeadline('DECLARACIÓN POLÉMICA GENERA DIVISIONES EN LA SALA');
+        if (option.boardImpact > 0 && option.fanImpact < 0) setHeadline('Board applauds while the fans remain silent');
+        else if (option.fanImpact >= 15) setHeadline('The crowd goes wild with the proposal!');
+        else if (option.boardImpact <= -10) setHeadline('Warning: Board shows clear discontent');
+        else if (option.boardImpact > 0 && option.fanImpact > 0) setHeadline('Masterful: Convinces both fans and board');
+        else setHeadline('Controversial statement divides the audience');
 
         setOpponents(prev => prev.map(o => ({
             ...o,
@@ -74,245 +74,238 @@ export const ElectionPitch: React.FC<ElectionPitchProps> = ({ team, player, onSu
         }, 2200);
     };
 
+    const getScoreColor = (score: number) => score >= 75 ? 'var(--apex-green)' : score <= 40 ? 'var(--apex-red)' : 'var(--apex-gold)';
+
+    // ── INTRO PHASE ──
     if (gamePhase === 'intro') {
         return (
-            <StartupScreenContainer>
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,#0c1631_0%,#020617_100%)]" />
-                <div className="relative z-10 flex flex-col items-center justify-center min-h-screen text-center px-4 w-full">
-                    {/* Broadcast Banner */}
-                    <div className="absolute top-10 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-red-600/90 text-white px-6 py-2 rounded-full animate-fade-in shadow-[0_0_30px_rgba(220,38,38,0.4)] backdrop-blur-sm border border-red-500/50">
-                        <div className="w-3 h-3 rounded-full bg-white animate-pulse shadow-[0_0_10px_white]" />
-                        <span className="font-black text-sm uppercase tracking-[0.2em]">Transmisión Especial en Vivo</span>
+            <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden" style={{ background: 'var(--apex-dark)' }}>
+                <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at top, rgba(200,168,78,0.05), var(--apex-dark) 70%)' }} />
+                
+                {/* Live badge */}
+                <div className="absolute top-6 right-6 flex items-center gap-2 px-4 py-1.5 rounded-lg z-20 animate-fade-in"
+                     style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)' }}>
+                    <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                    <span className="text-red-400 text-[10px] font-bold tracking-[0.15em] uppercase">LIVE</span>
+                </div>
+
+                <div className="relative z-10 flex flex-col items-center text-center px-6 animate-scale-in">
+                    {/* Club logo */}
+                    <div className="w-20 h-20 rounded-full flex items-center justify-center mb-6 p-4"
+                         style={{ border: '2px solid var(--apex-border-active)', background: 'rgba(15,20,35,0.8)' }}>
+                        <img src={team.logo} alt={team.name} className="w-full h-full object-contain"
+                             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                     </div>
 
-                    <div className="flex flex-col items-center animate-scale-in">
-                        <div className="relative mb-10">
-                            <div className="absolute inset-0 bg-blue-500/20 blur-[60px] rounded-full animate-pulse" />
-                            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-slate-900/50 border-4 border-slate-700/50 flex items-center justify-center p-6 shadow-2xl relative z-10 backdrop-blur-xl">
-                                <img src={team.logo} alt={team.name} className="w-full h-full object-contain drop-shadow-2xl filter brightness-110" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                            </div>
-                        </div>
+                    <h1 className="text-2xl font-extrabold text-white uppercase tracking-[0.1em] mb-1">{team.name}</h1>
+                    <p className="text-[10px] font-bold tracking-[0.2em] uppercase mb-8" style={{ color: 'var(--apex-text-secondary)' }}>
+                        Club Presidential Election
+                    </p>
 
-                        <h2 className="text-blue-400 font-bold tracking-[0.4em] uppercase text-xs md:text-sm mb-4">Gran Debate Presidencial</h2>
-                        <h1 className="text-5xl md:text-7xl font-black text-white uppercase italic tracking-tighter leading-none mb-6 drop-shadow-2xl">
-                            {team.name}
-                        </h1>
-                        
-                        <div className="flex items-center gap-4 bg-slate-900/80 px-6 py-3 rounded-2xl border border-white/5 backdrop-blur-md mb-12">
-                            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-xl">🎙️</div>
-                            <div className="text-left">
-                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Candidato Principal</p>
-                                <p className="text-white font-black text-lg">{player.name}</p>
-                            </div>
+                    <div className="apex-card p-4 flex items-center gap-3 mb-8">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg"
+                             style={{ background: 'rgba(200,168,78,0.1)', border: '1px solid var(--apex-border)' }}>🎙️</div>
+                        <div className="text-left">
+                            <div className="text-[9px] font-bold tracking-[0.15em] uppercase" style={{ color: 'var(--apex-gold)' }}>Main Candidate</div>
+                            <div className="text-sm font-extrabold text-white">{player.name}</div>
                         </div>
+                    </div>
 
-                        {/* Animated Loader */}
-                        <div className="w-64 flex flex-col items-center gap-3">
-                            <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
-                                <div className="h-full bg-blue-500 rounded-full w-full animate-[shrink_3s_linear_forwards]" />
-                            </div>
-                            <p className="text-slate-500 text-[10px] uppercase tracking-[0.3em] font-bold">Conectando estudios...</p>
+                    {/* Progress bar */}
+                    <div className="w-48">
+                        <div className="h-1 rounded-full overflow-hidden" style={{ background: 'var(--apex-border)' }}>
+                            <div className="h-full rounded-full animate-[shrink_3s_linear_forwards]" style={{ background: 'var(--apex-gold)' }} />
                         </div>
+                        <p className="text-[9px] font-bold tracking-[0.2em] uppercase mt-2" style={{ color: 'var(--apex-text-muted)' }}>
+                            Connecting studios...
+                        </p>
                     </div>
                 </div>
 
-                <style>{`
-                    @keyframes shrink { from { width: 0%; } to { width: 100%; } }
-                `}</style>
-            </StartupScreenContainer>
+                <style>{`@keyframes shrink { from { width: 0%; } to { width: 100%; } }`}</style>
+            </div>
         );
     }
 
+    // ── DONE PHASE ──
     if (gamePhase === 'done' || !currentQuestion) {
         return (
-            <StartupScreenContainer>
-                <div className="flex flex-col items-center justify-center min-h-screen gap-6 text-center px-4">
-                    <div className="w-24 h-24 rounded-full bg-emerald-500/10 border-2 border-emerald-500/30 flex items-center justify-center text-5xl animate-bounce shadow-[0_0_50px_rgba(16,185,129,0.2)]">
+            <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ background: 'var(--apex-dark)' }}>
+                <div className="flex flex-col items-center gap-4 text-center animate-scale-in">
+                    <div className="w-20 h-20 rounded-full flex items-center justify-center text-4xl animate-glow-pulse"
+                         style={{ background: 'rgba(200,168,78,0.08)', border: '2px solid var(--apex-gold-dim)' }}>
                         🗳️
                     </div>
-                    <div>
-                        <h2 className="text-4xl font-black text-white uppercase tracking-tight mb-2">Urnas Cerradas</h2>
-                        <p className="text-emerald-400 text-lg font-bold tracking-widest uppercase">Escrutinio en proceso...</p>
-                    </div>
+                    <h2 className="text-2xl font-extrabold text-white uppercase tracking-[0.1em]">Polls Closed</h2>
+                    <p className="text-sm font-bold tracking-[0.15em] uppercase" style={{ color: 'var(--apex-gold)' }}>Counting votes...</p>
                     <div className="mt-4"><LoadingSpinner /></div>
                 </div>
-            </StartupScreenContainer>
+            </div>
         );
     }
 
-    const getScoreColor = (score: number) => score >= 75 ? 'text-emerald-400' : score <= 40 ? 'text-red-500' : 'text-blue-400';
-    const getScoreBar = (score: number) => score >= 75 ? 'from-emerald-600 to-emerald-400' : score <= 40 ? 'from-red-600 to-red-400' : 'from-blue-600 to-blue-400';
-
+    // ── DEBATE PHASE ──
     return (
-        <div className="min-h-screen bg-[#020617] relative flex flex-col overflow-hidden font-sans">
-            {/* TV Broadcast Background Elements */}
-            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20 pointer-events-none" />
-            <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-600/10 blur-[120px] rounded-full pointer-events-none" />
-            <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-red-600/5 blur-[120px] rounded-full pointer-events-none" />
-            
-            {/* ── BROADCAST HEADER ── */}
-            <header className="relative z-20 bg-slate-950/80 backdrop-blur-xl border-b border-white/5 shadow-2xl">
-                <div className="max-w-7xl mx-auto px-4 lg:px-8 h-20 flex items-center justify-between gap-6">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-white/5 rounded-xl p-2 border border-white/10 shadow-inner">
-                            <img src={team.logo} alt={team.name} className="w-full h-full object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+        <div className="min-h-screen flex flex-col" style={{ background: 'var(--apex-dark)' }}>
+            {/* Header */}
+            <header className="px-4 pt-4 pb-3" style={{ borderBottom: '1px solid var(--apex-border)' }}>
+                <div className="flex items-center justify-between mb-3">
+                    <button onClick={onBack} className="w-8 h-8 rounded-lg flex items-center justify-center"
+                        style={{ border: '1px solid var(--apex-border)' }}>
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                    <div className="text-center">
+                        <div className="flex items-center gap-2 justify-center">
+                            <img src={team.logo} alt="" className="w-5 h-5 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                            <span className="text-xs font-extrabold text-white uppercase">{team.name}</span>
                         </div>
-                        <div className="hidden sm:block">
-                            <div className="text-[9px] text-red-500 font-black uppercase tracking-[0.3em] flex items-center gap-2 mb-0.5">
-                                <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" /> EN DIRECTO
-                            </div>
-                            <h1 className="text-xl font-black text-white uppercase tracking-tight leading-none">{team.name} DECIDE</h1>
-                        </div>
+                        <p className="text-[9px] uppercase tracking-[0.1em]" style={{ color: 'var(--apex-text-secondary)' }}>Club Presidential Election</p>
                     </div>
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                        <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                        <span className="text-red-400 text-[9px] font-bold tracking-wider">LIVE</span>
+                    </div>
+                </div>
 
-                    {/* Meters */}
-                    <div className="flex flex-1 max-w-md gap-4">
-                        <div className="flex-1 bg-slate-900/80 rounded-xl p-2.5 border border-white/5 relative overflow-hidden group">
-                            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                            <div className="flex justify-between items-end mb-1.5 relative z-10">
-                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Aprobación Directiva</span>
-                                <span className={`text-base font-black leading-none ${getScoreColor(boardScore)} transition-colors duration-500`}>{Math.round(boardScore)}%</span>
-                            </div>
-                            <div className="h-1.5 bg-slate-950 rounded-full overflow-hidden relative z-10 shadow-inner">
-                                <div className={`h-full bg-gradient-to-r ${getScoreBar(boardScore)} transition-all duration-1000 ease-out`} style={{ width: `${boardScore}%` }} />
-                            </div>
-                        </div>
-                        <div className="flex-1 bg-slate-900/80 rounded-xl p-2.5 border border-white/5 relative overflow-hidden group">
-                            <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                            <div className="flex justify-between items-end mb-1.5 relative z-10">
-                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Aprobación Socios</span>
-                                <span className={`text-base font-black leading-none ${getScoreColor(fanScore)} transition-colors duration-500`}>{Math.round(fanScore)}%</span>
-                            </div>
-                            <div className="h-1.5 bg-slate-950 rounded-full overflow-hidden relative z-10 shadow-inner">
-                                <div className={`h-full bg-gradient-to-r ${getScoreBar(fanScore)} transition-all duration-1000 ease-out`} style={{ width: `${fanScore}%` }} />
-                            </div>
-                        </div>
-                    </div>
+                <div className="text-center mb-3">
+                    <h2 className="text-base font-extrabold text-white uppercase tracking-[0.1em]">Presidential Debate</h2>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--apex-gold)' }}>
+                        Round {currentIndex + 1} of {questions.length}
+                    </p>
                 </div>
             </header>
 
-            {/* ── MAIN CONTENT GRID ── */}
-            <main className="flex-1 relative z-10 w-full max-w-7xl mx-auto px-4 lg:px-8 py-8 flex flex-col lg:flex-row gap-8">
-                
-                {/* ── LEFT: CANDIDATES PODIUM ── */}
-                <div className="lg:w-80 flex flex-col gap-4 order-2 lg:order-1">
-                    <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] mb-2 px-2">Sondeo a Boca de Urna</h3>
-                    <div className="flex flex-col gap-3">
-                        <div className="bg-gradient-to-br from-blue-900/40 to-slate-900/80 border border-blue-500/30 rounded-2xl p-4 flex items-center gap-4 shadow-[0_0_30px_rgba(59,130,246,0.1)] relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/10 rounded-bl-full" />
-                            <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-2xl shadow-lg z-10">🤵</div>
-                            <div className="z-10">
-                                <p className="text-[10px] text-blue-300 font-bold uppercase tracking-widest mb-1">Tú (Favorito)</p>
-                                <p className="text-lg font-black text-white leading-none">{player.name}</p>
-                            </div>
-                            <div className="ml-auto text-2xl font-black text-blue-400 z-10">{Math.round((boardScore + fanScore) / 2)}%</div>
-                        </div>
-
-                        {opponents.map((opp, i) => (
-                            <div key={i} className="bg-slate-900/60 border border-white/5 rounded-2xl p-3 flex items-center gap-4 hover:bg-slate-800/80 transition-colors">
-                                <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-xl">{opp.avatar}</div>
-                                <div>
-                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-0.5">Opositor</p>
-                                    <p className="text-sm font-bold text-slate-300 leading-none">{opp.name}</p>
-                                </div>
-                                <div className="ml-auto text-lg font-black text-slate-500">{Math.round(opp.score)}%</div>
-                            </div>
-                        ))}
+            {/* Score bars */}
+            <div className="px-4 py-3 flex gap-3">
+                <div className="flex-1 apex-card p-3">
+                    <div className="flex justify-between items-center mb-1.5">
+                        <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--apex-text-muted)' }}>Board</span>
+                        <span className="text-sm font-extrabold" style={{ color: getScoreColor(boardScore) }}>{Math.round(boardScore)}%</span>
+                    </div>
+                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                        <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${boardScore}%`, background: getScoreColor(boardScore) }} />
                     </div>
                 </div>
-
-                {/* ── RIGHT: DEBATE STAGE ── */}
-                <div className="flex-1 order-1 lg:order-2 flex flex-col">
-                    <div className="flex items-center justify-between mb-6">
-                        <div className="inline-flex items-center gap-2 bg-slate-900 border border-white/10 px-4 py-2 rounded-full">
-                            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                            <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Ronda {currentIndex + 1} de {questions.length}</span>
-                        </div>
-                        <span className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em]">{currentQuestion.category}</span>
+                <div className="flex-1 apex-card p-3">
+                    <div className="flex justify-between items-center mb-1.5">
+                        <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--apex-text-muted)' }}>Fans</span>
+                        <span className="text-sm font-extrabold" style={{ color: getScoreColor(fanScore) }}>{Math.round(fanScore)}%</span>
                     </div>
-
-                    <div className="flex-1 bg-gradient-to-b from-slate-900/90 to-slate-900/40 border border-white/10 rounded-[2rem] p-6 md:p-10 shadow-2xl relative overflow-hidden backdrop-blur-md">
-                        {/* Decorative quotes */}
-                        <div className="absolute top-6 left-6 text-6xl text-white/5 font-serif pointer-events-none">"</div>
-                        
-                        <h2 className="text-2xl md:text-3xl font-black text-white leading-tight mb-10 relative z-10">
-                            {currentQuestion.question}
-                        </h2>
-
-                        <div className="flex flex-col gap-4 relative z-10">
-                            {currentQuestion.options.map((opt, i) => {
-                                const isChosen = picked === opt;
-                                const isOther = !!picked && picked !== opt;
-                                
-                                return (
-                                    <button
-                                        key={i}
-                                        onClick={() => handlePick(opt)}
-                                        disabled={!!picked}
-                                        className={`group relative w-full text-left flex items-center gap-5 px-6 py-4 rounded-2xl border transition-all duration-500 ${
-                                            isChosen
-                                                ? 'bg-blue-600/20 border-blue-500 shadow-[0_0_30px_rgba(59,130,246,0.3)] scale-[1.02]'
-                                                : isOther
-                                                ? 'bg-slate-950/50 border-white/5 opacity-40 scale-[0.98]'
-                                                : 'bg-slate-800/40 border-white/10 hover:border-blue-500/50 hover:bg-slate-800/80 hover:-translate-y-1'
-                                        }`}
-                                    >
-                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 transition-colors duration-500 shadow-inner ${
-                                            isChosen ? 'bg-blue-600 text-white' : 'bg-slate-900 text-slate-400 group-hover:bg-slate-700'
-                                        }`}>
-                                            {opt.icon}
-                                        </div>
-                                        <div className="flex-1">
-                                            <span className={`block font-bold leading-snug transition-colors duration-300 ${
-                                                isChosen ? 'text-white text-lg' : 'text-slate-300 text-base group-hover:text-white'
-                                            }`}>
-                                                {opt.text}
-                                            </span>
-                                        </div>
-                                        {isChosen && (
-                                            <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 animate-scale-in shadow-lg">
-                                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                                </svg>
-                                            </div>
-                                        )}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-                </div>
-
-            </main>
-
-            {/* ── LOWER THIRDS / NEWS TICKER ── */}
-            <div className={`mt-auto w-full border-t-4 border-red-600 bg-slate-950 relative z-30 transition-transform duration-500 ${headline ? 'translate-y-0' : 'translate-y-full absolute bottom-0'}`}>
-                <div className="flex items-stretch h-14">
-                    <div className="bg-red-600 px-6 flex items-center justify-center shrink-0">
-                        <span className="text-white font-black uppercase tracking-widest text-xs md:text-sm">ÚLTIMA HORA</span>
-                    </div>
-                    <div className="flex-1 flex items-center px-6 overflow-hidden relative">
-                        <div className="absolute inset-0 bg-gradient-to-r from-slate-900 to-transparent w-10 z-10" />
-                        <p className="text-white font-bold text-sm md:text-base uppercase tracking-wider animate-[marquee_10s_linear_infinite] whitespace-nowrap">
-                            {headline} • Reacciones en la sede del club • {headline} • Análisis en directo • 
-                        </p>
+                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                        <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${fanScore}%`, background: getScoreColor(fanScore) }} />
                     </div>
                 </div>
             </div>
 
-            {/* Exit button */}
-            {!headline && (
-                <button
-                    onClick={onBack}
-                    className="absolute bottom-4 right-8 text-slate-600 hover:text-slate-400 font-black text-[10px] uppercase tracking-widest transition-colors z-20"
-                >
-                    SALIR DEL DEBATE
-                </button>
+            {/* Candidates */}
+            <div className="px-4 mb-3">
+                <div className="apex-card p-3">
+                    <div className="text-[9px] font-bold uppercase tracking-[0.1em] mb-2" style={{ color: 'var(--apex-text-muted)' }}>Live Poll</div>
+                    <div className="flex h-6 rounded-lg overflow-hidden mb-2">
+                        <div className="flex items-center justify-center transition-all duration-1000"
+                             style={{ width: `${playerAvgScore}%`, background: 'var(--apex-gold)', minWidth: '30px' }}>
+                            <span className="text-[9px] font-bold text-[var(--apex-dark)]">{playerAvgScore}%</span>
+                        </div>
+                        {opponents.map((opp, i) => (
+                            <div key={i} className="flex items-center justify-center transition-all duration-1000"
+                                 style={{
+                                     width: `${Math.round(opp.score / (opponents.length + 1))}%`,
+                                     background: i === 0 ? 'rgba(239,68,68,0.6)' : 'rgba(100,116,139,0.4)',
+                                     minWidth: '25px'
+                                 }}>
+                                <span className="text-[8px] font-bold text-white">{Math.round(opp.score)}%</span>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="flex gap-3">
+                        <div className="flex items-center gap-1.5">
+                            <div className="w-2 h-2 rounded-full" style={{ background: 'var(--apex-gold)' }} />
+                            <span className="text-[9px] font-bold text-white">{player.name}</span>
+                        </div>
+                        {opponents.map((opp, i) => (
+                            <div key={i} className="flex items-center gap-1.5">
+                                <div className="w-2 h-2 rounded-full" style={{ background: i === 0 ? 'rgba(239,68,68,0.6)' : 'rgba(100,116,139,0.4)' }} />
+                                <span className="text-[9px] font-bold" style={{ color: 'var(--apex-text-muted)' }}>{opp.name}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Debate Question */}
+            <div className="flex-1 px-4 pb-4 overflow-y-auto">
+                <div className="apex-card p-5 mb-3">
+                    <div className="flex items-center gap-2 mb-3">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--apex-gold)' }}>
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                        </svg>
+                        <span className="text-[9px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--apex-gold)' }}>{currentQuestion.category}</span>
+                    </div>
+                    <h3 className="text-base font-extrabold text-white leading-snug">{currentQuestion.question}</h3>
+                </div>
+
+                {/* Options */}
+                <div className="space-y-2.5">
+                    {currentQuestion.options.map((opt, i) => {
+                        const isChosen = picked === opt;
+                        const isOther = !!picked && picked !== opt;
+
+                        return (
+                            <button
+                                key={i}
+                                onClick={() => handlePick(opt)}
+                                disabled={!!picked}
+                                className="w-full text-left flex items-center gap-3 p-4 rounded-2xl transition-all duration-300"
+                                style={{
+                                    background: isChosen ? 'rgba(200,168,78,0.08)' : 'var(--apex-card)',
+                                    border: `1px solid ${isChosen ? 'var(--apex-gold)' : 'var(--apex-border)'}`,
+                                    opacity: isOther ? 0.35 : 1,
+                                    transform: isOther ? 'scale(0.98)' : isChosen ? 'scale(1.01)' : 'scale(1)',
+                                }}
+                            >
+                                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
+                                     style={{
+                                         background: isChosen ? 'rgba(200,168,78,0.15)' : 'rgba(255,255,255,0.03)',
+                                         border: `1px solid ${isChosen ? 'var(--apex-gold)' : 'var(--apex-border)'}`,
+                                     }}>
+                                    {opt.icon}
+                                </div>
+                                <span className={`text-sm font-semibold flex-1 ${isChosen ? 'text-white' : 'text-[var(--apex-text-secondary)]'}`}>
+                                    {opt.text}
+                                </span>
+                                {isChosen && (
+                                    <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 animate-scale-in"
+                                         style={{ background: 'var(--apex-gold)' }}>
+                                        <svg className="w-3.5 h-3.5" fill="none" stroke="var(--apex-dark)" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </div>
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* News Ticker */}
+            {headline && (
+                <div className="animate-slide-up" style={{ borderTop: '2px solid var(--apex-gold)' }}>
+                    <div className="flex items-center h-10 overflow-hidden">
+                        <div className="px-4 h-full flex items-center flex-shrink-0" style={{ background: 'var(--apex-gold)' }}>
+                            <span className="text-[var(--apex-dark)] font-extrabold text-[9px] uppercase tracking-[0.15em]">BREAKING</span>
+                        </div>
+                        <div className="flex-1 px-4 overflow-hidden">
+                            <p className="text-white font-bold text-xs uppercase tracking-wider whitespace-nowrap animate-[marquee_12s_linear_infinite]">
+                                {headline} • {headline} •
+                            </p>
+                        </div>
+                    </div>
+                </div>
             )}
 
-            <style>{`
-                @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-            `}</style>
+            <style>{`@keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }`}</style>
         </div>
     );
 };

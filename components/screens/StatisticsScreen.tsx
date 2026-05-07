@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { GameState, Player, LeagueId } from '../../types';
 import { TeamLogo } from '../../data/teams/helpers';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface StatisticsScreenProps {
     gameState: GameState;
@@ -16,13 +17,11 @@ interface PlayerStats {
     matches: number;
 }
 
-export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ gameState }) => {
+export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ gameState }) => {
     const [selectedLeague, setSelectedLeague] = useState<LeagueId>(gameState.team.leagueId);
 
-    // Calculate player statistics directly from player.stats
     const playerStats = useMemo(() => {
         const stats: PlayerStats[] = [];
-
         gameState.allTeams.forEach(team => {
             if (team.leagueId !== selectedLeague) return;
             team.squad.forEach(player => {
@@ -39,9 +38,8 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ gameState })
                 }
             });
         });
-
         return stats;
-    }, [gameState, selectedLeague]);
+    }, [gameState.allTeams, selectedLeague]);
 
     const topScorers = useMemo(() => {
         return [...playerStats]
@@ -73,16 +71,6 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ gameState })
         SERIE_A: 'Serie A'
     };
 
-    const LEAGUE_THEMES: Record<string, string> = {
-        PREMIER_LEAGUE: 'purple',
-        CHAMPIONSHIP: 'sky',
-        LA_LIGA: 'orange',
-        BUNDESLIGA: 'red',
-        SERIE_A: 'emerald'
-    };
-
-    const themeColor = LEAGUE_THEMES[selectedLeague] || 'purple';
-
     const AVAILABLE_LEAGUES = [
         LeagueId.PREMIER_LEAGUE,
         LeagueId.CHAMPIONSHIP,
@@ -92,198 +80,216 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ gameState })
     ];
 
     return (
-        <div className="p-4 md:p-6 space-y-8 max-w-7xl mx-auto animate-fade-in">
+        <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto pb-24 animate-fade-in">
             {/* League Selector */}
             <div className="flex overflow-x-auto gap-2 pb-2 custom-scrollbar hide-scrollbar-mobile">
                 {AVAILABLE_LEAGUES.map(league => (
-                    <button
+                    <motion.button
+                        whileTap={{ scale: 0.95 }}
                         key={league}
                         onClick={() => setSelectedLeague(league)}
-                        className={`whitespace-nowrap px-6 py-3 rounded-full font-bold text-sm transition-all duration-300 border ${
+                        className={`whitespace-nowrap px-6 py-2.5 rounded-xl text-[10px] uppercase font-black tracking-widest transition-all duration-300 border ${
                             selectedLeague === league 
-                            ? `bg-${LEAGUE_THEMES[league]}-600 text-white border-${LEAGUE_THEMES[league]}-500 shadow-lg shadow-${LEAGUE_THEMES[league]}-500/30` 
-                            : 'bg-slate-900/50 text-slate-400 border-white/5 hover:bg-slate-800 hover:text-white'
+                            ? `bg-[var(--apex-gold)] text-black border-[var(--apex-gold)] shadow-[0_0_15px_rgba(200,168,78,0.4)]` 
+                            : 'bg-black/30 text-white/50 border-white/5 hover:bg-black/50 hover:text-white hover:border-white/10'
                         }`}
                     >
                         {LEAGUE_NAMES[league]}
-                    </button>
+                    </motion.button>
                 ))}
             </div>
 
-            {/* Header Section */}
-            <div className={`relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-${themeColor}-500/30 p-8 shadow-2xl transition-colors duration-500`}>
-                <div className={`absolute top-0 right-0 w-64 h-64 bg-${themeColor}-500/5 blur-[80px] rounded-full translate-x-1/3 -translate-y-1/3 transition-colors duration-500`}></div>
-                <div className="relative flex flex-col md:flex-row items-center gap-8">
-                    <div className="w-24 h-24 p-3 bg-white/5 rounded-3xl backdrop-blur-md border border-white/10 flex items-center justify-center transform rotate-3 shadow-xl">
-                        <img 
-                            src={LEAGUE_LOGOS[selectedLeague]} 
-                            alt="League" 
-                            className="w-full h-full object-contain drop-shadow-lg" 
-                        />
-                    </div>
-                    <div className="text-center md:text-left">
-                        <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter uppercase italic leading-none mb-2">
-                            Estadísticas <span className={`text-${themeColor}-400 underline decoration-4 underline-offset-8 transition-colors duration-500`}>Elite</span>
-                        </h1>
-                        <p className="text-slate-400 font-bold uppercase tracking-[0.3em] text-xs">
-                            {LEAGUE_NAMES[selectedLeague]} • Temporada 2024/25
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Top Scorers Card */}
-                <div className={`bg-slate-900/50 border border-white/5 rounded-[2rem] overflow-hidden shadow-xl`}>
-                    <div className={`bg-gradient-to-r from-slate-800 to-slate-900 px-8 py-5 border-b border-white/5 flex items-center justify-between`}>
-                        <h3 className="text-white font-black text-lg uppercase tracking-wider italic flex items-center gap-3">
-                            <span className="text-2xl">⚽</span> Goleadores
-                        </h3>
-                    </div>
-                    <div className="p-2">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] border-b border-white/5">
-                                    <th className="px-6 py-4 text-left">Jugador</th>
-                                    <th className="px-6 py-4 text-center">Club</th>
-                                    <th className="px-6 py-4 text-right">Goles</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-white/5">
-                                {topScorers.length > 0 ? topScorers.map((stat, idx) => (
-                                    <tr key={stat.player.id} className="group hover:bg-white/5 transition-all duration-300">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-4">
-                                                <span className={`text-lg font-black ${idx === 0 ? 'text-yellow-400' : idx === 1 ? 'text-slate-300' : idx === 2 ? 'text-orange-400' : 'text-slate-600'}`}>
-                                                    {idx + 1}
-                                                </span>
-                                                <div>
-                                                    <div className="font-bold text-white group-hover:text-sky-400 transition-colors">{stat.player.name}</div>
-                                                    <div className="text-[10px] text-slate-500 font-black uppercase">{stat.player.position}</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex justify-center group-hover:scale-110 transition-transform">
-                                                <div className="w-8 h-8">
-                                                    <TeamLogo team={{ logo: stat.teamLogo, name: stat.teamName }} />
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-right font-black text-2xl text-white italic">{stat.goals}</td>
-                                    </tr>
-                                )) : (
-                                    <tr>
-                                        <td colSpan={3} className="px-6 py-12 text-center text-slate-500 font-bold italic">No hay datos registrados</td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                {/* Assists Card */}
-                <div className={`bg-slate-900/50 border border-white/5 rounded-[2rem] overflow-hidden shadow-xl`}>
-                    <div className={`bg-gradient-to-r from-slate-800 to-slate-900 px-8 py-5 border-b border-white/5 flex items-center justify-between`}>
-                        <h3 className="text-white font-black text-lg uppercase tracking-wider italic flex items-center gap-3">
-                            <span className="text-2xl">👟</span> Asistentes
-                        </h3>
-                    </div>
-                    <div className="p-2">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] border-b border-white/5">
-                                    <th className="px-6 py-4 text-left">Jugador</th>
-                                    <th className="px-6 py-4 text-center">Club</th>
-                                    <th className="px-6 py-4 text-right">Asis.</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-white/5">
-                                {topAssists.length > 0 ? topAssists.map((stat, idx) => (
-                                    <tr key={stat.player.id} className="group hover:bg-white/5 transition-all duration-300">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-4">
-                                                <span className={`text-lg font-black ${idx === 0 ? 'text-yellow-400' : idx === 1 ? 'text-slate-300' : idx === 2 ? 'text-orange-400' : 'text-slate-600'}`}>
-                                                    {idx + 1}
-                                                </span>
-                                                <div>
-                                                    <div className="font-bold text-white group-hover:text-sky-400 transition-colors">{stat.player.name}</div>
-                                                    <div className="text-[10px] text-slate-500 font-black uppercase">{stat.player.position}</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex justify-center group-hover:scale-110 transition-transform">
-                                                <div className="w-8 h-8">
-                                                    <TeamLogo team={{ logo: stat.teamLogo, name: stat.teamName }} />
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-right font-black text-2xl text-white italic">{stat.assists}</td>
-                                    </tr>
-                                )) : (
-                                    <tr>
-                                        <td colSpan={3} className="px-6 py-12 text-center text-slate-500 font-bold italic">No hay datos registrados</td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                {/* Team Performance Card */}
-                <div className="space-y-6 lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className={`bg-gradient-to-br from-slate-900 to-slate-800 border border-white/5 rounded-[2rem] p-8 shadow-xl relative overflow-hidden`}>
-                        <div className={`absolute top-0 right-0 w-32 h-32 bg-green-500/5 blur-[40px] rounded-full`}></div>
-                        <h3 className="text-white font-black text-xl uppercase italic mb-8 flex items-center gap-3">
-                            <div className="w-2 h-6 bg-green-500 rounded-full"></div>
-                            Potencia Ofensiva
-                        </h3>
-                        {(() => {
-                            const currentTable = gameState.leagueTables[selectedLeague] || [];
-                            const bestAttack = [...currentTable].sort((a, b) => b.goalsFor - a.goalsFor)[0];
-                            const team = gameState.allTeams.find(t => t.id === bestAttack?.teamId);
-                            return team ? (
-                                <div className="flex items-center gap-6 p-4 bg-white/5 rounded-2xl border border-white/10 group hover:bg-white/10 transition-all">
-                                    <div className="w-16 h-16 group-hover:scale-110 transition-transform">
-                                        <TeamLogo team={team} />
-                                    </div>
-                                    <div>
-                                        <div className="text-xs font-black text-green-400 uppercase tracking-widest mb-1">Más Goles Anotados</div>
-                                        <div className="text-2xl font-black text-white">{team.name}</div>
-                                        <div className="text-3xl font-black text-green-400 italic">{bestAttack.goalsFor} <span className="text-sm font-bold uppercase tracking-normal">Goles</span></div>
-                                    </div>
-                                </div>
-                            ) : null;
-                        })()}
+            <AnimatePresence mode="wait">
+                <motion.div 
+                    key={selectedLeague}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.3 }}
+                    className="space-y-6"
+                >
+                    {/* Header Section */}
+                    <div className="relative overflow-hidden apex-card p-6 md:p-8 shadow-2xl transition-all duration-500 group">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--apex-gold)]/10 blur-[80px] rounded-full translate-x-1/3 -translate-y-1/3 group-hover:bg-[var(--apex-gold)]/20 transition-all duration-700"></div>
+                        <div className="relative flex flex-col md:flex-row items-center md:items-start gap-6">
+                            <div className="w-20 h-20 md:w-24 md:h-24 p-3 bg-black/40 rounded-2xl border border-white/10 flex items-center justify-center shadow-xl">
+                                <img 
+                                    src={LEAGUE_LOGOS[selectedLeague]} 
+                                    alt="League" 
+                                    className="w-full h-full object-contain drop-shadow-lg" 
+                                />
+                            </div>
+                            <div className="text-center md:text-left pt-2">
+                                <h2 className="text-[10px] font-black text-gold-gradient tracking-[0.3em] uppercase mb-1">
+                                    {LEAGUE_NAMES[selectedLeague]} • Season 2024/25
+                                </h2>
+                                <h1 className="text-3xl md:text-5xl font-black text-white tracking-tighter uppercase italic leading-none mb-2">
+                                    Elite <span className="text-[var(--apex-gold)]">Stats</span>
+                                </h1>
+                            </div>
+                        </div>
                     </div>
 
-                    <div className={`bg-gradient-to-br from-slate-900 to-slate-800 border border-white/5 rounded-[2rem] p-8 shadow-xl relative overflow-hidden`}>
-                        <div className={`absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-[40px] rounded-full`}></div>
-                        <h3 className="text-white font-black text-xl uppercase italic mb-8 flex items-center gap-3">
-                            <div className="w-2 h-6 bg-blue-500 rounded-full"></div>
-                            Muro Defensivo
-                        </h3>
-                        {(() => {
-                            const currentTable = gameState.leagueTables[selectedLeague] || [];
-                            const bestDefense = [...currentTable].sort((a, b) => a.goalsAgainst - b.goalsAgainst)[0];
-                            const team = gameState.allTeams.find(t => t.id === bestDefense?.teamId);
-                            return team ? (
-                                <div className="flex items-center gap-6 p-4 bg-white/5 rounded-2xl border border-white/10 group hover:bg-white/10 transition-all">
-                                    <div className="w-16 h-16 group-hover:scale-110 transition-transform">
-                                        <TeamLogo team={team} />
-                                    </div>
-                                    <div>
-                                        <div className="text-xs font-black text-blue-400 uppercase tracking-widest mb-1">Menos Goles Recibidos</div>
-                                        <div className="text-2xl font-black text-white">{team.name}</div>
-                                        <div className="text-3xl font-black text-blue-400 italic">{bestDefense.goalsAgainst} <span className="text-sm font-bold uppercase tracking-normal">Goles</span></div>
-                                    </div>
-                                </div>
-                            ) : null;
-                        })()}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Top Scorers Card */}
+                        <div className="apex-card overflow-hidden">
+                            <div className="bg-black/40 px-6 py-5 border-b border-white/5 flex items-center justify-between">
+                                <h3 className="text-white font-black text-sm uppercase tracking-widest italic flex items-center gap-3">
+                                    <span className="text-xl">⚽</span> Top Scorers
+                                </h3>
+                            </div>
+                            <div className="p-0 overflow-x-auto custom-scrollbar">
+                                <table className="w-full text-sm whitespace-nowrap">
+                                    <thead>
+                                        <tr className="text-white/40 text-[9px] font-black uppercase tracking-[0.2em] border-b border-white/5 bg-black/20">
+                                            <th className="px-6 py-4 text-left">Player</th>
+                                            <th className="px-6 py-4 text-center">Club</th>
+                                            <th className="px-6 py-4 text-right">Goals</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/5">
+                                        {topScorers.length > 0 ? topScorers.map((stat, idx) => (
+                                            <tr key={stat.player.id} className="group hover:bg-white/5 transition-all duration-300">
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-4">
+                                                        <span className={`text-sm font-black w-4 text-center ${idx === 0 ? 'text-[var(--apex-gold)] drop-shadow-[0_0_5px_rgba(200,168,78,0.5)]' : idx === 1 ? 'text-slate-300' : idx === 2 ? 'text-orange-400' : 'text-white/30'}`}>
+                                                            {idx + 1}
+                                                        </span>
+                                                        <div>
+                                                            <div className="font-bold text-white group-hover:text-[var(--apex-gold)] transition-colors text-sm">{stat.player.name}</div>
+                                                            <div className="text-[9px] text-white/40 font-black uppercase tracking-[0.2em] mt-0.5">{stat.player.position}</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-3">
+                                                    <div className="flex justify-center group-hover:scale-110 transition-transform">
+                                                        <div className="w-8 h-8 bg-black/30 p-1.5 rounded border border-white/5">
+                                                            <TeamLogo team={{ logo: stat.teamLogo, name: stat.teamName }} />
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 text-right font-black text-2xl text-[var(--apex-gold)] italic drop-shadow-sm">{stat.goals}</td>
+                                            </tr>
+                                        )) : (
+                                            <tr>
+                                                <td colSpan={3} className="px-6 py-12 text-center text-white/30 font-black text-[10px] uppercase tracking-widest">No data recorded</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        {/* Top Assists Card */}
+                        <div className="apex-card overflow-hidden">
+                            <div className="bg-black/40 px-6 py-5 border-b border-white/5 flex items-center justify-between">
+                                <h3 className="text-white font-black text-sm uppercase tracking-widest italic flex items-center gap-3">
+                                    <span className="text-xl">👟</span> Top Assists
+                                </h3>
+                            </div>
+                            <div className="p-0 overflow-x-auto custom-scrollbar">
+                                <table className="w-full text-sm whitespace-nowrap">
+                                    <thead>
+                                        <tr className="text-white/40 text-[9px] font-black uppercase tracking-[0.2em] border-b border-white/5 bg-black/20">
+                                            <th className="px-6 py-4 text-left">Player</th>
+                                            <th className="px-6 py-4 text-center">Club</th>
+                                            <th className="px-6 py-4 text-right">Assists</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/5">
+                                        {topAssists.length > 0 ? topAssists.map((stat, idx) => (
+                                            <tr key={stat.player.id} className="group hover:bg-white/5 transition-all duration-300">
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-4">
+                                                        <span className={`text-sm font-black w-4 text-center ${idx === 0 ? 'text-[var(--apex-gold)] drop-shadow-[0_0_5px_rgba(200,168,78,0.5)]' : idx === 1 ? 'text-slate-300' : idx === 2 ? 'text-orange-400' : 'text-white/30'}`}>
+                                                            {idx + 1}
+                                                        </span>
+                                                        <div>
+                                                            <div className="font-bold text-white group-hover:text-[var(--apex-gold)] transition-colors text-sm">{stat.player.name}</div>
+                                                            <div className="text-[9px] text-white/40 font-black uppercase tracking-[0.2em] mt-0.5">{stat.player.position}</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-3">
+                                                    <div className="flex justify-center group-hover:scale-110 transition-transform">
+                                                        <div className="w-8 h-8 bg-black/30 p-1.5 rounded border border-white/5">
+                                                            <TeamLogo team={{ logo: stat.teamLogo, name: stat.teamName }} />
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 text-right font-black text-2xl text-[var(--apex-gold)] italic drop-shadow-sm">{stat.assists}</td>
+                                            </tr>
+                                        )) : (
+                                            <tr>
+                                                <td colSpan={3} className="px-6 py-12 text-center text-white/30 font-black text-[10px] uppercase tracking-widest">No data recorded</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        {/* Team Performance Card */}
+                        <div className="space-y-6 lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="apex-card p-6 relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--apex-green)]/10 blur-[40px] rounded-full group-hover:bg-[var(--apex-green)]/20 transition-all duration-500"></div>
+                                <h3 className="text-white font-black text-sm uppercase tracking-widest mb-6 flex items-center gap-3">
+                                    <div className="w-1.5 h-4 bg-[var(--apex-green)] rounded-sm"></div>
+                                    Offensive Power
+                                </h3>
+                                {(() => {
+                                    const currentTable = gameState.leagueTables[selectedLeague] || [];
+                                    const bestAttack = [...currentTable].sort((a, b) => b.goalsFor - a.goalsFor)[0];
+                                    const team = gameState.allTeams.find(t => t.id === bestAttack?.teamId);
+                                    return team ? (
+                                        <div className="flex items-center gap-5 p-4 bg-black/30 rounded-xl border border-white/5 group-hover:bg-white/5 transition-all">
+                                            <div className="w-14 h-14 bg-black/40 p-2 rounded-lg border border-white/10 group-hover:scale-110 transition-transform">
+                                                <TeamLogo team={team} />
+                                            </div>
+                                            <div className="flex-1">
+                                                <div className="text-[9px] font-black text-[var(--apex-green)] uppercase tracking-[0.2em] mb-1">Most Goals Scored</div>
+                                                <div className="text-lg font-black text-white leading-none">{team.name}</div>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="text-3xl font-black text-[var(--apex-green)] italic">{bestAttack.goalsFor}</div>
+                                                <div className="text-[8px] text-white/40 uppercase tracking-[0.2em] font-black">Goals</div>
+                                            </div>
+                                        </div>
+                                    ) : null;
+                                })()}
+                            </div>
+
+                            <div className="apex-card p-6 relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/10 blur-[40px] rounded-full group-hover:bg-sky-500/20 transition-all duration-500"></div>
+                                <h3 className="text-white font-black text-sm uppercase tracking-widest mb-6 flex items-center gap-3">
+                                    <div className="w-1.5 h-4 bg-sky-500 rounded-sm"></div>
+                                    Defensive Wall
+                                </h3>
+                                {(() => {
+                                    const currentTable = gameState.leagueTables[selectedLeague] || [];
+                                    const bestDefense = [...currentTable].sort((a, b) => a.goalsAgainst - b.goalsAgainst)[0];
+                                    const team = gameState.allTeams.find(t => t.id === bestDefense?.teamId);
+                                    return team ? (
+                                        <div className="flex items-center gap-5 p-4 bg-black/30 rounded-xl border border-white/5 group-hover:bg-white/5 transition-all">
+                                            <div className="w-14 h-14 bg-black/40 p-2 rounded-lg border border-white/10 group-hover:scale-110 transition-transform">
+                                                <TeamLogo team={team} />
+                                            </div>
+                                            <div className="flex-1">
+                                                <div className="text-[9px] font-black text-sky-400 uppercase tracking-[0.2em] mb-1">Least Goals Conceded</div>
+                                                <div className="text-lg font-black text-white leading-none">{team.name}</div>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="text-3xl font-black text-sky-400 italic">{bestDefense.goalsAgainst}</div>
+                                                <div className="text-[8px] text-white/40 uppercase tracking-[0.2em] font-black">Goals</div>
+                                            </div>
+                                        </div>
+                                    ) : null;
+                                })()}
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
+                </motion.div>
+            </AnimatePresence>
         </div>
     );
-};
+});

@@ -1,116 +1,294 @@
 /* Tailwind CSS v4 */
 @import "tailwindcss";
 
-/* Global styles for Apex AI */
+/* ========================================
+   APEX AI — Premium Design System
+   ======================================== */
 
-/* Premier League Color Variables */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* ---- CSS Custom Properties ---- */
 :root {
-  --pl-purple-primary: #3d195b;
-  --pl-purple-light: #9333ea;
-  --pl-purple-dark: #2d1144;
-  --pl-white: #ffffff;
-  --pl-gradient-start: #9333ea;
-  --pl-gradient-end: #ffffff;
+  --apex-dark: #0A0E17;
+  --apex-darker: #060A12;
+  --apex-card: rgba(15, 20, 35, 0.8);
+  --apex-card-solid: #0F1423;
+  --apex-border: rgba(200, 168, 78, 0.15);
+  --apex-border-active: rgba(200, 168, 78, 0.4);
+  --apex-gold: #C8A84E;
+  --apex-gold-light: #FFD700;
+  --apex-gold-dim: rgba(200, 168, 78, 0.3);
+  --apex-text: #FFFFFF;
+  --apex-text-secondary: #8A8FA3;
+  --apex-text-muted: #5A5F73;
+  --apex-green: #4CAF50;
+  --apex-green-light: #66BB6A;
+  --apex-red: #EF5350;
 }
 
-/* Premier League Gradient Utilities */
-.bg-pl-gradient {
-  background: linear-gradient(135deg, var(--pl-gradient-start), var(--pl-gradient-end));
+/* ---- Global Reset ---- */
+* {
+  -webkit-tap-highlight-color: transparent;
 }
 
-.text-pl-gradient {
-  background: linear-gradient(135deg, var(--pl-gradient-start), var(--pl-gradient-end));
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--apex-dark);
+  color: var(--apex-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* ---- Apex Card System ---- */
+.apex-card {
+  background: var(--apex-card);
+  border: 1px solid var(--apex-border);
+  border-radius: 16px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.apex-card-solid {
+  background: var(--apex-card-solid);
+  border: 1px solid var(--apex-border);
+  border-radius: 16px;
+}
+
+.apex-card-gold {
+  background: var(--apex-card);
+  border: 1px solid var(--apex-border-active);
+  border-radius: 16px;
+  box-shadow: 0 0 20px rgba(200, 168, 78, 0.05);
+}
+
+/* ---- Apex Button System ---- */
+.apex-btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 1rem 1.5rem;
+  background: transparent;
+  border: 1px solid var(--apex-border-active);
+  border-radius: 12px;
+  color: var(--apex-gold);
+  font-weight: 700;
+  font-size: 0.875rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.apex-btn-primary:hover {
+  background: rgba(200, 168, 78, 0.08);
+  border-color: var(--apex-gold);
+  box-shadow: 0 0 25px rgba(200, 168, 78, 0.15);
+  transform: translateY(-1px);
+}
+
+.apex-btn-primary:active {
+  transform: translateY(0);
+}
+
+.apex-btn-primary.featured {
+  background: linear-gradient(135deg, rgba(200, 168, 78, 0.12), rgba(200, 168, 78, 0.04));
+  border-color: var(--apex-gold);
+  box-shadow: 0 0 20px rgba(200, 168, 78, 0.1);
+}
+
+.apex-btn-gold {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, var(--apex-gold), #B8963E);
+  border: none;
+  border-radius: 12px;
+  color: #0A0E17;
+  font-weight: 800;
+  font-size: 0.875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(200, 168, 78, 0.3);
+}
+
+.apex-btn-gold:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 30px rgba(200, 168, 78, 0.4);
+}
+
+/* ---- Apex Input System ---- */
+.apex-input {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  padding-left: 2.75rem;
+  background: rgba(10, 14, 23, 0.8);
+  border: 1px solid var(--apex-border);
+  border-radius: 12px;
+  color: var(--apex-text);
+  font-size: 0.9375rem;
+  transition: all 0.3s ease;
+}
+
+.apex-input::placeholder {
+  color: var(--apex-text-muted);
+}
+
+.apex-input:focus {
+  outline: none;
+  border-color: var(--apex-gold);
+  box-shadow: 0 0 0 3px rgba(200, 168, 78, 0.1);
+}
+
+.apex-select {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  padding-left: 2.75rem;
+  padding-right: 2.5rem;
+  background: rgba(10, 14, 23, 0.8);
+  border: 1px solid var(--apex-border);
+  border-radius: 12px;
+  color: var(--apex-text);
+  font-size: 0.9375rem;
+  appearance: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.apex-select:focus {
+  outline: none;
+  border-color: var(--apex-gold);
+}
+
+/* ---- Typography Utilities ---- */
+.apex-heading {
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--apex-text);
+}
+
+.apex-subheading {
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--apex-text-secondary);
+  font-size: 0.6875rem;
+}
+
+.text-gold {
+  color: var(--apex-gold);
+}
+
+.text-gold-gradient {
+  background: linear-gradient(135deg, var(--apex-gold-light), var(--apex-gold));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* Custom Animations */
-@keyframes shimmer {
-  0% {
-    background-position: -1000px 0;
-  }
-  100% {
-    background-position: 1000px 0;
-  }
+/* ---- Scrollbar ---- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-.animate-shimmer {
-  animation: shimmer 3s infinite;
+::-webkit-scrollbar-track {
+  background: var(--apex-darker);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(200, 168, 78, 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--apex-gold);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ---- Animations ---- */
+@keyframes shimmer-gold {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+.animate-shimmer-gold {
+  animation: shimmer-gold 3s infinite;
   background: linear-gradient(
     to right,
     transparent 0%,
-    rgba(147, 51, 234, 0.1) 50%,
+    rgba(200, 168, 78, 0.08) 50%,
     transparent 100%
   );
   background-size: 1000px 100%;
 }
 
-/* Smooth Scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: #1e293b;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #9333ea;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #a855f7;
-}
-
-/* Toast & Modal Animations */
-@keyframes slide-in-right {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
 @keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in-right {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
 }
 
 @keyframes scale-in {
-  from {
-    transform: scale(0.9);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 
-.animate-slide-in-right {
-  animation: slide-in-right 0.3s ease-out;
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 15px rgba(200, 168, 78, 0.1); }
+  50% { box-shadow: 0 0 30px rgba(200, 168, 78, 0.25); }
 }
 
-.animate-fade-in {
-  animation: fade-in 0.2s ease-out;
-}
+.animate-fade-in { animation: fade-in 0.3s ease-out; }
+.animate-slide-up { animation: slide-up 0.4s ease-out; }
+.animate-slide-in-right { animation: slide-in-right 0.3s ease-out; }
+.animate-scale-in { animation: scale-in 0.3s ease-out; }
+.animate-glow-pulse { animation: glow-pulse 2s ease-in-out infinite; }
 
-.animate-scale-in {
-  animation: scale-in 0.3s ease-out;
+/* Staggered children animation */
+.stagger-children > * {
+  opacity: 0;
+  animation: slide-up 0.4s ease-out forwards;
 }
+.stagger-children > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.1s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.2s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.25s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.3s; }
 
-/* Cinematic Animations */
+/* ---- Cinematic Animations (preserved) ---- */
 @keyframes confetti-fall {
   0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
   100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
@@ -135,4 +313,25 @@
   animation: trophy-rise 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
-/* Custom global styles can be added below */
+/* ---- Glass Effect ---- */
+.apex-glass {
+  background: rgba(10, 14, 23, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ---- Apex Divider ---- */
+.apex-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--apex-border), transparent);
+}
+
+/* ---- Safe Area for Mobile ---- */
+.pb-safe {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+.pt-safe {
+  padding-top: max(0.5rem, env(safe-area-inset-top));
+}

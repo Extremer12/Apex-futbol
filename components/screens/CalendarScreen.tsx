@@ -74,60 +74,55 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ gameState }) => 
     }, [selectedWeek]);
 
     return (
-        <div className="p-4 md:p-6 space-y-6 h-full flex flex-col animate-fade-in">
+        <div className="p-4 md:p-6 space-y-6 h-full flex flex-col pb-24 animate-fade-in">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <div className="bg-sky-500/20 p-2 rounded-xl shadow-inner">
-                        <CalendarIcon className="w-8 h-8 text-sky-400" />
-                    </div>
-                    <div>
-                        <h2 className="text-3xl font-black text-white tracking-tight uppercase">Calendario</h2>
-                        <p className="text-slate-400 text-sm font-medium">Temporada {gameState.season} / {gameState.season + 1}</p>
-                    </div>
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-4">
+                <div>
+                    <h2 className="text-[10px] font-black text-gold-gradient tracking-[0.3em] uppercase mb-1">Season Schedule</h2>
+                    <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter">Calendar</h1>
                 </div>
 
-                <div className="flex bg-slate-900/80 p-1 rounded-xl border border-slate-800 backdrop-blur-md">
+                <div className="flex bg-black/40 p-1 rounded-xl border border-white/10">
                     <button
                         onClick={() => setFilter('ALL')}
-                        className={`px-4 py-2 text-xs font-black rounded-lg transition-all duration-300 ${filter === 'ALL' ? 'bg-sky-600 text-white shadow-lg shadow-sky-600/20' : 'text-slate-400 hover:text-white'}`}
+                        className={`px-4 py-2 text-[10px] tracking-widest font-black rounded-lg transition-all duration-300 ${filter === 'ALL' ? 'bg-[var(--apex-gold)] text-black shadow-[0_0_15px_rgba(200,168,78,0.4)]' : 'text-white/40 hover:text-white'}`}
                     >
-                        TODO
+                        ALL
                     </button>
                     <button
                         onClick={() => setFilter('LEAGUE')}
-                        className={`px-4 py-2 text-xs font-black rounded-lg transition-all duration-300 ${filter === 'LEAGUE' ? 'bg-sky-600 text-white shadow-lg shadow-sky-600/20' : 'text-slate-400 hover:text-white'}`}
+                        className={`px-4 py-2 text-[10px] tracking-widest font-black rounded-lg transition-all duration-300 ${filter === 'LEAGUE' ? 'bg-[var(--apex-gold)] text-black shadow-[0_0_15px_rgba(200,168,78,0.4)]' : 'text-white/40 hover:text-white'}`}
                     >
-                        LIGA
+                        LEAGUE
                     </button>
                     <button
                         onClick={() => setFilter('CUP')}
-                        className={`px-4 py-2 text-xs font-black rounded-lg transition-all duration-300 ${filter === 'CUP' ? 'bg-sky-600 text-white shadow-lg shadow-sky-600/20' : 'text-slate-400 hover:text-white'}`}
+                        className={`px-4 py-2 text-[10px] tracking-widest font-black rounded-lg transition-all duration-300 ${filter === 'CUP' ? 'bg-[var(--apex-gold)] text-black shadow-[0_0_15px_rgba(200,168,78,0.4)]' : 'text-white/40 hover:text-white'}`}
                     >
-                        COPAS
+                        CUPS
                     </button>
                 </div>
             </div>
 
             {/* Matchday Navigation */}
-            <div className="flex items-center justify-between bg-slate-800/40 p-4 rounded-2xl border border-slate-800">
+            <div className="flex items-center justify-between apex-card p-4">
                 <button 
                     onClick={() => setSelectedWeek(prev => Math.max(1, prev - 1))}
                     disabled={selectedWeek === 1}
-                    className="p-3 rounded-xl bg-slate-900 border border-slate-700 hover:border-sky-500 hover:text-sky-400 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+                    className="p-3 rounded-xl bg-white/5 border border-white/10 hover:border-[var(--apex-gold)] hover:text-[var(--apex-gold)] disabled:opacity-20 disabled:cursor-not-allowed transition-all text-white/50"
                 >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" /></svg>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" /></svg>
                 </button>
 
                 <div className="flex flex-col items-center">
-                    <span className="text-[10px] font-black text-sky-500 uppercase tracking-[0.2em] mb-1">Seleccionar Jornada</span>
+                    <span className="text-[9px] font-black text-[var(--apex-gold)] uppercase tracking-[0.2em] mb-1.5">Select Matchday</span>
                     <select 
                         value={selectedWeek}
                         onChange={(e) => setSelectedWeek(parseInt(e.target.value))}
-                        className="bg-slate-900 text-white font-black text-xl px-4 py-1 rounded-xl border border-slate-700 focus:border-sky-500 focus:outline-none cursor-pointer"
+                        className="bg-black/50 text-white font-black text-lg px-4 py-1.5 rounded-lg border border-white/10 focus:border-[var(--apex-gold)] focus:outline-none cursor-pointer uppercase tracking-widest appearance-none text-center min-w-[140px]"
                     >
                         {weeks.map(w => (
-                            <option key={w} value={w}>JORNADA {w}</option>
+                            <option key={w} value={w}>WEEK {w}</option>
                         ))}
                     </select>
                 </div>
@@ -135,29 +130,29 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ gameState }) => 
                 <button 
                     onClick={() => setSelectedWeek(prev => Math.min(maxWeek, prev + 1))}
                     disabled={selectedWeek === maxWeek}
-                    className="p-3 rounded-xl bg-slate-900 border border-slate-700 hover:border-sky-500 hover:text-sky-400 disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+                    className="p-3 rounded-xl bg-white/5 border border-white/10 hover:border-[var(--apex-gold)] hover:text-[var(--apex-gold)] disabled:opacity-20 disabled:cursor-not-allowed transition-all text-white/50"
                 >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" /></svg>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" /></svg>
                 </button>
             </div>
 
-            {/* Horizontal Selector (kept for quick access but improved) */}
-            <div className="relative group px-2">
+            {/* Horizontal Selector */}
+            <div className="relative group px-1">
                 <div 
                     ref={scrollRef}
-                    className="flex gap-2 overflow-x-auto pb-4 pt-2 no-scrollbar scroll-smooth"
+                    className="flex gap-2.5 overflow-x-auto pb-4 pt-2 no-scrollbar scroll-smooth"
                 >
                     {weeks.map(week => (
                         <button
                             key={week}
                             id={`week-btn-${week}`}
                             onClick={() => setSelectedWeek(week)}
-                            className={`flex-shrink-0 w-12 h-12 flex flex-col items-center justify-center rounded-xl border-2 transition-all duration-300 ${
+                            className={`flex-shrink-0 w-11 h-11 flex flex-col items-center justify-center rounded-xl border-2 transition-all duration-300 ${
                                 selectedWeek === week 
-                                ? 'bg-sky-600 border-sky-400 text-white shadow-lg shadow-sky-600/40 scale-105 z-10' 
+                                ? 'bg-[var(--apex-gold)] border-[var(--apex-gold)] text-black shadow-[0_0_15px_rgba(200,168,78,0.4)] scale-110 z-10' 
                                 : week === gameState.currentWeek
-                                ? 'bg-slate-800 border-sky-500/50 text-sky-400'
-                                : 'bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-600 hover:text-slate-300'
+                                ? 'bg-black/50 border-[var(--apex-gold)]/50 text-[var(--apex-gold)]'
+                                : 'bg-black/30 border-white/5 text-white/40 hover:border-white/20 hover:text-white'
                             }`}
                         >
                             <span className="text-sm font-black leading-none">{week}</span>
@@ -167,24 +162,24 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ gameState }) => 
             </div>
 
             {/* Matches List */}
-            <div className="flex-1 bg-slate-900/50 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl backdrop-blur-sm flex flex-col">
-                <div className="bg-slate-800/50 px-6 py-4 border-b border-slate-800 flex justify-between items-center">
-                    <h3 className="font-black text-white text-lg flex items-center gap-2">
-                        <span className="w-2 h-6 bg-sky-500 rounded-full"></span>
-                        JORNADA {selectedWeek}
+            <div className="flex-1 apex-card overflow-hidden flex flex-col">
+                <div className="bg-black/30 px-6 py-4 border-b border-white/5 flex justify-between items-center">
+                    <h3 className="font-black text-white text-sm tracking-widest uppercase flex items-center gap-3">
+                        <span className="w-2 h-4 bg-[var(--apex-gold)] rounded-sm"></span>
+                        MATCHDAY {selectedWeek}
                     </h3>
                     {selectedWeek === gameState.currentWeek && (
-                        <span className="bg-sky-500/20 text-sky-400 text-[10px] font-black px-3 py-1 rounded-full border border-sky-500/30 animate-pulse">
-                            SEMANA ACTUAL
+                        <span className="bg-[var(--apex-gold)]/10 text-[var(--apex-gold)] text-[9px] font-black px-2.5 py-1 rounded border border-[var(--apex-gold)]/30 uppercase tracking-[0.2em] shadow-[0_0_10px_rgba(200,168,78,0.2)]">
+                            CURRENT WEEK
                         </span>
                     )}
                 </div>
                 
-                <div className="flex-1 overflow-y-auto divide-y divide-slate-800/50 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto divide-y divide-white/5 custom-scrollbar">
                     {filteredMatches.length === 0 ? (
-                        <div className="h-full flex flex-col items-center justify-center text-slate-500 p-10 opacity-50">
-                            <CalendarIcon className="w-16 h-16 mb-4" />
-                            <p className="font-bold">No hay partidos programados</p>
+                        <div className="h-full flex flex-col items-center justify-center text-white/30 p-10">
+                            <CalendarIcon className="w-12 h-12 mb-4 opacity-50" />
+                            <p className="text-[10px] font-black uppercase tracking-widest">No scheduled matches</p>
                         </div>
                     ) : (
                         filteredMatches.map((match, idx) => {
@@ -196,49 +191,49 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ gameState }) => 
                             return (
                                 <div
                                     key={idx}
-                                    className={`group px-4 md:px-8 py-5 flex items-center hover:bg-slate-800/40 transition-all duration-300 ${isPlayerMatch ? 'bg-sky-500/5 border-l-4 border-l-sky-500' : 'border-l-4 border-l-transparent'}`}
+                                    className={`group px-4 md:px-6 py-5 flex items-center hover:bg-white/5 transition-all duration-300 ${isPlayerMatch ? 'bg-[var(--apex-gold)]/5 border-l-2 border-l-[var(--apex-gold)]' : 'border-l-2 border-l-transparent'}`}
                                 >
                                     {/* Home Team */}
-                                    <div className="flex-1 flex items-center justify-end gap-3 md:gap-5 min-w-0">
-                                        <span className={`text-sm md:text-base text-right truncate transition-colors duration-300 ${isPlayerMatch && match.homeTeamId === gameState.team.id ? 'font-black text-sky-400' : 'font-bold text-slate-300 group-hover:text-white'}`}>
+                                    <div className="flex-1 flex items-center justify-end gap-3 min-w-0">
+                                        <span className={`text-xs md:text-sm text-right truncate uppercase tracking-widest transition-colors duration-300 ${isPlayerMatch && match.homeTeamId === gameState.team.id ? 'font-black text-[var(--apex-gold)]' : 'font-bold text-white/70 group-hover:text-white'}`}>
                                             {homeTeam?.name}
                                         </span>
-                                        <div className="w-8 h-8 md:w-10 md:h-10 flex-shrink-0 bg-slate-950/50 p-1.5 rounded-lg border border-slate-800 shadow-inner group-hover:scale-110 transition-transform duration-500 flex items-center justify-center">
+                                        <div className="w-8 h-8 md:w-10 md:h-10 flex-shrink-0 bg-black/40 p-1.5 rounded-lg border border-white/10 group-hover:scale-110 group-hover:border-white/30 transition-all duration-300 flex items-center justify-center">
                                             <TeamLogo team={homeTeam} />
                                         </div>
                                     </div>
 
                                     {/* Score/VS */}
-                                    <div className="w-24 md:w-32 flex flex-col items-center justify-center px-2">
+                                    <div className="w-20 md:w-28 flex flex-col items-center justify-center px-2">
                                         {isPlayed ? (
-                                            <div className="flex flex-col items-center gap-1">
-                                                <div className="flex items-center gap-2 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-700 shadow-xl">
-                                                    <span className={`text-xl font-black ${match.result!.homeScore > match.result!.awayScore ? 'text-white' : 'text-slate-500'}`}>{match.result?.homeScore}</span>
-                                                    <span className="text-slate-700 font-bold">-</span>
-                                                    <span className={`text-xl font-black ${match.result!.awayScore > match.result!.homeScore ? 'text-white' : 'text-slate-500'}`}>{match.result?.awayScore}</span>
+                                            <div className="flex flex-col items-center gap-1.5">
+                                                <div className="flex items-center gap-2 bg-black/60 px-3 py-1.5 rounded-lg border border-white/10">
+                                                    <span className={`text-base font-black ${match.result!.homeScore > match.result!.awayScore ? 'text-[var(--apex-gold)]' : 'text-white'}`}>{match.result?.homeScore}</span>
+                                                    <span className="text-white/30 font-bold">-</span>
+                                                    <span className={`text-base font-black ${match.result!.awayScore > match.result!.homeScore ? 'text-[var(--apex-gold)]' : 'text-white'}`}>{match.result?.awayScore}</span>
                                                 </div>
                                                 {match.penalties && (
-                                                    <span className="text-[9px] font-black text-yellow-500 bg-yellow-500/10 px-2 py-0.5 rounded uppercase tracking-tighter">Penales</span>
+                                                    <span className="text-[8px] font-black text-white/50 uppercase tracking-[0.2em]">Penalties</span>
                                                 )}
                                             </div>
                                         ) : (
-                                            <div className="bg-slate-800 px-4 py-1 rounded-full border border-slate-700 shadow-inner group-hover:bg-sky-900/50 group-hover:border-sky-500/50 transition-all duration-300">
-                                                <span className="text-xs font-black text-slate-500 group-hover:text-sky-400 tracking-widest">VS</span>
+                                            <div className="bg-white/5 px-3 py-1 rounded border border-white/10 group-hover:bg-white/10 transition-all duration-300">
+                                                <span className="text-[9px] font-black text-white/40 group-hover:text-white uppercase tracking-[0.2em]">VS</span>
                                             </div>
                                         )}
                                         {match.isCupMatch && (
-                                            <div className="mt-2 text-[9px] font-black text-orange-400 bg-orange-400/10 px-2 py-0.5 rounded uppercase tracking-widest">
-                                                {match.competition === 'FA_Cup' ? 'FA Cup' : 'Carabao Cup'}
+                                            <div className="mt-2 text-[8px] font-black text-white/60 bg-white/5 px-2 py-0.5 rounded uppercase tracking-[0.2em] border border-white/10">
+                                                {match.competition.replace('_', ' ')}
                                             </div>
                                         )}
                                     </div>
 
                                     {/* Away Team */}
-                                    <div className="flex-1 flex items-center justify-start gap-3 md:gap-5 min-w-0">
-                                        <div className="w-8 h-8 md:w-10 md:h-10 flex-shrink-0 bg-slate-950/50 p-1.5 rounded-lg border border-slate-800 shadow-inner group-hover:scale-110 transition-transform duration-500 flex items-center justify-center">
+                                    <div className="flex-1 flex items-center justify-start gap-3 min-w-0">
+                                        <div className="w-8 h-8 md:w-10 md:h-10 flex-shrink-0 bg-black/40 p-1.5 rounded-lg border border-white/10 group-hover:scale-110 group-hover:border-white/30 transition-all duration-300 flex items-center justify-center">
                                             <TeamLogo team={awayTeam} />
                                         </div>
-                                        <span className={`text-sm md:text-base truncate transition-colors duration-300 ${isPlayerMatch && match.awayTeamId === gameState.team.id ? 'font-black text-sky-400' : 'font-bold text-slate-300 group-hover:text-white'}`}>
+                                        <span className={`text-xs md:text-sm truncate uppercase tracking-widest transition-colors duration-300 ${isPlayerMatch && match.awayTeamId === gameState.team.id ? 'font-black text-[var(--apex-gold)]' : 'font-bold text-white/70 group-hover:text-white'}`}>
                                             {awayTeam?.name}
                                         </span>
                                     </div>

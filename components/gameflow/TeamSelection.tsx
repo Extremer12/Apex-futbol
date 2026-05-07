@@ -11,7 +11,7 @@ interface TeamSelectionProps {
 export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTeam }) => {
     const [selectedCountry, setSelectedCountry] = useState<CountryCode | null>(null);
     const [selectedLeague, setSelectedLeague] = useState<LeagueId | null>(null);
-    const [hoveredCountry, setHoveredCountry] = useState<CountryCode | null>(null);
+    const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
 
     const COUNTRY_CONFIG: Record<CountryCode, {
         title: string;
@@ -24,368 +24,330 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
         }[];
     }> = {
         ENG: {
-            title: 'The English Game',
+            title: 'The Home of Football',
             leagues: [
-                { id: LeagueId.PREMIER_LEAGUE, name: 'Premier League', logo: '/logos/Premier League.png', teams: '20', div: '1ª División' },
-                { id: LeagueId.CHAMPIONSHIP, name: 'Championship', logo: '/logos/Sky Bet Championship.png', teams: '24', div: '2ª División' }
+                { id: LeagueId.PREMIER_LEAGUE, name: 'Premier League', logo: '/logos/Premier League.png', teams: '20', div: '1st Division' },
+                { id: LeagueId.CHAMPIONSHIP, name: 'Championship', logo: '/logos/Sky Bet Championship.png', teams: '24', div: '2nd Division' }
             ]
         },
         ARG: {
             title: 'Pasión Argentina',
             leagues: [
-                { id: LeagueId.LIGA_ARGENTINA, name: 'Liga Argentina', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Liga_Profesional_de_F%C3%BAtbol_logo.svg/200px-Liga_Profesional_de_F%C3%BAtbol_logo.svg.png', teams: '28', div: '1ª División' },
-                { id: LeagueId.PRIMERA_NACIONAL, name: 'Primera Nacional', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Logo_Primera_Nacional.png/200px-Logo_Primera_Nacional.png', teams: '38', div: '2ª División' }
+                { id: LeagueId.LIGA_ARGENTINA, name: 'Liga Argentina', logo: 'https://tmssl.akamaized.net/images/logo/header/ar1p.png', teams: '28', div: '1st Division' },
+                { id: LeagueId.PRIMERA_NACIONAL, name: 'Primera Nacional', logo: 'https://tmssl.akamaized.net/images/logo/header/ar2n.png', teams: '38', div: '2nd Division' }
             ]
         },
         BRA: {
-            title: 'Samba do Futebol',
+            title: 'O Jogo Bonito',
             leagues: [
-                { id: LeagueId.BRASILEIRAO, name: 'Brasileirão', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Brasileirao_Serie_A_logo.png/200px-Brasileirao_Serie_A_logo.png', teams: '20', div: '1ª División' },
-                { id: LeagueId.SERIE_B_BR, name: 'Série B', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Logo_S%C3%A9rie_B_2023.png/200px-Logo_S%C3%A9rie_B_2023.png', teams: '20', div: '2ª División' }
+                { id: LeagueId.BRASILEIRAO, name: 'Brasileirão', logo: 'https://tmssl.akamaized.net/images/logo/header/bra1.png', teams: '20', div: '1st Division' },
+                { id: LeagueId.SERIE_B_BR, name: 'Série B', logo: 'https://tmssl.akamaized.net/images/logo/header/bra2.png', teams: '20', div: '2nd Division' }
             ]
         },
         ESP: {
             title: 'La Pasión Española',
             leagues: [
-                { id: LeagueId.LA_LIGA, name: 'La Liga', logo: 'https://tmssl.akamaized.net/images/logo/header/es1.png', teams: '20', div: '1ª División' },
-                { id: LeagueId.SEGUNDA_DIVISION_ESP, name: 'Segunda División', logo: 'https://tmssl.akamaized.net/images/logo/header/es2.png', teams: '22', div: '2ª División' }
+                { id: LeagueId.LA_LIGA, name: 'La Liga', logo: 'https://tmssl.akamaized.net/images/logo/header/es1.png', teams: '20', div: '1st Division' },
+                { id: LeagueId.SEGUNDA_DIVISION_ESP, name: 'Segunda División', logo: 'https://tmssl.akamaized.net/images/logo/header/es2.png', teams: '22', div: '2nd Division' }
             ]
         },
         GER: {
             title: 'Deutsche Fußball',
             leagues: [
-                { id: LeagueId.BUNDESLIGA, name: 'Bundesliga', logo: 'https://tmssl.akamaized.net/images/logo/header/l1.png', teams: '18', div: '1ª División' },
-                { id: LeagueId.ZWEITE_BUNDESLIGA, name: '2. Bundesliga', logo: 'https://tmssl.akamaized.net/images/logo/header/l2.png', teams: '18', div: '2ª División' }
+                { id: LeagueId.BUNDESLIGA, name: 'Bundesliga', logo: 'https://tmssl.akamaized.net/images/logo/header/l1.png', teams: '18', div: '1st Division' },
+                { id: LeagueId.ZWEITE_BUNDESLIGA, name: '2. Bundesliga', logo: 'https://tmssl.akamaized.net/images/logo/header/l2.png', teams: '18', div: '2nd Division' }
             ]
         },
         ITA: {
             title: 'Il Calcio Italiano',
             leagues: [
-                { id: LeagueId.SERIE_A, name: 'Serie A', logo: 'https://tmssl.akamaized.net/images/logo/header/it1.png', teams: '20', div: '1ª División' },
-                { id: LeagueId.SERIE_B_ITA, name: 'Serie B', logo: 'https://tmssl.akamaized.net/images/logo/header/it2.png', teams: '20', div: '2ª División' }
+                { id: LeagueId.SERIE_A, name: 'Serie A', logo: 'https://tmssl.akamaized.net/images/logo/header/it1.png', teams: '20', div: '1st Division' },
+                { id: LeagueId.SERIE_B_ITA, name: 'Serie B', logo: 'https://tmssl.akamaized.net/images/logo/header/it2.png', teams: '20', div: '2nd Division' }
             ]
         },
         FRA: {
-            title: 'Ligue de Talent',
+            title: 'Le Football Français',
             leagues: [
-                { id: LeagueId.LIGUE_1, name: 'Ligue 1', logo: 'https://tmssl.akamaized.net/images/logo/header/fr1.png', teams: '18', div: '1ª División' },
-                { id: LeagueId.LIGUE_2, name: 'Ligue 2', logo: 'https://tmssl.akamaized.net/images/logo/header/fr2.png', teams: '20', div: '2ª División' }
+                { id: LeagueId.LIGUE_1, name: 'Ligue 1', logo: 'https://tmssl.akamaized.net/images/logo/header/fr1.png', teams: '18', div: '1st Division' },
+                { id: LeagueId.LIGUE_2, name: 'Ligue 2', logo: 'https://tmssl.akamaized.net/images/logo/header/fr2.png', teams: '20', div: '2nd Division' }
             ]
         }
     };
 
-    const TIER_COLORS: Record<Team['tier'], string> = {
-        Top: 'from-purple-600/20 to-purple-900/40 border-purple-500/50 text-purple-400',
-        Mid: 'from-amber-600/20 to-amber-900/40 border-amber-500/50 text-amber-400',
-        Lower: 'from-emerald-600/20 to-emerald-900/40 border-emerald-500/50 text-emerald-400'
+    const COUNTRIES = [
+        { id: 'ENG' as CountryCode, name: 'England', flagUrl: 'https://flagcdn.com/gb-eng.svg' },
+        { id: 'ESP' as CountryCode, name: 'Spain', flagUrl: 'https://flagcdn.com/es.svg' },
+        { id: 'GER' as CountryCode, name: 'Germany', flagUrl: 'https://flagcdn.com/de.svg' },
+        { id: 'ITA' as CountryCode, name: 'Italy', flagUrl: 'https://flagcdn.com/it.svg' },
+        { id: 'FRA' as CountryCode, name: 'France', flagUrl: 'https://flagcdn.com/fr.svg' },
+        { id: 'ARG' as CountryCode, name: 'Argentina', flagUrl: 'https://flagcdn.com/ar.svg' },
+        { id: 'BRA' as CountryCode, name: 'Brazil', flagUrl: 'https://flagcdn.com/br.svg' },
+    ];
+
+    const FAN_EXPECTATIONS: Record<Team['tier'], string> = {
+        Top: 'Win the League',
+        Mid: 'Win Trophies',
+        Lower: 'Qualify Europe',
     };
 
-    const TIER_DESC: Record<Team['tier'], string> = {
-        Top: 'Expectativas Máximas - Solo para Valientes',
-        Mid: 'Proyecto en Crecimiento - El Reto Perfecto',
-        Lower: 'Desde los Cimientos - El Comienzo Ideal'
+    const FINANCIAL_STATUS: Record<Team['tier'], { label: string; color: string }> = {
+        Top: { label: 'Very Strong', color: 'var(--apex-green)' },
+        Mid: { label: 'Strong', color: 'var(--apex-green-light)' },
+        Lower: { label: 'Stable', color: 'var(--apex-gold)' },
     };
 
-    const teamsByTier = useMemo(() => {
-        const filtered = selectedLeague
-            ? TEAMS.filter(t => t.leagueId === selectedLeague)
-            : [];
-
-        return filtered.reduce((acc, team) => {
-            if (!acc[team.tier]) acc[team.tier] = [];
-            acc[team.tier].push(team);
-            return acc;
-        }, {} as Record<Team['tier'], Team[]>);
+    const teamsByLeague = useMemo(() => {
+        if (!selectedLeague) return [];
+        return TEAMS.filter(t => t.leagueId === selectedLeague);
     }, [selectedLeague]);
 
-    // 1. Country Selection View
-    if (!selectedCountry) {
-        const COUNTRIES = [
-            { id: 'ENG' as CountryCode, name: 'Inglaterra', flagUrl: 'https://flagcdn.com/gb-eng.svg', desc: 'Intensidad, ritmo frenético y los clubes históricos del mundo.', leagues: 'Premier · Championship', glow: 'rgba(59,130,246,0.5)', borderHover: 'hover:border-blue-500', bgHover: 'hover:bg-blue-900/20', textHover: 'group-hover:text-blue-400', dotColor: 'bg-blue-500' },
-            { id: 'ESP' as CountryCode, name: 'España', flagUrl: 'https://flagcdn.com/es.svg', desc: 'Donde el balón al piso es religión. Domina La Liga con talento.', leagues: 'La Liga', glow: 'rgba(239,68,68,0.5)', borderHover: 'hover:border-red-500', bgHover: 'hover:bg-red-900/20', textHover: 'group-hover:text-red-400', dotColor: 'bg-red-500' },
-            { id: 'GER' as CountryCode, name: 'Alemania', flagUrl: 'https://flagcdn.com/de.svg', desc: 'Estadios llenos y un modelo de desarrollo envidiado por Europa.', leagues: 'Bundesliga', glow: 'rgba(245,158,11,0.5)', borderHover: 'hover:border-amber-500', bgHover: 'hover:bg-amber-900/20', textHover: 'group-hover:text-amber-400', dotColor: 'bg-amber-500' },
-            { id: 'ITA' as CountryCode, name: 'Italia', flagUrl: 'https://flagcdn.com/it.svg', desc: 'Defensa de hierro y táctica impecable. El ajedrez del fútbol.', leagues: 'Serie A', glow: 'rgba(16,185,129,0.5)', borderHover: 'hover:border-emerald-500', bgHover: 'hover:bg-emerald-900/20', textHover: 'group-hover:text-emerald-400', dotColor: 'bg-emerald-500' },
-            { id: 'FRA' as CountryCode, name: 'Francia', flagUrl: 'https://flagcdn.com/fr.svg', desc: 'Talento joven, potencia física y el trampolín a la gloria europea.', leagues: 'Ligue 1 · Ligue 2', glow: 'rgba(99,102,241,0.5)', borderHover: 'hover:border-indigo-500', bgHover: 'hover:bg-indigo-900/20', textHover: 'group-hover:text-indigo-400', dotColor: 'bg-indigo-500' },
-            { id: 'ARG' as CountryCode, name: 'Argentina', flagUrl: 'https://flagcdn.com/ar.svg', desc: 'Pasión sin límites, estadios que laten y la cuna del fútbol mundial.', leagues: 'Primera · Nacional', glow: 'rgba(14,165,233,0.5)', borderHover: 'hover:border-sky-500', bgHover: 'hover:bg-sky-900/20', textHover: 'group-hover:text-sky-400', dotColor: 'bg-sky-500' },
-            { id: 'BRA' as CountryCode, name: 'Brasil', flagUrl: 'https://flagcdn.com/br.svg', desc: 'El Jogo Bonito. Talento infinito y el torneo más impredecible.', leagues: 'Brasileirão · Série B', glow: 'rgba(132,204,22,0.5)', borderHover: 'hover:border-lime-500', bgHover: 'hover:bg-lime-900/20', textHover: 'group-hover:text-lime-400', dotColor: 'bg-lime-500' },
-        ];
-        const active = COUNTRIES.find(c => c.id === hoveredCountry);
+    const currentStep = !selectedCountry ? 1 : !selectedLeague ? 2 : 3;
 
-        return (
-            <div className="min-h-screen bg-[#020617] relative overflow-hidden flex flex-col items-center justify-center p-4 md:p-8">
-                {/* Ambient background glow that shifts by country */}
-                <div
-                    className="absolute top-1/2 right-0 w-[600px] h-[600px] rounded-full blur-[160px] pointer-events-none transition-all duration-700 -translate-y-1/2"
-                    style={{ background: active ? active.glow : 'rgba(139,92,246,0.15)', opacity: 0.25 }}
-                />
-                <div className="absolute top-[-5%] left-[-5%] w-[40%] h-[40%] bg-purple-700/20 blur-[120px] rounded-full animate-pulse pointer-events-none" />
+    const currentLeague = selectedCountry && selectedLeague
+        ? COUNTRY_CONFIG[selectedCountry].leagues.find(l => l.id === selectedLeague)
+        : null;
 
-                <div className="relative z-10 w-full max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+    const handleBack = () => {
+        if (selectedLeague) {
+            setSelectedLeague(null);
+            setSelectedTeam(null);
+        } else if (selectedCountry) {
+            setSelectedCountry(null);
+        }
+    };
 
-                    {/* ─── LEFT: Header + List ─── */}
-                    <div className="flex flex-col gap-6 animate-fade-in">
-                        <div>
-                            <span className="text-purple-400 font-bold tracking-[0.3em] uppercase text-xs mb-2 block">Comienza tu Legado</span>
-                            <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter leading-none mb-3">
-                                Hola,&nbsp;
-                                <span className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-                                    {player.name}
-                                </span>
-                            </h1>
-                            <p className="text-slate-400 text-sm max-w-md leading-relaxed">
-                                Elige el país donde escribirás tu historia. Tu experiencia de&nbsp;
-                                <span className="text-white font-semibold">{player.experience}</span> te ha traído hasta aquí.
-                            </p>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[55vh] overflow-y-auto pr-2 custom-scrollbar">
-                            {COUNTRIES.map((c, i) => (
-                                <button
-                                    key={c.id}
-                                    onMouseEnter={() => setHoveredCountry(c.id)}
-                                    onMouseLeave={() => setHoveredCountry(null)}
-                                    onClick={() => setSelectedCountry(c.id)}
-                                    className={`group flex items-center gap-4 p-3 rounded-2xl border border-white/5 bg-slate-900/50 backdrop-blur-md transition-all duration-300 ${c.bgHover} ${c.borderHover} hover:border-opacity-60 hover:-translate-y-1 hover:shadow-xl w-full animate-scale-in`}
-                                    style={{ animationDelay: `${i * 50}ms` }}
-                                >
-                                    {/* Flag */}
-                                    <div className="w-12 h-12 shrink-0 rounded-xl bg-slate-800/80 border border-white/5 flex items-center justify-center transition-transform duration-300 group-hover:scale-110 overflow-hidden p-2">
-                                        <img src={c.flagUrl} alt={c.name} className="w-full h-full object-contain drop-shadow-md" />
-                                    </div>
-
-                                    {/* Text */}
-                                    <div className="text-left flex-1 min-w-0">
-                                        <div className={`text-lg font-black text-white uppercase tracking-wide transition-colors duration-300 ${c.textHover} truncate`}>
-                                            {c.name}
-                                        </div>
-                                        <div className="text-slate-500 text-[10px] font-semibold mt-0.5 truncate">{c.leagues}</div>
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* ─── RIGHT: Interactive Preview Panel ─── */}
-                    <div className="hidden lg:flex flex-col items-center justify-center relative min-h-[460px]">
-                        {/* Globe ring decoration */}
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <div
-                                className="w-[380px] h-[380px] rounded-full border transition-all duration-700"
-                                style={{ borderColor: active ? active.glow : 'rgba(255,255,255,0.04)', boxShadow: active ? `0 0 80px ${active.glow}22` : 'none' }}
-                            />
-                            <div
-                                className="absolute w-[280px] h-[280px] rounded-full border transition-all duration-700"
-                                style={{ borderColor: active ? active.glow : 'rgba(255,255,255,0.03)' }}
-                            />
-                            {/* Orbiting dot */}
-                            <div
-                                className="absolute w-3 h-3 rounded-full top-[10%] left-1/2 transition-all duration-700"
-                                style={{ background: active ? active.glow : '#334155', boxShadow: active ? `0 0 12px ${active.glow}` : 'none' }}
-                            />
-                        </div>
-
-                        {/* Content */}
-                        {active ? (
-                            <div key={active.id} className="relative z-10 flex flex-col items-center text-center gap-6 animate-scale-in">
-                                    <img 
-                                        src={active.flagUrl} 
-                                        alt={active.name}
-                                        className="w-48 h-32 object-cover rounded-2xl shadow-2xl animate-scale-in"
-                                        style={{ filter: `drop-shadow(0 0 40px ${active.glow})` }}
-                                    />
-                                <div>
-                                    <h2 className="text-5xl font-black text-white uppercase tracking-tighter">{active.name}</h2>
-                                    <div
-                                        className="h-1 w-16 rounded-full mx-auto mt-3 mb-5 transition-all duration-500"
-                                        style={{ background: active.glow }}
-                                    />
-                                    <p className="text-slate-300 text-base max-w-xs mx-auto leading-relaxed">{active.desc}</p>
-                                    <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10">
-                                        <span className={`w-2 h-2 rounded-full ${active.dotColor}`} />
-                                        <span className="text-slate-400 text-xs font-bold uppercase tracking-widest">{active.leagues}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="relative z-10 flex flex-col items-center text-slate-700 gap-4">
-                                <svg className="w-20 h-20 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <p className="font-semibold uppercase tracking-[0.25em] text-sm animate-pulse">Pasa el cursor por un país</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    // 2. League Selection View
-    if (!selectedLeague) {
-        return (
-            <div className="min-h-screen bg-[#020617] relative overflow-hidden flex flex-col items-center justify-center p-4">
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 pointer-events-none" />
-                
-                <div className="w-full max-w-5xl relative z-10 animate-fade-in">
-                    <button
-                        onClick={() => setSelectedCountry(null)}
-                        className="group mb-12 flex items-center gap-3 text-slate-500 hover:text-white transition-all duration-300"
-                    >
-                        <div className="p-2 rounded-full border border-slate-800 group-hover:border-white/20 group-hover:bg-white/5 transition-all">
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    return (
+        <div className="min-h-screen flex flex-col" style={{ background: 'var(--apex-dark)' }}>
+            {/* Header */}
+            <div className="px-5 pt-5 pb-3">
+                <div className="flex items-center gap-3 mb-4">
+                    {currentStep > 1 && (
+                        <button onClick={handleBack} className="w-9 h-9 rounded-xl flex items-center justify-center transition-all hover:bg-white/5"
+                            style={{ border: '1px solid var(--apex-border)' }}>
+                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                             </svg>
-                        </div>
-                        <span className="font-bold tracking-widest uppercase text-xs">Volver a Países</span>
-                    </button>
-
-                    <div className="text-center mb-16">
-                        <h1 className="text-5xl font-black text-white mb-4 tracking-tighter uppercase italic">
-                            {selectedCountry === 'ENG' ? 'The English Game' : 
-                             selectedCountry === 'ESP' ? 'La Pasión Española' :
-                             selectedCountry === 'GER' ? 'Deutsche Fußball' : 
-                             selectedCountry === 'FRA' ? 'Ligue de Talent' :
-                             selectedCountry === 'ARG' ? 'Pasión Argentina' :
-                             selectedCountry === 'BRA' ? 'Samba do Futebol' : 'Il Calcio Italiano'}
-                        </h1>
-                        <div className="w-24 h-1 bg-gradient-to-r from-transparent via-purple-500 to-transparent mx-auto" />
+                        </button>
+                    )}
+                    <div className="flex-1 text-center">
+                        <h1 className="text-lg font-extrabold tracking-[0.15em] uppercase text-white">Choose Your Club</h1>
+                        <p className="text-[10px] font-semibold tracking-[0.15em] uppercase" style={{ color: 'var(--apex-text-secondary)' }}>Build Your Legacy</p>
                     </div>
+                    {currentStep > 1 && <div className="w-9" />}
+                </div>
 
-                    <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-                        {selectedCountry && COUNTRY_CONFIG[selectedCountry].leagues.map((l, i) => (
+                {/* Stepper */}
+                <div className="flex items-center justify-center gap-0 mb-4">
+                    {[
+                        { num: 1, label: 'COUNTRY' },
+                        { num: 2, label: 'LEAGUE' },
+                        { num: 3, label: 'CLUB' }
+                    ].map((step, i) => (
+                        <React.Fragment key={step.num}>
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all"
+                                    style={{
+                                        background: currentStep >= step.num ? 'var(--apex-gold)' : 'transparent',
+                                        border: `1px solid ${currentStep >= step.num ? 'var(--apex-gold)' : 'var(--apex-text-muted)'}`,
+                                        color: currentStep >= step.num ? 'var(--apex-dark)' : 'var(--apex-text-muted)',
+                                    }}>
+                                    {step.num}
+                                </div>
+                                <span className="text-[9px] font-bold tracking-[0.1em]"
+                                    style={{ color: currentStep >= step.num ? 'var(--apex-text)' : 'var(--apex-text-muted)' }}>
+                                    {step.label}
+                                </span>
+                            </div>
+                            {i < 2 && (
+                                <div className="w-12 h-px mx-2" style={{ background: currentStep > step.num ? 'var(--apex-gold)' : 'var(--apex-border)' }} />
+                            )}
+                        </React.Fragment>
+                    ))}
+                </div>
+            </div>
+
+            {/* Step 1: Country */}
+            {!selectedCountry && (
+                <div className="flex-1 overflow-y-auto px-5 pb-6">
+                    <div className="space-y-3 stagger-children">
+                        {COUNTRIES.map((c) => (
                             <button
-                                key={l.id}
-                                onClick={() => setSelectedLeague(l.id)}
-                                className={`group relative bg-slate-900/60 border border-white/5 rounded-[2rem] p-10 hover:border-white/20 transition-all duration-500 hover:-translate-y-2 overflow-hidden shadow-2xl animate-scale-in ${COUNTRY_CONFIG[selectedCountry].leagues.length === 1 ? 'col-span-2 max-w-xl mx-auto w-full' : ''}`}
-                                style={{ animationDelay: `${i * 150}ms` }}
+                                key={c.id}
+                                onClick={() => setSelectedCountry(c.id)}
+                                className="w-full apex-card p-4 flex items-center gap-4 transition-all duration-300 hover:border-[rgba(200,168,78,0.3)] active:scale-[0.98]"
                             >
-                                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent" />
-                                <div className="relative flex flex-col items-center">
-                                    <div className="w-32 h-32 mb-8 transform group-hover:scale-110 transition-transform duration-700 ease-out">
-                                        <img src={l.logo} alt={l.name} className="w-full h-full object-contain drop-shadow-[0_0_20px_rgba(255,255,255,0.1)]" />
-                                    </div>
-                                    <h2 className="text-3xl font-black text-white mb-3 tracking-tight">{l.name}</h2>
-                                    <div className="px-6 py-2 rounded-full bg-white/5 border border-white/10 text-slate-300 text-sm font-bold uppercase tracking-widest">
-                                        {l.teams} Clubes • {l.div}
+                                <div className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden p-2"
+                                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--apex-border)' }}>
+                                    <img src={c.flagUrl} alt={c.name} className="w-full h-full object-contain" />
+                                </div>
+                                <div className="flex-1 text-left">
+                                    <div className="text-base font-extrabold text-white uppercase tracking-wide">{c.name}</div>
+                                    <div className="text-[10px] font-medium" style={{ color: 'var(--apex-text-secondary)' }}>
+                                        {COUNTRY_CONFIG[c.id].title}
                                     </div>
                                 </div>
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--apex-text-muted)' }}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
                             </button>
                         ))}
                     </div>
                 </div>
-            </div>
-        );
-    }
+            )}
 
-    // 3. Team Selection View
-    return (
-        <div className="min-h-screen bg-[#020617] relative flex flex-col items-center p-6 md:p-12 overflow-x-hidden">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[150%] h-[300px] bg-gradient-to-b from-purple-600/10 to-transparent blur-[100px] pointer-events-none" />
-            
-            {/* Nav Header */}
-            <div className="w-full max-w-7xl relative z-10 flex items-center justify-between mb-12 animate-fade-in">
-                <button
-                    onClick={() => setSelectedLeague(null)}
-                    className="group flex items-center gap-3 text-slate-500 hover:text-white transition-all"
-                >
-                    <div className="p-2 rounded-xl border border-slate-800 group-hover:bg-white/5 transition-all">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
+            {/* Step 2: League */}
+            {selectedCountry && !selectedLeague && (
+                <div className="flex-1 overflow-y-auto px-5 pb-6 animate-slide-up">
+                    {/* Selected Country Banner */}
+                    <div className="apex-card p-4 flex items-center gap-3 mb-4">
+                        <div className="text-[10px] font-bold tracking-[0.1em] uppercase" style={{ color: 'var(--apex-text-secondary)' }}>SELECT COUNTRY</div>
+                        <div className="flex items-center gap-2 ml-auto">
+                            <img src={COUNTRIES.find(c => c.id === selectedCountry)?.flagUrl} alt="" className="w-5 h-4 object-contain" />
+                            <span className="text-sm font-extrabold text-white uppercase">{COUNTRIES.find(c => c.id === selectedCountry)?.name}</span>
+                        </div>
                     </div>
-                    <span className="font-bold tracking-widest uppercase text-[10px]">Cambiar Liga</span>
-                </button>
-            </div>
 
-            {/* Cinematic League Header */}
-            <div className="text-center relative z-10 mb-20 animate-scale-in">
-                <div className="relative inline-block mb-8">
-                    <div className="absolute inset-0 bg-white blur-[50px] opacity-20 animate-pulse" />
-                    <img 
-                        src={
-                            selectedLeague === LeagueId.PREMIER_LEAGUE ? '/logos/Premier League.png' : 
-                            selectedLeague === LeagueId.CHAMPIONSHIP ? '/logos/Sky Bet Championship.png' : 
-                            selectedLeague === LeagueId.BUNDESLIGA ? 'https://tmssl.akamaized.net/images/logo/header/l1.png' :
-                            selectedLeague === LeagueId.ZWEITE_BUNDESLIGA ? 'https://tmssl.akamaized.net/images/logo/header/l2.png' :
-                            selectedLeague === LeagueId.SERIE_A ? 'https://tmssl.akamaized.net/images/logo/header/it1.png' : 
-                            selectedLeague === LeagueId.SERIE_B_ITA ? 'https://tmssl.akamaized.net/images/logo/header/it2.png' : 
-                            selectedLeague === LeagueId.LIGUE_1 ? 'https://tmssl.akamaized.net/images/logo/header/fr1.png' :
-                            selectedLeague === LeagueId.LIGUE_2 ? 'https://tmssl.akamaized.net/images/logo/header/fr2.png' :
-                            selectedLeague === LeagueId.LIGA_ARGENTINA ? 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Liga_Profesional_de_F%C3%BAtbol_logo.svg/200px-Liga_Profesional_de_F%C3%BAtbol_logo.svg.png' :
-                            selectedLeague === LeagueId.PRIMERA_NACIONAL ? 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Logo_Primera_Nacional.png/200px-Logo_Primera_Nacional.png' :
-                            selectedLeague === LeagueId.BRASILEIRAO ? 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Brasileirao_Serie_A_logo.png/200px-Brasileirao_Serie_A_logo.png' :
-                            selectedLeague === LeagueId.SERIE_B_BR ? 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Logo_S%C3%A9rie_B_2023.png/200px-Logo_S%C3%A9rie_B_2023.png' :
-                            selectedLeague === LeagueId.SEGUNDA_DIVISION_ESP ? 'https://tmssl.akamaized.net/images/logo/header/es2.png' :
-                            'https://tmssl.akamaized.net/images/logo/header/es1.png'
-                        } 
-                        alt="League" 
-                        className="w-32 h-32 md:w-48 md:h-48 object-contain relative z-10 drop-shadow-2xl" 
-                    />
-                </div>
-                <h1 className="text-5xl md:text-7xl font-black mb-4 tracking-tighter text-white uppercase italic">
-                    {selectedLeague === LeagueId.PREMIER_LEAGUE ? 'Premier League' : 
-                     selectedLeague === LeagueId.CHAMPIONSHIP ? 'Championship' : 
-                     selectedLeague === LeagueId.BUNDESLIGA ? 'Bundesliga' :
-                     selectedLeague === LeagueId.ZWEITE_BUNDESLIGA ? '2. Bundesliga' :
-                     selectedLeague === LeagueId.SERIE_A ? 'Serie A' : 
-                     selectedLeague === LeagueId.SERIE_B_ITA ? 'Serie B' : 
-                     selectedLeague === LeagueId.LIGUE_1 ? 'Ligue 1' :
-                     selectedLeague === LeagueId.LIGUE_2 ? 'Ligue 2' :
-                     selectedLeague === LeagueId.LIGA_ARGENTINA ? 'Liga Argentina' :
-                     selectedLeague === LeagueId.PRIMERA_NACIONAL ? 'Primera Nacional' :
-                     selectedLeague === LeagueId.BRASILEIRAO ? 'Brasileirão' : 
-                     selectedLeague === LeagueId.SERIE_B_BR ? 'Série B' :
-                     selectedLeague === LeagueId.SEGUNDA_DIVISION_ESP ? 'Segunda División' : 'La Liga'}
-                </h1>
-                <p className="text-slate-400 text-xl font-medium tracking-wide">Toma el control del club y forja tu propio destino</p>
-            </div>
-
-            <div className="w-full max-w-7xl space-y-24 relative z-10 pb-20">
-                {(['Top', 'Mid', 'Lower'] as const).map((tier, tierIdx) => {
-                    const teamsInTier = teamsByTier[tier];
-                    if (!teamsInTier || teamsInTier.length === 0) return null;
-
-                    return (
-                        <div key={tier} className="animate-fade-in" style={{ animationDelay: `${tierIdx * 200}ms` }}>
-                            <div className={`mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4 border-l-4 pl-6 py-2 bg-gradient-to-r ${TIER_COLORS[tier]} border-l-current`}>
-                                <div>
-                                    <h2 className="text-4xl font-black text-white tracking-tight uppercase italic">Clubes {tier}</h2>
-                                    <p className="text-slate-400 font-semibold mt-1">{TIER_DESC[tier]}</p>
+                    {/* League Cards */}
+                    <div className="text-[10px] font-bold tracking-[0.1em] uppercase mb-3" style={{ color: 'var(--apex-text-secondary)' }}>SELECT LEAGUE</div>
+                    <div className="space-y-3">
+                        {COUNTRY_CONFIG[selectedCountry].leagues.map((l, i) => (
+                            <button
+                                key={l.id}
+                                onClick={() => setSelectedLeague(l.id)}
+                                className="w-full apex-card p-5 flex items-center gap-4 transition-all duration-300 hover:border-[rgba(200,168,78,0.3)] active:scale-[0.98] animate-scale-in"
+                                style={{ animationDelay: `${i * 100}ms` }}
+                            >
+                                <div className="w-14 h-14 rounded-xl flex items-center justify-center p-1"
+                                    style={{ background: 'rgba(255,255,255,0.03)' }}>
+                                    <img src={l.logo} alt={l.name} className="w-full h-full object-contain" />
                                 </div>
-                                <div className="text-xs font-black tracking-[0.3em] uppercase opacity-40">
-                                    Total: {teamsInTier.length} Equipos
+                                <div className="flex-1 text-left">
+                                    <div className="text-base font-extrabold text-white">{l.name}</div>
+                                    <div className="text-[10px]" style={{ color: 'var(--apex-text-secondary)' }}>{l.teams} Clubs Competing</div>
+                                </div>
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--apex-text-muted)' }}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Step 3: Team */}
+            {selectedLeague && (
+                <div className="flex-1 overflow-y-auto px-5 pb-24 animate-slide-up">
+                    {/* Country + League summary */}
+                    <div className="flex gap-3 mb-4">
+                        <div className="flex-1 apex-card p-3 flex items-center gap-2">
+                            <img src={COUNTRIES.find(c => c.id === selectedCountry)?.flagUrl} alt="" className="w-5 h-4 object-contain" />
+                            <span className="text-xs font-bold text-white uppercase">{COUNTRIES.find(c => c.id === selectedCountry)?.name}</span>
+                        </div>
+                        <div className="flex-1 apex-card p-3 flex items-center gap-2">
+                            {currentLeague && <img src={currentLeague.logo} alt="" className="w-5 h-5 object-contain" />}
+                            <span className="text-xs font-bold text-white">{currentLeague?.name}</span>
+                            <span className="text-[9px] ml-auto" style={{ color: 'var(--apex-text-muted)' }}>{currentLeague?.teams} Clubs</span>
+                        </div>
+                    </div>
+
+                    {/* Team Grid */}
+                    <div className="flex items-center justify-between mb-3">
+                        <span className="text-[10px] font-bold tracking-[0.1em] uppercase" style={{ color: 'var(--apex-text-secondary)' }}>SELECT CLUB</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        {teamsByLeague.map((team, i) => {
+                            const isSelected = selectedTeam?.id === team.id;
+                            return (
+                                <button
+                                    key={team.id}
+                                    onClick={() => setSelectedTeam(team)}
+                                    className="relative p-4 rounded-2xl text-left transition-all duration-300 active:scale-[0.97] animate-scale-in"
+                                    style={{
+                                        animationDelay: `${i * 30}ms`,
+                                        background: isSelected ? 'rgba(200,168,78,0.06)' : 'var(--apex-card)',
+                                        border: `1px solid ${isSelected ? 'var(--apex-gold)' : 'var(--apex-border)'}`,
+                                    }}
+                                >
+                                    {isSelected && (
+                                        <div className="absolute top-2 right-2">
+                                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--apex-gold)' }}>
+                                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                            </svg>
+                                        </div>
+                                    )}
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="w-10 h-10">
+                                            <TeamLogo team={team} className="w-full h-full" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="text-xs font-extrabold text-white uppercase leading-tight truncate">{team.name}</div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-[9px]" style={{ color: 'var(--apex-text-muted)' }}>Financial Status</span>
+                                            <span className="text-[9px] font-bold" style={{ color: FINANCIAL_STATUS[team.tier].color }}>{FINANCIAL_STATUS[team.tier].label}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-[9px]" style={{ color: 'var(--apex-text-muted)' }}>Fan Expectations</span>
+                                            <span className="text-[9px] font-bold" style={{ color: 'var(--apex-gold)' }}>{FAN_EXPECTATIONS[team.tier]}</span>
+                                        </div>
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* Selected Team Detail */}
+                    {selectedTeam && (
+                        <div className="apex-card p-4 mt-4 animate-slide-up">
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="w-8 h-8"><TeamLogo team={selectedTeam} className="w-full h-full" /></div>
+                                <div>
+                                    <div className="text-sm font-extrabold text-white uppercase">{selectedTeam.name}</div>
+                                    <div className="text-[10px]" style={{ color: 'var(--apex-text-secondary)' }}>
+                                        {selectedTeam.tier === 'Top' ? 'One of the most iconic clubs in the world.' :
+                                         selectedTeam.tier === 'Mid' ? 'A club with ambition and potential for glory.' :
+                                         'A growing project ready for your leadership.'}
+                                    </div>
                                 </div>
                             </div>
-                            
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
-                                {teamsInTier.map((team, i) => (
-                                    <button
-                                        key={team.id}
-                                        onClick={() => onSelectTeam(team)}
-                                        className="group relative bg-slate-900/40 border border-white/5 p-8 rounded-[2rem] flex flex-col items-center justify-between gap-6 transition-all duration-500 hover:bg-white/5 hover:border-white/20 hover:-translate-y-3 hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-scale-in"
-                                        style={{ animationDelay: `${(tierIdx * 100) + (i * 30)}ms` }}
-                                    >
-                                        <div className="w-20 h-20 md:w-24 md:h-24 transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-700 ease-out">
-                                            <TeamLogo team={team} className="w-full h-full drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]" />
+                            <div className="flex gap-4 mt-3">
+                                {[
+                                    { icon: '🏆', label: 'History' },
+                                    { icon: '👥', label: 'Squad' },
+                                    { icon: '💰', label: 'Finances' },
+                                ].map(item => (
+                                    <div key={item.label} className="flex flex-col items-center gap-1 flex-1">
+                                        <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
+                                            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--apex-border)' }}>
+                                            {item.icon}
                                         </div>
-                                        <div className="text-center">
-                                            <span className="font-black text-xs md:text-sm text-white leading-tight uppercase group-hover:text-purple-400 transition-colors block mb-1">
-                                                {team.name}
-                                            </span>
-                                            <div className="flex justify-center gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
-                                                <div className="w-1 h-1 rounded-full bg-white" />
-                                                <div className="w-1 h-1 rounded-full bg-white" />
-                                                <div className="w-1 h-1 rounded-full bg-white" />
-                                            </div>
-                                        </div>
-                                        <div className="absolute inset-0 bg-gradient-to-t from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-[2rem] pointer-events-none" />
-                                    </button>
+                                        <span className="text-[9px] font-semibold" style={{ color: 'var(--apex-text-secondary)' }}>{item.label}</span>
+                                    </div>
                                 ))}
                             </div>
                         </div>
-                    );
-                })}
-            </div>
+                    )}
+                </div>
+            )}
+
+            {/* Fixed Bottom CTA */}
+            {selectedTeam && (
+                <div className="fixed bottom-0 left-0 right-0 p-5 z-50 animate-slide-up" style={{ background: 'linear-gradient(to top, var(--apex-dark), transparent)' }}>
+                    <button
+                        onClick={() => onSelectTeam(selectedTeam)}
+                        className="apex-btn-gold"
+                    >
+                        CONFIRM SELECTION
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                </div>
+            )}
         </div>
     );
 };

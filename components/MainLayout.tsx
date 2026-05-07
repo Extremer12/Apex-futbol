@@ -49,6 +49,8 @@ interface MainLayoutProps {
     onElectionComplete: () => void;
 }
 
+import { motion, AnimatePresence } from 'framer-motion';
+
 export const MainLayout: React.FC<MainLayoutProps> = ({
     gameState,
     activeScreen,
@@ -106,7 +108,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
     };
 
     return (
-        <div className="bg-slate-900 min-h-screen text-slate-200 font-sans relative">
+        <div className="min-h-screen font-sans relative" style={{ background: 'var(--apex-darker)', color: 'var(--apex-text)' }}>
             {/* Election Screen Overlay */}
             {gameState.mandate?.isElectionYear && matchPhase === 'PRE' && (
                 <ElectionScreen
@@ -116,14 +118,22 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                 />
             )}
 
-            <div className="max-w-7xl mx-auto">
+            <div className="max-w-md mx-auto min-h-screen relative shadow-2xl" style={{ background: 'var(--apex-dark)' }}>
                 <Header gameState={gameState} />
-                <main className="pb-24">
-                    <div key={activeScreen} className="content-fade-in">
-                        <React.Suspense fallback={<div className="flex items-center justify-center py-20"><LoadingSpinner /></div>}>
-                            {renderContent()}
-                        </React.Suspense>
-                    </div>
+                <main className="pb-24 overflow-x-hidden">
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={activeScreen}
+                            initial={{ opacity: 0, x: 10, scale: 0.98 }}
+                            animate={{ opacity: 1, x: 0, scale: 1 }}
+                            exit={{ opacity: 0, x: -10, scale: 0.98 }}
+                            transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
+                        >
+                            <React.Suspense fallback={<div className="flex items-center justify-center py-20"><LoadingSpinner /></div>}>
+                                {renderContent()}
+                            </React.Suspense>
+                        </motion.div>
+                    </AnimatePresence>
                 </main>
                 <BottomNav activeScreen={activeScreen} onNavigate={setActiveScreen} />
             </div>

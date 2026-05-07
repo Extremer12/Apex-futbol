@@ -17,14 +17,13 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = ({ gameState, dispa
     const playerPosition = playerTable.find(row => row.teamId === team.id)?.position || 10;
 
     // Calculate detailed breakdown
-    // For display purposes, assume there was a home match (to show potential revenue)
     const breakdown = calculateFinancialBreakdown(
         team,
         stadium,
         sponsors,
         playerPosition,
-        { bought: 0, sold: 0 }, // Weekly transfers (would need to track this)
-        true, // wasHomeMatch - showing potential with home match
+        { bought: 0, sold: 0 }, 
+        true, 
         team.leagueId
     );
 
@@ -35,40 +34,49 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = ({ gameState, dispa
     };
 
     const handleExpandStadium = () => {
-        if (confirm(`¿Expandir el estadio por ${formatCurrency(stadium.expansionCost || 0)}?`)) {
+        if (confirm(`Expand stadium capacity for ${formatCurrency(stadium.expansionCost || 0)}?`)) {
             dispatch({ type: 'EXPAND_STADIUM' });
         }
     };
 
     const getSponsorTypeLabel = (type: Sponsor['type']) => {
         const labels = {
-            shirt: 'Camiseta',
-            stadium: 'Estadio',
-            training: 'Entrenamiento',
-            kit: 'Equipación'
+            shirt: 'Shirt',
+            stadium: 'Stadium',
+            training: 'Training',
+            kit: 'Kit'
         };
         return labels[type];
     };
 
     return (
-        <div className="p-4 md:p-6 space-y-6">
-            <h2 className="text-3xl font-bold text-white">Finanzas</h2>
+        <div className="p-4 md:p-6 space-y-6 pb-24 animate-fade-in">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-4">
+                <div>
+                    <h2 className="text-[10px] font-black text-gold-gradient tracking-[0.3em] uppercase mb-1">Club Operations</h2>
+                    <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter">Finances</h1>
+                </div>
+            </div>
 
             {/* Balance Overview */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-gradient-to-br from-green-900/40 to-emerald-900/40 border-2 border-green-500/30 rounded-xl p-6">
-                    <h3 className="text-sm font-semibold text-green-300 uppercase mb-2">Balance Total</h3>
-                    <div className="text-4xl font-bold text-white">{formatCurrencyShort(finances.balance)}</div>
+                <div className="apex-card p-6 border-t-2 border-[var(--apex-green)] relative overflow-hidden group">
+                    <div className="absolute -right-4 -top-4 w-24 h-24 bg-[var(--apex-green)]/10 rounded-full blur-2xl group-hover:bg-[var(--apex-green)]/20 transition-all duration-500"></div>
+                    <h3 className="text-[10px] font-black text-[var(--apex-green)] uppercase tracking-widest mb-2 relative z-10">Total Balance</h3>
+                    <div className="text-3xl lg:text-4xl font-black text-white relative z-10">{formatCurrencyShort(finances.balance)}</div>
                 </div>
 
-                <div className="bg-gradient-to-br from-blue-900/40 to-cyan-900/40 border-2 border-blue-500/30 rounded-xl p-6">
-                    <h3 className="text-sm font-semibold text-blue-300 uppercase mb-2">Presupuesto Fichajes</h3>
-                    <div className="text-4xl font-bold text-white">{formatCurrencyShort(finances.transferBudget)}</div>
+                <div className="apex-card p-6 border-t-2 border-[var(--apex-gold)] relative overflow-hidden group">
+                    <div className="absolute -right-4 -top-4 w-24 h-24 bg-[var(--apex-gold)]/10 rounded-full blur-2xl group-hover:bg-[var(--apex-gold)]/20 transition-all duration-500"></div>
+                    <h3 className="text-[10px] font-black text-[var(--apex-gold)] uppercase tracking-widest mb-2 relative z-10">Transfer Budget</h3>
+                    <div className="text-3xl lg:text-4xl font-black text-white relative z-10">{formatCurrencyShort(finances.transferBudget)}</div>
                 </div>
 
-                <div className={`bg-gradient-to-br ${netIncome >= 0 ? 'from-green-900/40 to-emerald-900/40 border-green-500/30' : 'from-red-900/40 to-orange-900/40 border-red-500/30'} border-2 rounded-xl p-6`}>
-                    <h3 className="text-sm font-semibold text-slate-300 uppercase mb-2">Balance Semanal</h3>
-                    <div className={`text-4xl font-bold ${netIncome >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                <div className={`apex-card p-6 border-t-2 ${netIncome >= 0 ? 'border-[var(--apex-green)]' : 'border-[var(--apex-red)]'} relative overflow-hidden group`}>
+                    <div className={`absolute -right-4 -top-4 w-24 h-24 ${netIncome >= 0 ? 'bg-[var(--apex-green)]/10' : 'bg-[var(--apex-red)]/10'} rounded-full blur-2xl transition-all duration-500`}></div>
+                    <h3 className="text-[10px] font-black text-white/50 uppercase tracking-widest mb-2 relative z-10">Weekly Net Income</h3>
+                    <div className={`text-3xl lg:text-4xl font-black relative z-10 ${netIncome >= 0 ? 'text-[var(--apex-green)]' : 'text-[var(--apex-red)]'}`}>
                         {netIncome >= 0 ? '+' : ''}{formatCurrencyShort(netIncome)}
                     </div>
                 </div>
@@ -76,13 +84,13 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = ({ gameState, dispa
 
             {/* Negative Balance Warning */}
             {finances.balance < 0 && (
-                <div className="bg-red-900/40 border-2 border-red-500 rounded-xl p-4 flex items-center gap-3">
-                    <svg className="w-6 h-6 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
+                <div className="bg-[var(--apex-red)]/10 border border-[var(--apex-red)]/30 rounded-xl p-4 flex items-center gap-4 animate-pulse">
+                    <div className="w-10 h-10 rounded-full bg-[var(--apex-red)]/20 flex items-center justify-center flex-shrink-0">
+                        <span className="text-xl">⚠️</span>
+                    </div>
                     <div>
-                        <p className="text-red-200 font-semibold">⚠️ Balance Negativo</p>
-                        <p className="text-red-300 text-sm">Tu club está en números rojos. Considera vender jugadores o reducir gastos.</p>
+                        <p className="text-[var(--apex-red)] font-black uppercase tracking-wider text-sm">Negative Balance Alert</p>
+                        <p className="text-[var(--apex-red)]/80 text-xs font-bold mt-0.5">The club is in debt. The board may intervene if finances are not stabilized by selling players or reducing wages.</p>
                     </div>
                 </div>
             )}
@@ -90,28 +98,31 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = ({ gameState, dispa
             {/* Detailed Breakdown */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Income */}
-                <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
-                    <h3 className="text-xl font-bold text-green-400 mb-4">💰 Ingresos Semanales</h3>
-                    <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                            <span className="text-slate-300">Entradas (Día de Partido)</span>
-                            <span className="text-green-400 font-semibold">{formatCurrency(breakdown.matchdayRevenue)}</span>
+                <div className="apex-card p-6">
+                    <h3 className="text-sm font-black text-[var(--apex-green)] mb-6 uppercase tracking-widest flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-[var(--apex-green)]"></span>
+                        Weekly Revenue
+                    </h3>
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-center pb-3 border-b border-white/5">
+                            <span className="text-xs text-white/50 font-bold uppercase tracking-wider">Matchday Tickets</span>
+                            <span className="text-[var(--apex-green)] font-black">{formatCurrency(breakdown.matchdayRevenue)}</span>
                         </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-slate-300">Patrocinadores</span>
-                            <span className="text-green-400 font-semibold">{formatCurrency(breakdown.sponsorshipRevenue)}</span>
+                        <div className="flex justify-between items-center pb-3 border-b border-white/5">
+                            <span className="text-xs text-white/50 font-bold uppercase tracking-wider">Sponsorships</span>
+                            <span className="text-[var(--apex-green)] font-black">{formatCurrency(breakdown.sponsorshipRevenue)}</span>
                         </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-slate-300">Derechos de TV</span>
-                            <span className="text-green-400 font-semibold">{formatCurrency(breakdown.tvRevenue)}</span>
+                        <div className="flex justify-between items-center pb-3 border-b border-white/5">
+                            <span className="text-xs text-white/50 font-bold uppercase tracking-wider">Broadcasting (TV)</span>
+                            <span className="text-[var(--apex-green)] font-black">{formatCurrency(breakdown.tvRevenue)}</span>
                         </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-slate-300">Premios de Liga/Copa</span>
-                            <span className="text-green-400 font-semibold">{formatCurrency(breakdown.prizeMoneyRevenue)}</span>
+                        <div className="flex justify-between items-center pb-3 border-b border-white/5">
+                            <span className="text-xs text-white/50 font-bold uppercase tracking-wider">Prize Money</span>
+                            <span className="text-[var(--apex-green)] font-black">{formatCurrency(breakdown.prizeMoneyRevenue)}</span>
                         </div>
-                        <div className="border-t border-slate-700 pt-3 flex justify-between font-bold">
-                            <span className="text-white">Total Ingresos</span>
-                            <span className="text-green-400 text-xl">
+                        <div className="pt-2 flex justify-between font-black">
+                            <span className="text-white uppercase tracking-widest text-xs">Total Revenue</span>
+                            <span className="text-[var(--apex-green)] text-lg">
                                 {formatCurrency(breakdown.matchdayRevenue + breakdown.sponsorshipRevenue + breakdown.tvRevenue + breakdown.prizeMoneyRevenue)}
                             </span>
                         </div>
@@ -119,28 +130,31 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = ({ gameState, dispa
                 </div>
 
                 {/* Expenses */}
-                <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
-                    <h3 className="text-xl font-bold text-red-400 mb-4">💸 Gastos Semanales</h3>
-                    <div className="space-y-3">
-                        <div className="flex justify-between">
-                            <span className="text-slate-300">Salarios Jugadores</span>
-                            <span className="text-red-400 font-semibold">{formatCurrency(breakdown.wageExpenses)}</span>
+                <div className="apex-card p-6">
+                    <h3 className="text-sm font-black text-[var(--apex-red)] mb-6 uppercase tracking-widest flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-[var(--apex-red)]"></span>
+                        Weekly Expenses
+                    </h3>
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-center pb-3 border-b border-white/5">
+                            <span className="text-xs text-white/50 font-bold uppercase tracking-wider">Player Wages</span>
+                            <span className="text-[var(--apex-red)] font-black">{formatCurrency(breakdown.wageExpenses)}</span>
                         </div>
-                        <div className="flex justify-between">
-                            <span className="text-slate-300">Salario Director Técnico</span>
-                            <span className="text-red-400 font-semibold">{formatCurrency(breakdown.coachExpenses)}</span>
+                        <div className="flex justify-between items-center pb-3 border-b border-white/5">
+                            <span className="text-xs text-white/50 font-bold uppercase tracking-wider">Staff Wages</span>
+                            <span className="text-[var(--apex-red)] font-black">{formatCurrency(breakdown.coachExpenses)}</span>
                         </div>
-                        <div className="flex justify-between">
-                            <span className="text-slate-300">Mantenimiento Estadio</span>
-                            <span className="text-red-400 font-semibold">{formatCurrency(breakdown.stadiumExpenses)}</span>
+                        <div className="flex justify-between items-center pb-3 border-b border-white/5">
+                            <span className="text-xs text-white/50 font-bold uppercase tracking-wider">Stadium Maintenance</span>
+                            <span className="text-[var(--apex-red)] font-black">{formatCurrency(breakdown.stadiumExpenses)}</span>
                         </div>
-                        <div className="flex justify-between">
-                            <span className="text-slate-300">Gastos Operativos</span>
-                            <span className="text-red-400 font-semibold">{formatCurrency(breakdown.operationalExpenses)}</span>
+                        <div className="flex justify-between items-center pb-3 border-b border-white/5">
+                            <span className="text-xs text-white/50 font-bold uppercase tracking-wider">Operational Costs</span>
+                            <span className="text-[var(--apex-red)] font-black">{formatCurrency(breakdown.operationalExpenses)}</span>
                         </div>
-                        <div className="border-t border-slate-700 pt-3 flex justify-between font-bold">
-                            <span className="text-white">Total Gastos</span>
-                            <span className="text-red-400 text-xl">
+                        <div className="pt-2 flex justify-between font-black">
+                            <span className="text-white uppercase tracking-widest text-xs">Total Expenses</span>
+                            <span className="text-[var(--apex-red)] text-lg">
                                 {formatCurrency(breakdown.wageExpenses + breakdown.coachExpenses + breakdown.stadiumExpenses + breakdown.operationalExpenses)}
                             </span>
                         </div>
@@ -149,41 +163,50 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = ({ gameState, dispa
             </div>
 
             {/* Stadium Management */}
-            <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
-                <h3 className="text-xl font-bold text-white mb-4">🏟️ Gestión del Estadio</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                        <div className="flex justify-between">
-                            <span className="text-slate-400">Nombre:</span>
-                            <span className="text-white font-semibold">{stadium.name}</span>
+            <div className="apex-card p-6 border-l-4 border-l-[var(--apex-gold)]">
+                <h3 className="text-lg font-black text-white mb-6 uppercase tracking-tight flex items-center gap-3">
+                    <span className="p-2 bg-white/5 rounded-lg border border-white/10">🏟️</span> 
+                    Stadium Management
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                            <span className="text-[10px] text-white/50 font-bold uppercase tracking-widest">Name</span>
+                            <span className="text-sm text-white font-black">{stadium.name}</span>
                         </div>
-                        <div className="flex justify-between">
-                            <span className="text-slate-400">Capacidad:</span>
-                            <span className="text-white font-semibold">{stadium.capacity.toLocaleString()} asientos</span>
+                        <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                            <span className="text-[10px] text-white/50 font-bold uppercase tracking-widest">Capacity</span>
+                            <span className="text-sm text-[var(--apex-gold)] font-black">{stadium.capacity.toLocaleString()} seats</span>
                         </div>
-                        <div className="flex justify-between">
-                            <span className="text-slate-400">Precio Entrada:</span>
-                            <span className="text-white font-semibold">{formatCurrency(stadium.ticketPrice)}</span>
+                        <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                            <span className="text-[10px] text-white/50 font-bold uppercase tracking-widest">Ticket Price</span>
+                            <span className="text-sm text-[var(--apex-green)] font-black">{formatCurrency(stadium.ticketPrice)}</span>
                         </div>
-                        <div className="flex justify-between">
-                            <span className="text-slate-400">Mantenimiento:</span>
-                            <span className="text-red-400 font-semibold">{formatCurrency(stadium.maintenanceCost)}/semana</span>
+                        <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                            <span className="text-[10px] text-white/50 font-bold uppercase tracking-widest">Maintenance</span>
+                            <span className="text-sm text-[var(--apex-red)] font-black">{formatCurrency(stadium.maintenanceCost)}/wk</span>
                         </div>
                     </div>
 
                     <div className="flex flex-col justify-center">
-                        {stadium.expansionCost && (
+                        {stadium.expansionCost ? (
                             <button
                                 onClick={handleExpandStadium}
                                 disabled={finances.balance < stadium.expansionCost}
-                                className={`px-6 py-3 rounded-lg font-semibold transition-colors ${finances.balance >= stadium.expansionCost
-                                    ? 'bg-blue-600 hover:bg-blue-500 text-white'
-                                    : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                                className={`w-full py-4 rounded-xl font-black uppercase tracking-widest text-xs transition-all ${finances.balance >= stadium.expansionCost
+                                    ? 'bg-[var(--apex-gold)]/10 text-[var(--apex-gold)] hover:bg-[var(--apex-gold)] hover:text-black border border-[var(--apex-gold)]/30'
+                                    : 'bg-black/40 text-white/30 border border-white/5 cursor-not-allowed'
                                     }`}
                             >
-                                Expandir a {stadium.expansionCapacity?.toLocaleString()} asientos
-                                <div className="text-sm mt-1">Coste: {formatCurrency(stadium.expansionCost)}</div>
+                                Expand to {stadium.expansionCapacity?.toLocaleString()} seats
+                                <div className={`text-[9px] mt-1.5 ${finances.balance >= stadium.expansionCost ? 'text-white/60' : 'text-white/20'}`}>
+                                    Cost: {formatCurrency(stadium.expansionCost)}
+                                </div>
                             </button>
+                        ) : (
+                            <div className="h-full flex items-center justify-center bg-black/20 border border-white/5 rounded-xl">
+                                <span className="text-xs font-bold text-white/40 uppercase tracking-widest">Stadium at Maximum Capacity</span>
+                            </div>
                         )}
                     </div>
                 </div>
@@ -192,60 +215,61 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = ({ gameState, dispa
             {/* Sponsors */}
             <div className="space-y-8">
                 <div>
-                    <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                        <span className="p-2 bg-slate-800 rounded-lg">🤝</span> Patrocinadores Actuales
+                    <h3 className="text-lg font-black text-white mb-4 flex items-center gap-3 uppercase tracking-tight">
+                        <span className="p-2 bg-white/5 rounded-lg border border-white/10">🤝</span> 
+                        Active Sponsors
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         {sponsors.length > 0 ? sponsors.map(sponsor => (
-                            <div key={sponsor.id} className="relative group overflow-hidden bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-5 border border-slate-700 shadow-lg">
-                                <div className="absolute -right-2 -top-2 text-4xl opacity-10 group-hover:scale-110 transition-transform">{sponsor.logo}</div>
-                                <div className="text-[10px] font-black text-sky-400 uppercase tracking-widest mb-1">{getSponsorTypeLabel(sponsor.type)}</div>
-                                <div className="font-bold text-white text-lg mb-2">{sponsor.name}</div>
-                                <div className="flex justify-between items-end">
-                                    <div className="text-green-400 font-black text-xl">{formatCurrency(sponsor.weeklyIncome)}<span className="text-[10px] text-slate-500 font-normal">/sem</span></div>
-                                    <div className="text-[10px] text-slate-500 bg-slate-950 px-2 py-1 rounded-full border border-slate-800">
-                                        {Math.floor(sponsor.duration / 52)} AÑOS
+                            <div key={sponsor.id} className="relative group overflow-hidden apex-card p-5">
+                                <div className="absolute -right-4 -top-4 text-6xl opacity-5 group-hover:scale-110 group-hover:opacity-10 transition-all duration-500 grayscale">{sponsor.logo}</div>
+                                <div className="text-[9px] font-black text-[var(--apex-gold)] uppercase tracking-[0.2em] mb-1.5">{getSponsorTypeLabel(sponsor.type)}</div>
+                                <div className="font-black text-white text-base leading-tight mb-4">{sponsor.name}</div>
+                                <div className="flex justify-between items-end mt-auto">
+                                    <div className="text-[var(--apex-green)] font-black text-lg leading-none">{formatCurrency(sponsor.weeklyIncome)}<span className="text-[8px] text-white/40 font-bold ml-1">/WK</span></div>
+                                    <div className="text-[8px] font-black text-white/50 bg-black/40 px-2 py-1 rounded border border-white/10 uppercase tracking-widest">
+                                        {Math.floor(sponsor.duration / 52)} YRS
                                     </div>
                                 </div>
                             </div>
                         )) : (
-                            <div className="col-span-full bg-slate-800/20 border-2 border-dashed border-slate-700 rounded-2xl py-12 text-center text-slate-500">
-                                No tienes patrocinadores activos. ¡Revisa las ofertas!
+                            <div className="col-span-full apex-card border-dashed border-white/10 py-12 text-center">
+                                <p className="text-xs font-bold text-white/40 uppercase tracking-widest">No active sponsors. Review commercial offers!</p>
                             </div>
                         )}
                     </div>
                 </div>
 
                 <div>
-                    <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                        <span className="p-2 bg-sky-500/20 rounded-lg">📋</span> Ofertas de Patrocinio
+                    <h3 className="text-lg font-black text-white mb-4 flex items-center gap-3 uppercase tracking-tight">
+                        <span className="p-2 bg-[var(--apex-gold)]/10 border border-[var(--apex-gold)]/20 rounded-lg">📋</span> 
+                        Commercial Offers
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                         {availableSponsors.map(sponsor => (
-                            <div key={sponsor.id} className="bg-slate-900/50 rounded-2xl p-6 border border-slate-800 hover:border-sky-500/30 transition-all duration-300 group shadow-xl">
+                            <div key={sponsor.id} className="apex-card p-6 flex flex-col hover:border-[var(--apex-gold)]/50 transition-all duration-300 group">
                                 <div className="flex justify-between items-start mb-6">
                                     <div>
-                                        <div className="text-[10px] font-black text-sky-400 uppercase tracking-widest mb-1">{getSponsorTypeLabel(sponsor.type)}</div>
-                                        <div className="font-black text-white text-2xl group-hover:text-sky-300 transition-colors">{sponsor.name}</div>
+                                        <div className="text-[9px] font-black text-[var(--apex-gold)] uppercase tracking-[0.2em] mb-1.5">{getSponsorTypeLabel(sponsor.type)}</div>
+                                        <div className="font-black text-white text-xl group-hover:text-[var(--apex-gold)] transition-colors leading-tight">{sponsor.name}</div>
                                     </div>
-                                    <div className="text-4xl bg-slate-800 p-3 rounded-2xl group-hover:scale-110 transition-transform duration-500">{sponsor.logo}</div>
+                                    <div className="text-3xl bg-white/5 p-3 rounded-xl border border-white/10 group-hover:bg-[var(--apex-gold)]/10 transition-colors grayscale group-hover:grayscale-0">{sponsor.logo}</div>
                                 </div>
 
-                                <div className="space-y-4 mb-6">
-                                    <div className="flex justify-between items-center bg-slate-800/30 p-3 rounded-xl">
-                                        <span className="text-sm text-slate-400">Ingresos Semanales</span>
-                                        <span className="text-green-400 font-black text-lg">{formatCurrency(sponsor.weeklyIncome)}</span>
+                                <div className="space-y-3 mb-8">
+                                    <div className="flex justify-between items-center bg-black/30 p-3 rounded-lg border border-white/5">
+                                        <span className="text-[10px] text-white/50 font-bold uppercase tracking-wider">Weekly Income</span>
+                                        <span className="text-[var(--apex-green)] font-black">{formatCurrency(sponsor.weeklyIncome)}</span>
                                     </div>
                                     <div className="flex justify-between items-center px-3">
-                                        <span className="text-sm text-slate-400">Duración Contrato</span>
-                                        <span className="text-white font-bold">{Math.floor(sponsor.duration / 52)} años</span>
+                                        <span className="text-[10px] text-white/50 font-bold uppercase tracking-wider">Contract Length</span>
+                                        <span className="text-white font-black text-xs">{Math.floor(sponsor.duration / 52)} Years</span>
                                     </div>
                                     {sponsor.bonus && (
-                                        <div className="relative overflow-hidden bg-sky-900/20 border border-sky-500/20 p-4 rounded-xl">
-                                            <div className="absolute right-0 top-0 p-1 opacity-10">✨</div>
-                                            <div className="text-[10px] font-black text-sky-400 uppercase mb-1">Bono por Rendimiento</div>
-                                            <div className="text-sm text-sky-200">
-                                                <span className="font-bold text-white">{formatCurrency(sponsor.bonus.amount)}</span> si el equipo queda en <span className="font-bold text-white">{sponsor.bonus.condition === 'top4' ? 'Top 4' : sponsor.bonus.condition === 'top6' ? 'Top 6' : 'Ascenso'}</span>.
+                                        <div className="relative overflow-hidden bg-[var(--apex-gold)]/5 border border-[var(--apex-gold)]/20 p-3.5 rounded-lg mt-2">
+                                            <div className="text-[9px] font-black text-[var(--apex-gold)] uppercase tracking-wider mb-1">Performance Bonus</div>
+                                            <div className="text-[10px] text-white/70 font-medium leading-relaxed">
+                                                <span className="font-black text-[var(--apex-green)]">{formatCurrency(sponsor.bonus.amount)}</span> if the team finishes in <span className="font-black text-white">{sponsor.bonus.condition === 'top4' ? 'Top 4' : sponsor.bonus.condition === 'top6' ? 'Top 6' : 'Promotion Zone'}</span>.
                                             </div>
                                         </div>
                                     )}
@@ -253,9 +277,9 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = ({ gameState, dispa
 
                                 <button
                                     onClick={() => handleAcceptSponsor(sponsor.id)}
-                                    className="w-full py-4 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white rounded-xl font-black shadow-lg shadow-sky-600/20 transform hover:-translate-y-1 transition-all duration-200"
+                                    className="apex-btn-gold mt-auto w-full text-[10px]"
                                 >
-                                    FIRMAR CONTRATO
+                                    SIGN CONTRACT
                                 </button>
                             </div>
                         ))}
