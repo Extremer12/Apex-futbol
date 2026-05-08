@@ -76,9 +76,9 @@ export const TrophyRoomScreen: React.FC<TrophyRoomScreenProps> = ({ gameState })
                         </motion.div>
                     )}
                     <div className="text-center md:text-left">
-                        <h2 className="text-[10px] font-black text-gold-gradient tracking-[0.3em] uppercase mb-2">Club Honors</h2>
-                        <h1 className="text-4xl md:text-6xl font-black text-white mb-2 tracking-tighter uppercase italic leading-none">Trophy <span className="text-[var(--apex-gold)]">Room</span></h1>
-                        <p className="text-white/50 font-black uppercase tracking-widest text-[10px] bg-black/30 inline-block px-3 py-1.5 rounded-lg border border-white/5">Official Cabinet of {team.name}</p>
+                        <h2 className="text-[10px] font-black text-gold-gradient tracking-[0.3em] uppercase mb-2">Palmarés del Club</h2>
+                        <h1 className="text-4xl md:text-6xl font-black text-white mb-2 tracking-tighter uppercase italic leading-none">Sala de <span className="text-[var(--apex-gold)]">Trofeos</span></h1>
+                        <p className="text-white/50 font-black uppercase tracking-widest text-[10px] bg-black/30 inline-block px-3 py-1.5 rounded-lg border border-white/5">Vitrina oficial de {team.name}</p>
                     </div>
                 </div>
             </motion.div>
@@ -91,9 +91,9 @@ export const TrophyRoomScreen: React.FC<TrophyRoomScreenProps> = ({ gameState })
                     className="apex-card border-dashed border-white/20 rounded-3xl py-24 flex flex-col items-center justify-center text-center"
                 >
                     <TrophyIcon className="w-20 h-20 text-white/10 mb-6" />
-                    <h2 className="text-2xl font-black text-white/50 mb-3 uppercase tracking-widest">Empty Cabinet</h2>
+                    <h2 className="text-2xl font-black text-white/50 mb-3 uppercase tracking-widest">Vitrina Vacía</h2>
                     <p className="text-white/30 text-sm max-w-md px-4 leading-relaxed font-bold">
-                        The club hasn't secured any titles under your mandate yet. Work hard to fill this room with glory!
+                        El club aún no ha conquistado títulos bajo tu mandato. ¡Trabaja duro para llenar esta sala de gloria!
                     </p>
                 </motion.div>
             ) : (
@@ -107,7 +107,7 @@ export const TrophyRoomScreen: React.FC<TrophyRoomScreenProps> = ({ gameState })
                     >
                         <h2 className="text-lg font-black text-white flex items-center gap-3 border-b border-white/10 pb-4 uppercase tracking-widest">
                             <span className="text-[var(--apex-gold)] text-2xl drop-shadow-[0_0_10px_rgba(200,168,78,0.5)]">🏆</span> 
-                            National Leagues <span className="text-white/30 ml-auto">({leagueTrophies.length})</span>
+                            Ligas Nacionales <span className="text-white/30 ml-auto">({leagueTrophies.length})</span>
                         </h2>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                             {leagueTrophies.map(trophy => (
@@ -137,7 +137,7 @@ export const TrophyRoomScreen: React.FC<TrophyRoomScreenProps> = ({ gameState })
                     >
                         <h2 className="text-lg font-black text-white flex items-center gap-3 border-b border-white/10 pb-4 uppercase tracking-widest">
                             <span className="text-slate-300 text-2xl drop-shadow-[0_0_10px_rgba(203,213,225,0.5)]">🥈</span> 
-                            Domestic Cups <span className="text-white/30 ml-auto">({cupTrophies.length})</span>
+                            Copas Nacionales <span className="text-white/30 ml-auto">({cupTrophies.length})</span>
                         </h2>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                             {cupTrophies.map(trophy => (

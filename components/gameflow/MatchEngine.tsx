@@ -189,7 +189,7 @@ export const MatchEngine: React.FC<MatchEngineProps> = ({ homeTeam, awayTeam, ma
                         </div>
                         <h2 className="text-sm md:text-3xl font-black text-white tracking-tight drop-shadow-lg truncate w-full px-1">{homeTeam.name}</h2>
                         <div className="text-[10px] md:text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider hidden md:block">
-                            {homeTeam.coach?.style || 'Balanced'} • {homeTeam.coach?.preferredFormation || '4-4-2'}
+                            {homeTeam.coach?.style || 'Equilibrado'} • {homeTeam.coach?.preferredFormation || '4-4-2'}
                         </div>
                     </div>
 
@@ -216,7 +216,7 @@ export const MatchEngine: React.FC<MatchEngineProps> = ({ homeTeam, awayTeam, ma
                         </div>
                         <h2 className="text-sm md:text-3xl font-black text-white tracking-tight drop-shadow-lg truncate w-full px-1">{awayTeam.name}</h2>
                         <div className="text-[10px] md:text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider hidden md:block">
-                            {awayTeam.coach?.style || 'Balanced'} • {awayTeam.coach?.preferredFormation || '4-4-2'}
+                            {awayTeam.coach?.style || 'Equilibrado'} • {awayTeam.coach?.preferredFormation || '4-4-2'}
                         </div>
                     </div>
                 </div>

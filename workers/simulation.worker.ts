@@ -72,9 +72,12 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
         });
 
         // Deep clone teams and squad, and handle weekly condition/injury updates
+        // Optimized: only clone objects if they actually change
         let updatedAllTeams = allTeams.map(t => {
+            let teamChanged = false;
             const updatedSquad = t.squad.map(p => {
-                const newP = { ...p, stats: { ...p.stats! } }; // Deep clone stats
+                let pChanged = false;
+                const newP = { ...p };
                 
                 // Heal injuries / suspensions if week advances
                 if (newP.isInjured && newP.injuryWeeksRemaining) {
@@ -83,6 +86,7 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                         newP.isInjured = false;
                         newP.injuryWeeksRemaining = 0;
                     }
+                    pChanged = true;
                 }
                 if (newP.isSuspended && newP.suspensionWeeksRemaining) {
                     newP.suspensionWeeksRemaining -= 1;
@@ -90,15 +94,36 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                         newP.isSuspended = false;
                         newP.suspensionWeeksRemaining = 0;
                     }
+                    pChanged = true;
                 }
 
                 // Recover condition slightly for all players at the start of the week
-                // (Matches will reduce it later if they play)
-                newP.condition = Math.min(100, (newP.condition || 100) + 15);
+                if (!newP.condition || newP.condition < 100) {
+                    newP.condition = Math.min(100, (newP.condition || 100) + 15);
+                    pChanged = true;
+                }
                 
-                return newP;
+                // Ensure stats exists
+                if (!newP.stats) {
+                    newP.stats = { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 };
+                    pChanged = true;
+                }
+
+                if (pChanged) {
+                    teamChanged = true;
+                    // Deep clone stats ONLY if the player changed
+                    newP.stats = { ...newP.stats };
+                    return newP;
+                }
+                
+                return p; // Return original reference if nothing changed
             });
-            return { ...t, squad: updatedSquad };
+            
+            if (teamChanged) {
+                return { ...t, squad: updatedSquad };
+            }
+            
+            return t; // Return original reference if nothing changed
         });
         
         // Filter matches by currentWeek AND currentTurn

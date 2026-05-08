@@ -4,7 +4,7 @@ import { simulationWorker } from '../services/simulationWorker';
 import { generateNews, generateMatchReport, generateTransferOffer, generatePlayerOfTheWeekNews, generateImportantNews, generateCoachReport } from '../services/gameLogic';
 import { advanceCupRound, progressInternationalCup, checkAndScheduleIntercontinental } from '../services/simulation';
 import { eventEngine, TriggeredEvent } from '../services/eventEngine';
-import { formatDate } from '../utils';
+import { formatDate, isTransferWindowOpen } from '../utils';
 
 export function useSimulation(
     gameState: GameState | null,
@@ -86,24 +86,36 @@ export function useSimulation(
 
             // Generate transfer offers
             const generatedOffers: Offer[] = [];
-            const transferListedPlayers = gameState.team.squad.filter(p => p.isTransferListed);
-            for (const player of transferListedPlayers) {
-                if (Math.random() < 0.3) {
-                    const potentialBuyers = gameState.allTeams.filter(t => t.id !== gameState.team.id);
-                    const offer = await generateTransferOffer(player, gameState.team, potentialBuyers);
-                    if (offer) {
-                        generatedOffers.push({
-                            id: `offer_${new Date().toISOString()}_${player.id}`,
-                            playerId: player.id,
-                            ...offer
-                        });
+            if (isTransferWindowOpen(gameState.currentWeek)) {
+                const transferListedPlayers = gameState.team.squad.filter(p => p.isTransferListed);
+                for (const player of transferListedPlayers) {
+                    if (Math.random() < 0.3) {
+                        const potentialBuyers = gameState.allTeams.filter(t => t.id !== gameState.team.id);
+                        const offer = await generateTransferOffer(player, gameState.team, potentialBuyers);
+                        if (offer) {
+                            generatedOffers.push({
+                                id: `offer_${new Date().toISOString()}_${player.id}`,
+                                playerId: player.id,
+                                ...offer
+                            });
+                        }
                     }
                 }
             }
 
+            // Restore logos from original state (JSX cannot be passed through worker)
+            const restoredTeams = simulationResult.updatedAllTeams.map(updatedTeam => {
+                const originalTeam = gameState.allTeams.find(t => t.id === updatedTeam.id);
+                return {
+                    ...updatedTeam,
+                    logo: originalTeam?.logo || updatedTeam.logo
+                };
+            });
+
             // Handle cup progression
             let updatedCups = simulationResult.updatedCups;
             const faCupMatches = matchesThisWeek.filter(m => m.competition === 'FA_Cup');
+            const intercontinentalMatches = matchesThisWeek.filter(m => m.competition === 'Copa_Intercontinental');
             if (faCupMatches.length > 0 && faCupMatches.every(m => m.result !== undefined)) {
                 const nextCupWeek = newWeek + 4;
                 updatedCups.faCup = advanceCupRound(updatedCups.faCup, simulationResult.updatedAllTeams, nextCupWeek);
@@ -296,14 +308,7 @@ export function useSimulation(
                 setCurrentEvent(triggeredEvent);
             }
 
-            // Restore logos from original state (JSX cannot be passed through worker)
-            const restoredTeams = simulationResult.updatedAllTeams.map(updatedTeam => {
-                const originalTeam = gameState.allTeams.find(t => t.id === updatedTeam.id);
-                return {
-                    ...updatedTeam,
-                    logo: originalTeam?.logo || updatedTeam.logo
-                };
-            });
+            // restoredTeams already declared above (before cup progression)
 
             // Generate Coach Report
             const coachReport = generateCoachReport(gameState);

@@ -6,9 +6,9 @@ interface ProfileCreationProps {
 }
 
 const EXPERIENCE_OPTIONS = [
-    { value: 0, label: 'Rookie', desc: 'First time in charge' },
-    { value: 1, label: 'Experienced', desc: 'You know the ropes' },
-    { value: 2, label: 'Legend', desc: 'Born to lead' },
+    { value: 0, label: 'Novato', desc: 'Primera vez al mando' },
+    { value: 1, label: 'Experimentado', desc: 'Conoces el oficio' },
+    { value: 2, label: 'Leyenda', desc: 'Nacido para liderar' },
 ];
 
 export const ProfileCreation: React.FC<ProfileCreationProps> = ({ onProfileCreate }) => {

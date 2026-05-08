@@ -96,52 +96,24 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
     const brasileiraoTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.BRASILEIRAO);
     const serieBBrTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.SERIE_B_BR);
 
-    // Copa Libertadores participants: 32 teams from South America
-    let libertadoresParticipants = [
-        ...ligaArgTeams.slice(0, 16),
-        ...brasileiraoTeams.slice(0, 16)
-    ];
-
-    if (playerTeamCopy.leagueId === LeagueId.LIGA_ARGENTINA || playerTeamCopy.leagueId === LeagueId.BRASILEIRAO) {
-        if (!libertadoresParticipants.find(t => t.id === playerTeamCopy.id)) {
-            libertadoresParticipants.pop();
-            libertadoresParticipants.push(playerTeamCopy);
-        }
-    }
-    libertadoresParticipants.sort(() => 0.5 - Math.random());
-
-    // Champions League participants: 36 teams from Europe
-    const championsLeagueParticipants = [
-        ...plTeams.slice(0, 8),
-        ...laTeams.slice(0, 8),
-        ...gerTeams.slice(0, 8),
-        ...itaTeams.slice(0, 6),
-        ...ligue1Teams.slice(0, 6)
-    ].sort(() => 0.5 - Math.random());
+    // International competitions (Champions League, Copa Libertadores) are NOT generated
+    // in season 1. They will be created by seasonManager.ts from season 2 onwards
+    // based on actual league standings.
 
     // Generate cup draws
     const englishTeams = [...plTeams, ...chTeams];
     const faCupRound1 = generateCupDraw(englishTeams, 'Round 1', 'FA_Cup');
     const carabaoCupRound1 = generateCupDraw(englishTeams, 'Round 1', 'Carabao_Cup');
-    
-    // International Cups (2026 Formats)
-    const libertadoresGroups = generateGroupPhase(libertadoresParticipants, 'Copa_Libertadores');
-    const championsLeagueSwiss = generateSwissPhase(championsLeagueParticipants, 'Champions_League', 8);
 
-    const libertadoresFixtures = libertadoresGroups.flatMap(g => g.fixtures);
-    const championsLeagueFixtures = championsLeagueSwiss.fixtures;
-
-    // Assign cup fixtures to specific weeks (midweeks)
+    // Assign cup fixtures to specific weeks
     const faCupFixtures = faCupRound1.map(m => ({ ...m, week: 5 }));
     const carabaoCupFixtures = carabaoCupRound1.map(m => ({ ...m, week: 2 }));
-
-    // Generate full season schedule
+    
+    // Generate full season schedule (league + national cups only in season 1)
     const initialSchedule = [
         ...generateSeasonSchedule(allTeamsCopy),
         ...faCupFixtures,
-        ...carabaoCupFixtures,
-        ...libertadoresFixtures,
-        ...championsLeagueFixtures
+        ...carabaoCupFixtures
     ];
 
     // Build and return the initial game state
@@ -226,8 +198,8 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
                 name: 'Copa Libertadores',
                 logo: 'https://tmssl.akamaized.net/images/logo/header/cli.png',
                 type: 'groups',
-                phase: 'groups',
-                groups: libertadoresGroups,
+                phase: 'finished',
+                groups: [],
                 rounds: [],
                 currentRoundIndex: 0,
                 statistics: { topScorers: [], championsHistory: [] }
@@ -237,9 +209,9 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
                 name: 'UEFA Champions League',
                 logo: 'https://tmssl.akamaized.net/images/logo/header/cl.png',
                 type: 'swiss',
-                phase: 'swiss',
-                swissTable: championsLeagueSwiss.table,
-                swissFixtures: championsLeagueFixtures,
+                phase: 'finished',
+                swissTable: [],
+                swissFixtures: [],
                 rounds: [],
                 currentRoundIndex: 0,
                 statistics: { topScorers: [], championsHistory: [] }
@@ -280,45 +252,7 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
         availableSponsors: generateSponsorMarket(playerTeamCopy.tier),
         scouts: [],
         scoutedPlayerIds: {},
-        cinematicQueue: [
-            {
-                id: `champions_draw_${Date.now()}`,
-                type: 'GROUP_DRAW',
-                title: 'UEFA Champions League',
-                subtitle: 'Sorteo de Rivales - Fase de Liga',
-                metadata: {
-                    accentColor: '#3B82F6',
-                    bgClass: 'from-blue-900 via-slate-950 to-slate-950',
-                    swissOpponents: championsLeagueFixtures
-                        .filter(f => f.homeTeamId === playerTeamCopy.id || f.awayTeamId === playerTeamCopy.id)
-                        .map(f => {
-                            const isHome = f.homeTeamId === playerTeamCopy.id;
-                            const oppId = isHome ? f.awayTeamId : f.homeTeamId;
-                            const opp = allTeamsCopy.find(t => t.id === oppId);
-                            return { name: opp?.name || 'Rival', venue: isHome ? 'home' : 'away' };
-                        })
-                }
-            },
-            {
-                id: `libertadores_draw_${Date.now()}`,
-                type: 'GROUP_DRAW',
-                title: 'Copa Libertadores',
-                subtitle: 'Sorteo de Fase de Grupos',
-                metadata: {
-                    accentColor: '#FACC15',
-                    bgClass: 'from-yellow-900 via-slate-950 to-slate-950',
-                    groups: libertadoresGroups
-                        .filter(g => g.teams.includes(playerTeamCopy.id))
-                        .map(g => ({
-                            name: g.name,
-                            teams: g.teams.map(tId => ({
-                                name: allTeamsCopy.find(t => t.id === tId)?.name || 'Equipo',
-                                isPlayer: tId === playerTeamCopy.id
-                            }))
-                        }))
-                }
-            }
-        ],
+        cinematicQueue: [],  // No international draws in season 1
         preferredCurrency: 'EUR',
         preferredLanguage: 'es',
     };

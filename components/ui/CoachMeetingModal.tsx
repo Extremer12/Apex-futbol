@@ -105,7 +105,7 @@ export const CoachMeetingModal: React.FC<CoachMeetingModalProps> = ({
                                             <div className="text-sm font-bold text-white">{player.name}</div>
                                             <div className="flex gap-2 text-[10px]">
                                                 <span className="text-slate-400 uppercase font-bold">{player.position}</span>
-                                                <span className="text-yellow-500 uppercase font-black">Rating: {player.rating}</span>
+                                                <span className="text-yellow-500 uppercase font-black">Valoración: {player.rating}</span>
                                             </div>
                                         </div>
                                     </div>

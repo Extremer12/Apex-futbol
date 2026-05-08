@@ -8,6 +8,17 @@ import { generateYouthPlayer, generateSeasonSchedule, generateCupDraw, createIni
 import { calculatePrizeMoney, generateSponsorMarket } from './economy';
 import { formatDate, formatCurrency } from '../utils';
 
+// Define promotion/relegation pairs locally (mirrors simulation.ts)
+const PROMOTION_RELEGATION_PAIRS: [LeagueId, LeagueId][] = [
+    [LeagueId.PREMIER_LEAGUE, LeagueId.CHAMPIONSHIP],
+    [LeagueId.LA_LIGA, LeagueId.SEGUNDA_DIVISION_ESP],
+    [LeagueId.BUNDESLIGA, LeagueId.ZWEITE_BUNDESLIGA],
+    [LeagueId.SERIE_A, LeagueId.SERIE_B_ITA],
+    [LeagueId.LIGUE_1, LeagueId.LIGUE_2],
+    [LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL],
+    [LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR],
+];
+
 /**
  * Processes the transition to a new season
  * Handles aging, retirements, regens, promotion/relegation, and schedule generation
@@ -319,8 +330,10 @@ export function startNewSeason(currentState: GameState): GameState {
     }
 
     // 7. Calculate fan approval changes based on season performance and promises
-    const playerPosition = sortedPL.find(row => row.teamId === updatedPlayerTeam.id)?.position ||
-        sortedCH.find(row => row.teamId === updatedPlayerTeam.id)?.position || 10;
+    // Find the player's position in their own league table (works for ANY league)
+    const playerLeagueTable = currentState.leagueTables[updatedPlayerTeam.leagueId] || [];
+    const sortedPlayerLeague = [...playerLeagueTable].sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference);
+    const playerPosition = sortedPlayerLeague.findIndex(row => row.teamId === updatedPlayerTeam.id) + 1 || 10;
 
     let approvalDelta = 0;
     if (playerPosition <= 4) approvalDelta = 15;
@@ -396,7 +409,12 @@ export function startNewSeason(currentState: GameState): GameState {
             let achieved = false;
             if (sponsor.bonus.condition === 'top4' && playerPosition <= 4) achieved = true;
             else if (sponsor.bonus.condition === 'top6' && playerPosition <= 6) achieved = true;
-            else if (sponsor.bonus.condition === 'promotion' && promotedIds.includes(currentState.team.id)) achieved = true;
+            else if (sponsor.bonus.condition === 'promotion') {
+                // Check if our team was in a second division and got promoted
+                const secondDivs = PROMOTION_RELEGATION_PAIRS.map(p => p[1]);
+                const wasInSecondDiv = secondDivs.includes(currentState.team.leagueId as LeagueId);
+                if (wasInSecondDiv && playerPosition <= 3) achieved = true;
+            }
             
             if (achieved) {
                 sponsorshipBonuses += sponsor.bonus.amount;
@@ -474,6 +492,22 @@ export function startNewSeason(currentState: GameState): GameState {
         }
     }
 
+    // Collect promoted/relegated team names for the cinematic summary
+    const relegatedTeamNames: string[] = [];
+    const promotedTeamNames: string[] = [];
+    PROMOTION_RELEGATION_PAIRS.forEach(([div1, div2]) => {
+        const d1t = currentState.leagueTables[div1] || [];
+        const d2t = currentState.leagueTables[div2] || [];
+        if (d1t.length > 0) {
+            const s1 = [...d1t].sort((a,b) => b.points - a.points || b.goalDifference - a.goalDifference);
+            s1.slice(-3).forEach(r => { const t = processedTeams.find(tm => tm.id === r.teamId); if (t) relegatedTeamNames.push(t.name); });
+        }
+        if (d2t.length > 0) {
+            const s2 = [...d2t].sort((a,b) => b.points - a.points || b.goalDifference - a.goalDifference);
+            s2.slice(0, 3).forEach(r => { const t = processedTeams.find(tm => tm.id === r.teamId); if (t) promotedTeamNames.push(t.name); });
+        }
+    });
+
     // Season summary (always at the end of the queue)
     newCinematicQueue.push({
         id: `cinematic_summary_${newSeasonYear}`,
@@ -482,8 +516,8 @@ export function startNewSeason(currentState: GameState): GameState {
         subtitle: `Resultados finales y premios`,
         metadata: {
             position: playerPosition,
-            promoted: promotedTeams,
-            relegated: relegatedTeams,
+            promoted: promotedTeamNames,
+            relegated: relegatedTeamNames,
             balance: newBalance
         }
     });

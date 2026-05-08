@@ -5,7 +5,7 @@ import { LoadingSpinner } from '../icons';
 import { generateTransferNegotiationResponse, NegotiationResponse } from '../../services/gameLogic';
 import { Modal } from '../ui/Modal';
 import { TeamLogo } from '../../data/teams/helpers';
-import { formatCurrencyShort, formatDate } from '../../utils';
+import { formatCurrencyShort, formatDate, isTransferWindowOpen, getNextTransferWindow } from '../../utils';
 
 interface TransfersScreenProps {
     gameState: GameState;
@@ -99,12 +99,8 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
     const isNegotiationDead = !!(lastHistoryItem && typeof lastHistoryItem === 'object' && 'decision' in lastHistoryItem && lastHistoryItem.decision === 'rejected');
 
     // Transfer Window Logic
-    const isTransferWindowOpen = () => {
-        const month = new Date(gameState.currentDate).getMonth();
-        // 0 = January, 6 = July, 7 = August
-        return month === 0 || month === 6 || month === 7;
-    };
-    const marketOpen = isTransferWindowOpen();
+    const marketOpen = isTransferWindowOpen(gameState.currentWeek);
+    const nextWindow = getNextTransferWindow(gameState.currentWeek);
 
     return (
         <div className="p-4 md:p-6 space-y-6 pb-24 animate-fade-in">
@@ -128,10 +124,27 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
             </div>
 
             {/* Market Status */}
-            {!marketOpen && (
-                <div className="bg-[var(--apex-red)]/10 border border-[var(--apex-red)]/30 rounded-xl p-6 text-center animate-pulse">
-                    <h3 className="text-[var(--apex-red)] font-black uppercase tracking-widest text-lg mb-2">Mercado Cerrado</h3>
-                    <p className="text-[var(--apex-red)]/80 text-sm font-bold">No se pueden realizar transferencias en este momento. El mercado abrirá en enero o julio.</p>
+            {!marketOpen ? (
+                <div className="bg-slate-900/50 border border-red-500/30 rounded-2xl p-6 text-center animate-fade-in relative overflow-hidden">
+                    <div className="absolute inset-0 bg-red-500/5 animate-pulse"></div>
+                    <div className="relative z-10 flex flex-col items-center justify-center">
+                        <div className="w-12 h-12 rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center mb-3">
+                            <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                        </div>
+                        <h3 className="text-red-500 font-black uppercase tracking-[0.2em] text-lg mb-1">Mercado Cerrado</h3>
+                        <p className="text-slate-400 text-sm font-bold">Apertura: <span className="text-white">{nextWindow}</span></p>
+                    </div>
+                </div>
+            ) : (
+                <div className="bg-slate-900/50 border border-green-500/30 rounded-2xl p-6 text-center animate-fade-in relative overflow-hidden">
+                    <div className="absolute inset-0 bg-green-500/5 animate-pulse"></div>
+                    <div className="relative z-10 flex flex-col items-center justify-center">
+                        <div className="w-12 h-12 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center mb-3">
+                            <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" /></svg>
+                        </div>
+                        <h3 className="text-green-500 font-black uppercase tracking-[0.2em] text-lg mb-1">Mercado Abierto</h3>
+                        <p className="text-slate-400 text-sm font-bold">Puedes negociar libremente y hacer ofertas.</p>
+                    </div>
                 </div>
             )}
 

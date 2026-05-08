@@ -23,7 +23,7 @@ export const Header: React.FC<HeaderProps> = ({ gameState }) => (
                             {gameState.team.name}
                         </h1>
                         <p className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: 'var(--apex-text-secondary)' }}>
-                            Season {gameState.season}
+                            Temporada {gameState.season}
                         </p>
                     </div>
                 </div>
@@ -32,13 +32,13 @@ export const Header: React.FC<HeaderProps> = ({ gameState }) => (
                 <div className="flex items-center gap-2">
                     {/* Date & Week */}
                     <div className="hidden sm:flex flex-col items-end px-3 py-1.5 rounded-lg" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--apex-border)' }}>
-                        <p className="text-[8px] font-bold uppercase tracking-[0.15em]" style={{ color: 'var(--apex-text-muted)' }}>Week {gameState.currentWeek}</p>
+                        <p className="text-[8px] font-bold uppercase tracking-[0.15em]" style={{ color: 'var(--apex-text-muted)' }}>Semana {gameState.currentWeek}</p>
                         <p className="text-[10px] font-extrabold text-white">{formatDate(gameState.currentDate)}</p>
                     </div>
 
                     {/* Balance */}
                     <div className="flex flex-col items-end px-3 py-1.5 rounded-lg" style={{ background: 'rgba(200,168,78,0.05)', border: '1px solid var(--apex-border)' }}>
-                        <p className="text-[8px] font-bold uppercase tracking-[0.15em]" style={{ color: 'var(--apex-text-muted)' }}>Balance</p>
+                        <p className="text-[8px] font-bold uppercase tracking-[0.15em]" style={{ color: 'var(--apex-text-muted)' }}>Saldo</p>
                         <AnimatedNumber
                             value={gameState.finances.balance}
                             formatter={(n) => formatCurrencyShort(n)}

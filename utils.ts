@@ -59,3 +59,17 @@ export const generateRandomName = (): string => {
 };
 
 // Morale Helpers removed as they are now in services/morale.ts
+export const getNextTransferWindow = (currentWeek: number): string => {
+    if (currentWeek > 4 && currentWeek < 20) return "Mercado de Invierno (Semana 20)";
+    if (currentWeek > 24) return "Mercado de Verano (Fin de temporada)";
+    return "Abierto ahora";
+};
+
+export const isTransferWindowOpen = (currentWeek: number): boolean => {
+    // Summer transfer window: Weeks 0 to 4
+    if (currentWeek >= 0 && currentWeek <= 4) return true;
+    // Winter transfer window: Weeks 20 to 24 (mid season)
+    if (currentWeek >= 20 && currentWeek <= 24) return true;
+    
+    return false;
+};

@@ -43,18 +43,18 @@ export const ClubHubScreen: React.FC<ClubHubScreenProps> = ({ gameState, dispatc
                     <TrophyIcon className="w-48 h-48 text-[var(--apex-gold)] grayscale" />
                 </div>
                 <div className="relative z-10">
-                    <h2 className="text-[10px] font-black text-gold-gradient tracking-[0.3em] uppercase mb-1">Presidential Office</h2>
-                    <h1 className="text-3xl md:text-4xl font-black text-white mb-4 uppercase italic tracking-tighter">Club Hub</h1>
+                    <h2 className="text-[10px] font-black text-gold-gradient tracking-[0.3em] uppercase mb-1">Oficina Presidencial</h2>
+                    <h1 className="text-3xl md:text-4xl font-black text-white mb-4 uppercase italic tracking-tighter">Centro del Club</h1>
                     <div className="flex flex-wrap items-center gap-3">
                         <span className="bg-[var(--apex-gold)]/10 text-[var(--apex-gold)] px-3 py-1.5 rounded text-[10px] font-black border border-[var(--apex-gold)]/30 uppercase tracking-widest">
-                            TERM #{mandate.totalMandates}
+                            MANDATO #{mandate.totalMandates}
                         </span>
                         <span className="flex items-center gap-2 text-xs font-bold text-white/70 uppercase tracking-widest">
                             <span className="w-1.5 h-1.5 bg-[var(--apex-green)] rounded-full animate-pulse shadow-[0_0_10px_rgba(46,204,113,0.5)]"></span>
-                            Year {mandate.currentYear} of 4
+                            Año {mandate.currentYear} de 4
                         </span>
                         <span className="text-white/20 hidden md:inline">|</span>
-                        <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest bg-black/40 px-3 py-1.5 rounded border border-white/5">Next Election: Season {mandate.nextElectionSeason}</span>
+                        <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest bg-black/40 px-3 py-1.5 rounded border border-white/5">Próxima Elección: Temporada {mandate.nextElectionSeason}</span>
                     </div>
                 </div>
             </div>
@@ -65,7 +65,7 @@ export const ClubHubScreen: React.FC<ClubHubScreenProps> = ({ gameState, dispatc
                     {/* Fan Approval Card */}
                     <div className="apex-card p-6">
                         <h2 className="text-sm font-black text-white mb-6 uppercase tracking-widest flex items-center gap-2">
-                            <UsersIcon className="w-4 h-4 text-[var(--apex-gold)]" /> Fan Approval
+                            <UsersIcon className="w-4 h-4 text-[var(--apex-gold)]" /> Aprobación de la Hinchada
                         </h2>
                         
                         <div className="flex flex-col items-center justify-center mb-8">
@@ -87,20 +87,20 @@ export const ClubHubScreen: React.FC<ClubHubScreenProps> = ({ gameState, dispatc
                                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                                     <span className="text-3xl font-black text-white tracking-tighter">{fanApproval.rating}%</span>
                                     <span className={`text-[9px] font-black uppercase tracking-widest mt-0.5 ${fanApproval.trend === 'rising' ? 'text-[var(--apex-green)]' : fanApproval.trend === 'falling' ? 'text-[var(--apex-red)]' : 'text-white/50'}`}>
-                                        {fanApproval.trend === 'rising' ? '▲ RISING' : fanApproval.trend === 'falling' ? '▼ FALLING' : '● STABLE'}
+                                        {fanApproval.trend === 'rising' ? '▲ SUBIENDO' : fanApproval.trend === 'falling' ? '▼ BAJANDO' : '● ESTABLE'}
                                     </span>
                                 </div>
                             </div>
                         </div>
 
                         <div className="space-y-3">
-                            <h3 className="text-[10px] font-black text-white/40 uppercase tracking-widest border-b border-white/5 pb-2">Key Factors</h3>
+                            <h3 className="text-[10px] font-black text-white/40 uppercase tracking-widest border-b border-white/5 pb-2">Factores Clave</h3>
                             <div className="grid grid-cols-1 gap-2">
                                 {[
-                                    { label: 'Sporting Results', value: fanApproval.factors.results, icon: <TrophyIcon className="w-3.5 h-3.5" /> },
-                                    { label: 'Financial Health', value: fanApproval.factors.finances, icon: <span className="text-xs">💰</span> },
-                                    { label: 'Transfer Policy', value: fanApproval.factors.transfers, icon: <UsersIcon className="w-3.5 h-3.5" /> },
-                                    { label: 'Promises Met', value: fanApproval.factors.promises, icon: <TrendingUpIcon className="w-3.5 h-3.5" /> },
+                                    { label: 'Resultados Deportivos', value: fanApproval.factors.results, icon: <TrophyIcon className="w-3.5 h-3.5" /> },
+                                    { label: 'Salud Financiera', value: fanApproval.factors.finances, icon: <span className="text-xs">💰</span> },
+                                    { label: 'Política de Fichajes', value: fanApproval.factors.transfers, icon: <UsersIcon className="w-3.5 h-3.5" /> },
+                                    { label: 'Promesas Cumplidas', value: fanApproval.factors.promises, icon: <TrendingUpIcon className="w-3.5 h-3.5" /> },
                                 ].map((factor, i) => (
                                     <div key={i} className="flex justify-between items-center bg-black/20 p-3 rounded-lg border border-white/5">
                                         <div className="flex items-center gap-2.5">
@@ -119,10 +119,10 @@ export const ClubHubScreen: React.FC<ClubHubScreenProps> = ({ gameState, dispatc
                     {/* Board Confidence */}
                     <div className="apex-card p-6 border-t-2 border-[var(--apex-gold)]">
                         <h2 className="text-sm font-black text-white mb-4 uppercase tracking-widest flex items-center gap-2">
-                            <TrendingUpIcon className="w-4 h-4 text-[var(--apex-gold)]" /> Board Confidence
+                            <TrendingUpIcon className="w-4 h-4 text-[var(--apex-gold)]" /> Confianza de la Directiva
                         </h2>
                         <div className="flex justify-between items-end mb-2">
-                            <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest">Trust Level</span>
+                            <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest">Nivel de Confianza</span>
                             <span className="text-2xl font-black text-white tracking-tighter">{boardConfidence}%</span>
                         </div>
                         <div className="h-1.5 bg-black/50 rounded-full overflow-hidden border border-white/5">
@@ -132,9 +132,9 @@ export const ClubHubScreen: React.FC<ClubHubScreenProps> = ({ gameState, dispatc
                             />
                         </div>
                         <p className="text-[10px] font-bold text-white/50 mt-4 leading-relaxed uppercase tracking-widest">
-                            {boardConfidence >= 80 ? 'The board is delighted with your vision and results.' : 
-                             boardConfidence >= 50 ? 'You have the board\'s backing, but steady progress is expected.' : 
-                             'Your position is under scrutiny. Immediate improvements are required.'}
+                            {boardConfidence >= 80 ? 'La directiva está encantada con tu visión y resultados.' : 
+                             boardConfidence >= 50 ? 'Tienes el respaldo de la directiva, pero se espera progreso constante.' : 
+                             'Tu posición está bajo escrutinio. Se requieren mejoras inmediatas.'}
                         </p>
                     </div>
                 </div>
@@ -147,7 +147,7 @@ export const ClubHubScreen: React.FC<ClubHubScreenProps> = ({ gameState, dispatc
                             <div className="p-1.5 bg-[var(--apex-gold)]/10 rounded border border-[var(--apex-gold)]/20">
                                 <TrophyIcon className="w-4 h-4 text-[var(--apex-gold)]" />
                             </div>
-                            Electoral Promises
+                            Promesas Electorales
                         </h2>
 
                         {electoralPromises.length > 0 ? (
@@ -160,7 +160,7 @@ export const ClubHubScreen: React.FC<ClubHubScreenProps> = ({ gameState, dispatc
                                                 <h3 className="font-bold text-sm text-white leading-tight">{promise.description}</h3>
                                             </div>
                                             {promise.fulfilled && (
-                                                <span className="bg-[var(--apex-green)] text-black text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest ml-2 flex-shrink-0 shadow-[0_0_10px_rgba(46,204,113,0.3)]">MET</span>
+                                                <span className="bg-[var(--apex-green)] text-black text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest ml-2 flex-shrink-0 shadow-[0_0_10px_rgba(46,204,113,0.3)]">CUMPLIDA</span>
                                             )}
                                         </div>
                                         
@@ -179,7 +179,7 @@ export const ClubHubScreen: React.FC<ClubHubScreenProps> = ({ gameState, dispatc
                             </div>
                         ) : (
                             <div className="bg-black/20 border border-dashed border-white/10 rounded-xl py-12 text-center">
-                                <p className="text-xs font-bold text-white/30 uppercase tracking-widest">No active promises for this term.</p>
+                                <p className="text-xs font-bold text-white/30 uppercase tracking-widest">No hay promesas activas para este mandato.</p>
                             </div>
                         )}
                     </div>
@@ -193,13 +193,13 @@ export const ClubHubScreen: React.FC<ClubHubScreenProps> = ({ gameState, dispatc
                                     <span className="text-xl leading-none block">🏟️</span>
                                 </div>
                                 <div className="text-right">
-                                    <span className="text-[8px] text-white/40 uppercase font-black tracking-widest block mb-0.5">Capacity</span>
+                                    <span className="text-[8px] text-white/40 uppercase font-black tracking-widest block mb-0.5">Capacidad</span>
                                     <span className="text-sm font-black text-white">{stadium.capacity.toLocaleString()}</span>
                                 </div>
                             </div>
-                            <h3 className="text-sm font-black text-white uppercase mb-1">Stadium</h3>
-                            <p className="text-[10px] text-white/50 font-bold mb-4 uppercase tracking-widest leading-relaxed">Upgrade facilities & expand.</p>
-                            <button className="w-full py-2 bg-black/40 border border-white/5 text-white/70 text-[9px] font-black rounded-lg group-hover:bg-[var(--apex-gold)] group-hover:text-black group-hover:border-[var(--apex-gold)] transition-all uppercase tracking-widest">Manage</button>
+                            <h3 className="text-sm font-black text-white uppercase mb-1">Estadio</h3>
+                            <p className="text-[10px] text-white/50 font-bold mb-4 uppercase tracking-widest leading-relaxed">Mejorar instalaciones y ampliar.</p>
+                            <button className="w-full py-2 bg-black/40 border border-white/5 text-white/70 text-[9px] font-black rounded-lg group-hover:bg-[var(--apex-gold)] group-hover:text-black group-hover:border-[var(--apex-gold)] transition-all uppercase tracking-widest">Gestionar</button>
                         </div>
 
                         {/* Sponsorships Card */}
@@ -209,13 +209,13 @@ export const ClubHubScreen: React.FC<ClubHubScreenProps> = ({ gameState, dispatc
                                     <TrendingUpIcon className="w-5 h-5" />
                                 </div>
                                 <div className="text-right">
-                                    <span className="text-[8px] text-white/40 uppercase font-black tracking-widest block mb-0.5">Wk. Income</span>
+                                    <span className="text-[8px] text-white/40 uppercase font-black tracking-widest block mb-0.5">Ing. Semanal</span>
                                     <span className="text-sm font-black text-[var(--apex-green)]">+{formatCurrencyShort(gameState.sponsors.reduce((s, c) => s + c.weeklyIncome, 0))}</span>
                                 </div>
                             </div>
-                            <h3 className="text-sm font-black text-white uppercase mb-1">Sponsors</h3>
-                            <p className="text-[10px] text-white/50 font-bold mb-4 uppercase tracking-widest leading-relaxed">Negotiate deals & bonuses.</p>
-                            <button className="w-full py-2 bg-black/40 border border-white/5 text-white/70 text-[9px] font-black rounded-lg group-hover:bg-[var(--apex-green)] group-hover:text-black group-hover:border-[var(--apex-green)] transition-all uppercase tracking-widest">View Contracts</button>
+                            <h3 className="text-sm font-black text-white uppercase mb-1">Patrocinios</h3>
+                            <p className="text-[10px] text-white/50 font-bold mb-4 uppercase tracking-widest leading-relaxed">Negocia acuerdos y bonificaciones.</p>
+                            <button className="w-full py-2 bg-black/40 border border-white/5 text-white/70 text-[9px] font-black rounded-lg group-hover:bg-[var(--apex-green)] group-hover:text-black group-hover:border-[var(--apex-green)] transition-all uppercase tracking-widest">Ver Contratos</button>
                         </div>
 
                         {/* Trophies Card */}
@@ -225,13 +225,13 @@ export const ClubHubScreen: React.FC<ClubHubScreenProps> = ({ gameState, dispatc
                                     <TrophyIcon className="w-5 h-5" />
                                 </div>
                                 <div className="text-right">
-                                    <span className="text-[8px] text-white/40 uppercase font-black tracking-widest block mb-0.5">Titles</span>
+                                    <span className="text-[8px] text-white/40 uppercase font-black tracking-widest block mb-0.5">Títulos</span>
                                     <span className="text-sm font-black text-[var(--apex-gold)]">{team.trophyCabinet?.length || 0}</span>
                                 </div>
                             </div>
-                            <h3 className="text-sm font-black text-white uppercase mb-1">Cabinet</h3>
-                            <p className="text-[10px] text-white/50 font-bold mb-4 uppercase tracking-widest leading-relaxed">View club's historic honors.</p>
-                            <button className="w-full py-2 bg-black/40 border border-white/5 text-white/70 text-[9px] font-black rounded-lg group-hover:bg-[var(--apex-gold)] group-hover:text-black group-hover:border-[var(--apex-gold)] transition-all uppercase tracking-widest">Open Cabinet</button>
+                            <h3 className="text-sm font-black text-white uppercase mb-1">Vitrina</h3>
+                            <p className="text-[10px] text-white/50 font-bold mb-4 uppercase tracking-widest leading-relaxed">Ver los títulos históricos del club.</p>
+                            <button className="w-full py-2 bg-black/40 border border-white/5 text-white/70 text-[9px] font-black rounded-lg group-hover:bg-[var(--apex-gold)] group-hover:text-black group-hover:border-[var(--apex-gold)] transition-all uppercase tracking-widest">Abrir Vitrina</button>
                         </div>
                     </div>
                 </div>

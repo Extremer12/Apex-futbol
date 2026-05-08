@@ -4,6 +4,7 @@ import { LEAGUE_COUNTRY, CountryCode } from '../../types';
 import { TeamForm } from '../ui/TeamForm';
 import { TrophyIcon } from '../icons';
 import { TeamLogo } from '../../data/teams/helpers';
+import { TournamentBracket } from '../ui/TournamentBracket';
 
 interface LeagueScreenProps {
     gameState: GameState;
@@ -362,41 +363,14 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                                     <p className="font-bold uppercase tracking-widest">La competición no ha comenzado</p>
                                 </div>
                             )}
-                            {/* Bracket-style fixtures */}
-                            {currentRound && (
-                                <>
-                                    <h3 className={`text-xs font-black uppercase tracking-[0.25em] mb-4 ${theme.accent}`}>{translatedRoundName}</h3>
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                                        {fixtures.map((fixture, idx) => {
-                                            const home = getTeamById(fixture.homeTeamId);
-                                            const away = getTeamById(fixture.awayTeamId);
-                                            const isPlayerMatch = home?.id === gameState.team.id || away?.id === gameState.team.id;
-                                            const homeWon = fixture.result && fixture.result.homeScore > fixture.result.awayScore;
-                                            const awayWon = fixture.result && fixture.result.awayScore > fixture.result.homeScore;
-                                            return (
-                                                <div key={idx} className={`rounded-2xl border overflow-hidden transition-all ${isPlayerMatch ? `${theme.border} bg-white/5` : 'border-white/5 bg-slate-900/40'}`}>
-                                                    {/* Home row */}
-                                                    <div className={`flex items-center justify-between px-4 py-3 border-b border-white/5 ${homeWon ? 'bg-white/10' : ''}`}>
-                                                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                                                            <div className="w-8 h-8 shrink-0"><TeamLogo team={home} /></div>
-                                                            <span className={`font-bold text-sm truncate ${isPlayerMatch && home?.id === gameState.team.id ? theme.accent : homeWon ? 'text-white' : 'text-slate-300'}`}>{home?.name}</span>
-                                                        </div>
-                                                        <span className={`font-black text-lg w-8 text-center ${homeWon ? 'text-white' : 'text-slate-500'}`}>{fixture.result ? fixture.result.homeScore : '-'}</span>
-                                                    </div>
-                                                    {/* Away row */}
-                                                    <div className={`flex items-center justify-between px-4 py-3 ${awayWon ? 'bg-white/10' : ''}`}>
-                                                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                                                            <div className="w-8 h-8 shrink-0"><TeamLogo team={away} /></div>
-                                                            <span className={`font-bold text-sm truncate ${isPlayerMatch && away?.id === gameState.team.id ? theme.accent : awayWon ? 'text-white' : 'text-slate-300'}`}>{away?.name}</span>
-                                                        </div>
-                                                        <span className={`font-black text-lg w-8 text-center ${awayWon ? 'text-white' : 'text-slate-500'}`}>{fixture.result ? fixture.result.awayScore : '-'}</span>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </>
-                            )}
+                            {/* Full Bracket View */}
+                            <TournamentBracket
+                                cup={cup}
+                                getTeamById={getTeamById}
+                                playerTeamId={gameState.team.id}
+                                theme={theme}
+                                logoUrl={logo}
+                            />
                         </div>
                     ) : (
                         <div className="space-y-3">
