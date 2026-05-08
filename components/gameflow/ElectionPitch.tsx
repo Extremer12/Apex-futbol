@@ -80,7 +80,15 @@ export const ElectionPitch: React.FC<ElectionPitchProps> = ({ team, player, onSu
     if (gamePhase === 'intro') {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden" style={{ background: 'var(--apex-dark)' }}>
-                <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at top, rgba(200,168,78,0.05), var(--apex-dark) 70%)' }} />
+                {/* Background Image with subtle parallax movement */}
+                <div 
+                    className="absolute inset-0 bg-cover bg-center transition-transform duration-[20s] ease-out animate-slow-zoom"
+                    style={{ 
+                        backgroundImage: 'url("/bg-debate.png")',
+                        filter: 'brightness(1.0) saturate(1.1)'
+                    }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#0A0E17]/80 via-transparent to-[#0A0E17]" />
                 
                 {/* Live badge */}
                 <div className="absolute top-6 right-6 flex items-center gap-2 px-4 py-1.5 rounded-lg z-20 animate-fade-in"
@@ -98,15 +106,15 @@ export const ElectionPitch: React.FC<ElectionPitchProps> = ({ team, player, onSu
                     </div>
 
                     <h1 className="text-2xl font-extrabold text-white uppercase tracking-[0.1em] mb-1">{team.name}</h1>
-                    <p className="text-[10px] font-bold tracking-[0.2em] uppercase mb-8" style={{ color: 'var(--apex-text-secondary)' }}>
-                        Club Presidential Election
+                    <p className="text-[10px] font-bold tracking-[0.2em] uppercase mb-8" style={{ color: 'var(--apex-gold)' }}>
+                        Elecciones Presidenciales del Club
                     </p>
 
                     <div className="apex-card p-4 flex items-center gap-3 mb-8">
                         <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg"
                              style={{ background: 'rgba(200,168,78,0.1)', border: '1px solid var(--apex-border)' }}>🎙️</div>
                         <div className="text-left">
-                            <div className="text-[9px] font-bold tracking-[0.15em] uppercase" style={{ color: 'var(--apex-gold)' }}>Main Candidate</div>
+                            <div className="text-[9px] font-bold tracking-[0.15em] uppercase" style={{ color: 'var(--apex-gold)' }}>Candidato Principal</div>
                             <div className="text-sm font-extrabold text-white">{player.name}</div>
                         </div>
                     </div>
@@ -117,7 +125,7 @@ export const ElectionPitch: React.FC<ElectionPitchProps> = ({ team, player, onSu
                             <div className="h-full rounded-full animate-[shrink_3s_linear_forwards]" style={{ background: 'var(--apex-gold)' }} />
                         </div>
                         <p className="text-[9px] font-bold tracking-[0.2em] uppercase mt-2" style={{ color: 'var(--apex-text-muted)' }}>
-                            Connecting studios...
+                            Conectando con los estudios...
                         </p>
                     </div>
                 </div>
@@ -136,8 +144,8 @@ export const ElectionPitch: React.FC<ElectionPitchProps> = ({ team, player, onSu
                          style={{ background: 'rgba(200,168,78,0.08)', border: '2px solid var(--apex-gold-dim)' }}>
                         🗳️
                     </div>
-                    <h2 className="text-2xl font-extrabold text-white uppercase tracking-[0.1em]">Polls Closed</h2>
-                    <p className="text-sm font-bold tracking-[0.15em] uppercase" style={{ color: 'var(--apex-gold)' }}>Counting votes...</p>
+                    <h2 className="text-2xl font-extrabold text-white uppercase tracking-[0.1em]">Cierre de Urnas</h2>
+                    <p className="text-sm font-bold tracking-[0.15em] uppercase" style={{ color: 'var(--apex-gold)' }}>Contando votos...</p>
                     <div className="mt-4"><LoadingSpinner /></div>
                 </div>
             </div>
@@ -146,7 +154,18 @@ export const ElectionPitch: React.FC<ElectionPitchProps> = ({ team, player, onSu
 
     // ── DEBATE PHASE ──
     return (
-        <div className="min-h-screen flex flex-col" style={{ background: 'var(--apex-dark)' }}>
+        <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: 'var(--apex-dark)' }}>
+            {/* Background Image with subtle parallax movement */}
+            <div 
+                className="absolute inset-0 bg-cover bg-center transition-transform duration-[20s] ease-out animate-slow-zoom"
+                style={{ 
+                    backgroundImage: 'url("/bg-debate.png")',
+                    filter: 'brightness(0.6) saturate(0.8)'
+                }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#0A0E17]/90 via-transparent to-[#0A0E17]" />
+            
+            <div className="relative z-10 flex flex-col min-h-screen">
             {/* Header */}
             <header className="px-4 pt-4 pb-3" style={{ borderBottom: '1px solid var(--apex-border)' }}>
                 <div className="flex items-center justify-between mb-3">
@@ -161,18 +180,18 @@ export const ElectionPitch: React.FC<ElectionPitchProps> = ({ team, player, onSu
                             <img src={team.logo} alt="" className="w-5 h-5 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                             <span className="text-xs font-extrabold text-white uppercase">{team.name}</span>
                         </div>
-                        <p className="text-[9px] uppercase tracking-[0.1em]" style={{ color: 'var(--apex-text-secondary)' }}>Club Presidential Election</p>
+                        <p className="text-[9px] uppercase tracking-[0.1em]" style={{ color: 'var(--apex-text-secondary)' }}>Elecciones Presidenciales</p>
                     </div>
                     <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
                         <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                        <span className="text-red-400 text-[9px] font-bold tracking-wider">LIVE</span>
+                        <span className="text-red-400 text-[9px] font-bold tracking-wider">EN DIRECTO</span>
                     </div>
                 </div>
 
                 <div className="text-center mb-3">
-                    <h2 className="text-base font-extrabold text-white uppercase tracking-[0.1em]">Presidential Debate</h2>
+                    <h2 className="text-base font-extrabold text-white uppercase tracking-[0.1em]">Debate Presidencial</h2>
                     <p className="text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--apex-gold)' }}>
-                        Round {currentIndex + 1} of {questions.length}
+                        Ronda {currentIndex + 1} de {questions.length}
                     </p>
                 </div>
             </header>
@@ -181,7 +200,7 @@ export const ElectionPitch: React.FC<ElectionPitchProps> = ({ team, player, onSu
             <div className="px-4 py-3 flex gap-3">
                 <div className="flex-1 apex-card p-3">
                     <div className="flex justify-between items-center mb-1.5">
-                        <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--apex-text-muted)' }}>Board</span>
+                        <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--apex-text-muted)' }}>Directiva</span>
                         <span className="text-sm font-extrabold" style={{ color: getScoreColor(boardScore) }}>{Math.round(boardScore)}%</span>
                     </div>
                     <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
@@ -190,7 +209,7 @@ export const ElectionPitch: React.FC<ElectionPitchProps> = ({ team, player, onSu
                 </div>
                 <div className="flex-1 apex-card p-3">
                     <div className="flex justify-between items-center mb-1.5">
-                        <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--apex-text-muted)' }}>Fans</span>
+                        <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--apex-text-muted)' }}>Afición</span>
                         <span className="text-sm font-extrabold" style={{ color: getScoreColor(fanScore) }}>{Math.round(fanScore)}%</span>
                     </div>
                     <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
@@ -202,7 +221,7 @@ export const ElectionPitch: React.FC<ElectionPitchProps> = ({ team, player, onSu
             {/* Candidates */}
             <div className="px-4 mb-3">
                 <div className="apex-card p-3">
-                    <div className="text-[9px] font-bold uppercase tracking-[0.1em] mb-2" style={{ color: 'var(--apex-text-muted)' }}>Live Poll</div>
+                    <div className="text-[9px] font-bold uppercase tracking-[0.1em] mb-2" style={{ color: 'var(--apex-text-muted)' }}>Encuesta en Vivo</div>
                     <div className="flex h-6 rounded-lg overflow-hidden mb-2">
                         <div className="flex items-center justify-center transition-all duration-1000"
                              style={{ width: `${playerAvgScore}%`, background: 'var(--apex-gold)', minWidth: '30px' }}>
@@ -306,6 +325,7 @@ export const ElectionPitch: React.FC<ElectionPitchProps> = ({ team, player, onSu
             )}
 
             <style>{`@keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }`}</style>
+            </div>
         </div>
     );
 };

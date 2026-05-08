@@ -12,10 +12,14 @@ interface SettingsScreenProps {
     currentSaveName: string | null;
     lastSaved: Date | null;
     preferredCurrency: 'EUR' | 'USD';
+    preferredLanguage: 'en' | 'es';
     dispatch: React.Dispatch<GameAction>;
 }
 
-export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onSaveGame, onQuitToMenu, currentSaveName, lastSaved, preferredCurrency, dispatch }) => {
+import { translations } from '../../src/i18n/translations';
+
+export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onSaveGame, onQuitToMenu, currentSaveName, lastSaved, preferredCurrency, preferredLanguage, dispatch }) => {
+    const t = translations[preferredLanguage || 'es'];
     const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
     const [isQuitModalOpen, setIsQuitModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -169,11 +173,45 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onSaveGame, onQu
                 </div>
             </div>
 
+            {/* Language Settings */}
+            <div className="space-y-4">
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">{t.settings.language}</h3>
+                <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                    <p className="text-slate-400 text-sm mb-4">
+                        {preferredLanguage === 'es' ? 'Elige el idioma de la interfaz del juego.' : 'Choose the language for the game interface.'}
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                        <button
+                            onClick={() => dispatch({ type: 'SET_LANGUAGE', payload: 'es' })}
+                            className={`flex items-center justify-center gap-3 p-4 rounded-xl border-2 font-black text-lg transition-all ${
+                                preferredLanguage === 'es'
+                                    ? 'border-[var(--apex-gold)] bg-[var(--apex-gold)]/10 text-[var(--apex-gold)]'
+                                    : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600'
+                            }`}
+                        >
+                            <span className="text-xl">🇪🇸</span> Español
+                        </button>
+                        <button
+                            onClick={() => dispatch({ type: 'SET_LANGUAGE', payload: 'en' })}
+                            className={`flex items-center justify-center gap-3 p-4 rounded-xl border-2 font-black text-lg transition-all ${
+                                preferredLanguage === 'en'
+                                    ? 'border-[var(--apex-gold)] bg-[var(--apex-gold)]/10 text-[var(--apex-gold)]'
+                                    : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600'
+                            }`}
+                        >
+                            <span className="text-xl">🇺🇸</span> English
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             {/* Currency Settings */}
             <div className="space-y-4">
-                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Moneda</h3>
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">{t.settings.currency || 'Moneda'}</h3>
                 <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-                    <p className="text-slate-400 text-sm mb-4">Elige la moneda que se usa para mostrar valores, salarios y presupuestos en todo el juego.</p>
+                    <p className="text-slate-400 text-sm mb-4">
+                        {preferredLanguage === 'es' ? 'Elige la moneda para valores y presupuestos.' : 'Choose the currency for values and budgets.'}
+                    </p>
                     <div className="grid grid-cols-2 gap-3">
                         <button
                             id="currency-eur"

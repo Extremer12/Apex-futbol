@@ -391,7 +391,8 @@ export interface GameState {
   scouts: Scout[];
   scoutedPlayerIds: Record<number, number>; // playerId -> scoutingLevel (0-100)
   cinematicQueue: CinematicEvent[];
-  preferredCurrency: 'EUR' | 'USD'; // Added for Phase 7
+  preferredCurrency: 'EUR' | 'USD';
+  preferredLanguage: 'en' | 'es'; // Added for Phase 7: i18n
 }
 
 export enum Screen {

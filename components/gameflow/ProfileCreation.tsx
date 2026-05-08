@@ -26,18 +26,23 @@ export const ProfileCreation: React.FC<ProfileCreationProps> = ({ onProfileCreat
         <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: 'var(--apex-dark)' }}>
             {/* Background */}
             <div className="absolute inset-0">
-                <div className="absolute inset-0 bg-gradient-to-b from-[#0A0E17] via-[#0D1220] to-[#0A0E17]" />
-                <div className="absolute top-0 right-0 w-[400px] h-[400px] opacity-10"
-                     style={{ background: 'radial-gradient(ellipse, rgba(200,168,78,0.2), transparent 70%)' }} />
+                <div 
+                    className="absolute inset-0 bg-cover bg-center transition-transform duration-[20s] ease-out animate-slow-zoom"
+                    style={{ 
+                        backgroundImage: 'url("/bg-profile.png")',
+                        filter: 'brightness(1.0) saturate(1.1)'
+                    }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#0A0E17]/80 via-[#0D1220]/60 to-[#0A0E17]/90" />
             </div>
 
             {/* Content */}
             <div className="relative z-10 flex flex-col min-h-screen">
                 {/* Header */}
                 <div className="text-center pt-8 pb-4 px-6">
-                    <h1 className="text-lg font-extrabold tracking-[0.2em] uppercase text-white mb-1">Create Your Profile</h1>
+                    <h1 className="text-lg font-extrabold tracking-[0.2em] uppercase text-white mb-1">Crea Tu Perfil</h1>
                     <p className="text-[10px] font-semibold tracking-[0.15em] uppercase" style={{ color: 'var(--apex-text-secondary)' }}>
-                        Build your legacy. Lead your club.
+                        Construye tu legado. Lidera tu club.
                     </p>
                     {/* Step indicator */}
                     <div className="flex items-center justify-center gap-2 mt-4">
@@ -55,11 +60,11 @@ export const ProfileCreation: React.FC<ProfileCreationProps> = ({ onProfileCreat
                             {/* Card Header */}
                             <div className="text-center mb-6">
                                 <p className="text-[10px] font-bold tracking-[0.2em] uppercase mb-1" style={{ color: 'var(--apex-gold)' }}>
-                                    Step 1 of 4
+                                    Paso 1 de 4
                                 </p>
-                                <h2 className="text-xl font-extrabold text-white tracking-tight uppercase">President Profile</h2>
+                                <h2 className="text-xl font-extrabold text-white tracking-tight uppercase">Perfil de Presidente</h2>
                                 <p className="text-xs mt-1" style={{ color: 'var(--apex-text-secondary)' }}>
-                                    Define your identity. Shape your journey.
+                                    Define tu identidad. Comienza tu viaje.
                                 </p>
                             </div>
 
@@ -83,7 +88,7 @@ export const ProfileCreation: React.FC<ProfileCreationProps> = ({ onProfileCreat
                             <div className="space-y-5 flex-1">
                                 {/* President Name */}
                                 <div>
-                                    <label className="block text-[10px] font-bold tracking-[0.15em] uppercase mb-2 text-white">President Name</label>
+                                    <label className="block text-[10px] font-bold tracking-[0.15em] uppercase mb-2 text-white">Nombre del Presidente</label>
                                     <div className="relative">
                                         <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--apex-text-muted)' }}>
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -92,7 +97,7 @@ export const ProfileCreation: React.FC<ProfileCreationProps> = ({ onProfileCreat
                                             type="text"
                                             value={name}
                                             onChange={(e) => setName(e.target.value)}
-                                            placeholder="Enter your name"
+                                            placeholder="Introduce tu nombre"
                                             className="apex-input"
                                             required
                                         />
@@ -101,7 +106,7 @@ export const ProfileCreation: React.FC<ProfileCreationProps> = ({ onProfileCreat
 
                                 {/* Experience Level */}
                                 <div>
-                                    <label className="block text-[10px] font-bold tracking-[0.15em] uppercase mb-2 text-white">Experience Level</label>
+                                    <label className="block text-[10px] font-bold tracking-[0.15em] uppercase mb-2 text-white">Nivel de Experiencia</label>
                                     <div className="space-y-2">
                                         {EXPERIENCE_OPTIONS.map((opt) => (
                                             <button
@@ -136,7 +141,7 @@ export const ProfileCreation: React.FC<ProfileCreationProps> = ({ onProfileCreat
                                 disabled={!name.trim()}
                                 className="apex-btn-gold mt-6 disabled:opacity-30 disabled:cursor-not-allowed"
                             >
-                                CONTINUE
+                                CONTINUAR
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
                                 </svg>
@@ -151,8 +156,8 @@ export const ProfileCreation: React.FC<ProfileCreationProps> = ({ onProfileCreat
                                 </svg>
                             </div>
                             <div>
-                                <p className="text-[10px] text-white font-medium">Your profile shapes how the world sees you.</p>
-                                <p className="text-[9px]" style={{ color: 'var(--apex-text-muted)' }}>Choose wisely — every decision defines your legacy.</p>
+                                <p className="text-[10px] text-white font-medium">Tu perfil define cómo te ve el mundo.</p>
+                                <p className="text-[9px]" style={{ color: 'var(--apex-text-muted)' }}>Elige sabiamente — cada decisión define tu legado.</p>
                             </div>
                         </div>
                     </form>

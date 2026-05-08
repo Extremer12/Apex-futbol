@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { GameState, MatchPhase, PendingSimulationResults, NewsItem, Offer } from '../types';
 import { simulationWorker } from '../services/simulationWorker';
 import { generateNews, generateMatchReport, generateTransferOffer, generatePlayerOfTheWeekNews, generateImportantNews, generateCoachReport } from '../services/gameLogic';
-import { advanceCupRound, progressInternationalCup } from '../services/simulation';
+import { advanceCupRound, progressInternationalCup, checkAndScheduleIntercontinental } from '../services/simulation';
 import { eventEngine, TriggeredEvent } from '../services/eventEngine';
 import { formatDate } from '../utils';
 
@@ -169,7 +169,13 @@ export function useSimulation(
                 }
             }
 
-            const intercontinentalMatches = matchesThisWeek.filter(m => m.competition === 'Copa_Intercontinental');
+            // Check Intercontinental Final
+            const interCup = checkAndScheduleIntercontinental({ cups: updatedCups, allTeams: restoredTeams }, newWeek);
+            if (interCup) {
+                updatedCups.copaIntercontinental = interCup;
+                simulationResult.updatedSchedule.push(...interCup.rounds[0].fixtures);
+            }
+
             if (intercontinentalMatches.length > 0 && intercontinentalMatches.every(m => m.result !== undefined)) {
                 // Since Intercontinental is a single final match, we just advance the cup to calculate the winner.
                 updatedCups.copaIntercontinental = advanceCupRound(updatedCups.copaIntercontinental, simulationResult.updatedAllTeams, newWeek);
@@ -230,6 +236,48 @@ export function useSimulation(
                         bgClass: 'from-emerald-900 via-slate-950 to-slate-950'
                     }
                 });
+            }
+
+            // Transfer Window News
+            const prevDate = new Date(gameState.currentDate);
+            const currDate = newDate;
+            const prevMonth = prevDate.getMonth();
+            const currMonth = currDate.getMonth();
+
+            if (prevMonth !== currMonth) {
+                if (currMonth === 0) { // Enero
+                    newsToAdd.push({
+                        id: `market_open_jan_${Date.now()}`,
+                        headline: '💼 Mercado Abierto: Enero',
+                        body: 'Se abre la ventana de traspasos de invierno. Los clubes buscan refuerzos de última hora.',
+                        date: formatDate(currDate),
+                        type: 'standard'
+                    });
+                } else if (currMonth === 1) { // Febrero
+                    newsToAdd.push({
+                        id: `market_close_feb_${Date.now()}`,
+                        headline: '🚫 Mercado Cerrado',
+                        body: 'Finaliza el periodo de fichajes de invierno. Las plantillas quedan cerradas hasta verano.',
+                        date: formatDate(currDate),
+                        type: 'standard'
+                    });
+                } else if (currMonth === 6) { // Julio
+                    newsToAdd.push({
+                        id: `market_open_jul_${Date.now()}`,
+                        headline: '☀️ Mercado de Verano Abierto',
+                        body: 'Comienza el periodo de fichajes estival. Se esperan grandes movimientos en las ligas europeas.',
+                        date: formatDate(currDate),
+                        type: 'standard'
+                    });
+                } else if (currMonth === 8) { // Septiembre
+                    newsToAdd.push({
+                        id: `market_close_sep_${Date.now()}`,
+                        headline: '⏳ Deadline Day Finalizado',
+                        body: 'El mercado de verano ha cerrado. Se acabó el tiempo para las negociaciones.',
+                        date: formatDate(currDate),
+                        type: 'standard'
+                    });
+                }
             }
 
             if (newCinematicEvents.length > 0) {

@@ -28,7 +28,7 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
 
     const handlePromote = (player: Player) => {
         if (gameState.team.squad.length >= 25) {
-            showToast("The squad is full (Max 25). Sell players before promoting academy youth.", 'warning');
+            showToast("La plantilla está llena (Máx 25). Vende jugadores antes de ascender a juveniles.", 'warning');
             return;
         }
         setPlayerToPromote(player);
@@ -37,7 +37,7 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
     const confirmPromote = () => {
         if (playerToPromote) {
             dispatch({ type: 'PROMOTE_PLAYER', payload: playerToPromote });
-            showToast(`${playerToPromote.name} has been promoted to the first team!`, 'success');
+            showToast(`¡${playerToPromote.name} ha sido ascendido al primer equipo!`, 'success');
             setPlayerToPromote(null);
         }
     }
@@ -84,8 +84,8 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-4">
                 <div>
-                    <h2 className="text-[10px] font-black text-gold-gradient tracking-[0.3em] uppercase mb-1">Team Management</h2>
-                    <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter">Squad</h1>
+                    <h2 className="text-[10px] font-black text-gold-gradient tracking-[0.3em] uppercase mb-1">Gestión de Equipo</h2>
+                    <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter">Plantilla</h1>
                 </div>
                 
                 <div className="flex space-x-2">
@@ -93,44 +93,55 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
                         onClick={() => setActiveTab('FIRST_TEAM')}
                         className={`px-4 py-2 flex items-center gap-2 font-bold text-[10px] uppercase tracking-widest transition-all rounded-lg ${activeTab === 'FIRST_TEAM' ? 'bg-[var(--apex-gold)]/10 text-[var(--apex-gold)] border border-[var(--apex-gold)]/30' : 'text-white/50 hover:bg-white/5 border border-transparent'}`}
                     >
-                        <UsersIcon className="w-4 h-4" /> First Team
+                        <UsersIcon className="w-4 h-4" /> Primer Equipo
                     </button>
                     <button
                         onClick={() => setActiveTab('ACADEMY')}
                         className={`px-4 py-2 flex items-center gap-2 font-bold text-[10px] uppercase tracking-widest transition-all rounded-lg ${activeTab === 'ACADEMY' ? 'bg-[var(--apex-gold)]/10 text-[var(--apex-gold)] border border-[var(--apex-gold)]/30' : 'text-white/50 hover:bg-white/5 border border-transparent'}`}
                     >
-                        <SparklesIcon className="w-4 h-4" /> Academy
+                        <SparklesIcon className="w-4 h-4" /> Cantera
                     </button>
                 </div>
             </div>
 
             {activeTab === 'FIRST_TEAM' && (
                 <div className="space-y-6">
-                    {/* Coach Status Card */}
-                    <div className="apex-card p-6 flex flex-col md:flex-row justify-between items-center gap-6">
-                        <div className="flex items-center gap-4">
-                            <div className="w-14 h-14 bg-gradient-to-br from-[#1a1a2e] to-[#0f3460] border border-[var(--apex-gold)]/30 rounded-xl flex items-center justify-center shadow-lg">
-                                <UsersIcon className="w-6 h-6 text-[var(--apex-gold)]" />
-                            </div>
-                            <div>
-                                <h3 className="text-lg font-black text-white uppercase tracking-tight">{gameState.team.coach?.name || 'No Manager'}</h3>
-                                <div className="flex gap-2 mt-1.5">
-                                    <span className="text-[9px] font-black bg-[var(--apex-gold)]/10 text-[var(--apex-gold)] border border-[var(--apex-gold)]/20 px-2 py-0.5 rounded uppercase tracking-widest">{gameState.team.coach?.style || 'Balanced'}</span>
-                                    <span className="text-[9px] font-black bg-white/5 text-white/70 border border-white/10 px-2 py-0.5 rounded uppercase tracking-widest">{gameState.team.coach?.preferredFormation || '4-4-2'}</span>
-                                </div>
-                            </div>
-                        </div>
+                    {/* Pitch Background Header */}
+                    <div className="relative h-48 md:h-64 rounded-2xl overflow-hidden border border-white/10 shadow-2xl mb-6">
+                        <div 
+                            className="absolute inset-0 bg-cover bg-center transition-transform duration-[20s] ease-out animate-slow-zoom"
+                            style={{ 
+                                backgroundImage: 'url("/bg-pitch.png")',
+                                filter: 'brightness(0.7) saturate(1.2)'
+                            }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[var(--apex-dark)] via-transparent to-black/20" />
                         
-                        <div className="flex flex-col items-center md:items-end gap-2 w-full md:w-auto">
-                            <div className="text-[9px] font-black text-white/50 uppercase tracking-widest">Manager Satisfaction</div>
-                            <div className="flex items-center gap-3 w-full md:w-48">
-                                <div className="flex-1 h-1.5 bg-black/50 rounded-full overflow-hidden border border-white/5">
-                                    <div 
-                                        className={`h-full transition-all duration-1000 ${ (gameState.team.coach?.satisfactionLevel || 0) >= 70 ? 'bg-[var(--apex-green)]' : (gameState.team.coach?.satisfactionLevel || 0) >= 40 ? 'bg-[var(--apex-gold)]' : 'bg-[var(--apex-red)]'}`} 
-                                        style={{ width: `${gameState.team.coach?.satisfactionLevel || 0}%` }}
-                                    />
+                        <div className="absolute bottom-0 left-0 right-0 p-6 flex flex-col md:flex-row justify-between items-end md:items-center gap-4">
+                            <div className="flex items-center gap-4">
+                                <div className="w-16 h-16 bg-black/40 backdrop-blur-md border border-[var(--apex-gold)]/30 rounded-xl flex items-center justify-center shadow-lg">
+                                    <UsersIcon className="w-8 h-8 text-[var(--apex-gold)]" />
                                 </div>
-                                <span className="text-sm font-black text-white">{gameState.team.coach?.satisfactionLevel || 0}%</span>
+                                <div>
+                                    <h3 className="text-xl font-black text-white uppercase tracking-tight leading-none mb-1">{gameState.team.coach?.name || 'Sin Entrenador'}</h3>
+                                    <div className="flex gap-2">
+                                        <span className="text-[10px] font-black bg-[var(--apex-gold)] text-black px-2 py-0.5 rounded uppercase tracking-widest">{gameState.team.coach?.style || 'Equilibrado'}</span>
+                                        <span className="text-[10px] font-black bg-white/10 text-white px-2 py-0.5 rounded uppercase tracking-widest">{gameState.team.coach?.preferredFormation || '4-4-2'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className="flex flex-col items-end gap-2 w-full md:w-auto">
+                                <div className="text-[10px] font-black text-white uppercase tracking-widest opacity-60">Confianza en el Táctico</div>
+                                <div className="flex items-center gap-3 w-full md:w-48">
+                                    <div className="flex-1 h-2 bg-black/40 backdrop-blur-md rounded-full overflow-hidden border border-white/10">
+                                        <div 
+                                            className={`h-full transition-all duration-1000 ${ (gameState.team.coach?.satisfactionLevel || 0) >= 70 ? 'bg-[var(--apex-green)]' : (gameState.team.coach?.satisfactionLevel || 0) >= 40 ? 'bg-[var(--apex-gold)]' : 'bg-[var(--apex-red)]'}`} 
+                                            style={{ width: `${gameState.team.coach?.satisfactionLevel || 0}%` }}
+                                        />
+                                    </div>
+                                    <span className="text-lg font-black text-white leading-none">{gameState.team.coach?.satisfactionLevel || 0}%</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -138,8 +149,8 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 apex-card p-3">
                         <div className="flex items-center gap-3 px-2">
                             <div>
-                                <h3 className="font-black text-white uppercase text-xs">Filters & Sorting</h3>
-                                <p className="text-[9px] text-[var(--apex-gold)] font-bold uppercase tracking-widest">{gameState.team.squad.length}/25 Players</p>
+                                <h3 className="font-black text-white uppercase text-xs">Filtros y Orden</h3>
+                                <p className="text-[9px] text-[var(--apex-gold)] font-bold uppercase tracking-widest">{gameState.team.squad.length}/25 Jugadores</p>
                             </div>
                         </div>
 
@@ -151,11 +162,11 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
                                     onChange={(e) => setFilterPosition(e.target.value as FilterPosition)}
                                     className="bg-transparent text-white text-[10px] uppercase tracking-wider font-bold focus:outline-none w-full"
                                 >
-                                    <option value="ALL">All Positions</option>
-                                    <option value="POR">Goalkeepers</option>
-                                    <option value="DEF">Defenders</option>
-                                    <option value="CEN">Midfielders</option>
-                                    <option value="DEL">Forwards</option>
+                                    <option value="ALL">Todas las Posiciones</option>
+                                    <option value="POR">Porteros</option>
+                                    <option value="DEF">Defensas</option>
+                                    <option value="CEN">Centrocampistas</option>
+                                    <option value="DEL">Delanteros</option>
                                 </select>
                             </div>
 
@@ -166,11 +177,11 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
                                     onChange={(e) => setSortOption(e.target.value as SortOption)}
                                     className="bg-transparent text-white text-[10px] uppercase tracking-wider font-bold focus:outline-none w-full"
                                 >
-                                    <option value="rating">By Rating</option>
-                                    <option value="value">By Value</option>
-                                    <option value="age">By Age</option>
-                                    <option value="name">By Name</option>
-                                    <option value="position">By Position</option>
+                                    <option value="rating">Por Valoración</option>
+                                    <option value="value">Por Valor</option>
+                                    <option value="age">Por Edad</option>
+                                    <option value="name">Por Nombre</option>
+                                    <option value="position">Por Posición</option>
                                 </select>
                             </div>
                         </div>
@@ -182,14 +193,14 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
                             <table className="w-full text-left border-collapse min-w-[700px]">
                                 <thead>
                                     <tr className="bg-black/40 text-[9px] font-black text-white/40 uppercase tracking-[0.2em] border-b border-white/5">
-                                        <th className="px-4 py-3">Player</th>
+                                        <th className="px-4 py-3">Jugador</th>
                                         <th className="px-3 py-3 text-center">Pos</th>
-                                        <th className="px-3 py-3 text-center">Age</th>
-                                        <th className="px-3 py-3 text-center">Rat</th>
-                                        <th className="px-3 py-3 text-center">Value</th>
-                                        <th className="px-3 py-3 text-center">Condition</th>
+                                        <th className="px-3 py-3 text-center">Edad</th>
+                                        <th className="px-3 py-3 text-center">Val</th>
+                                        <th className="px-3 py-3 text-center">Valor</th>
+                                        <th className="px-3 py-3 text-center">Condición</th>
                                         <th className="px-3 py-3 text-center">G/A</th>
-                                        <th className="px-3 py-3 text-center">Morale</th>
+                                        <th className="px-3 py-3 text-center">Moral</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/5">
@@ -213,7 +224,7 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
                                                             {player.name}
                                                             {player.isTransferListed && <BriefcaseIcon className="w-3 h-3 text-[var(--apex-gold)]" />}
                                                         </div>
-                                                        <div className="text-[9px] text-white/40 font-bold uppercase tracking-wider">Wage: {formatCurrencyShort(player.wage)}/wk</div>
+                                                        <div className="text-[9px] text-white/40 font-bold uppercase tracking-wider">Salario: {formatCurrencyShort(player.wage)}/sem</div>
                                                     </div>
                                                 </div>
                                             </td>
@@ -238,11 +249,11 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
                                                 <div className="flex flex-col items-center gap-1">
                                                     {player.isInjured ? (
                                                         <span className="text-[9px] font-black bg-[var(--apex-red)]/10 text-[var(--apex-red)] border border-[var(--apex-red)]/20 px-2 py-0.5 rounded flex items-center gap-1 uppercase">
-                                                            🚑 {player.injuryWeeksRemaining} wk
+                                                            🚑 {player.injuryWeeksRemaining} sem
                                                         </span>
                                                     ) : player.isSuspended ? (
                                                         <span className="text-[9px] font-black bg-[var(--apex-red)]/10 text-[var(--apex-red)] border border-[var(--apex-red)]/20 px-2 py-0.5 rounded flex items-center gap-1 uppercase">
-                                                            🟥 {player.suspensionWeeksRemaining} mt
+                                                            🟥 {player.suspensionWeeksRemaining} par
                                                         </span>
                                                     ) : (
                                                         <div className="w-12 h-1 bg-black/50 rounded-full overflow-hidden border border-white/5">
@@ -275,15 +286,15 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
                 <div className="space-y-6">
                     <div className="apex-card p-6 text-center border-t-2 border-[var(--apex-gold)]">
                         <SparklesIcon className="w-8 h-8 text-[var(--apex-gold)] mx-auto mb-3" />
-                        <h3 className="text-xl font-black text-white uppercase mb-2">Youth Academy</h3>
-                        <p className="text-white/50 text-[10px] uppercase tracking-widest max-w-lg mx-auto leading-relaxed">Developing the stars of tomorrow. Promote youth players to the first team to begin their professional careers.</p>
+                        <h3 className="text-xl font-black text-white uppercase mb-2">Academia Juvenil</h3>
+                        <p className="text-white/50 text-[10px] uppercase tracking-widest max-w-lg mx-auto leading-relaxed">Desarrollando las estrellas del mañana. Asciende a jugadores juveniles al primer equipo para comenzar sus carreras profesionales.</p>
                     </div>
 
                     <div className="apex-card overflow-hidden">
                         {gameState.youthAcademy.length === 0 ? (
                             <div className="p-16 text-center flex flex-col items-center gap-4 text-white/30">
                                 <SparklesIcon className="w-12 h-12 opacity-20" />
-                                <p className="text-xs uppercase tracking-widest font-bold">No players in the academy currently.</p>
+                                <p className="text-xs uppercase tracking-widest font-bold">No hay jugadores en la cantera actualmente.</p>
                             </div>
                         ) : (
                             <div className="divide-y divide-white/5">
@@ -297,21 +308,21 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
                                                 <div className="text-base font-black text-white group-hover:text-[var(--apex-gold)] transition-colors">{player.name}</div>
                                                 <div className="flex gap-2 mt-1">
                                                     <span className={`text-[9px] font-black px-2 py-0.5 rounded border uppercase ${getPositionColor(player.position)}`}>{player.position}</span>
-                                                    <span className="text-[9px] font-bold text-white/50 uppercase tracking-widest">{player.age} yrs</span>
+                                                    <span className="text-[9px] font-bold text-white/50 uppercase tracking-widest">{player.age} años</span>
                                                 </div>
                                             </div>
                                         </div>
 
                                         <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto bg-black/20 sm:bg-transparent p-3 sm:p-0 rounded-lg">
                                             <div className="text-center">
-                                                <div className="text-[9px] font-black text-white/40 uppercase tracking-widest mb-0.5">Potential</div>
+                                                <div className="text-[9px] font-black text-white/40 uppercase tracking-widest mb-0.5">Potencial</div>
                                                 <div className="text-lg font-black text-white">{player.rating}</div>
                                             </div>
                                             <button
                                                 onClick={() => handlePromote(player)}
                                                 className="apex-btn-gold py-2 px-6 text-[10px]"
                                             >
-                                                PROMOTE
+                                                ASCENDER
                                             </button>
                                         </div>
                                     </div>
@@ -324,10 +335,10 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
 
             <ConfirmationModal
                 isOpen={playerToPromote !== null}
-                title="Promote Player"
-                message={`Are you sure you want to promote ${playerToPromote?.name} to the first team?`}
-                confirmText="Promote"
-                cancelText="Cancel"
+                title="Ascender Jugador"
+                message={`¿Estás seguro de que quieres ascender a ${playerToPromote?.name} al primer equipo?`}
+                confirmText="Ascender"
+                cancelText="Cancelar"
                 confirmVariant="success"
                 onConfirm={confirmPromote}
                 onCancel={() => setPlayerToPromote(null)}

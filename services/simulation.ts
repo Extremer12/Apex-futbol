@@ -411,19 +411,27 @@ const generateLeagueSchedule = (teams: Team[], leagueId: string): Match[] => {
 };
 
 export const generateSeasonSchedule = (allTeams: Team[]): Match[] => {
-    const premierLeagueTeams = allTeams.filter(t => t.leagueId === 'PREMIER_LEAGUE');
-    const championshipTeams = allTeams.filter(t => t.leagueId === 'CHAMPIONSHIP');
-    const laLigaTeams = allTeams.filter(t => t.leagueId === 'LA_LIGA');
-    const bundesligaTeams = allTeams.filter(t => t.leagueId === 'BUNDESLIGA');
-    const serieATeams = allTeams.filter(t => t.leagueId === 'SERIE_A');
+    const leaguesToSchedule = [
+        LeagueId.PREMIER_LEAGUE, LeagueId.CHAMPIONSHIP,
+        LeagueId.LA_LIGA, LeagueId.SEGUNDA_DIVISION_ESP,
+        LeagueId.BUNDESLIGA, LeagueId.ZWEITE_BUNDESLIGA,
+        LeagueId.SERIE_A, LeagueId.SERIE_B_ITA,
+        LeagueId.LIGUE_1, LeagueId.LIGUE_2,
+        LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
+        LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR
+    ];
 
-    const plSchedule = generateLeagueSchedule(premierLeagueTeams, 'PREMIER_LEAGUE');
-    const chSchedule = generateLeagueSchedule(championshipTeams, 'CHAMPIONSHIP');
-    const laSchedule = generateLeagueSchedule(laLigaTeams, 'LA_LIGA');
-    const gerSchedule = generateLeagueSchedule(bundesligaTeams, 'BUNDESLIGA');
-    const itaSchedule = generateLeagueSchedule(serieATeams, 'SERIE_A');
+    let fullSchedule: Match[] = [];
 
-    return [...plSchedule, ...chSchedule, ...laSchedule, ...gerSchedule, ...itaSchedule];
+    for (const leagueId of leaguesToSchedule) {
+        const teamsInLeague = allTeams.filter(t => t.leagueId === leagueId);
+        if (teamsInLeague.length > 0) {
+            const schedule = generateLeagueSchedule(teamsInLeague, leagueId);
+            fullSchedule = [...fullSchedule, ...schedule];
+        }
+    }
+
+    return fullSchedule;
 };
 
 export const generateCupDraw = (teams: Team[], roundName: string, competition: Match['competition'] = 'FA_Cup'): Match[] => {
@@ -585,8 +593,12 @@ export const advanceCupRound = (cup: CupCompetition, allTeams: Team[], nextWeek:
     
     let competitionType: Match['competition'] = 'FA_Cup';
     if (cup.id === 'carabao_cup') competitionType = 'Carabao_Cup';
-    if (cup.id === 'copa_libertadores') competitionType = 'Copa_Libertadores';
+    if (cup.id === 'copa_del_rey') competitionType = 'Copa_Del_Rey';
+    if (cup.id === 'dfb_pokal') competitionType = 'DFB_Pokal';
+    if (cup.id === 'coppa_italia') competitionType = 'Coppa_Italia';
     if (cup.id === 'champions_league') competitionType = 'Champions_League';
+    if (cup.id === 'europa_league') competitionType = 'Europa_League';
+    if (cup.id === 'copa_libertadores') competitionType = 'Copa_Libertadores';
     if (cup.id === 'copa_intercontinental') competitionType = 'Copa_Intercontinental';
 
     const nextRoundFixtures = generateCupDraw(winnerTeams, nextRoundName, competitionType);
@@ -611,6 +623,37 @@ export const advanceCupRound = (cup: CupCompetition, allTeams: Team[], nextWeek:
         rounds: updatedRounds,
         currentRoundIndex: cup.currentRoundIndex + 1
     };
+};
+
+export const checkAndScheduleIntercontinental = (gameState: { cups: Record<string, CupCompetition>, allTeams: Team[] }, nextWeek: number): CupCompetition | null => {
+    const { championsLeague, copaLibertadores, copaIntercontinental } = gameState.cups;
+
+    // Only if both are finished and Intercontinental hasn't started
+    if (championsLeague.winnerId && copaLibertadores.winnerId && (!copaIntercontinental.rounds || copaIntercontinental.rounds.length === 0)) {
+        const clWinner = gameState.allTeams.find(t => t.id === championsLeague.winnerId)!;
+        const libWinner = gameState.allTeams.find(t => t.id === copaLibertadores.winnerId)!;
+
+        const finalFixture: Match = {
+            week: nextWeek + 2,
+            homeTeamId: clWinner.id,
+            awayTeamId: libWinner.id,
+            competition: 'Copa_Intercontinental',
+            isCupMatch: true,
+            isMidweek: true
+        };
+
+        return {
+            ...copaIntercontinental,
+            rounds: [{
+                name: 'Final Intercontinental',
+                fixtures: [finalFixture],
+                completed: false
+            }],
+            currentRoundIndex: 0
+        };
+    }
+
+    return null;
 };
 
 const getNextRoundName = (teamsRemaining: number): string => {

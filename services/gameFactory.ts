@@ -97,10 +97,18 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
     const serieBBrTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.SERIE_B_BR);
 
     // Copa Libertadores participants: 32 teams from South America
-    const libertadoresParticipants = [
+    let libertadoresParticipants = [
         ...ligaArgTeams.slice(0, 16),
         ...brasileiraoTeams.slice(0, 16)
-    ].sort(() => 0.5 - Math.random());
+    ];
+
+    if (playerTeamCopy.leagueId === LeagueId.LIGA_ARGENTINA || playerTeamCopy.leagueId === LeagueId.BRASILEIRAO) {
+        if (!libertadoresParticipants.find(t => t.id === playerTeamCopy.id)) {
+            libertadoresParticipants.pop();
+            libertadoresParticipants.push(playerTeamCopy);
+        }
+    }
+    libertadoresParticipants.sort(() => 0.5 - Math.random());
 
     // Champions League participants: 36 teams from Europe
     const championsLeagueParticipants = [
@@ -312,5 +320,6 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
             }
         ],
         preferredCurrency: 'EUR',
+        preferredLanguage: 'es',
     };
 }

@@ -46,7 +46,9 @@ export type GameAction =
     | { type: 'UPDATE_BOARD_CONFIDENCE'; payload: number }
     | { type: 'UPDATE_STADIUM'; payload: Stadium }
     | { type: 'HIRE_SCOUT'; payload: Scout }
-    | { type: 'SET_CURRENCY'; payload: 'EUR' | 'USD' };
+    | { type: 'SCOUT_PLAYER'; payload: { playerId: number } }
+    | { type: 'SET_CURRENCY'; payload: 'EUR' | 'USD' }
+    | { type: 'SET_LANGUAGE'; payload: 'en' | 'es' };
 
 export const initialState: GameState | null = null;
 
@@ -62,6 +64,7 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
 
             // MIGRATION: Ensure all new fields exist for legacy saves
             const currentTurn = loadedState.currentTurn || 'weekend';
+            const preferredLanguage = loadedState.preferredLanguage || 'es'; // Default to Spanish as requested
 
             // 1. Political System Migration
             const mandate = loadedState.mandate || {
@@ -162,6 +165,7 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 cups: fullCups,
                 cinematicQueue,
                 preferredCurrency: loadedState.preferredCurrency || 'EUR',
+                preferredLanguage,
             };
         }
 
@@ -723,9 +727,37 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
             };
         }
 
+        case 'SCOUT_PLAYER': {
+            if (!state) return null;
+            const { playerId } = action.payload;
+            const currentLevel = state.scoutedPlayerIds[playerId] || 0;
+            
+            // Cost of manual scouting: 0.1M (100k)
+            const scoutingCost = 0.1;
+            if (state.finances.balance < scoutingCost) return state;
+
+            return {
+                ...state,
+                finances: {
+                    ...state.finances,
+                    balance: state.finances.balance - scoutingCost,
+                    balanceHistory: [...state.finances.balanceHistory, state.finances.balance - scoutingCost]
+                },
+                scoutedPlayerIds: {
+                    ...state.scoutedPlayerIds,
+                    [playerId]: Math.min(100, currentLevel + 25) // Increase 25% each time
+                }
+            };
+        }
+
         case 'SET_CURRENCY': {
             if (!state) return null;
             return { ...state, preferredCurrency: action.payload };
+        }
+
+        case 'SET_LANGUAGE': {
+            if (!state) return null;
+            return { ...state, preferredLanguage: action.payload };
         }
 
         default:

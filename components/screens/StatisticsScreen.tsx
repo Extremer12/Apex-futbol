@@ -59,25 +59,37 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
         PREMIER_LEAGUE: '/logos/Premier League.png',
         CHAMPIONSHIP: '/logos/Sky Bet Championship.png',
         LA_LIGA: 'https://tmssl.akamaized.net/images/logo/header/es1.png',
+        SEGUNDA_DIVISION_ESP: 'https://tmssl.akamaized.net/images/logo/header/es2.png',
         BUNDESLIGA: 'https://tmssl.akamaized.net/images/logo/header/l1.png',
-        SERIE_A: 'https://tmssl.akamaized.net/images/logo/header/it1.png'
+        ZWEITE_BUNDESLIGA: 'https://tmssl.akamaized.net/images/logo/header/l2.png',
+        SERIE_A: 'https://tmssl.akamaized.net/images/logo/header/it1.png',
+        SERIE_B_ITA: 'https://tmssl.akamaized.net/images/logo/header/it2.png',
+        LIGUE_1: 'https://tmssl.akamaized.net/images/logo/header/fr1.png',
+        LIGUE_2: 'https://tmssl.akamaized.net/images/logo/header/fr2.png',
+        LIGA_ARGENTINA: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Liga_Profesional_de_F%C3%BAtbol_logo.svg/200px-Liga_Profesional_de_F%C3%BAtbol_logo.svg.png',
+        PRIMERA_NACIONAL: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Primera_Nacional_logo.png/200px-Primera_Nacional_logo.png',
+        BRASILEIRAO: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Brasileirao_Serie_A_logo.png/200px-Brasileirao_Serie_A_logo.png',
+        SERIE_B_BR: 'https://upload.wikimedia.org/wikipedia/en/thumb/f/f6/Brasileir%C3%A3o_S%C3%A9rie_B_logo.png/200px-Brasileir%C3%A3o_S%C3%A9rie_B_logo.png',
     };
 
     const LEAGUE_NAMES: Record<string, string> = {
         PREMIER_LEAGUE: 'Premier League',
         CHAMPIONSHIP: 'Championship',
         LA_LIGA: 'La Liga',
+        SEGUNDA_DIVISION_ESP: 'Segunda División',
         BUNDESLIGA: 'Bundesliga',
-        SERIE_A: 'Serie A'
+        ZWEITE_BUNDESLIGA: '2. Bundesliga',
+        SERIE_A: 'Serie A',
+        SERIE_B_ITA: 'Serie B',
+        LIGUE_1: 'Ligue 1',
+        LIGUE_2: 'Ligue 2',
+        LIGA_ARGENTINA: 'Liga Argentina',
+        PRIMERA_NACIONAL: 'Primera Nacional',
+        BRASILEIRAO: 'Brasileirão',
+        SERIE_B_BR: 'Série B BR'
     };
 
-    const AVAILABLE_LEAGUES = [
-        LeagueId.PREMIER_LEAGUE,
-        LeagueId.CHAMPIONSHIP,
-        LeagueId.LA_LIGA,
-        LeagueId.BUNDESLIGA,
-        LeagueId.SERIE_A
-    ];
+    const AVAILABLE_LEAGUES = Object.values(LeagueId);
 
     return (
         <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto pb-24 animate-fade-in">
@@ -121,10 +133,10 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
                             </div>
                             <div className="text-center md:text-left pt-2">
                                 <h2 className="text-[10px] font-black text-gold-gradient tracking-[0.3em] uppercase mb-1">
-                                    {LEAGUE_NAMES[selectedLeague]} • Season 2024/25
+                                    {LEAGUE_NAMES[selectedLeague]} • Temporada 2024/25
                                 </h2>
                                 <h1 className="text-3xl md:text-5xl font-black text-white tracking-tighter uppercase italic leading-none mb-2">
-                                    Elite <span className="text-[var(--apex-gold)]">Stats</span>
+                                    Estadísticas <span className="text-[var(--apex-gold)]">Élite</span>
                                 </h1>
                             </div>
                         </div>
@@ -135,16 +147,16 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
                         <div className="apex-card overflow-hidden">
                             <div className="bg-black/40 px-6 py-5 border-b border-white/5 flex items-center justify-between">
                                 <h3 className="text-white font-black text-sm uppercase tracking-widest italic flex items-center gap-3">
-                                    <span className="text-xl">⚽</span> Top Scorers
+                                    <span className="text-xl">⚽</span> Máximos Goleadores
                                 </h3>
                             </div>
                             <div className="p-0 overflow-x-auto custom-scrollbar">
                                 <table className="w-full text-sm whitespace-nowrap">
                                     <thead>
                                         <tr className="text-white/40 text-[9px] font-black uppercase tracking-[0.2em] border-b border-white/5 bg-black/20">
-                                            <th className="px-6 py-4 text-left">Player</th>
+                                            <th className="px-6 py-4 text-left">Jugador</th>
                                             <th className="px-6 py-4 text-center">Club</th>
-                                            <th className="px-6 py-4 text-right">Goals</th>
+                                            <th className="px-6 py-4 text-right">Goles</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-white/5">
@@ -172,7 +184,7 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
                                             </tr>
                                         )) : (
                                             <tr>
-                                                <td colSpan={3} className="px-6 py-12 text-center text-white/30 font-black text-[10px] uppercase tracking-widest">No data recorded</td>
+                                                <td colSpan={3} className="px-6 py-12 text-center text-white/30 font-black text-[10px] uppercase tracking-widest">Sin datos registrados</td>
                                             </tr>
                                         )}
                                     </tbody>
@@ -184,16 +196,16 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
                         <div className="apex-card overflow-hidden">
                             <div className="bg-black/40 px-6 py-5 border-b border-white/5 flex items-center justify-between">
                                 <h3 className="text-white font-black text-sm uppercase tracking-widest italic flex items-center gap-3">
-                                    <span className="text-xl">👟</span> Top Assists
+                                    <span className="text-xl">👟</span> Máximos Asistentes
                                 </h3>
                             </div>
                             <div className="p-0 overflow-x-auto custom-scrollbar">
                                 <table className="w-full text-sm whitespace-nowrap">
                                     <thead>
                                         <tr className="text-white/40 text-[9px] font-black uppercase tracking-[0.2em] border-b border-white/5 bg-black/20">
-                                            <th className="px-6 py-4 text-left">Player</th>
+                                            <th className="px-6 py-4 text-left">Jugador</th>
                                             <th className="px-6 py-4 text-center">Club</th>
-                                            <th className="px-6 py-4 text-right">Assists</th>
+                                            <th className="px-6 py-4 text-right">Asistencias</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-white/5">
@@ -221,7 +233,7 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
                                             </tr>
                                         )) : (
                                             <tr>
-                                                <td colSpan={3} className="px-6 py-12 text-center text-white/30 font-black text-[10px] uppercase tracking-widest">No data recorded</td>
+                                                <td colSpan={3} className="px-6 py-12 text-center text-white/30 font-black text-[10px] uppercase tracking-widest">Sin datos registrados</td>
                                             </tr>
                                         )}
                                     </tbody>
@@ -235,7 +247,7 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--apex-green)]/10 blur-[40px] rounded-full group-hover:bg-[var(--apex-green)]/20 transition-all duration-500"></div>
                                 <h3 className="text-white font-black text-sm uppercase tracking-widest mb-6 flex items-center gap-3">
                                     <div className="w-1.5 h-4 bg-[var(--apex-green)] rounded-sm"></div>
-                                    Offensive Power
+                                    Poder Ofensivo
                                 </h3>
                                 {(() => {
                                     const currentTable = gameState.leagueTables[selectedLeague] || [];
@@ -247,12 +259,12 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
                                                 <TeamLogo team={team} />
                                             </div>
                                             <div className="flex-1">
-                                                <div className="text-[9px] font-black text-[var(--apex-green)] uppercase tracking-[0.2em] mb-1">Most Goals Scored</div>
+                                                <div className="text-[9px] font-black text-[var(--apex-green)] uppercase tracking-[0.2em] mb-1">Más Goles Anotados</div>
                                                 <div className="text-lg font-black text-white leading-none">{team.name}</div>
                                             </div>
                                             <div className="text-right">
                                                 <div className="text-3xl font-black text-[var(--apex-green)] italic">{bestAttack.goalsFor}</div>
-                                                <div className="text-[8px] text-white/40 uppercase tracking-[0.2em] font-black">Goals</div>
+                                                <div className="text-[8px] text-white/40 uppercase tracking-[0.2em] font-black">Goles</div>
                                             </div>
                                         </div>
                                     ) : null;
@@ -263,7 +275,7 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/10 blur-[40px] rounded-full group-hover:bg-sky-500/20 transition-all duration-500"></div>
                                 <h3 className="text-white font-black text-sm uppercase tracking-widest mb-6 flex items-center gap-3">
                                     <div className="w-1.5 h-4 bg-sky-500 rounded-sm"></div>
-                                    Defensive Wall
+                                    Muro Defensivo
                                 </h3>
                                 {(() => {
                                     const currentTable = gameState.leagueTables[selectedLeague] || [];
@@ -275,12 +287,12 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
                                                 <TeamLogo team={team} />
                                             </div>
                                             <div className="flex-1">
-                                                <div className="text-[9px] font-black text-sky-400 uppercase tracking-[0.2em] mb-1">Least Goals Conceded</div>
+                                                <div className="text-[9px] font-black text-sky-400 uppercase tracking-[0.2em] mb-1">Menos Goles Concedidos</div>
                                                 <div className="text-lg font-black text-white leading-none">{team.name}</div>
                                             </div>
                                             <div className="text-right">
                                                 <div className="text-3xl font-black text-sky-400 italic">{bestDefense.goalsAgainst}</div>
-                                                <div className="text-[8px] text-white/40 uppercase tracking-[0.2em] font-black">Goals</div>
+                                                <div className="text-[8px] text-white/40 uppercase tracking-[0.2em] font-black">Goles</div>
                                             </div>
                                         </div>
                                     ) : null;

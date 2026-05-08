@@ -55,7 +55,7 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
     const CUP_LOGOS: Record<string, string> = {
         champions_league: 'https://tmssl.akamaized.net/images/logo/header/cl.png',
         copa_libertadores: 'https://tmssl.akamaized.net/images/logo/header/cli.png',
-        copa_intercontinental: 'https://tmssl.akamaized.net/images/logo/header/cwc.png',
+        copa_intercontinental: 'https://upload.wikimedia.org/wikipedia/en/5/5b/FIFA_Intercontinental_Cup_%28logo%29.png',
         fa_cup: '/logos/The Emirates FA Cup.png',
         carabao_cup: '/logos/carabao_cup_logo.png',
     };
@@ -303,6 +303,17 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
         const isFinished = !!cup.winnerId;
         const winner = cup.winnerId ? getTeamById(cup.winnerId) : null;
 
+        const roundNameMap: Record<string, string> = {
+            'Final': 'Gran Final',
+            'Semi-Final': 'Semifinales',
+            'Quarter-Final': 'Cuartos de Final',
+            'Round of 16': 'Octavos de Final',
+            'Round of 32': 'Dieciseisavos de Final',
+            'Final Intercontinental': 'Duelo por la Gloria Eterna'
+        };
+
+        const translatedRoundName = roundNameMap[currentRound?.name] || currentRound?.name || 'Finalizada';
+
         return (
             <div className={`bg-gradient-to-br ${theme.bg} border-2 ${theme.border} rounded-3xl shadow-2xl overflow-hidden animate-fade-in`}>
                 {/* Header */}
@@ -322,7 +333,7 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                                 <div className="flex items-center gap-3 mt-1">
                                     <span className={`font-bold uppercase tracking-widest text-xs ${theme.accent}`}>Torneo Eliminatorio</span>
                                     <span className="text-slate-600">•</span>
-                                    <span className="text-slate-400 text-sm font-medium">{currentRound?.name || 'Finalizada'}</span>
+                                    <span className="text-slate-400 text-sm font-medium">{translatedRoundName}</span>
                                 </div>
                             </div>
                         </div>
@@ -354,7 +365,7 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                             {/* Bracket-style fixtures */}
                             {currentRound && (
                                 <>
-                                    <h3 className={`text-xs font-black uppercase tracking-[0.25em] mb-4 ${theme.accent}`}>{currentRound.name}</h3>
+                                    <h3 className={`text-xs font-black uppercase tracking-[0.25em] mb-4 ${theme.accent}`}>{translatedRoundName}</h3>
                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                                         {fixtures.map((fixture, idx) => {
                                             const home = getTeamById(fixture.homeTeamId);
@@ -664,7 +675,7 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
 
                 <button
                     onClick={() => setActiveTab('COPA_INTERCONTINENTAL')}
-                    className={`flex-1 py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-500 ${activeTab === 'COPA_INTERCONTINENTAL' ? 'bg-slate-700 text-white shadow-xl scale-[1.02] border border-slate-500' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+                    className={`flex-1 py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-500 ${activeTab === 'COPA_INTERCONTINENTAL' ? 'bg-emerald-600 text-white shadow-xl scale-[1.02] border border-emerald-500' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
                 >
                     Intercontinental
                 </button>

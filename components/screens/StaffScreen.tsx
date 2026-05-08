@@ -25,24 +25,24 @@ export const StaffScreen = React.memo(({ gameState, dispatch }: StaffScreenProps
 
     const handleHireScout = (scout: Scout) => {
         if (scouts.length >= 3) {
-            showToast("You already have the maximum number of scouts (3).", 'warning');
+            showToast("Ya tienes el número máximo de ojeadores (3).", 'warning');
             return;
         }
         if (finances.balance < scout.hiringFee) {
-            showToast("Insufficient funds to hire this scout.", 'error');
+            showToast("Fondos insuficientes para contratar a este ojeador.", 'error');
             return;
         }
 
         dispatch({ type: 'HIRE_SCOUT', payload: scout });
-        showToast(`${scout.name} has joined your scouting team.`, 'success');
+        showToast(`${scout.name} se ha unido a tu equipo de ojeo.`, 'success');
     };
 
     return (
         <div className="p-4 md:p-6 space-y-8 pb-24 animate-fade-in">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-4">
                 <div>
-                    <h2 className="text-[10px] font-black text-gold-gradient tracking-[0.3em] uppercase mb-1">Club Personnel</h2>
-                    <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter">Staff</h1>
+                    <h2 className="text-[10px] font-black text-gold-gradient tracking-[0.3em] uppercase mb-1">Personal del Club</h2>
+                    <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter">Staff Técnico</h1>
                 </div>
             </div>
 
@@ -50,12 +50,12 @@ export const StaffScreen = React.memo(({ gameState, dispatch }: StaffScreenProps
             <section className="space-y-4">
                 <div className="flex items-center gap-3">
                     <SearchIcon className="w-5 h-5 text-[var(--apex-gold)]" />
-                    <h3 className="text-lg font-black text-white uppercase tracking-widest">Your Scouts ({scouts.length}/3)</h3>
+                    <h3 className="text-lg font-black text-white uppercase tracking-widest">Mis Ojeadores ({scouts.length}/3)</h3>
                 </div>
 
                 {scouts.length === 0 ? (
                     <div className="bg-black/20 border-2 border-dashed border-white/10 rounded-2xl p-10 text-center text-white/40">
-                        <p className="font-bold uppercase tracking-widest text-xs">No scouts hired. Hire one below to analyze the market!</p>
+                        <p className="font-bold uppercase tracking-widest text-xs">No hay ojeadores contratados. ¡Contrata uno para analizar el mercado!</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -64,13 +64,13 @@ export const StaffScreen = React.memo(({ gameState, dispatch }: StaffScreenProps
                                 <div className="absolute top-0 right-0 w-24 h-24 bg-[var(--apex-gold)]/5 -rotate-12 translate-x-8 -translate-y-8 group-hover:bg-[var(--apex-gold)]/10 transition-colors pointer-events-none"></div>
                                 <div className="font-black text-white text-lg mb-1 tracking-tight">{scout.name}</div>
                                 <div className="flex gap-2 mb-5">
-                                    <span className="text-[9px] font-black bg-[var(--apex-gold)]/10 text-[var(--apex-gold)] px-2 py-0.5 rounded border border-[var(--apex-gold)]/20 uppercase tracking-[0.2em]">{scout.specialty || 'Generalist'}</span>
+                                    <span className="text-[9px] font-black bg-[var(--apex-gold)]/10 text-[var(--apex-gold)] px-2 py-0.5 rounded border border-[var(--apex-gold)]/20 uppercase tracking-[0.2em]">{scout.specialty || 'Generalista'}</span>
                                 </div>
                                 
                                 <div className="space-y-3 mb-5">
                                     <div>
                                         <div className="flex justify-between items-center text-[10px] mb-1">
-                                            <span className="text-white/50 font-bold uppercase tracking-widest">Efficiency</span>
+                                            <span className="text-white/50 font-bold uppercase tracking-widest">Eficiencia</span>
                                             <span className="text-[var(--apex-gold)] font-black">{scout.efficiency}%</span>
                                         </div>
                                         <div className="w-full h-1.5 bg-black/50 border border-white/5 rounded-full overflow-hidden">
@@ -80,7 +80,7 @@ export const StaffScreen = React.memo(({ gameState, dispatch }: StaffScreenProps
                                     
                                     <div>
                                         <div className="flex justify-between items-center text-[10px] mb-1">
-                                            <span className="text-white/50 font-bold uppercase tracking-widest">Accuracy</span>
+                                            <span className="text-white/50 font-bold uppercase tracking-widest">Precisión</span>
                                             <span className="text-[var(--apex-green)] font-black">{scout.accuracy}%</span>
                                         </div>
                                         <div className="w-full h-1.5 bg-black/50 border border-white/5 rounded-full overflow-hidden">
@@ -89,7 +89,7 @@ export const StaffScreen = React.memo(({ gameState, dispatch }: StaffScreenProps
                                     </div>
                                 </div>
 
-                                <div className="text-[10px] text-white/50 font-black uppercase tracking-[0.2em]">Wage: {formatCurrencyShort(scout.salary)}/wk</div>
+                                <div className="text-[10px] text-white/50 font-black uppercase tracking-[0.2em]">Sueldo: {formatCurrencyShort(scout.salary)}/sem.</div>
                             </div>
                         ))}
                     </div>
@@ -100,7 +100,7 @@ export const StaffScreen = React.memo(({ gameState, dispatch }: StaffScreenProps
             <section className="space-y-4">
                 <div className="flex items-center gap-3">
                     <TrendingUpIcon className="w-5 h-5 text-[var(--apex-green)]" />
-                    <h3 className="text-lg font-black text-white uppercase tracking-widest">Available Candidates</h3>
+                    <h3 className="text-lg font-black text-white uppercase tracking-widest">Candidatos Disponibles</h3>
                 </div>
 
                 <div className="apex-card overflow-hidden">
@@ -108,12 +108,12 @@ export const StaffScreen = React.memo(({ gameState, dispatch }: StaffScreenProps
                         <table className="w-full text-left border-collapse whitespace-nowrap">
                             <thead>
                                 <tr className="bg-black/30 text-[9px] font-black text-white/40 uppercase tracking-[0.2em] border-b border-white/5">
-                                    <th className="px-6 py-4">Candidate</th>
-                                    <th className="px-4 py-4 text-center">Effic.</th>
-                                    <th className="px-4 py-4 text-center">Accur.</th>
-                                    <th className="px-4 py-4 text-center">Specialty</th>
-                                    <th className="px-4 py-4 text-center">Hiring Fee</th>
-                                    <th className="px-6 py-4 text-right">Action</th>
+                                    <th className="px-6 py-4">Candidato</th>
+                                    <th className="px-4 py-4 text-center">Eficiencia</th>
+                                    <th className="px-4 py-4 text-center">Precisión</th>
+                                    <th className="px-4 py-4 text-center">Especialidad</th>
+                                    <th className="px-4 py-4 text-center">Coste Fichaje</th>
+                                    <th className="px-6 py-4 text-right">Acción</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
@@ -123,7 +123,7 @@ export const StaffScreen = React.memo(({ gameState, dispatch }: StaffScreenProps
                                         <tr key={scout.id} className="hover:bg-white/5 transition-colors group">
                                             <td className="px-6 py-4">
                                                 <div className="font-black text-white tracking-tight">{scout.name}</div>
-                                                <div className="text-[9px] text-white/40 font-bold uppercase tracking-[0.2em]">{formatCurrencyShort(scout.salary)} / week</div>
+                                                <div className="text-[9px] text-white/40 font-bold uppercase tracking-[0.2em]">{formatCurrencyShort(scout.salary)} / semana</div>
                                             </td>
                                             <td className="px-4 py-4 text-center">
                                                 <span className="font-black text-[var(--apex-gold)]">{scout.efficiency}%</span>
@@ -132,7 +132,7 @@ export const StaffScreen = React.memo(({ gameState, dispatch }: StaffScreenProps
                                                 <span className="font-black text-[var(--apex-green)]">{scout.accuracy}%</span>
                                             </td>
                                             <td className="px-4 py-4 text-center">
-                                                <span className="text-[9px] font-black bg-white/5 text-white/70 border border-white/10 px-2 py-1 rounded uppercase tracking-widest">{scout.specialty || 'Generalist'}</span>
+                                                <span className="text-[9px] font-black bg-white/5 text-white/70 border border-white/10 px-2 py-1 rounded uppercase tracking-widest">{scout.specialty || 'Generalista'}</span>
                                             </td>
                                             <td className="px-4 py-4 text-center">
                                                 <span className="font-black text-white/90">{formatCurrencyShort(scout.hiringFee)}</span>
@@ -147,7 +147,7 @@ export const StaffScreen = React.memo(({ gameState, dispatch }: StaffScreenProps
                                                         : 'apex-btn-gold !py-2'
                                                     }`}
                                                 >
-                                                    {isHired ? 'HIRED' : 'HIRE'}
+                                                    {isHired ? 'CONTRATADO' : 'CONTRATAR'}
                                                 </button>
                                             </td>
                                         </tr>
