@@ -8,6 +8,7 @@ import { ProfileCreation } from './gameflow/ProfileCreation';
 import { TeamSelection } from './gameflow/TeamSelection';
 import { ElectionPitch } from './gameflow/ElectionPitch';
 import { ElectionResult } from './gameflow/ElectionResult';
+import { PromiseSelection } from './gameflow/PromiseSelection';
 import { LoadingSpinner } from './icons';
 import { ElectoralPromise } from '../types';
 import { StartupScreenContainer } from './gameflow/StartupScreenContainer';
