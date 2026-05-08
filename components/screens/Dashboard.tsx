@@ -439,6 +439,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ gameState, onPlayMatch, ma
                     </div>
                 </div>
             </div>
+            </div>
         </div>
     );
 };
