@@ -18,13 +18,14 @@ export const formatCurrency = (amount: number | undefined | null): string => {
 };
 
 export const formatCurrencyShort = (amount: number | undefined | null): string => {
-    return new Intl.NumberFormat(GLOBAL_CURRENCY === 'EUR' ? 'es-ES' : 'en-US', {
-        style: 'currency',
-        currency: GLOBAL_CURRENCY,
-        notation: 'compact',
-        compactDisplay: 'short',
-        maximumFractionDigits: 1,
-    }).format(amount || 0);
+    const val = amount || 0;
+    if (Math.abs(val) >= 1_000_000) {
+        return (val / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+    }
+    if (Math.abs(val) >= 1_000) {
+        return (val / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
+    }
+    return val.toString();
 };
 
 export const formatWeeklyWage = (amount: number | undefined | null): string => {

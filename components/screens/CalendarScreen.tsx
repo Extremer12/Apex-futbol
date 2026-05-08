@@ -19,6 +19,12 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ gameState }) => 
 
     const getTeamById = (id: number) => gameState.allTeams.find(t => t.id === id);
 
+    const getMonthName = (week: number) => {
+        const months = ['Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo'];
+        const index = Math.floor((week - 1) / 4);
+        return months[index] || 'Junio';
+    };
+
     const filteredMatches = useMemo(() => {
         let matches = gameState.schedule.filter(m => m.week === selectedWeek);
 
@@ -78,8 +84,8 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ gameState }) => 
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-4">
                 <div>
-                    <h2 className="text-[10px] font-black text-gold-gradient tracking-[0.3em] uppercase mb-1">Season Schedule</h2>
-                    <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter">Calendar</h1>
+                    <h2 className="text-[10px] font-black text-gold-gradient tracking-[0.3em] uppercase mb-1">Calendario de Temporada</h2>
+                    <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter">Calendario</h1>
                 </div>
 
                 <div className="flex bg-black/40 p-1 rounded-xl border border-white/10">
@@ -87,19 +93,19 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ gameState }) => 
                         onClick={() => setFilter('ALL')}
                         className={`px-4 py-2 text-[10px] tracking-widest font-black rounded-lg transition-all duration-300 ${filter === 'ALL' ? 'bg-[var(--apex-gold)] text-black shadow-[0_0_15px_rgba(200,168,78,0.4)]' : 'text-white/40 hover:text-white'}`}
                     >
-                        ALL
+                        TODO
                     </button>
                     <button
                         onClick={() => setFilter('LEAGUE')}
                         className={`px-4 py-2 text-[10px] tracking-widest font-black rounded-lg transition-all duration-300 ${filter === 'LEAGUE' ? 'bg-[var(--apex-gold)] text-black shadow-[0_0_15px_rgba(200,168,78,0.4)]' : 'text-white/40 hover:text-white'}`}
                     >
-                        LEAGUE
+                        LIGA
                     </button>
                     <button
                         onClick={() => setFilter('CUP')}
                         className={`px-4 py-2 text-[10px] tracking-widest font-black rounded-lg transition-all duration-300 ${filter === 'CUP' ? 'bg-[var(--apex-gold)] text-black shadow-[0_0_15px_rgba(200,168,78,0.4)]' : 'text-white/40 hover:text-white'}`}
                     >
-                        CUPS
+                        COPAS
                     </button>
                 </div>
             </div>
@@ -115,14 +121,14 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ gameState }) => 
                 </button>
 
                 <div className="flex flex-col items-center">
-                    <span className="text-[9px] font-black text-[var(--apex-gold)] uppercase tracking-[0.2em] mb-1.5">Select Matchday</span>
+                    <span className="text-[9px] font-black text-[var(--apex-gold)] uppercase tracking-[0.2em] mb-1.5">Seleccionar Jornada</span>
                     <select 
                         value={selectedWeek}
                         onChange={(e) => setSelectedWeek(parseInt(e.target.value))}
                         className="bg-black/50 text-white font-black text-lg px-4 py-1.5 rounded-lg border border-white/10 focus:border-[var(--apex-gold)] focus:outline-none cursor-pointer uppercase tracking-widest appearance-none text-center min-w-[140px]"
                     >
                         {weeks.map(w => (
-                            <option key={w} value={w}>WEEK {w}</option>
+                            <option key={w} value={w}>SEM. {w} - {getMonthName(w)}</option>
                         ))}
                     </select>
                 </div>
@@ -166,11 +172,11 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ gameState }) => 
                 <div className="bg-black/30 px-6 py-4 border-b border-white/5 flex justify-between items-center">
                     <h3 className="font-black text-white text-sm tracking-widest uppercase flex items-center gap-3">
                         <span className="w-2 h-4 bg-[var(--apex-gold)] rounded-sm"></span>
-                        MATCHDAY {selectedWeek}
+                        JORNADA {selectedWeek} ({getMonthName(selectedWeek)})
                     </h3>
                     {selectedWeek === gameState.currentWeek && (
                         <span className="bg-[var(--apex-gold)]/10 text-[var(--apex-gold)] text-[9px] font-black px-2.5 py-1 rounded border border-[var(--apex-gold)]/30 uppercase tracking-[0.2em] shadow-[0_0_10px_rgba(200,168,78,0.2)]">
-                            CURRENT WEEK
+                            SEMANA ACTUAL
                         </span>
                     )}
                 </div>
@@ -179,7 +185,7 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ gameState }) => 
                     {filteredMatches.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-white/30 p-10">
                             <CalendarIcon className="w-12 h-12 mb-4 opacity-50" />
-                            <p className="text-[10px] font-black uppercase tracking-widest">No scheduled matches</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest">Sin partidos programados</p>
                         </div>
                     ) : (
                         filteredMatches.map((match, idx) => {

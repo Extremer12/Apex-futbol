@@ -123,14 +123,15 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
     const [cupTab, setCupTab] = useState<'ROUNDS' | 'STATS'>('ROUNDS');
     const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
         'INTERNATIONAL': true,
-        'Inglaterra': true,
-        'España': true,
-        'Alemania': true,
-        'Italia': true,
-        'Francia': true,
-        'Argentina': true,
-        'Brasil': true
+        'Inglaterra': false,
+        'España': false,
+        'Alemania': false,
+        'Italia': false,
+        'Francia': false,
+        'Argentina': false,
+        'Brasil': false
     });
+    const contentRef = React.useRef<HTMLDivElement>(null);
 
     const getTeamById = (id: number) => gameState.allTeams.find(t => t.id === id);
 
@@ -454,6 +455,9 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                 onClick={() => {
                     setSelectedCompetitionId(comp.id);
                     setCupTab('ROUNDS');
+                    setTimeout(() => {
+                        contentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 100);
                 }}
                 className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-left ${isSelected ? 'bg-white/10 shadow-lg ring-1 ring-white/20' : 'hover:bg-white/5'}`}
             >
@@ -557,7 +561,7 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                 </div>
 
                 {/* Panel Derecho (Contenido) */}
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0" ref={contentRef}>
                     {!selectedCompDef ? (
                         <div className="flex flex-col items-center justify-center h-full min-h-[400px] bg-slate-900/30 border border-white/5 rounded-3xl p-6 text-center">
                             <TrophyIcon className="w-16 h-16 text-slate-700 mb-4" />
