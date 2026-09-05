@@ -1,5 +1,6 @@
 import React from 'react';
-import { GameState, Screen, PlayerProfile, Team } from '../types';
+import { GameState, Screen, PlayerProfile, Team, MatchPhase } from '../types';
+import { FullScreenMatchSimulation } from './gameflow/FullScreenMatchSimulation';
 import { GameAction } from '../state/reducer';
 import { Header } from './ui/Header';
 import { BottomNav } from './ui/BottomNav';
@@ -19,7 +20,6 @@ const ClubHubScreen = React.lazy(() => import('./screens/ClubHubScreen').then(m 
 const TrophyRoomScreen = React.lazy(() => import('./screens/TrophyRoomScreen').then(m => ({ default: m.TrophyRoomScreen })));
 
 import { LoadingSpinner } from './icons';
-import { MatchPhase } from '../types';
 
 interface PendingSimulationResults {
     newsToAdd: any[];
@@ -107,8 +107,19 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         }
     };
 
+    const isLiveMatch = matchPhase === 'LIVE' && !!pendingResults?.playerMatchResult;
+
     return (
         <div className="min-h-screen font-sans relative" style={{ background: 'var(--apex-darker)', color: 'var(--apex-text)' }}>
+            {/* Fullscreen Match Simulation Overlay */}
+            {isLiveMatch && pendingResults && (
+                <FullScreenMatchSimulation
+                    gameState={gameState}
+                    pendingResults={pendingResults}
+                    onMatchComplete={onWeekComplete}
+                />
+            )}
+
             {/* Election Screen Overlay */}
             {gameState.mandate?.isElectionYear && matchPhase === 'PRE' && (
                 <ElectionScreen
@@ -118,25 +129,28 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                 />
             )}
 
-            <div className="max-w-md mx-auto min-h-screen relative shadow-2xl" style={{ background: 'var(--apex-dark)' }}>
-                <Header gameState={gameState} />
-                <main className="pb-24 overflow-x-hidden">
-                    <AnimatePresence mode="wait">
-                        <motion.div
-                            key={activeScreen}
-                            initial={{ opacity: 0, x: 10, scale: 0.98 }}
-                            animate={{ opacity: 1, x: 0, scale: 1 }}
-                            exit={{ opacity: 0, x: -10, scale: 0.98 }}
-                            transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
-                        >
-                            <React.Suspense fallback={<div className="flex items-center justify-center py-20"><LoadingSpinner /></div>}>
-                                {renderContent()}
-                            </React.Suspense>
-                        </motion.div>
-                    </AnimatePresence>
-                </main>
-                <BottomNav activeScreen={activeScreen} onNavigate={setActiveScreen} />
-            </div>
+            {/* Regular Layout - Hidden during Fullscreen Live Match Simulation */}
+            {!isLiveMatch && (
+                <div className="max-w-md mx-auto min-h-screen relative shadow-2xl" style={{ background: 'var(--apex-dark)' }}>
+                    <Header gameState={gameState} />
+                    <main className="pb-24 overflow-x-hidden">
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={activeScreen}
+                                initial={{ opacity: 0, x: 10, scale: 0.98 }}
+                                animate={{ opacity: 1, x: 0, scale: 1 }}
+                                exit={{ opacity: 0, x: -10, scale: 0.98 }}
+                                transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
+                            >
+                                <React.Suspense fallback={<div className="flex items-center justify-center py-20"><LoadingSpinner /></div>}>
+                                    {renderContent()}
+                                </React.Suspense>
+                            </motion.div>
+                        </AnimatePresence>
+                    </main>
+                    <BottomNav activeScreen={activeScreen} onNavigate={setActiveScreen} />
+                </div>
+            )}
         </div>
     );
 };
