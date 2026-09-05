@@ -20,11 +20,18 @@ export interface PlayerStats {
   redCards: number;
 }
 
+export type SquadRole = 'Key' | 'FirstTeam' | 'Rotation' | 'Prospect';
+export type PotentialTier = 'Wonderkid' | 'Star' | 'Solid' | 'Veteran';
+
 export interface Player {
   id: number;
   name: string;
   position: 'POR' | 'DEF' | 'CEN' | 'DEL';
   rating: number; // 1-100
+  potential?: number; // 1-100
+  potentialTier?: PotentialTier;
+  preferredRole?: SquadRole;
+  releaseClause?: number; // in millions
   value: number; // in millions
   wage: number; // per week
   morale: Morale;
@@ -39,6 +46,24 @@ export interface Player {
   injuryWeeksRemaining?: number;
   isSuspended?: boolean;
   suspensionWeeksRemaining?: number;
+}
+
+export interface ContractOffer {
+  wage: number; // weekly wage in EUR
+  contractYears: number; // 1 to 5 years
+  role: SquadRole;
+  signingBonus: number; // in millions
+}
+
+export interface ContractNegotiationResult {
+  decision: 'accepted' | 'rejected' | 'counter';
+  message: string;
+  counterOffer?: {
+    wage: number;
+    contractYears: number;
+    role: SquadRole;
+    signingBonus: number;
+  };
 }
 
 export enum LeagueId {
@@ -187,6 +212,8 @@ export interface Offer {
   offeringTeamId: number;
   offerValue: number;
   message: string;
+  status?: 'pending' | 'negotiating' | 'accepted' | 'rejected';
+  counterOfferValue?: number;
 }
 
 export interface CupRound {

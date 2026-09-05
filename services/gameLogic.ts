@@ -1,5 +1,6 @@
-import { GameState, Player, PlayerProfile, Team, CoachReport } from '../types';
-import { formatCurrency } from '../utils';
+import { GameState, Player, PlayerProfile, Team, CoachReport, SquadRole, ContractNegotiationResult } from '../types';
+import { formatCurrency, formatWeeklyWage } from '../utils';
+import { getExpectedWage } from '../utils/playerUtils';
 
 // --- INTERFACES ---
 
@@ -230,8 +231,8 @@ export const generateTransferNegotiationResponse = async (player: Player, offer:
     const greed = Math.random();
 
     // Umbrales
-    const acceptThreshold = 1.2 + (greed * 0.3) - (patience * 0.2); // Entre 1.0 y 1.5 veces el valor
-    const rejectThreshold = 0.8 - (greed * 0.1); // Si es menos del 70-80%, rechazo directo.
+    const acceptThreshold = 1.15 + (greed * 0.25) - (patience * 0.15); // Entre 1.0 y 1.4 veces el valor
+    const rejectThreshold = 0.75 - (greed * 0.1); // Si es menos del 70-75%, rechazo directo.
 
     if (ratio >= acceptThreshold) {
         return {
@@ -256,13 +257,97 @@ export const generateTransferNegotiationResponse = async (player: Player, offer:
     }
 };
 
+// LÓGICA DE FASE 2: Negociación de contrato con el agente del jugador
+export const generatePlayerContractNegotiationResponse = async (
+    player: Player,
+    wageOffer: number,
+    contractYears: number,
+    role: SquadRole,
+    signingBonus: number,
+    buyingTeam: Team
+): Promise<ContractNegotiationResult> => {
+    const expectedWage = getExpectedWage(player, buyingTeam.tier, role);
+    const wageRatio = wageOffer / Math.max(1, expectedWage);
+    
+    // Rol incompatible para jugadores de alta valoración
+    if (player.rating >= 82 && (role === 'Prospect' || (player.rating >= 86 && role === 'Rotation'))) {
+        return {
+            decision: 'rejected',
+            message: `Mi cliente (${player.name}) es un futbolista consagrado. No aceptará un rol secundario como "${role === 'Prospect' ? 'Joven Promesa' : 'Rotación'}". Exige ser titular habitual o jugador clave.`
+        };
+    }
+
+    // Evaluación económica
+    const hasGoodBonus = signingBonus >= (expectedWage * 15) / 1000000;
+    if (wageRatio >= 1.02 || (wageRatio >= 0.94 && hasGoodBonus)) {
+        const acceptMessages = [
+            `Las condiciones contractuales satisfacen plenamente a ${player.name}. ¡Estamos listos para estampar la firma!`,
+            `Acuerdo total entre las partes. ${player.name} vestirá con orgullo la camiseta del ${buyingTeam.name}.`,
+            `Trato formal cerrado. El contrato por ${contractYears} año${contractYears > 1 ? 's' : ''} y ${formatWeeklyWage(wageOffer)}/sem queda sellado.`
+        ];
+        return {
+            decision: 'accepted',
+            message: acceptMessages[Math.floor(Math.random() * acceptMessages.length)]
+        };
+    } else if (wageRatio < 0.72) {
+        return {
+            decision: 'rejected',
+            message: `La propuesta salarial de ${formatWeeklyWage(wageOffer)} semanales está muy por debajo de lo que merece ${player.name}. No podemos continuar las negociaciones.`
+        };
+    } else {
+        const targetWage = Math.round((expectedWage * (1.03 + Math.random() * 0.07)) / 500) * 500;
+        const targetYears = contractYears < 2 ? 3 : contractYears;
+        const targetBonus = Math.round(((expectedWage * 8) / 1000000) * 10) / 10;
+        return {
+            decision: 'counter',
+            message: `Estamos cerca de un acuerdo. ${player.name} solicita ${formatWeeklyWage(targetWage)}/sem y una prima de fichaje de €${targetBonus}M para comprometerse.`,
+            counterOffer: {
+                wage: targetWage,
+                contractYears: targetYears,
+                role: (role === 'Prospect' && player.rating >= 75) ? 'Rotation' : role,
+                signingBonus: targetBonus
+            }
+        };
+    }
+};
+
+// LÓGICA DE CONTRAOFERTAS PARA OFERTAS RECIBIDAS DE OTROS CLUBES
+export const generateCounterOfferDecision = async (
+    player: Player,
+    counterValue: number,
+    originalOffer: number,
+    buyerTeam: Team
+): Promise<{ decision: 'accepted' | 'counter' | 'rejected'; message: string; newOfferValue?: number }> => {
+    const playerVal = player.value;
+    const ratioToVal = counterValue / Math.max(0.1, playerVal);
+    
+    if (counterValue <= buyerTeam.transferBudget && ratioToVal <= 1.35) {
+        return {
+            decision: 'accepted',
+            message: `El ${buyerTeam.name} acepta vuestras exigencias y pagará €${counterValue}M por el traspaso de ${player.name}.`
+        };
+    } else if (ratioToVal > 1.9 || counterValue > buyerTeam.transferBudget * 1.4) {
+        return {
+            decision: 'rejected',
+            message: `El ${buyerTeam.name} considera inaceptable pedir €${counterValue}M y cancela su interés por ${player.name}.`
+        };
+    } else {
+        const newOffer = Math.min(buyerTeam.transferBudget, Math.round(((originalOffer + counterValue) / 2) * 10) / 10);
+        return {
+            decision: 'counter',
+            message: `El ${buyerTeam.name} no alcanza los €${counterValue}M, pero ofrece una contrapropuesta final de €${newOffer}M.`,
+            newOfferValue: newOffer
+        };
+    }
+};
+
 export const generateTransferOffer = async (player: Player, sellingTeam: Team, potentialBuyers: Team[]): Promise<OfferResponse | null> => {
     // Lógica Local
     const viableBuyers = potentialBuyers.filter(t => t.transferBudget >= player.value * 0.8);
     if (viableBuyers.length === 0) return null;
 
     const buyer = viableBuyers[Math.floor(Math.random() * viableBuyers.length)];
-    const variance = 0.8 + (Math.random() * 0.4);
+    const variance = 0.85 + (Math.random() * 0.35);
     const offerValue = Math.round(player.value * variance * 10) / 10;
     const msgTemplate = OFFER_MESSAGES[Math.floor(Math.random() * OFFER_MESSAGES.length)];
 

@@ -27,7 +27,9 @@ export type GameAction =
     | { type: 'ADD_OFFER'; payload: Offer }
     | { type: 'ACCEPT_OFFER'; payload: { offerId: string } }
     | { type: 'REJECT_OFFER'; payload: { offerId: string } }
-    | { type: 'SIGN_PLAYER'; payload: { player: Player; fee: number } }
+    | { type: 'COUNTER_OFFER'; payload: { offerId: string; counterAmount: number } }
+    | { type: 'UPDATE_OFFER'; payload: Offer }
+    | { type: 'SIGN_PLAYER'; payload: { player: Player; fee: number; wage?: number; contractYears?: number; role?: import('../types').SquadRole; signingBonus?: number } }
     | { type: 'PROMOTE_PLAYER'; payload: Player }
     | { type: 'TOGGLE_TRANSFER_LIST'; payload: Player }
     | { type: 'SET_VIEWING_PLAYER'; payload: Player | null }
@@ -50,7 +52,7 @@ export const initialState: GameState | null = null;
 
 // Action type sets for routing to sub-reducers
 const LIFECYCLE_ACTIONS = new Set(['INITIALIZE_GAME', 'LOAD_GAME', 'RESET_GAME', 'ADVANCE_WEEK_START', 'ADVANCE_WEEK_SUCCESS', 'START_NEW_SEASON']);
-const TRANSFER_ACTIONS = new Set(['ADD_OFFER', 'ACCEPT_OFFER', 'REJECT_OFFER', 'SIGN_PLAYER', 'TOGGLE_TRANSFER_LIST']);
+const TRANSFER_ACTIONS = new Set(['ADD_OFFER', 'ACCEPT_OFFER', 'REJECT_OFFER', 'COUNTER_OFFER', 'UPDATE_OFFER', 'SIGN_PLAYER', 'TOGGLE_TRANSFER_LIST']);
 const STAFF_ACTIONS = new Set(['HIRE_COACH', 'FIRE_COACH', 'HIRE_SCOUT', 'SCOUT_PLAYER']);
 const ECONOMY_ACTIONS = new Set(['ACCEPT_SPONSOR', 'REMOVE_SPONSOR_OFFER', 'EXPAND_STADIUM', 'UPDATE_FINANCES', 'UPDATE_STADIUM']);
 const POLITICAL_ACTIONS = new Set(['TRIGGER_ELECTION', 'ELECTION_RESULT', 'UPDATE_FAN_APPROVAL', 'SET_FAN_APPROVAL', 'UPDATE_BOARD_CONFIDENCE']);

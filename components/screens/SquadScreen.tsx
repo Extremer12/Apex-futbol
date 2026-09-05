@@ -1,11 +1,18 @@
 import React, { useState } from 'react';
 import { GameState, Player } from '../../types';
 import { GameAction } from '../../state/reducer';
-import { formatCurrency, formatCurrencyShort } from '../../utils';
+import { formatCurrency, formatCurrencyShort, formatWeeklyWage } from '../../utils';
 import { BriefcaseIcon, SparklesIcon, UsersIcon } from '../icons';
-import { TrendingUpIcon, FilterIcon, StarIcon } from 'lucide-react';
+import { TrendingUpIcon, FilterIcon, StarIcon, Sparkles } from 'lucide-react';
 import { ConfirmationModal } from '../common/ConfirmationModal';
 import { useToast } from '../common/ToastProvider';
+import { PlayerPhoto } from '../../data/teams/helpers';
+import { 
+    getPlayerAge, 
+    getPlayerPotential, 
+    getPlayerPotentialTier, 
+    getTierBadge 
+} from '../../utils/playerUtils';
 
 interface SquadScreenProps {
     gameState: GameState;
@@ -204,77 +211,82 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/5">
-                                    {sortedSquad.map((player) => (
-                                        <tr 
-                                            key={player.id} 
-                                            onClick={() => onViewPlayer(player)}
-                                            className="hover:bg-white/5 cursor-pointer transition-colors group"
-                                        >
-                                            <td className="px-4 py-3">
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-black text-sm border ${
-                                                        player.rating >= 85 ? 'bg-[var(--apex-gold)]/10 text-[var(--apex-gold)] border-[var(--apex-gold)]/30' :
-                                                        player.rating >= 75 ? 'bg-white/10 text-white border-white/20' :
-                                                        'bg-black/30 text-white/50 border-white/5'
+                                    {sortedSquad.map((player) => {
+                                        const age = getPlayerAge(player);
+                                        const potTier = getPlayerPotentialTier(player);
+                                        const tierBadge = getTierBadge(potTier);
+
+                                        return (
+                                            <tr 
+                                                key={player.id} 
+                                                onClick={() => onViewPlayer(player)}
+                                                className="hover:bg-white/5 cursor-pointer transition-colors group"
+                                            >
+                                                <td className="px-4 py-3">
+                                                    <div className="flex items-center gap-3">
+                                                        <PlayerPhoto player={player} className="w-9 h-9 rounded-lg border border-white/10 shadow-sm group-hover:scale-105 transition-transform" />
+                                                        <div>
+                                                            <div className="font-bold text-sm text-white group-hover:text-[var(--apex-gold)] transition-colors flex items-center gap-1.5 flex-wrap">
+                                                                {player.name}
+                                                                {player.isTransferListed && <BriefcaseIcon className="w-3 h-3 text-[var(--apex-gold)]" />}
+                                                                <span className={`text-[8px] font-black px-1.5 py-0.2 rounded border uppercase ${tierBadge.color}`}>
+                                                                    {tierBadge.label}
+                                                                </span>
+                                                            </div>
+                                                            <div className="text-[9px] text-white/40 font-bold uppercase tracking-wider">
+                                                                Salario: {formatWeeklyWage(player.wage)}/sem • {player.contractYears}a rest.
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-3 py-3 text-center">
+                                                    <span className={`px-2 py-0.5 rounded text-[9px] font-black border ${getPositionColor(player.position)}`}>
+                                                        {player.position}
+                                                    </span>
+                                                </td>
+                                                <td className="px-3 py-3 text-center text-white/70 font-bold text-xs">{age}</td>
+                                                <td className="px-3 py-3 text-center">
+                                                    <span className={`text-base font-black flex items-center justify-center gap-1 ${
+                                                        player.rating >= 80 ? 'text-[var(--apex-gold)]' :
+                                                        player.rating >= 70 ? 'text-white' :
+                                                        'text-white/50'
                                                     }`}>
-                                                        {player.name.charAt(0)}
+                                                        {player.rating}
+                                                        {player.rating >= 85 && <StarIcon className="w-3 h-3 fill-[var(--apex-gold)] text-[var(--apex-gold)]" />}
+                                                    </span>
+                                                </td>
+                                                <td className="px-3 py-3 text-center font-bold text-white/90 text-xs tracking-wider">{formatCurrencyShort(player.value)}</td>
+                                                <td className="px-3 py-3">
+                                                    <div className="flex flex-col items-center gap-1">
+                                                        {player.isInjured ? (
+                                                            <span className="text-[9px] font-black bg-[var(--apex-red)]/10 text-[var(--apex-red)] border border-[var(--apex-red)]/20 px-2 py-0.5 rounded flex items-center gap-1 uppercase">
+                                                                🚑 {player.injuryWeeksRemaining} sem
+                                                            </span>
+                                                        ) : player.isSuspended ? (
+                                                            <span className="text-[9px] font-black bg-[var(--apex-red)]/10 text-[var(--apex-red)] border border-[var(--apex-red)]/20 px-2 py-0.5 rounded flex items-center gap-1 uppercase">
+                                                                🟥 {player.suspensionWeeksRemaining} par
+                                                            </span>
+                                                        ) : (
+                                                            <div className="w-12 h-1 bg-black/50 rounded-full overflow-hidden border border-white/5">
+                                                                <div 
+                                                                    className={`h-full ${ (player.condition || 100) > 70 ? 'bg-[var(--apex-green)]' : (player.condition || 100) > 40 ? 'bg-[var(--apex-gold)]' : 'bg-[var(--apex-red)]'}`}
+                                                                    style={{ width: `${player.condition || 100}%` }}
+                                                                />
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                    <div>
-                                                        <div className="font-bold text-sm text-white group-hover:text-[var(--apex-gold)] transition-colors flex items-center gap-1.5">
-                                                            {player.name}
-                                                            {player.isTransferListed && <BriefcaseIcon className="w-3 h-3 text-[var(--apex-gold)]" />}
-                                                        </div>
-                                                        <div className="text-[9px] text-white/40 font-bold uppercase tracking-wider">Salario: {formatCurrencyShort(player.wage)}/sem</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-3 py-3 text-center">
-                                                <span className={`px-2 py-0.5 rounded text-[9px] font-black border ${getPositionColor(player.position)}`}>
-                                                    {player.position}
-                                                </span>
-                                            </td>
-                                            <td className="px-3 py-3 text-center text-white/70 font-bold text-xs">{player.age}</td>
-                                            <td className="px-3 py-3 text-center">
-                                                <span className={`text-base font-black flex items-center justify-center gap-1 ${
-                                                    player.rating >= 80 ? 'text-[var(--apex-gold)]' :
-                                                    player.rating >= 70 ? 'text-white' :
-                                                    'text-white/50'
-                                                }`}>
-                                                    {player.rating}
-                                                    {player.rating >= 85 && <StarIcon className="w-3 h-3 fill-[var(--apex-gold)] text-[var(--apex-gold)]" />}
-                                                </span>
-                                            </td>
-                                            <td className="px-3 py-3 text-center font-bold text-white/90 text-xs tracking-wider">{formatCurrencyShort(player.value)}</td>
-                                            <td className="px-3 py-3">
-                                                <div className="flex flex-col items-center gap-1">
-                                                    {player.isInjured ? (
-                                                        <span className="text-[9px] font-black bg-[var(--apex-red)]/10 text-[var(--apex-red)] border border-[var(--apex-red)]/20 px-2 py-0.5 rounded flex items-center gap-1 uppercase">
-                                                            🚑 {player.injuryWeeksRemaining} sem
-                                                        </span>
-                                                    ) : player.isSuspended ? (
-                                                        <span className="text-[9px] font-black bg-[var(--apex-red)]/10 text-[var(--apex-red)] border border-[var(--apex-red)]/20 px-2 py-0.5 rounded flex items-center gap-1 uppercase">
-                                                            🟥 {player.suspensionWeeksRemaining} par
-                                                        </span>
-                                                    ) : (
-                                                        <div className="w-12 h-1 bg-black/50 rounded-full overflow-hidden border border-white/5">
-                                                            <div 
-                                                                className={`h-full ${ (player.condition || 100) > 70 ? 'bg-[var(--apex-green)]' : (player.condition || 100) > 40 ? 'bg-[var(--apex-gold)]' : 'bg-[var(--apex-red)]'}`}
-                                                                style={{ width: `${player.condition || 100}%` }}
-                                                            />
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="px-3 py-3 text-center text-white/50 font-bold text-xs">
-                                                {player.stats?.goals || 0}/{player.stats?.assists || 0}
-                                            </td>
-                                            <td className="px-3 py-3 text-center">
-                                                <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border transition-colors ${getMoraleColor(player.morale)}`}>
-                                                    {player.morale}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                                </td>
+                                                <td className="px-3 py-3 text-center text-white/50 font-bold text-xs">
+                                                    {player.stats?.goals || 0}/{player.stats?.assists || 0}
+                                                </td>
+                                                <td className="px-3 py-3 text-center">
+                                                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border transition-colors ${getMoraleColor(player.morale)}`}>
+                                                        {player.morale}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>
@@ -298,35 +310,51 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
                             </div>
                         ) : (
                             <div className="divide-y divide-white/5">
-                                {gameState.youthAcademy.map(player => (
-                                    <div key={player.id} className="flex flex-col sm:flex-row items-center justify-between p-5 hover:bg-white/5 transition-colors group gap-4">
-                                        <div className="flex items-center gap-4 w-full sm:w-auto">
-                                            <div className="w-12 h-12 bg-[var(--apex-gold)]/10 rounded-xl flex items-center justify-center border border-[var(--apex-gold)]/20">
-                                                <SparklesIcon className="w-5 h-5 text-[var(--apex-gold)]" />
-                                            </div>
-                                            <div>
-                                                <div className="text-base font-black text-white group-hover:text-[var(--apex-gold)] transition-colors">{player.name}</div>
-                                                <div className="flex gap-2 mt-1">
-                                                    <span className={`text-[9px] font-black px-2 py-0.5 rounded border uppercase ${getPositionColor(player.position)}`}>{player.position}</span>
-                                                    <span className="text-[9px] font-bold text-white/50 uppercase tracking-widest">{player.age} años</span>
+                                {gameState.youthAcademy.map(player => {
+                                    const age = getPlayerAge(player);
+                                    const potential = getPlayerPotential(player);
+                                    const potTier = getPlayerPotentialTier(player);
+                                    const tierBadge = getTierBadge(potTier);
+
+                                    return (
+                                        <div key={player.id} className="flex flex-col sm:flex-row items-center justify-between p-5 hover:bg-white/5 transition-colors group gap-4">
+                                            <div className="flex items-center gap-4 w-full sm:w-auto">
+                                                <PlayerPhoto player={player} className="w-12 h-12 rounded-xl border border-white/10 shadow-md group-hover:scale-105 transition-transform" />
+                                                <div>
+                                                    <div className="text-base font-black text-white group-hover:text-[var(--apex-gold)] transition-colors flex items-center gap-2">
+                                                        {player.name}
+                                                        <span className={`text-[8px] font-black px-1.5 py-0.2 rounded border uppercase ${tierBadge.color}`}>
+                                                            {tierBadge.label}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex gap-2 mt-1">
+                                                        <span className={`text-[9px] font-black px-2 py-0.5 rounded border uppercase ${getPositionColor(player.position)}`}>{player.position}</span>
+                                                        <span className="text-[9px] font-bold text-white/50 uppercase tracking-widest">{age} años</span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
 
-                                        <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto bg-black/20 sm:bg-transparent p-3 sm:p-0 rounded-lg">
-                                            <div className="text-center">
-                                                <div className="text-[9px] font-black text-white/40 uppercase tracking-widest mb-0.5">Potencial</div>
-                                                <div className="text-lg font-black text-white">{player.rating}</div>
+                                            <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto bg-black/20 sm:bg-transparent p-3 sm:p-0 rounded-lg">
+                                                <div className="text-center">
+                                                    <div className="text-[9px] font-black text-white/40 uppercase tracking-widest mb-0.5">Media / Potencial</div>
+                                                    <div className="text-sm font-black text-white flex items-center justify-center gap-1">
+                                                        <span>{player.rating}</span>
+                                                        <span className="text-white/30">/</span>
+                                                        <span className="text-[var(--apex-gold)] flex items-center gap-0.5">
+                                                            {potential} <Sparkles className="w-3 h-3 inline" />
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => handlePromote(player)}
+                                                    className="apex-btn-gold py-2 px-6 text-[10px]"
+                                                >
+                                                    ASCENDER
+                                                </button>
                                             </div>
-                                            <button
-                                                onClick={() => handlePromote(player)}
-                                                className="apex-btn-gold py-2 px-6 text-[10px]"
-                                            >
-                                                ASCENDER
-                                            </button>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                     </div>

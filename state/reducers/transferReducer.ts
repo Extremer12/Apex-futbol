@@ -7,6 +7,8 @@ type TransferAction = Extract<GameAction,
     | { type: 'ADD_OFFER' }
     | { type: 'ACCEPT_OFFER' }
     | { type: 'REJECT_OFFER' }
+    | { type: 'COUNTER_OFFER' }
+    | { type: 'UPDATE_OFFER' }
     | { type: 'SIGN_PLAYER' }
     | { type: 'TOGGLE_TRANSFER_LIST' }
 >;
@@ -16,7 +18,26 @@ export function handleTransferAction(state: GameState, action: TransferAction): 
         case 'ADD_OFFER': {
             return {
                 ...state,
-                incomingOffers: [...state.incomingOffers, action.payload]
+                incomingOffers: [...state.incomingOffers, { ...action.payload, status: action.payload.status || 'pending' }]
+            };
+        }
+
+        case 'UPDATE_OFFER': {
+            return {
+                ...state,
+                incomingOffers: state.incomingOffers.map(o => o.id === action.payload.id ? action.payload : o)
+            };
+        }
+
+        case 'COUNTER_OFFER': {
+            const { offerId, counterAmount } = action.payload;
+            return {
+                ...state,
+                incomingOffers: state.incomingOffers.map(o => 
+                    o.id === offerId 
+                        ? { ...o, counterOfferValue: counterAmount, status: 'negotiating' } 
+                        : o
+                )
             };
         }
 
@@ -28,11 +49,12 @@ export function handleTransferAction(state: GameState, action: TransferAction): 
             if (!player) return state;
 
             const offeringTeam = state.allTeams.find(t => t.id === offer.offeringTeamId);
+            const finalFee = offer.counterOfferValue || offer.offerValue;
 
             // Update finances
-            const newBalance = state.finances.balance + offer.offerValue;
-            const newTransferBudget = state.finances.transferBudget + offer.offerValue;
-            const newWages = state.finances.weeklyWages - player.wage;
+            const newBalance = state.finances.balance + finalFee;
+            const newTransferBudget = state.finances.transferBudget + finalFee;
+            const newWages = Math.max(0, state.finances.weeklyWages - player.wage);
 
             // Update squad
             const newSquad = state.team.squad.filter(p => p.id !== player.id);
@@ -50,9 +72,10 @@ export function handleTransferAction(state: GameState, action: TransferAction): 
             // Create news item
             const newsItem: NewsItem = {
                 id: `news_${new Date().toISOString()}`,
-                headline: `¡VENDIDO! ${player.name} ficha por el ${offeringTeam?.name || 'otro club'}`,
-                body: `${player.name} ha completado su traspaso al ${offeringTeam?.name || 'otro club'} por una cifra de ${formatCurrency(offer.offerValue)}. El presidente expresó que era "una buena operación para el club".`,
-                date: formatDate(state.currentDate)
+                headline: `¡OFICIAL! ${player.name} traspasado al ${offeringTeam?.name || 'otro club'}`,
+                body: `${player.name} ha completado su traspaso al ${offeringTeam?.name || 'otro club'} por una cifra acordada de ${formatCurrency(finalFee)}. El presidente expresó que era "una operación redonda para la entidad".`,
+                date: formatDate(state.currentDate),
+                type: 'transfer'
             };
 
             return {
@@ -78,12 +101,23 @@ export function handleTransferAction(state: GameState, action: TransferAction): 
         }
 
         case 'SIGN_PLAYER': {
-            const { player, fee } = action.payload;
+            const { player, fee, wage, contractYears, role, signingBonus } = action.payload;
 
-            const playerToAdd: Player = { ...player, morale: 'Contento', contractYears: 3, isTransferListed: false };
-            const newWages = state.finances.weeklyWages + player.wage;
-            const newTransferBudget = state.finances.transferBudget - fee;
-            const newBalance = state.finances.balance - fee;
+            const negotiatedWage = wage || player.wage || 10000;
+            const negotiatedYears = contractYears || 3;
+            const totalCashDeducted = fee + (signingBonus || 0);
+
+            const playerToAdd: Player = { 
+                ...player, 
+                morale: 'Contento', 
+                contractYears: negotiatedYears, 
+                wage: negotiatedWage,
+                preferredRole: role || player.preferredRole || 'FirstTeam',
+                isTransferListed: false 
+            };
+            const newWages = state.finances.weeklyWages + negotiatedWage;
+            const newTransferBudget = state.finances.transferBudget - totalCashDeducted;
+            const newBalance = state.finances.balance - totalCashDeducted;
 
             const updatedAllTeams = state.allTeams.map(t => {
                 if (t.squad.some(p => p.id === player.id)) {
@@ -96,11 +130,26 @@ export function handleTransferAction(state: GameState, action: TransferAction): 
             });
             const updatedPlayerTeam = updatedAllTeams.find(t => t.id === state.team.id)!;
 
+            // Add signing news
+            const newsItem: NewsItem = {
+                id: `news_${new Date().toISOString()}`,
+                headline: `¡FICHAJE BOMBA! ${player.name} ya es del ${state.team.name}`,
+                body: `${player.name} ha firmado su contrato por ${negotiatedYears} temporadas con el ${state.team.name}. Traspaso valorado en ${formatCurrency(fee)} con un salario semanal de ${formatCurrency(negotiatedWage)}.`,
+                date: formatDate(state.currentDate),
+                type: 'transfer'
+            };
+
             return {
                 ...state,
                 team: updatedPlayerTeam,
                 allTeams: updatedAllTeams,
-                finances: { ...state.finances, balance: newBalance, transferBudget: newTransferBudget, weeklyWages: newWages }
+                finances: { 
+                    ...state.finances, 
+                    balance: newBalance, 
+                    transferBudget: newTransferBudget, 
+                    weeklyWages: newWages 
+                },
+                newsFeed: [newsItem, ...state.newsFeed].slice(0, 20)
             };
         }
 
