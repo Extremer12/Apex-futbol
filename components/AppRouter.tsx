@@ -22,7 +22,7 @@ interface AppRouterProps {
     electionResult: ElectionResponse | null;
     onNewGame: () => void;
     onLoadGameScreen: () => void;
-    onLoadGame: (id: string) => Promise<void>;
+    onLoadGame: (id: string, isCloud?: boolean) => Promise<void> | void;
     onProfileCreate: (profile: PlayerProfile) => void;
     onTeamSelect: (team: Team) => void;
     onPitchSubmit: (debateSummary: string) => Promise<void>;

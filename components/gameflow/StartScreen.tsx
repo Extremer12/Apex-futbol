@@ -3,13 +3,16 @@ import { LoadingSpinner } from '../icons';
 import { AboutModal, PlaceholderModal } from './PlaceholderModals';
 import { getSavedGames } from '../../services/db';
 
+import { UserBadge } from '../auth/UserBadge';
+import { LeaderboardModal } from '../leaderboard/LeaderboardModal';
+
 interface StartScreenProps {
     onNewGame: () => void;
     onLoadGameScreen: () => void;
 }
 
 export const StartScreen: React.FC<StartScreenProps> = ({ onNewGame, onLoadGameScreen }) => {
-    const [modal, setModal] = useState<'achievements' | 'stats' | 'about' | null>(null);
+    const [modal, setModal] = useState<'achievements' | 'stats' | 'about' | 'leaderboard' | null>(null);
     const [hasSaves, setHasSaves] = useState(false);
     const [isCheckingSaves, setIsCheckingSaves] = useState(true);
 
@@ -34,6 +37,7 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onNewGame, onLoadGameS
             {modal === 'achievements' && <PlaceholderModal title="Logros" onClose={() => setModal(null)} />}
             {modal === 'stats' && <PlaceholderModal title="Estadísticas" onClose={() => setModal(null)} />}
             {modal === 'about' && <AboutModal onClose={() => setModal(null)} />}
+            {modal === 'leaderboard' && <LeaderboardModal onClose={() => setModal(null)} />}
 
             {/* Background layers */}
             <div className="absolute inset-0">
@@ -74,6 +78,7 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onNewGame, onLoadGameS
                             <div className="text-[9px] font-bold leading-none mt-0.5" style={{ color: 'var(--apex-gold)' }}>Presidente</div>
                         </div>
                     </div>
+                    <UserBadge />
                 </div>
                 {/* Spacer instead of Logo Section because the background image has the logo */}
                 <div className="flex-1 flex flex-col items-center justify-center px-6 pb-4">
@@ -120,6 +125,22 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onNewGame, onLoadGameS
                             <div className="text-[10px] font-bold" style={{ color: 'var(--apex-text-secondary)' }}>Continúa tu carrera guardada</div>
                         </div>
                         <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--apex-text-muted)' }}>
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+
+                    {/* Salón de la Fama - Leaderboard */}
+                    <button onClick={() => setModal('leaderboard')} className="apex-btn-primary group">
+                        <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.25)' }}>
+                            <svg className="w-4.5 h-4.5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div className="flex-1 text-left">
+                            <div className="text-sm font-black tracking-widest uppercase italic text-yellow-400">Salón de la Fama</div>
+                            <div className="text-[10px] font-bold" style={{ color: 'var(--apex-text-secondary)' }}>Ranking mundial en línea</div>
+                        </div>
+                        <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--apex-gold)' }}>
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
                     </button>

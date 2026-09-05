@@ -176,7 +176,7 @@ export function startNewSeason(currentState: GameState): GameState {
             const sorted2 = [...div2Table].sort((a,b) => b.points - a.points || b.goalDifference - a.goalDifference);
             
             const relegatedNames = sorted1.slice(-3).map(r => processedTeams.find(t => t.id === r.teamId)?.name).filter(Boolean);
-            const promotedNames = sorted2.slice(0, 3).map(p => processedTeams.find(t => t.id === p.id)?.name).filter(Boolean);
+            const promotedNames = sorted2.slice(0, 3).map(p => processedTeams.find(t => t.id === p.teamId)?.name).filter(Boolean);
             
             if (relegatedNames.length > 0 || promotedNames.length > 0) {
                 const leagueName = div1.replace(/_/g, ' ');

@@ -1,4 +1,34 @@
-import { GameState, FanApproval } from '../types';
+import { GameState, FanApproval, Team } from '../types';
+
+/**
+ * Calculate the transfer factor for fan approval (-10 to +10).
+ * Measures squad quality vs tier expectations, with bonus for star signings.
+ */
+const calculateTransferFactor = (gameState: GameState): number => {
+    const squad = gameState.team.squad;
+    if (squad.length === 0) return 0;
+
+    // Average squad rating
+    const avgSquadRating = squad.reduce((sum, p) => sum + p.rating, 0) / squad.length;
+
+    // Expected rating baseline by tier
+    const expectedRating = gameState.team.tier === 'Top' ? 78 : gameState.team.tier === 'Mid' ? 68 : 58;
+
+    // Delta: how much better/worse than expected
+    const ratingDelta = avgSquadRating - expectedRating;
+
+    // Scale to -10..+10 range (each 1 point above/below expected = ~2 approval points)
+    let transfers = Math.round(Math.max(-10, Math.min(10, ratingDelta * 2)));
+
+    // Bonus: recently signed star players (rating >= 85, default 3-year contract = recent signing)
+    const hasStarSignings = squad.some(p => p.rating >= 85 && p.contractYears === 3);
+    if (hasStarSignings) transfers = Math.min(10, transfers + 3);
+
+    // Penalty: squad too thin (less than 18 players)
+    if (squad.length < 18) transfers = Math.max(-10, transfers - 3);
+
+    return transfers;
+};
 
 /**
  * Calculate fan approval based on team performance
@@ -27,8 +57,8 @@ export const calculateFanApproval = (gameState: GameState): FanApproval => {
     ).length || 0;
     const promises = (fulfilledPromises * 10) - (failedPromises * 10);
 
-    // Factor Transferencias (placeholder for now)
-    const transfers = 0;
+    // Factor Transferencias (-10 a +10)
+    const transfers = calculateTransferFactor(gameState);
 
     // Total
     const baseRating = 60; // Start at 60%
@@ -51,12 +81,14 @@ export const calculateFanApproval = (gameState: GameState): FanApproval => {
 };
 
 /**
- * Update fan approval after a match
+ * Update fan approval after a match.
+ * Includes bonus/penalty based on opponent strength.
  */
 export const updateFanApprovalAfterMatch = (
     gameState: GameState,
     won: boolean,
-    draw: boolean
+    draw: boolean,
+    opponent?: Team
 ): { delta: number; reason: string } => {
     let delta = 0;
     let reason = '';
@@ -73,7 +105,24 @@ export const updateFanApprovalAfterMatch = (
     }
 
     // Bonus/penalty based on opponent strength
-    // TODO: Implement opponent tier comparison
+    if (opponent) {
+        const playerTier = gameState.team.tier;
+        const opponentTier = opponent.tier;
+
+        if (won && opponentTier === 'Top' && playerTier !== 'Top') {
+            delta += 2;
+            reason = `¡Victoria histórica contra ${opponent.name}!`;
+        } else if (won && opponentTier === 'Top') {
+            delta += 1;
+            reason = `Gran victoria contra ${opponent.name}`;
+        } else if (!won && !draw && opponentTier === 'Lower' && playerTier !== 'Lower') {
+            delta -= 2;
+            reason = `Derrota vergonzosa contra ${opponent.name}`;
+        } else if (!won && !draw && opponentTier === 'Lower') {
+            delta -= 1;
+            reason = `Derrota contra ${opponent.name}`;
+        }
+    }
 
     return { delta, reason };
 };

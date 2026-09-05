@@ -17,12 +17,17 @@ interface SettingsScreenProps {
 }
 
 import { translations } from '../../src/i18n/translations';
+import { CommunityPacksSection } from './settings/CommunityPacksSection';
+import { useAuth } from '../../contexts/AuthContext';
+import { LeaderboardModal } from '../leaderboard/LeaderboardModal';
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onSaveGame, onQuitToMenu, currentSaveName, lastSaved, preferredCurrency, preferredLanguage, dispatch }) => {
     const t = translations[preferredLanguage || 'es'];
+    const { user, profile, signInWithGoogle, signOut, isConfigured } = useAuth();
     const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
     const [isQuitModalOpen, setIsQuitModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
 
     const handleClearData = async () => {
@@ -95,8 +100,97 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onSaveGame, onQu
                 </Modal>
             )}
             
+            {isLeaderboardOpen && <LeaderboardModal onClose={() => setIsLeaderboardOpen(false)} />}
+
             <div className="flex items-center justify-between">
                 <h2 className="text-3xl font-bold text-sky-400">Ajustes y Sistema</h2>
+            </div>
+
+            {/* Supabase Cloud & Account Section */}
+            <div className="space-y-4">
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                    <span>☁️ Cuenta y Sincronización en la Nube</span>
+                </h3>
+                <div className="bg-slate-900 border border-slate-800 rounded-xl shadow-lg p-5">
+                    {user ? (
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div className="flex items-center gap-3">
+                                {profile?.avatar_url ? (
+                                    <img
+                                        src={profile.avatar_url}
+                                        alt={profile.display_name || 'Avatar'}
+                                        className="w-12 h-12 rounded-full border-2 border-[var(--apex-gold)] shadow-md"
+                                    />
+                                ) : (
+                                    <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-lg font-black text-[var(--apex-gold)] border border-slate-700">
+                                        {(profile?.display_name || user.email || 'U').charAt(0).toUpperCase()}
+                                    </div>
+                                )}
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-white font-bold text-base">{profile?.display_name || 'Presidente'}</span>
+                                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-900/30 text-green-400 border border-green-500/30">
+                                            Google Conectado
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-slate-400">{user.email}</p>
+                                    <p className="text-[11px] text-sky-400 font-medium mt-0.5">Sincronización en la nube Supabase activa</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2 self-end sm:self-center">
+                                <button
+                                    onClick={() => setIsLeaderboardOpen(true)}
+                                    className="px-3 py-2 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-lg text-xs font-bold transition-all"
+                                >
+                                    🏆 Ranking Mundial
+                                </button>
+                                <button
+                                    onClick={signOut}
+                                    className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-bold transition-all border border-slate-700"
+                                >
+                                    Cerrar Sesión
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            <div className="flex items-start gap-3">
+                                <div className="p-2.5 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400 shrink-0">
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 00-9.78 2.096A4.001 4.001 0 003 15z" />
+                                    </svg>
+                                </div>
+                                <div className="flex-1">
+                                    <h4 className="text-white font-bold text-sm">Respalda tus partidas y compite en el ranking</h4>
+                                    <p className="text-xs text-slate-400 mt-1">
+                                        Inicia sesión con tu cuenta de Google para guardar tus partidas automáticamente en la nube de Supabase y figurar en el Salón de la Fama mundial.
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-3 pt-1">
+                                <button
+                                    onClick={signInWithGoogle}
+                                    disabled={!isConfigured}
+                                    className="flex items-center gap-2.5 px-4 py-2.5 bg-white text-slate-900 hover:bg-slate-100 rounded-xl text-xs font-bold shadow-md transition-all disabled:opacity-50"
+                                >
+                                    <svg className="w-4 h-4" viewBox="0 0 24 24">
+                                        <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.15z"/>
+                                        <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.36 24 12 24z"/>
+                                        <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.98 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+                                        <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.36 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+                                    </svg>
+                                    Conectar con Google
+                                </button>
+                                <button
+                                    onClick={() => setIsLeaderboardOpen(true)}
+                                    className="px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl text-xs font-bold transition-all"
+                                >
+                                    🏆 Ver Salón de la Fama
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Save Management Section */}
@@ -237,6 +331,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onSaveGame, onQu
                         </button>
                     </div>
                 </div>
+            </div>
+
+            {/* Community Logo & Asset Packs Section */}
+            <div className="space-y-4">
+                <CommunityPacksSection />
             </div>
 
             {/* Danger Zone */}

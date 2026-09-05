@@ -1,5 +1,6 @@
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { GameState, MatchPhase, PendingSimulationResults, NewsItem, Offer } from '../types';
+import { GameAction } from '../state/reducer';
 import { simulationWorker } from '../services/simulationWorker';
 import { generateNews, generateMatchReport, generateTransferOffer, generatePlayerOfTheWeekNews, generateImportantNews, generateCoachReport } from '../services/gameLogic';
 import { advanceCupRound, progressInternationalCup, checkAndScheduleIntercontinental } from '../services/simulation';
@@ -8,7 +9,7 @@ import { formatDate, isTransferWindowOpen } from '../utils';
 
 export function useSimulation(
     gameState: GameState | null,
-    dispatch: any,
+    dispatch: React.Dispatch<GameAction>,
     setAppState: (state: any) => void,
     showNotification: (msg: string, type?: 'success' | 'error' | 'info' | 'warning') => void,
     setCurrentEvent: (event: TriggeredEvent | null) => void

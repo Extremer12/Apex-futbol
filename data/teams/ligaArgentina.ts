@@ -9,7 +9,7 @@ export const ligaArgentinaTeams: Team[] = [
         { id: 70104, name: 'Nicolás Figal', position: 'DEF', rating: 77, value: 2500000, wage: 25000, morale: 'Feliz', contractYears: 2 },
     ]},
     { id: 702, name: 'River Plate', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Escudo_del_C_A_River_Plate.svg/1024px-Escudo_del_C_A_River_Plate.svg.png', leagueId: LeagueId.LIGA_ARGENTINA, budget: 28000000, transferBudget: 12000000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#CC0000', secondaryColor: '#FFFFFF', squad: [
-        { id: 70201, name: 'Franco Armani', position: 'POR', rating: 83, value: 4000000, middleName: '', lastName: '', age: 37, valueInMillions: 4, country: 'Argentina', condition: 100, sharpness: 100, wage: 45000, morale: 'Feliz', contractYears: 2 },
+        { id: 70201, name: 'Franco Armani', position: 'POR', rating: 83, value: 4000000, wage: 45000, morale: 'Feliz', contractYears: 2 },
         { id: 70202, name: 'Pablo Solari', position: 'DEL', rating: 79, value: 6000000, wage: 30000, morale: 'Feliz', contractYears: 2 },
         { id: 70203, name: 'Nacho Fernández', position: 'CEN', rating: 80, value: 5000000, wage: 35000, morale: 'Feliz', contractYears: 2 },
         { id: 70204, name: 'Paulo Díaz', position: 'DEF', rating: 81, value: 6000000, wage: 30000, morale: 'Feliz', contractYears: 2 },

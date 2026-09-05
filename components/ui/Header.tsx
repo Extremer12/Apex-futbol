@@ -3,6 +3,7 @@ import { GameState } from '../../types';
 import { AnimatedNumber } from './AnimatedNumber';
 import { formatDate, formatCurrencyShort } from '../../utils';
 import { TeamLogo } from '../../data/teams/helpers';
+import { UserBadge } from '../auth/UserBadge';
 
 interface HeaderProps {
     gameState: GameState;
@@ -45,6 +46,9 @@ export const Header: React.FC<HeaderProps> = ({ gameState }) => (
                             className="text-[11px] font-extrabold text-gold-gradient uppercase"
                         />
                     </div>
+
+                    {/* Supabase User & Cloud Sync Badge */}
+                    <UserBadge />
                 </div>
             </div>
         </div>

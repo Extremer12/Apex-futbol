@@ -7,6 +7,7 @@ import { saveGame, loadGame, SavedGameData } from './services/db';
 import { NotificationProvider, useNotification } from './contexts/NotificationContext';
 import { ModalProvider, useModal } from './contexts/ModalContext';
 import { ToastProvider } from './components/common/ToastProvider';
+import { AuthProvider } from './contexts/AuthContext';
 
 // Router and Layout
 import { AppRouter } from './components/AppRouter';
@@ -67,7 +68,7 @@ function AppLogic() {
     // Custom Hooks
     const { matchPhase, setMatchPhase, pendingResults, setPendingResults, isSimulating, handlePlayMatch, handleWeekComplete } = useSimulation(gameState, dispatch, setAppState, showNotification, setCurrentEvent);
     
-    const { currentSaveId, currentSaveName, lastSaved, resetSaveState, performLoadGame, performSaveGame } = useGameSave(gameState, playerProfile, appState, matchPhase, dispatch, showNotification);
+    const { currentSaveId, currentSaveName, lastSaved, resetSaveState, performLoadGame, performLoadCloudGame, performSaveGame } = useGameSave(gameState, playerProfile, appState, matchPhase, dispatch, showNotification);
 
     const resetGameData = useCallback(() => {
         dispatch({ type: 'RESET_GAME' });
@@ -85,15 +86,15 @@ function AppLogic() {
         setAppState('PROFILE_CREATION');
     }, [resetGameData]);
 
-    const handleLoadGame = useCallback(async (id: string) => {
-        const loadedProfile = await performLoadGame(id);
+    const handleLoadGame = useCallback(async (id: string, isCloud?: boolean) => {
+        const loadedProfile = isCloud ? await performLoadCloudGame(id) : await performLoadGame(id);
         if (loadedProfile) {
             setPlayerProfile(loadedProfile);
             setAppState('GAME_ACTIVE');
         } else {
             setAppState('START_SCREEN');
         }
-    }, [performLoadGame]);
+    }, [performLoadGame, performLoadCloudGame]);
 
     const handleProfileCreate = (profile: PlayerProfile) => {
         setPlayerProfile(profile);
@@ -305,13 +306,15 @@ function AppLogic() {
 // --- Main App Component with Providers ---
 function App() {
     return (
-        <NotificationProvider>
-            <ModalProvider>
-                <ToastProvider>
-                    <AppLogic />
-                </ToastProvider>
-            </ModalProvider>
-        </NotificationProvider>
+        <AuthProvider>
+            <NotificationProvider>
+                <ModalProvider>
+                    <ToastProvider>
+                        <AppLogic />
+                    </ToastProvider>
+                </ModalProvider>
+            </NotificationProvider>
+        </AuthProvider>
     );
 }
 

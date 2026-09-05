@@ -1,17 +1,30 @@
 import React from 'react';
 import { Player } from '../../types';
 
-// Team Logo Component (Used for rendering)
-export const TeamLogo: React.FC<{ team?: { logo: string, name: string }, className?: string }> = ({ team, className = "w-full h-full" }) => {
+import { customPacksService } from '../../services/customPacks/packService';
+
+// Team Logo Component (Used for rendering with Community Pack support)
+export const TeamLogo: React.FC<{ team?: { id?: number | string; logo?: string; name: string; shortName?: string }, className?: string }> = ({ team, className = "w-full h-full" }) => {
   const [error, setError] = React.useState(false);
-  
+  const [, setTick] = React.useState(0);
+
+  // Subscribe to pack updates so logo updates in real-time
+  React.useEffect(() => {
+    return customPacksService.subscribe(() => {
+      setError(false);
+      setTick(t => t + 1);
+    });
+  }, []);
+
   if (!team) return <div className={className} />;
+
+  const logoUrl = customPacksService.resolveTeamLogo(team);
 
   return (
     <div className={className + " relative flex items-center justify-center"}>
-      {!error && team.logo ? (
+      {!error && logoUrl ? (
         <img
-          src={team.logo}
+          src={logoUrl}
           alt={`${team.name} logo`}
           onError={() => setError(true)}
           className="w-full h-full object-contain drop-shadow-lg"
