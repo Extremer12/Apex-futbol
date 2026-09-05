@@ -428,7 +428,18 @@ export interface PendingSimulationResults {
     updatedAllTeams: Team[];
     confidenceChange: number;
     newOffers: Offer[];
-    playerMatchResult: { homeScore: number; awayScore: number, penalties?: { home: number, away: number }, events?: string[] } | null;
+    playerMatchResult: { 
+        homeTeamId?: number;
+        awayTeamId?: number;
+        competition?: string;
+        week?: number;
+        isMidweek?: boolean;
+        homeScore: number; 
+        awayScore: number; 
+        penalties?: { home: number; away: number }; 
+        events?: string[];
+        scorers?: { playerId: number; playerName: string; minute: number }[];
+    } | null;
     updatedCups?: { faCup: any, carabaoCup: any };
     updatedScoutedPlayerIds?: Record<number, number>;
     coachReport?: CoachReport;

@@ -40,6 +40,40 @@ export const TeamLogo: React.FC<{ team?: { id?: number | string; logo?: string; 
   );
 };
 
+// Player Photo Component (Used for rendering with Community Pack support)
+export const PlayerPhoto: React.FC<{ player?: { id?: number | string; name: string; photo?: string }, className?: string }> = ({ player, className = "w-10 h-10" }) => {
+  const [error, setError] = React.useState(false);
+  const [, setTick] = React.useState(0);
+
+  React.useEffect(() => {
+    return customPacksService.subscribe(() => {
+      setError(false);
+      setTick(t => t + 1);
+    });
+  }, []);
+
+  if (!player) return <div className={className} />;
+
+  const photoUrl = customPacksService.resolvePlayerPhoto(player);
+
+  return (
+    <div className={`${className} relative flex items-center justify-center shrink-0`}>
+      {!error && photoUrl ? (
+        <img
+          src={photoUrl}
+          alt={`${player.name} photo`}
+          onError={() => setError(true)}
+          className="w-full h-full object-cover rounded-full drop-shadow-md"
+        />
+      ) : (
+        <div className="w-full h-full rounded-full bg-slate-800 border border-white/10 flex items-center justify-center text-slate-400 font-bold text-xs">
+          {player.name.substring(0, 2).toUpperCase()}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const createTeamLogo = (logoPath: string, teamName: string) => {
   return logoPath;
 };

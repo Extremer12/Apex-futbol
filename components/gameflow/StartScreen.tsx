@@ -5,6 +5,7 @@ import { getSavedGames } from '../../services/db';
 
 import { UserBadge } from '../auth/UserBadge';
 import { LeaderboardModal } from '../leaderboard/LeaderboardModal';
+import { CommunityPacksModal } from '../ui/CommunityPacksModal';
 
 interface StartScreenProps {
     onNewGame: () => void;
@@ -12,7 +13,7 @@ interface StartScreenProps {
 }
 
 export const StartScreen: React.FC<StartScreenProps> = ({ onNewGame, onLoadGameScreen }) => {
-    const [modal, setModal] = useState<'achievements' | 'stats' | 'about' | 'leaderboard' | null>(null);
+    const [modal, setModal] = useState<'achievements' | 'stats' | 'about' | 'leaderboard' | 'packs' | null>(null);
     const [hasSaves, setHasSaves] = useState(false);
     const [isCheckingSaves, setIsCheckingSaves] = useState(true);
 
@@ -38,6 +39,7 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onNewGame, onLoadGameS
             {modal === 'stats' && <PlaceholderModal title="Estadísticas" onClose={() => setModal(null)} />}
             {modal === 'about' && <AboutModal onClose={() => setModal(null)} />}
             {modal === 'leaderboard' && <LeaderboardModal onClose={() => setModal(null)} />}
+            {modal === 'packs' && <CommunityPacksModal isOpen={true} onClose={() => setModal(null)} />}
 
             {/* Background layers */}
             <div className="absolute inset-0">
@@ -78,7 +80,18 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onNewGame, onLoadGameS
                             <div className="text-[9px] font-bold leading-none mt-0.5" style={{ color: 'var(--apex-gold)' }}>Presidente</div>
                         </div>
                     </div>
-                    <UserBadge />
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setModal('packs')}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl apex-glass text-xs font-bold text-slate-300 hover:text-white hover:border-[var(--apex-gold)] transition-all shadow-md"
+                            style={{ border: '1px solid var(--apex-border)' }}
+                            title="Gestionar escudos y logos reales"
+                        >
+                            <span className="text-sm">🛡️</span>
+                            <span className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--apex-gold)]">Logos & Packs</span>
+                        </button>
+                        <UserBadge />
+                    </div>
                 </div>
                 {/* Spacer instead of Logo Section because the background image has the logo */}
                 <div className="flex-1 flex flex-col items-center justify-center px-6 pb-4">
@@ -125,6 +138,28 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onNewGame, onLoadGameS
                             <div className="text-[10px] font-bold" style={{ color: 'var(--apex-text-secondary)' }}>Continúa tu carrera guardada</div>
                         </div>
                         <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--apex-text-muted)' }}>
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+
+                    {/* Escudos y Packs de la Comunidad */}
+                    <button 
+                        onClick={() => setModal('packs')} 
+                        className="apex-btn-primary group border border-[var(--apex-gold)]/30 hover:border-[var(--apex-gold)]"
+                    >
+                        <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-[var(--apex-gold)]/15 border border-[var(--apex-gold)]/30">
+                            <span className="text-lg">🛡️</span>
+                        </div>
+                        <div className="flex-1 text-left">
+                            <div className="text-sm font-black tracking-widest uppercase italic flex items-center gap-2 text-white">
+                                <span>Packs y Logos Reales</span>
+                                <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold bg-[var(--apex-gold)]/20 text-[var(--apex-gold)] uppercase tracking-wider">
+                                    Comunidad
+                                </span>
+                            </div>
+                            <div className="text-[10px] font-bold text-slate-400">Importa escudos, copas y caras (.ZIP o URL)</div>
+                        </div>
+                        <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--apex-gold)' }}>
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
                     </button>

@@ -8,7 +8,18 @@ interface SimulationResult {
     updatedLeagueTables: Record<LeagueId, LeagueTableRow[]>;
     updatedAllTeams: Team[];
     confidenceChange: number;
-    playerMatchResult: { homeScore: number; awayScore: number; penalties?: { home: number; away: number } } | null;
+    playerMatchResult: { 
+        homeTeamId?: number;
+        awayTeamId?: number;
+        competition?: string;
+        week?: number;
+        isMidweek?: boolean;
+        homeScore: number; 
+        awayScore: number; 
+        penalties?: { home: number; away: number };
+        events?: string[];
+        scorers?: { playerId: number; playerName: string; minute: number }[];
+    } | null;
     updatedCups: GameState['cups'];
     updatedScoutedPlayerIds: Record<number, number>;
     newsToAdd?: any[];

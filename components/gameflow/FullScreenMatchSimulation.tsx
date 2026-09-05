@@ -7,6 +7,11 @@ interface FullScreenMatchSimulationProps {
     pendingResults: {
         updatedSchedule?: any[];
         playerMatchResult: {
+            homeTeamId?: number;
+            awayTeamId?: number;
+            competition?: string;
+            week?: number;
+            isMidweek?: boolean;
             homeScore: number;
             awayScore: number;
             penalties?: { home: number; away: number };
@@ -22,6 +27,7 @@ interface ParsedEvent {
     type: 'goal' | 'save' | 'card' | 'whistle' | 'normal';
     text: string;
     teamName?: string;
+    isHome?: boolean;
 }
 
 export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps> = ({
@@ -29,23 +35,26 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
     pendingResults,
     onMatchComplete
 }) => {
-    // 1. Resolve match and teams
-    const playedMatch = pendingResults.updatedSchedule?.find(
-        (m: any) => (m.homeTeamId === gameState.team.id || m.awayTeamId === gameState.team.id) && m.result
-    ) || gameState.schedule.find(
-        m => (m.homeTeamId === gameState.team.id || m.awayTeamId === gameState.team.id) &&
-             m.week === (gameState.currentTurn === 'midweek' ? gameState.currentWeek + 1 : gameState.currentWeek)
-    );
-
-    const isHome = playedMatch ? playedMatch.homeTeamId === gameState.team.id : true;
-    const opponentId = isHome ? playedMatch?.awayTeamId : playedMatch?.homeTeamId;
-    const opponent = gameState.allTeams.find(t => t.id === opponentId) || gameState.team;
-    const homeTeam: Team = isHome ? gameState.team : opponent;
-    const awayTeam: Team = !isHome ? gameState.team : opponent;
-    const competitionName = playedMatch?.competition || (gameState.currentTurn === 'midweek' ? 'Copa Nacional' : 'Liga Profesional');
-    const stadiumName = isHome ? (gameState.stadium?.name || 'Estadio Principal') : `Estadio de ${homeTeam.name}`;
-
     const finalResult = pendingResults.playerMatchResult;
+
+    // 1. Resolve match and teams with absolute certainty
+    const homeTeam: Team = (finalResult?.homeTeamId ? gameState.allTeams.find(t => t.id === finalResult.homeTeamId) : null)
+        || gameState.team;
+
+    const awayTeam: Team = (finalResult?.awayTeamId ? gameState.allTeams.find(t => t.id === finalResult.awayTeamId) : null)
+        || gameState.allTeams.find(t => t.id !== homeTeam.id)
+        || gameState.team;
+
+    const isHome = homeTeam.id === gameState.team.id;
+    const competitionName = finalResult?.competition || (gameState.currentTurn === 'midweek' ? 'Copa Nacional' : 'Liga');
+    const stadiumName = isHome ? (gameState.stadium?.name || gameState.team.stadiumName || 'Estadio Principal') : (homeTeam.stadiumName || `Estadio de ${homeTeam.name}`);
+
+    // Check if match had extra time (events after 90')
+    const hasExtraTime = (finalResult?.events || []).some(e => {
+        const m = e.match(/^(\d+)'/);
+        return m ? parseInt(m[1], 10) > 90 : false;
+    });
+    const totalMatchMinutes = hasExtraTime ? 120 : 90;
 
     // 2. State
     const [minute, setMinute] = useState(0);
@@ -77,13 +86,15 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
         }
     }, [commentary]);
 
-    // Parse events into structured format
+    // Parse events into structured format with strict goal detection
     const parseEvent = (e: string): ParsedEvent => {
         const minMatch = e.match(/^(\d+)'/);
-        const min = minMatch ? parseInt(minMatch[1], 10) : minute;
-        const isGoal = e.includes('⚽') || e.toLowerCase().includes('gol');
-        const isSave = e.includes('🧤') || e.toLowerCase().includes('paradón') || e.toLowerCase().includes('atajada');
-        const isCard = e.includes('🟨') || e.includes('🟥') || e.toLowerCase().includes('tarjeta');
+        const min = minMatch ? parseInt(minMatch[1], 10) : 0;
+
+        // ONLY events with ⚽ are genuine goals (avoid false positives like 'evita el gol')
+        const isGoal = e.includes('⚽');
+        const isSave = e.includes('🧤') || e.toLowerCase().includes('parada') || e.toLowerCase().includes('atajada');
+        const isCard = e.includes('🟨') || e.includes('🟥') || e.toLowerCase().includes('tarjeta') || e.toLowerCase().includes('expulsión');
         const isWhistle = e.includes('⏱️') || e.toLowerCase().includes('final');
 
         let type: ParsedEvent['type'] = 'normal';
@@ -92,34 +103,59 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
         else if (isCard) type = 'card';
         else if (isWhistle) type = 'whistle';
 
+        let isHomeAction = false;
+        if (isGoal) {
+            if (e.includes(`GOOOOL de ${homeTeam.name}`) || e.includes(`¡GOL EN PRÓRROGA! ${homeTeam.name}`) || e.includes(`¡GOL DE ${homeTeam.name}`)) {
+                isHomeAction = true;
+            } else if (e.includes(`GOOOOL de ${awayTeam.name}`) || e.includes(`¡GOL EN PRÓRROGA! ${awayTeam.name}`) || e.includes(`¡GOL DE ${awayTeam.name}`)) {
+                isHomeAction = false;
+            } else if (e.includes(homeTeam.name) && !e.includes(awayTeam.name)) {
+                isHomeAction = true;
+            } else if (e.includes(awayTeam.name) && !e.includes(homeTeam.name)) {
+                isHomeAction = false;
+            } else {
+                const hasHomePlayer = homeTeam.squad.some(p => e.includes(p.name));
+                isHomeAction = hasHomePlayer;
+            }
+        } else {
+            isHomeAction = e.includes(homeTeam.name);
+        }
+
         return {
             minute: min,
             type,
             text: e,
-            teamName: e.includes(homeTeam.name) ? homeTeam.name : (e.includes(awayTeam.name) ? awayTeam.name : undefined)
+            teamName: isHomeAction ? homeTeam.name : awayTeam.name,
+            isHome: isHomeAction
         };
     };
+
+    // Pre-parsed events
+    const allParsedEvents = React.useMemo(() => {
+        if (!finalResult?.events) return [];
+        return finalResult.events.map(parseEvent);
+    }, [finalResult?.events, homeTeam.name, awayTeam.name]);
 
     // Fast-forward / Skip to end
     const handleSkipToEnd = () => {
         if (intervalRef.current) clearInterval(intervalRef.current);
         if (!finalResult) return;
 
-        setMinute(90);
+        setMinute(totalMatchMinutes);
         setDisplayScore({ home: finalResult.homeScore, away: finalResult.awayScore });
         setIsFinished(true);
 
-        // Add all remaining events to commentary
-        if (finalResult.events) {
-            const allRemaining = finalResult.events
-                .filter(e => !processedEventsRef.current.has(e))
-                .map(parseEvent);
-            setCommentary(prev => [...prev, ...allRemaining, {
-                minute: 90,
+        const allRemaining = allParsedEvents.filter(e => !processedEventsRef.current.has(e.text));
+        setCommentary(prev => [
+            ...prev,
+            ...allRemaining,
+            {
+                minute: totalMatchMinutes,
                 type: 'whistle',
-                text: `¡FINAL DEL PARTIDO! ${homeTeam.name} ${finalResult.homeScore} - ${finalResult.awayScore} ${awayTeam.name}`
-            }]);
-        }
+                text: `¡FINAL DEL PARTIDO! ${homeTeam.name} ${finalResult.homeScore} - ${finalResult.awayScore} ${awayTeam.name}`,
+                isHome: false
+            }
+        ]);
     };
 
     // Main Simulation Loop
@@ -132,53 +168,53 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
         const duration = 10000 / speedMultiplier; // 10s default or 5s on 2x
         const interval = 50;
         const totalSteps = duration / interval;
-        const minuteIncrement = 90 / totalSteps;
+        const minuteIncrement = totalMatchMinutes / totalSteps;
         let step = 0;
 
         intervalRef.current = setInterval(() => {
             step++;
-            const currentMinute = Math.min(90, Math.floor(step * minuteIncrement));
+            const currentMinute = Math.min(totalMatchMinutes, Math.floor(step * minuteIncrement));
             setMinute(currentMinute);
 
-            // Check events for current minute
-            if (finalResult.events && finalResult.events.length > 0) {
-                finalResult.events.forEach(e => {
-                    const eventMin = parseInt(e.split("'")[0], 10);
-                    if (eventMin === currentMinute && !processedEventsRef.current.has(e)) {
-                        processedEventsRef.current.add(e);
-                        const parsed = parseEvent(e);
-                        setCommentary(prev => [...prev, parsed]);
+            // Process all events up to current minute
+            const newEventsToProcess = allParsedEvents.filter(
+                ev => ev.minute <= currentMinute && !processedEventsRef.current.has(ev.text)
+            );
 
-                        // If goal
-                        if (parsed.type === 'goal') {
-                            const isHomeGoal = e.includes(homeTeam.name);
-                            setDisplayScore(prev => ({
-                                home: isHomeGoal ? prev.home + 1 : prev.home,
-                                away: !isHomeGoal ? prev.away + 1 : prev.away
-                            }));
+            if (newEventsToProcess.length > 0) {
+                newEventsToProcess.forEach(ev => {
+                    processedEventsRef.current.add(ev.text);
+                    setCommentary(prev => [...prev, ev]);
 
-                            setIsShaking(true);
-                            setGoalPopup({
-                                team: isHomeGoal ? homeTeam.name : awayTeam.name,
-                                text: parsed.text.replace(/^\d+'\s*/, '')
-                            });
+                    if (ev.type === 'goal') {
+                        setIsShaking(true);
+                        setGoalPopup({
+                            team: ev.teamName || (ev.isHome ? homeTeam.name : awayTeam.name),
+                            text: ev.text.replace(/^\d+'\s*/, '')
+                        });
 
-                            setTimeout(() => {
-                                setIsShaking(false);
-                                setGoalPopup(null);
-                            }, 1800);
-                        }
-
-                        // Stats increment
-                        if (parsed.type === 'goal' || parsed.type === 'save') {
-                            const isHomeAction = e.includes(homeTeam.name);
-                            setStats(prev => ({
-                                ...prev,
-                                homeShots: isHomeAction ? prev.homeShots + 1 : prev.homeShots,
-                                awayShots: !isHomeAction ? prev.awayShots + 1 : prev.awayShots
-                            }));
-                        }
+                        setTimeout(() => {
+                            setIsShaking(false);
+                            setGoalPopup(null);
+                        }, 1800);
                     }
+
+                    if (ev.type === 'goal' || ev.type === 'save') {
+                        setStats(prev => ({
+                            ...prev,
+                            homeShots: ev.isHome ? prev.homeShots + 1 : prev.homeShots,
+                            awayShots: !ev.isHome ? prev.awayShots + 1 : prev.awayShots
+                        }));
+                    }
+                });
+
+                // Deterministic score update: count exactly the genuine goals up to currentMinute
+                const goalsSoFar = allParsedEvents.filter(
+                    ev => ev.type === 'goal' && ev.minute <= currentMinute
+                );
+                setDisplayScore({
+                    home: goalsSoFar.filter(g => g.isHome).length,
+                    away: goalsSoFar.filter(g => !g.isHome).length
                 });
             }
 
@@ -206,16 +242,17 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
             // Match finished
             if (step >= totalSteps) {
                 clearInterval(intervalRef.current);
-                setMinute(90);
+                setMinute(totalMatchMinutes);
                 setDisplayScore({ home: finalResult.homeScore, away: finalResult.awayScore });
                 setIsFinished(true);
 
                 setCommentary(prev => [
                     ...prev,
                     {
-                        minute: 90,
+                        minute: totalMatchMinutes,
                         type: 'whistle',
-                        text: `¡FINAL DEL PARTIDO! ${homeTeam.name} ${finalResult.homeScore} - ${finalResult.awayScore} ${awayTeam.name}`
+                        text: `¡FINAL DEL PARTIDO! ${homeTeam.name} ${finalResult.homeScore} - ${finalResult.awayScore} ${awayTeam.name}`,
+                        isHome: false
                     }
                 ]);
             }
@@ -224,7 +261,7 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
         return () => {
             if (intervalRef.current) clearInterval(intervalRef.current);
         };
-    }, [finalResult, speedMultiplier]);
+    }, [finalResult, speedMultiplier, allParsedEvents, totalMatchMinutes]);
 
     // Outcome determination for player
     const playerWon = (isHome && displayScore.home > displayScore.away) || (!isHome && displayScore.away > displayScore.home);

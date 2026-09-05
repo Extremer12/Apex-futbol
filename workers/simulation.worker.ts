@@ -34,7 +34,18 @@ interface SimulationOutput {
         updatedLeagueTables: Record<LeagueId, LeagueTableRow[]>;
         updatedAllTeams: Team[];
         confidenceChange: number;
-        playerMatchResult: { homeScore: number; awayScore: number; penalties?: { home: number; away: number }; events?: string[]; scorers?: any[] } | null;
+        playerMatchResult: { 
+            homeTeamId?: number;
+            awayTeamId?: number;
+            competition?: string;
+            week?: number;
+            isMidweek?: boolean;
+            homeScore: number; 
+            awayScore: number; 
+            penalties?: { home: number; away: number }; 
+            events?: string[]; 
+            scorers?: any[]; 
+        } | null;
         updatedCups: any;
         updatedScoutedPlayerIds: Record<number, number>;
         newsToAdd?: any[];
@@ -135,7 +146,18 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
         const weeklyNet = (finances.weeklyIncome - finances.weeklyWages) / 1_000_000;
         let confidenceChange = weeklyNet > 0 ? 1 : -1;
 
-        let playerMatchResult: { homeScore: number; awayScore: number; penalties?: { home: number; away: number }; events?: string[]; scorers?: any[] } | null = null;
+        let playerMatchResult: { 
+            homeTeamId?: number;
+            awayTeamId?: number;
+            competition?: string;
+            week?: number;
+            isMidweek?: boolean;
+            homeScore: number; 
+            awayScore: number; 
+            penalties?: { home: number; away: number }; 
+            events?: string[]; 
+            scorers?: any[]; 
+        } | null = null;
 
         if (matchesThisWeek.length > 0) {
             matchesThisWeek.forEach(match => {
@@ -173,12 +195,19 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
 
                 if (match.homeTeamId === playerTeamId || match.awayTeamId === playerTeamId) {
                     console.log('[WORKER] Player match result:', {
+                        homeTeamId: match.homeTeamId,
+                        awayTeamId: match.awayTeamId,
                         homeScore: result.homeScore,
                         awayScore: result.awayScore,
                         eventsCount: result.events?.length || 0,
                         events: result.events
                     });
                     playerMatchResult = {
+                        homeTeamId: match.homeTeamId,
+                        awayTeamId: match.awayTeamId,
+                        competition: match.competition,
+                        week: match.week,
+                        isMidweek: !!match.isMidweek,
                         homeScore: result.homeScore,
                         awayScore: result.awayScore,
                         penalties: result.penalties,

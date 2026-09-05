@@ -3,6 +3,7 @@ import { Player, Morale } from '../../types';
 import { GameAction } from '../../state/reducer';
 import { Modal } from './Modal';
 import { formatCurrency, formatWeeklyWage } from '../../utils';
+import { PlayerPhoto } from '../../data/teams/helpers';
 
 interface PlayerDetailModalProps {
     player: Player;
@@ -18,6 +19,18 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({ player, di
     return (
         <Modal title={player.name} onClose={onClose}>
             <div className="space-y-4">
+                {/* Player Profile Header Card with Photo */}
+                <div className="flex items-center gap-4 bg-slate-800/70 border border-white/5 p-4 rounded-xl">
+                    <PlayerPhoto player={player} className="w-16 h-16 rounded-2xl border-2 border-white/10 shadow-xl" />
+                    <div>
+                        <h3 className="text-lg font-black text-white">{player.name}</h3>
+                        <div className="flex items-center gap-2 mt-1">
+                            <span className="px-2 py-0.5 rounded bg-sky-500/20 text-sky-400 text-xs font-bold uppercase">{player.position}</span>
+                            <span className="text-xs text-slate-400">{player.age || 24} años</span>
+                            <span className={`text-xs font-bold ${MORALE_COLORS[player.morale]}`}>• {player.morale}</span>
+                        </div>
+                    </div>
+                </div>
                 <div className="grid grid-cols-4 gap-4 text-center bg-slate-800/50 p-4 rounded-lg">
                     <div><p className="text-xs text-slate-400 uppercase">Nivel</p><p className="text-3xl font-bold text-sky-400">{player.rating}</p></div>
                     <div><p className="text-xs text-slate-400 uppercase">Valor</p><p className="text-xl mt-2 font-bold text-green-400">{formatCurrency(player.value)}</p></div>

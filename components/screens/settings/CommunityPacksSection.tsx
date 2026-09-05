@@ -1,6 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { customPacksService } from '../../../services/customPacks/packService';
+import { supabase } from '../../../services/supabase';
 import { TrophyIcon, SparklesIcon, TrashIcon } from '../../icons';
+
+interface CommunityPackEntry {
+    id: string;
+    title: string;
+    description: string | null;
+    author_name: string;
+    manifest_url: string;
+    downloads_count: number;
+    category: string;
+}
 
 export const CommunityPacksSection: React.FC = () => {
     const [stats, setStats] = useState({ teams: 0, competitions: 0, players: 0, total: 0 });
@@ -11,6 +22,8 @@ export const CommunityPacksSection: React.FC = () => {
     const [feedbackMessage, setFeedbackMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [isDragOver, setIsDragOver] = useState(false);
     const [showHelpGuide, setShowHelpGuide] = useState(false);
+    const [onlinePacks, setOnlinePacks] = useState<CommunityPackEntry[]>([]);
+    const [isLoadingOnlinePacks, setIsLoadingOnlinePacks] = useState(false);
     
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -19,8 +32,27 @@ export const CommunityPacksSection: React.FC = () => {
         setStats(s);
     };
 
+    const fetchOnlinePacks = async () => {
+        setIsLoadingOnlinePacks(true);
+        try {
+            const { data, error } = await supabase
+                .from('community_packs')
+                .select('*')
+                .order('downloads_count', { ascending: false })
+                .limit(10);
+            if (!error && data) {
+                setOnlinePacks(data as CommunityPackEntry[]);
+            }
+        } catch (e) {
+            console.error('Error fetching community packs from Supabase:', e);
+        } finally {
+            setIsLoadingOnlinePacks(false);
+        }
+    };
+
     useEffect(() => {
         refreshStats();
+        fetchOnlinePacks();
         const unsubscribe = customPacksService.subscribe(refreshStats);
         return () => unsubscribe();
     }, []);
@@ -82,6 +114,40 @@ export const CommunityPacksSection: React.FC = () => {
             setFeedbackMessage({
                 type: 'error',
                 text: err.message || 'Error al descargar o procesar el manifiesto online.'
+            });
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const installCommunityPack = async (pack: CommunityPackEntry) => {
+        setIsProcessing(true);
+        setProgressPercent(0);
+        setProgressStatus(`Descargando "${pack.title}"...`);
+        setFeedbackMessage(null);
+
+        try {
+            const result = await customPacksService.importUrlPack(pack.manifest_url, (pct, status) => {
+                setProgressPercent(pct);
+                setProgressStatus(status);
+            });
+
+            setFeedbackMessage({
+                type: 'success',
+                text: `¡Éxito! Se instaló el pack "${pack.title}" (${result.importedCount} logos aplicados).`
+            });
+
+            await supabase
+                .from('community_packs')
+                .update({ downloads_count: (pack.downloads_count || 0) + 1 })
+                .eq('id', pack.id);
+
+            await refreshStats();
+            fetchOnlinePacks();
+        } catch (err: any) {
+            setFeedbackMessage({
+                type: 'error',
+                text: err.message || 'Error al descargar el pack comunitario.'
             });
         } finally {
             setIsProcessing(false);
@@ -267,6 +333,59 @@ export const CommunityPacksSection: React.FC = () => {
                     <span className="flex-1">{feedbackMessage.text}</span>
                 </div>
             )}
+
+            {/* Galería de Packs de la Comunidad (Supabase) */}
+            <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                        <span>🌐</span> Packs Destacados de la Comunidad
+                    </span>
+                    <button
+                        onClick={fetchOnlinePacks}
+                        disabled={isLoadingOnlinePacks}
+                        className="text-[10px] font-bold text-sky-400 hover:text-sky-300 uppercase tracking-wider"
+                    >
+                        {isLoadingOnlinePacks ? 'Actualizando...' : 'Refrescar'}
+                    </button>
+                </div>
+
+                {onlinePacks.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {onlinePacks.map((pack) => (
+                            <div key={pack.id} className="bg-slate-950/60 border border-white/10 rounded-xl p-3 flex flex-col justify-between hover:border-[var(--apex-gold)]/40 transition-colors">
+                                <div>
+                                    <div className="flex items-center justify-between mb-1">
+                                        <h4 className="text-xs font-bold text-white truncate">{pack.title}</h4>
+                                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-400 uppercase font-bold">
+                                            {pack.category || 'logos'}
+                                        </span>
+                                    </div>
+                                    {pack.description && (
+                                        <p className="text-[10px] text-slate-400 line-clamp-2 mb-2">{pack.description}</p>
+                                    )}
+                                    <div className="text-[9px] text-slate-500 flex items-center justify-between">
+                                        <span>Por: {pack.author_name}</span>
+                                        <span>⬇️ {pack.downloads_count || 0} descargas</span>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => installCommunityPack(pack)}
+                                    disabled={isProcessing}
+                                    className="mt-3 w-full py-1.5 bg-gradient-to-r from-[var(--apex-gold)] to-yellow-500 hover:from-yellow-400 hover:to-yellow-500 text-slate-950 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all shadow-md"
+                                >
+                                    Instalar en 1 Clic
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="bg-slate-950/40 border border-dashed border-white/10 rounded-xl p-4 text-center">
+                        <p className="text-xs text-slate-400">
+                            Aún no hay packs públicos registrados en la nube. ¡Puedes importar tu propio .ZIP o pegar una URL directa abajo!
+                        </p>
+                    </div>
+                )}
+            </div>
 
             {/* Importar desde URL */}
             <form onSubmit={handleUrlImport} className="space-y-2">

@@ -31,7 +31,10 @@ USING (auth.uid() = id);
 
 -- Trigger: Automatically handle new user signup from Google OAuth
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER 
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
     INSERT INTO public.profiles (id, email, full_name, avatar_url)
     VALUES (
@@ -48,7 +51,9 @@ BEGIN
         updated_at = timezone('utc'::text, now());
     RETURN new;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql;
+
+REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM public, anon, authenticated;
 
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created

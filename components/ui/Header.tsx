@@ -1,16 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { GameState } from '../../types';
 import { AnimatedNumber } from './AnimatedNumber';
 import { formatDate, formatCurrencyShort } from '../../utils';
 import { TeamLogo } from '../../data/teams/helpers';
 import { UserBadge } from '../auth/UserBadge';
+import { CommunityPacksModal } from './CommunityPacksModal';
 
 interface HeaderProps {
     gameState: GameState;
 }
 
-export const Header: React.FC<HeaderProps> = ({ gameState }) => (
-    <header className="sticky top-0 z-30 pt-safe" style={{ background: 'rgba(10,14,23,0.85)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderBottom: '1px solid var(--apex-border)' }}>
+export const Header: React.FC<HeaderProps> = ({ gameState }) => {
+    const [isPacksOpen, setIsPacksOpen] = useState(false);
+
+    return (
+        <>
+            <CommunityPacksModal isOpen={isPacksOpen} onClose={() => setIsPacksOpen(false)} />
+            <header className="sticky top-0 z-30 pt-safe" style={{ background: 'rgba(10,14,23,0.85)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderBottom: '1px solid var(--apex-border)' }}>
         <div className="max-w-7xl mx-auto px-5 py-3">
             <div className="flex justify-between items-center">
                 {/* Team Info */}
@@ -47,10 +53,22 @@ export const Header: React.FC<HeaderProps> = ({ gameState }) => (
                         />
                     </div>
 
+                    {/* Community Packs & Logos Button */}
+                    <button
+                        onClick={() => setIsPacksOpen(true)}
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-[var(--apex-gold)]/30 bg-[var(--apex-gold)]/10 hover:bg-[var(--apex-gold)]/20 text-[var(--apex-gold)] transition-all shadow-sm"
+                        title="Gestionar escudos y logos reales"
+                    >
+                        <span className="text-xs">🛡️</span>
+                        <span className="hidden sm:inline text-[9px] font-black uppercase tracking-wider">Logos</span>
+                    </button>
+
                     {/* Supabase User & Cloud Sync Badge */}
                     <UserBadge />
                 </div>
             </div>
         </div>
     </header>
-);
+    </>
+    );
+};

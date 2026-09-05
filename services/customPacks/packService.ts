@@ -71,6 +71,21 @@ class CustomPacksService {
         return defaultLogo || undefined;
     }
 
+    public resolvePlayerPhoto(player?: { id?: number | string; name?: string; photo?: string }): string | undefined {
+        if (!player) return undefined;
+        const keys: string[] = [];
+        if (player.id !== undefined && player.id !== null) {
+            keys.push(String(player.id));
+        }
+        if (player.name) {
+            keys.push(normalizeKey(player.name));
+            keys.push(player.name.toLowerCase().replace(/[^a-z0-9]/g, ''));
+        }
+        const custom = this.getCustomLogo('players', keys);
+        if (custom) return custom;
+        return player.photo || undefined;
+    }
+
     /**
      * Import a .ZIP file containing folders like /teams/, /competitions/, /players/
      */
