@@ -1,9 +1,9 @@
 import React, { useState, useCallback } from 'react';
-import { GameState, MatchPhase, PendingSimulationResults, NewsItem, Offer } from '../types';
+import { GameState, MatchPhase, PendingSimulationResults, NewsItem, Offer, LeagueId } from '../types';
 import { GameAction } from '../state/reducer';
 import { simulationWorker } from '../services/simulationWorker';
 import { generateNews, generateMatchReport, generateTransferOffer, generatePlayerOfTheWeekNews, generateImportantNews, generateCoachReport } from '../services/gameLogic';
-import { advanceCupRound, progressInternationalCup, checkAndScheduleIntercontinental } from '../services/simulation';
+import { advanceCupRound, progressInternationalCup, checkAndScheduleIntercontinental, generateArgentinePlayoffs } from '../services/simulation';
 import { eventEngine, TriggeredEvent } from '../services/eventEngine';
 import { formatDate, isTransferWindowOpen } from '../utils';
 
@@ -192,6 +192,71 @@ export function useSimulation(
             if (intercontinentalMatches.length > 0 && intercontinentalMatches.every(m => m.result !== undefined)) {
                 // Since Intercontinental is a single final match, we just advance the cup to calculate the winner.
                 updatedCups.copaIntercontinental = advanceCupRound(updatedCups.copaIntercontinental, simulationResult.updatedAllTeams, newWeek);
+            }
+
+            // Argentine Playoffs Logic (Torneo Apertura & Clausura)
+            // Apertura Phase Regular ends at Week 16 -> Generate Playoffs for Week 17
+            if (newWeek === 16) {
+                const argTable = simulationResult.updatedLeagueTables[LeagueId.LIGA_ARGENTINA] || [];
+                const zoneATeams = argTable.filter(r => r.zone === 'A').map(r => restoredTeams.find(t => t.id === r.teamId)!).filter(Boolean);
+                const zoneBTeams = argTable.filter(r => r.zone === 'B').map(r => restoredTeams.find(t => t.id === r.teamId)!).filter(Boolean);
+
+                if (zoneATeams.length >= 8 && zoneBTeams.length >= 8) {
+                    const octavosFixtures = generateArgentinePlayoffs(zoneATeams.slice(0, 8), zoneBTeams.slice(0, 8), 'Playoffs_Apertura', 17);
+                    updatedCups.aperturaPlayoffs = {
+                        id: 'apertura_playoffs',
+                        name: 'Playoffs Apertura',
+                        type: 'knockout',
+                        phase: 'knockout',
+                        rounds: [{ name: 'Octavos de Final', fixtures: octavosFixtures, completed: false }],
+                        currentRoundIndex: 0,
+                        statistics: { topScorers: [], championsHistory: [] }
+                    };
+                    simulationResult.updatedSchedule.push(...octavosFixtures);
+                }
+            }
+
+            // Advance Apertura Playoffs (Weeks 17, 18, 19)
+            const aperturaPlayoffMatches = matchesThisWeek.filter(m => m.competition === 'Playoffs_Apertura');
+            if (aperturaPlayoffMatches.length > 0 && aperturaPlayoffMatches.every(m => m.result !== undefined) && updatedCups.aperturaPlayoffs) {
+                const prevRoundsCount = updatedCups.aperturaPlayoffs.rounds.length;
+                updatedCups.aperturaPlayoffs = advanceCupRound(updatedCups.aperturaPlayoffs, simulationResult.updatedAllTeams, newWeek + 1);
+                if (updatedCups.aperturaPlayoffs.rounds.length > prevRoundsCount) {
+                    const nextRound = updatedCups.aperturaPlayoffs.rounds[updatedCups.aperturaPlayoffs.rounds.length - 1];
+                    simulationResult.updatedSchedule.push(...nextRound.fixtures);
+                }
+            }
+
+            // Clausura Phase Regular ends at Week 36 -> Generate Playoffs for Week 37
+            if (newWeek === 36) {
+                const argTable = simulationResult.updatedLeagueTables[LeagueId.LIGA_ARGENTINA] || [];
+                const zoneATeams = argTable.filter(r => r.zone === 'A').map(r => restoredTeams.find(t => t.id === r.teamId)!).filter(Boolean);
+                const zoneBTeams = argTable.filter(r => r.zone === 'B').map(r => restoredTeams.find(t => t.id === r.teamId)!).filter(Boolean);
+
+                if (zoneATeams.length >= 8 && zoneBTeams.length >= 8) {
+                    const octavosFixtures = generateArgentinePlayoffs(zoneATeams.slice(0, 8), zoneBTeams.slice(0, 8), 'Playoffs_Clausura', 37);
+                    updatedCups.clausuraPlayoffs = {
+                        id: 'clausura_playoffs',
+                        name: 'Playoffs Clausura',
+                        type: 'knockout',
+                        phase: 'knockout',
+                        rounds: [{ name: 'Octavos de Final', fixtures: octavosFixtures, completed: false }],
+                        currentRoundIndex: 0,
+                        statistics: { topScorers: [], championsHistory: [] }
+                    };
+                    simulationResult.updatedSchedule.push(...octavosFixtures);
+                }
+            }
+
+            // Advance Clausura Playoffs (Weeks 37, 38, 39)
+            const clausuraPlayoffMatches = matchesThisWeek.filter(m => m.competition === 'Playoffs_Clausura');
+            if (clausuraPlayoffMatches.length > 0 && clausuraPlayoffMatches.every(m => m.result !== undefined) && updatedCups.clausuraPlayoffs) {
+                const prevRoundsCount = updatedCups.clausuraPlayoffs.rounds.length;
+                updatedCups.clausuraPlayoffs = advanceCupRound(updatedCups.clausuraPlayoffs, simulationResult.updatedAllTeams, newWeek + 1);
+                if (updatedCups.clausuraPlayoffs.rounds.length > prevRoundsCount) {
+                    const nextRound = updatedCups.clausuraPlayoffs.rounds[updatedCups.clausuraPlayoffs.rounds.length - 1];
+                    simulationResult.updatedSchedule.push(...nextRound.fixtures);
+                }
             }
 
             // Trigger CUP_KICKOFF cinematics for international cups

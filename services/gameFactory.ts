@@ -200,6 +200,9 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
             copaDelRey: { id: 'copa_del_rey', name: 'Copa del Rey', type: 'knockout', phase: 'knockout', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
             dfbPokal: { id: 'dfb_pokal', name: 'DFB-Pokal', type: 'knockout', phase: 'knockout', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
             coppaItalia: { id: 'coppa_italia', name: 'Coppa Italia', type: 'knockout', phase: 'knockout', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
+            copaArgentina: { id: 'copa_argentina', name: 'Copa Argentina', type: 'knockout', phase: 'knockout', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
+            aperturaPlayoffs: { id: 'apertura_playoffs', name: 'Playoffs Apertura', type: 'knockout', phase: 'knockout', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
+            clausuraPlayoffs: { id: 'clausura_playoffs', name: 'Playoffs Clausura', type: 'knockout', phase: 'knockout', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
             copaLibertadores: {
                 id: 'copa_libertadores',
                 name: 'Copa Libertadores',

@@ -374,40 +374,165 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
     return { homeScore, awayScore, events, scorers, penalties: penaltiesResult };
 };
 
-// Helper to generate a round-robin schedule for a single league
-const generateLeagueSchedule = (teams: Team[], leagueId: string): Match[] => {
-    const teamIds = teams.map(t => t.id);
-    if (teamIds.length % 2 !== 0) return []; // Should handle odd teams with byes ideally
-    const schedule: Match[] = [];
-    const numWeeks = teamIds.length - 1;
-    const halfSeasonSize = teamIds.length / 2;
-    const teamsSlice = teamIds.slice(1);
+// Helper to generate Argentine 2026 30-team format schedule (Apertura & Clausura)
+export const generateArgentineTournamentSchedule = (teams: Team[]): Match[] => {
+    const zoneA = teams.filter(t => t.zone === 'A');
+    const zoneB = teams.filter(t => t.zone === 'B');
 
-    for (let week = 0; week < numWeeks; week++) {
-        const weekFixtures: { home: number, away: number }[] = [];
-        const awayTeamIndex = week % teamsSlice.length;
-        weekFixtures.push({ home: teamIds[0], away: teamsSlice[awayTeamIndex] });
-        for (let i = 1; i < halfSeasonSize; i++) {
-            const homeIndex = (week + i) % teamsSlice.length;
-            const awayIndex = (week + teamsSlice.length - i) % teamsSlice.length;
-            weekFixtures.push({ home: teamsSlice[homeIndex], away: teamsSlice[awayIndex] });
-        }
-        weekFixtures.forEach(fixture => schedule.push({
-            week: week + 1,
-            homeTeamId: fixture.home,
-            awayTeamId: fixture.away,
-            competition: 'League' as const,
-            isCupMatch: false
-        }));
+    // Fallback if zones not properly populated
+    if (zoneA.length !== 15 || zoneB.length !== 15) {
+        return generateLeagueSchedule(teams, LeagueId.LIGA_ARGENTINA);
     }
-    const secondHalf = schedule.map(match => ({
-        week: match.week + numWeeks,
-        homeTeamId: match.awayTeamId,
-        awayTeamId: match.homeTeamId,
-        competition: 'League' as const,
-        isCupMatch: false
+
+    const CLASSIC_DERBY_PAIRS: [number, number][] = [
+        [701, 702], // Boca vs River
+        [704, 703], // Independiente vs Racing
+        [705, 708], // San Lorenzo vs Huracán
+        [706, 729], // Estudiantes LP vs Gimnasia LP
+        [710, 709], // Newell's vs Rosario Central
+        [715, 730], // Lanús vs Banfield
+        [711, 716], // Talleres vs Belgrano
+        [722, 723], // Platense vs Tigre
+        [707, 726], // Vélez vs Argentinos Jrs
+        [717, 733], // Instituto vs Estudiantes Río Cuarto
+        [728, 731], // Gimnasia Mza vs Ind. Rivadavia
+        [724, 712], // Unión SF vs Atlético Tucumán
+        [719, 718], // Central Córdoba SdE vs Sarmiento Junín
+        [714, 720], // Defensa y Justicia vs Barracas Central
+        [727, 732], // Deportivo Riestra vs Aldosivi
+    ];
+
+    // Build 15-round Berger schedule for 16 slots (15 teams + 1 dummy slot at index 15)
+    const getZoneRoundRobin = (zoneTeams: Team[]) => {
+        const slots: (number | null)[] = zoneTeams.map(t => t.id);
+        slots.push(null); // Slot 15 is dummy (bye)
+        const rounds: { fixtures: { home: number; away: number }[]; byeTeamId: number }[] = [];
+        const n = 16;
+        const half = 8;
+        const rotating = slots.slice(1);
+
+        for (let round = 0; round < 15; round++) {
+            const currentRoundSlots = [slots[0], ...rotating];
+            const fixtures: { home: number; away: number }[] = [];
+            let byeTeamId = 0;
+
+            for (let i = 0; i < half; i++) {
+                const team1 = currentRoundSlots[i];
+                const team2 = currentRoundSlots[n - 1 - i];
+
+                if (team1 === null) {
+                    byeTeamId = team2!;
+                } else if (team2 === null) {
+                    byeTeamId = team1;
+                } else {
+                    if (round % 2 === 0) {
+                        fixtures.push({ home: team1, away: team2 });
+                    } else {
+                        fixtures.push({ home: team2, away: team1 });
+                    }
+                }
+            }
+
+            rounds.push({ fixtures, byeTeamId });
+            const last = rotating.pop()!;
+            rotating.unshift(last);
+        }
+        return rounds;
+    };
+
+    const roundsA = getZoneRoundRobin(zoneA);
+    const roundsB = getZoneRoundRobin(zoneB);
+
+    const aperturaMatches: Match[] = [];
+
+    // Rounds 1 to 15 (Weeks 1 to 15)
+    for (let r = 0; r < 15; r++) {
+        const week = r + 1;
+        // Intramural Zona A
+        roundsA[r].fixtures.forEach(f => {
+            aperturaMatches.push({
+                week,
+                homeTeamId: f.home,
+                awayTeamId: f.away,
+                competition: 'Torneo_Apertura',
+                isCupMatch: false,
+            });
+        });
+        // Intramural Zona B
+        roundsB[r].fixtures.forEach(f => {
+            aperturaMatches.push({
+                week,
+                homeTeamId: f.home,
+                awayTeamId: f.away,
+                competition: 'Torneo_Apertura',
+                isCupMatch: false,
+            });
+        });
+        // Interzonal match between the two bye teams
+        const byeA = roundsA[r].byeTeamId;
+        const byeB = roundsB[r].byeTeamId;
+        if (byeA && byeB) {
+            aperturaMatches.push({
+                week,
+                homeTeamId: r % 2 === 0 ? byeA : byeB,
+                awayTeamId: r % 2 === 0 ? byeB : byeA,
+                competition: 'Torneo_Apertura',
+                isCupMatch: false,
+            });
+        }
+    }
+
+    // Round 16: Fecha de Clásicos (Week 16)
+    CLASSIC_DERBY_PAIRS.forEach(([idA, idB], idx) => {
+        aperturaMatches.push({
+            week: 16,
+            homeTeamId: idx % 2 === 0 ? idA : idB,
+            awayTeamId: idx % 2 === 0 ? idB : idA,
+            competition: 'Torneo_Apertura',
+            isCupMatch: false,
+        });
+    });
+
+    // Torneo Clausura (Weeks 21 to 36): Inverted venues
+    const clausuraMatches: Match[] = aperturaMatches.map(m => ({
+        week: m.week + 20, // Weeks 21 to 36
+        homeTeamId: m.awayTeamId,
+        awayTeamId: m.homeTeamId,
+        competition: 'Torneo_Clausura',
+        isCupMatch: false,
     }));
-    return [...schedule, ...secondHalf];
+
+    return [...aperturaMatches, ...clausuraMatches];
+};
+
+export const generateArgentinePlayoffs = (
+    sortedZoneA: Team[], 
+    sortedZoneB: Team[], 
+    competition: 'Playoffs_Apertura' | 'Playoffs_Clausura', 
+    startWeek: number
+): Match[] => {
+    // Top 8 of each zone
+    // Octavos pairings: 1ºA vs 8ºB, 1ºB vs 8ºA, 2ºA vs 7ºB, 2ºB vs 7ºA, 3ºA vs 6ºB, 3ºB vs 6ºA, 4ºA vs 5ºB, 4ºB vs 5ºA
+    const octavosPairings: [Team, Team][] = [
+        [sortedZoneA[0], sortedZoneB[7]],
+        [sortedZoneB[0], sortedZoneA[7]],
+        [sortedZoneA[1], sortedZoneB[6]],
+        [sortedZoneB[1], sortedZoneA[6]],
+        [sortedZoneA[2], sortedZoneB[5]],
+        [sortedZoneB[2], sortedZoneA[5]],
+        [sortedZoneA[3], sortedZoneB[4]],
+        [sortedZoneB[3], sortedZoneA[4]],
+    ];
+
+    return octavosPairings
+        .filter(([home, away]) => home && away)
+        .map(([home, away]) => ({
+            week: startWeek,
+            homeTeamId: home.id,
+            awayTeamId: away.id,
+            competition,
+            isCupMatch: true,
+        }));
 };
 
 export const generateSeasonSchedule = (allTeams: Team[]): Match[] => {
@@ -426,8 +551,13 @@ export const generateSeasonSchedule = (allTeams: Team[]): Match[] => {
     for (const leagueId of leaguesToSchedule) {
         const teamsInLeague = allTeams.filter(t => t.leagueId === leagueId);
         if (teamsInLeague.length > 0) {
-            const schedule = generateLeagueSchedule(teamsInLeague, leagueId);
-            fullSchedule = [...fullSchedule, ...schedule];
+            if (leagueId === LeagueId.LIGA_ARGENTINA) {
+                const schedule = generateArgentineTournamentSchedule(teamsInLeague);
+                fullSchedule = [...fullSchedule, ...schedule];
+            } else {
+                const schedule = generateLeagueSchedule(teamsInLeague, leagueId);
+                fullSchedule = [...fullSchedule, ...schedule];
+            }
         }
     }
 
@@ -668,6 +798,10 @@ export const createInitialLeagueTable = (teams: Team[]): LeagueTableRow[] => {
     return teams.map(team => ({
         teamId: team.id, position: 0, played: 0, won: 0, drawn: 0, lost: 0,
         goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0, form: [],
+        zone: team.zone,
+        promedio: 0,
+        playedTotal: 0,
+        pointsTotal: 0,
     })).sort((a, b) => teams.find(t => t.id === a.teamId)!.name.localeCompare(teams.find(t => t.id === b.teamId)!.name));
 };
 
@@ -844,12 +978,42 @@ export const handlePromotionRelegation = (allTeams: Team[], leagueTables: Record
         const sortedDiv1 = sortTable(div1Table);
         const sortedDiv2 = sortTable(div2Table);
 
-        const relegatedIds = sortedDiv1.slice(-3).map(r => r.teamId);
-        const promotedIds = sortedDiv2.slice(0, 3).map(r => r.teamId);
+        let relegatedIds: number[] = [];
+        let promotedIds: number[] = [];
 
+        if (div1 === LeagueId.LIGA_ARGENTINA) {
+            // Relegation 1: Last place in Tabla Anual (30th place)
+            const lastTablaAnual = sortedDiv1[sortedDiv1.length - 1]?.teamId;
+            if (lastTablaAnual) relegatedIds.push(lastTablaAnual);
+
+            // Relegation 2: Lowest Promedio (pointsTotal / playedTotal)
+            const sortedByPromedio = [...div1Table].sort((a, b) => (a.promedio ?? 0) - (b.promedio ?? 0));
+            for (const r of sortedByPromedio) {
+                if (!relegatedIds.includes(r.teamId)) {
+                    relegatedIds.push(r.teamId);
+                    break;
+                }
+            }
+
+            // 2 Promoted teams from Primera Nacional
+            promotedIds = sortedDiv2.slice(0, 2).map(r => r.teamId);
+        } else {
+            relegatedIds = sortedDiv1.slice(-3).map(r => r.teamId);
+            promotedIds = sortedDiv2.slice(0, 3).map(r => r.teamId);
+        }
+
+        // Get zones of relegated teams to assign to promoted teams in Liga Argentina
+        const relegatedZones = relegatedIds.map(id => allTeams.find(t => t.id === id)?.zone || 'A');
+
+        let promotedIndex = 0;
         updatedTeams = updatedTeams.map(team => {
-            if (relegatedIds.includes(team.id)) return { ...team, leagueId: div2 };
-            if (promotedIds.includes(team.id)) return { ...team, leagueId: div1 };
+            if (relegatedIds.includes(team.id)) {
+                return { ...team, leagueId: div2, zone: undefined };
+            }
+            if (promotedIds.includes(team.id)) {
+                const assignedZone = div1 === LeagueId.LIGA_ARGENTINA ? relegatedZones[promotedIndex++] || 'A' : undefined;
+                return { ...team, leagueId: div1, zone: assignedZone };
+            }
             return team;
         });
     }

@@ -238,6 +238,15 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                     homeRow.form.unshift(homeResult);
                     awayRow.form.unshift(awayResult);
 
+                    // Update historical promedios for Argentine league
+                    homeRow.playedTotal = (homeRow.playedTotal || 0) + 1;
+                    homeRow.pointsTotal = (homeRow.pointsTotal || 0) + (homeResult === 'W' ? 3 : homeResult === 'D' ? 1 : 0);
+                    homeRow.promedio = Number((homeRow.pointsTotal / Math.max(1, homeRow.playedTotal)).toFixed(3));
+
+                    awayRow.playedTotal = (awayRow.playedTotal || 0) + 1;
+                    awayRow.pointsTotal = (awayRow.pointsTotal || 0) + (awayResult === 'W' ? 3 : awayResult === 'D' ? 1 : 0);
+                    awayRow.promedio = Number((awayRow.pointsTotal / Math.max(1, awayRow.playedTotal)).toFixed(3));
+
                     homeTeam.teamMorale = updateTeamMorale(homeTeam.teamMorale, homeResult);
                     awayTeam.teamMorale = updateTeamMorale(awayTeam.teamMorale, awayResult);
 
@@ -277,8 +286,13 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                     if (match.competition === 'Copa_Del_Rey') cupId = 'copaDelRey';
                     if (match.competition === 'DFB_Pokal') cupId = 'dfbPokal';
                     if (match.competition === 'Coppa_Italia') cupId = 'coppaItalia';
+                    if (match.competition === 'Copa_Argentina') cupId = 'copaArgentina';
+                    if (match.competition === 'Playoffs_Apertura') cupId = 'aperturaPlayoffs';
+                    if (match.competition === 'Playoffs_Clausura') cupId = 'clausuraPlayoffs';
                     if (match.competition === 'Champions_League') cupId = 'championsLeague';
                     if (match.competition === 'Europa_League') cupId = 'europaLeague';
+                    if (match.competition === 'Copa_Libertadores') cupId = 'copaLibertadores';
+                    if (match.competition === 'Copa_Intercontinental') cupId = 'copaIntercontinental';
 
                     const currentCup = updatedCups[cupId];
 

@@ -107,6 +107,7 @@ export interface Team {
   name: string;
   logo: string;
   leagueId: LeagueId; // Added for multi-league support
+  zone?: 'A' | 'B'; // For Argentine 2026 30-team format
   budget: number; // Main budget in millions
   transferBudget: number; // Transfer budget in millions
   squad: Player[];
@@ -187,7 +188,7 @@ export interface Match {
     events?: string[];
     scorers?: MatchScorer[];
   };
-  competition?: 'League' | 'FA_Cup' | 'Carabao_Cup' | 'Copa_Del_Rey' | 'DFB_Pokal' | 'Coppa_Italia' | 'Champions_League' | 'Europa_League' | 'Copa_Libertadores' | 'Copa_Intercontinental'; // Added to distinguish match types
+  competition?: string; // e.g. 'League', 'Torneo_Apertura', 'Torneo_Clausura', 'Playoffs_Apertura', etc.
   isCupMatch?: boolean;
   isMidweek?: boolean; // True for matches played on a midweek turn
   penalties?: { home: number; away: number; };
@@ -205,6 +206,10 @@ export interface LeagueTableRow {
   goalDifference: number;
   points: number;
   form: ('W' | 'D' | 'L')[];
+  zone?: 'A' | 'B';
+  promedio?: number;
+  playedTotal?: number;
+  pointsTotal?: number;
 }
 
 export interface Offer {
@@ -405,6 +410,9 @@ export interface GameState {
     copaDelRey: CupCompetition;
     dfbPokal: CupCompetition;
     coppaItalia: CupCompetition;
+    copaArgentina?: CupCompetition;
+    aperturaPlayoffs?: CupCompetition;
+    clausuraPlayoffs?: CupCompetition;
     championsLeague: CupCompetition;
     europaLeague: CupCompetition;
     copaLibertadores: CupCompetition;

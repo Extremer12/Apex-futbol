@@ -41,6 +41,7 @@ export const CUP_LOGOS: Record<string, string> = {
     copa_del_rey: 'https://tmssl.akamaized.net/images/logo/header/cdr.png',
     dfb_pokal: 'https://tmssl.akamaized.net/images/logo/header/dfb.png',
     coppa_italia: 'https://tmssl.akamaized.net/images/logo/header/cit.png',
+    copa_argentina: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Copa_Argentina_logo.png/200px-Copa_Argentina_logo.png',
 };
 
 export const CUP_THEMES: Record<string, { accent: string; bg: string; border: string }> = {
@@ -52,6 +53,7 @@ export const CUP_THEMES: Record<string, { accent: string; bg: string; border: st
     copa_del_rey: { accent: 'text-amber-500', bg: 'from-amber-950 via-slate-950 to-slate-950', border: 'border-amber-500/40' },
     dfb_pokal: { accent: 'text-yellow-500', bg: 'from-yellow-950 via-slate-950 to-slate-950', border: 'border-yellow-500/40' },
     coppa_italia: { accent: 'text-green-500', bg: 'from-green-950 via-slate-950 to-slate-950', border: 'border-green-500/40' },
+    copa_argentina: { accent: 'text-cyan-400', bg: 'from-cyan-950 via-slate-950 to-slate-950', border: 'border-cyan-500/40' },
 };
 
 export type CompetitionItem = {
@@ -98,6 +100,7 @@ export const ALL_COMPETITIONS: CompetitionItem[] = [
     // Argentina
     { id: 'LIGA_ARGENTINA', name: 'Liga Argentina', type: 'LEAGUE', logo: LEAGUE_LOGOS.LIGA_ARGENTINA, country: 'Argentina', flagUrl: 'https://flagcdn.com/ar.svg', category: 'DOMESTIC', isFirstDiv: true },
     { id: 'PRIMERA_NACIONAL', name: 'Primera Nacional', type: 'LEAGUE', logo: LEAGUE_LOGOS.PRIMERA_NACIONAL, country: 'Argentina', flagUrl: 'https://flagcdn.com/ar.svg', category: 'DOMESTIC', isFirstDiv: false },
+    { id: 'COPA_ARGENTINA', name: 'Copa Argentina', type: 'CUP', logo: CUP_LOGOS.copa_argentina, country: 'Argentina', flagUrl: 'https://flagcdn.com/ar.svg', category: 'DOMESTIC', cupKey: 'copaArgentina' },
 
     // Brasil
     { id: 'BRASILEIRAO', name: 'Brasileirão', type: 'LEAGUE', logo: LEAGUE_LOGOS.BRASILEIRAO, country: 'Brasil', flagUrl: 'https://flagcdn.com/br.svg', category: 'DOMESTIC', isFirstDiv: true },
