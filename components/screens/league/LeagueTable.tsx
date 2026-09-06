@@ -6,6 +6,7 @@ import { TeamLogo } from '../../../data/teams/helpers';
 import { LEAGUE_THEMES } from './constants';
 import { customPacksService } from '../../../services/customPacks/packService';
 import { Trophy, Shield, Flame, Activity } from 'lucide-react';
+import { TournamentBracket } from '../../ui/TournamentBracket';
 
 interface LeagueTableProps {
     table?: LeagueTableRow[];
@@ -73,15 +74,15 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
         const reducido = gameState.cups.nacionalReducido;
 
         return (
-            <div className="p-6 space-y-6">
+            <div className="p-3 sm:p-5 space-y-6">
                 {/* Final por el Primer Ascenso */}
-                <div className="bg-slate-800/40 rounded-xl p-5 border border-white/10 space-y-4">
-                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <div className="bg-slate-800/40 rounded-2xl p-3 sm:p-5 border border-white/10 space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
                         <div className="flex items-center gap-2.5">
                             <Trophy className="w-5 h-5 text-amber-400" />
                             <h4 className="text-white font-black text-sm uppercase tracking-wide">Final por el Primer Ascenso (1ºA vs 1ºB)</h4>
                         </div>
-                        <span className="text-[11px] font-bold text-slate-400 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5">
+                        <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5">
                             {finalPrimerAscenso?.winnerId ? `Campeón Ascendido: ${getTeamById(finalPrimerAscenso.winnerId)?.name}` : 'En Disputa (Semana 35)'}
                         </span>
                     </div>
@@ -92,51 +93,24 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
                             <p className="text-[11px] text-slate-500 mt-1">El 1.º de la Zona A se enfrentará al 1.º de la Zona B en estadio neutral.</p>
                         </div>
                     ) : (
-                        <div className="max-w-md mx-auto">
-                            {finalPrimerAscenso.rounds.map((round, rIdx) => (
-                                <div key={rIdx} className="bg-slate-900/60 rounded-xl p-3 border border-white/5 space-y-2">
-                                    <div className="text-[11px] font-black uppercase text-amber-400 tracking-wider text-center border-b border-white/5 pb-1">
-                                        {round.name}
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        {round.fixtures.map((f, fIdx) => {
-                                            const home = getTeamById(f.homeTeamId);
-                                            const away = getTeamById(f.awayTeamId);
-                                            return (
-                                                <div key={fIdx} className="bg-slate-800/60 rounded-lg p-2 text-xs flex items-center justify-between">
-                                                    <div className="space-y-1 flex-1 min-w-0">
-                                                        <div className="flex items-center justify-between text-slate-200 truncate">
-                                                            <span className="truncate">{home?.name}</span>
-                                                            <span className="font-bold text-white ml-2">{f.result ? f.result.homeScore : '-'}</span>
-                                                        </div>
-                                                        <div className="flex items-center justify-between text-slate-200 truncate">
-                                                            <span className="truncate">{away?.name}</span>
-                                                            <span className="font-bold text-white ml-2">{f.result ? f.result.awayScore : '-'}</span>
-                                                        </div>
-                                                    </div>
-                                                    {f.penalties && (
-                                                        <div className="text-[9px] text-amber-400 font-bold ml-2 text-right">
-                                                            Pen ({f.penalties.home}-{f.penalties.away})
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                        <TournamentBracket
+                            cup={finalPrimerAscenso}
+                            getTeamById={getTeamById}
+                            playerTeamId={gameState.team.id}
+                            theme={{ accent: 'text-amber-400', bg: 'from-amber-950/40', border: 'border-amber-500/30' }}
+                            logoUrl={logo || '/sinlogo.png'}
+                        />
                     )}
                 </div>
 
                 {/* Torneo Reducido por el Segundo Ascenso */}
-                <div className="bg-slate-800/40 rounded-xl p-5 border border-white/10 space-y-4">
-                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <div className="bg-slate-800/40 rounded-2xl p-3 sm:p-5 border border-white/10 space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
                         <div className="flex items-center gap-2.5">
                             <Trophy className="w-5 h-5 text-cyan-400" />
                             <h4 className="text-white font-black text-sm uppercase tracking-wide">Torneo Reducido - Segundo Ascenso</h4>
                         </div>
-                        <span className="text-[11px] font-bold text-slate-400 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5">
+                        <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5">
                             {reducido?.winnerId ? `Segundo Ascendido: ${getTeamById(reducido.winnerId)?.name}` : 'En Disputa (Semanas 35 a 38)'}
                         </span>
                     </div>
@@ -147,39 +121,78 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
                             <p className="text-[11px] text-slate-500 mt-1">Participan los clubes ubicados del 2.º al 8.º puesto de cada zona (14 clubes) más el perdedor de la final por el 1.º ascenso en cuartos.</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                            {reducido.rounds.map((round, rIdx) => (
-                                <div key={rIdx} className="bg-slate-900/60 rounded-xl p-3 border border-white/5 space-y-2">
-                                    <div className="text-[11px] font-black uppercase text-cyan-400 tracking-wider text-center border-b border-white/5 pb-1">
-                                        {round.name}
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        {round.fixtures.map((f, fIdx) => {
+                        <div className="space-y-4">
+                            {/* Fase 1: Cruces preliminares (7 partidos) si están en ronda 0 */}
+                            {reducido.rounds[0]?.fixtures?.length === 7 && (
+                                <div className="space-y-2">
+                                    <h5 className="text-xs font-black uppercase text-cyan-400 tracking-wider">
+                                        Fase 1 (Cruces Directos 2º al 8º de cada zona)
+                                    </h5>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
+                                        {reducido.rounds[0].fixtures.map((f, fIdx) => {
                                             const home = getTeamById(f.homeTeamId);
                                             const away = getTeamById(f.awayTeamId);
+                                            const hasResult = f.result !== undefined;
+                                            const homeWon = hasResult && f.result!.homeScore > f.result!.awayScore;
+                                            const awayWon = hasResult && f.result!.awayScore > f.result!.homeScore;
+                                            const isPlayerMatch = home?.id === gameState.team.id || away?.id === gameState.team.id;
+
                                             return (
-                                                <div key={fIdx} className="bg-slate-800/60 rounded-lg p-2 text-xs flex items-center justify-between">
-                                                    <div className="space-y-1 flex-1 min-w-0">
-                                                        <div className="flex items-center justify-between text-slate-200 truncate">
-                                                            <span className="truncate">{home?.name}</span>
-                                                            <span className="font-bold text-white ml-2">{f.result ? f.result.homeScore : '-'}</span>
+                                                <div key={fIdx} className={`rounded-xl border p-2 text-xs flex flex-col gap-1.5 ${
+                                                    isPlayerMatch ? 'border-amber-400/60 bg-amber-500/10' : 'border-white/10 bg-slate-900/70'
+                                                }`}>
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                                            <div className="w-4 h-4 shrink-0 flex items-center justify-center">
+                                                                <TeamLogo team={home} />
+                                                            </div>
+                                                            <span className={`truncate text-xs ${homeWon ? 'font-black text-white' : 'text-slate-300'}`}>{home?.name}</span>
                                                         </div>
-                                                        <div className="flex items-center justify-between text-slate-200 truncate">
-                                                            <span className="truncate">{away?.name}</span>
-                                                            <span className="font-bold text-white ml-2">{f.result ? f.result.awayScore : '-'}</span>
-                                                        </div>
+                                                        <span className="font-bold text-white ml-2">{hasResult ? f.result!.homeScore : '-'}</span>
                                                     </div>
-                                                    {f.penalties && (
-                                                        <div className="text-[9px] text-cyan-400 font-bold ml-2 text-right">
-                                                            Pen ({f.penalties.home}-{f.penalties.away})
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                                            <div className="w-4 h-4 shrink-0 flex items-center justify-center">
+                                                                <TeamLogo team={away} />
+                                                            </div>
+                                                            <span className={`truncate text-xs ${awayWon ? 'font-black text-white' : 'text-slate-300'}`}>{away?.name}</span>
                                                         </div>
-                                                    )}
+                                                        <span className="font-bold text-white ml-2">{hasResult ? f.result!.awayScore : '-'}</span>
+                                                    </div>
                                                 </div>
                                             );
                                         })}
                                     </div>
                                 </div>
-                            ))}
+                            )}
+
+                            {/* Torneo Cuartos, Semis y Final en Bracket Bifurcado */}
+                            {reducido.rounds.length > 1 ? (
+                                <div className="space-y-2 pt-2">
+                                    <h5 className="text-xs font-black uppercase text-cyan-400 tracking-wider">
+                                        Cuadro Final del Reducido (Cuartos, Semis y Final)
+                                    </h5>
+                                    <TournamentBracket
+                                        cup={{
+                                            ...reducido,
+                                            rounds: reducido.rounds.slice(1),
+                                            currentRoundIndex: Math.max(0, reducido.currentRoundIndex - 1)
+                                        }}
+                                        getTeamById={getTeamById}
+                                        playerTeamId={gameState.team.id}
+                                        theme={{ accent: 'text-cyan-400', bg: 'from-cyan-950/40', border: 'border-cyan-500/30' }}
+                                        logoUrl={logo || '/sinlogo.png'}
+                                    />
+                                </div>
+                            ) : reducido.rounds[0]?.fixtures?.length !== 7 ? (
+                                <TournamentBracket
+                                    cup={reducido}
+                                    getTeamById={getTeamById}
+                                    playerTeamId={gameState.team.id}
+                                    theme={{ accent: 'text-cyan-400', bg: 'from-cyan-950/40', border: 'border-cyan-500/30' }}
+                                    logoUrl={logo || '/sinlogo.png'}
+                                />
+                            ) : null}
                         </div>
                     )}
                 </div>
@@ -192,15 +205,15 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
         const clausura = gameState.cups.clausuraPlayoffs;
 
         return (
-            <div className="p-6 space-y-6">
+            <div className="p-3 sm:p-5 space-y-6">
                 {/* Apertura Playoffs */}
-                <div className="bg-slate-800/40 rounded-xl p-5 border border-white/10 space-y-4">
-                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <div className="bg-slate-800/40 rounded-2xl p-3 sm:p-5 border border-white/10 space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
                         <div className="flex items-center gap-2.5">
                             <Trophy className="w-5 h-5 text-amber-400" />
                             <h4 className="text-white font-black text-sm uppercase tracking-wide">Playoffs - Torneo Apertura</h4>
                         </div>
-                        <span className="text-[11px] font-bold text-slate-400 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5">
+                        <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5">
                             {apertura?.winnerId ? `Campeón: ${getTeamById(apertura.winnerId)?.name}` : 'En Disputa (Fecha 17 a 20)'}
                         </span>
                     </div>
@@ -211,51 +224,24 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
                             <p className="text-[11px] text-slate-500 mt-1">Clasificarán los mejores 8 equipos de la Zona A y los mejores 8 de la Zona B (Octavos de Final a partido único).</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                            {apertura.rounds.map((round, rIdx) => (
-                                <div key={rIdx} className="bg-slate-900/60 rounded-xl p-3 border border-white/5 space-y-2">
-                                    <div className="text-[11px] font-black uppercase text-amber-400 tracking-wider text-center border-b border-white/5 pb-1">
-                                        {round.name}
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        {round.fixtures.map((f, fIdx) => {
-                                            const home = getTeamById(f.homeTeamId);
-                                            const away = getTeamById(f.awayTeamId);
-                                            return (
-                                                <div key={fIdx} className="bg-slate-800/60 rounded-lg p-2 text-xs flex items-center justify-between">
-                                                    <div className="space-y-1 flex-1 min-w-0">
-                                                        <div className="flex items-center justify-between text-slate-200 truncate">
-                                                            <span className="truncate">{home?.name}</span>
-                                                            <span className="font-bold text-white ml-2">{f.result ? f.result.homeScore : '-'}</span>
-                                                        </div>
-                                                        <div className="flex items-center justify-between text-slate-200 truncate">
-                                                            <span className="truncate">{away?.name}</span>
-                                                            <span className="font-bold text-white ml-2">{f.result ? f.result.awayScore : '-'}</span>
-                                                        </div>
-                                                    </div>
-                                                    {f.penalties && (
-                                                        <div className="text-[9px] text-amber-400 font-bold ml-2 text-right">
-                                                            Pen ({f.penalties.home}-{f.penalties.away})
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                        <TournamentBracket
+                            cup={apertura}
+                            getTeamById={getTeamById}
+                            playerTeamId={gameState.team.id}
+                            theme={{ accent: 'text-amber-400', bg: 'from-amber-950/40', border: 'border-amber-500/30' }}
+                            logoUrl={logo || '/sinlogo.png'}
+                        />
                     )}
                 </div>
 
                 {/* Clausura Playoffs */}
-                <div className="bg-slate-800/40 rounded-xl p-5 border border-white/10 space-y-4">
-                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <div className="bg-slate-800/40 rounded-2xl p-3 sm:p-5 border border-white/10 space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
                         <div className="flex items-center gap-2.5">
                             <Trophy className="w-5 h-5 text-cyan-400" />
                             <h4 className="text-white font-black text-sm uppercase tracking-wide">Playoffs - Torneo Clausura</h4>
                         </div>
-                        <span className="text-[11px] font-bold text-slate-400 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5">
+                        <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5">
                             {clausura?.winnerId ? `Campeón: ${getTeamById(clausura.winnerId)?.name}` : 'En Disputa (Fecha 37 a 40)'}
                         </span>
                     </div>
@@ -266,40 +252,13 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
                             <p className="text-[11px] text-slate-500 mt-1">Clasificarán los 8 mejores de cada zona tras la disputa de las 16 fechas del Clausura.</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                            {clausura.rounds.map((round, rIdx) => (
-                                <div key={rIdx} className="bg-slate-900/60 rounded-xl p-3 border border-white/5 space-y-2">
-                                    <div className="text-[11px] font-black uppercase text-cyan-400 tracking-wider text-center border-b border-white/5 pb-1">
-                                        {round.name}
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        {round.fixtures.map((f, fIdx) => {
-                                            const home = getTeamById(f.homeTeamId);
-                                            const away = getTeamById(f.awayTeamId);
-                                            return (
-                                                <div key={fIdx} className="bg-slate-800/60 rounded-lg p-2 text-xs flex items-center justify-between">
-                                                    <div className="space-y-1 flex-1 min-w-0">
-                                                        <div className="flex items-center justify-between text-slate-200 truncate">
-                                                            <span className="truncate">{home?.name}</span>
-                                                            <span className="font-bold text-white ml-2">{f.result ? f.result.homeScore : '-'}</span>
-                                                        </div>
-                                                        <div className="flex items-center justify-between text-slate-200 truncate">
-                                                            <span className="truncate">{away?.name}</span>
-                                                            <span className="font-bold text-white ml-2">{f.result ? f.result.awayScore : '-'}</span>
-                                                        </div>
-                                                    </div>
-                                                    {f.penalties && (
-                                                        <div className="text-[9px] text-cyan-400 font-bold ml-2 text-right">
-                                                            Pen ({f.penalties.home}-{f.penalties.away})
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                        <TournamentBracket
+                            cup={clausura}
+                            getTeamById={getTeamById}
+                            playerTeamId={gameState.team.id}
+                            theme={{ accent: 'text-cyan-400', bg: 'from-cyan-950/40', border: 'border-cyan-500/30' }}
+                            logoUrl={logo || '/sinlogo.png'}
+                        />
                     )}
                 </div>
             </div>
@@ -309,9 +268,9 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
     return (
         <div className={`bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 border-2 border-${theme}-500/30 rounded-2xl shadow-2xl overflow-hidden animate-fade-in`}>
             {/* Cabecera Principal */}
-            <div className={`bg-gradient-to-r from-${theme}-600 via-${theme}-500 to-${theme}-600 px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3`}>
-                <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 p-1 bg-white/10 rounded-lg flex items-center justify-center">
+            <div className={`bg-gradient-to-r from-${theme}-600 via-${theme}-500 to-${theme}-600 px-4 sm:px-6 py-3.5 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3`}>
+                <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 p-1 bg-white/10 rounded-lg flex items-center justify-center shrink-0">
                         <img 
                             src={logo || '/sinlogo.png'} 
                             alt={title} 
@@ -320,12 +279,12 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
                         />
                     </div>
                     <div>
-                        <h3 className="text-white font-bold text-lg uppercase tracking-wider">{title}</h3>
+                        <h3 className="text-white font-bold text-base sm:text-lg uppercase tracking-wider">{title}</h3>
                         {isArgentina && (
-                            <span className="text-[11px] text-white/80 font-medium">Formato Oficial 2026: 30 Equipos • Apertura y Clausura</span>
+                            <span className="text-[10px] sm:text-[11px] text-white/80 font-medium">Formato Oficial 2026: 30 Equipos • Apertura y Clausura</span>
                         )}
                         {isPrimeraNacional && (
-                            <span className="text-[11px] text-white/80 font-medium">Formato Oficial 2026: 36 Equipos • 2 Zonas de 18 • Reducido y Descensos</span>
+                            <span className="text-[10px] sm:text-[11px] text-white/80 font-medium">Formato Oficial 2026: 36 Equipos • 2 Zonas de 18 • Reducido y Descensos</span>
                         )}
                     </div>
                 </div>
@@ -335,7 +294,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
                     <div className="flex items-center gap-1 bg-black/20 p-1 rounded-xl backdrop-blur-md self-start sm:self-auto overflow-x-auto max-w-full">
                         <button
                             onClick={() => setArgView('ZONA_A')}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
+                            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
                                 argView === 'ZONA_A' ? 'bg-white text-slate-900 shadow-md' : 'text-white/80 hover:text-white hover:bg-white/10'
                             }`}
                         >
@@ -343,7 +302,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
                         </button>
                         <button
                             onClick={() => setArgView('ZONA_B')}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
+                            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
                                 argView === 'ZONA_B' ? 'bg-white text-slate-900 shadow-md' : 'text-white/80 hover:text-white hover:bg-white/10'
                             }`}
                         >
@@ -351,7 +310,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
                         </button>
                         <button
                             onClick={() => setArgView('TABLA_ANUAL')}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
+                            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
                                 argView === 'TABLA_ANUAL' ? 'bg-white text-slate-900 shadow-md' : 'text-white/80 hover:text-white hover:bg-white/10'
                             }`}
                         >
@@ -359,7 +318,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
                         </button>
                         <button
                             onClick={() => setArgView('PROMEDIOS')}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
+                            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
                                 argView === 'PROMEDIOS' ? 'bg-white text-slate-900 shadow-md' : 'text-white/80 hover:text-white hover:bg-white/10'
                             }`}
                         >
@@ -367,7 +326,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
                         </button>
                         <button
                             onClick={() => setArgView('PLAYOFFS')}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
+                            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
                                 argView === 'PLAYOFFS' ? 'bg-white text-slate-900 shadow-md' : 'text-white/80 hover:text-white hover:bg-white/10'
                             }`}
                         >
@@ -381,7 +340,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
                     <div className="flex items-center gap-1 bg-black/20 p-1 rounded-xl backdrop-blur-md self-start sm:self-auto overflow-x-auto max-w-full">
                         <button
                             onClick={() => setArgView('ZONA_A')}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
+                            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
                                 argView === 'ZONA_A' ? 'bg-white text-slate-900 shadow-md' : 'text-white/80 hover:text-white hover:bg-white/10'
                             }`}
                         >
@@ -389,7 +348,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
                         </button>
                         <button
                             onClick={() => setArgView('ZONA_B')}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
+                            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
                                 argView === 'ZONA_B' ? 'bg-white text-slate-900 shadow-md' : 'text-white/80 hover:text-white hover:bg-white/10'
                             }`}
                         >
@@ -397,7 +356,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
                         </button>
                         <button
                             onClick={() => setArgView('TABLA_GENERAL')}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
+                            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
                                 argView === 'TABLA_GENERAL' ? 'bg-white text-slate-900 shadow-md' : 'text-white/80 hover:text-white hover:bg-white/10'
                             }`}
                         >
@@ -405,7 +364,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
                         </button>
                         <button
                             onClick={() => setArgView('REDUCIDO')}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
+                            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
                                 argView === 'REDUCIDO' ? 'bg-white text-slate-900 shadow-md' : 'text-white/80 hover:text-white hover:bg-white/10'
                             }`}
                         >
@@ -421,23 +380,23 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
             ) : isPrimeraNacional && argView === 'REDUCIDO' ? (
                 renderNacionalReducido()
             ) : (
-                /* Tabla de Posiciones */
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                /* Tabla de Posiciones: 100% Ajustada sin Scroll Horizontal */
+                <div className="w-full overflow-hidden">
+                    <table className="w-full table-fixed text-xs sm:text-sm">
                         <thead>
-                            <tr className={`bg-slate-800/50 text-slate-400 uppercase text-[10px] font-black tracking-widest border-b border-white/5`}>
-                                <th className="px-4 py-4 text-center">Pos</th>
-                                <th className="px-6 py-4 text-left">Club</th>
-                                <th className="px-3 py-4 text-center">PJ</th>
-                                <th className="px-3 py-4 text-center">G</th>
-                                <th className="px-3 py-4 text-center">E</th>
-                                <th className="px-3 py-4 text-center">P</th>
-                                <th className="px-4 py-4 text-center">Forma</th>
-                                <th className="px-3 py-4 text-center">DG</th>
+                            <tr className="bg-slate-800/60 text-slate-400 uppercase text-[9px] sm:text-[10px] font-black tracking-wider border-b border-white/10">
+                                <th className="w-7 sm:w-10 px-1 py-2.5 sm:py-3 text-center">Pos</th>
+                                <th className="px-2 py-2.5 sm:py-3 text-left">Club</th>
+                                <th className="w-6 sm:w-8 px-0.5 py-2.5 sm:py-3 text-center">PJ</th>
+                                <th className="w-6 sm:w-8 px-0.5 py-2.5 sm:py-3 text-center">G</th>
+                                <th className="w-6 sm:w-8 px-0.5 py-2.5 sm:py-3 text-center">E</th>
+                                <th className="w-6 sm:w-8 px-0.5 py-2.5 sm:py-3 text-center">P</th>
+                                <th className="hidden md:table-cell w-24 px-2 py-2.5 sm:py-3 text-center">Forma</th>
+                                <th className="w-7 sm:w-10 px-0.5 py-2.5 sm:py-3 text-center">DG</th>
                                 {isArgentina && argView === 'PROMEDIOS' && (
-                                    <th className="px-4 py-4 text-center text-cyan-400">Prom</th>
+                                    <th className="w-12 sm:w-14 px-1 py-2.5 sm:py-3 text-center text-cyan-400">Prom</th>
                                 )}
-                                <th className="px-4 py-4 text-center">Pts</th>
+                                <th className="w-8 sm:w-12 px-1 py-2.5 sm:py-3 text-center font-black">Pts</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
@@ -509,42 +468,44 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
                                     : (row.played > 0 ? (row.points / row.played).toFixed(3) : '0.000');
 
                                 return (
-                                    <tr key={row.teamId} className={`transition-all duration-200 ${isPlayerTeam ? 'bg-white/10' : 'hover:bg-white/5'}`}>
-                                        <td className="px-4 py-4 text-center relative">
-                                            <div className="flex items-center justify-center gap-2">
-                                                <span className={`font-bold ${isPlayerTeam ? 'text-white' : 'text-slate-400'}`}>{row.position}</span>
-                                                {zoneColor && <div className={`w-1 h-6 ${zoneColor} rounded-full absolute left-2`} title={zoneLabel}></div>}
+                                    <tr key={row.teamId} className={`transition-all duration-200 ${isPlayerTeam ? 'bg-amber-500/15 font-semibold' : 'hover:bg-white/5'}`}>
+                                        <td className="w-7 sm:w-10 px-1 py-2 sm:py-2.5 text-center relative">
+                                            <div className="flex items-center justify-center">
+                                                <span className={`font-bold ${isPlayerTeam ? 'text-amber-300' : 'text-slate-400'}`}>{row.position}</span>
+                                                {zoneColor && <div className={`w-1 h-4 sm:h-5 ${zoneColor} rounded-full absolute left-1 sm:left-1.5`} title={zoneLabel} />}
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 flex items-center justify-center">
+                                        <td className="px-2 py-2 sm:py-2.5 min-w-0">
+                                            <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
+                                                <div className="w-5 h-5 sm:w-7 sm:h-7 shrink-0 flex items-center justify-center">
                                                     <TeamLogo team={team} />
                                                 </div>
-                                                <div className="flex items-center gap-2 min-w-0">
-                                                    <span className={`font-bold truncate ${isPlayerTeam ? 'text-white' : 'text-slate-200'}`}>{team?.name}</span>
+                                                <div className="flex items-center gap-1 sm:gap-1.5 min-w-0 flex-1">
+                                                    <span className={`font-bold truncate text-[11px] sm:text-xs md:text-sm ${isPlayerTeam ? 'text-white' : 'text-slate-200'}`}>
+                                                        {team?.name}
+                                                    </span>
                                                     {(isArgentina || isPrimeraNacional) && row.zone && (argView === 'TABLA_ANUAL' || argView === 'PROMEDIOS' || argView === 'TABLA_GENERAL') && (
-                                                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-slate-400 border border-white/5">
-                                                            Zona {row.zone}
+                                                        <span className="text-[8px] sm:text-[9px] font-bold px-1 py-0.5 rounded bg-white/10 text-slate-400 shrink-0">
+                                                            Z{row.zone}
                                                         </span>
                                                     )}
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-3 py-4 text-center text-slate-400">{row.played}</td>
-                                        <td className="px-3 py-4 text-center text-slate-400">{row.won}</td>
-                                        <td className="px-3 py-4 text-center text-slate-400">{row.drawn}</td>
-                                        <td className="px-3 py-4 text-center text-slate-400">{row.lost}</td>
-                                        <td className="px-4 py-4"><div className="flex justify-center"><TeamForm form={row.form} /></div></td>
-                                        <td className={`px-3 py-4 text-center font-bold ${row.goalDifference > 0 ? 'text-green-400' : row.goalDifference < 0 ? 'text-red-400' : 'text-slate-400'}`}>
+                                        <td className="w-6 sm:w-8 px-0.5 py-2 sm:py-2.5 text-center text-slate-400">{row.played}</td>
+                                        <td className="w-6 sm:w-8 px-0.5 py-2 sm:py-2.5 text-center text-slate-400">{row.won}</td>
+                                        <td className="w-6 sm:w-8 px-0.5 py-2 sm:py-2.5 text-center text-slate-400">{row.drawn}</td>
+                                        <td className="w-6 sm:w-8 px-0.5 py-2 sm:py-2.5 text-center text-slate-400">{row.lost}</td>
+                                        <td className="hidden md:table-cell w-24 px-2 py-2 sm:py-2.5"><div className="flex justify-center"><TeamForm form={row.form} /></div></td>
+                                        <td className={`w-7 sm:w-10 px-0.5 py-2 sm:py-2.5 text-center font-bold ${row.goalDifference > 0 ? 'text-emerald-400' : row.goalDifference < 0 ? 'text-red-400' : 'text-slate-400'}`}>
                                             {row.goalDifference > 0 ? `+${row.goalDifference}` : row.goalDifference}
                                         </td>
                                         {isArgentina && argView === 'PROMEDIOS' && (
-                                            <td className="px-4 py-4 text-center font-bold text-cyan-400">
+                                            <td className="w-12 sm:w-14 px-1 py-2 sm:py-2.5 text-center font-bold text-cyan-400 text-[11px] sm:text-xs">
                                                 {promedioVal}
                                             </td>
                                         )}
-                                        <td className="px-4 py-4 text-center font-black text-white">{row.points}</td>
+                                        <td className="w-8 sm:w-12 px-1 py-2 sm:py-2.5 text-center font-black text-white">{row.points}</td>
                                     </tr>
                                 );
                             })}

@@ -29,18 +29,18 @@ export const EuropeanTable: React.FC<EuropeanTableProps> = ({
                 <h3 className="text-white font-bold text-lg uppercase tracking-wider">{title} (Fase de Liga Suiza)</h3>
             </div>
 
-            <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+            <div className="w-full overflow-hidden">
+                <table className="w-full table-fixed text-xs sm:text-sm">
                     <thead>
-                        <tr className={`bg-slate-800/50 text-slate-400 uppercase text-[10px] font-black tracking-widest border-b border-white/5`}>
-                            <th className="px-4 py-4 text-center">Pos</th>
-                            <th className="px-6 py-4 text-left">Club</th>
-                            <th className="px-3 py-4 text-center">PJ</th>
-                            <th className="px-3 py-4 text-center">G</th>
-                            <th className="px-3 py-4 text-center">E</th>
-                            <th className="px-3 py-4 text-center">P</th>
-                            <th className="px-3 py-4 text-center">DG</th>
-                            <th className="px-4 py-4 text-center">Pts</th>
+                        <tr className="bg-slate-800/60 text-slate-400 uppercase text-[9px] sm:text-[10px] font-black tracking-wider border-b border-white/10">
+                            <th className="w-7 sm:w-10 px-1 py-2.5 sm:py-3 text-center">Pos</th>
+                            <th className="px-2 py-2.5 sm:py-3 text-left">Club</th>
+                            <th className="w-6 sm:w-8 px-0.5 py-2.5 sm:py-3 text-center">PJ</th>
+                            <th className="w-6 sm:w-8 px-0.5 py-2.5 sm:py-3 text-center">G</th>
+                            <th className="w-6 sm:w-8 px-0.5 py-2.5 sm:py-3 text-center">E</th>
+                            <th className="w-6 sm:w-8 px-0.5 py-2.5 sm:py-3 text-center">P</th>
+                            <th className="w-7 sm:w-10 px-0.5 py-2.5 sm:py-3 text-center">DG</th>
+                            <th className="w-8 sm:w-12 px-1 py-2.5 sm:py-3 text-center font-black">Pts</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
@@ -56,27 +56,27 @@ export const EuropeanTable: React.FC<EuropeanTableProps> = ({
                             else { zoneColor = 'bg-red-500'; zoneLabel = 'Eliminado'; }
 
                             return (
-                                <tr key={row.teamId} className={`transition-all duration-200 ${isPlayerTeam ? 'bg-white/10' : 'hover:bg-white/5'}`}>
-                                    <td className="px-4 py-4 text-center relative">
-                                        <div className="flex items-center justify-center gap-2">
-                                            <span className={`font-bold ${isPlayerTeam ? 'text-white' : 'text-slate-400'}`}>{pos}</span>
-                                            {zoneColor && <div className={`w-1 h-6 ${zoneColor} rounded-full absolute left-2`} title={zoneLabel}></div>}
+                                <tr key={row.teamId} className={`transition-all duration-200 ${isPlayerTeam ? 'bg-amber-500/15 font-semibold' : 'hover:bg-white/5'}`}>
+                                    <td className="w-7 sm:w-10 px-1 py-2 sm:py-2.5 text-center relative">
+                                        <div className="flex items-center justify-center">
+                                            <span className={`font-bold ${isPlayerTeam ? 'text-amber-300' : 'text-slate-400'}`}>{pos}</span>
+                                            {zoneColor && <div className={`w-1 h-4 sm:h-5 ${zoneColor} rounded-full absolute left-1 sm:left-1.5`} title={zoneLabel}></div>}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 flex items-center justify-center"><TeamLogo team={team} /></div>
-                                            <span className={`font-bold ${isPlayerTeam ? 'text-white' : 'text-slate-200'}`}>{team?.name}</span>
+                                    <td className="px-2 py-2 sm:py-2.5 min-w-0">
+                                        <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
+                                            <div className="w-5 h-5 sm:w-7 sm:h-7 shrink-0 flex items-center justify-center"><TeamLogo team={team} /></div>
+                                            <span className={`font-bold truncate text-[11px] sm:text-xs md:text-sm ${isPlayerTeam ? 'text-white' : 'text-slate-200'}`}>{team?.name}</span>
                                         </div>
                                     </td>
-                                    <td className="px-3 py-4 text-center text-slate-400">{row.played}</td>
-                                    <td className="px-3 py-4 text-center text-slate-400">{row.won}</td>
-                                    <td className="px-3 py-4 text-center text-slate-400">{row.drawn}</td>
-                                    <td className="px-3 py-4 text-center text-slate-400">{row.lost}</td>
-                                    <td className={`px-3 py-4 text-center font-bold ${row.goalDifference > 0 ? 'text-green-400' : row.goalDifference < 0 ? 'text-red-400' : 'text-slate-400'}`}>
+                                    <td className="w-6 sm:w-8 px-0.5 py-2 sm:py-2.5 text-center text-slate-400">{row.played}</td>
+                                    <td className="w-6 sm:w-8 px-0.5 py-2 sm:py-2.5 text-center text-slate-400">{row.won}</td>
+                                    <td className="w-6 sm:w-8 px-0.5 py-2 sm:py-2.5 text-center text-slate-400">{row.drawn}</td>
+                                    <td className="w-6 sm:w-8 px-0.5 py-2 sm:py-2.5 text-center text-slate-400">{row.lost}</td>
+                                    <td className={`w-7 sm:w-10 px-0.5 py-2 sm:py-2.5 text-center font-bold ${row.goalDifference > 0 ? 'text-emerald-400' : row.goalDifference < 0 ? 'text-red-400' : 'text-slate-400'}`}>
                                         {row.goalDifference > 0 ? `+${row.goalDifference}` : row.goalDifference}
                                     </td>
-                                    <td className="px-4 py-4 text-center font-black text-white">{row.points}</td>
+                                    <td className="w-8 sm:w-12 px-1 py-2 sm:py-2.5 text-center font-black text-white">{row.points}</td>
                                 </tr>
                             );
                         })}

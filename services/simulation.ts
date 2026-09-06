@@ -548,16 +548,26 @@ export const generateArgentinePlayoffs = (
     startWeek: number
 ): Match[] => {
     // Top 8 of each zone
-    // Octavos pairings: 1ºA vs 8ºB, 1ºB vs 8ºA, 2ºA vs 7ºB, 2ºB vs 7ºA, 3ºA vs 6ºB, 3ºB vs 6ºA, 4ºA vs 5ºB, 4ºB vs 5ºA
+    // Standard bifurcated tournament pairings:
+    // Cuadro Izquierdo:
+    // Llave 1: 1ºA vs 8ºB
+    // Llave 2: 4ºA vs 5ºB (El ganador de Llave 1 y 2 juegan en Cuartos Izquierda 1)
+    // Llave 3: 2ºB vs 7ºA
+    // Llave 4: 3ºB vs 6ºA (El ganador de Llave 3 y 4 juegan en Cuartos Izquierda 2)
+    // Cuadro Derecho:
+    // Llave 5: 1ºB vs 8ºA
+    // Llave 6: 4ºB vs 5ºA (El ganador de Llave 5 y 6 juegan en Cuartos Derecha 1)
+    // Llave 7: 2ºA vs 7ºB
+    // Llave 8: 3ºA vs 6ºB (El ganador de Llave 7 y 8 juegan en Cuartos Derecha 2)
     const octavosPairings: [Team, Team][] = [
-        [sortedZoneA[0], sortedZoneB[7]],
-        [sortedZoneB[0], sortedZoneA[7]],
-        [sortedZoneA[1], sortedZoneB[6]],
-        [sortedZoneB[1], sortedZoneA[6]],
-        [sortedZoneA[2], sortedZoneB[5]],
-        [sortedZoneB[2], sortedZoneA[5]],
-        [sortedZoneA[3], sortedZoneB[4]],
-        [sortedZoneB[3], sortedZoneA[4]],
+        [sortedZoneA[0], sortedZoneB[7]], // Llave 1 (Izq)
+        [sortedZoneA[3], sortedZoneB[4]], // Llave 2 (Izq)
+        [sortedZoneB[1], sortedZoneA[6]], // Llave 3 (Izq)
+        [sortedZoneB[2], sortedZoneA[5]], // Llave 4 (Izq)
+        [sortedZoneB[0], sortedZoneA[7]], // Llave 5 (Der)
+        [sortedZoneB[3], sortedZoneA[4]], // Llave 6 (Der)
+        [sortedZoneA[1], sortedZoneB[6]], // Llave 7 (Der)
+        [sortedZoneA[2], sortedZoneB[5]], // Llave 8 (Der)
     ];
 
     return octavosPairings
@@ -838,12 +848,28 @@ export const advanceCupRound = (cup: CupCompetition, allTeams: Team[], nextWeek:
     if (cup.id === 'copa_del_rey') competitionType = 'Copa_Del_Rey';
     if (cup.id === 'dfb_pokal') competitionType = 'DFB_Pokal';
     if (cup.id === 'coppa_italia') competitionType = 'Coppa_Italia';
+    if (cup.id === 'copa_argentina') competitionType = 'Copa_Argentina';
+    if (cup.id === 'apertura_playoffs') competitionType = 'Playoffs_Apertura';
+    if (cup.id === 'clausura_playoffs') competitionType = 'Playoffs_Clausura';
+    if (cup.id === 'nacional_reducido') competitionType = 'Nacional_Reducido';
     if (cup.id === 'champions_league') competitionType = 'Champions_League';
     if (cup.id === 'europa_league') competitionType = 'Europa_League';
     if (cup.id === 'copa_libertadores') competitionType = 'Copa_Libertadores';
     if (cup.id === 'copa_intercontinental') competitionType = 'Copa_Intercontinental';
 
-    const nextRoundFixtures = generateCupDraw(winnerTeams, nextRoundName, competitionType);
+    // Pair winners in exact bracket tree order (Match 0 winner vs Match 1 winner, Match 2 vs Match 3, etc.)
+    const nextRoundFixtures: Match[] = [];
+    for (let i = 0; i < winnerTeams.length; i += 2) {
+        if (i + 1 < winnerTeams.length) {
+            nextRoundFixtures.push({
+                week: nextWeek,
+                homeTeamId: winnerTeams[i].id,
+                awayTeamId: winnerTeams[i + 1].id,
+                competition: competitionType,
+                isCupMatch: true
+            });
+        }
+    }
 
     // Assign week to next round fixtures
     const fixturesWithWeek = nextRoundFixtures.map(f => ({ ...f, week: nextWeek }));

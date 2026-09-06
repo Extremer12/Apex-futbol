@@ -127,15 +127,15 @@ export const CupView: React.FC<CupViewProps> = ({
                 </div>
             </div>
 
-            <div className="p-6">
+            <div className="p-3 sm:p-6">
                 {cupTab === 'ROUNDS' ? (
                     <div className="space-y-4">
                         {isFinished && winner && (
-                            <div className={`flex items-center gap-4 p-5 rounded-2xl border ${theme.border} bg-white/5 mb-6`}>
-                                <div className="w-12 h-12 shrink-0"><TrophyIcon className={`w-full h-full ${theme.accent}`} /></div>
+                            <div className={`flex items-center gap-4 p-4 sm:p-5 rounded-2xl border ${theme.border} bg-white/5 mb-4 sm:mb-6`}>
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 shrink-0"><TrophyIcon className={`w-full h-full ${theme.accent}`} /></div>
                                 <div>
                                     <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Campeón</p>
-                                    <p className="text-white font-black text-2xl">{winner.name}</p>
+                                    <p className="text-white font-black text-xl sm:text-2xl">{winner.name}</p>
                                 </div>
                             </div>
                         )}
@@ -145,7 +145,7 @@ export const CupView: React.FC<CupViewProps> = ({
                                 <p className="font-bold uppercase tracking-widest">La competición no ha comenzado</p>
                             </div>
                         )}
-                        <div className="overflow-x-auto pb-4">
+                        <div className="w-full overflow-hidden">
                             <TournamentBracket
                                 cup={cup}
                                 getTeamById={getTeamById}
