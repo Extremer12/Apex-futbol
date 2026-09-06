@@ -303,6 +303,47 @@ export function useSimulation(
                 });
             }
 
+            // Dynamic Match Report News for player's team
+            if (simulationResult.playerMatchResult) {
+                const match = simulationResult.playerMatchResult;
+                const isHome = match.homeTeam.id === gameState.team.id;
+                const playerTeam = isHome ? match.homeTeam : match.awayTeam;
+                const opponent = isHome ? match.awayTeam : match.homeTeam;
+                const userScore = isHome ? match.homeScore : match.awayScore;
+                const oppScore = isHome ? match.awayScore : match.homeScore;
+
+                let headline = '';
+                let body = '';
+
+                const goalEvents = match.events?.filter((e: any) => e.type === 'GOAL') || [];
+                const userScorers = goalEvents.filter((e: any) => (isHome && e.teamId === match.homeTeam.id) || (!isHome && e.teamId === match.awayTeam.id));
+                const topScorerName = userScorers[0]?.playerName || match.manOfTheMatch?.name;
+
+                if (userScore > oppScore) {
+                    if (userScore - oppScore >= 3) {
+                        headline = `🔥 Goleada contundente del ${playerTeam.name} (${userScore}-${oppScore})`;
+                        body = `Exhibición total de ${playerTeam.name} frente a ${opponent.name}. ${topScorerName ? `${topScorerName} brilló con luz propia` : 'El equipo brilló en todas sus líneas'} en una jornada memorable.`;
+                    } else {
+                        headline = `✅ ${playerTeam.name} suma tres puntos de oro ante ${opponent.name} (${userScore}-${oppScore})`;
+                        body = `Gran triunfo trabajado de ${playerTeam.name} para mantener la ilusión de la afición. ${topScorerName ? `Destacada actuación de ${topScorerName}.` : ''}`;
+                    }
+                } else if (userScore === oppScore) {
+                    headline = `🤝 Empate ${userScore}-${oppScore} entre ${playerTeam.name} y ${opponent.name}`;
+                    body = `Partido intenso y dividido en el que ambos equipos se repartieron los puntos tras 90 minutos de máxima disputa.`;
+                } else {
+                    headline = `❌ ${playerTeam.name} tropieza ${userScore}-${oppScore} ante ${opponent.name}`;
+                    body = `${playerTeam.name} no logró imponer su juego frente a ${opponent.name} y buscará reencontrarse con la victoria en la siguiente jornada.`;
+                }
+
+                newsToAdd.unshift({
+                    id: `match_news_${Date.now()}_${newWeek}`,
+                    headline,
+                    body,
+                    date: formatDate(newDate),
+                    type: 'standard'
+                });
+            }
+
             // Check for random events
             const triggeredEvent = eventEngine.triggerEvent(gameState);
             if (triggeredEvent) {

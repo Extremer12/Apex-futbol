@@ -49,31 +49,38 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
     const totalWages = playerTeamCopy.squad.reduce((sum, player) => sum + player.wage, 0);
     const weeklyIncome = getBaseWeeklyIncome(selectedTeam.leagueId); // Dynamic based on league
 
-    // Create tutorial news
-    const tutorialNews: NewsItem[] = [
+    // Generate club-tailored initial news
+    const starPlayer = [...playerTeamCopy.squad].sort((a, b) => b.rating - a.rating)[0];
+    const initialStadium = generateStadium(playerTeamCopy);
+
+    const initialNews: NewsItem[] = [
         {
-            id: 'tutorial-4',
-            headline: 'La Cantera te Espera',
-            body: 'Hemos ojeado a jóvenes promesas. Revisa la pestaña "Cantera" en tu Plantilla para ver a las futuras estrellas.',
-            date: formatDate(now)
+            id: `init-news-1-${Date.now()}`,
+            headline: `${playerTeamCopy.name} inicia una nueva era con ${playerProfile?.name || 'su nuevo presidente'}`,
+            body: `La afición y la directiva de ${playerTeamCopy.name} dan la bienvenida al nuevo proyecto. Máxima ilusión de cara a los retos de la presente temporada.`,
+            date: formatDate(now),
+            type: 'standard'
         },
         {
-            id: 'tutorial-3',
-            headline: '¡Comienza la Temporada!',
-            body: 'La nueva temporada está sobre nosotros. ¡Es hora de llevar a este club a la gloria! Buena suerte, Presidente.',
-            date: formatDate(now)
+            id: `init-news-2-${Date.now()}`,
+            headline: `El ${initialStadium.name} se prepara para el estreno liguero`,
+            body: `Con una capacidad para ${initialStadium.capacity.toLocaleString()} espectadores, las gradas esperan un gran aforo en el debut oficial de la campaña.`,
+            date: formatDate(now),
+            type: 'standard'
         },
         {
-            id: 'tutorial-2',
-            headline: 'Consejo del Día: Mercado de Fichajes',
-            body: `Utiliza la pantalla de 'Fichajes' para ojear jugadores y fortalecer tu equipo. Un buen fichaje puede cambiar tu temporada.`,
-            date: formatDate(now)
+            id: `init-news-3-${Date.now()}`,
+            headline: `${starPlayer ? starPlayer.name : 'La plantilla'} asume el liderazgo en ${playerTeamCopy.name}`,
+            body: `Las miradas se posan sobre ${starPlayer ? starPlayer.name : 'las figuras del equipo'} para marcar diferencias en el terreno de juego desde la primera fecha.`,
+            date: formatDate(now),
+            type: 'standard'
         },
         {
-            id: 'tutorial-1',
-            headline: `Bienvenido a ${selectedTeam.name}`,
-            body: `¡Felicidades por tu elección, ${playerProfile?.name}! La junta y los aficionados confían en ti. El primer paso es revisar tu 'Plantilla' actual.`,
-            date: formatDate(now)
+            id: `init-news-4-${Date.now()}`,
+            headline: 'La Cantera y la Dirección Deportiva afinan los últimos detalles',
+            body: `Se han incorporado jóvenes promesas al filial y se monitorea el mercado de fichajes para reforzar las posiciones clave.`,
+            date: formatDate(now),
+            type: 'standard'
         },
     ];
 
@@ -124,7 +131,7 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
         currentDate: now,
         currentWeek: 0,
         season: 2024,
-        newsFeed: tutorialNews,
+        newsFeed: initialNews,
         schedule: initialSchedule,
         leagueTables: {
             [LeagueId.PREMIER_LEAGUE]: createInitialLeagueTable(plTeams),

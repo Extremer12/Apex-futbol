@@ -5,6 +5,7 @@ import { formatDate, formatCurrencyShort } from '../../utils';
 import { TeamLogo } from '../../data/teams/helpers';
 import { UserBadge } from '../auth/UserBadge';
 import { CommunityPacksModal } from './CommunityPacksModal';
+import { Shield } from 'lucide-react';
 
 interface HeaderProps {
     gameState: GameState;
@@ -16,59 +17,62 @@ export const Header: React.FC<HeaderProps> = ({ gameState }) => {
     return (
         <>
             <CommunityPacksModal isOpen={isPacksOpen} onClose={() => setIsPacksOpen(false)} />
-            <header className="sticky top-0 z-30 pt-safe" style={{ background: 'rgba(10,14,23,0.85)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderBottom: '1px solid var(--apex-border)' }}>
-        <div className="max-w-7xl mx-auto px-5 py-3">
-            <div className="flex justify-between items-center">
-                {/* Team Info */}
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 flex items-center justify-center rounded-xl p-1.5"
-                         style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--apex-border)' }}>
-                        <TeamLogo team={gameState.team} />
-                    </div>
-                    <div>
-                        <h1 className="text-base font-extrabold tracking-tight text-white uppercase leading-none mb-1">
-                            {gameState.team.name}
-                        </h1>
-                        <p className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: 'var(--apex-text-secondary)' }}>
-                            Temporada {gameState.season}
-                        </p>
+            <header 
+                className="sticky top-0 z-30 pt-safe backdrop-blur-2xl bg-[#0A0E17]/80 border-b border-white/[0.06] transition-all"
+            >
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5">
+                    <div className="flex justify-between items-center">
+                        {/* Team Info - Direct & Clean, without nested container boxes */}
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 shrink-0 flex items-center justify-center">
+                                <TeamLogo team={gameState.team} className="w-9 h-9 object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]" />
+                            </div>
+                            <div>
+                                <h1 className="text-sm sm:text-base font-black tracking-tight text-white uppercase leading-none mb-1 truncate max-w-[150px] sm:max-w-xs">
+                                    {gameState.team.name}
+                                </h1>
+                                <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40">
+                                    Temporada {gameState.season} • Sem {gameState.currentWeek}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Info & Actions - Sleek typography without unnecessary boxes */}
+                        <div className="flex items-center gap-4 sm:gap-6">
+                            {/* Date */}
+                            <div className="hidden md:flex flex-col items-end">
+                                <span className="text-[8px] font-bold uppercase tracking-[0.15em] text-white/30">Fecha</span>
+                                <span className="text-[11px] font-extrabold text-white/90">{formatDate(gameState.currentDate)}</span>
+                            </div>
+
+                            {/* Balance */}
+                            <div className="flex flex-col items-end">
+                                <span className="text-[8px] font-bold uppercase tracking-[0.15em] text-[var(--apex-gold)]/60">Saldo</span>
+                                <AnimatedNumber
+                                    value={gameState.finances.balance}
+                                    formatter={(n) => formatCurrencyShort(n)}
+                                    className="text-xs sm:text-sm font-black text-[var(--apex-gold)] drop-shadow-sm"
+                                />
+                            </div>
+
+                            {/* Packs & Logos Action */}
+                            <button
+                                onClick={() => setIsPacksOpen(true)}
+                                className="flex items-center gap-1.5 p-1.5 sm:px-2.5 sm:py-1 rounded-lg text-white/60 hover:text-[var(--apex-gold)] hover:bg-white/[0.05] transition-all cursor-pointer group"
+                                title="Gestionar escudos y logos reales"
+                            >
+                                <Shield className="w-4 h-4 text-white/40 group-hover:text-[var(--apex-gold)] transition-colors" />
+                                <span className="hidden sm:inline text-[9px] font-extrabold uppercase tracking-wider text-white/60 group-hover:text-white transition-colors">
+                                    Logos
+                                </span>
+                            </button>
+
+                            {/* Supabase User Badge */}
+                            <UserBadge />
+                        </div>
                     </div>
                 </div>
-
-                {/* Info Cards */}
-                <div className="flex items-center gap-2">
-                    {/* Date & Week */}
-                    <div className="hidden sm:flex flex-col items-end px-3 py-1.5 rounded-lg" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--apex-border)' }}>
-                        <p className="text-[8px] font-bold uppercase tracking-[0.15em]" style={{ color: 'var(--apex-text-muted)' }}>Semana {gameState.currentWeek}</p>
-                        <p className="text-[10px] font-extrabold text-white">{formatDate(gameState.currentDate)}</p>
-                    </div>
-
-                    {/* Balance */}
-                    <div className="flex flex-col items-end px-3 py-1.5 rounded-lg" style={{ background: 'rgba(200,168,78,0.05)', border: '1px solid var(--apex-border)' }}>
-                        <p className="text-[8px] font-bold uppercase tracking-[0.15em]" style={{ color: 'var(--apex-text-muted)' }}>Saldo</p>
-                        <AnimatedNumber
-                            value={gameState.finances.balance}
-                            formatter={(n) => formatCurrencyShort(n)}
-                            className="text-[11px] font-extrabold text-gold-gradient uppercase"
-                        />
-                    </div>
-
-                    {/* Community Packs & Logos Button */}
-                    <button
-                        onClick={() => setIsPacksOpen(true)}
-                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-[var(--apex-gold)]/30 bg-[var(--apex-gold)]/10 hover:bg-[var(--apex-gold)]/20 text-[var(--apex-gold)] transition-all shadow-sm"
-                        title="Gestionar escudos y logos reales"
-                    >
-                        <span className="text-xs">🛡️</span>
-                        <span className="hidden sm:inline text-[9px] font-black uppercase tracking-wider">Logos</span>
-                    </button>
-
-                    {/* Supabase User & Cloud Sync Badge */}
-                    <UserBadge />
-                </div>
-            </div>
-        </div>
-    </header>
-    </>
+            </header>
+        </>
     );
 };

@@ -107,25 +107,34 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     />
                 </div>
 
-                <StadiumRevenueCard />
+                <StadiumRevenueCard gameState={gameState} />
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                     {/* News */}
                     <div className="lg:col-span-7 apex-card overflow-hidden">
                         <div className="p-4 border-b border-white/5 bg-black/20 flex justify-between items-center">
                             <span className="text-[9px] font-black tracking-[0.2em] text-white/40 uppercase">Últimas Noticias</span>
+                            <span className="text-[9px] text-white/30 font-bold uppercase">{gameState.newsFeed.length} registradas</span>
                         </div>
                         <div className="p-5 space-y-6">
                             {gameState.newsFeed.slice(0, 3).map((item, idx) => (
                                 <div key={item.id} className="flex gap-4 group cursor-pointer">
-                                    <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 border border-white/10">
+                                    <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 border border-white/10 bg-black/40">
                                         <img 
                                             src={`https://images.unsplash.com/photo-${idx === 0 ? '1574629810360-7efbbe195018' : idx === 1 ? '1511886929837-354d827aae26' : '1522778119026-d647f0596c20'}?auto=format&fit=crop&q=80&w=400`} 
                                             alt="News" 
                                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+                                            onError={(e) => {
+                                                (e.target as HTMLImageElement).src = '/sinlogo.png';
+                                            }}
                                         />
                                     </div>
                                     <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className="text-[8px] font-extrabold uppercase tracking-wider text-[var(--apex-gold)] bg-[var(--apex-gold)]/10 px-1.5 py-0.5 rounded">
+                                                {item.date || 'Actualidad'}
+                                            </span>
+                                        </div>
                                         <h4 className="text-sm font-black text-white leading-tight group-hover:text-[var(--apex-gold)] transition-colors mb-1">{item.headline}</h4>
                                         <p className="text-[10px] text-white/50 line-clamp-2">
                                             <LinkedText text={item.body} players={allPlayers} onPlayerClick={handlePlayerClick} />
@@ -141,23 +150,47 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         <div className="p-4 border-b border-white/5 bg-black/20 flex justify-between items-center">
                             <span className="text-[9px] font-black tracking-[0.2em] text-white/40 uppercase">Actualizaciones de Mercado</span>
                         </div>
-                        <div className="p-4 space-y-4">
-                            {[
-                                { name: 'J. Bellingham', pos: 'MC', club: 'Real Madrid', type: 'Objetivo' },
-                                { name: 'A. Davies', pos: 'LI', club: 'Bayern München', type: 'Objetivo' },
-                                { name: 'V. Osimhen', pos: 'DC', club: 'Napoli', type: 'Rumor' }
-                            ].map((p, i) => (
-                                <div key={i} className="flex items-center gap-4 p-3 bg-black/20 rounded-xl border border-white/5 hover:border-white/10 transition-colors cursor-pointer group">
-                                    <img src={getPlayerImage(p.name)} alt={p.name} className="w-12 h-12 rounded-full border-2 border-white/10 bg-slate-800" />
-                                    <div className="flex-1">
-                                        <div className="text-xs font-black text-white group-hover:text-[var(--apex-gold)]">{p.name}</div>
-                                        <div className="text-[9px] text-white/40 font-bold uppercase">{p.pos} • {p.club}</div>
+                        <div className="p-4 space-y-3">
+                            {(() => {
+                                const playerTeamId = gameState.team.id;
+                                const otherTeams = gameState.allTeams.filter(t => t.id !== playerTeamId);
+                                const otherPlayers = otherTeams.flatMap(t => t.squad.map(p => ({ ...p, clubName: t.name })));
+                                const targets = otherPlayers
+                                    .filter(p => p.rating >= 80)
+                                    .slice(0, 3);
+
+                                const displayList = targets.length >= 3 ? targets : [
+                                    { id: 9901, name: 'K. Mbappé', position: 'DEL', clubName: 'Real Madrid', rating: 92 },
+                                    { id: 9902, name: 'H. Kane', position: 'DEL', clubName: 'Bayern München', rating: 90 },
+                                    { id: 9903, name: 'F. Wirtz', position: 'CEN', clubName: 'Bayer Leverkusen', rating: 88 }
+                                ];
+
+                                return displayList.map((p, i) => (
+                                    <div 
+                                        key={p.id || i} 
+                                        onClick={() => handlePlayerClick(p.name)}
+                                        className="flex items-center gap-3 p-2.5 bg-black/20 rounded-xl border border-white/5 hover:border-white/10 transition-colors cursor-pointer group"
+                                    >
+                                        <div className="w-10 h-10 rounded-full border border-white/10 bg-slate-800 flex items-center justify-center shrink-0 overflow-hidden">
+                                            <img 
+                                                src={getPlayerImage(p.name)} 
+                                                alt={p.name} 
+                                                className="w-full h-full object-cover" 
+                                                onError={(e) => {
+                                                    (e.target as HTMLImageElement).src = '/sinrostro.png';
+                                                }}
+                                            />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="text-xs font-black text-white group-hover:text-[var(--apex-gold)] truncate">{p.name}</div>
+                                            <div className="text-[9px] text-white/40 font-bold uppercase truncate">{p.position} • {p.clubName}</div>
+                                        </div>
+                                        <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase shrink-0 ${i % 2 === 0 ? 'bg-[var(--apex-green)]/10 text-[var(--apex-green)]' : 'bg-orange-500/10 text-orange-400'}`}>
+                                            {i % 2 === 0 ? 'Objetivo' : 'Rumor'}
+                                        </span>
                                     </div>
-                                    <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${p.type === 'Objetivo' ? 'bg-[var(--apex-green)]/10 text-[var(--apex-green)]' : 'bg-orange-500/10 text-orange-400'}`}>
-                                        {p.type}
-                                    </span>
-                                </div>
-                            ))}
+                                ));
+                            })()}
                         </div>
                     </div>
                 </div>
