@@ -374,6 +374,42 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
     return { homeScore, awayScore, events, scorers, penalties: penaltiesResult };
 };
 
+// Helper to generate a round-robin schedule for a single league
+export const generateLeagueSchedule = (teams: Team[], leagueId: string): Match[] => {
+    const teamIds = teams.map(t => t.id);
+    if (teamIds.length % 2 !== 0) return []; // Should handle odd teams with byes ideally
+    const schedule: Match[] = [];
+    const numWeeks = teamIds.length - 1;
+    const halfSeasonSize = teamIds.length / 2;
+    const teamsSlice = teamIds.slice(1);
+
+    for (let week = 0; week < numWeeks; week++) {
+        const weekFixtures: { home: number, away: number }[] = [];
+        const awayTeamIndex = week % teamsSlice.length;
+        weekFixtures.push({ home: teamIds[0], away: teamsSlice[awayTeamIndex] });
+        for (let i = 1; i < halfSeasonSize; i++) {
+            const homeIndex = (week + i) % teamsSlice.length;
+            const awayIndex = (week + teamsSlice.length - i) % teamsSlice.length;
+            weekFixtures.push({ home: teamsSlice[homeIndex], away: teamsSlice[awayIndex] });
+        }
+        weekFixtures.forEach(fixture => schedule.push({
+            week: week + 1,
+            homeTeamId: fixture.home,
+            awayTeamId: fixture.away,
+            competition: 'League' as const,
+            isCupMatch: false
+        }));
+    }
+    const secondHalf = schedule.map(match => ({
+        week: match.week + numWeeks,
+        homeTeamId: match.awayTeamId,
+        awayTeamId: match.homeTeamId,
+        competition: 'League' as const,
+        isCupMatch: false
+    }));
+    return [...schedule, ...secondHalf];
+};
+
 // Helper to generate Argentine 2026 30-team format schedule (Apertura & Clausura)
 export const generateArgentineTournamentSchedule = (teams: Team[]): Match[] => {
     const zoneA = teams.filter(t => t.zone === 'A');
