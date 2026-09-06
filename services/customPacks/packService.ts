@@ -189,6 +189,62 @@ class CustomPacksService {
     }
 
     /**
+     * Download with automatic CORS fallback
+     */
+    private async fetchBlobWithFallback(
+        url: string,
+        onDownloadProgress?: (mb: string, totalMb: string, pct: number) => void
+    ): Promise<Blob> {
+        const candidateUrls = [
+            url,
+            `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+            `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
+        ];
+
+        let lastError: any = null;
+
+        for (let i = 0; i < candidateUrls.length; i++) {
+            const currentUrl = candidateUrls[i];
+            try {
+                const response = await fetch(currentUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const contentLength = +(response.headers.get('Content-Length') || 0);
+
+                if (response.body && contentLength > 0) {
+                    const reader = response.body.getReader();
+                    const chunks: Uint8Array[] = [];
+                    let receivedLength = 0;
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        chunks.push(value);
+                        receivedLength += value.length;
+                        const pct = Math.min(45, Math.round((receivedLength / contentLength) * 45));
+                        const mb = (receivedLength / (1024 * 1024)).toFixed(1);
+                        const totalMb = (contentLength / (1024 * 1024)).toFixed(1);
+                        onDownloadProgress?.(mb, totalMb, pct);
+                    }
+
+                    return new Blob(chunks);
+                } else {
+                    return await response.blob();
+                }
+            } catch (err: any) {
+                console.warn(`Fetch candidate ${i + 1} (${currentUrl}) failed:`, err);
+                lastError = err;
+            }
+        }
+
+        throw new Error(
+            `No se pudo descargar automáticamente el archivo desde GitHub (${lastError?.message || 'CORS / Network Error'}). Puedes descargar el .zip desde tu navegador y cargarlo aquí abajo.`
+        );
+    }
+
+    /**
      * Download and Import a remote .ZIP file pack
      */
     public async downloadAndImportZipPack(
@@ -197,35 +253,9 @@ class CustomPacksService {
     ): Promise<{ importedCount: number; errors: string[] }> {
         onProgress?.(3, 'Conectando con el repositorio del paquete...');
         
-        const response = await fetch(zipUrl);
-        if (!response.ok) {
-            throw new Error(`Error al descargar el archivo ZIP (${response.status}: ${response.statusText})`);
-        }
-
-        const contentLength = +(response.headers.get('Content-Length') || 0);
-        let blob: Blob;
-
-        if (response.body && contentLength > 0) {
-            const reader = response.body.getReader();
-            const chunks: Uint8Array[] = [];
-            let receivedLength = 0;
-
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                chunks.push(value);
-                receivedLength += value.length;
-                const downloadPct = Math.min(45, Math.round((receivedLength / contentLength) * 45));
-                const mb = (receivedLength / (1024 * 1024)).toFixed(1);
-                const totalMb = (contentLength / (1024 * 1024)).toFixed(1);
-                onProgress?.(downloadPct, `Descargando pack (${mb}MB / ${totalMb}MB)...`);
-            }
-
-            blob = new Blob(chunks);
-        } else {
-            onProgress?.(20, 'Descargando paquete comunitario...');
-            blob = await response.blob();
-        }
+        const blob = await this.fetchBlobWithFallback(zipUrl, (mb, totalMb, pct) => {
+            onProgress?.(pct, `Descargando pack (${mb}MB / ${totalMb}MB)...`);
+        });
 
         onProgress?.(48, 'Descarga completada. Descomprimiendo escudos...');
         return await this.importZipPack(blob, (pct, status) => {

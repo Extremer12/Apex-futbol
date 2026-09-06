@@ -48,37 +48,24 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onNewGame, onLoadGameS
     if (currentView === 'PACKS') {
         return (
             <div className="min-h-screen bg-[#0A0E17] text-white flex flex-col animate-fade-in relative z-50">
-                {/* Full-screen top header */}
-                <header className="sticky top-0 z-30 bg-[#0F1423]/90 backdrop-blur-xl border-b border-white/10 px-6 py-4">
-                    <div className="max-w-6xl mx-auto flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <button
-                                onClick={() => setCurrentView('MENU')}
-                                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[var(--apex-gold)] text-white text-xs font-black uppercase tracking-wider transition-all active:scale-95"
-                            >
-                                <ArrowLeft className="w-4 h-4 text-[var(--apex-gold)]" />
-                                <span>Volver al Menú</span>
-                            </button>
-                            <div className="h-6 w-px bg-white/10 hidden sm:block" />
-                            <div>
-                                <h1 className="text-base sm:text-lg font-black text-white uppercase tracking-tight flex items-center gap-2">
-                                    <span>Packs y Logos Reales</span>
-                                    <span className="px-2 py-0.5 rounded text-[9px] font-black bg-[var(--apex-gold)]/20 text-[var(--apex-gold)] border border-[var(--apex-gold)]/30 uppercase tracking-widest">
-                                        Comunidad
-                                    </span>
-                                </h1>
-                                <p className="text-[11px] text-slate-400 hidden sm:block">
-                                    Gestor de escudos oficiales, trofeos de copa y fotos reales de futbolistas
-                                </p>
-                            </div>
-                        </div>
-
-                        <UserBadge />
+                {/* Clean Top Header (Solo flecha y título, sin foto de perfil ni cajas redundantes) */}
+                <header className="sticky top-0 z-30 bg-[#0A0E17]/95 backdrop-blur-xl border-b border-white/5 px-4 sm:px-6 py-3">
+                    <div className="max-w-2xl mx-auto flex items-center gap-3">
+                        <button
+                            onClick={() => setCurrentView('MENU')}
+                            className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-all active:scale-95 cursor-pointer"
+                            title="Volver al menú"
+                        >
+                            <ArrowLeft className="w-5 h-5 text-[var(--apex-gold)]" />
+                        </button>
+                        <h1 className="text-sm sm:text-base font-black text-white uppercase tracking-tight">
+                            Packs y Escudos Reales
+                        </h1>
                     </div>
                 </header>
 
                 {/* Full-screen Content Container */}
-                <main className="flex-1 max-w-6xl mx-auto w-full p-6 sm:p-8 space-y-6">
+                <main className="flex-1 max-w-2xl mx-auto w-full p-4 sm:p-6">
                     <CommunityPacksSection />
                 </main>
             </div>
