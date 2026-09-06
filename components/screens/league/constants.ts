@@ -84,6 +84,7 @@ export const ALL_COMPETITIONS: CompetitionItem[] = [
 
     // Alemania
     { id: 'BUNDESLIGA', name: 'Bundesliga', type: 'LEAGUE', logo: LEAGUE_LOGOS.BUNDESLIGA, country: 'Alemania', flagUrl: 'https://flagcdn.com/de.svg', category: 'DOMESTIC', isFirstDiv: true },
+    { id: 'ZWEITE_BUNDESLIGA', name: '2. Bundesliga', type: 'LEAGUE', logo: LEAGUE_LOGOS.ZWEITE_BUNDESLIGA, country: 'Alemania', flagUrl: 'https://flagcdn.com/de.svg', category: 'DOMESTIC', isFirstDiv: false },
     { id: 'DFB_POKAL', name: 'DFB-Pokal', type: 'CUP', logo: CUP_LOGOS.dfb_pokal, country: 'Alemania', flagUrl: 'https://flagcdn.com/de.svg', category: 'DOMESTIC', cupKey: 'dfbPokal' },
 
     // Italia
