@@ -90,7 +90,7 @@ class CustomPacksService {
      * Import a .ZIP file containing folders like /teams/, /competitions/, /players/
      */
     public async importZipPack(
-        file: File,
+        file: File | Blob,
         onProgress?: (progressPercent: number, statusText: string) => void
     ): Promise<{ importedCount: number; errors: string[] }> {
         onProgress?.(5, 'Leyendo archivo ZIP...');
@@ -111,12 +111,12 @@ class CustomPacksService {
         for (const filePath of entries) {
             processed++;
             const pct = Math.round(10 + (processed / totalFiles) * 75);
-            onProgress?.(pct, `Procesando (${processed}/${totalFiles}): ${filePath}`);
+            onProgress?.(pct, `Procesando (${processed}/${totalFiles}): ${filePath.split('/').pop()}`);
 
             const zipEntry = loadedZip.files[filePath];
             const lowerPath = filePath.toLowerCase();
 
-            // Validate image extension
+            // Validate image extension (.png, .svg, .jpg, .jpeg, .webp, .gif)
             if (!/\.(png|jpg|jpeg|svg|webp|gif)$/i.test(lowerPath)) {
                 continue;
             }
@@ -129,7 +129,7 @@ class CustomPacksService {
                 category = 'players';
             }
 
-            // Extract file name without directory
+            // Extract file name without directory (e.g. logos/spain/la-liga/barcelona.png -> barcelona.png)
             const fileName = filePath.split('/').pop() || filePath;
             const normalizedIdentifier = normalizeKey(fileName);
             const rawSlug = fileName.toLowerCase().replace(/\.(png|jpg|jpeg|svg|webp|gif)$/i, '').replace(/[^a-z0-9]/g, '');
@@ -142,6 +142,13 @@ class CustomPacksService {
             try {
                 const blob = await zipEntry.async('blob');
                 const now = Date.now();
+                const mimeType = lowerPath.endsWith('.svg') 
+                    ? 'image/svg+xml' 
+                    : lowerPath.endsWith('.webp')
+                    ? 'image/webp'
+                    : lowerPath.endsWith('.jpg') || lowerPath.endsWith('.jpeg')
+                    ? 'image/jpeg'
+                    : 'image/png';
 
                 // Save by normalized identifier
                 if (normalizedIdentifier) {
@@ -150,7 +157,7 @@ class CustomPacksService {
                         category,
                         identifier: normalizedIdentifier,
                         blob,
-                        mimeType: blob.type || 'image/png',
+                        mimeType,
                         updatedAt: now
                     });
                 }
@@ -162,7 +169,7 @@ class CustomPacksService {
                         category,
                         identifier: rawSlug,
                         blob,
-                        mimeType: blob.type || 'image/png',
+                        mimeType,
                         updatedAt: now
                     });
                 }
@@ -171,7 +178,7 @@ class CustomPacksService {
             }
         }
 
-        onProgress?.(90, 'Guardando en base de datos local...');
+        onProgress?.(90, 'Guardando en almacenamiento local del dispositivo...');
         await saveStoredAssetsBatch(assetsToSave);
 
         onProgress?.(98, 'Actualizando interfaz...');
@@ -179,6 +186,52 @@ class CustomPacksService {
 
         onProgress?.(100, '¡Pack importado exitosamente!');
         return { importedCount: assetsToSave.length, errors };
+    }
+
+    /**
+     * Download and Import a remote .ZIP file pack
+     */
+    public async downloadAndImportZipPack(
+        zipUrl: string,
+        onProgress?: (progressPercent: number, statusText: string) => void
+    ): Promise<{ importedCount: number; errors: string[] }> {
+        onProgress?.(3, 'Conectando con el repositorio del paquete...');
+        
+        const response = await fetch(zipUrl);
+        if (!response.ok) {
+            throw new Error(`Error al descargar el archivo ZIP (${response.status}: ${response.statusText})`);
+        }
+
+        const contentLength = +(response.headers.get('Content-Length') || 0);
+        let blob: Blob;
+
+        if (response.body && contentLength > 0) {
+            const reader = response.body.getReader();
+            const chunks: Uint8Array[] = [];
+            let receivedLength = 0;
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                chunks.push(value);
+                receivedLength += value.length;
+                const downloadPct = Math.min(45, Math.round((receivedLength / contentLength) * 45));
+                const mb = (receivedLength / (1024 * 1024)).toFixed(1);
+                const totalMb = (contentLength / (1024 * 1024)).toFixed(1);
+                onProgress?.(downloadPct, `Descargando pack (${mb}MB / ${totalMb}MB)...`);
+            }
+
+            blob = new Blob(chunks);
+        } else {
+            onProgress?.(20, 'Descargando paquete comunitario...');
+            blob = await response.blob();
+        }
+
+        onProgress?.(48, 'Descarga completada. Descomprimiendo escudos...');
+        return await this.importZipPack(blob, (pct, status) => {
+            const mappedPct = Math.min(100, Math.round(50 + (pct * 0.5)));
+            onProgress?.(mappedPct, status);
+        });
     }
 
     /**

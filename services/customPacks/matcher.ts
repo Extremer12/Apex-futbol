@@ -3,7 +3,10 @@
 export function normalizeKey(str: string): string {
     if (!str) return '';
     
-    return str
+    // Always extract only the filename in case a full path was passed
+    const fileName = str.split(/[\\/]/).pop() || str;
+
+    return fileName
         .toLowerCase()
         // Strip accents/diacritics: á -> a, é -> e, ñ -> n
         .normalize('NFD')

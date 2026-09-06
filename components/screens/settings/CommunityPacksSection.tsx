@@ -13,6 +13,8 @@ interface CommunityPackEntry {
     category: string;
 }
 
+const OFFICIAL_COMMUNITY_PACK_URL = 'https://github.com/Extremer12/community-data-packs/releases/download/v1.0.0/football-logos-master.zip';
+
 export const CommunityPacksSection: React.FC = () => {
     const [stats, setStats] = useState({ teams: 0, competitions: 0, players: 0, total: 0 });
     const [isProcessing, setIsProcessing] = useState(false);
@@ -56,6 +58,36 @@ export const CommunityPacksSection: React.FC = () => {
         const unsubscribe = customPacksService.subscribe(refreshStats);
         return () => unsubscribe();
     }, []);
+
+    const handleInstallOfficialPack = async () => {
+        setIsProcessing(true);
+        setProgressPercent(0);
+        setProgressStatus('Iniciando conexión con GitHub Releases...');
+        setFeedbackMessage(null);
+
+        try {
+            const result = await customPacksService.downloadAndImportZipPack(
+                OFFICIAL_COMMUNITY_PACK_URL,
+                (pct, status) => {
+                    setProgressPercent(pct);
+                    setProgressStatus(status);
+                }
+            );
+
+            setFeedbackMessage({
+                type: 'success',
+                text: `¡Éxito! Se descargó e instaló el Pack Oficial de la Comunidad (${result.importedCount} escudos aplicados en tu dispositivo).`
+            });
+            await refreshStats();
+        } catch (err: any) {
+            setFeedbackMessage({
+                type: 'error',
+                text: err.message || 'Error al descargar o instalar el paquete oficial.'
+            });
+        } finally {
+            setIsProcessing(false);
+        }
+    };
 
     const handleFileSelect = async (file: File) => {
         if (!file.name.toLowerCase().endsWith('.zip')) {
@@ -214,7 +246,7 @@ export const CommunityPacksSection: React.FC = () => {
                 </div>
                 <button
                     onClick={() => setShowHelpGuide(!showHelpGuide)}
-                    className="text-xs text-[var(--apex-gold)] hover:underline font-bold uppercase tracking-wider self-start sm:self-auto"
+                    className="text-xs text-[var(--apex-gold)] hover:underline font-bold uppercase tracking-wider self-start sm:self-auto cursor-pointer"
                 >
                     {showHelpGuide ? 'Ocultar Guía' : '¿Cómo nombrar los archivos?'}
                 </button>
@@ -266,56 +298,57 @@ export const CommunityPacksSection: React.FC = () => {
                 </div>
             </div>
 
-            {/* Zona Drag & Drop para .ZIP */}
-            <div
-                onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
-                onDragLeave={() => setIsDragOver(false)}
-                onDrop={(e) => {
-                    e.preventDefault();
-                    setIsDragOver(false);
-                    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                        handleFileSelect(e.dataTransfer.files[0]);
-                    }
-                }}
-                className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center transition-all duration-200 cursor-pointer ${
-                    isDragOver 
-                        ? 'border-[var(--apex-gold)] bg-[var(--apex-gold)]/10 scale-[1.01]' 
-                        : 'border-white/15 bg-slate-950/40 hover:border-white/30 hover:bg-slate-950/60'
-                }`}
-                onClick={() => fileInputRef.current?.click()}
-            >
-                <input 
-                    type="file" 
-                    ref={fileInputRef} 
-                    onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])} 
-                    accept=".zip" 
-                    className="hidden" 
-                />
-                <TrophyIcon className="w-12 h-12 text-[var(--apex-gold)] opacity-70 mb-3" />
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-1">
-                    Arrastra tu archivo .ZIP de logos aquí
-                </h3>
-                <p className="text-xs text-slate-400 mb-4">
-                    o haz clic para examinar en tu dispositivo (soporta miles de escudos e imágenes)
-                </p>
-                <button 
-                    type="button" 
-                    className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-colors"
-                >
-                    Seleccionar Archivo .ZIP
-                </button>
+            {/* 🌟 Botón Destacado: Instalador en 1 Clic Estilo Super Kickoff */}
+            <div className="relative overflow-hidden rounded-2xl border border-[var(--apex-gold)]/40 bg-gradient-to-br from-[var(--apex-gold)]/15 via-slate-900/90 to-slate-950 p-6 shadow-2xl">
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+                    <div className="space-y-1.5 flex-1">
+                        <div className="flex items-center gap-2">
+                            <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-[var(--apex-gold)] text-slate-950">
+                                Recomendado • 1 Clic
+                            </span>
+                            <span className="text-[10px] font-bold text-sky-400">GitHub Release Oficial v1.0.0</span>
+                        </div>
+                        <h3 className="text-base sm:text-lg font-black text-white uppercase tracking-tight">
+                            Pack Oficial de la Comunidad (Escudos y Ligas)
+                        </h3>
+                        <p className="text-xs text-slate-300 leading-relaxed">
+                            Descarga e instala automáticamente el paquete completo de logos de clubes y competiciones en el almacenamiento de tu dispositivo.
+                        </p>
+                    </div>
+
+                    <button
+                        onClick={handleInstallOfficialPack}
+                        disabled={isProcessing}
+                        className="px-6 py-3.5 bg-gradient-to-r from-[var(--apex-gold)] via-yellow-400 to-[var(--apex-gold)] hover:from-yellow-300 hover:to-yellow-500 disabled:opacity-50 text-slate-950 text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-[var(--apex-gold)]/20 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2.5 flex-shrink-0 cursor-pointer"
+                    >
+                        {isProcessing ? (
+                            <>
+                                <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                                <span>Instalando...</span>
+                            </>
+                        ) : (
+                            <>
+                                <TrophyIcon className="w-4 h-4" />
+                                <span>Descargar e Instalar Pack</span>
+                            </>
+                        )}
+                    </button>
+                </div>
             </div>
 
-            {/* Barra de Progreso */}
+            {/* Barra de Progreso Activa */}
             {isProcessing && (
-                <div className="space-y-2 bg-slate-950/60 p-4 rounded-xl border border-white/5 animate-fade-in">
+                <div className="space-y-2 bg-slate-950/80 p-4 rounded-xl border border-[var(--apex-gold)]/30 animate-fade-in shadow-lg">
                     <div className="flex justify-between text-xs font-bold">
-                        <span className="text-slate-300 truncate">{progressStatus}</span>
+                        <span className="text-slate-200 truncate flex items-center gap-2">
+                            <span className="inline-block w-2 h-2 rounded-full bg-[var(--apex-gold)] animate-pulse" />
+                            {progressStatus}
+                        </span>
                         <span className="text-[var(--apex-gold)]">{progressPercent}%</span>
                     </div>
-                    <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                    <div className="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
                         <div 
-                            className="bg-gradient-to-r from-[var(--apex-gold)] to-yellow-400 h-full transition-all duration-300 rounded-full" 
+                            className="bg-gradient-to-r from-[var(--apex-gold)] via-yellow-400 to-amber-300 h-full transition-all duration-300 rounded-full" 
                             style={{ width: `${progressPercent}%` }}
                         />
                     </div>
@@ -334,16 +367,63 @@ export const CommunityPacksSection: React.FC = () => {
                 </div>
             )}
 
+            {/* Zona Drag & Drop para .ZIP personalizado (Secundaria) */}
+            <div className="space-y-2">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
+                    O Cargar Tu Propio Archivo .ZIP Local
+                </span>
+                <div
+                    onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+                    onDragLeave={() => setIsDragOver(false)}
+                    onDrop={(e) => {
+                        e.preventDefault();
+                        setIsDragOver(false);
+                        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                            handleFileSelect(e.dataTransfer.files[0]);
+                        }
+                    }}
+                    className={`border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center text-center transition-all duration-200 cursor-pointer ${
+                        isDragOver 
+                            ? 'border-[var(--apex-gold)] bg-[var(--apex-gold)]/10 scale-[1.01]' 
+                            : 'border-white/15 bg-slate-950/40 hover:border-white/30 hover:bg-slate-950/60'
+                    }`}
+                    onClick={() => fileInputRef.current?.click()}
+                >
+                    <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])} 
+                        accept=".zip" 
+                        className="hidden" 
+                    />
+                    <svg className="w-8 h-8 text-slate-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-1">
+                        Arrastra tu archivo .ZIP personalizado aquí
+                    </h4>
+                    <p className="text-[11px] text-slate-400 mb-3">
+                        o haz clic para buscar en tus archivos locales
+                    </p>
+                    <button 
+                        type="button" 
+                        className="px-3.5 py-1.5 bg-white/10 hover:bg-white/20 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors cursor-pointer"
+                    >
+                        Examinar Dispositivo
+                    </button>
+                </div>
+            </div>
+
             {/* Galería de Packs de la Comunidad (Supabase) */}
             <div className="space-y-3 pt-2">
                 <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                        <span>🌐</span> Packs Destacados de la Comunidad
+                        <span>🌐</span> Otros Packs en la Nube
                     </span>
                     <button
                         onClick={fetchOnlinePacks}
                         disabled={isLoadingOnlinePacks}
-                        className="text-[10px] font-bold text-sky-400 hover:text-sky-300 uppercase tracking-wider"
+                        className="text-[10px] font-bold text-sky-400 hover:text-sky-300 uppercase tracking-wider cursor-pointer"
                     >
                         {isLoadingOnlinePacks ? 'Actualizando...' : 'Refrescar'}
                     </button>
@@ -453,6 +533,19 @@ export const CommunityPacksSection: React.FC = () => {
                         Restablecer Logos por Defecto
                     </button>
                 )}
+            </div>
+
+            {/* Aviso Legal y Descargo de Responsabilidad (Modelo UGC / Safe Harbor) */}
+            <div className="bg-slate-950/40 border border-white/5 rounded-xl p-3.5 text-[10px] text-slate-400 leading-relaxed space-y-1">
+                <div className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-slate-300 text-[10px]">
+                    <span>⚖️</span>
+                    <span>Descargo de Responsabilidad y Cumplimiento Legal (UGC)</span>
+                </div>
+                <p>
+                    Apex AI es un simulador independiente no afiliado, respaldado ni asociado con FIFA, UEFA, CONMEBOL, ligas oficiales ni clubes de fútbol.
+                    Todos los nombres, marcas registradas y escudos pertenecen a sus respectivos propietarios.
+                    Esta función opera bajo el principio de <strong>Contenido Generado por el Usuario (UGC)</strong> y uso personal en almacenamiento local ({'IndexedDB'}).
+                </p>
             </div>
         </div>
     );
