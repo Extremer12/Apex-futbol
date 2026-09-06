@@ -99,7 +99,7 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onNewGame, onLoadGameS
                 <div 
                     className="absolute inset-0 bg-cover bg-center"
                     style={{ 
-                        backgroundImage: 'url("/bg-start.png")',
+                        backgroundImage: 'url("/bg-inicio.png")',
                         filter: 'brightness(0.95) saturate(1.1)'
                     }}
                 />

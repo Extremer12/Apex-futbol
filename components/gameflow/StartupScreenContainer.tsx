@@ -2,11 +2,11 @@ import React from 'react';
 
 export const StartupScreenContainer: React.FC<{children: React.ReactNode}> = ({ children }) => (
     <div className="min-h-screen flex flex-col items-center justify-center p-5 relative overflow-hidden">
-        {/* Background Layer with subtle parallax-like movement */}
+        {/* Background Layer (Static) */}
         <div 
-            className="absolute inset-0 z-0 bg-cover bg-center animate-slow-zoom"
+            className="absolute inset-0 z-0 bg-cover bg-center"
             style={{ 
-                backgroundImage: 'url("/bg-start.png")',
+                backgroundImage: 'url("/bg-inicio.png")',
                 filter: 'brightness(1.0) saturate(1.1)'
             }}
         />
