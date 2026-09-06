@@ -34,7 +34,12 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
         <div className={`bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 border-2 border-${theme}-500/30 rounded-2xl shadow-2xl overflow-hidden animate-fade-in`}>
             <div className={`bg-gradient-to-r from-${theme}-600 via-${theme}-500 to-${theme}-600 px-6 py-4 flex items-center gap-4`}>
                 <div className="w-10 h-10 p-1 bg-white/10 rounded-lg flex items-center justify-center">
-                    {logo ? <img src={logo} alt={title} className="w-full h-full object-contain drop-shadow-md" /> : <TrophyIcon className="w-6 h-6 text-white" />}
+                    <img 
+                        src={logo || '/sinlogo.png'} 
+                        alt={title} 
+                        onError={(e) => { (e.target as HTMLImageElement).src = '/sinlogo.png'; }}
+                        className="w-full h-full object-contain drop-shadow-md" 
+                    />
                 </div>
                 <h3 className="text-white font-bold text-lg uppercase tracking-wider">{title}</h3>
             </div>

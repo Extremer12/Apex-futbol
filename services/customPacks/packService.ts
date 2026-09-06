@@ -56,23 +56,23 @@ class CustomPacksService {
         return undefined;
     }
 
-    public resolveTeamLogo(team?: { id?: number | string; name?: string; shortName?: string; logo?: string }): string | undefined {
-        if (!team) return undefined;
+    public resolveTeamLogo(team?: { id?: number | string; name?: string; shortName?: string; logo?: string }): string {
+        if (!team) return '/sinlogo.png';
         const keys = getTeamMatchKeys(team);
         const custom = this.getCustomLogo('teams', keys);
         if (custom) return custom;
-        return team.logo || undefined;
+        return team.logo || '/sinlogo.png';
     }
 
-    public resolveCompetitionLogo(competitionId: string, name?: string, defaultLogo?: string): string | undefined {
+    public resolveCompetitionLogo(competitionId: string, name?: string, defaultLogo?: string): string {
         const keys = getCompetitionMatchKeys(competitionId, name);
         const custom = this.getCustomLogo('competitions', keys);
         if (custom) return custom;
-        return defaultLogo || undefined;
+        return defaultLogo || '/sinlogo.png';
     }
 
-    public resolvePlayerPhoto(player?: { id?: number | string; name?: string; photo?: string }): string | undefined {
-        if (!player) return undefined;
+    public resolvePlayerPhoto(player?: { id?: number | string; name?: string; photo?: string }): string {
+        if (!player) return '/sinrostro.png';
         const keys: string[] = [];
         if (player.id !== undefined && player.id !== null) {
             keys.push(String(player.id));
@@ -83,7 +83,7 @@ class CustomPacksService {
         }
         const custom = this.getCustomLogo('players', keys);
         if (custom) return custom;
-        return player.photo || undefined;
+        return player.photo || '/sinrostro.png';
     }
 
     /**

@@ -16,26 +16,24 @@ export const TeamLogo: React.FC<{ team?: { id?: number | string; logo?: string; 
     });
   }, []);
 
-  if (!team) return <div className={className} />;
+  if (!team) {
+    return (
+      <div className={className + " relative flex items-center justify-center"}>
+        <img src="/sinlogo.png" alt="Club logo" className="w-full h-full object-contain opacity-80" />
+      </div>
+    );
+  }
 
   const logoUrl = customPacksService.resolveTeamLogo(team);
 
   return (
     <div className={className + " relative flex items-center justify-center"}>
-      {!error && logoUrl ? (
-        <img
-          src={logoUrl}
-          alt={`${team.name} logo`}
-          onError={() => setError(true)}
-          className="w-full h-full object-contain drop-shadow-lg"
-        />
-      ) : (
-        <div className="w-full h-full rounded-full bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 flex items-center justify-center shadow-lg">
-          <span className="text-[10px] font-black text-slate-400">
-            {team.name.substring(0, 2).toUpperCase()}
-          </span>
-        </div>
-      )}
+      <img
+        src={!error && logoUrl ? logoUrl : "/sinlogo.png"}
+        alt={`${team.name} logo`}
+        onError={() => setError(true)}
+        className="w-full h-full object-contain drop-shadow-md"
+      />
     </div>
   );
 };
@@ -52,24 +50,24 @@ export const PlayerPhoto: React.FC<{ player?: { id?: number | string; name: stri
     });
   }, []);
 
-  if (!player) return <div className={className} />;
+  if (!player) {
+    return (
+      <div className={`${className} relative flex items-center justify-center shrink-0`}>
+        <img src="/sinrostro.png" alt="Foto jugador" className="w-full h-full object-cover rounded-full" />
+      </div>
+    );
+  }
 
   const photoUrl = customPacksService.resolvePlayerPhoto(player);
 
   return (
     <div className={`${className} relative flex items-center justify-center shrink-0`}>
-      {!error && photoUrl ? (
-        <img
-          src={photoUrl}
-          alt={`${player.name} photo`}
-          onError={() => setError(true)}
-          className="w-full h-full object-cover rounded-full drop-shadow-md"
-        />
-      ) : (
-        <div className="w-full h-full rounded-full bg-slate-800 border border-white/10 flex items-center justify-center text-slate-400 font-bold text-xs">
-          {player.name.substring(0, 2).toUpperCase()}
-        </div>
-      )}
+      <img
+        src={!error && photoUrl ? photoUrl : "/sinrostro.png"}
+        alt={`${player.name} photo`}
+        onError={() => setError(true)}
+        className="w-full h-full object-cover rounded-full drop-shadow-md"
+      />
     </div>
   );
 };

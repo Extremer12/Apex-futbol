@@ -104,11 +104,12 @@ export const CupView: React.FC<CupViewProps> = ({
                 <div className="relative flex flex-col md:flex-row items-center justify-between gap-6">
                     <div className="flex items-center gap-5">
                         <div className="w-20 h-20 p-2 bg-white/10 rounded-2xl border border-white/10 flex items-center justify-center shadow-xl backdrop-blur-sm shrink-0">
-                            {logo ? (
-                                <img src={logo} alt={cup.name} className="w-full h-full object-contain drop-shadow-lg" />
-                            ) : (
-                                <TrophyIcon className={`w-10 h-10 ${theme.accent}`} />
-                            )}
+                            <img 
+                                src={logo || '/sinlogo.png'} 
+                                alt={cup.name} 
+                                onError={(e) => { (e.target as HTMLImageElement).src = '/sinlogo.png'; }}
+                                className="w-full h-full object-contain drop-shadow-lg" 
+                            />
                         </div>
                         <div>
                             <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight uppercase italic">{cup.name}</h2>
