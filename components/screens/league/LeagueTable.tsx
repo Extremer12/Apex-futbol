@@ -16,7 +16,7 @@ interface LeagueTableProps {
     gameState: GameState;
 }
 
-type ArgViewMode = 'ZONA_A' | 'ZONA_B' | 'TABLA_ANUAL' | 'PROMEDIOS' | 'PLAYOFFS';
+type ArgViewMode = 'ZONA_A' | 'ZONA_B' | 'TABLA_ANUAL' | 'PROMEDIOS' | 'PLAYOFFS' | 'TABLA_GENERAL' | 'REDUCIDO';
 
 export const LeagueTable: React.FC<LeagueTableProps> = ({
     table,
@@ -30,6 +30,8 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
 
     const [argView, setArgView] = useState<ArgViewMode>('ZONA_A');
     const isArgentina = leagueId === 'LIGA_ARGENTINA';
+    const isPrimeraNacional = leagueId === 'PRIMERA_NACIONAL';
+    const isZonalLeague = isArgentina || isPrimeraNacional;
     const theme = LEAGUE_THEMES[leagueId] || 'purple';
     const logo = customPacksService.resolveCompetitionLogo(leagueId, title, logoPath);
 
@@ -37,7 +39,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
 
     // Derived table based on Argentine views or standard leagues
     const displayedRows = useMemo(() => {
-        if (!isArgentina) {
+        if (!isZonalLeague) {
             return table;
         }
 
@@ -53,7 +55,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
             return sorted.map((r, idx) => ({ ...r, position: idx + 1 }));
         }
 
-        if (argView === 'TABLA_ANUAL') {
+        if (argView === 'TABLA_ANUAL' || argView === 'TABLA_GENERAL') {
             const sorted = [...table].sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference || b.goalsFor - a.goalsFor);
             return sorted.map((r, idx) => ({ ...r, position: idx + 1 }));
         }
@@ -64,7 +66,126 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
         }
 
         return table;
-    }, [table, isArgentina, argView]);
+    }, [table, isZonalLeague, argView]);
+
+    const renderNacionalReducido = () => {
+        const finalPrimerAscenso = gameState.cups.nacionalPrimerAscenso;
+        const reducido = gameState.cups.nacionalReducido;
+
+        return (
+            <div className="p-6 space-y-6">
+                {/* Final por el Primer Ascenso */}
+                <div className="bg-slate-800/40 rounded-xl p-5 border border-white/10 space-y-4">
+                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                        <div className="flex items-center gap-2.5">
+                            <Trophy className="w-5 h-5 text-amber-400" />
+                            <h4 className="text-white font-black text-sm uppercase tracking-wide">Final por el Primer Ascenso (1ºA vs 1ºB)</h4>
+                        </div>
+                        <span className="text-[11px] font-bold text-slate-400 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5">
+                            {finalPrimerAscenso?.winnerId ? `Campeón Ascendido: ${getTeamById(finalPrimerAscenso.winnerId)?.name}` : 'En Disputa (Semana 35)'}
+                        </span>
+                    </div>
+
+                    {(!finalPrimerAscenso?.rounds || finalPrimerAscenso.rounds.length === 0) ? (
+                        <div className="text-center py-6 text-slate-400 text-xs">
+                            <p className="font-semibold text-slate-300">La Final por el Primer Ascenso se disputará al finalizar la Fecha 34.</p>
+                            <p className="text-[11px] text-slate-500 mt-1">El 1.º de la Zona A se enfrentará al 1.º de la Zona B en estadio neutral.</p>
+                        </div>
+                    ) : (
+                        <div className="max-w-md mx-auto">
+                            {finalPrimerAscenso.rounds.map((round, rIdx) => (
+                                <div key={rIdx} className="bg-slate-900/60 rounded-xl p-3 border border-white/5 space-y-2">
+                                    <div className="text-[11px] font-black uppercase text-amber-400 tracking-wider text-center border-b border-white/5 pb-1">
+                                        {round.name}
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        {round.fixtures.map((f, fIdx) => {
+                                            const home = getTeamById(f.homeTeamId);
+                                            const away = getTeamById(f.awayTeamId);
+                                            return (
+                                                <div key={fIdx} className="bg-slate-800/60 rounded-lg p-2 text-xs flex items-center justify-between">
+                                                    <div className="space-y-1 flex-1 min-w-0">
+                                                        <div className="flex items-center justify-between text-slate-200 truncate">
+                                                            <span className="truncate">{home?.name}</span>
+                                                            <span className="font-bold text-white ml-2">{f.result ? f.result.homeScore : '-'}</span>
+                                                        </div>
+                                                        <div className="flex items-center justify-between text-slate-200 truncate">
+                                                            <span className="truncate">{away?.name}</span>
+                                                            <span className="font-bold text-white ml-2">{f.result ? f.result.awayScore : '-'}</span>
+                                                        </div>
+                                                    </div>
+                                                    {f.penalties && (
+                                                        <div className="text-[9px] text-amber-400 font-bold ml-2 text-right">
+                                                            Pen ({f.penalties.home}-{f.penalties.away})
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Torneo Reducido por el Segundo Ascenso */}
+                <div className="bg-slate-800/40 rounded-xl p-5 border border-white/10 space-y-4">
+                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                        <div className="flex items-center gap-2.5">
+                            <Trophy className="w-5 h-5 text-cyan-400" />
+                            <h4 className="text-white font-black text-sm uppercase tracking-wide">Torneo Reducido - Segundo Ascenso</h4>
+                        </div>
+                        <span className="text-[11px] font-bold text-slate-400 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5">
+                            {reducido?.winnerId ? `Segundo Ascendido: ${getTeamById(reducido.winnerId)?.name}` : 'En Disputa (Semanas 35 a 38)'}
+                        </span>
+                    </div>
+
+                    {(!reducido?.rounds || reducido.rounds.length === 0) ? (
+                        <div className="text-center py-8 text-slate-400 text-xs">
+                            <p className="font-semibold text-slate-300">El Torneo Reducido comenzará al finalizar la Fecha 34.</p>
+                            <p className="text-[11px] text-slate-500 mt-1">Participan los clubes ubicados del 2.º al 8.º puesto de cada zona (14 clubes) más el perdedor de la final por el 1.º ascenso en cuartos.</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                            {reducido.rounds.map((round, rIdx) => (
+                                <div key={rIdx} className="bg-slate-900/60 rounded-xl p-3 border border-white/5 space-y-2">
+                                    <div className="text-[11px] font-black uppercase text-cyan-400 tracking-wider text-center border-b border-white/5 pb-1">
+                                        {round.name}
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        {round.fixtures.map((f, fIdx) => {
+                                            const home = getTeamById(f.homeTeamId);
+                                            const away = getTeamById(f.awayTeamId);
+                                            return (
+                                                <div key={fIdx} className="bg-slate-800/60 rounded-lg p-2 text-xs flex items-center justify-between">
+                                                    <div className="space-y-1 flex-1 min-w-0">
+                                                        <div className="flex items-center justify-between text-slate-200 truncate">
+                                                            <span className="truncate">{home?.name}</span>
+                                                            <span className="font-bold text-white ml-2">{f.result ? f.result.homeScore : '-'}</span>
+                                                        </div>
+                                                        <div className="flex items-center justify-between text-slate-200 truncate">
+                                                            <span className="truncate">{away?.name}</span>
+                                                            <span className="font-bold text-white ml-2">{f.result ? f.result.awayScore : '-'}</span>
+                                                        </div>
+                                                    </div>
+                                                    {f.penalties && (
+                                                        <div className="text-[9px] text-cyan-400 font-bold ml-2 text-right">
+                                                            Pen ({f.penalties.home}-{f.penalties.away})
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    };
 
     const renderPlayoffs = () => {
         const apertura = gameState.cups.aperturaPlayoffs;
@@ -203,10 +324,13 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
                         {isArgentina && (
                             <span className="text-[11px] text-white/80 font-medium">Formato Oficial 2026: 30 Equipos • Apertura y Clausura</span>
                         )}
+                        {isPrimeraNacional && (
+                            <span className="text-[11px] text-white/80 font-medium">Formato Oficial 2026: 36 Equipos • 2 Zonas de 18 • Reducido y Descensos</span>
+                        )}
                     </div>
                 </div>
 
-                {/* Sub-Tabs de Argentina */}
+                {/* Sub-Tabs de Liga Argentina */}
                 {isArgentina && (
                     <div className="flex items-center gap-1 bg-black/20 p-1 rounded-xl backdrop-blur-md self-start sm:self-auto overflow-x-auto max-w-full">
                         <button
@@ -251,11 +375,51 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
                         </button>
                     </div>
                 )}
+
+                {/* Sub-Tabs de Primera Nacional */}
+                {isPrimeraNacional && (
+                    <div className="flex items-center gap-1 bg-black/20 p-1 rounded-xl backdrop-blur-md self-start sm:self-auto overflow-x-auto max-w-full">
+                        <button
+                            onClick={() => setArgView('ZONA_A')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
+                                argView === 'ZONA_A' ? 'bg-white text-slate-900 shadow-md' : 'text-white/80 hover:text-white hover:bg-white/10'
+                            }`}
+                        >
+                            Zona A (18)
+                        </button>
+                        <button
+                            onClick={() => setArgView('ZONA_B')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
+                                argView === 'ZONA_B' ? 'bg-white text-slate-900 shadow-md' : 'text-white/80 hover:text-white hover:bg-white/10'
+                            }`}
+                        >
+                            Zona B (18)
+                        </button>
+                        <button
+                            onClick={() => setArgView('TABLA_GENERAL')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
+                                argView === 'TABLA_GENERAL' ? 'bg-white text-slate-900 shadow-md' : 'text-white/80 hover:text-white hover:bg-white/10'
+                            }`}
+                        >
+                            General
+                        </button>
+                        <button
+                            onClick={() => setArgView('REDUCIDO')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
+                                argView === 'REDUCIDO' ? 'bg-white text-slate-900 shadow-md' : 'text-white/80 hover:text-white hover:bg-white/10'
+                            }`}
+                        >
+                            Reducido y Final
+                        </button>
+                    </div>
+                )}
             </div>
 
-            {/* Render Playoffs View */}
+            {/* Render Reducido & Finales or Playoffs */}
             {isArgentina && argView === 'PLAYOFFS' ? (
                 renderPlayoffs()
+            ) : isPrimeraNacional && argView === 'REDUCIDO' ? (
+                renderNacionalReducido()
             ) : (
                 /* Tabla de Posiciones */
                 <div className="overflow-x-auto">
@@ -307,6 +471,27 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
                                             zoneLabel = 'Descenso por Promedio';
                                         }
                                     }
+                                } else if (isPrimeraNacional) {
+                                    if (argView === 'ZONA_A' || argView === 'ZONA_B') {
+                                        if (row.position === 1) {
+                                            zoneColor = 'bg-amber-500';
+                                            zoneLabel = 'Final por el 1º Ascenso';
+                                        } else if (row.position >= 2 && row.position <= 8) {
+                                            zoneColor = 'bg-cyan-500';
+                                            zoneLabel = 'Clasifica al Torneo Reducido';
+                                        } else if (row.position >= 17) {
+                                            zoneColor = 'bg-red-500';
+                                            zoneLabel = 'Descenso Directo';
+                                        }
+                                    } else if (argView === 'TABLA_GENERAL') {
+                                        if (row.position <= 2) {
+                                            zoneColor = 'bg-green-500';
+                                            zoneLabel = 'Zona de Ascenso';
+                                        } else if (row.position >= displayedRows.length - 3) {
+                                            zoneColor = 'bg-red-500';
+                                            zoneLabel = 'Zona de Descenso';
+                                        }
+                                    }
                                 } else {
                                     if (isFirstDiv) {
                                         if (row.position <= 4) { zoneColor = 'bg-purple-500'; zoneLabel = 'Champions League'; }
@@ -338,7 +523,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
                                                 </div>
                                                 <div className="flex items-center gap-2 min-w-0">
                                                     <span className={`font-bold truncate ${isPlayerTeam ? 'text-white' : 'text-slate-200'}`}>{team?.name}</span>
-                                                    {isArgentina && row.zone && (argView === 'TABLA_ANUAL' || argView === 'PROMEDIOS') && (
+                                                    {(isArgentina || isPrimeraNacional) && row.zone && (argView === 'TABLA_ANUAL' || argView === 'PROMEDIOS' || argView === 'TABLA_GENERAL') && (
                                                         <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-slate-400 border border-white/5">
                                                             Zona {row.zone}
                                                         </span>
@@ -397,6 +582,37 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
                                         <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
                                         <span>Último promedio desciende a Primera Nacional</span>
                                     </div>
+                                )}
+                            </>
+                        ) : isPrimeraNacional ? (
+                            <>
+                                {(argView === 'ZONA_A' || argView === 'ZONA_B') && (
+                                    <>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div>
+                                            <span>1º Final por el 1º Ascenso Directo</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-2.5 h-2.5 rounded-full bg-cyan-500"></div>
+                                            <span>2º al 8º Clasifican al Torneo Reducido</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
+                                            <span>17º y 18º Descenso Directo</span>
+                                        </div>
+                                    </>
+                                )}
+                                {argView === 'TABLA_GENERAL' && (
+                                    <>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-2.5 h-2.5 rounded-full bg-green-500"></div>
+                                            <span>Puestos de Ascenso</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
+                                            <span>Puestos de Descenso</span>
+                                        </div>
+                                    </>
                                 )}
                             </>
                         ) : (

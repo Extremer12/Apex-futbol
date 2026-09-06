@@ -289,6 +289,8 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                     if (match.competition === 'Copa_Argentina') cupId = 'copaArgentina';
                     if (match.competition === 'Playoffs_Apertura') cupId = 'aperturaPlayoffs';
                     if (match.competition === 'Playoffs_Clausura') cupId = 'clausuraPlayoffs';
+                    if (match.competition === 'Nacional_Primer_Ascenso') cupId = 'nacionalPrimerAscenso';
+                    if (match.competition === 'Nacional_Reducido') cupId = 'nacionalReducido';
                     if (match.competition === 'Champions_League') cupId = 'championsLeague';
                     if (match.competition === 'Europa_League') cupId = 'europaLeague';
                     if (match.competition === 'Copa_Libertadores') cupId = 'copaLibertadores';

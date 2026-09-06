@@ -42,6 +42,8 @@ export const CUP_LOGOS: Record<string, string> = {
     dfb_pokal: 'https://tmssl.akamaized.net/images/logo/header/dfb.png',
     coppa_italia: 'https://tmssl.akamaized.net/images/logo/header/cit.png',
     copa_argentina: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Copa_Argentina_logo.png/200px-Copa_Argentina_logo.png',
+    nacional_primer_ascenso: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Primera_Nacional_logo.png/200px-Primera_Nacional_logo.png',
+    nacional_reducido: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Primera_Nacional_logo.png/200px-Primera_Nacional_logo.png',
 };
 
 export const CUP_THEMES: Record<string, { accent: string; bg: string; border: string }> = {
@@ -54,6 +56,8 @@ export const CUP_THEMES: Record<string, { accent: string; bg: string; border: st
     dfb_pokal: { accent: 'text-yellow-500', bg: 'from-yellow-950 via-slate-950 to-slate-950', border: 'border-yellow-500/40' },
     coppa_italia: { accent: 'text-green-500', bg: 'from-green-950 via-slate-950 to-slate-950', border: 'border-green-500/40' },
     copa_argentina: { accent: 'text-cyan-400', bg: 'from-cyan-950 via-slate-950 to-slate-950', border: 'border-cyan-500/40' },
+    nacional_primer_ascenso: { accent: 'text-amber-400', bg: 'from-amber-950 via-slate-950 to-slate-950', border: 'border-amber-500/40' },
+    nacional_reducido: { accent: 'text-cyan-400', bg: 'from-cyan-950 via-slate-950 to-slate-950', border: 'border-cyan-500/40' },
 };
 
 export type CompetitionItem = {

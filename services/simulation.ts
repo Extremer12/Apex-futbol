@@ -571,6 +571,79 @@ export const generateArgentinePlayoffs = (
         }));
 };
 
+// Helper to generate Primera Nacional 36-team format (2 zones of 18, 34 matchdays)
+export const generatePrimeraNacionalSchedule = (teams: Team[]): Match[] => {
+    const zoneA = teams.filter(t => t.zone === 'A');
+    const zoneB = teams.filter(t => t.zone === 'B');
+
+    // Fallback if zones not properly populated
+    if (zoneA.length !== 18 || zoneB.length !== 18) {
+        return generateLeagueSchedule(teams, LeagueId.PRIMERA_NACIONAL);
+    }
+
+    const scheduleA = generateLeagueSchedule(zoneA, LeagueId.PRIMERA_NACIONAL);
+    const scheduleB = generateLeagueSchedule(zoneB, LeagueId.PRIMERA_NACIONAL);
+
+    return [...scheduleA, ...scheduleB];
+};
+
+export const generateNacionalPrimerAscenso = (leaderA: Team, leaderB: Team, week: number): Match => {
+    return {
+        week,
+        homeTeamId: leaderA.id,
+        awayTeamId: leaderB.id,
+        competition: 'Nacional_Primer_Ascenso',
+        isCupMatch: true,
+    };
+};
+
+export const generateNacionalReducidoPhase1 = (zoneATeams: Team[], zoneBTeams: Team[], week: number): Match[] => {
+    // 2º to 8º of each zone: zoneATeams[1..7] and zoneBTeams[1..7]
+    const pairings: [Team, Team][] = [
+        [zoneATeams[1], zoneBTeams[7]], // 2ºA vs 8ºB
+        [zoneBTeams[1], zoneATeams[7]], // 2ºB vs 8ºA
+        [zoneATeams[2], zoneBTeams[6]], // 3ºA vs 7ºB
+        [zoneBTeams[2], zoneATeams[6]], // 3ºB vs 7ºA
+        [zoneATeams[3], zoneBTeams[5]], // 4ºA vs 6ºB
+        [zoneBTeams[3], zoneATeams[5]], // 4ºB vs 6ºA
+        [zoneATeams[4], zoneBTeams[4]], // 5ºA vs 5ºB
+    ];
+
+    return pairings
+        .filter(([home, away]) => home && away)
+        .map(([home, away]) => ({
+            week,
+            homeTeamId: home.id,
+            awayTeamId: away.id,
+            competition: 'Nacional_Reducido',
+            isCupMatch: true,
+        }));
+};
+
+export const generateNacionalReducidoCuartos = (winnersPhase1: Team[], loserPrimerAscenso: Team, week: number): Match[] => {
+    const all8 = [loserPrimerAscenso, ...winnersPhase1].filter(Boolean);
+    all8.sort((a, b) => b.budget - a.budget);
+
+    const fixtures: Match[] = [];
+    const pairs: [number, number][] = [
+        [0, 7], [1, 6], [2, 5], [3, 4]
+    ];
+
+    pairs.forEach(([h, a]) => {
+        if (all8[h] && all8[a]) {
+            fixtures.push({
+                week,
+                homeTeamId: all8[h].id,
+                awayTeamId: all8[a].id,
+                competition: 'Nacional_Reducido',
+                isCupMatch: true,
+            });
+        }
+    });
+
+    return fixtures;
+};
+
 export const generateSeasonSchedule = (allTeams: Team[]): Match[] => {
     const leaguesToSchedule = [
         LeagueId.PREMIER_LEAGUE, LeagueId.CHAMPIONSHIP,
@@ -589,6 +662,9 @@ export const generateSeasonSchedule = (allTeams: Team[]): Match[] => {
         if (teamsInLeague.length > 0) {
             if (leagueId === LeagueId.LIGA_ARGENTINA) {
                 const schedule = generateArgentineTournamentSchedule(teamsInLeague);
+                fullSchedule = [...fullSchedule, ...schedule];
+            } else if (leagueId === LeagueId.PRIMERA_NACIONAL) {
+                const schedule = generatePrimeraNacionalSchedule(teamsInLeague);
                 fullSchedule = [...fullSchedule, ...schedule];
             } else {
                 const schedule = generateLeagueSchedule(teamsInLeague, leagueId);
@@ -1031,8 +1107,14 @@ export const handlePromotionRelegation = (allTeams: Team[], leagueTables: Record
                 }
             }
 
-            // 2 Promoted teams from Primera Nacional
-            promotedIds = sortedDiv2.slice(0, 2).map(r => r.teamId);
+            // 2 Promoted teams from Primera Nacional (Leaders of Reducido/Final or top positions)
+            const zoneATable = div2Table.filter(r => r.zone === 'A').sort((a, b) => b.points - a.points);
+            const zoneBTable = div2Table.filter(r => r.zone === 'B').sort((a, b) => b.points - a.points);
+            
+            const promo1 = zoneATable[0]?.teamId || sortedDiv2[0]?.teamId;
+            const promo2 = zoneBTable[0]?.teamId || sortedDiv2[1]?.teamId;
+            if (promo1) promotedIds.push(promo1);
+            if (promo2 && promo2 !== promo1) promotedIds.push(promo2);
         } else {
             relegatedIds = sortedDiv1.slice(-3).map(r => r.teamId);
             promotedIds = sortedDiv2.slice(0, 3).map(r => r.teamId);
@@ -1044,7 +1126,7 @@ export const handlePromotionRelegation = (allTeams: Team[], leagueTables: Record
         let promotedIndex = 0;
         updatedTeams = updatedTeams.map(team => {
             if (relegatedIds.includes(team.id)) {
-                return { ...team, leagueId: div2, zone: undefined };
+                return { ...team, leagueId: div2, zone: relegatedZones[promotedIndex % 2] || 'A' };
             }
             if (promotedIds.includes(team.id)) {
                 const assignedZone = div1 === LeagueId.LIGA_ARGENTINA ? relegatedZones[promotedIndex++] || 'A' : undefined;

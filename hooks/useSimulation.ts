@@ -3,7 +3,7 @@ import { GameState, MatchPhase, PendingSimulationResults, NewsItem, Offer, Leagu
 import { GameAction } from '../state/reducer';
 import { simulationWorker } from '../services/simulationWorker';
 import { generateNews, generateMatchReport, generateTransferOffer, generatePlayerOfTheWeekNews, generateImportantNews, generateCoachReport } from '../services/gameLogic';
-import { advanceCupRound, progressInternationalCup, checkAndScheduleIntercontinental, generateArgentinePlayoffs } from '../services/simulation';
+import { advanceCupRound, progressInternationalCup, checkAndScheduleIntercontinental, generateArgentinePlayoffs, generateNacionalPrimerAscenso, generateNacionalReducidoPhase1, generateNacionalReducidoCuartos, determineCupWinner } from '../services/simulation';
 import { eventEngine, TriggeredEvent } from '../services/eventEngine';
 import { formatDate, isTransferWindowOpen } from '../utils';
 
@@ -255,6 +255,90 @@ export function useSimulation(
                 updatedCups.clausuraPlayoffs = advanceCupRound(updatedCups.clausuraPlayoffs, simulationResult.updatedAllTeams, newWeek + 1);
                 if (updatedCups.clausuraPlayoffs.rounds.length > prevRoundsCount) {
                     const nextRound = updatedCups.clausuraPlayoffs.rounds[updatedCups.clausuraPlayoffs.rounds.length - 1];
+                    simulationResult.updatedSchedule.push(...nextRound.fixtures);
+                }
+            }
+
+            // Primera Nacional: Week 34 ends -> Generate Primer Ascenso Final & Reducido Phase 1 for Week 35
+            if (newWeek === 34) {
+                const pnTable = simulationResult.updatedLeagueTables[LeagueId.PRIMERA_NACIONAL] || [];
+                const zoneATeams = pnTable.filter(r => r.zone === 'A').map(r => restoredTeams.find(t => t.id === r.teamId)!).filter(Boolean);
+                const zoneBTeams = pnTable.filter(r => r.zone === 'B').map(r => restoredTeams.find(t => t.id === r.teamId)!).filter(Boolean);
+
+                if (zoneATeams.length >= 8 && zoneBTeams.length >= 8) {
+                    // Final por el Primer Ascenso (1ºA vs 1ºB)
+                    const finalPrimerAscensoFixture = generateNacionalPrimerAscenso(zoneATeams[0], zoneBTeams[0], 35);
+                    updatedCups.nacionalPrimerAscenso = {
+                        id: 'nacional_primer_ascenso',
+                        name: 'Final 1º Ascenso',
+                        type: 'knockout',
+                        phase: 'knockout',
+                        rounds: [{ name: 'Final por el 1º Ascenso', fixtures: [finalPrimerAscensoFixture], completed: false }],
+                        currentRoundIndex: 0,
+                        statistics: { topScorers: [], championsHistory: [] }
+                    };
+                    simulationResult.updatedSchedule.push(finalPrimerAscensoFixture);
+
+                    // Reducido Fase 1 (2º al 8º de cada zona)
+                    const reducidoPhase1Fixtures = generateNacionalReducidoPhase1(zoneATeams, zoneBTeams, 35);
+                    updatedCups.nacionalReducido = {
+                        id: 'nacional_reducido',
+                        name: 'Torneo Reducido',
+                        type: 'knockout',
+                        phase: 'knockout',
+                        rounds: [{ name: 'Fase 1', fixtures: reducidoPhase1Fixtures, completed: false }],
+                        currentRoundIndex: 0,
+                        statistics: { topScorers: [], championsHistory: [] }
+                    };
+                    simulationResult.updatedSchedule.push(...reducidoPhase1Fixtures);
+                }
+            }
+
+            // Primera Nacional: Week 35 matches finished -> Winner of 1st Ascenso is set, and Loser joins Reducido Cuartos at Week 36
+            const primerAscensoMatches = matchesThisWeek.filter(m => m.competition === 'Nacional_Primer_Ascenso');
+            const reducidoPhase1Matches = matchesThisWeek.filter(m => m.competition === 'Nacional_Reducido' && newWeek === 35);
+            if (primerAscensoMatches.length > 0 && primerAscensoMatches.every(m => m.result !== undefined) &&
+                reducidoPhase1Matches.length > 0 && reducidoPhase1Matches.every(m => m.result !== undefined) &&
+                updatedCups.nacionalPrimerAscenso && updatedCups.nacionalReducido) {
+
+                const finalMatch = primerAscensoMatches[0];
+                const winnerId = determineCupWinner(finalMatch);
+                const loserId = winnerId === finalMatch.homeTeamId ? finalMatch.awayTeamId : finalMatch.homeTeamId;
+                const loserTeam = restoredTeams.find(t => t.id === loserId)!;
+
+                // Mark Primer Ascenso Cup completed
+                updatedCups.nacionalPrimerAscenso = {
+                    ...updatedCups.nacionalPrimerAscenso,
+                    winnerId: winnerId || undefined,
+                    rounds: [{ ...updatedCups.nacionalPrimerAscenso.rounds[0], completed: true }]
+                };
+
+                // Determine 7 winners of Reducido Phase 1
+                const winnersPhase1 = reducidoPhase1Matches.map(m => {
+                    const wId = determineCupWinner(m);
+                    return restoredTeams.find(t => t.id === wId)!;
+                }).filter(Boolean);
+
+                // Generate Cuartos de Final with 8 teams (7 winners + loser of primer ascenso) for Week 36
+                const cuartosFixtures = generateNacionalReducidoCuartos(winnersPhase1, loserTeam, 36);
+                updatedCups.nacionalReducido = {
+                    ...updatedCups.nacionalReducido,
+                    rounds: [
+                        { ...updatedCups.nacionalReducido.rounds[0], completed: true },
+                        { name: 'Cuartos de Final', fixtures: cuartosFixtures, completed: false }
+                    ],
+                    currentRoundIndex: 1
+                };
+                simulationResult.updatedSchedule.push(...cuartosFixtures);
+            }
+
+            // Advance Reducido Semis & Final (Weeks 36, 37)
+            const generalReducidoMatches = matchesThisWeek.filter(m => m.competition === 'Nacional_Reducido' && newWeek >= 36);
+            if (generalReducidoMatches.length > 0 && generalReducidoMatches.every(m => m.result !== undefined) && updatedCups.nacionalReducido) {
+                const prevRoundsCount = updatedCups.nacionalReducido.rounds.length;
+                updatedCups.nacionalReducido = advanceCupRound(updatedCups.nacionalReducido, simulationResult.updatedAllTeams, newWeek + 1);
+                if (updatedCups.nacionalReducido.rounds.length > prevRoundsCount) {
+                    const nextRound = updatedCups.nacionalReducido.rounds[updatedCups.nacionalReducido.rounds.length - 1];
                     simulationResult.updatedSchedule.push(...nextRound.fixtures);
                 }
             }

@@ -203,6 +203,8 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
             copaArgentina: { id: 'copa_argentina', name: 'Copa Argentina', type: 'knockout', phase: 'knockout', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
             aperturaPlayoffs: { id: 'apertura_playoffs', name: 'Playoffs Apertura', type: 'knockout', phase: 'knockout', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
             clausuraPlayoffs: { id: 'clausura_playoffs', name: 'Playoffs Clausura', type: 'knockout', phase: 'knockout', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
+            nacionalPrimerAscenso: { id: 'nacional_primer_ascenso', name: 'Final 1º Ascenso', type: 'knockout', phase: 'knockout', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
+            nacionalReducido: { id: 'nacional_reducido', name: 'Torneo Reducido', type: 'knockout', phase: 'knockout', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
             copaLibertadores: {
                 id: 'copa_libertadores',
                 name: 'Copa Libertadores',

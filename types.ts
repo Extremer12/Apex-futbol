@@ -413,6 +413,8 @@ export interface GameState {
     copaArgentina?: CupCompetition;
     aperturaPlayoffs?: CupCompetition;
     clausuraPlayoffs?: CupCompetition;
+    nacionalPrimerAscenso?: CupCompetition;
+    nacionalReducido?: CupCompetition;
     championsLeague: CupCompetition;
     europaLeague: CupCompetition;
     copaLibertadores: CupCompetition;
