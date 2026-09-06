@@ -176,10 +176,7 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                                 onClick={() => setSelectedCountry(c.id)}
                                 className="w-full apex-card p-4 flex items-center gap-4 transition-all duration-300 hover:border-[rgba(200,168,78,0.3)] active:scale-[0.98]"
                             >
-                                <div className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden p-2"
-                                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--apex-border)' }}>
-                                    <img src={c.flagUrl} alt={c.name} className="w-full h-full object-contain" />
-                                </div>
+                                <img src={c.flagUrl} alt={c.name} className="w-11 h-7 object-cover rounded shadow-md" />
                                 <div className="flex-1 text-left">
                                     <div className="text-base font-extrabold text-white uppercase tracking-wide">{c.name}</div>
                                     <div className="text-[10px] font-medium" style={{ color: 'var(--apex-text-secondary)' }}>
@@ -200,15 +197,15 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                 <div className="flex-1 overflow-y-auto px-5 pb-6 animate-slide-up">
                     {/* Selected Country Banner */}
                     <div className="apex-card p-4 flex items-center gap-3 mb-4">
-                        <div className="text-[10px] font-bold tracking-[0.1em] uppercase" style={{ color: 'var(--apex-text-secondary)' }}>SELECT COUNTRY</div>
-                        <div className="flex items-center gap-2 ml-auto">
-                            <img src={COUNTRIES.find(c => c.id === selectedCountry)?.flagUrl} alt="" className="w-5 h-4 object-contain" />
+                        <div className="text-[10px] font-bold tracking-[0.1em] uppercase" style={{ color: 'var(--apex-text-secondary)' }}>PAÍS SELECCIONADO</div>
+                        <div className="flex items-center gap-2.5 ml-auto">
+                            <img src={COUNTRIES.find(c => c.id === selectedCountry)?.flagUrl} alt="" className="w-6 h-4 object-cover rounded shadow-xs" />
                             <span className="text-sm font-extrabold text-white uppercase">{COUNTRIES.find(c => c.id === selectedCountry)?.name}</span>
                         </div>
                     </div>
 
                     {/* League Cards */}
-                    <div className="text-[10px] font-bold tracking-[0.1em] uppercase mb-3" style={{ color: 'var(--apex-text-secondary)' }}>SELECT LEAGUE</div>
+                    <div className="text-[10px] font-bold tracking-[0.1em] uppercase mb-3" style={{ color: 'var(--apex-text-secondary)' }}>SELECCIONA LA LIGA</div>
                     <div className="space-y-3">
                         {COUNTRY_CONFIG[selectedCountry].leagues.map((l, i) => (
                             <button
@@ -217,13 +214,10 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                                 className="w-full apex-card p-5 flex items-center gap-4 transition-all duration-300 hover:border-[rgba(200,168,78,0.3)] active:scale-[0.98] animate-scale-in"
                                 style={{ animationDelay: `${i * 100}ms` }}
                             >
-                                <div className="w-14 h-14 rounded-xl flex items-center justify-center p-1"
-                                    style={{ background: 'rgba(255,255,255,0.03)' }}>
-                                    <img src={l.logo} alt={l.name} className="w-full h-full object-contain" />
-                                </div>
+                                <img src={l.logo} alt={l.name} className="w-12 h-12 object-contain drop-shadow-md" />
                                 <div className="flex-1 text-left">
                                     <div className="text-base font-extrabold text-white">{l.name}</div>
-                                    <div className="text-[10px]" style={{ color: 'var(--apex-text-secondary)' }}>{l.teams} Clubs Competing</div>
+                                    <div className="text-[10px]" style={{ color: 'var(--apex-text-secondary)' }}>{l.teams} Clubes • {l.div}</div>
                                 </div>
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--apex-text-muted)' }}>
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -239,20 +233,20 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                 <div className="flex-1 overflow-y-auto px-5 pb-24 animate-slide-up">
                     {/* Country + League summary */}
                     <div className="flex gap-3 mb-4">
-                        <div className="flex-1 apex-card p-3 flex items-center gap-2">
-                            <img src={COUNTRIES.find(c => c.id === selectedCountry)?.flagUrl} alt="" className="w-5 h-4 object-contain" />
-                            <span className="text-xs font-bold text-white uppercase">{COUNTRIES.find(c => c.id === selectedCountry)?.name}</span>
+                        <div className="flex-1 apex-card p-3 flex items-center gap-2.5">
+                            <img src={COUNTRIES.find(c => c.id === selectedCountry)?.flagUrl} alt="" className="w-5 h-3.5 object-cover rounded shadow-xs" />
+                            <span className="text-xs font-bold text-white uppercase truncate">{COUNTRIES.find(c => c.id === selectedCountry)?.name}</span>
                         </div>
-                        <div className="flex-1 apex-card p-3 flex items-center gap-2">
+                        <div className="flex-1 apex-card p-3 flex items-center gap-2.5">
                             {currentLeague && <img src={currentLeague.logo} alt="" className="w-5 h-5 object-contain" />}
-                            <span className="text-xs font-bold text-white">{currentLeague?.name}</span>
-                            <span className="text-[9px] ml-auto" style={{ color: 'var(--apex-text-muted)' }}>{currentLeague?.teams} Clubs</span>
+                            <span className="text-xs font-bold text-white truncate">{currentLeague?.name}</span>
+                            <span className="text-[9px] ml-auto text-white/50">{currentLeague?.teams} Clubes</span>
                         </div>
                     </div>
 
                     {/* Team Grid */}
                     <div className="flex items-center justify-between mb-3">
-                        <span className="text-[10px] font-bold tracking-[0.1em] uppercase" style={{ color: 'var(--apex-text-secondary)' }}>SELECT CLUB</span>
+                        <span className="text-[10px] font-bold tracking-[0.1em] uppercase" style={{ color: 'var(--apex-text-secondary)' }}>SELECCIONA TU CLUB</span>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
@@ -287,11 +281,11 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
 
                                     <div className="space-y-1.5">
                                         <div className="flex justify-between items-center">
-                                            <span className="text-[9px]" style={{ color: 'var(--apex-text-muted)' }}>Financial Status</span>
+                                            <span className="text-[9px]" style={{ color: 'var(--apex-text-muted)' }}>Finanzas</span>
                                             <span className="text-[9px] font-bold" style={{ color: FINANCIAL_STATUS[team.tier].color }}>{FINANCIAL_STATUS[team.tier].label}</span>
                                         </div>
                                         <div className="flex justify-between items-center">
-                                            <span className="text-[9px]" style={{ color: 'var(--apex-text-muted)' }}>Fan Expectations</span>
+                                            <span className="text-[9px]" style={{ color: 'var(--apex-text-muted)' }}>Expectativa</span>
                                             <span className="text-[9px] font-bold" style={{ color: 'var(--apex-gold)' }}>{FAN_EXPECTATIONS[team.tier]}</span>
                                         </div>
                                     </div>
@@ -308,24 +302,21 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                                 <div>
                                     <div className="text-sm font-extrabold text-white uppercase">{selectedTeam.name}</div>
                                     <div className="text-[10px]" style={{ color: 'var(--apex-text-secondary)' }}>
-                                        {selectedTeam.tier === 'Top' ? 'One of the most iconic clubs in the world.' :
-                                         selectedTeam.tier === 'Mid' ? 'A club with ambition and potential for glory.' :
-                                         'A growing project ready for your leadership.'}
+                                        {selectedTeam.tier === 'Top' ? 'Uno de los clubes más icónicos del mundo.' :
+                                         selectedTeam.tier === 'Mid' ? 'Un club con ambición y gran potencial.' :
+                                         'Un proyecto en crecimiento listo para tu liderazgo.'}
                                     </div>
                                 </div>
                             </div>
-                            <div className="flex gap-4 mt-3">
+                            <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-white/5">
                                 {[
-                                    { icon: '🏆', label: 'History' },
-                                    { icon: '👥', label: 'Squad' },
-                                    { icon: '💰', label: 'Finances' },
+                                    { icon: '🏆', label: 'Historia' },
+                                    { icon: '👥', label: 'Plantel' },
+                                    { icon: '💰', label: 'Finanzas' },
                                 ].map(item => (
-                                    <div key={item.label} className="flex flex-col items-center gap-1 flex-1">
-                                        <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
-                                            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--apex-border)' }}>
-                                            {item.icon}
-                                        </div>
-                                        <span className="text-[9px] font-semibold" style={{ color: 'var(--apex-text-secondary)' }}>{item.label}</span>
+                                    <div key={item.label} className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-white/[0.02]">
+                                        <span className="text-sm">{item.icon}</span>
+                                        <span className="text-[10px] font-semibold text-white/75">{item.label}</span>
                                     </div>
                                 ))}
                             </div>

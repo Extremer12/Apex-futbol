@@ -160,6 +160,7 @@ export interface Scout {
 export interface PlayerProfile {
   name: string;
   experience: number; // Starts at 0
+  photo?: string;     // Custom avatar image DataURL or URL
 }
 
 export interface NewsItem {

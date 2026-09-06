@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { PlayerProfile } from '../../types';
 
 interface ProfileCreationProps {
@@ -14,11 +14,30 @@ const EXPERIENCE_OPTIONS = [
 export const ProfileCreation: React.FC<ProfileCreationProps> = ({ onProfileCreate }) => {
     const [name, setName] = useState('');
     const [experience, setExperience] = useState(0);
+    const [photo, setPhoto] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = () => {
+                if (typeof reader.result === 'string') {
+                    setPhoto(reader.result);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (name.trim()) {
-            onProfileCreate({ name: name.trim(), experience });
+            onProfileCreate({ 
+                name: name.trim(), 
+                experience,
+                photo: photo || undefined 
+            });
         }
     };
 
@@ -27,7 +46,7 @@ export const ProfileCreation: React.FC<ProfileCreationProps> = ({ onProfileCreat
             {/* Background */}
             <div className="absolute inset-0">
                 <div 
-                    className="absolute inset-0 bg-cover bg-center transition-transform duration-[20s] ease-out animate-slow-zoom"
+                    className="absolute inset-0 bg-cover bg-center"
                     style={{ 
                         backgroundImage: 'url("/bg-profile.png")',
                         filter: 'brightness(1.0) saturate(1.1)'
@@ -68,20 +87,50 @@ export const ProfileCreation: React.FC<ProfileCreationProps> = ({ onProfileCreat
                                 </p>
                             </div>
 
-                            {/* Avatar */}
+                            {/* Avatar Picker */}
                             <div className="flex flex-col items-center mb-6">
-                                <div className="w-24 h-24 rounded-full flex items-center justify-center mb-3 relative"
-                                     style={{ border: '2px solid var(--apex-gold)', background: 'linear-gradient(135deg, rgba(200,168,78,0.1), rgba(15,20,35,0.8))' }}>
-                                    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--apex-gold-dim)' }}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                    </svg>
-                                    <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center"
-                                         style={{ background: 'var(--apex-card-solid)', border: '1px solid var(--apex-border)' }}>
-                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--apex-text-secondary)' }}>
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                <input 
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={handlePhotoChange}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="w-24 h-24 rounded-full flex items-center justify-center mb-2 relative group cursor-pointer transition-transform active:scale-95 overflow-hidden"
+                                    style={{ 
+                                        border: '2px solid var(--apex-gold)', 
+                                        background: photo ? '#000' : 'linear-gradient(135deg, rgba(200,168,78,0.1), rgba(15,20,35,0.8))' 
+                                    }}
+                                    title="Toca para subir tu foto"
+                                >
+                                    {photo ? (
+                                        <img src={photo} alt="Avatar" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--apex-gold-dim)' }}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                        </svg>
+                                    )}
+
+                                    {/* Camera / Edit badge */}
+                                    <div className="absolute bottom-1 right-1 w-6 h-6 rounded-full flex items-center justify-center shadow-lg"
+                                         style={{ background: 'var(--apex-gold)', color: '#0A0E17' }}>
+                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                                         </svg>
                                     </div>
-                                </div>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="text-[11px] font-bold tracking-wider uppercase transition-opacity hover:opacity-80"
+                                    style={{ color: 'var(--apex-gold)' }}
+                                >
+                                    {photo ? 'Cambiar Foto' : '+ Subir Foto'}
+                                </button>
                             </div>
 
                             {/* Fields */}

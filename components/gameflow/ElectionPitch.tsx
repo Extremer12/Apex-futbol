@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Team, PlayerProfile } from '../../types';
 import { LoadingSpinner } from '../icons';
 import { selectDebateQuestions, evaluateDebate, DebateQuestion, DebateOption, OpponentCandidate, generateOpponents } from '../../services/electionDebate';
+import { TeamLogo } from '../../data/teams/helpers';
 
 interface ElectionPitchProps {
     team: Team;
@@ -80,9 +81,9 @@ export const ElectionPitch: React.FC<ElectionPitchProps> = ({ team, player, onSu
     if (gamePhase === 'intro') {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden" style={{ background: 'var(--apex-dark)' }}>
-                {/* Background Image with subtle parallax movement */}
+                {/* Background Image */}
                 <div 
-                    className="absolute inset-0 bg-cover bg-center transition-transform duration-[20s] ease-out animate-slow-zoom"
+                    className="absolute inset-0 bg-cover bg-center"
                     style={{ 
                         backgroundImage: 'url("/bg-debate.png")',
                         filter: 'brightness(1.0) saturate(1.1)'
@@ -99,10 +100,8 @@ export const ElectionPitch: React.FC<ElectionPitchProps> = ({ team, player, onSu
 
                 <div className="relative z-10 flex flex-col items-center text-center px-6 animate-scale-in">
                     {/* Club logo */}
-                    <div className="w-20 h-20 rounded-full flex items-center justify-center mb-6 p-4"
-                         style={{ border: '2px solid var(--apex-border-active)', background: 'rgba(15,20,35,0.8)' }}>
-                        <img src={team.logo} alt={team.name} className="w-full h-full object-contain"
-                             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                    <div className="w-20 h-20 mb-6 drop-shadow-lg">
+                        <TeamLogo team={team} className="w-full h-full" />
                     </div>
 
                     <h1 className="text-2xl font-extrabold text-white uppercase tracking-[0.1em] mb-1">{team.name}</h1>
@@ -155,9 +154,9 @@ export const ElectionPitch: React.FC<ElectionPitchProps> = ({ team, player, onSu
     // ── DEBATE PHASE ──
     return (
         <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: 'var(--apex-dark)' }}>
-            {/* Background Image with subtle parallax movement */}
+            {/* Background Image */}
             <div 
-                className="absolute inset-0 bg-cover bg-center transition-transform duration-[20s] ease-out animate-slow-zoom"
+                className="absolute inset-0 bg-cover bg-center"
                 style={{ 
                     backgroundImage: 'url("/bg-debate.png")',
                     filter: 'brightness(0.6) saturate(0.8)'
@@ -177,7 +176,7 @@ export const ElectionPitch: React.FC<ElectionPitchProps> = ({ team, player, onSu
                     </button>
                     <div className="text-center">
                         <div className="flex items-center gap-2 justify-center">
-                            <img src={team.logo} alt="" className="w-5 h-5 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                            <div className="w-5 h-5"><TeamLogo team={team} className="w-full h-full" /></div>
                             <span className="text-xs font-extrabold text-white uppercase">{team.name}</span>
                         </div>
                         <p className="text-[9px] uppercase tracking-[0.1em]" style={{ color: 'var(--apex-text-secondary)' }}>Elecciones Presidenciales</p>

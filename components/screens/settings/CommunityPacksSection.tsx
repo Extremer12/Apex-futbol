@@ -390,23 +390,44 @@ export const CommunityPacksSection: React.FC = () => {
             {/* Importar desde URL */}
             <form onSubmit={handleUrlImport} className="space-y-2">
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
-                    O Importar mediante URL de Manifiesto Online (JSON)
+                    O Importar mediante URL de Manifiesto Online o Enlace Directo
                 </label>
                 <div className="flex flex-col sm:flex-row gap-2">
-                    <input 
-                        type="url" 
-                        placeholder="https://raw.githubusercontent.com/.../logopack.json" 
-                        value={urlInput}
-                        onChange={(e) => setUrlInput(e.target.value)}
-                        disabled={isProcessing}
-                        className="flex-1 bg-slate-950/80 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[var(--apex-gold)] transition-colors"
-                    />
+                    <div className="flex-1 relative flex items-center">
+                        <input 
+                            type="text" 
+                            placeholder="https://.../pack.json o enlace de imagen" 
+                            value={urlInput}
+                            onChange={(e) => setUrlInput(e.target.value)}
+                            disabled={isProcessing}
+                            autoComplete="off"
+                            autoCorrect="off"
+                            spellCheck="false"
+                            className="w-full bg-slate-950/80 border border-white/10 rounded-xl pl-4 pr-20 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[var(--apex-gold)] transition-colors"
+                        />
+                        <button
+                            type="button"
+                            onClick={async () => {
+                                try {
+                                    const text = await navigator.clipboard.readText();
+                                    if (text) setUrlInput(text.trim());
+                                } catch (err) {
+                                    // Clipboard API permission denied fallback
+                                    console.warn("Could not read clipboard", err);
+                                }
+                            }}
+                            className="absolute right-2 px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-[10px] font-black uppercase tracking-wider text-slate-200 transition-colors flex items-center gap-1 cursor-pointer"
+                            title="Pegar enlace copiado"
+                        >
+                            <span>📋</span> Pegar
+                        </button>
+                    </div>
                     <button
                         type="submit"
                         disabled={isProcessing || !urlInput.trim()}
-                        className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 disabled:opacity-40 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-colors shadow-lg shadow-sky-600/20"
+                        className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 disabled:opacity-40 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-colors shadow-lg shadow-sky-600/20 cursor-pointer"
                     >
-                        Cargar Pack
+                        Cargar Enlace
                     </button>
                 </div>
             </form>

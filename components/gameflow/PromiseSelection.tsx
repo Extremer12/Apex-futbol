@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Team, ElectoralPromise } from '../../types';
 import { StartupScreenContainer } from './StartupScreenContainer';
+import { TeamLogo } from '../../data/teams/helpers';
 
 interface PromiseSelectionProps {
     team: Team;
@@ -72,7 +73,11 @@ export const PromiseSelection: React.FC<PromiseSelectionProps> = ({ team, onSele
     return (
         <StartupScreenContainer>
             <div className="w-full max-w-2xl">
-                <div className='flex justify-center mb-4'>{team.logo}</div>
+                <div className='flex justify-center mb-4'>
+                    <div className="w-16 h-16">
+                        <TeamLogo team={team} className="w-full h-full" />
+                    </div>
+                </div>
                 <h1 className="text-3xl font-bold mb-2 text-center text-white">Promesas Electorales</h1>
                 <p className="text-slate-400 text-center mb-8">
                     Selecciona hasta 3 promesas para tu mandato. 

@@ -93,24 +93,22 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onNewGame, onLoadGameS
             {modal === 'about' && <AboutModal onClose={() => setModal(null)} />}
             {modal === 'leaderboard' && <LeaderboardModal onClose={() => setModal(null)} />}
 
-            {/* Background layers (COMPLETELY STATIC, NO MOVEMENT) */}
-            <div className="absolute inset-0 pointer-events-none">
-                {/* Background Image without animation */}
+            {/* Background layers (COMPLETELY STATIC, NO MOVEMENT, PERFECT TOP CLARITY) */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                {/* Background Image positioned cleanly at top */}
                 <div 
-                    className="absolute inset-0 bg-cover bg-center"
+                    className="absolute inset-0"
                     style={{ 
                         backgroundImage: 'url("/bg-inicio.png")',
-                        filter: 'brightness(0.95) saturate(1.1)'
+                        backgroundSize: 'min(100vw, 620px) auto',
+                        backgroundPosition: 'top center',
+                        backgroundRepeat: 'no-repeat',
+                        filter: 'brightness(1.05) contrast(1.02)'
                     }}
                 />
                 
-                {/* Contrast overlays */}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0A0E17] via-[#0A0E17]/60 to-black/50" />
-                <div className="absolute inset-0 bg-radial-gradient from-transparent via-black/30 to-[#0A0E17]/90" />
-
-                {/* Subtle warm center glow */}
-                <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] rounded-full opacity-20 pointer-events-none"
-                     style={{ background: 'radial-gradient(ellipse, rgba(212,175,55,0.3), transparent 70%)' }} />
+                {/* Smooth bottom-only fade so top remains 100% visible and bright */}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0A0E17] from-30% via-[#0A0E17]/85 via-55% to-transparent" />
             </div>
 
             {/* Content */}
