@@ -718,8 +718,12 @@ export const determineCupWinner = (match: Match): number | null => {
     if (match.penalties) {
         return match.penalties.home > match.penalties.away ? match.homeTeamId : match.awayTeamId;
     }
+    if (match.result.penalties) {
+        return match.result.penalties.home > match.result.penalties.away ? match.homeTeamId : match.awayTeamId;
+    }
 
-    return null; // Match not yet decided
+    // Safe tiebreaker fallback for knockout matches
+    return match.homeTeamId;
 };
 
 // Helper function to advance cup to next round
@@ -792,13 +796,31 @@ export const progressInternationalCup = (cup: CupCompetition, allTeams: Team[], 
     return cup;
 };
 
-export const advanceCupRound = (cup: CupCompetition, allTeams: Team[], nextWeek: number): CupCompetition => {
+export const advanceCupRound = (
+    cup: CupCompetition, 
+    allTeams: Team[], 
+    nextWeek: number,
+    recentMatches?: Match[]
+): CupCompetition => {
     // Check if there are rounds initialized
-    if (!cup.rounds || cup.rounds.length === 0) return cup;
+    if (!cup || !cup.rounds || cup.rounds.length === 0) return cup;
 
     const currentRound = cup.rounds[cup.currentRoundIndex];
     if (!currentRound) return cup;
     
+    // Synchronize fixture results with recent matches if results are missing
+    if (recentMatches && recentMatches.length > 0) {
+        currentRound.fixtures = currentRound.fixtures.map(f => {
+            if (f.result !== undefined) return f;
+            const played = recentMatches.find(m => 
+                m.homeTeamId === f.homeTeamId && 
+                m.awayTeamId === f.awayTeamId && 
+                m.result !== undefined
+            );
+            return played ? { ...f, result: played.result, penalties: played.penalties || played.result?.penalties } : f;
+        });
+    }
+
     // Check if current round is complete
     const allMatchesPlayed = currentRound.fixtures.every(m => m.result !== undefined);
     if (!allMatchesPlayed) {
@@ -814,7 +836,7 @@ export const advanceCupRound = (cup: CupCompetition, allTeams: Team[], nextWeek:
         }
     });
 
-    // If this was the final (only 2 teams), set winner
+    // If this was the final (only 1 winner remaining), set winner and finalize cup
     if (winners.length === 1) {
         const winnerTeam = allTeams.find(t => t.id === winners[0]);
         const updatedStatistics = {
@@ -825,13 +847,14 @@ export const advanceCupRound = (cup: CupCompetition, allTeams: Team[], nextWeek:
                     winnerId: winners[0],
                     winnerName: winnerTeam?.name || 'Unknown'
                 },
-                ...cup.statistics.championsHistory
+                ...(cup.statistics?.championsHistory || [])
             ].slice(0, 10)
         };
 
         return {
             ...cup,
             winnerId: winners[0],
+            phase: 'finished',
             statistics: updatedStatistics,
             rounds: cup.rounds.map((r, idx) =>
                 idx === cup.currentRoundIndex ? { ...r, completed: true } : r

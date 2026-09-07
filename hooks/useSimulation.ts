@@ -195,8 +195,8 @@ export function useSimulation(
             }
 
             // Argentine Playoffs Logic (Torneo Apertura & Clausura)
-            // Apertura Phase Regular ends at Week 16 -> Generate Playoffs for Week 17
-            if (newWeek === 16) {
+            // Apertura Regular Phase ends at Week 16 -> Generate Playoffs for Week 17
+            if (newWeek === 17 && (!updatedCups.aperturaPlayoffs || updatedCups.aperturaPlayoffs.rounds.length === 0)) {
                 const argTable = simulationResult.updatedLeagueTables[LeagueId.LIGA_ARGENTINA] || [];
                 const zoneATeams = argTable.filter(r => r.zone === 'A').map(r => restoredTeams.find(t => t.id === r.teamId)!).filter(Boolean);
                 const zoneBTeams = argTable.filter(r => r.zone === 'B').map(r => restoredTeams.find(t => t.id === r.teamId)!).filter(Boolean);
@@ -216,19 +216,19 @@ export function useSimulation(
                 }
             }
 
-            // Advance Apertura Playoffs (Weeks 17, 18, 19)
+            // Advance Apertura Playoffs (Weeks 17 Octavos -> 18 Cuartos -> 19 Semis -> 20 Final)
             const aperturaPlayoffMatches = matchesThisWeek.filter(m => m.competition === 'Playoffs_Apertura');
             if (aperturaPlayoffMatches.length > 0 && aperturaPlayoffMatches.every(m => m.result !== undefined) && updatedCups.aperturaPlayoffs) {
                 const prevRoundsCount = updatedCups.aperturaPlayoffs.rounds.length;
-                updatedCups.aperturaPlayoffs = advanceCupRound(updatedCups.aperturaPlayoffs, simulationResult.updatedAllTeams, newWeek + 1);
+                updatedCups.aperturaPlayoffs = advanceCupRound(updatedCups.aperturaPlayoffs, simulationResult.updatedAllTeams, newWeek, matchesThisWeek);
                 if (updatedCups.aperturaPlayoffs.rounds.length > prevRoundsCount) {
                     const nextRound = updatedCups.aperturaPlayoffs.rounds[updatedCups.aperturaPlayoffs.rounds.length - 1];
                     simulationResult.updatedSchedule.push(...nextRound.fixtures);
                 }
             }
 
-            // Clausura Phase Regular ends at Week 36 -> Generate Playoffs for Week 37
-            if (newWeek === 36) {
+            // Clausura Regular Phase ends at Week 36 -> Generate Playoffs for Week 37
+            if (newWeek === 37 && (!updatedCups.clausuraPlayoffs || updatedCups.clausuraPlayoffs.rounds.length === 0)) {
                 const argTable = simulationResult.updatedLeagueTables[LeagueId.LIGA_ARGENTINA] || [];
                 const zoneATeams = argTable.filter(r => r.zone === 'A').map(r => restoredTeams.find(t => t.id === r.teamId)!).filter(Boolean);
                 const zoneBTeams = argTable.filter(r => r.zone === 'B').map(r => restoredTeams.find(t => t.id === r.teamId)!).filter(Boolean);
@@ -248,11 +248,11 @@ export function useSimulation(
                 }
             }
 
-            // Advance Clausura Playoffs (Weeks 37, 38, 39)
+            // Advance Clausura Playoffs (Weeks 37 Octavos -> 38 Cuartos -> 39 Semis -> 40 Final)
             const clausuraPlayoffMatches = matchesThisWeek.filter(m => m.competition === 'Playoffs_Clausura');
             if (clausuraPlayoffMatches.length > 0 && clausuraPlayoffMatches.every(m => m.result !== undefined) && updatedCups.clausuraPlayoffs) {
                 const prevRoundsCount = updatedCups.clausuraPlayoffs.rounds.length;
-                updatedCups.clausuraPlayoffs = advanceCupRound(updatedCups.clausuraPlayoffs, simulationResult.updatedAllTeams, newWeek + 1);
+                updatedCups.clausuraPlayoffs = advanceCupRound(updatedCups.clausuraPlayoffs, simulationResult.updatedAllTeams, newWeek, matchesThisWeek);
                 if (updatedCups.clausuraPlayoffs.rounds.length > prevRoundsCount) {
                     const nextRound = updatedCups.clausuraPlayoffs.rounds[updatedCups.clausuraPlayoffs.rounds.length - 1];
                     simulationResult.updatedSchedule.push(...nextRound.fixtures);
@@ -260,7 +260,7 @@ export function useSimulation(
             }
 
             // Primera Nacional: Week 34 ends -> Generate Primer Ascenso Final & Reducido Phase 1 for Week 35
-            if (newWeek === 34) {
+            if (newWeek === 35 && (!updatedCups.nacionalPrimerAscenso || !updatedCups.nacionalPrimerAscenso.rounds.length)) {
                 const pnTable = simulationResult.updatedLeagueTables[LeagueId.PRIMERA_NACIONAL] || [];
                 const zoneATeams = pnTable.filter(r => r.zone === 'A').map(r => restoredTeams.find(t => t.id === r.teamId)!).filter(Boolean);
                 const zoneBTeams = pnTable.filter(r => r.zone === 'B').map(r => restoredTeams.find(t => t.id === r.teamId)!).filter(Boolean);
@@ -296,7 +296,7 @@ export function useSimulation(
 
             // Primera Nacional: Week 35 matches finished -> Winner of 1st Ascenso is set, and Loser joins Reducido Cuartos at Week 36
             const primerAscensoMatches = matchesThisWeek.filter(m => m.competition === 'Nacional_Primer_Ascenso');
-            const reducidoPhase1Matches = matchesThisWeek.filter(m => m.competition === 'Nacional_Reducido' && newWeek === 35);
+            const reducidoPhase1Matches = matchesThisWeek.filter(m => m.competition === 'Nacional_Reducido' && newWeek === 36);
             if (primerAscensoMatches.length > 0 && primerAscensoMatches.every(m => m.result !== undefined) &&
                 reducidoPhase1Matches.length > 0 && reducidoPhase1Matches.every(m => m.result !== undefined) &&
                 updatedCups.nacionalPrimerAscenso && updatedCups.nacionalReducido) {
@@ -332,11 +332,11 @@ export function useSimulation(
                 simulationResult.updatedSchedule.push(...cuartosFixtures);
             }
 
-            // Advance Reducido Semis & Final (Weeks 36, 37)
-            const generalReducidoMatches = matchesThisWeek.filter(m => m.competition === 'Nacional_Reducido' && newWeek >= 36);
+            // Advance Reducido Semis & Final (Weeks 36, 37, 38)
+            const generalReducidoMatches = matchesThisWeek.filter(m => m.competition === 'Nacional_Reducido' && newWeek >= 37);
             if (generalReducidoMatches.length > 0 && generalReducidoMatches.every(m => m.result !== undefined) && updatedCups.nacionalReducido) {
                 const prevRoundsCount = updatedCups.nacionalReducido.rounds.length;
-                updatedCups.nacionalReducido = advanceCupRound(updatedCups.nacionalReducido, simulationResult.updatedAllTeams, newWeek + 1);
+                updatedCups.nacionalReducido = advanceCupRound(updatedCups.nacionalReducido, simulationResult.updatedAllTeams, newWeek, matchesThisWeek);
                 if (updatedCups.nacionalReducido.rounds.length > prevRoundsCount) {
                     const nextRound = updatedCups.nacionalReducido.rounds[updatedCups.nacionalReducido.rounds.length - 1];
                     simulationResult.updatedSchedule.push(...nextRound.fixtures);
