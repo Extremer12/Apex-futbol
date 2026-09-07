@@ -8,6 +8,7 @@ export const CommunityPacksSection: React.FC = () => {
     const [stats, setStats] = useState({ teams: 0, competitions: 0, players: 0, total: 0 });
     const [isArgPackActive, setIsArgPackActive] = useState<boolean>(false);
     const [isEngPackActive, setIsEngPackActive] = useState<boolean>(false);
+    const [isItaPackActive, setIsItaPackActive] = useState<boolean>(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [progressPercent, setProgressPercent] = useState(0);
     const [progressStatus, setProgressStatus] = useState('');
@@ -22,6 +23,7 @@ export const CommunityPacksSection: React.FC = () => {
         setStats(s);
         setIsArgPackActive(customPacksService.isArgentinePackActive());
         setIsEngPackActive(customPacksService.isEnglishPackActive());
+        setIsItaPackActive(customPacksService.isItalianPackActive());
     };
 
     useEffect(() => {
@@ -74,17 +76,41 @@ export const CommunityPacksSection: React.FC = () => {
         }
     };
 
+    // Toggle Italian Pack (jsDelivr CDN)
+    const handleToggleItaPack = (enable: boolean) => {
+        setIsProcessing(true);
+        try {
+            customPacksService.setItalianPackActive(enable);
+            setIsItaPackActive(enable);
+            setFeedbackMessage({
+                type: 'success',
+                text: enable 
+                    ? '¡Pack de Fútbol Italiano activado! Se cargaron los escudos de Serie A y Serie B.' 
+                    : 'Pack de Fútbol Italiano desinstalado. Se restauraron los escudos genéricos neutros.'
+            });
+        } catch (err: any) {
+            setFeedbackMessage({
+                type: 'error',
+                text: 'Error al cambiar el estado del pack: ' + (err.message || err)
+            });
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
     // Enable all community packs
     const handleEnableAllPacks = () => {
         setIsProcessing(true);
         try {
             customPacksService.setArgentinePackActive(true);
             customPacksService.setEnglishPackActive(true);
+            customPacksService.setItalianPackActive(true);
             setIsArgPackActive(true);
             setIsEngPackActive(true);
+            setIsItaPackActive(true);
             setFeedbackMessage({
                 type: 'success',
-                text: '¡Todos los packs comunitarios activos! (Argentina, Premier League y Championship).'
+                text: '¡Todos los packs comunitarios activos! (Argentina, Inglaterra e Italia).'
             });
         } catch (err: any) {
             setFeedbackMessage({ type: 'error', text: err.message || 'Error al activar los packs.' });
@@ -196,6 +222,7 @@ export const CommunityPacksSection: React.FC = () => {
             await customPacksService.clearAllPacks();
             setIsArgPackActive(false);
             setIsEngPackActive(false);
+            setIsItaPackActive(false);
             setFeedbackMessage({ type: 'success', text: 'Se restablecieron todos los escudos a genéricos neutros.' });
             await refreshState();
         } catch (err: any) {
@@ -216,7 +243,7 @@ export const CommunityPacksSection: React.FC = () => {
                 </div>
                 
                 <div className="flex items-center gap-2">
-                    {(!isArgPackActive || !isEngPackActive) && (
+                    {(!isArgPackActive || !isEngPackActive || !isItaPackActive) && (
                         <button
                             onClick={handleEnableAllPacks}
                             disabled={isProcessing}
@@ -226,7 +253,7 @@ export const CommunityPacksSection: React.FC = () => {
                             <span>Activar Todos</span>
                         </button>
                     )}
-                    {(isArgPackActive || isEngPackActive || stats.total > 0) && (
+                    {(isArgPackActive || isEngPackActive || isItaPackActive || stats.total > 0) && (
                         <button
                             onClick={handleClearAll}
                             disabled={isProcessing}
@@ -241,7 +268,7 @@ export const CommunityPacksSection: React.FC = () => {
             </div>
 
             {/* 🌟 Grid de Packs Oficiales Disponibles en jsDelivr */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {/* Tarjeta 1: Fútbol Argentino */}
                 <div className={`rounded-2xl border p-4 transition-all shadow-xl relative overflow-hidden flex flex-col justify-between ${
                     isArgPackActive 
@@ -264,10 +291,10 @@ export const CommunityPacksSection: React.FC = () => {
                             )}
                         </div>
                         <h4 className="text-sm font-black text-white uppercase tracking-tight">
-                            Primera División y Primera Nacional
+                            Primera División & Nacional
                         </h4>
                         <p className="text-xs text-slate-400 leading-relaxed">
-                            Incluye Boca, River, Racing, Independiente, San Lorenzo y los 66 clubes de AFA.
+                            Boca, River, Racing, Independiente, San Lorenzo y 66 clubes de AFA.
                         </p>
                     </div>
 
@@ -279,7 +306,7 @@ export const CommunityPacksSection: React.FC = () => {
                                 className="w-full py-2 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 text-red-300 hover:text-red-100 text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
                             >
                                 <Trash2 className="w-3.5 h-3.5" />
-                                <span>Desinstalar Pack</span>
+                                <span>Desinstalar</span>
                             </button>
                         ) : (
                             <button
@@ -288,7 +315,7 @@ export const CommunityPacksSection: React.FC = () => {
                                 className="w-full py-2 bg-[var(--apex-gold)] hover:bg-[#FFE57F] text-[#0A0E17] text-[11px] font-black uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
                             >
                                 <Sparkles className="w-3.5 h-3.5 text-black stroke-[2.5]" />
-                                <span>Instalar Pack Argentino</span>
+                                <span>Instalar Argentina</span>
                             </button>
                         )}
                     </div>
@@ -316,10 +343,10 @@ export const CommunityPacksSection: React.FC = () => {
                             )}
                         </div>
                         <h4 className="text-sm font-black text-white uppercase tracking-tight">
-                            Premier League y Championship
+                            Premier & Championship
                         </h4>
                         <p className="text-xs text-slate-400 leading-relaxed">
-                            Incluye Arsenal, City, Liverpool, United, Chelsea, Tottenham y los clubes de Championship.
+                            Arsenal, City, Liverpool, United, Chelsea, Tottenham y Championship.
                         </p>
                     </div>
 
@@ -331,7 +358,7 @@ export const CommunityPacksSection: React.FC = () => {
                                 className="w-full py-2 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 text-red-300 hover:text-red-100 text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
                             >
                                 <Trash2 className="w-3.5 h-3.5" />
-                                <span>Desinstalar Pack</span>
+                                <span>Desinstalar</span>
                             </button>
                         ) : (
                             <button
@@ -340,7 +367,59 @@ export const CommunityPacksSection: React.FC = () => {
                                 className="w-full py-2 bg-purple-500 hover:bg-purple-400 text-white text-[11px] font-black uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
                             >
                                 <Globe className="w-3.5 h-3.5 text-white stroke-[2.5]" />
-                                <span>Instalar Pack Inglés</span>
+                                <span>Instalar Inglaterra</span>
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* Tarjeta 3: Fútbol Italiano */}
+                <div className={`rounded-2xl border p-4 transition-all shadow-xl relative overflow-hidden flex flex-col justify-between ${
+                    isItaPackActive 
+                        ? 'bg-gradient-to-b from-[#10241A] to-[#0A160F] border-emerald-500/40' 
+                        : 'bg-gradient-to-b from-[#161D2E] to-[#0E131F] border-white/10'
+                }`}>
+                    <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                                Italia • 40+ Escudos
+                            </span>
+                            {isItaPackActive ? (
+                                <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-500/30">
+                                    <CheckCircle2 className="w-3 h-3" /> Activo
+                                </span>
+                            ) : (
+                                <span className="text-[10px] font-bold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700">
+                                    Genérico
+                                </span>
+                            )}
+                        </div>
+                        <h4 className="text-sm font-black text-white uppercase tracking-tight">
+                            Serie A & Serie B
+                        </h4>
+                        <p className="text-xs text-slate-400 leading-relaxed">
+                            Inter, Milan, Juventus, Roma, Napoli, Lazio, Fiorentina y Serie B.
+                        </p>
+                    </div>
+
+                    <div className="pt-3 mt-2 border-t border-white/5">
+                        {isItaPackActive ? (
+                            <button
+                                onClick={() => handleToggleItaPack(false)}
+                                disabled={isProcessing}
+                                className="w-full py-2 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 text-red-300 hover:text-red-100 text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+                            >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>Desinstalar</span>
+                            </button>
+                        ) : (
+                            <button
+                                onClick={() => handleToggleItaPack(true)}
+                                disabled={isProcessing}
+                                className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-black uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                                <Globe className="w-3.5 h-3.5 text-white stroke-[2.5]" />
+                                <span>Instalar Italia</span>
                             </button>
                         )}
                     </div>

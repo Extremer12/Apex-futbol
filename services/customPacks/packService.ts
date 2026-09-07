@@ -68,6 +68,29 @@ class CustomPacksService {
         this.notifyListeners();
     }
 
+    public isItalianPackActive(): boolean {
+        if (typeof window === 'undefined') return false;
+        try {
+            return localStorage.getItem('apex_pack_italian_active') === 'true';
+        } catch {
+            return false;
+        }
+    }
+
+    public setItalianPackActive(active: boolean): void {
+        if (typeof window === 'undefined') return;
+        try {
+            if (active) {
+                localStorage.setItem('apex_pack_italian_active', 'true');
+            } else {
+                localStorage.removeItem('apex_pack_italian_active');
+            }
+        } catch (e) {
+            console.error('Failed to save italian pack state:', e);
+        }
+        this.notifyListeners();
+    }
+
     public async init(): Promise<void> {
         if (this.isInitialized) return;
         await this.reloadCache();
@@ -112,8 +135,9 @@ class CustomPacksService {
 
         const isArgActive = this.isArgentinePackActive();
         const isEngActive = this.isEnglishPackActive();
+        const isItaActive = this.isItalianPackActive();
 
-        if (isArgActive || isEngActive) {
+        if (isArgActive || isEngActive || isItaActive) {
             // Check by numeric/string ID
             if (team.id !== undefined && team.id !== null) {
                 const idNum = Number(team.id);
@@ -122,7 +146,11 @@ class CustomPacksService {
                     return ARG_CLUB_LOGOS_BY_ID[team.id];
                 }
                 // English IDs: 1-20 (Premier) and 101-124 (Championship)
-                if (isEngActive && idNum < 700 && ARG_CLUB_LOGOS_BY_ID[team.id]) {
+                if (isEngActive && ((idNum >= 1 && idNum <= 20) || (idNum >= 101 && idNum <= 124)) && ARG_CLUB_LOGOS_BY_ID[team.id]) {
+                    return ARG_CLUB_LOGOS_BY_ID[team.id];
+                }
+                // Italian IDs: 501-520 (Serie A) and 961-978 (Serie B)
+                if (isItaActive && ((idNum >= 501 && idNum <= 520) || (idNum >= 961 && idNum <= 978)) && ARG_CLUB_LOGOS_BY_ID[team.id]) {
                     return ARG_CLUB_LOGOS_BY_ID[team.id];
                 }
                 // General lookup if pack active
@@ -152,7 +180,7 @@ class CustomPacksService {
         const custom = this.getCustomLogo('competitions', keys);
         if (custom) return custom;
 
-        if (this.isArgentinePackActive() || this.isEnglishPackActive()) {
+        if (this.isArgentinePackActive() || this.isEnglishPackActive() || this.isItalianPackActive()) {
             if (ARG_COMPETITION_LOGOS[competitionId]) {
                 return ARG_COMPETITION_LOGOS[competitionId];
             }
