@@ -176,7 +176,16 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
             const nextWeek = state.currentTurn === 'midweek' ? state.currentWeek + 1 : state.currentWeek;
             const daysToAdd = state.currentTurn === 'weekend' ? 3 : 4; // Sat -> Wed (3), Wed -> Sat (4)
 
-            return {
+            const updatedFinances = {
+                ...state.finances,
+                balance: newBalance,
+                weeklyIncome: breakdown.matchdayRevenue + breakdown.sponsorshipRevenue + breakdown.tvRevenue + breakdown.prizeMoneyRevenue + breakdown.transferRevenue,
+                weeklyWages: breakdown.wageExpenses + breakdown.coachExpenses + breakdown.stadiumExpenses + breakdown.operationalExpenses + breakdown.transferExpenses,
+                balanceHistory: [...state.finances.balanceHistory, newBalance].slice(-52),
+                breakdown
+            };
+
+            const interimState: GameState = {
                 ...state,
                 currentDate: new Date(state.currentDate.getTime() + daysToAdd * 24 * 60 * 60 * 1000),
                 currentWeek: nextWeek,
@@ -195,18 +204,18 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
                 boardConfidence: newConfidence,
                 incomingOffers: [...state.incomingOffers, ...newOffers],
                 cups: newCups || state.cups,
-                finances: {
-                    ...state.finances,
-                    balance: newBalance,
-                    weeklyIncome: breakdown.matchdayRevenue + breakdown.sponsorshipRevenue + breakdown.tvRevenue + breakdown.prizeMoneyRevenue + breakdown.transferRevenue,
-                    weeklyWages: breakdown.wageExpenses + breakdown.coachExpenses + breakdown.stadiumExpenses + breakdown.operationalExpenses + breakdown.transferExpenses,
-                    balanceHistory: [...state.finances.balanceHistory, newBalance].slice(-52),
-                    breakdown
-                },
+                finances: updatedFinances,
                 scoutedPlayerIds: newScoutedPlayerIds || state.scoutedPlayerIds,
                 cinematicQueue: action.payload.cinematicEvents && action.payload.cinematicEvents.length > 0
                     ? [...state.cinematicQueue, ...action.payload.cinematicEvents]
                     : state.cinematicQueue,
+            };
+
+            const { updatedAchievements } = evaluateAchievements(interimState);
+
+            return {
+                ...interimState,
+                achievements: updatedAchievements
             };
         }
 

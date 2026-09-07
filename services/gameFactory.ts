@@ -9,6 +9,7 @@ import { generateRandomCoach, generateCoachMarket } from './coaching';
 import { generateYouthPlayer, generateSeasonSchedule, generateCupDraw, createInitialLeagueTable, generateSwissPhase, generateGroupPhase, createInitialEuropeanTable } from './simulation';
 import { getBaseWeeklyIncome, generateStadium, generateSponsor, generateSponsorMarket } from './economy';
 import { formatDate } from '../utils';
+import { getInitialAchievements } from './achievementService';
 
 interface InitializeGameParams {
     selectedTeam: Team;
@@ -319,5 +320,7 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
         cinematicQueue: [],  // No international draws in season 1
         preferredCurrency: 'EUR',
         preferredLanguage: 'es',
+        achievements: getInitialAchievements(),
+        seasonHistory: [],
     };
 }

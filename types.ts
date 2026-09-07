@@ -447,6 +447,42 @@ export interface GameState {
   cinematicQueue: CinematicEvent[];
   preferredCurrency: 'EUR' | 'USD';
   preferredLanguage: 'en' | 'es'; // Added for Phase 7: i18n
+  achievements?: Achievement[];
+  seasonHistory?: SeasonHistoryRecord[];
+}
+
+export type AchievementCategory = 'trophies' | 'management' | 'transfers' | 'special';
+
+export interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  category: AchievementCategory;
+  isUnlocked: boolean;
+  unlockedAt?: string;
+  progress?: number;
+  maxProgress?: number;
+}
+
+export interface SeasonHistoryRecord {
+  season: number;
+  leagueId: LeagueId;
+  leagueName: string;
+  userTeamId: number;
+  userTeamName: string;
+  userPosition: number;
+  userPoints: number;
+  userWon: number;
+  userDrawn: number;
+  userLost: number;
+  leagueChampion: string;
+  cupWinners: { cupName: string; winnerName: string }[];
+  ballonDorWinner?: { name: string; teamName: string; rating: number };
+  goldenBootWinner?: { name: string; teamName: string; goals: number };
+  promotedTeams: string[];
+  relegatedTeams: string[];
+  endBalance: number;
 }
 
 export enum Screen {

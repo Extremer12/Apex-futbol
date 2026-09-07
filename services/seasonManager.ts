@@ -3,10 +3,11 @@
  * Handles season transitions, aging, retirements, and promotion/relegation
  */
 
-import { GameState, Team, Player, NewsItem, EuropeanCompetition, EuropeanTableRow, Match, CupCompetition, CupChampion, LeagueId } from '../types';
+import { GameState, Team, Player, NewsItem, EuropeanCompetition, EuropeanTableRow, Match, CupCompetition, CupChampion, LeagueId, SeasonHistoryRecord } from '../types';
 import { generateYouthPlayer, generateSeasonSchedule, generateCupDraw, createInitialLeagueTable, handlePromotionRelegation, generateSwissPhase, generateGroupPhase, createInitialEuropeanTable } from './simulation';
 import { calculatePrizeMoney, generateSponsorMarket } from './economy';
 import { formatDate, formatCurrency } from '../utils';
+import { evaluateAchievements } from './achievementService';
 
 // Define promotion/relegation pairs locally (mirrors simulation.ts)
 const PROMOTION_RELEGATION_PAIRS: [LeagueId, LeagueId][] = [
@@ -574,6 +575,62 @@ export function startNewSeason(currentState: GameState): GameState {
         }
     });
 
+    // 7.6 Build Season History Record
+    const userLeagueId = currentState.team.leagueId;
+    const userTable = currentState.leagueTables[userLeagueId] || [];
+    const sortedUserTable = [...userTable].sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference);
+    const userRow = sortedUserTable.find(r => r.teamId === currentState.team.id);
+    const leagueChampionTeam = processedTeams.find(t => t.id === sortedUserTable[0]?.teamId)?.name || 'Desconocido';
+
+    const cupWinnersList: { cupName: string; winnerName: string }[] = [];
+    Object.entries(currentState.cups).forEach(([_, cup]) => {
+        if (cup?.winnerId) {
+            const winnerTeam = processedTeams.find(t => t.id === cup.winnerId);
+            if (winnerTeam) {
+                cupWinnersList.push({ cupName: cup.name, winnerName: winnerTeam.name });
+            }
+        }
+    });
+
+    const seasonRecord: SeasonHistoryRecord = {
+        season: currentSeason,
+        leagueId: userLeagueId,
+        leagueName: LEAGUE_TROPHY_NAMES[userLeagueId] || userLeagueId.replace(/_/g, ' '),
+        userTeamId: currentState.team.id,
+        userTeamName: currentState.team.name,
+        userPosition: playerPosition,
+        userPoints: userRow?.points || 0,
+        userWon: userRow?.won || 0,
+        userDrawn: userRow?.drawn || 0,
+        userLost: userRow?.lost || 0,
+        leagueChampion: leagueChampionTeam,
+        cupWinners: cupWinnersList,
+        ballonDorWinner: ballonDorWinner ? { 
+            name: ballonDorWinner.name, 
+            teamName: processedTeams.find(t => t.squad.some(p => p.id === ballonDorWinner!.id))?.name || 'Club', 
+            rating: ballonDorWinner.rating 
+        } : undefined,
+        goldenBootWinner: goldenBootWinner ? { 
+            name: goldenBootWinner.name, 
+            teamName: processedTeams.find(t => t.squad.some(p => p.id === goldenBootWinner!.id))?.name || 'Club', 
+            goals: maxGoals 
+        } : undefined,
+        promotedTeams: promotedTeamNames,
+        relegatedTeams: relegatedTeamNames,
+        endBalance: newBalance
+    };
+
+    const updatedSeasonHistory = [...(currentState.seasonHistory || []), seasonRecord];
+
+    // Evaluate Achievements
+    const tempStateForAchievements: GameState = {
+        ...currentState,
+        team: updatedPlayerTeamWithTrophies,
+        finances: { ...currentState.finances, balance: newBalance },
+        seasonHistory: updatedSeasonHistory
+    };
+    const { updatedAchievements } = evaluateAchievements(tempStateForAchievements);
+
     // 8. Return updated state
     return {
         ...currentState,
@@ -672,6 +729,8 @@ export function startNewSeason(currentState: GameState): GameState {
             balance: newBalance
         },
         availableSponsors: generateSponsorMarket(updatedPlayerTeam.tier),
-        cinematicQueue: newCinematicQueue
+        cinematicQueue: newCinematicQueue,
+        achievements: updatedAchievements,
+        seasonHistory: updatedSeasonHistory
     };
 }
