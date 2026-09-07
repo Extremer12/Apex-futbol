@@ -22,6 +22,7 @@ interface AppRouterProps {
     electionResult: ElectionResponse | null;
     onNewGame: () => void;
     onLoadGameScreen: () => void;
+    onBackToStart?: () => void;
     onLoadGame: (id: string, isCloud?: boolean) => Promise<void> | void;
     onProfileCreate: (profile: PlayerProfile) => void;
     onTeamSelect: (team: Team) => void;
@@ -39,6 +40,7 @@ export const AppRouter: React.FC<AppRouterProps> = ({
     electionResult,
     onNewGame,
     onLoadGameScreen,
+    onBackToStart,
     onLoadGame,
     onProfileCreate,
     onTeamSelect,
@@ -53,7 +55,7 @@ export const AppRouter: React.FC<AppRouterProps> = ({
             return <StartScreen onNewGame={onNewGame} onLoadGameScreen={onLoadGameScreen} />;
 
         case 'LOAD_GAME':
-            return <LoadGameScreen onLoadGame={onLoadGame} onBack={() => onLoadGameScreen()} />;
+            return <LoadGameScreen onLoadGame={onLoadGame} onBack={onBackToStart || (() => onNewGame())} />;
 
         case 'GAME_OVER':
             return <GameOverScreen onNewGame={onNewGame} />;

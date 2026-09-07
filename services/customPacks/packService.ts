@@ -45,6 +45,29 @@ class CustomPacksService {
         this.notifyListeners();
     }
 
+    public isEnglishPackActive(): boolean {
+        if (typeof window === 'undefined') return false;
+        try {
+            return localStorage.getItem('apex_pack_english_active') === 'true';
+        } catch {
+            return false;
+        }
+    }
+
+    public setEnglishPackActive(active: boolean): void {
+        if (typeof window === 'undefined') return;
+        try {
+            if (active) {
+                localStorage.setItem('apex_pack_english_active', 'true');
+            } else {
+                localStorage.removeItem('apex_pack_english_active');
+            }
+        } catch (e) {
+            console.error('Failed to save english pack state:', e);
+        }
+        this.notifyListeners();
+    }
+
     public async init(): Promise<void> {
         if (this.isInitialized) return;
         await this.reloadCache();
@@ -87,10 +110,28 @@ class CustomPacksService {
         const custom = this.getCustomLogo('teams', keys);
         if (custom) return custom;
 
-        if (this.isArgentinePackActive()) {
-            if (team.id !== undefined && team.id !== null && ARG_CLUB_LOGOS_BY_ID[team.id]) {
-                return ARG_CLUB_LOGOS_BY_ID[team.id];
+        const isArgActive = this.isArgentinePackActive();
+        const isEngActive = this.isEnglishPackActive();
+
+        if (isArgActive || isEngActive) {
+            // Check by numeric/string ID
+            if (team.id !== undefined && team.id !== null) {
+                const idNum = Number(team.id);
+                // Argentine IDs: 701-799
+                if (isArgActive && idNum >= 700 && idNum < 800 && ARG_CLUB_LOGOS_BY_ID[team.id]) {
+                    return ARG_CLUB_LOGOS_BY_ID[team.id];
+                }
+                // English IDs: 1-20 (Premier) and 101-124 (Championship)
+                if (isEngActive && idNum < 700 && ARG_CLUB_LOGOS_BY_ID[team.id]) {
+                    return ARG_CLUB_LOGOS_BY_ID[team.id];
+                }
+                // General lookup if pack active
+                if (ARG_CLUB_LOGOS_BY_ID[team.id]) {
+                    return ARG_CLUB_LOGOS_BY_ID[team.id];
+                }
             }
+
+            // Check by team name
             if (team.name) {
                 const norm = normalizeKey(team.name);
                 if (norm && ARG_CLUB_LOGOS_BY_NAME[norm]) {
@@ -111,7 +152,7 @@ class CustomPacksService {
         const custom = this.getCustomLogo('competitions', keys);
         if (custom) return custom;
 
-        if (this.isArgentinePackActive()) {
+        if (this.isArgentinePackActive() || this.isEnglishPackActive()) {
             if (ARG_COMPETITION_LOGOS[competitionId]) {
                 return ARG_COMPETITION_LOGOS[competitionId];
             }
@@ -401,6 +442,7 @@ class CustomPacksService {
      */
     public async clearAllPacks(): Promise<void> {
         this.setArgentinePackActive(false);
+        this.setEnglishPackActive(false);
         await clearAllStoredAssets();
         await this.reloadCache();
     }

@@ -272,6 +272,7 @@ function AppLogic() {
                 electionResult={electionResult}
                 onNewGame={handleNewGame}
                 onLoadGameScreen={() => setAppState('LOAD_GAME')}
+                onBackToStart={() => setAppState('START_SCREEN')}
                 onLoadGame={handleLoadGame}
                 onProfileCreate={handleProfileCreate}
                 onTeamSelect={handleTeamSelect}

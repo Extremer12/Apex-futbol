@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { customPacksService } from '../../../services/customPacks/packService';
-import { Download, Upload, Link2, AlertCircle, CheckCircle2, RotateCcw, Shield, Sparkles, Trash2 } from 'lucide-react';
-import { ARG_PACK_CDN } from '../../../services/customPacks/argentineLogos';
+import { Download, Upload, Link2, AlertCircle, CheckCircle2, RotateCcw, Shield, Sparkles, Trash2, Globe } from 'lucide-react';
 
 const OFFICIAL_GLOBAL_PACK_ZIP = 'https://github.com/Extremer12/community-data-packs/releases/download/v1.0.0/football-logos-master.zip';
 
 export const CommunityPacksSection: React.FC = () => {
     const [stats, setStats] = useState({ teams: 0, competitions: 0, players: 0, total: 0 });
     const [isArgPackActive, setIsArgPackActive] = useState<boolean>(false);
+    const [isEngPackActive, setIsEngPackActive] = useState<boolean>(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [progressPercent, setProgressPercent] = useState(0);
     const [progressStatus, setProgressStatus] = useState('');
@@ -21,6 +21,7 @@ export const CommunityPacksSection: React.FC = () => {
         const s = await customPacksService.getStats();
         setStats(s);
         setIsArgPackActive(customPacksService.isArgentinePackActive());
+        setIsEngPackActive(customPacksService.isEnglishPackActive());
     };
 
     useEffect(() => {
@@ -38,7 +39,7 @@ export const CommunityPacksSection: React.FC = () => {
             setFeedbackMessage({
                 type: 'success',
                 text: enable 
-                    ? '¡Pack de Fútbol Argentino activado! Se cargaron los escudos oficiales vectoriales.' 
+                    ? '¡Pack de Fútbol Argentino activado! Se cargaron los escudos oficiales vectoriales (Primera División + Primera Nacional).' 
                     : 'Pack de Fútbol Argentino desinstalado. Se restauraron los escudos genéricos neutros.'
             });
         } catch (err: any) {
@@ -46,6 +47,47 @@ export const CommunityPacksSection: React.FC = () => {
                 type: 'error',
                 text: 'Error al cambiar el estado del pack: ' + (err.message || err)
             });
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    // Toggle English Pack (jsDelivr CDN)
+    const handleToggleEngPack = (enable: boolean) => {
+        setIsProcessing(true);
+        try {
+            customPacksService.setEnglishPackActive(enable);
+            setIsEngPackActive(enable);
+            setFeedbackMessage({
+                type: 'success',
+                text: enable 
+                    ? '¡Pack de Fútbol Inglés activado! Se cargaron los escudos de Premier League y Championship.' 
+                    : 'Pack de Fútbol Inglés desinstalado. Se restauraron los escudos genéricos neutros.'
+            });
+        } catch (err: any) {
+            setFeedbackMessage({
+                type: 'error',
+                text: 'Error al cambiar el estado del pack: ' + (err.message || err)
+            });
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    // Enable all community packs
+    const handleEnableAllPacks = () => {
+        setIsProcessing(true);
+        try {
+            customPacksService.setArgentinePackActive(true);
+            customPacksService.setEnglishPackActive(true);
+            setIsArgPackActive(true);
+            setIsEngPackActive(true);
+            setFeedbackMessage({
+                type: 'success',
+                text: '¡Todos los packs comunitarios activos! (Argentina, Premier League y Championship).'
+            });
+        } catch (err: any) {
+            setFeedbackMessage({ type: 'error', text: err.message || 'Error al activar los packs.' });
         } finally {
             setIsProcessing(false);
         }
@@ -153,6 +195,7 @@ export const CommunityPacksSection: React.FC = () => {
         try {
             await customPacksService.clearAllPacks();
             setIsArgPackActive(false);
+            setIsEngPackActive(false);
             setFeedbackMessage({ type: 'success', text: 'Se restablecieron todos los escudos a genéricos neutros.' });
             await refreshState();
         } catch (err: any) {
@@ -162,7 +205,7 @@ export const CommunityPacksSection: React.FC = () => {
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                     <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
                         <Shield className="w-4 h-4 text-[var(--apex-gold)]" /> Packs de la Comunidad
@@ -171,74 +214,140 @@ export const CommunityPacksSection: React.FC = () => {
                         Modelo World Soccer Champs & Super Kickoff (Licencias & UGC).
                     </p>
                 </div>
-                {(isArgPackActive || stats.total > 0) && (
-                    <button
-                        onClick={handleClearAll}
-                        disabled={isProcessing}
-                        className="text-[11px] font-bold text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors cursor-pointer"
-                        title="Restablecer todo a genéricos"
-                    >
-                        <RotateCcw className="w-3.5 h-3.5" />
-                        <span>Restablecer Todo</span>
-                    </button>
-                )}
+                
+                <div className="flex items-center gap-2">
+                    {(!isArgPackActive || !isEngPackActive) && (
+                        <button
+                            onClick={handleEnableAllPacks}
+                            disabled={isProcessing}
+                            className="text-[11px] font-bold text-[var(--apex-gold)] hover:underline flex items-center gap-1 transition-colors cursor-pointer"
+                        >
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>Activar Todos</span>
+                        </button>
+                    )}
+                    {(isArgPackActive || isEngPackActive || stats.total > 0) && (
+                        <button
+                            onClick={handleClearAll}
+                            disabled={isProcessing}
+                            className="text-[11px] font-bold text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors cursor-pointer ml-2"
+                            title="Restablecer todo a genéricos"
+                        >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                            <span>Restablecer Todo</span>
+                        </button>
+                    )}
+                </div>
             </div>
 
-            {/* 🌟 Tarjeta 1: Pack de Fútbol Argentino (jsDelivr CDN) */}
-            <div className={`rounded-2xl border p-5 transition-all shadow-xl relative overflow-hidden ${
-                isArgPackActive 
-                    ? 'bg-gradient-to-b from-[#101A2B] to-[#0A101C] border-sky-500/40' 
-                    : 'bg-gradient-to-b from-[#161D2E] to-[#0E131F] border-white/10'
-            }`}>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="space-y-1.5 flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
+            {/* 🌟 Grid de Packs Oficiales Disponibles en jsDelivr */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* Tarjeta 1: Fútbol Argentino */}
+                <div className={`rounded-2xl border p-4 transition-all shadow-xl relative overflow-hidden flex flex-col justify-between ${
+                    isArgPackActive 
+                        ? 'bg-gradient-to-b from-[#101A2B] to-[#0A101C] border-sky-500/40' 
+                        : 'bg-gradient-to-b from-[#161D2E] to-[#0E131F] border-white/10'
+                }`}>
+                    <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
                             <span className="text-[10px] font-black uppercase tracking-wider text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-md border border-sky-500/20">
-                                Fútbol Argentino • 2026
+                                Argentina • 66 Escudos
                             </span>
                             {isArgPackActive ? (
                                 <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-500/30">
-                                    <CheckCircle2 className="w-3 h-3" /> Pack Activo (65+ escudos .SVG)
+                                    <CheckCircle2 className="w-3 h-3" /> Activo
                                 </span>
                             ) : (
                                 <span className="text-[10px] font-bold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700">
-                                    Escudos Genéricos Activos
+                                    Genérico
                                 </span>
                             )}
                         </div>
-                        <h4 className="text-base font-black text-white uppercase tracking-tight">
-                            Pack de Fútbol Argentino
+                        <h4 className="text-sm font-black text-white uppercase tracking-tight">
+                            Primera División y Primera Nacional
                         </h4>
                         <p className="text-xs text-slate-400 leading-relaxed">
-                            Incluye los 30 clubes de Primera División, 36 clubes de Primera Nacional y logos de torneo desde el catálogo comunitario en jsDelivr.
+                            Incluye Boca, River, Racing, Independiente, San Lorenzo y los 66 clubes de AFA.
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="pt-3 mt-2 border-t border-white/5">
                         {isArgPackActive ? (
                             <button
                                 onClick={() => handleToggleArgPack(false)}
                                 disabled={isProcessing}
-                                className="w-full sm:w-auto px-4 py-3 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 text-red-300 hover:text-red-100 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+                                className="w-full py-2 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 text-red-300 hover:text-red-100 text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
                             >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="w-3.5 h-3.5" />
                                 <span>Desinstalar Pack</span>
                             </button>
                         ) : (
                             <button
                                 onClick={() => handleToggleArgPack(true)}
                                 disabled={isProcessing}
-                                className="w-full sm:w-auto px-5 py-3 bg-[var(--apex-gold)] hover:bg-[#FFE57F] text-[#0A0E17] text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                                className="w-full py-2 bg-[var(--apex-gold)] hover:bg-[#FFE57F] text-[#0A0E17] text-[11px] font-black uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
                             >
-                                <Sparkles className="w-4 h-4 text-black stroke-[2.5]" />
+                                <Sparkles className="w-3.5 h-3.5 text-black stroke-[2.5]" />
                                 <span>Instalar Pack Argentino</span>
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* Tarjeta 2: Fútbol Inglés */}
+                <div className={`rounded-2xl border p-4 transition-all shadow-xl relative overflow-hidden flex flex-col justify-between ${
+                    isEngPackActive 
+                        ? 'bg-gradient-to-b from-[#1A182B] to-[#0E0D1F] border-purple-500/40' 
+                        : 'bg-gradient-to-b from-[#161D2E] to-[#0E131F] border-white/10'
+                }`}>
+                    <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-md border border-purple-500/20">
+                                Inglaterra • 44 Escudos
+                            </span>
+                            {isEngPackActive ? (
+                                <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-500/30">
+                                    <CheckCircle2 className="w-3 h-3" /> Activo
+                                </span>
+                            ) : (
+                                <span className="text-[10px] font-bold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700">
+                                    Genérico
+                                </span>
+                            )}
+                        </div>
+                        <h4 className="text-sm font-black text-white uppercase tracking-tight">
+                            Premier League y Championship
+                        </h4>
+                        <p className="text-xs text-slate-400 leading-relaxed">
+                            Incluye Arsenal, City, Liverpool, United, Chelsea, Tottenham y los clubes de Championship.
+                        </p>
+                    </div>
+
+                    <div className="pt-3 mt-2 border-t border-white/5">
+                        {isEngPackActive ? (
+                            <button
+                                onClick={() => handleToggleEngPack(false)}
+                                disabled={isProcessing}
+                                className="w-full py-2 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 text-red-300 hover:text-red-100 text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+                            >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>Desinstalar Pack</span>
+                            </button>
+                        ) : (
+                            <button
+                                onClick={() => handleToggleEngPack(true)}
+                                disabled={isProcessing}
+                                className="w-full py-2 bg-purple-500 hover:bg-purple-400 text-white text-[11px] font-black uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                                <Globe className="w-3.5 h-3.5 text-white stroke-[2.5]" />
+                                <span>Instalar Pack Inglés</span>
                             </button>
                         )}
                     </div>
                 </div>
             </div>
 
-            {/* 📦 Tarjeta 2: Pack Global / Personalizado */}
+            {/* 📦 Tarjeta 3: Pack Global / Personalizado */}
             <div className="rounded-2xl bg-slate-900/60 border border-white/10 p-4 space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
@@ -248,7 +357,7 @@ export const CommunityPacksSection: React.FC = () => {
                             </span>
                             {stats.total > 0 && (
                                 <span className="text-[10px] font-bold text-emerald-400">
-                                    • {stats.total} archivos personalizados en storage
+                                    • {stats.total} archivos en almacenamiento local
                                 </span>
                             )}
                         </div>
