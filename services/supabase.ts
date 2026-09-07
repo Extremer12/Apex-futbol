@@ -1,21 +1,28 @@
 import { createClient } from '@supabase/supabase-js';
 import { Database } from '../types/supabase';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://sfecahvwieugqwxroisg.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_LvpPQed1rb2lh3NgYjKRHQ_Js1rKgJk';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-    console.warn('Apex AI: Supabase environment variables missing. Falling back to default configuration.');
+const isConfigured = Boolean(supabaseUrl && supabaseAnonKey);
+
+if (!isConfigured) {
+    console.warn('Apex AI: Supabase environment variables (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY) are missing. Cloud features will be disabled.');
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
-    auth: {
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: true,
-        storage: window.localStorage,
-    },
-});
+// Use placeholders when env vars are missing to avoid runtime crashes during initialization
+export const supabase = createClient<Database>(
+    supabaseUrl || 'https://placeholder.supabase.co',
+    supabaseAnonKey || 'placeholder-key',
+    {
+        auth: {
+            autoRefreshToken: isConfigured,
+            persistSession: isConfigured,
+            detectSessionInUrl: isConfigured,
+            storage: window.localStorage,
+        },
+    }
+);
 
 export const signInWithGoogle = async () => {
     const { data, error } = await supabase.auth.signInWithOAuth({

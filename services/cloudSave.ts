@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { GameState, PlayerProfile } from '../types';
 import { SCHEMA_VERSION } from './db';
+import { compressString, decompressString } from '../utils/compression';
 
 export interface CloudSaveSummary {
     id: string;
@@ -27,7 +28,13 @@ export async function uploadSaveToCloud(
 
     // Clean non-serializable objects (like functions or cyclical references)
     const replacer = (key: string, value: any) => (key === 'logo' ? undefined : value);
-    const storableGameState = JSON.parse(JSON.stringify(gameState, replacer));
+    const rawJson = JSON.stringify(gameState, replacer);
+    const compressedData = compressString(rawJson);
+
+    const storableGameState = {
+        __compressed: true,
+        data: compressedData
+    };
     const storableProfile = JSON.parse(JSON.stringify(playerProfile));
 
     const { error } = await supabase
@@ -41,7 +48,7 @@ export async function uploadSaveToCloud(
                 team_name: gameState.team.name,
                 season: gameState.season || 1,
                 game_date: String(gameState.currentDate),
-                game_state: storableGameState,
+                game_state: storableGameState as any,
                 player_profile: storableProfile,
                 schema_version: SCHEMA_VERSION,
                 updated_at: new Date().toISOString(),
@@ -108,8 +115,22 @@ export async function downloadCloudSave(slotId: string): Promise<{
         return null;
     }
 
+    let loadedGameState: GameState;
+    const rawState = data.game_state as any;
+
+    if (rawState && rawState.__compressed && typeof rawState.data === 'string') {
+        const decompressedJson = decompressString(rawState.data);
+        loadedGameState = JSON.parse(decompressedJson);
+    } else {
+        loadedGameState = rawState as GameState;
+    }
+
+    if (loadedGameState && loadedGameState.currentDate) {
+        loadedGameState.currentDate = new Date(loadedGameState.currentDate);
+    }
+
     return {
-        gameState: data.game_state as unknown as GameState,
+        gameState: loadedGameState,
         playerProfile: data.player_profile as unknown as PlayerProfile,
         saveName: data.save_name,
     };

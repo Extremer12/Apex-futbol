@@ -1,5 +1,5 @@
 import React from 'react';
-import { GameState, Screen, PlayerProfile, Team, MatchPhase } from '../types';
+import { GameState, Screen, PlayerProfile, Team, MatchPhase, PendingSimulationResults, Player } from '../types';
 import { FullScreenMatchSimulation } from './gameflow/FullScreenMatchSimulation';
 import { GameAction } from '../state/reducer';
 import { Header } from './ui/Header';
@@ -21,28 +21,6 @@ const TrophyRoomScreen = React.lazy(() => import('./screens/TrophyRoomScreen').t
 
 import { LoadingSpinner } from './icons';
 
-interface PendingSimulationResults {
-    newsToAdd: any[];
-    updatedSchedule: any[];
-    updatedLeagueTables: Record<string, any[]>;
-    updatedAllTeams: Team[];
-    confidenceChange: number;
-    newOffers: any[];
-    playerMatchResult: { 
-        homeTeamId?: number;
-        awayTeamId?: number;
-        competition?: string;
-        week?: number;
-        isMidweek?: boolean;
-        homeScore: number; 
-        awayScore: number; 
-        penalties?: { home: number; away: number }; 
-        events?: string[];
-        scorers?: { playerId: number; playerName: string; minute: number }[];
-    } | null;
-    updatedCups?: { faCup: any, carabaoCup: any };
-}
-
 interface MainLayoutProps {
     gameState: GameState;
     activeScreen: Screen;
@@ -51,7 +29,7 @@ interface MainLayoutProps {
     pendingResults: PendingSimulationResults | null;
     onPlayMatch: () => void;
     onWeekComplete: () => void;
-    allPlayers: any[];
+    allPlayers: Player[];
     dispatch: React.Dispatch<GameAction>;
     onSaveGame: (mode: 'overwrite' | 'new') => void;
     onQuitToMenu: () => void;

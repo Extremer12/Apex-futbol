@@ -67,36 +67,76 @@ export function startNewSeason(currentState: GameState): GameState {
     const currentSeason = currentState.season;
     const trophiesToAward: { teamId: number, name: string, type: 'league' | 'cup' }[] = [];
 
+    const LEAGUE_TROPHY_NAMES: Record<string, string> = {
+        [LeagueId.PREMIER_LEAGUE]: 'Premier League',
+        [LeagueId.CHAMPIONSHIP]: 'Championship',
+        [LeagueId.LA_LIGA]: 'LaLiga EA Sports',
+        [LeagueId.SEGUNDA_DIVISION_ESP]: 'LaLiga Hypermotion',
+        [LeagueId.BUNDESLIGA]: 'Bundesliga',
+        [LeagueId.ZWEITE_BUNDESLIGA]: '2. Bundesliga',
+        [LeagueId.SERIE_A]: 'Serie A',
+        [LeagueId.SERIE_B_ITA]: 'Serie B',
+        [LeagueId.LIGUE_1]: 'Ligue 1',
+        [LeagueId.LIGUE_2]: 'Ligue 2',
+        [LeagueId.LIGA_ARGENTINA]: 'Liga Profesional de Fútbol',
+        [LeagueId.PRIMERA_NACIONAL]: 'Primera Nacional',
+        [LeagueId.BRASILEIRAO]: 'Brasileirão Série A',
+        [LeagueId.SERIE_B_BR]: 'Brasileirão Série B'
+    };
+
     // Leagues
     Object.entries(currentState.leagueTables).forEach(([leagueId, table]) => {
         if (table.length > 0) {
             const sortedTable = [...table].sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference);
             const winnerId = sortedTable[0].teamId;
-            let leagueName = leagueId;
-            switch(leagueId) {
-                case 'PREMIER_LEAGUE': leagueName = 'Premier League'; break;
-                case 'CHAMPIONSHIP': leagueName = 'Championship'; break;
-                case 'LA_LIGA': leagueName = 'La Liga'; break;
-                case 'BUNDESLIGA': leagueName = 'Bundesliga'; break;
-                case 'SERIE_A': leagueName = 'Serie A'; break;
-            }
+            const leagueName = LEAGUE_TROPHY_NAMES[leagueId] || leagueId.replace(/_/g, ' ');
             trophiesToAward.push({ teamId: winnerId, name: leagueName, type: 'league' });
         }
     });
 
-    if (currentState.cups.faCup.winnerId) {
+    // National Cups
+    if (currentState.cups.faCup?.winnerId) {
         trophiesToAward.push({ teamId: currentState.cups.faCup.winnerId, name: 'FA Cup', type: 'cup' });
     }
-    if (currentState.cups.carabaoCup.winnerId) {
+    if (currentState.cups.carabaoCup?.winnerId) {
         trophiesToAward.push({ teamId: currentState.cups.carabaoCup.winnerId, name: 'Carabao Cup', type: 'cup' });
     }
-    if (currentState.cups.championsLeague.winnerId) {
-        trophiesToAward.push({ teamId: currentState.cups.championsLeague.winnerId, name: 'Champions League', type: 'cup' });
+    if (currentState.cups.copaDelRey?.winnerId) {
+        trophiesToAward.push({ teamId: currentState.cups.copaDelRey.winnerId, name: 'Copa del Rey', type: 'cup' });
     }
-    if (currentState.cups.copaLibertadores.winnerId) {
+    if (currentState.cups.dfbPokal?.winnerId) {
+        trophiesToAward.push({ teamId: currentState.cups.dfbPokal.winnerId, name: 'DFB-Pokal', type: 'cup' });
+    }
+    if (currentState.cups.coppaItalia?.winnerId) {
+        trophiesToAward.push({ teamId: currentState.cups.coppaItalia.winnerId, name: 'Coppa Italia', type: 'cup' });
+    }
+    if (currentState.cups.copaArgentina?.winnerId) {
+        trophiesToAward.push({ teamId: currentState.cups.copaArgentina.winnerId, name: 'Copa Argentina', type: 'cup' });
+    }
+    if (currentState.cups.aperturaPlayoffs?.winnerId) {
+        trophiesToAward.push({ teamId: currentState.cups.aperturaPlayoffs.winnerId, name: 'Torneo Apertura', type: 'cup' });
+    }
+    if (currentState.cups.clausuraPlayoffs?.winnerId) {
+        trophiesToAward.push({ teamId: currentState.cups.clausuraPlayoffs.winnerId, name: 'Torneo Clausura', type: 'cup' });
+    }
+    if (currentState.cups.nacionalPrimerAscenso?.winnerId) {
+        trophiesToAward.push({ teamId: currentState.cups.nacionalPrimerAscenso.winnerId, name: 'Primera Nacional (1º Ascenso)', type: 'cup' });
+    }
+    if (currentState.cups.nacionalReducido?.winnerId) {
+        trophiesToAward.push({ teamId: currentState.cups.nacionalReducido.winnerId, name: 'Torneo Reducido', type: 'cup' });
+    }
+
+    // International Cups
+    if (currentState.cups.championsLeague?.winnerId) {
+        trophiesToAward.push({ teamId: currentState.cups.championsLeague.winnerId, name: 'UEFA Champions League', type: 'cup' });
+    }
+    if (currentState.cups.europaLeague?.winnerId) {
+        trophiesToAward.push({ teamId: currentState.cups.europaLeague.winnerId, name: 'UEFA Europa League', type: 'cup' });
+    }
+    if (currentState.cups.copaLibertadores?.winnerId) {
         trophiesToAward.push({ teamId: currentState.cups.copaLibertadores.winnerId, name: 'Copa Libertadores', type: 'cup' });
     }
-    if (currentState.cups.copaIntercontinental.winnerId) {
+    if (currentState.cups.copaIntercontinental?.winnerId) {
         trophiesToAward.push({ teamId: currentState.cups.copaIntercontinental.winnerId, name: 'Copa Intercontinental', type: 'cup' });
     }
 
@@ -207,22 +247,34 @@ export function startNewSeason(currentState: GameState): GameState {
     const newPlTeams = getLeagueTeams('PREMIER_LEAGUE');
     const newChTeams = getLeagueTeams('CHAMPIONSHIP');
     const newLaTeams = getLeagueTeams('LA_LIGA');
+    const newSegTeams = getLeagueTeams('SEGUNDA_DIVISION_ESP');
     const newGerTeams = getLeagueTeams('BUNDESLIGA');
+    const newZweiteTeams = getLeagueTeams('ZWEITE_BUNDESLIGA');
     const newItaTeams = getLeagueTeams('SERIE_A');
+    const newSerieBTeams = getLeagueTeams('SERIE_B_ITA');
+    const newArgTeams = getLeagueTeams('LIGA_ARGENTINA');
+    const newNacTeams = getLeagueTeams('PRIMERA_NACIONAL');
 
     // 5. Generate new cup draws (National Cups)
     const englishTeamsNewSeason = [...newPlTeams, ...newChTeams];
+    const spanishTeamsNewSeason = [...newLaTeams, ...newSegTeams];
+    const germanTeamsNewSeason = [...newGerTeams, ...newZweiteTeams];
+    const italianTeamsNewSeason = [...newItaTeams, ...newSerieBTeams];
+    const argentinianTeamsNewSeason = [...newArgTeams, ...newNacTeams];
+
     const faCupRound1 = generateCupDraw(englishTeamsNewSeason, 'Round 1', 'FA_Cup');
     const carabaoCupRound1 = generateCupDraw(englishTeamsNewSeason, 'Round 1', 'Carabao_Cup');
-    const copaDelReyRound1 = generateCupDraw(newLaTeams, 'Round 1', 'Copa_Del_Rey');
-    const dfbPokalRound1 = generateCupDraw(newGerTeams, 'Round 1', 'DFB_Pokal');
-    const coppaItaliaRound1 = generateCupDraw(newItaTeams, 'Round 1', 'Coppa_Italia');
+    const copaDelReyRound1 = generateCupDraw(spanishTeamsNewSeason, 'Round 1', 'Copa_del_Rey');
+    const dfbPokalRound1 = generateCupDraw(germanTeamsNewSeason, 'Round 1', 'DFB_Pokal');
+    const coppaItaliaRound1 = generateCupDraw(italianTeamsNewSeason, 'Round 1', 'Coppa_Italia');
+    const copaArgentinaRound1 = generateCupDraw(argentinianTeamsNewSeason, 'Round 1', 'Copa_Argentina');
 
     const faCupFixtures = faCupRound1.map(m => ({ ...m, week: 5 }));
     const carabaoCupFixtures = carabaoCupRound1.map(m => ({ ...m, week: 2 }));
-    const copaDelReyFixtures = copaDelReyRound1.map(m => ({ ...m, week: 3 }));
-    const dfbPokalFixtures = dfbPokalRound1.map(m => ({ ...m, week: 4 }));
-    const coppaItaliaFixtures = coppaItaliaRound1.map(m => ({ ...m, week: 5 }));
+    const copaDelReyFixtures = copaDelReyRound1.map(m => ({ ...m, week: 4 }));
+    const dfbPokalFixtures = dfbPokalRound1.map(m => ({ ...m, week: 3 }));
+    const coppaItaliaFixtures = coppaItaliaRound1.map(m => ({ ...m, week: 4 }));
+    const copaArgentinaFixtures = copaArgentinaRound1.map(m => ({ ...m, week: 5 }));
 
     // 5.5 Generate European & South American Competitions (Dynamic Qualification)
     const getTopTeams = (lid: LeagueId, count: number) => {
@@ -288,7 +340,7 @@ export function startNewSeason(currentState: GameState): GameState {
 
     const fullSchedule = [
         ...newSeasonSchedule, 
-        ...faCupFixtures, ...carabaoCupFixtures, ...copaDelReyFixtures, ...dfbPokalFixtures, ...coppaItaliaFixtures,
+        ...faCupFixtures, ...carabaoCupFixtures, ...copaDelReyFixtures, ...dfbPokalFixtures, ...coppaItaliaFixtures, ...copaArgentinaFixtures,
         ...clFixtures, ...libGroupFixtures, ...intercontinentalFixtures
     ];
 
@@ -580,6 +632,12 @@ export function startNewSeason(currentState: GameState): GameState {
                 type: 'knockout', phase: 'knockout',
                 rounds: [{ name: 'Round 1', fixtures: coppaItaliaFixtures, completed: false }],
                 currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.coppaItalia?.statistics?.championsHistory || [] }
+            },
+            copaArgentina: {
+                id: 'copa_argentina', name: 'Copa Argentina', 
+                type: 'knockout', phase: 'knockout',
+                rounds: [{ name: 'Round 1', fixtures: copaArgentinaFixtures, completed: false }],
+                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.copaArgentina?.statistics?.championsHistory || [] }
             },
             championsLeague: {
                 id: 'champions_league', name: 'Champions League', 

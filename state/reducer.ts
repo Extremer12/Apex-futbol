@@ -1,4 +1,4 @@
-import { GameState, Team, PlayerProfile, NewsItem, Player, Match, LeagueTableRow, Offer, LeagueId, CupCompetition, FanApproval, Stadium, Scout } from '../types';
+import { GameState, Team, PlayerProfile, NewsItem, Player, Match, LeagueTableRow, Offer, LeagueId, CupCompetition, FanApproval, Stadium, Scout, CinematicEvent, CoachReport, ElectoralPromise } from '../types';
 
 // Sub-reducers
 import { handleGameLifecycleAction } from './reducers/gameLifecycleReducer';
@@ -11,15 +11,15 @@ import { handleUIAction } from './reducers/uiReducer';
 
 // Define all possible action types
 export type GameAction =
-    | { type: 'INITIALIZE_GAME'; payload: { team: Team; playerProfile: PlayerProfile; initialPromises?: any[] } }
+    | { type: 'INITIALIZE_GAME'; payload: { team: Team; playerProfile: PlayerProfile; initialPromises?: ElectoralPromise[] } }
     | { type: 'LOAD_GAME'; payload: GameState }
     | { type: 'RESET_GAME' }
     | { type: 'ADVANCE_WEEK_START' }
-    | { type: 'ADVANCE_WEEK_SUCCESS'; payload: { newsItems: NewsItem[]; newSchedule: Match[]; newLeagueTables: Record<LeagueId, LeagueTableRow[]>; newAllTeams: Team[]; newConfidence: number; newOffers: Offer[]; newCups?: GameState['cups']; coachReport?: any; newScoutedPlayerIds?: any; cinematicEvents?: import('../types').CinematicEvent[] } }
+    | { type: 'ADVANCE_WEEK_SUCCESS'; payload: { newsItems: NewsItem[]; newSchedule: Match[]; newLeagueTables: Record<LeagueId, LeagueTableRow[]>; newAllTeams: Team[]; newConfidence: number; newOffers: Offer[]; newCups?: GameState['cups']; coachReport?: CoachReport; newScoutedPlayerIds?: Record<number, number>; cinematicEvents?: CinematicEvent[] } }
     | { type: 'PROMOTE_YOUTH'; payload: number }
     | { type: 'START_NEW_SEASON' }
     | { type: 'POP_CINEMATIC' }
-    | { type: 'PUSH_CINEMATIC'; payload: import('../types').CinematicEvent }
+    | { type: 'PUSH_CINEMATIC'; payload: CinematicEvent }
     | { type: 'TRIGGER_ELECTION' }
     | { type: 'ELECTION_RESULT'; payload: { won: boolean; newApproval: number } }
     | { type: 'UPDATE_FAN_APPROVAL'; payload: { delta: number; reason: string } }

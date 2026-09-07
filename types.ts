@@ -367,12 +367,28 @@ export interface FinancialBreakdown {
 }
 
 
+export interface CinematicEventMetadata {
+  competition?: string;
+  team?: Team;
+  accentColor?: string;
+  bgClass?: string;
+  logoUrl?: string;
+  stats?: {
+    played: number;
+    won: number;
+    goalsFor: number;
+    goalDifference: number;
+  };
+  customBadge?: string;
+  [key: string]: unknown;
+}
+
 export interface CinematicEvent {
   id: string;
   type: 'LEAGUE_WIN' | 'CUP_WIN' | 'PROMOTION' | 'RELEGATION' | 'SEASON_SUMMARY' | 'CUP_KICKOFF' | 'GROUP_DRAW';
   title: string;
   subtitle: string;
-  metadata?: any;
+  metadata?: CinematicEventMetadata;
 }
 
 export interface GameState {
@@ -459,6 +475,19 @@ export interface CoachReport {
     promotions: Player[]; 
 }
 
+export interface PlayerMatchResult {
+    homeTeamId?: number;
+    awayTeamId?: number;
+    competition?: string;
+    week?: number;
+    isMidweek?: boolean;
+    homeScore: number; 
+    awayScore: number; 
+    penalties?: { home: number; away: number }; 
+    events?: string[];
+    scorers?: { playerId: number; playerName: string; minute: number }[];
+}
+
 export interface PendingSimulationResults {
     newsToAdd: NewsItem[];
     updatedSchedule: Match[];
@@ -466,19 +495,9 @@ export interface PendingSimulationResults {
     updatedAllTeams: Team[];
     confidenceChange: number;
     newOffers: Offer[];
-    playerMatchResult: { 
-        homeTeamId?: number;
-        awayTeamId?: number;
-        competition?: string;
-        week?: number;
-        isMidweek?: boolean;
-        homeScore: number; 
-        awayScore: number; 
-        penalties?: { home: number; away: number }; 
-        events?: string[];
-        scorers?: { playerId: number; playerName: string; minute: number }[];
-    } | null;
-    updatedCups?: { faCup: any, carabaoCup: any };
+    playerMatchResult: PlayerMatchResult | null;
+    updatedCups: GameState['cups'];
     updatedScoutedPlayerIds?: Record<number, number>;
     coachReport?: CoachReport;
+    cinematicEvents?: CinematicEvent[];
 }

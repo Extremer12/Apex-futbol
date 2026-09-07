@@ -107,20 +107,40 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
     // in season 1. They will be created by seasonManager.ts from season 2 onwards
     // based on actual league standings.
 
-    // Generate cup draws
+    // Generate national cup draws for all leagues
     const englishTeams = [...plTeams, ...chTeams];
     const faCupRound1 = generateCupDraw(englishTeams, 'Round 1', 'FA_Cup');
     const carabaoCupRound1 = generateCupDraw(englishTeams, 'Round 1', 'Carabao_Cup');
 
+    const spanishTeams = [...laTeams, ...seg2EspTeams];
+    const copaDelReyRound1 = generateCupDraw(spanishTeams, 'Round 1', 'Copa_del_Rey');
+
+    const germanTeams = [...gerTeams, ...zweiteTeams];
+    const dfbPokalRound1 = generateCupDraw(germanTeams, 'Round 1', 'DFB_Pokal');
+
+    const italianTeams = [...itaTeams, ...serieBItaTeams];
+    const coppaItaliaRound1 = generateCupDraw(italianTeams, 'Round 1', 'Coppa_Italia');
+
+    const argentinianTeams = [...ligaArgTeams, ...primeraNacTeams];
+    const copaArgentinaRound1 = generateCupDraw(argentinianTeams, 'Round 1', 'Copa_Argentina');
+
     // Assign cup fixtures to specific weeks
     const faCupFixtures = faCupRound1.map(m => ({ ...m, week: 5 }));
     const carabaoCupFixtures = carabaoCupRound1.map(m => ({ ...m, week: 2 }));
+    const copaDelReyFixtures = copaDelReyRound1.map(m => ({ ...m, week: 4 }));
+    const dfbPokalFixtures = dfbPokalRound1.map(m => ({ ...m, week: 3 }));
+    const coppaItaliaFixtures = coppaItaliaRound1.map(m => ({ ...m, week: 4 }));
+    const copaArgentinaFixtures = copaArgentinaRound1.map(m => ({ ...m, week: 5 }));
     
     // Generate full season schedule (league + national cups only in season 1)
     const initialSchedule = [
         ...generateSeasonSchedule(allTeamsCopy),
         ...faCupFixtures,
-        ...carabaoCupFixtures
+        ...carabaoCupFixtures,
+        ...copaDelReyFixtures,
+        ...dfbPokalFixtures,
+        ...coppaItaliaFixtures,
+        ...copaArgentinaFixtures
     ];
 
     // Build and return the initial game state
@@ -197,10 +217,42 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
                 currentRoundIndex: 0,
                 statistics: { topScorers: [], championsHistory: [] }
             },
-            copaDelRey: { id: 'copa_del_rey', name: 'Copa del Rey', type: 'knockout', phase: 'knockout', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
-            dfbPokal: { id: 'dfb_pokal', name: 'DFB-Pokal', type: 'knockout', phase: 'knockout', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
-            coppaItalia: { id: 'coppa_italia', name: 'Coppa Italia', type: 'knockout', phase: 'knockout', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
-            copaArgentina: { id: 'copa_argentina', name: 'Copa Argentina', type: 'knockout', phase: 'knockout', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
+            copaDelRey: {
+                id: 'copa_del_rey',
+                name: 'Copa del Rey',
+                type: 'knockout',
+                phase: 'knockout',
+                rounds: [{ name: 'Round 1', fixtures: copaDelReyFixtures, completed: false }],
+                currentRoundIndex: 0,
+                statistics: { topScorers: [], championsHistory: [] }
+            },
+            dfbPokal: {
+                id: 'dfb_pokal',
+                name: 'DFB-Pokal',
+                type: 'knockout',
+                phase: 'knockout',
+                rounds: [{ name: 'Round 1', fixtures: dfbPokalFixtures, completed: false }],
+                currentRoundIndex: 0,
+                statistics: { topScorers: [], championsHistory: [] }
+            },
+            coppaItalia: {
+                id: 'coppa_italia',
+                name: 'Coppa Italia',
+                type: 'knockout',
+                phase: 'knockout',
+                rounds: [{ name: 'Round 1', fixtures: coppaItaliaFixtures, completed: false }],
+                currentRoundIndex: 0,
+                statistics: { topScorers: [], championsHistory: [] }
+            },
+            copaArgentina: {
+                id: 'copa_argentina',
+                name: 'Copa Argentina',
+                type: 'knockout',
+                phase: 'knockout',
+                rounds: [{ name: 'Round 1', fixtures: copaArgentinaFixtures, completed: false }],
+                currentRoundIndex: 0,
+                statistics: { topScorers: [], championsHistory: [] }
+            },
             aperturaPlayoffs: { id: 'apertura_playoffs', name: 'Playoffs Apertura', type: 'knockout', phase: 'knockout', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
             clausuraPlayoffs: { id: 'clausura_playoffs', name: 'Playoffs Clausura', type: 'knockout', phase: 'knockout', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
             nacionalPrimerAscenso: { id: 'nacional_primer_ascenso', name: 'Final 1º Ascenso', type: 'knockout', phase: 'knockout', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
