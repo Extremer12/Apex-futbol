@@ -159,12 +159,24 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
             scorers?: any[]; 
         } | null = null;
 
+        // Pre-index teams for O(1) instant lookups
+        const teamMap = new Map<number, Team>(updatedAllTeams.map(t => [t.id, t]));
+
+        // Pre-index schedule positions for this week's matches for O(1) lookups
+        const scheduleIndexMap = new Map<string, number>();
+        newSchedule.forEach((m, idx) => {
+            if (m.week === nextWeek && !!m.isMidweek === isMidweek) {
+                scheduleIndexMap.set(`${m.homeTeamId}_${m.awayTeamId}`, idx);
+            }
+        });
+
         if (matchesThisWeek.length > 0) {
             matchesThisWeek.forEach(match => {
                 if (match.result) return;
 
-                const homeTeam = updatedAllTeams.find(t => t.id === match.homeTeamId)!;
-                const awayTeam = updatedAllTeams.find(t => t.id === match.awayTeamId)!;
+                const homeTeam = teamMap.get(match.homeTeamId);
+                const awayTeam = teamMap.get(match.awayTeamId);
+                if (!homeTeam || !awayTeam) return;
 
                 let homeRow: LeagueTableRow | undefined;
                 let awayRow: LeagueTableRow | undefined;
@@ -179,29 +191,24 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
 
                 const dummyRow: LeagueTableRow = { teamId: 0, position: 0, played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0, form: [] };
 
-                const result = simulateMatch(homeTeam, awayTeam, homeRow || dummyRow, awayRow || dummyRow, match.isCupMatch || false);
+                const isUserMatch = match.homeTeamId === playerTeamId || match.awayTeamId === playerTeamId;
+                const result = simulateMatch(homeTeam, awayTeam, homeRow || dummyRow, awayRow || dummyRow, match.isCupMatch || false, isUserMatch);
 
-                const matchIndex = newSchedule.findIndex(m => m.week === nextWeek && !!m.isMidweek === isMidweek && m.homeTeamId === match.homeTeamId && m.awayTeamId === match.awayTeamId);
-                newSchedule[matchIndex] = {
-                    ...newSchedule[matchIndex],
-                    result: { 
-                        homeScore: result.homeScore, 
-                        awayScore: result.awayScore, 
-                        events: result.events,
-                        scorers: result.scorers 
-                    },
-                    penalties: result.penalties
-                };
+                const matchIndex = scheduleIndexMap.get(`${match.homeTeamId}_${match.awayTeamId}`);
+                if (matchIndex !== undefined && newSchedule[matchIndex]) {
+                    newSchedule[matchIndex] = {
+                        ...newSchedule[matchIndex],
+                        result: { 
+                            homeScore: result.homeScore, 
+                            awayScore: result.awayScore, 
+                            events: result.events,
+                            scorers: result.scorers 
+                        },
+                        penalties: result.penalties
+                    };
+                }
 
-                if (match.homeTeamId === playerTeamId || match.awayTeamId === playerTeamId) {
-                    console.log('[WORKER] Player match result:', {
-                        homeTeamId: match.homeTeamId,
-                        awayTeamId: match.awayTeamId,
-                        homeScore: result.homeScore,
-                        awayScore: result.awayScore,
-                        eventsCount: result.events?.length || 0,
-                        events: result.events
-                    });
+                if (isUserMatch) {
                     playerMatchResult = {
                         homeTeamId: match.homeTeamId,
                         awayTeamId: match.awayTeamId,

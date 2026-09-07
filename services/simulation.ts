@@ -122,7 +122,14 @@ export const generateYouthPlayer = (tier: Team['tier'] = 'Lower'): Player => {
     };
 };
 
-export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: LeagueTableRow, awayTableRow: LeagueTableRow, isCupMatch: boolean = false): { homeScore: number; awayScore: number, events: string[], scorers: { playerId: number, playerName: string, minute: number }[], penalties?: { home: number, away: number } } => {
+export const simulateMatch = (
+    homeTeam: Team,
+    awayTeam: Team,
+    homeTableRow: LeagueTableRow,
+    awayTableRow: LeagueTableRow,
+    isCupMatch: boolean = false,
+    isUserMatch: boolean = false
+): { homeScore: number; awayScore: number, events: string[], scorers: { playerId: number, playerName: string, minute: number }[], penalties?: { home: number, away: number } } => {
     
     // Select squads
     const homeSquad = selectMatchSquad(homeTeam);
@@ -225,7 +232,9 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
             if (Math.random() < injuryChance && !p.isInjured) {
                 p.isInjured = true;
                 p.injuryWeeksRemaining = 1 + Math.floor(Math.random() * 4);
-                events.push(`🚑 ¡Malas noticias para ${teamName}! ${p.name} ha sufrido una lesión muscular y estará fuera ${p.injuryWeeksRemaining} semanas.`);
+                if (isUserMatch) {
+                    events.push(`🚑 ¡Malas noticias para ${teamName}! ${p.name} ha sufrido una lesión muscular y estará fuera ${p.injuryWeeksRemaining} semanas.`);
+                }
             }
 
             // Cards
@@ -235,7 +244,9 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
                 if (p.stats) p.stats.redCards++;
                 p.isSuspended = true;
                 p.suspensionWeeksRemaining = 1 + Math.floor(Math.random() * 3);
-                events.push(`🟥 ¡Expulsión en el ${teamName}! ${p.name} recibe tarjeta roja directa y se perderá ${p.suspensionWeeksRemaining} partidos.`);
+                if (isUserMatch) {
+                    events.push(`🟥 ¡Expulsión en el ${teamName}! ${p.name} recibe tarjeta roja directa y se perderá ${p.suspensionWeeksRemaining} partidos.`);
+                }
             }
         });
     };
@@ -256,15 +267,19 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
             if (assister && assister.stats) assister.stats.assists++;
             
             scorers.push({ playerId: scorer.id, playerName: scorer.name, minute });
-            let msg = `${minute}' ⚽ GOOOOL de ${homeTeam.name}! ${scorer.name} marca con un remate espectacular.`;
-            if (assister) msg += ` (Asistencia de ${assister.name})`;
-            events.push(msg);
-        } else if (rand < 0.4) {
-            events.push(`${minute}' 🧤 ¡Gran parada! El portero del ${awayTeam.name} evita el gol tras un disparo de ${getScorer(homeSquad).name}.`);
-        } else if (rand < 0.5) {
-            events.push(`${minute}' 🟨 Tarjeta amarilla para un jugador de ${homeTeam.name} por falta táctica.`);
-        } else {
-            events.push(`${minute}' 🏟️ Ocasión para el ${homeTeam.name}, pero el balón se va fuera.`);
+            if (isUserMatch) {
+                let msg = `${minute}' ⚽ GOOOOL de ${homeTeam.name}! ${scorer.name} marca con un remate espectacular.`;
+                if (assister) msg += ` (Asistencia de ${assister.name})`;
+                events.push(msg);
+            }
+        } else if (isUserMatch) {
+            if (rand < 0.4) {
+                events.push(`${minute}' 🧤 ¡Gran parada! El portero del ${awayTeam.name} evita el gol tras un disparo de ${getScorer(homeSquad).name}.`);
+            } else if (rand < 0.5) {
+                events.push(`${minute}' 🟨 Tarjeta amarilla para un jugador de ${homeTeam.name} por falta táctica.`);
+            } else {
+                events.push(`${minute}' 🏟️ Ocasión para el ${homeTeam.name}, pero el balón se va fuera.`);
+            }
         }
     }
 
@@ -281,31 +296,39 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
             if (assister && assister.stats) assister.stats.assists++;
 
             scorers.push({ playerId: scorer.id, playerName: scorer.name, minute });
-            let msg = `${minute}' ⚽ GOOOOL de ${awayTeam.name}! ${scorer.name} anota para la visita.`;
-            if (assister) msg += ` (Asistencia de ${assister.name})`;
-            events.push(msg);
-        } else if (rand < 0.4) {
-            events.push(`${minute}' 🧤 ¡Increíble reflejo! El portero del ${homeTeam.name} desvía el balón al córner.`);
-        } else if (rand < 0.5) {
-            events.push(`${minute}' 🟨 Tarjeta amarilla para un jugador de ${awayTeam.name}.`);
-        } else {
-            events.push(`${minute}' 🏟️ El ${awayTeam.name} presiona, pero el remate sale desviado.`);
+            if (isUserMatch) {
+                let msg = `${minute}' ⚽ GOOOOL de ${awayTeam.name}! ${scorer.name} anota para la visita.`;
+                if (assister) msg += ` (Asistencia de ${assister.name})`;
+                events.push(msg);
+            }
+        } else if (isUserMatch) {
+            if (rand < 0.4) {
+                events.push(`${minute}' 🧤 ¡Increíble reflejo! El portero del ${homeTeam.name} desvía el balón al córner.`);
+            } else if (rand < 0.5) {
+                events.push(`${minute}' 🟨 Tarjeta amarilla para un jugador de ${awayTeam.name}.`);
+            } else {
+                events.push(`${minute}' 🏟️ El ${awayTeam.name} presiona, pero el remate sale desviado.`);
+            }
         }
     }
 
-    events.sort((a, b) => {
-        const minA = parseInt(a.split("'")[0]);
-        const minB = parseInt(b.split("'")[0]);
-        return minA - minB;
-    });
+    if (isUserMatch && events.length > 0) {
+        events.sort((a, b) => {
+            const minA = parseInt(a.split("'")[0]);
+            const minB = parseInt(b.split("'")[0]);
+            return minA - minB;
+        });
+    }
 
     const trimGoals = (score: number, teamName: string, teamSquad: Player[]) => {
         if (score > 8) {
             let goalsToRemove = score - 8;
-            for (let i = events.length - 1; i >= 0 && goalsToRemove > 0; i--) {
-                if (events[i].includes('⚽') && events[i].includes(teamName)) {
-                    events.splice(i, 1);
-                    goalsToRemove--;
+            if (isUserMatch) {
+                for (let i = events.length - 1; i >= 0 && goalsToRemove > 0; i--) {
+                    if (events[i].includes('⚽') && events[i].includes(teamName)) {
+                        events.splice(i, 1);
+                        goalsToRemove--;
+                    }
                 }
             }
             let scorersToRemove = score - 8;
@@ -327,7 +350,7 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
 
     let penaltiesResult;
     if (isCupMatch && homeScore === awayScore) {
-        events.push(`90' ⏱️ Final del tiempo reglamentario. ¡Nos vamos a la prórroga!`);
+        if (isUserMatch) events.push(`90' ⏱️ Final del tiempo reglamentario. ¡Nos vamos a la prórroga!`);
         const etHomeChances = Math.max(1, homeChances / 4);
         const etAwayChances = Math.max(1, awayChances / 4);
 
@@ -338,7 +361,7 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
                 const scorer = getScorer(homeSquad);
                 if (scorer.stats) scorer.stats.goals++;
                 scorers.push({ playerId: scorer.id, playerName: scorer.name, minute });
-                events.push(`${minute}' ⚽ ¡GOL EN PRÓRROGA! ${homeTeam.name} se pone en ventaja con un tanto de ${scorer.name}.`);
+                if (isUserMatch) events.push(`${minute}' ⚽ ¡GOL EN PRÓRROGA! ${homeTeam.name} se pone en ventaja con un tanto de ${scorer.name}.`);
             }
         }
         for (let i = 0; i < Math.round(etAwayChances); i++) {
@@ -348,12 +371,12 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
                 const scorer = getScorer(awaySquad);
                 if (scorer.stats) scorer.stats.goals++;
                 scorers.push({ playerId: scorer.id, playerName: scorer.name, minute });
-                events.push(`${minute}' ⚽ ¡GOL EN PRÓRROGA! ${awayTeam.name} empata el partido con un tanto de ${scorer.name}.`);
+                if (isUserMatch) events.push(`${minute}' ⚽ ¡GOL EN PRÓRROGA! ${awayTeam.name} empata el partido con un tanto de ${scorer.name}.`);
             }
         }
 
         if (homeScore === awayScore) {
-            events.push(`120' ⏱️ Final de la prórroga. ¡El partido se decidirá en los penales!`);
+            if (isUserMatch) events.push(`120' ⏱️ Final de la prórroga. ¡El partido se decidirá en los penales!`);
             let homePens = 0;
             let awayPens = 0;
             for (let k = 0; k < 5; k++) {
@@ -365,8 +388,8 @@ export const simulateMatch = (homeTeam: Team, awayTeam: Team, homeTableRow: Leag
                 if (Math.random() > 0.2) awayPens++;
             }
             penaltiesResult = { home: homePens, away: awayPens };
-            events.push(`🏁 Penales: ${homeTeam.name} ${homePens} - ${awayPens} ${awayTeam.name}`);
-        } else {
+            if (isUserMatch) events.push(`🏁 Penales: ${homeTeam.name} ${homePens} - ${awayPens} ${awayTeam.name}`);
+        } else if (isUserMatch) {
             events.push(`120' 🏁 Final de la prórroga.`);
         }
     }

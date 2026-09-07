@@ -18,27 +18,31 @@ export function useGameSave(
     const [currentSaveName, setCurrentSaveName] = useState<string | null>(null);
     const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
-    // Auto-saving effect
+    // Debounced auto-saving effect to avoid freezing the main UI thread during week transition
     useEffect(() => {
         if (appState === 'GAME_ACTIVE' && gameState && playerProfile && currentSaveId && currentSaveName && matchPhase === 'PRE') {
-            const saveData: SavedGameData = {
-                id: currentSaveId,
-                saveName: currentSaveName,
-                playerProfile,
-                gameState,
-                teamName: gameState.team.name,
-                lastSaved: new Date(),
-            };
-            saveGame(saveData)
-                .then(async () => {
-                    setLastSaved(new Date());
-                    // Opportunistic cloud backup if logged in
-                    const { data: { user } } = await supabase.auth.getUser();
-                    if (user) {
-                        uploadSaveToCloud(currentSaveId, currentSaveName, gameState, playerProfile).catch(() => {});
-                    }
-                })
-                .catch(err => console.error("Auto-save failed:", err));
+            const timeoutId = setTimeout(() => {
+                const saveData: SavedGameData = {
+                    id: currentSaveId,
+                    saveName: currentSaveName,
+                    playerProfile,
+                    gameState,
+                    teamName: gameState.team.name,
+                    lastSaved: new Date(),
+                };
+                saveGame(saveData)
+                    .then(async () => {
+                        setLastSaved(new Date());
+                        // Opportunistic cloud backup if logged in (deferred to background)
+                        const { data: { user } } = await supabase.auth.getUser();
+                        if (user) {
+                            uploadSaveToCloud(currentSaveId, currentSaveName, gameState, playerProfile).catch(() => {});
+                        }
+                    })
+                    .catch(err => console.error("Auto-save failed:", err));
+            }, 1200);
+
+            return () => clearTimeout(timeoutId);
         }
     }, [gameState, playerProfile, appState, currentSaveId, currentSaveName, matchPhase]);
 

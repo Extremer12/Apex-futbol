@@ -35,13 +35,11 @@ export function useSimulation(
             const simulatedWeek = gameState.currentTurn === 'midweek' ? gameState.currentWeek + 1 : gameState.currentWeek;
 
             // 2. Restore React / JSX logos from previous state (logos stripped by Web Worker)
-            const restoredTeams = simulationResult.updatedAllTeams.map(updatedTeam => {
-                const originalTeam = gameState.allTeams.find(t => t.id === updatedTeam.id);
-                return {
-                    ...updatedTeam,
-                    logo: originalTeam?.logo || updatedTeam.logo
-                };
-            });
+            const originalLogoMap = new Map(gameState.allTeams.map(t => [t.id, t.logo]));
+            const restoredTeams = simulationResult.updatedAllTeams.map(updatedTeam => ({
+                ...updatedTeam,
+                logo: originalLogoMap.get(updatedTeam.id) || updatedTeam.logo
+            }));
 
             // 3. Process Cup & Playoff Progression
             const cupResult = handleCupProgression(
