@@ -301,22 +301,22 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
                 </button>
             </div>
 
-            {/* Main Bifurcated Bracket Container: ZERO horizontal scroll */}
-            <div className="w-full bg-[#0B0F19]/80 border border-white/10 rounded-2xl p-2 sm:p-4 overflow-hidden shadow-2xl">
+            {/* Main Bifurcated Bracket Container: with smooth horizontal scrolling when needed */}
+            <div className="w-full bg-[#0B0F19]/90 border border-white/10 rounded-2xl p-3 sm:p-5 overflow-x-auto shadow-2xl">
                 {/* Desktop and Tablet: Bifurcated Left - Center - Right Grid */}
-                <div className={`${viewMode === 'ALL' ? 'flex' : 'hidden sm:flex'} items-stretch justify-between gap-1 sm:gap-2 md:gap-3 w-full`}>
+                <div className={`${viewMode === 'ALL' ? 'flex' : 'hidden sm:flex'} items-stretch justify-between gap-2.5 sm:gap-4 md:gap-6 min-w-[850px] lg:min-w-[1000px] w-full py-2`}>
                     {/* LEFT BRACKET (From First Round towards Semi-Final) */}
-                    <div className="flex items-stretch justify-between flex-1 gap-1 sm:gap-2">
+                    <div className="flex items-stretch justify-between flex-1 gap-2 sm:gap-3">
                         {leftColumns.map((col, cIdx) => (
-                            <div key={`left_${cIdx}`} className="flex-1 min-w-0 flex flex-col">
+                            <div key={`left_${cIdx}`} className="flex-1 min-w-[125px] sm:min-w-[145px] md:min-w-[165px] flex flex-col">
                                 {/* Round Header */}
-                                <div className="text-center pb-2">
-                                    <span className="text-[8px] sm:text-[10px] md:text-[11px] font-black uppercase tracking-wider text-slate-400 truncate block">
+                                <div className="text-center pb-2.5">
+                                    <span className="text-[10px] sm:text-xs md:text-[13px] font-black uppercase tracking-wider text-slate-300 truncate block bg-white/5 py-1 px-2 rounded-lg border border-white/5">
                                         {col.name}
                                     </span>
                                 </div>
                                 {/* Matches Column */}
-                                <div className="flex flex-col justify-around flex-1 gap-1.5 sm:gap-2">
+                                <div className="flex flex-col justify-around flex-1 gap-2 sm:gap-3">
                                     {col.matches.map((match) => (
                                         <MatchCard
                                             key={match.id}
@@ -331,23 +331,23 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
                     </div>
 
                     {/* CENTER (Gran Final + Cup Trophy) */}
-                    <div className="w-[100px] sm:w-[130px] md:w-[160px] lg:w-[190px] shrink-0 flex flex-col items-center justify-center px-1 sm:px-2 z-10">
+                    <div className="w-[130px] sm:w-[160px] md:w-[195px] shrink-0 flex flex-col items-center justify-center px-1 sm:px-2 z-10">
                         {/* Cup Icon / Logo */}
-                        <div className="flex flex-col items-center mb-2 text-center">
-                            <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 p-1.5 rounded-2xl bg-white/5 border border-white/15 flex items-center justify-center shadow-lg relative group">
+                        <div className="flex flex-col items-center mb-3 text-center">
+                            <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 p-2 rounded-2xl bg-white/5 border border-white/15 flex items-center justify-center shadow-xl relative group">
                                 {logoUrl ? (
                                     <img src={logoUrl} alt="" className="w-full h-full object-contain drop-shadow" />
                                 ) : (
-                                    <Trophy className={`w-6 h-6 sm:w-8 sm:h-8 ${theme.accent}`} />
+                                    <Trophy className={`w-7 h-7 sm:w-9 sm:h-9 ${theme.accent}`} />
                                 )}
-                                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center text-[9px] text-slate-950 font-black shadow">
+                                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center text-[10px] text-slate-950 font-black shadow">
                                     ★
                                 </div>
                             </div>
-                            <span className="text-[9px] sm:text-[11px] md:text-xs font-black text-amber-400 uppercase tracking-widest mt-1.5">
+                            <span className="text-[10px] sm:text-xs md:text-sm font-black text-amber-400 uppercase tracking-widest mt-2">
                                 Gran Final
                             </span>
-                            <span className="text-[7px] sm:text-[9px] text-slate-400 font-medium">Sede Neutral</span>
+                            <span className="text-[8px] sm:text-[10px] text-slate-400 font-medium">Sede Neutral</span>
                         </div>
 
                         {/* Final Match Card */}
@@ -364,17 +364,17 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
                     </div>
 
                     {/* RIGHT BRACKET (From Semi-Final backwards to First Round) */}
-                    <div className="flex items-stretch justify-between flex-1 gap-1 sm:gap-2">
+                    <div className="flex items-stretch justify-between flex-1 gap-2 sm:gap-3">
                         {rightColumns.map((col, cIdx) => (
-                            <div key={`right_${cIdx}`} className="flex-1 min-w-0 flex flex-col">
+                            <div key={`right_${cIdx}`} className="flex-1 min-w-[125px] sm:min-w-[145px] md:min-w-[165px] flex flex-col">
                                 {/* Round Header */}
-                                <div className="text-center pb-2">
-                                    <span className="text-[8px] sm:text-[10px] md:text-[11px] font-black uppercase tracking-wider text-slate-400 truncate block">
+                                <div className="text-center pb-2.5">
+                                    <span className="text-[10px] sm:text-xs md:text-[13px] font-black uppercase tracking-wider text-slate-300 truncate block bg-white/5 py-1 px-2 rounded-lg border border-white/5">
                                         {col.name}
                                     </span>
                                 </div>
                                 {/* Matches Column */}
-                                <div className="flex flex-col justify-around flex-1 gap-1.5 sm:gap-2">
+                                <div className="flex flex-col justify-around flex-1 gap-2 sm:gap-3">
                                     {col.matches.map((match) => (
                                         <MatchCard
                                             key={match.id}
@@ -397,10 +397,10 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
                                 <ChevronLeft className="w-4 h-4 text-amber-400" />
                                 <span>Cuadro Izquierdo (Ruta a la Final)</span>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2.5">
                                 {leftColumns.map((col, cIdx) => (
                                     <div key={`mob_left_${cIdx}`} className="flex-1 flex flex-col gap-2">
-                                        <div className="text-[10px] font-black uppercase text-center text-slate-400">
+                                        <div className="text-[10px] font-black uppercase text-center text-slate-400 bg-white/5 py-1 rounded">
                                             {col.name}
                                         </div>
                                         <div className="flex flex-col justify-around flex-1 gap-2">
@@ -416,8 +416,8 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
 
                     {viewMode === 'FINAL' && finalMatch && (
                         <div className="space-y-4 py-4 max-w-xs mx-auto text-center">
-                            <div className="w-14 h-14 mx-auto p-2 bg-white/10 rounded-2xl border border-white/15 flex items-center justify-center">
-                                {logoUrl ? <img src={logoUrl} alt="" className="w-full h-full object-contain" /> : <Trophy className="w-8 h-8 text-amber-400" />}
+                            <div className="w-16 h-16 mx-auto p-2.5 bg-white/10 rounded-2xl border border-white/15 flex items-center justify-center">
+                                {logoUrl ? <img src={logoUrl} alt="" className="w-full h-full object-contain" /> : <Trophy className="w-9 h-9 text-amber-400" />}
                             </div>
                             <h4 className="text-sm font-black text-white uppercase tracking-wider">Gran Final</h4>
                             <MatchCard match={finalMatch} playerTeamId={playerTeamId} theme={theme} isFinal />
@@ -430,10 +430,10 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
                                 <span>Cuadro Derecho (Ruta a la Final)</span>
                                 <ChevronRight className="w-4 h-4 text-amber-400" />
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2.5">
                                 {rightColumns.map((col, cIdx) => (
                                     <div key={`mob_right_${cIdx}`} className="flex-1 flex flex-col gap-2">
-                                        <div className="text-[10px] font-black uppercase text-center text-slate-400">
+                                        <div className="text-[10px] font-black uppercase text-center text-slate-400 bg-white/5 py-1 rounded">
                                             {col.name}
                                         </div>
                                         <div className="flex flex-col justify-around flex-1 gap-2">
@@ -467,7 +467,7 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
     );
 };
 
-// Compact Match Card designed to never overflow
+// Compact Match Card designed to look crisp and readable
 const MatchCard: React.FC<{
     match: ProjectedMatch;
     playerTeamId: number;
@@ -480,37 +480,37 @@ const MatchCard: React.FC<{
 
     return (
         <div
-            className={`w-full rounded-lg sm:rounded-xl border transition-all overflow-hidden ${
+            className={`w-full rounded-xl border transition-all overflow-hidden shadow-sm hover:shadow-md ${
                 isFinal
-                    ? 'border-amber-400/60 bg-gradient-to-b from-amber-500/10 to-black/60 shadow-lg ring-1 ring-amber-400/30'
+                    ? 'border-amber-400/80 bg-gradient-to-b from-amber-500/15 via-slate-900 to-black/80 ring-2 ring-amber-400/40'
                     : isPlayerMatch
-                    ? 'border-amber-400/70 bg-amber-500/10 shadow-md ring-1 ring-amber-400/40'
-                    : 'border-white/10 bg-[#121828]/90 hover:border-white/20'
+                    ? 'border-amber-400/70 bg-gradient-to-r from-amber-500/15 to-slate-900 ring-1 ring-amber-400/50'
+                    : 'border-white/10 bg-[#121828]/95 hover:border-white/20'
             }`}
         >
             {/* Home Row */}
             <div
-                className={`flex items-center justify-between px-1.5 sm:px-2 py-1 sm:py-1.5 transition-colors ${
-                    match.home.isWinner ? 'bg-emerald-500/15' : isHomePlayer ? 'bg-white/10' : ''
+                className={`flex items-center justify-between px-2 sm:px-2.5 py-1.5 sm:py-2 transition-colors ${
+                    match.home.isWinner ? 'bg-emerald-500/20' : isHomePlayer ? 'bg-white/10' : ''
                 }`}
             >
-                <div className="flex items-center gap-1 sm:gap-1.5 min-w-0 flex-1">
-                    <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 flex items-center justify-center">
+                <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
+                    <div className="w-5 h-5 sm:w-5.5 sm:h-5.5 shrink-0 flex items-center justify-center">
                         {match.home.team ? (
                             <TeamLogo team={match.home.team} />
                         ) : (
-                            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-white/15" />
+                            <div className="w-3.5 h-3.5 rounded-full bg-white/15" />
                         )}
                     </div>
                     <span
-                        className={`text-[8px] sm:text-[10px] md:text-[11px] truncate leading-tight ${
+                        className={`text-[11px] sm:text-xs md:text-[13px] truncate leading-tight ${
                             match.home.isWinner
                                 ? 'text-white font-black'
                                 : isHomePlayer
-                                ? 'text-amber-300 font-bold'
+                                ? 'text-amber-300 font-black'
                                 : match.home.team
-                                ? 'text-slate-200 font-medium'
-                                : 'text-slate-500 text-[7px] sm:text-[8px] italic'
+                                ? 'text-slate-200 font-semibold'
+                                : 'text-slate-500 text-[10px] sm:text-[11px] italic'
                         }`}
                         title={match.home.team?.name || match.home.placeholder}
                     >
@@ -518,7 +518,7 @@ const MatchCard: React.FC<{
                     </span>
                 </div>
                 <span
-                    className={`text-[8px] sm:text-[10px] md:text-[11px] font-black pl-1 shrink-0 ${
+                    className={`text-[11px] sm:text-xs md:text-[13px] font-black pl-1.5 shrink-0 ${
                         match.home.isWinner ? 'text-emerald-400 font-black' : 'text-slate-400'
                     }`}
                 >
@@ -531,27 +531,27 @@ const MatchCard: React.FC<{
 
             {/* Away Row */}
             <div
-                className={`flex items-center justify-between px-1.5 sm:px-2 py-1 sm:py-1.5 transition-colors ${
-                    match.away.isWinner ? 'bg-emerald-500/15' : isAwayPlayer ? 'bg-white/10' : ''
+                className={`flex items-center justify-between px-2 sm:px-2.5 py-1.5 sm:py-2 transition-colors ${
+                    match.away.isWinner ? 'bg-emerald-500/20' : isAwayPlayer ? 'bg-white/10' : ''
                 }`}
             >
-                <div className="flex items-center gap-1 sm:gap-1.5 min-w-0 flex-1">
-                    <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 flex items-center justify-center">
+                <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
+                    <div className="w-5 h-5 sm:w-5.5 sm:h-5.5 shrink-0 flex items-center justify-center">
                         {match.away.team ? (
                             <TeamLogo team={match.away.team} />
                         ) : (
-                            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-white/15" />
+                            <div className="w-3.5 h-3.5 rounded-full bg-white/15" />
                         )}
                     </div>
                     <span
-                        className={`text-[8px] sm:text-[10px] md:text-[11px] truncate leading-tight ${
+                        className={`text-[11px] sm:text-xs md:text-[13px] truncate leading-tight ${
                             match.away.isWinner
                                 ? 'text-white font-black'
                                 : isAwayPlayer
-                                ? 'text-amber-300 font-bold'
+                                ? 'text-amber-300 font-black'
                                 : match.away.team
-                                ? 'text-slate-200 font-medium'
-                                : 'text-slate-500 text-[7px] sm:text-[8px] italic'
+                                ? 'text-slate-200 font-semibold'
+                                : 'text-slate-500 text-[10px] sm:text-[11px] italic'
                         }`}
                         title={match.away.team?.name || match.away.placeholder}
                     >
@@ -559,7 +559,7 @@ const MatchCard: React.FC<{
                     </span>
                 </div>
                 <span
-                    className={`text-[8px] sm:text-[10px] md:text-[11px] font-black pl-1 shrink-0 ${
+                    className={`text-[11px] sm:text-xs md:text-[13px] font-black pl-1.5 shrink-0 ${
                         match.away.isWinner ? 'text-emerald-400 font-black' : 'text-slate-400'
                     }`}
                 >
@@ -569,7 +569,7 @@ const MatchCard: React.FC<{
 
             {/* Penalty shootout badge if match went to penalties */}
             {match.penalties && (
-                <div className="bg-amber-500/20 text-amber-300 text-[7px] sm:text-[8px] font-bold text-center py-0.5 border-t border-amber-400/20">
+                <div className="bg-amber-500/20 text-amber-300 text-[9px] sm:text-[10px] font-bold text-center py-0.5 border-t border-amber-400/20">
                     Penales: {match.penalties.home} - {match.penalties.away}
                 </div>
             )}

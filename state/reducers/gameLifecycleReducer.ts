@@ -204,6 +204,9 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
                     breakdown
                 },
                 scoutedPlayerIds: newScoutedPlayerIds || state.scoutedPlayerIds,
+                cinematicQueue: action.payload.cinematicEvents && action.payload.cinematicEvents.length > 0
+                    ? [...state.cinematicQueue, ...action.payload.cinematicEvents]
+                    : state.cinematicQueue,
             };
         }
 

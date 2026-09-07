@@ -352,6 +352,141 @@ export function useSimulation(
             // Trigger CUP_KICKOFF cinematics for international cups
             const newCinematicEvents: any[] = [];
 
+            // 🏆 Check if Player's Team won Torneo Apertura
+            if (updatedCups.aperturaPlayoffs?.winnerId && !gameState.cups.aperturaPlayoffs?.winnerId && updatedCups.aperturaPlayoffs.winnerId === gameState.team.id) {
+                const argTable = simulationResult.updatedLeagueTables[LeagueId.LIGA_ARGENTINA] || [];
+                const playerRow = argTable.find(r => r.teamId === gameState.team.id);
+                newCinematicEvents.push({
+                    id: `champ_apertura_${Date.now()}`,
+                    type: 'CUP_WIN',
+                    title: '¡CAMPEÓN DEL TORNEO APERTURA!',
+                    subtitle: `${gameState.team.name} se consagra campeón de la Liga Profesional tras conquistar los Playoffs`,
+                    metadata: {
+                        competition: 'Torneo Apertura 2026',
+                        team: gameState.team,
+                        accentColor: '#F59E0B',
+                        stats: {
+                            played: (playerRow?.played || 16) + 4,
+                            won: (playerRow?.won || 0) + 4,
+                            goalsFor: (playerRow?.goalsFor || 0) + 7,
+                            goalDifference: (playerRow?.goalDifference || 0) + 5
+                        }
+                    }
+                });
+            }
+
+            // 🏆 Check if Player's Team won Torneo Clausura
+            if (updatedCups.clausuraPlayoffs?.winnerId && !gameState.cups.clausuraPlayoffs?.winnerId && updatedCups.clausuraPlayoffs.winnerId === gameState.team.id) {
+                const argTable = simulationResult.updatedLeagueTables[LeagueId.LIGA_ARGENTINA] || [];
+                const playerRow = argTable.find(r => r.teamId === gameState.team.id);
+                newCinematicEvents.push({
+                    id: `champ_clausura_${Date.now()}`,
+                    type: 'CUP_WIN',
+                    title: '¡CAMPEÓN DEL TORNEO CLAUSURA!',
+                    subtitle: `${gameState.team.name} se consagra campeón de la Liga Profesional tras conquistar los Playoffs`,
+                    metadata: {
+                        competition: 'Torneo Clausura 2026',
+                        team: gameState.team,
+                        accentColor: '#06B6D4',
+                        stats: {
+                            played: (playerRow?.played || 32) + 4,
+                            won: (playerRow?.won || 0) + 4,
+                            goalsFor: (playerRow?.goalsFor || 0) + 8,
+                            goalDifference: (playerRow?.goalDifference || 0) + 6
+                        }
+                    }
+                });
+            }
+
+            // 🏆 Check Primera Nacional Primer Ascenso & Reducido
+            if (updatedCups.nacionalPrimerAscenso?.winnerId && !gameState.cups.nacionalPrimerAscenso?.winnerId && updatedCups.nacionalPrimerAscenso.winnerId === gameState.team.id) {
+                newCinematicEvents.push({
+                    id: `champ_primer_ascenso_${Date.now()}`,
+                    type: 'PROMOTION',
+                    title: '¡CAMPEÓN Y ASCENDIDO A PRIMERA!',
+                    subtitle: `${gameState.team.name} gana la Final por el 1º Ascenso y jugará en la Liga Profesional`,
+                    metadata: {
+                        competition: 'Primera Nacional (1º Ascenso)',
+                        team: gameState.team,
+                        accentColor: '#F59E0B',
+                        stats: { played: 35, won: 22, goalsFor: 48, goalDifference: 22 }
+                    }
+                });
+            }
+
+            if (updatedCups.nacionalReducido?.winnerId && !gameState.cups.nacionalReducido?.winnerId && updatedCups.nacionalReducido.winnerId === gameState.team.id) {
+                newCinematicEvents.push({
+                    id: `champ_reducido_${Date.now()}`,
+                    type: 'PROMOTION',
+                    title: '¡ASCENDIDO A PRIMERA DIVISIÓN!',
+                    subtitle: `${gameState.team.name} gana el Torneo Reducido y asciende a la máxima categoría`,
+                    metadata: {
+                        competition: 'Torneo Reducido (2º Ascenso)',
+                        team: gameState.team,
+                        accentColor: '#06B6D4',
+                        stats: { played: 38, won: 24, goalsFor: 52, goalDifference: 25 }
+                    }
+                });
+            }
+
+            // 🏆 Check International and European Cups
+            const genericCups = [
+                { key: 'copaLibertadores', name: 'Copa Libertadores 2026', accent: '#F59E0B' },
+                { key: 'championsLeague', name: 'UEFA Champions League 2026', accent: '#6366F1' },
+                { key: 'copaIntercontinental', name: 'Copa Intercontinental 2026', accent: '#10B981' },
+                { key: 'faCup', name: 'FA Cup 2026', accent: '#EF4444' },
+                { key: 'carabaoCup', name: 'Carabao Cup 2026', accent: '#10B981' },
+            ];
+
+            for (const gc of genericCups) {
+                const upCup = (updatedCups as any)[gc.key];
+                const oldCup = (gameState.cups as any)?.[gc.key];
+                if (upCup?.winnerId && !oldCup?.winnerId && upCup.winnerId === gameState.team.id) {
+                    newCinematicEvents.push({
+                        id: `champ_${gc.key}_${Date.now()}`,
+                        type: 'CUP_WIN',
+                        title: `¡CAMPEÓN DE LA ${gc.name.toUpperCase()}!`,
+                        subtitle: `${gameState.team.name} alza el trofeo tras una campaña histórica`,
+                        metadata: {
+                            competition: gc.name,
+                            team: gameState.team,
+                            accentColor: gc.accent,
+                            stats: {
+                                played: upCup.rounds?.length || 6,
+                                won: upCup.rounds?.length || 6,
+                                goalsFor: 14,
+                                goalDifference: 10
+                            }
+                        }
+                    });
+                }
+            }
+
+            // 🏆 Check European / Standard League Titles
+            const playerLeague = gameState.team.leagueId;
+            const playerTable = simulationResult.updatedLeagueTables[playerLeague] || [];
+            const playerRow = playerTable.find(r => r.teamId === gameState.team.id);
+            const maxLeagueWeeks = playerLeague === LeagueId.BUNDESLIGA ? 34 : 38;
+            if (simulatedWeek >= maxLeagueWeeks && playerRow && playerRow.position === 1 && !playerLeague.includes('ARGENTINA') && !playerLeague.includes('NACIONAL')) {
+                newCinematicEvents.push({
+                    id: `champ_league_${Date.now()}`,
+                    type: 'LEAGUE_WIN',
+                    title: '¡CAMPEÓN DE LIGA!',
+                    subtitle: `${gameState.team.name} finaliza en la cima de la tabla y conquista el campeonato`,
+                    metadata: {
+                        competition: playerLeague.replace(/_/g, ' '),
+                        team: gameState.team,
+                        accentColor: '#F59E0B',
+                        stats: {
+                            played: playerRow.played,
+                            won: playerRow.won,
+                            goalsFor: playerRow.goalsFor,
+                            goalDifference: playerRow.goalDifference
+                        }
+                    }
+                });
+            }
+
             const isFirstLibRound = gameState.cups.copaLibertadores.rounds.length > 0 &&
                 gameState.cups.copaLibertadores.rounds[0].fixtures.every(m => !m.result) &&
                 libertadoresMatches.length > 0;
@@ -520,7 +655,8 @@ export function useSimulation(
                 playerMatchResult: simulationResult.playerMatchResult,
                 updatedCups,
                 updatedScoutedPlayerIds: simulationResult.updatedScoutedPlayerIds,
-                coachReport
+                coachReport,
+                cinematicEvents: newCinematicEvents
             });
 
             setMatchPhase('LIVE');
@@ -552,7 +688,8 @@ export function useSimulation(
                 newOffers: pendingResults.newOffers,
                 newCups: pendingResults.updatedCups,
                 newScoutedPlayerIds: (pendingResults as any).updatedScoutedPlayerIds,
-                coachReport: pendingResults.coachReport
+                coachReport: pendingResults.coachReport,
+                cinematicEvents: (pendingResults as any).cinematicEvents
             }
         });
 

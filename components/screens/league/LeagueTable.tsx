@@ -17,7 +17,7 @@ interface LeagueTableProps {
     gameState: GameState;
 }
 
-type ArgViewMode = 'ZONA_A' | 'ZONA_B' | 'TABLA_ANUAL' | 'PROMEDIOS' | 'PLAYOFFS' | 'TABLA_GENERAL' | 'REDUCIDO';
+type ArgViewMode = 'ZONA_A' | 'ZONA_B' | 'TABLA_ANUAL' | 'PROMEDIOS' | 'PLAYOFFS_APERTURA' | 'PLAYOFFS_CLAUSURA' | 'TABLA_GENERAL' | 'REDUCIDO';
 
 export const LeagueTable: React.FC<LeagueTableProps> = ({
     table,
@@ -200,28 +200,33 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
         );
     };
 
-    const renderPlayoffs = () => {
+    const renderAperturaPlayoffs = () => {
         const apertura = gameState.cups.aperturaPlayoffs;
-        const clausura = gameState.cups.clausuraPlayoffs;
 
         return (
-            <div className="p-3 sm:p-5 space-y-6">
-                {/* Apertura Playoffs */}
-                <div className="bg-slate-800/40 rounded-2xl p-3 sm:p-5 border border-white/10 space-y-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
-                        <div className="flex items-center gap-2.5">
-                            <Trophy className="w-5 h-5 text-amber-400" />
-                            <h4 className="text-white font-black text-sm uppercase tracking-wide">Playoffs - Torneo Apertura</h4>
+            <div className="p-3 sm:p-6 space-y-4">
+                <div className="bg-slate-800/40 rounded-2xl p-4 sm:p-6 border border-white/10 space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
+                                <Trophy className="w-6 h-6 text-amber-400" />
+                            </div>
+                            <div>
+                                <h4 className="text-white font-black text-base sm:text-lg uppercase tracking-wide">Playoffs - Torneo Apertura</h4>
+                                <span className="text-xs text-slate-400">16 Clasificados (8 de Zona A + 8 de Zona B) • Octavos, Cuartos, Semis y Gran Final</span>
+                            </div>
                         </div>
-                        <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5">
-                            {apertura?.winnerId ? `Campeón: ${getTeamById(apertura.winnerId)?.name}` : 'En Disputa (Fecha 17 a 20)'}
+                        <span className="text-xs font-bold text-amber-300 bg-amber-500/15 px-3 py-1.5 rounded-xl border border-amber-500/30 shadow-sm">
+                            {apertura?.winnerId ? `🏆 Campeón Apertura: ${getTeamById(apertura.winnerId)?.name}` : 'En Disputa (Fecha 17 a 20)'}
                         </span>
                     </div>
 
                     {(!apertura?.rounds || apertura.rounds.length === 0) ? (
-                        <div className="text-center py-8 text-slate-400 text-xs">
-                            <p className="font-semibold text-slate-300">Los Playoffs del Apertura comenzarán al finalizar la Fecha 16.</p>
-                            <p className="text-[11px] text-slate-500 mt-1">Clasificarán los mejores 8 equipos de la Zona A y los mejores 8 de la Zona B (Octavos de Final a partido único).</p>
+                        <div className="text-center py-14 text-slate-400 text-sm space-y-2">
+                            <p className="font-bold text-slate-200 text-base">Los Playoffs del Apertura comenzarán al finalizar la Fecha 16.</p>
+                            <p className="text-xs text-slate-400 max-w-md mx-auto">
+                                Clasificarán los mejores 8 equipos de la Zona A y los mejores 8 de la Zona B en cruces de eliminación directa a partido único.
+                            </p>
                         </div>
                     ) : (
                         <TournamentBracket
@@ -233,23 +238,37 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
                         />
                     )}
                 </div>
+            </div>
+        );
+    };
 
-                {/* Clausura Playoffs */}
-                <div className="bg-slate-800/40 rounded-2xl p-3 sm:p-5 border border-white/10 space-y-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
-                        <div className="flex items-center gap-2.5">
-                            <Trophy className="w-5 h-5 text-cyan-400" />
-                            <h4 className="text-white font-black text-sm uppercase tracking-wide">Playoffs - Torneo Clausura</h4>
+    const renderClausuraPlayoffs = () => {
+        const clausura = gameState.cups.clausuraPlayoffs;
+
+        return (
+            <div className="p-3 sm:p-6 space-y-4">
+                <div className="bg-slate-800/40 rounded-2xl p-4 sm:p-6 border border-white/10 space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
+                                <Trophy className="w-6 h-6 text-cyan-400" />
+                            </div>
+                            <div>
+                                <h4 className="text-white font-black text-base sm:text-lg uppercase tracking-wide">Playoffs - Torneo Clausura</h4>
+                                <span className="text-xs text-slate-400">16 Clasificados (8 de Zona A + 8 de Zona B) • Octavos, Cuartos, Semis y Gran Final</span>
+                            </div>
                         </div>
-                        <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5">
-                            {clausura?.winnerId ? `Campeón: ${getTeamById(clausura.winnerId)?.name}` : 'En Disputa (Fecha 37 a 40)'}
+                        <span className="text-xs font-bold text-cyan-300 bg-cyan-500/15 px-3 py-1.5 rounded-xl border border-cyan-500/30 shadow-sm">
+                            {clausura?.winnerId ? `🏆 Campeón Clausura: ${getTeamById(clausura.winnerId)?.name}` : 'En Disputa (Fecha 37 a 40)'}
                         </span>
                     </div>
 
                     {(!clausura?.rounds || clausura.rounds.length === 0) ? (
-                        <div className="text-center py-8 text-slate-400 text-xs">
-                            <p className="font-semibold text-slate-300">Los Playoffs del Clausura comenzarán al finalizar la Fecha 36.</p>
-                            <p className="text-[11px] text-slate-500 mt-1">Clasificarán los 8 mejores de cada zona tras la disputa de las 16 fechas del Clausura.</p>
+                        <div className="text-center py-14 text-slate-400 text-sm space-y-2">
+                            <p className="font-bold text-slate-200 text-base">Los Playoffs del Clausura comenzarán al finalizar la Fecha 36.</p>
+                            <p className="text-xs text-slate-400 max-w-md mx-auto">
+                                Clasificarán los 8 mejores de cada zona tras completarse la fase regular del Torneo Clausura.
+                            </p>
                         </div>
                     ) : (
                         <TournamentBracket
@@ -325,12 +344,22 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
                             Promedios
                         </button>
                         <button
-                            onClick={() => setArgView('PLAYOFFS')}
-                            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
-                                argView === 'PLAYOFFS' ? 'bg-white text-slate-900 shadow-md' : 'text-white/80 hover:text-white hover:bg-white/10'
+                            onClick={() => setArgView('PLAYOFFS_APERTURA')}
+                            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                                argView === 'PLAYOFFS_APERTURA' ? 'bg-amber-400 text-slate-950 shadow-md font-black' : 'text-white/80 hover:text-white hover:bg-white/10'
                             }`}
                         >
-                            Playoffs
+                            <Trophy className="w-3.5 h-3.5 text-amber-500" />
+                            Playoffs Apertura
+                        </button>
+                        <button
+                            onClick={() => setArgView('PLAYOFFS_CLAUSURA')}
+                            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                                argView === 'PLAYOFFS_CLAUSURA' ? 'bg-cyan-400 text-slate-950 shadow-md font-black' : 'text-white/80 hover:text-white hover:bg-white/10'
+                            }`}
+                        >
+                            <Trophy className="w-3.5 h-3.5 text-cyan-500" />
+                            Playoffs Clausura
                         </button>
                     </div>
                 )}
@@ -375,8 +404,10 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
             </div>
 
             {/* Render Reducido & Finales or Playoffs */}
-            {isArgentina && argView === 'PLAYOFFS' ? (
-                renderPlayoffs()
+            {isArgentina && argView === 'PLAYOFFS_APERTURA' ? (
+                renderAperturaPlayoffs()
+            ) : isArgentina && argView === 'PLAYOFFS_CLAUSURA' ? (
+                renderClausuraPlayoffs()
             ) : isPrimeraNacional && argView === 'REDUCIDO' ? (
                 renderNacionalReducido()
             ) : (

@@ -68,6 +68,112 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     const homeTeamObj = isHome ? gameState.team : opponent;
     const awayTeamObj = !isHome ? gameState.team : opponent;
 
+    // Analyze match stage details (Playoffs, Finals, Semis, Cups, League)
+    const getMatchStageDetails = () => {
+        const allCups = Object.values(gameState.cups || {});
+        for (const cup of allCups) {
+            if (!cup || !cup.rounds) continue;
+            for (let rIdx = 0; rIdx < cup.rounds.length; rIdx++) {
+                const round = cup.rounds[rIdx];
+                const found = round.fixtures?.some(f => 
+                    f.week === nextMatch.week && 
+                    !!f.isMidweek === !!nextMatch.isMidweek && 
+                    f.homeTeamId === nextMatch.homeTeamId && 
+                    f.awayTeamId === nextMatch.awayTeamId
+                );
+                if (found) {
+                    const totalFixtures = round.fixtures?.length || 0;
+                    let stageName = round.name;
+                    if (round.name === 'Final' || totalFixtures === 1) stageName = 'Gran Final';
+                    else if (round.name === 'Semi-Final' || totalFixtures === 2) stageName = 'Semifinales';
+                    else if (round.name === 'Quarter-Final' || totalFixtures === 4) stageName = 'Cuartos de Final';
+                    else if (round.name === 'Round of 16' || totalFixtures === 8) stageName = 'Octavos de Final';
+                    else if (round.name === 'Round of 32' || totalFixtures === 16) stageName = 'Dieciseisavos de Final';
+
+                    return {
+                        competition: cup.name,
+                        stage: stageName,
+                        isPlayoffOrCup: true,
+                        isFinal: stageName === 'Gran Final',
+                        isSemi: stageName === 'Semifinales',
+                        isQuarter: stageName === 'Cuartos de Final',
+                        isOctavos: stageName === 'Octavos de Final',
+                    };
+                }
+            }
+        }
+
+        const comp = nextMatch.competition || '';
+        if (comp.includes('Playoffs_Apertura') || comp.includes('Playoffs Apertura')) {
+            let stageName = 'Octavos de Final';
+            if (nextMatch.week === 18) stageName = 'Cuartos de Final';
+            else if (nextMatch.week === 19) stageName = 'Semifinales';
+            else if (nextMatch.week >= 20) stageName = 'Gran Final';
+
+            return {
+                competition: 'Playoffs Apertura',
+                stage: stageName,
+                isPlayoffOrCup: true,
+                isFinal: stageName === 'Gran Final',
+                isSemi: stageName === 'Semifinales',
+                isQuarter: stageName === 'Cuartos de Final',
+                isOctavos: stageName === 'Octavos de Final',
+            };
+        }
+
+        if (comp.includes('Playoffs_Clausura') || comp.includes('Playoffs Clausura')) {
+            let stageName = 'Octavos de Final';
+            if (nextMatch.week === 38) stageName = 'Cuartos de Final';
+            else if (nextMatch.week === 39) stageName = 'Semifinales';
+            else if (nextMatch.week >= 40) stageName = 'Gran Final';
+
+            return {
+                competition: 'Playoffs Clausura',
+                stage: stageName,
+                isPlayoffOrCup: true,
+                isFinal: stageName === 'Gran Final',
+                isSemi: stageName === 'Semifinales',
+                isQuarter: stageName === 'Cuartos de Final',
+                isOctavos: stageName === 'Octavos de Final',
+            };
+        }
+
+        if (comp.includes('nacional_primer_ascenso')) {
+            return {
+                competition: 'Primera Nacional',
+                stage: 'Final 1º Ascenso',
+                isPlayoffOrCup: true,
+                isFinal: true,
+            };
+        }
+
+        if (comp.includes('nacional_reducido')) {
+            const isFin = nextMatch.week >= 38;
+            return {
+                competition: 'Primera Nacional',
+                stage: isFin ? 'Final del Reducido' : 'Semifinal Reducido',
+                isPlayoffOrCup: true,
+                isFinal: isFin,
+            };
+        }
+
+        return {
+            competition: comp || 'Liga',
+            stage: `Fecha ${nextMatch.week}`,
+            isPlayoffOrCup: false,
+        };
+    };
+
+    const stageInfo = getMatchStageDetails();
+
+    let playButtonText = 'Jugar Jornada';
+    if (stageInfo.isFinal) playButtonText = '🏆 Jugar Gran Final';
+    else if (stageInfo.isSemi) playButtonText = '⚔️ Jugar Semifinal';
+    else if (stageInfo.isQuarter) playButtonText = '⚔️ Jugar Cuartos de Final';
+    else if (stageInfo.isOctavos) playButtonText = '⚔️ Jugar Octavos de Final';
+    else if (stageInfo.isPlayoffOrCup) playButtonText = `⚔️ Jugar ${stageInfo.stage}`;
+    else playButtonText = `⚽ Jugar Fecha ${nextMatch.week}`;
+
     return (
         <div className="apex-card p-6 relative overflow-hidden group min-h-[280px] flex flex-col justify-center">
             <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
@@ -76,7 +182,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             
             <div className="flex justify-between items-center mb-4">
                 <span className="text-[9px] font-black tracking-[0.3em] text-[var(--apex-gold)] uppercase">Próximo Partido</span>
-                <span className="text-[9px] font-black tracking-[0.2em] text-white/40 uppercase">{nextMatch.competition || 'Liga'}</span>
+                <span className="text-[10px] font-black tracking-[0.15em] text-white/80 uppercase bg-white/5 px-2.5 py-0.5 rounded-lg border border-white/10">
+                    {stageInfo.competition}
+                </span>
             </div>
 
             {/* Symmetrical Matchup Grid */}
@@ -117,8 +225,22 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 </div>
             </div>
 
-            <div className="flex flex-col items-center gap-1 mb-6">
-                <span className="text-[10px] font-black text-white uppercase">Jornada {nextWeek} • 16:30</span>
+            <div className="flex flex-col items-center gap-1.5 mb-6">
+                <div className="flex items-center gap-2">
+                    {stageInfo.isPlayoffOrCup ? (
+                        <span className={`text-[10px] sm:text-xs font-black uppercase px-3 py-1 rounded-full border shadow-md flex items-center gap-1.5 ${
+                            stageInfo.isFinal 
+                                ? 'bg-amber-500/20 text-amber-300 border-amber-400/50 animate-pulse' 
+                                : 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40'
+                        }`}>
+                            {stageInfo.isFinal ? '🏆' : '⚔️'} {stageInfo.stage} • Partido Eliminatorio
+                        </span>
+                    ) : (
+                        <span className="text-[10px] sm:text-xs font-black text-white uppercase tracking-wider">
+                            Jornada {nextWeek} • 16:30
+                        </span>
+                    )}
+                </div>
                 <div className="flex items-center gap-2 text-white/40">
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" strokeWidth={2} /></svg>
                     <span className="text-[9px] font-bold uppercase tracking-widest">{isHome ? gameState.team.stadiumName : opponent?.stadiumName}</span>
@@ -127,9 +249,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
             <button 
                 onClick={onPlayMatch}
-                className="w-full py-4 bg-gradient-to-r from-[var(--apex-gold)] to-yellow-600 text-black font-black text-xs uppercase tracking-[0.2em] rounded-xl shadow-[0_10px_30px_rgba(200,168,78,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group/btn"
+                className="w-full py-4 bg-gradient-to-r from-[var(--apex-gold)] to-yellow-600 text-black font-black text-xs uppercase tracking-[0.2em] rounded-xl shadow-[0_10px_30px_rgba(200,168,78,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group/btn cursor-pointer"
             >
-                {nextMatch ? 'Jugar Jornada' : 'Simular Semana'}
+                <span>{playButtonText}</span>
                 <svg className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
         </div>

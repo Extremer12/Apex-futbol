@@ -15,7 +15,7 @@ export type GameAction =
     | { type: 'LOAD_GAME'; payload: GameState }
     | { type: 'RESET_GAME' }
     | { type: 'ADVANCE_WEEK_START' }
-    | { type: 'ADVANCE_WEEK_SUCCESS'; payload: { newsItems: NewsItem[]; newSchedule: Match[]; newLeagueTables: Record<LeagueId, LeagueTableRow[]>; newAllTeams: Team[]; newConfidence: number; newOffers: Offer[]; newCups?: GameState['cups']; coachReport?: any; newScoutedPlayerIds?: any } }
+    | { type: 'ADVANCE_WEEK_SUCCESS'; payload: { newsItems: NewsItem[]; newSchedule: Match[]; newLeagueTables: Record<LeagueId, LeagueTableRow[]>; newAllTeams: Team[]; newConfidence: number; newOffers: Offer[]; newCups?: GameState['cups']; coachReport?: any; newScoutedPlayerIds?: any; cinematicEvents?: import('../types').CinematicEvent[] } }
     | { type: 'PROMOTE_YOUTH'; payload: number }
     | { type: 'START_NEW_SEASON' }
     | { type: 'POP_CINEMATIC' }

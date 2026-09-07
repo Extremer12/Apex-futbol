@@ -3,6 +3,7 @@ import { CinematicEvent } from '../../types';
 import { Confetti } from '../ui/Confetti';
 import { TrophyIcon, TrendingUpIcon, TrendingDownIcon } from '../icons';
 import { formatCurrency } from '../../utils';
+import { TeamLogo } from '../../data/teams/helpers';
 
 interface CinematicOverlayProps {
     event: CinematicEvent;
@@ -133,21 +134,90 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({ event, onCon
                 );
             }
             case 'LEAGUE_WIN':
-            case 'CUP_WIN':
+            case 'CUP_WIN': {
+                const team = event.metadata?.team;
+                const compName = event.metadata?.competition || event.title;
+                const stats = event.metadata?.stats;
+                const accentColor = event.metadata?.accentColor || '#F59E0B';
+
                 return (
-                    <div className="flex flex-col items-center justify-center animate-trophy-rise relative z-10">
-                        <div className="w-48 h-48 mb-8 drop-shadow-[0_0_50px_rgba(250,204,21,0.6)]">
-                            <TrophyIcon className="w-full h-full text-yellow-400" />
+                    <div className="flex flex-col items-center justify-center relative z-10 w-full max-w-2xl mx-auto px-4">
+                        {/* Radial glow */}
+                        <div
+                            className="absolute w-[450px] h-[450px] rounded-full blur-3xl opacity-25 pointer-events-none"
+                            style={{ background: `radial-gradient(circle, ${accentColor} 0%, transparent 70%)` }}
+                        />
+
+                        {/* Top Badge */}
+                        <div className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-amber-400/40 bg-amber-500/15 backdrop-blur-md mb-6 animate-fade-in shadow-lg">
+                            <span className="text-amber-300 font-black text-xs uppercase tracking-[0.3em]">
+                                ★ CAMPEÓN OFICIAL ★
+                            </span>
                         </div>
-                        <h1 className="text-6xl font-black text-white uppercase tracking-tight text-center drop-shadow-2xl">
-                            {event.title}
+
+                        {/* Crest + Trophy Duo */}
+                        <div className="flex items-center justify-center gap-5 sm:gap-8 mb-6">
+                            {team && (
+                                <div className="relative group">
+                                    <div 
+                                        className="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl p-3 sm:p-4 bg-white/5 border border-white/15 flex items-center justify-center shadow-2xl backdrop-blur-md"
+                                        style={{ boxShadow: `0 0 35px ${accentColor}40` }}
+                                    >
+                                        <TeamLogo team={team} className="w-full h-full object-contain drop-shadow-[0_4px_16px_rgba(0,0,0,0.6)]" />
+                                    </div>
+                                    <div className="absolute -bottom-2 -right-2 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-amber-500 border-2 border-slate-950 flex items-center justify-center text-slate-950 font-black text-xs shadow-lg">
+                                        ★
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="w-24 h-24 sm:w-32 sm:h-32 flex items-center justify-center drop-shadow-[0_0_50px_rgba(245,158,11,0.7)] animate-bounce">
+                                <TrophyIcon className="w-full h-full text-amber-400" />
+                            </div>
+                        </div>
+
+                        {/* Title & Subtitle */}
+                        <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white uppercase tracking-tight text-center drop-shadow-[0_4px_24px_rgba(0,0,0,0.8)]">
+                            ¡CAMPEONES!
                         </h1>
-                        <p className="text-2xl text-yellow-300 mt-4 font-bold text-center uppercase tracking-widest">
+                        <p className="text-xl sm:text-2xl text-amber-300 mt-2 font-black text-center uppercase tracking-wider">
+                            {compName}
+                        </p>
+                        <p className="text-xs sm:text-sm text-slate-300 mt-1 font-medium text-center max-w-lg">
                             {event.subtitle}
                         </p>
-                        <Confetti count={150} />
+
+                        {/* Stats Dashboard */}
+                        {stats && (
+                            <div className="w-full mt-6 bg-[#0E1524]/90 border border-white/10 rounded-2xl p-4 sm:p-5 shadow-2xl backdrop-blur-md">
+                                <div className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-slate-400 mb-3 border-b border-white/10 pb-2 text-center">
+                                    Rendimiento y Estadísticas del Campeón
+                                </div>
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 text-center">
+                                    <div className="p-2.5 rounded-xl bg-white/5 border border-white/5">
+                                        <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Partidos</span>
+                                        <span className="text-lg sm:text-xl font-black text-white">{stats.played}</span>
+                                    </div>
+                                    <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                                        <span className="text-[9px] sm:text-[10px] font-bold text-emerald-400 uppercase tracking-wider block">Victorias</span>
+                                        <span className="text-lg sm:text-xl font-black text-emerald-300">{stats.won}</span>
+                                    </div>
+                                    <div className="p-2.5 rounded-xl bg-white/5 border border-white/5">
+                                        <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Goles a Favor</span>
+                                        <span className="text-lg sm:text-xl font-black text-white">{stats.goalsFor}</span>
+                                    </div>
+                                    <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                                        <span className="text-[9px] sm:text-[10px] font-bold text-amber-400 uppercase tracking-wider block">Diferencia de Gol</span>
+                                        <span className="text-lg sm:text-xl font-black text-amber-300">{stats.goalDifference > 0 ? `+${stats.goalDifference}` : stats.goalDifference}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <Confetti count={180} />
                     </div>
                 );
+            }
             case 'PROMOTION':
                 return (
                     <div className="flex flex-col items-center justify-center animate-trophy-rise relative z-10">
