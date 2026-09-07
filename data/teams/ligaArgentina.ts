@@ -1,5 +1,6 @@
 import { Team, LeagueId } from '../../types';
 import { createGenericSquad } from './helpers';
+import { ARG_PACK_CDN } from '../../services/customPacks/argentineLogos';
 
 export const ligaArgentinaTeams: Team[] = [
     // ==========================================
@@ -8,7 +9,7 @@ export const ligaArgentinaTeams: Team[] = [
     {
         id: 701,
         name: 'Boca Juniors',
-        logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Escudo_del_Club_Atl%C3%A9tico_Boca_Juniors.svg/1024px-Escudo_del_Club_Atl%C3%A9tico_Boca_Juniors.svg.png',
+        logo: `${ARG_PACK_CDN}/primera_division/argentina_boca-juniors.football-logos.cc.svg`,
         leagueId: LeagueId.LIGA_ARGENTINA,
         zone: 'A',
         budget: 25000000,
@@ -42,7 +43,7 @@ export const ligaArgentinaTeams: Team[] = [
     {
         id: 704,
         name: 'Independiente',
-        logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/Escudo_del_Club_Atl%C3%A9tico_Independiente.svg/1024px-Escudo_del_Club_Atl%C3%A9tico_Independiente.svg.png',
+        logo: `${ARG_PACK_CDN}/primera_division/argentina_independiente.football-logos.cc.svg`,
         leagueId: LeagueId.LIGA_ARGENTINA,
         zone: 'A',
         budget: 12000000,
@@ -70,7 +71,7 @@ export const ligaArgentinaTeams: Team[] = [
     {
         id: 705,
         name: 'San Lorenzo',
-        logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Escudo_del_Club_Atl%C3%A9tico_San_Lorenzo_de_Almagro.svg/1024px-Escudo_del_Club_Atl%C3%A9tico_San_Lorenzo_de_Almagro.svg.png',
+        logo: `${ARG_PACK_CDN}/primera_division/argentina_san-lorenzo-de-almagro.football-logos.cc.svg`,
         leagueId: LeagueId.LIGA_ARGENTINA,
         zone: 'A',
         budget: 11000000,
@@ -97,7 +98,7 @@ export const ligaArgentinaTeams: Team[] = [
     {
         id: 711,
         name: 'Talleres (Córdoba)',
-        logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Escudo_del_Club_Atl%C3%A9tico_Talleres_de_C%C3%B3rdoba.svg/1024px-Escudo_del_Club_Atl%C3%A9tico_Talleres_de_C%C3%B3rdoba.svg.png',
+        logo: `${ARG_PACK_CDN}/primera_division/argentina_talleres.football-logos.cc.svg`,
         leagueId: LeagueId.LIGA_ARGENTINA,
         zone: 'A',
         budget: 10000000,
@@ -124,7 +125,7 @@ export const ligaArgentinaTeams: Team[] = [
     {
         id: 706,
         name: 'Estudiantes de La Plata',
-        logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Escudo_del_Club_Estudiantes_de_La_Plata.svg/1024px-Escudo_del_Club_Estudiantes_de_La_Plata.svg.png',
+        logo: `${ARG_PACK_CDN}/primera_division/argentina_estudiantes-de-la-plata.football-logos.cc.svg`,
         leagueId: LeagueId.LIGA_ARGENTINA,
         zone: 'A',
         budget: 11000000,
@@ -150,7 +151,7 @@ export const ligaArgentinaTeams: Team[] = [
     {
         id: 707,
         name: 'Vélez Sarsfield',
-        logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/Escudo_del_C_A_V%C3%A9lez_Sarsfield.svg/1024px-Escudo_del_C_A_V%C3%A9lez_Sarsfield.svg.png',
+        logo: `${ARG_PACK_CDN}/primera_division/argentina_velez-sarsfield.football-logos.cc.svg`,
         leagueId: LeagueId.LIGA_ARGENTINA,
         zone: 'A',
         budget: 10000000,
@@ -176,7 +177,7 @@ export const ligaArgentinaTeams: Team[] = [
     {
         id: 715,
         name: 'Lanús',
-        logo: 'https://upload.wikimedia.org/wikipedia/commons/f/f0/Escudo_del_Club_Atletico_Lan%C3%BAs.png',
+        logo: `${ARG_PACK_CDN}/primera_division/argentina_lanus.football-logos.cc.svg`,
         leagueId: LeagueId.LIGA_ARGENTINA,
         zone: 'A',
         budget: 8000000,
@@ -200,7 +201,7 @@ export const ligaArgentinaTeams: Team[] = [
     {
         id: 710,
         name: "Newell's Old Boys",
-        logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Escudo_del_Club_Atl%C3%A9tico_Newell%27s_Old_Boys.svg/1024px-Escudo_del_Club_Atl%C3%A9tico_Newell%27s_Old_Boys.svg.png',
+        logo: `${ARG_PACK_CDN}/primera_division/argentina_newells-old-boys.football-logos.cc.svg`,
         leagueId: LeagueId.LIGA_ARGENTINA,
         zone: 'A',
         budget: 8000000,
@@ -221,13 +222,13 @@ export const ligaArgentinaTeams: Team[] = [
             ...createGenericSquad(71020, 'Newells').slice(0, 10)
         ]
     },
-    { id: 717, name: 'Instituto (Córdoba)', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Instituto_acc_cordoba_logo.svg/1024px-Instituto_acc_cordoba_logo.svg.png', leagueId: LeagueId.LIGA_ARGENTINA, zone: 'A', budget: 5000000, transferBudget: 1200000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#FFFFFF', squad: createGenericSquad(71700, 'Instituto') },
-    { id: 714, name: 'Defensa y Justicia', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/Escudo_del_Club_Social_y_Deportivo_Defensa_y_Justicia.svg/1024px-Escudo_del_Club_Social_y_Deportivo_Defensa_y_Justicia.svg.png', leagueId: LeagueId.LIGA_ARGENTINA, zone: 'A', budget: 6000000, transferBudget: 1500000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#008000', secondaryColor: '#FFDB00', squad: createGenericSquad(71400, 'Defensa') },
-    { id: 722, name: 'Platense', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Escudo_del_Club_Atl%C3%A9tico_Platense.svg/1024px-Escudo_del_Club_Atl%C3%A9tico_Platense.svg.png', leagueId: LeagueId.LIGA_ARGENTINA, zone: 'A', budget: 4500000, transferBudget: 1000000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#5C3317', secondaryColor: '#FFFFFF', squad: createGenericSquad(72200, 'Platense') },
-    { id: 724, name: 'Unión (Santa Fe)', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Escudo_del_Club_Atl%C3%A9tico_Uni%C3%B3n_de_Santa_Fe.svg/1024px-Escudo_del_Club_Atl%C3%A9tico_Uni%C3%B3n_de_Santa_Fe.svg.png', leagueId: LeagueId.LIGA_ARGENTINA, zone: 'A', budget: 5000000, transferBudget: 1200000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#FFFFFF', squad: createGenericSquad(72400, 'Union SF') },
-    { id: 719, name: 'Central Córdoba (SdE)', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Escudo_del_Club_Central_C%C3%B3rdoba_de_Santiago_del_Estero._%281970s_created_logo%29.svg/1024px-Escudo_del_Club_Central_C%C3%B3rdoba_de_Santiago_del_Estero._%281970s_created_logo%29.svg.png', leagueId: LeagueId.LIGA_ARGENTINA, zone: 'A', budget: 4000000, transferBudget: 900000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#000000', secondaryColor: '#FFFFFF', squad: createGenericSquad(71900, 'Cba Central') },
-    { id: 727, name: 'Deportivo Riestra', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Escudo_del_Deportivo_Riestra.svg/1024px-Escudo_del_Deportivo_Riestra.svg.png', leagueId: LeagueId.LIGA_ARGENTINA, zone: 'A', budget: 3500000, transferBudget: 800000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#000000', secondaryColor: '#FFFFFF', squad: createGenericSquad(72700, 'Riestra') },
-    { id: 728, name: 'Gimnasia y Esgrima (Mendoza)', logo: 'https://tmssl.akamaized.net/images/wappen/head/14101.png', leagueId: LeagueId.LIGA_ARGENTINA, zone: 'A', budget: 3500000, transferBudget: 800000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#000000', secondaryColor: '#FFFFFF', squad: createGenericSquad(72800, 'Gimnasia Mza') },
+    { id: 717, name: 'Instituto (Córdoba)', logo: `${ARG_PACK_CDN}/primera_division/argentina_instituto-cordoba.football-logos.cc.svg`, leagueId: LeagueId.LIGA_ARGENTINA, zone: 'A', budget: 5000000, transferBudget: 1200000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#FFFFFF', squad: createGenericSquad(71700, 'Instituto') },
+    { id: 714, name: 'Defensa y Justicia', logo: `${ARG_PACK_CDN}/primera_division/argentina_defensa-y-justicia.football-logos.cc.svg`, leagueId: LeagueId.LIGA_ARGENTINA, zone: 'A', budget: 6000000, transferBudget: 1500000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#008000', secondaryColor: '#FFDB00', squad: createGenericSquad(71400, 'Defensa') },
+    { id: 722, name: 'Platense', logo: `${ARG_PACK_CDN}/primera_division/argentina_club-atletico-platanense.football-logos.cc.svg`, leagueId: LeagueId.LIGA_ARGENTINA, zone: 'A', budget: 4500000, transferBudget: 1000000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#5C3317', secondaryColor: '#FFFFFF', squad: createGenericSquad(72200, 'Platense') },
+    { id: 724, name: 'Unión (Santa Fe)', logo: `${ARG_PACK_CDN}/primera_division/argentina_union.football-logos.cc.svg`, leagueId: LeagueId.LIGA_ARGENTINA, zone: 'A', budget: 5000000, transferBudget: 1200000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#FFFFFF', squad: createGenericSquad(72400, 'Union SF') },
+    { id: 719, name: 'Central Córdoba (SdE)', logo: `${ARG_PACK_CDN}/primera_division/argentina_central-cordoba.football-logos.cc.svg`, leagueId: LeagueId.LIGA_ARGENTINA, zone: 'A', budget: 4000000, transferBudget: 900000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#000000', secondaryColor: '#FFFFFF', squad: createGenericSquad(71900, 'Cba Central') },
+    { id: 727, name: 'Deportivo Riestra', logo: `${ARG_PACK_CDN}/primera_division/argentina_deportivo-riestra.football-logos.cc.svg`, leagueId: LeagueId.LIGA_ARGENTINA, zone: 'A', budget: 3500000, transferBudget: 800000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#000000', secondaryColor: '#FFFFFF', squad: createGenericSquad(72700, 'Riestra') },
+    { id: 728, name: 'Gimnasia y Esgrima (Mendoza)', logo: `${ARG_PACK_CDN}/primera_division/argentina_gimnasia-y-esgrima.football-logos.cc.svg`, leagueId: LeagueId.LIGA_ARGENTINA, zone: 'A', budget: 3500000, transferBudget: 800000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#000000', secondaryColor: '#FFFFFF', squad: createGenericSquad(72800, 'Gimnasia Mza') },
 
     // ==========================================
     // ZONA B (15 Equipos)
@@ -235,7 +236,7 @@ export const ligaArgentinaTeams: Team[] = [
     {
         id: 702,
         name: 'River Plate',
-        logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Escudo_del_C_A_River_Plate.svg/1024px-Escudo_del_C_A_River_Plate.svg.png',
+        logo: `${ARG_PACK_CDN}/primera_division/argentina_river-plate.football-logos.cc.svg`,
         leagueId: LeagueId.LIGA_ARGENTINA,
         zone: 'B',
         budget: 28000000,
@@ -269,7 +270,7 @@ export const ligaArgentinaTeams: Team[] = [
     {
         id: 703,
         name: 'Racing Club',
-        logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Escudo_de_Racing_Club.svg/1024px-Escudo_de_Racing_Club.svg.png',
+        logo: `${ARG_PACK_CDN}/primera_division/argentina_racing-club.football-logos.cc.svg`,
         leagueId: LeagueId.LIGA_ARGENTINA,
         zone: 'B',
         budget: 16000000,
@@ -298,7 +299,7 @@ export const ligaArgentinaTeams: Team[] = [
     {
         id: 708,
         name: 'Huracán',
-        logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Club_Atl%C3%A9tico_Hurac%C3%A1n_logo.svg/1024px-Club_Atl%C3%A9tico_Hurac%C3%A1n_logo.svg.png',
+        logo: `${ARG_PACK_CDN}/primera_division/argentina_ca-huracan.football-logos.cc.svg`,
         leagueId: LeagueId.LIGA_ARGENTINA,
         zone: 'B',
         budget: 8500000,
@@ -323,7 +324,7 @@ export const ligaArgentinaTeams: Team[] = [
     {
         id: 709,
         name: 'Rosario Central',
-        logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Escudo_del_Club_Atl%C3%A9tico_Rosario_Central.svg/1024px-Escudo_del_Club_Atl%C3%A9tico_Rosario_Central.svg.png',
+        logo: `${ARG_PACK_CDN}/primera_division/argentina_rosario-central.football-logos.cc.svg`,
         leagueId: LeagueId.LIGA_ARGENTINA,
         zone: 'B',
         budget: 10000000,
@@ -346,17 +347,17 @@ export const ligaArgentinaTeams: Team[] = [
             ...createGenericSquad(70920, 'Rosario Central').slice(0, 8)
         ]
     },
-    { id: 726, name: 'Argentinos Juniors', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Escudo_de_la_Asociaci%C3%B3n_Atl%C3%A9tica_Argentinos_Juniors.svg/1024px-Escudo_de_la_Asociaci%C3%B3n_Atl%C3%A9tica_Argentinos_Juniors.svg.png', leagueId: LeagueId.LIGA_ARGENTINA, zone: 'B', budget: 7500000, transferBudget: 2200000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#FFFFFF', squad: createGenericSquad(72600, 'Arg Juniors') },
-    { id: 729, name: 'Gimnasia y Esgrima La Plata', logo: 'https://tmssl.akamaized.net/images/wappen/head/1105.png', leagueId: LeagueId.LIGA_ARGENTINA, zone: 'B', budget: 7500000, transferBudget: 2200000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#FFFFFF', squad: createGenericSquad(72900, 'Gimnasia LP') },
-    { id: 716, name: 'Belgrano (Córdoba)', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/Club_Atl%C3%A9tico_Belgrano_logo.svg/1024px-Club_Atl%C3%A9tico_Belgrano_logo.svg.png', leagueId: LeagueId.LIGA_ARGENTINA, zone: 'B', budget: 8000000, transferBudget: 2500000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#6BB3E3', secondaryColor: '#FFFFFF', squad: createGenericSquad(71600, 'Belgrano') },
-    { id: 730, name: 'Banfield', logo: 'https://tmssl.akamaized.net/images/wappen/head/830.png', leagueId: LeagueId.LIGA_ARGENTINA, zone: 'B', budget: 5500000, transferBudget: 1300000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#006400', secondaryColor: '#FFFFFF', squad: createGenericSquad(73000, 'Banfield') },
-    { id: 723, name: 'Tigre', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Escudo_del_Club_Atl%C3%A9tico_Tigre.svg/1024px-Escudo_del_Club_Atl%C3%A9tico_Tigre.svg.png', leagueId: LeagueId.LIGA_ARGENTINA, zone: 'B', budget: 5000000, transferBudget: 1200000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#C8102E', squad: createGenericSquad(72300, 'Tigre') },
-    { id: 712, name: 'Atlético Tucumán', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Escudo_del_Club_Atletico_Tucuman.svg/1024px-Escudo_del_Club_Atletico_Tucuman.svg.png', leagueId: LeagueId.LIGA_ARGENTINA, zone: 'B', budget: 5000000, transferBudget: 1100000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#6BB3E3', secondaryColor: '#FFFFFF', squad: createGenericSquad(71200, 'Tucuman') },
-    { id: 720, name: 'Barracas Central', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Barracas_central_logo.svg/1024px-Barracas_central_logo.svg.png', leagueId: LeagueId.LIGA_ARGENTINA, zone: 'B', budget: 4500000, transferBudget: 1000000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#FFFFFF', squad: createGenericSquad(72000, 'Barracas') },
-    { id: 718, name: 'Sarmiento (Junín)', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Escudo_del_Club_Atl%C3%A9tico_Sarmiento_de_Jun%C3%ADn.svg/1024px-Escudo_del_Club_Atl%C3%A9tico_Sarmiento_de_Jun%C3%ADn.svg.png', leagueId: LeagueId.LIGA_ARGENTINA, zone: 'B', budget: 4000000, transferBudget: 900000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#006400', secondaryColor: '#FFFFFF', squad: createGenericSquad(71800, 'Sarmiento') },
-    { id: 731, name: 'Independiente Rivadavia (Mendoza)', logo: 'https://tmssl.akamaized.net/images/wappen/head/10244.png', leagueId: LeagueId.LIGA_ARGENTINA, zone: 'B', budget: 4500000, transferBudget: 1000000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#FFFFFF', squad: createGenericSquad(73100, 'Ind Rivadavia') },
-    { id: 732, name: 'Aldosivi (Mar del Plata)', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Escudo_del_Club_Atl%C3%A9tico_Aldosivi.svg/1024px-Escudo_del_Club_Atl%C3%A9tico_Aldosivi.svg.png', leagueId: LeagueId.LIGA_ARGENTINA, zone: 'B', budget: 4000000, transferBudget: 800000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#006400', secondaryColor: '#FFDB00', squad: createGenericSquad(73200, 'Aldosivi') },
-    { id: 733, name: 'Estudiantes (Río Cuarto)', logo: 'https://tmssl.akamaized.net/images/wappen/head/28557.png', leagueId: LeagueId.LIGA_ARGENTINA, zone: 'B', budget: 3500000, transferBudget: 800000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#6BB3E3', secondaryColor: '#FFFFFF', squad: createGenericSquad(73300, 'Est Rio Cuarto') },
+    { id: 726, name: 'Argentinos Juniors', logo: `${ARG_PACK_CDN}/primera_division/argentina_argeninos-juniors.football-logos.cc.svg`, leagueId: LeagueId.LIGA_ARGENTINA, zone: 'B', budget: 7500000, transferBudget: 2200000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#FFFFFF', squad: createGenericSquad(72600, 'Arg Juniors') },
+    { id: 729, name: 'Gimnasia y Esgrima La Plata', logo: `${ARG_PACK_CDN}/primera_division/argentina_gimnasia-lp.football-logos.cc.svg`, leagueId: LeagueId.LIGA_ARGENTINA, zone: 'B', budget: 7500000, transferBudget: 2200000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#FFFFFF', squad: createGenericSquad(72900, 'Gimnasia LP') },
+    { id: 716, name: 'Belgrano (Córdoba)', logo: `${ARG_PACK_CDN}/primera_division/argentina_belgrano.football-logos.cc.svg`, leagueId: LeagueId.LIGA_ARGENTINA, zone: 'B', budget: 8000000, transferBudget: 2500000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#6BB3E3', secondaryColor: '#FFFFFF', squad: createGenericSquad(71600, 'Belgrano') },
+    { id: 730, name: 'Banfield', logo: `${ARG_PACK_CDN}/primera_division/argentina_banfield.football-logos.cc.svg`, leagueId: LeagueId.LIGA_ARGENTINA, zone: 'B', budget: 5500000, transferBudget: 1300000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#006400', secondaryColor: '#FFFFFF', squad: createGenericSquad(73000, 'Banfield') },
+    { id: 723, name: 'Tigre', logo: `${ARG_PACK_CDN}/primera_division/argentina_tigre.football-logos.cc.svg`, leagueId: LeagueId.LIGA_ARGENTINA, zone: 'B', budget: 5000000, transferBudget: 1200000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#C8102E', squad: createGenericSquad(72300, 'Tigre') },
+    { id: 712, name: 'Atlético Tucumán', logo: `${ARG_PACK_CDN}/primera_division/argentina_atletico-tucuman.football-logos.cc.svg`, leagueId: LeagueId.LIGA_ARGENTINA, zone: 'B', budget: 5000000, transferBudget: 1100000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#6BB3E3', secondaryColor: '#FFFFFF', squad: createGenericSquad(71200, 'Tucuman') },
+    { id: 720, name: 'Barracas Central', logo: `${ARG_PACK_CDN}/primera_division/argentina_barracas-central.football-logos.cc.svg`, leagueId: LeagueId.LIGA_ARGENTINA, zone: 'B', budget: 4500000, transferBudget: 1000000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#FFFFFF', squad: createGenericSquad(72000, 'Barracas') },
+    { id: 718, name: 'Sarmiento (Junín)', logo: `${ARG_PACK_CDN}/primera_division/argentina_sarmiento.football-logos.cc.svg`, leagueId: LeagueId.LIGA_ARGENTINA, zone: 'B', budget: 4000000, transferBudget: 900000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#006400', secondaryColor: '#FFFFFF', squad: createGenericSquad(71800, 'Sarmiento') },
+    { id: 731, name: 'Independiente Rivadavia (Mendoza)', logo: `${ARG_PACK_CDN}/primera_division/argentina_independiente-rivadavia.football-logos.cc.svg`, leagueId: LeagueId.LIGA_ARGENTINA, zone: 'B', budget: 4500000, transferBudget: 1000000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#FFFFFF', squad: createGenericSquad(73100, 'Ind Rivadavia') },
+    { id: 732, name: 'Aldosivi (Mar del Plata)', logo: `${ARG_PACK_CDN}/primera_division/argentina_aldosivi.football-logos.cc.svg`, leagueId: LeagueId.LIGA_ARGENTINA, zone: 'B', budget: 4000000, transferBudget: 800000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#006400', secondaryColor: '#FFDB00', squad: createGenericSquad(73200, 'Aldosivi') },
+    { id: 733, name: 'Estudiantes (Río Cuarto)', logo: `${ARG_PACK_CDN}/primera_division/argentina_estudiantes-de-rio-cuarto.football-logos.cc.svg`, leagueId: LeagueId.LIGA_ARGENTINA, zone: 'B', budget: 3500000, transferBudget: 800000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#6BB3E3', secondaryColor: '#FFFFFF', squad: createGenericSquad(73300, 'Est Rio Cuarto') },
 ];
 
 export const primeraNacionalTeams: Team[] = [
@@ -364,43 +365,43 @@ export const primeraNacionalTeams: Team[] = [
     // ZONA A (18 Equipos)
     // ==========================================
     { id: 750, name: 'Acassuso', logo: 'https://tmssl.akamaized.net/images/wappen/head/10243.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'A', budget: 1200000, transferBudget: 250000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#FFFFFF', squad: createGenericSquad(75000, 'Acassuso') },
-    { id: 756, name: 'All Boys', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Escudo_del_Club_Atl%C3%A9tico_All_Boys.svg/1024px-Escudo_del_Club_Atl%C3%A9tico_All_Boys.svg.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'A', budget: 1500000, transferBudget: 300000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#FFFFFF', secondaryColor: '#003DA5', squad: createGenericSquad(75600, 'All Boys') },
-    { id: 762, name: 'Almirante Brown', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Escudo_del_Club_Almirante_Brown.svg/1024px-Escudo_del_Club_Almirante_Brown.svg.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'A', budget: 1400000, transferBudget: 250000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#FFDB00', secondaryColor: '#000000', squad: createGenericSquad(76200, 'Alm Brown') },
-    { id: 771, name: 'Central Norte (Salta)', logo: 'https://tmssl.akamaized.net/images/wappen/head/20857.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'A', budget: 1100000, transferBudget: 200000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#000000', secondaryColor: '#FFFFFF', squad: createGenericSquad(77100, 'Central Norte') },
-    { id: 753, name: 'Chaco For Ever', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Escudo_del_Club_Atl%C3%A9tico_Chaco_For_Ever.svg/1024px-Escudo_del_Club_Atl%C3%A9tico_Chaco_For_Ever.svg.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'A', budget: 1300000, transferBudget: 250000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#000000', secondaryColor: '#FFFFFF', squad: createGenericSquad(75300, 'Chaco Ever') },
+    { id: 756, name: 'All Boys', logo: `${ARG_PACK_CDN}/primera_nacional/argentina_all-boys.football-logos.cc.svg`, leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'A', budget: 1500000, transferBudget: 300000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#FFFFFF', secondaryColor: '#003DA5', squad: createGenericSquad(75600, 'All Boys') },
+    { id: 762, name: 'Almirante Brown', logo: `${ARG_PACK_CDN}/primera_nacional/argentina_almirante-brown.football-logos.cc.svg`, leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'A', budget: 1400000, transferBudget: 250000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#FFDB00', secondaryColor: '#000000', squad: createGenericSquad(76200, 'Alm Brown') },
+    { id: 771, name: 'Central Norte (Salta)', logo: `${ARG_PACK_CDN}/primera_nacional/argentina_central-norte.football-logos.cc.svg`, leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'A', budget: 1100000, transferBudget: 200000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#000000', secondaryColor: '#FFFFFF', squad: createGenericSquad(77100, 'Central Norte') },
+    { id: 753, name: 'Chaco For Ever', logo: `${ARG_PACK_CDN}/primera_nacional/argentina_chaco-for-ever.football-logos.cc.svg`, leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'A', budget: 1300000, transferBudget: 250000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#000000', secondaryColor: '#FFFFFF', squad: createGenericSquad(75300, 'Chaco Ever') },
     { id: 772, name: 'Ciudad de Bolívar', logo: 'https://tmssl.akamaized.net/images/wappen/head/79183.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'A', budget: 1000000, transferBudget: 200000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#6BB3E3', secondaryColor: '#003DA5', squad: createGenericSquad(77200, 'Bolivar') },
-    { id: 767, name: 'Colón (Santa Fe)', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Escudo_del_Club_Atl%C3%A9tico_Col%C3%B3n.svg/1024px-Escudo_del_Club_Atl%C3%A9tico_Col%C3%B3n.svg.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'A', budget: 3500000, transferBudget: 750000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#000000', squad: createGenericSquad(76700, 'Colon') },
-    { id: 773, name: 'Defensores de Belgrano', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Escudo_del_Club_Atl%C3%A9tico_Defensores_de_Belgrano.svg/1024px-Escudo_del_Club_Atl%C3%A9tico_Defensores_de_Belgrano.svg.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'A', budget: 1400000, transferBudget: 250000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#000000', squad: createGenericSquad(77300, 'Def Belgrano') },
-    { id: 774, name: 'Deportivo Madryn', logo: 'https://tmssl.akamaized.net/images/wappen/head/20863.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'A', budget: 1200000, transferBudget: 200000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#FFDB00', secondaryColor: '#000000', squad: createGenericSquad(77400, 'Dep Madryn') },
-    { id: 759, name: 'Deportivo Morón', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Escudo_del_Club_Deportivo_Mor%C3%B3n.svg/1024px-Escudo_del_Club_Deportivo_Mor%C3%B3n.svg.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'A', budget: 1300000, transferBudget: 250000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#FFFFFF', squad: createGenericSquad(75900, 'Moron') },
-    { id: 757, name: 'Estudiantes (BA)', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Escudo_del_Club_Atl%C3%A9tico_Estudiantes.svg/1024px-Escudo_del_Club_Atl%C3%A9tico_Estudiantes.svg.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'A', budget: 1300000, transferBudget: 250000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#000000', secondaryColor: '#FFFFFF', squad: createGenericSquad(75700, 'Est BA') },
-    { id: 760, name: 'Ferro Carril Oeste', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Escudo_del_Club_Ferro_Carril_Oeste.svg/1024px-Escudo_del_Club_Ferro_Carril_Oeste.svg.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'A', budget: 2200000, transferBudget: 450000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#006400', secondaryColor: '#FFFFFF', squad: createGenericSquad(76000, 'Ferro') },
+    { id: 767, name: 'Colón (Santa Fe)', logo: `${ARG_PACK_CDN}/primera_nacional/argentina_colon-santa-fe.football-logos.cc.svg`, leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'A', budget: 3500000, transferBudget: 750000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#000000', squad: createGenericSquad(76700, 'Colon') },
+    { id: 773, name: 'Defensores de Belgrano', logo: `${ARG_PACK_CDN}/primera_nacional/argentina_defensores-de-belgrano.football-logos.cc.svg`, leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'A', budget: 1400000, transferBudget: 250000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#000000', squad: createGenericSquad(77300, 'Def Belgrano') },
+    { id: 774, name: 'Deportivo Madryn', logo: `${ARG_PACK_CDN}/primera_nacional/argentina_deportivo-madryn.football-logos.cc.svg`, leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'A', budget: 1200000, transferBudget: 200000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#FFDB00', secondaryColor: '#000000', squad: createGenericSquad(77400, 'Dep Madryn') },
+    { id: 759, name: 'Deportivo Morón', logo: `${ARG_PACK_CDN}/primera_nacional/argentina_deportivo-moron.football-logos.cc.svg`, leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'A', budget: 1300000, transferBudget: 250000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#FFFFFF', squad: createGenericSquad(75900, 'Moron') },
+    { id: 757, name: 'Estudiantes (BA)', logo: `${ARG_PACK_CDN}/primera_nacional/argentina_estudiantes-de-buenos-aires.football-logos.cc.svg`, leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'A', budget: 1300000, transferBudget: 250000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#000000', secondaryColor: '#FFFFFF', squad: createGenericSquad(75700, 'Est BA') },
+    { id: 760, name: 'Ferro Carril Oeste', logo: `${ARG_PACK_CDN}/primera_nacional/argentina_ferro-carril-oeste.football-logos.cc.svg`, leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'A', budget: 2200000, transferBudget: 450000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#006400', secondaryColor: '#FFFFFF', squad: createGenericSquad(76000, 'Ferro') },
     { id: 769, name: 'Godoy Cruz', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Escudo_del_Club_Deportivo_Godoy_Cruz_Antonio_Tomba.svg/1024px-Escudo_del_Club_Deportivo_Godoy_Cruz_Antonio_Tomba.svg.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'A', budget: 3500000, transferBudget: 750000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#FFFFFF', squad: createGenericSquad(76900, 'Godoy Cruz') },
-    { id: 775, name: 'Los Andes', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Escudo_Club_Atl%C3%A9tico_Los_Andes.svg/1024px-Escudo_Club_Atl%C3%A9tico_Los_Andes.svg.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'A', budget: 1200000, transferBudget: 220000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#FFFFFF', squad: createGenericSquad(77500, 'Los Andes') },
-    { id: 766, name: 'Mitre (SdE)', logo: 'https://upload.wikimedia.org/wikipedia/commons/2/23/Escudo_Club_Atletico_Mitre_%28SdE%29.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'A', budget: 1100000, transferBudget: 200000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#FFDB00', secondaryColor: '#000000', squad: createGenericSquad(76600, 'Mitre') },
-    { id: 776, name: 'Racing de Córdoba', logo: 'https://tmssl.akamaized.net/images/wappen/head/10245.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'A', budget: 1200000, transferBudget: 220000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#6BB3E3', secondaryColor: '#FFFFFF', squad: createGenericSquad(77600, 'Racing Cba') },
-    { id: 777, name: 'San Miguel', logo: 'https://tmssl.akamaized.net/images/wappen/head/20872.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'A', budget: 1100000, transferBudget: 200000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#006400', secondaryColor: '#FFFFFF', squad: createGenericSquad(77700, 'San Miguel') },
-    { id: 778, name: 'San Telmo', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Escudo_Club_Atl%C3%A9tico_San_Telmo.svg/1024px-Escudo_Club_Atl%C3%A9tico_San_Telmo.svg.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'A', budget: 1100000, transferBudget: 200000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#6BB3E3', squad: createGenericSquad(77800, 'San Telmo') },
+    { id: 775, name: 'Los Andes', logo: `${ARG_PACK_CDN}/primera_nacional/argentina_los-andes.football-logos.cc.svg`, leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'A', budget: 1200000, transferBudget: 220000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#FFFFFF', squad: createGenericSquad(77500, 'Los Andes') },
+    { id: 766, name: 'Mitre (SdE)', logo: `${ARG_PACK_CDN}/primera_nacional/argentina_mitre-santiago-del-estero.football-logos.cc.svg`, leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'A', budget: 1100000, transferBudget: 200000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#FFDB00', secondaryColor: '#000000', squad: createGenericSquad(76600, 'Mitre') },
+    { id: 776, name: 'Racing de Córdoba', logo: `${ARG_PACK_CDN}/primera_nacional/argentina_racing.football-logos.cc.svg`, leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'A', budget: 1200000, transferBudget: 220000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#6BB3E3', secondaryColor: '#FFFFFF', squad: createGenericSquad(77600, 'Racing Cba') },
+    { id: 777, name: 'San Miguel', logo: `${ARG_PACK_CDN}/primera_nacional/argentina_san-miguel.football-logos.cc.svg`, leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'A', budget: 1100000, transferBudget: 200000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#006400', secondaryColor: '#FFFFFF', squad: createGenericSquad(77700, 'San Miguel') },
+    { id: 778, name: 'San Telmo', logo: `${ARG_PACK_CDN}/primera_nacional/argentina_san-telmo.football-logos.cc.svg`, leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'A', budget: 1100000, transferBudget: 200000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#6BB3E3', squad: createGenericSquad(77800, 'San Telmo') },
 
     // ==========================================
     // ZONA B (18 Equipos)
     // ==========================================
-    { id: 761, name: 'Agropecuario', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Escudo_del_Club_Agropecuario_Argentino.svg/1024px-Escudo_del_Club_Agropecuario_Argentino.svg.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 1200000, transferBudget: 200000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#006400', secondaryColor: '#C8102E', squad: createGenericSquad(76100, 'Agropecuario') },
-    { id: 755, name: 'Almagro', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Escudo_del_Club_Almagro.svg/1024px-Escudo_del_Club_Almagro.svg.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 1200000, transferBudget: 220000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#C8102E', squad: createGenericSquad(75500, 'Almagro') },
-    { id: 779, name: 'Atlanta', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Escudo_del_Club_Atl%C3%A9tico_Atlanta.svg/1024px-Escudo_del_Club_Atl%C3%A9tico_Atlanta.svg.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 1400000, transferBudget: 250000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#FFDB00', secondaryColor: '#003DA5', squad: createGenericSquad(77900, 'Atlanta') },
+    { id: 761, name: 'Agropecuario', logo: `${ARG_PACK_CDN}/primera_nacional/argentina_agropecuario-argentino.football-logos.cc.svg`, leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 1200000, transferBudget: 200000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#006400', secondaryColor: '#C8102E', squad: createGenericSquad(76100, 'Agropecuario') },
+    { id: 755, name: 'Almagro', logo: `${ARG_PACK_CDN}/primera_nacional/argentina_almagro.football-logos.cc.svg`, leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 1200000, transferBudget: 220000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#C8102E', squad: createGenericSquad(75500, 'Almagro') },
+    { id: 779, name: 'Atlanta', logo: `${ARG_PACK_CDN}/primera_nacional/argentina_atletico-atlanta.football-logos.cc.svg`, leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 1400000, transferBudget: 250000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#FFDB00', secondaryColor: '#003DA5', squad: createGenericSquad(77900, 'Atlanta') },
     { id: 780, name: 'Atlético de Rafaela', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Escudo_de_Atl%C3%A9tico_de_Rafaela.svg/1024px-Escudo_de_Atl%C3%A9tico_de_Rafaela.svg.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 1400000, transferBudget: 250000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#6BB3E3', secondaryColor: '#FFFFFF', squad: createGenericSquad(78000, 'Rafaela') },
-    { id: 764, name: 'Chacarita Juniors', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Escudo_del_Club_Atl%C3%A9tico_Chacarita_Juniors.svg/1024px-Escudo_del_Club_Atl%C3%A9tico_Chacarita_Juniors.svg.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 2000000, transferBudget: 400000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#000000', squad: createGenericSquad(76400, 'Chacarita') },
-    { id: 781, name: 'Colegiales', logo: 'https://tmssl.akamaized.net/images/wappen/head/10246.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 1100000, transferBudget: 200000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#C8102E', squad: createGenericSquad(78100, 'Colegiales') },
-    { id: 782, name: 'Deportivo Maipú', logo: 'https://tmssl.akamaized.net/images/wappen/head/20862.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 1200000, transferBudget: 200000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#FFFFFF', squad: createGenericSquad(78200, 'Dep Maipu') },
+    { id: 764, name: 'Chacarita Juniors', logo: `${ARG_PACK_CDN}/primera_nacional/argentina_chacarita-juniors.football-logos.cc.svg`, leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 2000000, transferBudget: 400000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#000000', squad: createGenericSquad(76400, 'Chacarita') },
+    { id: 781, name: 'Colegiales', logo: `${ARG_PACK_CDN}/primera_nacional/argentina_colegiales.football-logos.cc.svg`, leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 1100000, transferBudget: 200000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#C8102E', squad: createGenericSquad(78100, 'Colegiales') },
+    { id: 782, name: 'Deportivo Maipú', logo: `${ARG_PACK_CDN}/primera_nacional/argentina_deportivo-maipu.football-logos.cc.svg`, leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 1200000, transferBudget: 200000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#FFFFFF', squad: createGenericSquad(78200, 'Dep Maipu') },
     { id: 783, name: 'Ferrocarril Midland', logo: 'https://tmssl.akamaized.net/images/wappen/head/28558.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 1000000, transferBudget: 180000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#FFFFFF', squad: createGenericSquad(78300, 'Midland') },
-    { id: 784, name: 'Gimnasia y Esgrima (Jujuy)', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/Escudo_del_Club_Gimnasia_y_Esgrima_de_Jujuy.svg/1024px-Escudo_del_Club_Gimnasia_y_Esgrima_de_Jujuy.svg.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 1300000, transferBudget: 220000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#6BB3E3', secondaryColor: '#FFFFFF', squad: createGenericSquad(78400, 'Gimnasia Jujuy') },
-    { id: 785, name: 'Gimnasia y Tiro (Salta)', logo: 'https://tmssl.akamaized.net/images/wappen/head/20859.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 1200000, transferBudget: 200000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#6BB3E3', secondaryColor: '#003DA5', squad: createGenericSquad(78500, 'Gimnasia Tiro') },
-    { id: 786, name: 'Güemes (SdE)', logo: 'https://tmssl.akamaized.net/images/wappen/head/28559.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 1100000, transferBudget: 200000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#C8102E', squad: createGenericSquad(78600, 'Guemes') },
-    { id: 754, name: 'Nueva Chicago', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Escudo_del_Club_Atl%C3%A9tico_Nueva_Chicago.svg/1024px-Escudo_del_Club_Atl%C3%A9tico_Nueva_Chicago.svg.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 1800000, transferBudget: 350000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#006400', secondaryColor: '#000000', squad: createGenericSquad(75400, 'Nueva Chicago') },
-    { id: 787, name: 'Patronato', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Club_Atl%C3%A9tico_Patronato_de_la_Juventud_Cat%C3%B3lica_logo.svg/1024px-Club_Atl%C3%A9tico_Patronato_de_la_Juventud_Cat%C3%B3lica_logo.svg.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 2000000, transferBudget: 400000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#000000', squad: createGenericSquad(78700, 'Patronato') },
-    { id: 770, name: 'Quilmes', logo: 'https://tmssl.akamaized.net/images/wappen/head/1820.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 2200000, transferBudget: 450000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#FFFFFF', squad: createGenericSquad(77000, 'Quilmes') },
+    { id: 784, name: 'Gimnasia y Esgrima (Jujuy)', logo: `${ARG_PACK_CDN}/primera_nacional/argentina_gimnasia-de-jujuy.football-logos.cc.svg`, leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 1300000, transferBudget: 220000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#6BB3E3', secondaryColor: '#FFFFFF', squad: createGenericSquad(78400, 'Gimnasia Jujuy') },
+    { id: 785, name: 'Gimnasia y Tiro (Salta)', logo: `${ARG_PACK_CDN}/primera_nacional/argentina_gimnasia-y-tiro.football-logos.cc.svg`, leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 1200000, transferBudget: 200000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#6BB3E3', secondaryColor: '#003DA5', squad: createGenericSquad(78500, 'Gimnasia Tiro') },
+    { id: 786, name: 'Güemes (SdE)', logo: `${ARG_PACK_CDN}/primera_nacional/argentina_guemes.football-logos.cc.svg`, leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 1100000, transferBudget: 200000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#C8102E', squad: createGenericSquad(78600, 'Guemes') },
+    { id: 754, name: 'Nueva Chicago', logo: `${ARG_PACK_CDN}/primera_nacional/argentina_nueva-chicago.football-logos.cc.svg`, leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 1800000, transferBudget: 350000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#006400', secondaryColor: '#000000', squad: createGenericSquad(75400, 'Nueva Chicago') },
+    { id: 787, name: 'Patronato', logo: `${ARG_PACK_CDN}/primera_nacional/argentina_patronato.football-logos.cc.svg`, leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 2000000, transferBudget: 400000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#000000', squad: createGenericSquad(78700, 'Patronato') },
+    { id: 770, name: 'Quilmes', logo: `${ARG_PACK_CDN}/primera_nacional/argentina_quilmes.football-logos.cc.svg`, leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 2200000, transferBudget: 450000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#FFFFFF', squad: createGenericSquad(77000, 'Quilmes') },
     { id: 751, name: 'San Martín (San Juan)', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Escudo_del_Club_Atl%C3%A9tico_San_Mart%C3%ADn_de_San_Juan.svg/1024px-Escudo_del_Club_Atl%C3%A9tico_San_Mart%C3%ADn_de_San_Juan.svg.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 2200000, transferBudget: 450000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#006400', secondaryColor: '#000000', squad: createGenericSquad(75100, 'San Martin SJ') },
-    { id: 788, name: 'San Martín (Tucumán)', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/Escudo_Club_Atl%C3%A9tico_San_Mart%C3%ADn_de_Tucum%C3%A1n.svg/1024px-Escudo_Club_Atl%C3%A9tico_San_Mart%C3%ADn_de_Tucum%C3%A1n.svg.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 2500000, transferBudget: 500000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#FFFFFF', squad: createGenericSquad(78800, 'San Martin Tuc') },
-    { id: 765, name: 'Temperley', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Escudo_del_Club_Atl%C3%A9tico_Temperley.svg/1024px-Escudo_del_Club_Atl%C3%A9tico_Temperley.svg.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 1300000, transferBudget: 220000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#6BB3E3', secondaryColor: '#FFFFFF', squad: createGenericSquad(76500, 'Temperley') },
-    { id: 789, name: 'Tristán Suárez', logo: 'https://tmssl.akamaized.net/images/wappen/head/20874.png', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 1100000, transferBudget: 200000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#FFFFFF', squad: createGenericSquad(78900, 'Tristan Suarez') }
+    { id: 788, name: 'San Martín (Tucumán)', logo: `${ARG_PACK_CDN}/primera_nacional/argentina_san-martin-tucuman.football-logos.cc.svg`, leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 2500000, transferBudget: 500000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#FFFFFF', squad: createGenericSquad(78800, 'San Martin Tuc') },
+    { id: 765, name: 'Temperley', logo: `${ARG_PACK_CDN}/primera_nacional/argentina_temperley.football-logos.cc.svg`, leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 1300000, transferBudget: 220000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#6BB3E3', secondaryColor: '#FFFFFF', squad: createGenericSquad(76500, 'Temperley') },
+    { id: 789, name: 'Tristán Suárez', logo: `${ARG_PACK_CDN}/primera_nacional/argentina_tristan-suarez.football-logos.cc.svg`, leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 1100000, transferBudget: 200000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#FFFFFF', squad: createGenericSquad(78900, 'Tristan Suarez') }
 ];

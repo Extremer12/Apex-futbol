@@ -2,6 +2,8 @@ import JSZip from 'jszip';
 import { StoredAsset, saveStoredAssetsBatch, getAllStoredAssets, clearAllStoredAssets, getStoredAssetsCount } from './storage';
 import { normalizeKey, getTeamMatchKeys, getCompetitionMatchKeys } from './matcher';
 
+import { ARG_CLUB_LOGOS_BY_ID, ARG_COMPETITION_LOGOS } from './argentineLogos';
+
 export type PackUpdateListener = () => void;
 
 class CustomPacksService {
@@ -61,6 +63,9 @@ class CustomPacksService {
         const keys = getTeamMatchKeys(team);
         const custom = this.getCustomLogo('teams', keys);
         if (custom) return custom;
+        if (team.id && ARG_CLUB_LOGOS_BY_ID[team.id]) {
+            return ARG_CLUB_LOGOS_BY_ID[team.id];
+        }
         return team.logo || '/sinlogo.png';
     }
 
@@ -68,6 +73,9 @@ class CustomPacksService {
         const keys = getCompetitionMatchKeys(competitionId, name);
         const custom = this.getCustomLogo('competitions', keys);
         if (custom) return custom;
+        if (ARG_COMPETITION_LOGOS[competitionId]) {
+            return ARG_COMPETITION_LOGOS[competitionId];
+        }
         return defaultLogo || '/sinlogo.png';
     }
 

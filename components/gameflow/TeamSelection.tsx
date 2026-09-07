@@ -33,8 +33,8 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
         ARG: {
             title: 'Pasión Argentina',
             leagues: [
-                { id: LeagueId.LIGA_ARGENTINA, name: 'Liga Argentina', logo: 'https://tmssl.akamaized.net/images/logo/header/ar1p.png', teams: '30', div: '1st Division' },
-                { id: LeagueId.PRIMERA_NACIONAL, name: 'Primera Nacional', logo: 'https://tmssl.akamaized.net/images/logo/header/ar2n.png', teams: '36', div: '2nd Division' }
+                { id: LeagueId.LIGA_ARGENTINA, name: 'Liga Argentina', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/primera_division/argentina_argentina-primera-division.football-logos.cc.svg', teams: '30', div: '1st Division' },
+                { id: LeagueId.PRIMERA_NACIONAL, name: 'Primera Nacional', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/primera_nacional/argentina_primera-nacional.football-logos.cc.svg', teams: '36', div: '2nd Division' }
             ]
         },
         BRA: {
