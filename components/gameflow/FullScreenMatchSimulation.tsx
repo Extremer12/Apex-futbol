@@ -359,7 +359,7 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
                 <div className="max-w-5xl mx-auto flex items-center justify-between gap-3 sm:gap-8">
                     {/* Home Team */}
                     <div className="flex-1 flex flex-col items-center sm:items-end text-center sm:text-right">
-                        <div className="w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center p-2 rounded-2xl bg-slate-900/80 border border-white/10 shadow-xl mb-2 sm:mb-3">
+                        <div className="w-16 h-16 sm:w-24 sm:h-24 md:w-28 md:h-28 flex items-center justify-center mb-2 sm:mb-3 drop-shadow-[0_4px_20px_rgba(0,0,0,0.7)]">
                             <TeamLogo team={homeTeam} />
                         </div>
                         <h2 className="text-base sm:text-2xl md:text-3xl font-black tracking-tight text-white line-clamp-1">
@@ -416,7 +416,7 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
 
                     {/* Away Team */}
                     <div className="flex-1 flex flex-col items-center sm:items-start text-center sm:text-left">
-                        <div className="w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center p-2 rounded-2xl bg-slate-900/80 border border-white/10 shadow-xl mb-2 sm:mb-3">
+                        <div className="w-16 h-16 sm:w-24 sm:h-24 md:w-28 md:h-28 flex items-center justify-center mb-2 sm:mb-3 drop-shadow-[0_4px_20px_rgba(0,0,0,0.7)]">
                             <TeamLogo team={awayTeam} />
                         </div>
                         <h2 className="text-base sm:text-2xl md:text-3xl font-black tracking-tight text-white line-clamp-1">

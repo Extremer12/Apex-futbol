@@ -270,12 +270,12 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
             {/* Cabecera Principal */}
             <div className={`bg-gradient-to-r from-${theme}-600 via-${theme}-500 to-${theme}-600 px-4 sm:px-6 py-3.5 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3`}>
                 <div className="flex items-center gap-3 sm:gap-4">
-                    <div className="w-9 h-9 sm:w-10 sm:h-10 p-1 bg-white/10 rounded-lg flex items-center justify-center shrink-0">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center shrink-0">
                         <img 
                             src={logo || '/sinlogo.png'} 
                             alt={title} 
                             onError={(e) => { (e.target as HTMLImageElement).src = '/sinlogo.png'; }}
-                            className="w-full h-full object-contain drop-shadow-md" 
+                            className="w-full h-full object-contain drop-shadow-xl" 
                         />
                     </div>
                     <div>

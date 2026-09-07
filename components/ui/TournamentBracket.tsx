@@ -38,11 +38,19 @@ interface ProjectedRound {
 
 const ROUND_NAME_MAP: Record<string, string> = {
     'Round of 32': 'Dieciseisavos',
-    'Round of 16': 'Octavos',
-    'Quarter-Final': 'Cuartos',
+    'Round of 16': 'Octavos de Final',
+    'Octavos de Final': 'Octavos de Final',
+    'Octavos': 'Octavos de Final',
+    'Quarter-Final': 'Cuartos de Final',
+    'Cuartos de Final': 'Cuartos de Final',
+    'Cuartos': 'Cuartos de Final',
     'Semi-Final': 'Semifinales',
+    'Semifinales': 'Semifinales',
+    'Semis': 'Semifinales',
     'Final': 'Gran Final',
-    'Final Intercontinental': 'Final Mundial',
+    'Gran Final': 'Gran Final',
+    'Final Intercontinental': 'Final Intercontinental',
+    'Final Primer Ascenso': 'Final Primer Ascenso',
 };
 
 const getMatchWinnerId = (match?: Match): number | null => {

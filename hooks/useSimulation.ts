@@ -113,32 +113,39 @@ export function useSimulation(
                 };
             });
 
-            // Handle cup progression
+            // Handle cup and playoff progression
             let updatedCups = simulationResult.updatedCups;
-            const faCupMatches = matchesThisWeek.filter(m => m.competition === 'FA_Cup');
-            const intercontinentalMatches = matchesThisWeek.filter(m => m.competition === 'Copa_Intercontinental');
-            if (faCupMatches.length > 0 && faCupMatches.every(m => m.result !== undefined)) {
-                const nextCupWeek = newWeek + 4;
-                updatedCups.faCup = advanceCupRound(updatedCups.faCup, simulationResult.updatedAllTeams, nextCupWeek);
+            const simulatedWeek = gameState.currentTurn === 'midweek' ? gameState.currentWeek + 1 : gameState.currentWeek;
+            const justPlayedMatches = simulationResult.updatedSchedule.filter(
+                m => m.result !== undefined && m.week === simulatedWeek && !!m.isMidweek === (gameState.currentTurn === 'midweek')
+            );
 
-                if (updatedCups.faCup.rounds.length > gameState.cups.faCup.rounds.length) {
+            // FA Cup
+            const faCupMatches = justPlayedMatches.filter(m => m.competition === 'FA_Cup');
+            if (updatedCups.faCup && updatedCups.faCup.rounds && updatedCups.faCup.rounds.length > 0 && !updatedCups.faCup.winnerId) {
+                const prevRoundsCount = updatedCups.faCup.rounds.length;
+                const nextCupWeek = newWeek + 4;
+                updatedCups.faCup = advanceCupRound(updatedCups.faCup, simulationResult.updatedAllTeams, nextCupWeek, simulationResult.updatedSchedule);
+                if (updatedCups.faCup.rounds.length > prevRoundsCount) {
                     const newRound = updatedCups.faCup.rounds[updatedCups.faCup.rounds.length - 1];
                     simulationResult.updatedSchedule.push(...newRound.fixtures);
                 }
             }
 
-            const carabaoCupMatches = matchesThisWeek.filter(m => m.competition === 'Carabao_Cup');
-            if (carabaoCupMatches.length > 0 && carabaoCupMatches.every(m => m.result !== undefined)) {
+            // Carabao Cup
+            const carabaoCupMatches = justPlayedMatches.filter(m => m.competition === 'Carabao_Cup');
+            if (updatedCups.carabaoCup && updatedCups.carabaoCup.rounds && updatedCups.carabaoCup.rounds.length > 0 && !updatedCups.carabaoCup.winnerId) {
+                const prevRoundsCount = updatedCups.carabaoCup.rounds.length;
                 const nextCupWeek = newWeek + 3;
-                updatedCups.carabaoCup = advanceCupRound(updatedCups.carabaoCup, simulationResult.updatedAllTeams, nextCupWeek);
-
-                if (updatedCups.carabaoCup.rounds.length > gameState.cups.carabaoCup.rounds.length) {
+                updatedCups.carabaoCup = advanceCupRound(updatedCups.carabaoCup, simulationResult.updatedAllTeams, nextCupWeek, simulationResult.updatedSchedule);
+                if (updatedCups.carabaoCup.rounds.length > prevRoundsCount) {
                     const newRound = updatedCups.carabaoCup.rounds[updatedCups.carabaoCup.rounds.length - 1];
                     simulationResult.updatedSchedule.push(...newRound.fixtures);
                 }
             }
 
-            const libertadoresMatches = matchesThisWeek.filter(m => m.competition === 'Copa_Libertadores');
+            // Copa Libertadores
+            const libertadoresMatches = justPlayedMatches.filter(m => m.competition === 'Copa_Libertadores');
             if (libertadoresMatches.length > 0 && libertadoresMatches.every(m => m.result !== undefined)) {
                 const nextCupWeek = newWeek + 4;
                 const result = progressInternationalCup(updatedCups.copaLibertadores, simulationResult.updatedAllTeams, nextCupWeek);
@@ -146,7 +153,6 @@ export function useSimulation(
 
                 if (result.newFixtures) {
                     simulationResult.updatedSchedule.push(...result.newFixtures);
-                    // Trigger knockout kickoff cinematic
                     dispatch({ 
                         type: 'PUSH_CINEMATIC', 
                         payload: {
@@ -160,7 +166,8 @@ export function useSimulation(
                 }
             }
 
-            const championsLeagueMatches = matchesThisWeek.filter(m => m.competition === 'Champions_League');
+            // Champions League
+            const championsLeagueMatches = justPlayedMatches.filter(m => m.competition === 'Champions_League');
             if (championsLeagueMatches.length > 0 && championsLeagueMatches.every(m => m.result !== undefined)) {
                 const nextCupWeek = newWeek + 5;
                 const result = progressInternationalCup(updatedCups.championsLeague, simulationResult.updatedAllTeams, nextCupWeek);
@@ -168,7 +175,6 @@ export function useSimulation(
 
                 if (result.newFixtures) {
                     simulationResult.updatedSchedule.push(...result.newFixtures);
-                    // Trigger knockout kickoff cinematic
                     dispatch({ 
                         type: 'PUSH_CINEMATIC', 
                         payload: {
@@ -189,14 +195,14 @@ export function useSimulation(
                 simulationResult.updatedSchedule.push(...interCup.rounds[0].fixtures);
             }
 
+            const intercontinentalMatches = justPlayedMatches.filter(m => m.competition === 'Copa_Intercontinental');
             if (intercontinentalMatches.length > 0 && intercontinentalMatches.every(m => m.result !== undefined)) {
-                // Since Intercontinental is a single final match, we just advance the cup to calculate the winner.
-                updatedCups.copaIntercontinental = advanceCupRound(updatedCups.copaIntercontinental, simulationResult.updatedAllTeams, newWeek);
+                updatedCups.copaIntercontinental = advanceCupRound(updatedCups.copaIntercontinental, simulationResult.updatedAllTeams, newWeek, simulationResult.updatedSchedule);
             }
 
             // Argentine Playoffs Logic (Torneo Apertura & Clausura)
-            // Apertura Regular Phase ends at Week 16 -> Generate Playoffs for Week 17
-            if (newWeek === 17 && (!updatedCups.aperturaPlayoffs || updatedCups.aperturaPlayoffs.rounds.length === 0)) {
+            // 1. Apertura Regular Phase ends at Week 16 -> Generate Playoffs for Week 17
+            if (simulatedWeek >= 16 && (!updatedCups.aperturaPlayoffs || !updatedCups.aperturaPlayoffs.rounds || updatedCups.aperturaPlayoffs.rounds.length === 0)) {
                 const argTable = simulationResult.updatedLeagueTables[LeagueId.LIGA_ARGENTINA] || [];
                 const zoneATeams = argTable.filter(r => r.zone === 'A').map(r => restoredTeams.find(t => t.id === r.teamId)!).filter(Boolean);
                 const zoneBTeams = argTable.filter(r => r.zone === 'B').map(r => restoredTeams.find(t => t.id === r.teamId)!).filter(Boolean);
@@ -208,7 +214,7 @@ export function useSimulation(
                         name: 'Playoffs Apertura',
                         type: 'knockout',
                         phase: 'knockout',
-                        rounds: [{ name: 'Octavos de Final', fixtures: octavosFixtures, completed: false }],
+                        rounds: [{ name: 'Round of 16', fixtures: octavosFixtures, completed: false }],
                         currentRoundIndex: 0,
                         statistics: { topScorers: [], championsHistory: [] }
                     };
@@ -216,19 +222,19 @@ export function useSimulation(
                 }
             }
 
-            // Advance Apertura Playoffs (Weeks 17 Octavos -> 18 Cuartos -> 19 Semis -> 20 Final)
-            const aperturaPlayoffMatches = matchesThisWeek.filter(m => m.competition === 'Playoffs_Apertura');
-            if (aperturaPlayoffMatches.length > 0 && aperturaPlayoffMatches.every(m => m.result !== undefined) && updatedCups.aperturaPlayoffs) {
+            // 2. Advance Apertura Playoffs (Weeks 17 Octavos -> 18 Cuartos -> 19 Semis -> 20 Final -> Champion crowned)
+            if (updatedCups.aperturaPlayoffs && updatedCups.aperturaPlayoffs.rounds && updatedCups.aperturaPlayoffs.rounds.length > 0 && !updatedCups.aperturaPlayoffs.winnerId) {
                 const prevRoundsCount = updatedCups.aperturaPlayoffs.rounds.length;
-                updatedCups.aperturaPlayoffs = advanceCupRound(updatedCups.aperturaPlayoffs, simulationResult.updatedAllTeams, newWeek, matchesThisWeek);
+                const nextPlayoffWeek = Math.min(20, Math.max(17, simulatedWeek) + 1);
+                updatedCups.aperturaPlayoffs = advanceCupRound(updatedCups.aperturaPlayoffs, simulationResult.updatedAllTeams, nextPlayoffWeek, simulationResult.updatedSchedule);
                 if (updatedCups.aperturaPlayoffs.rounds.length > prevRoundsCount) {
                     const nextRound = updatedCups.aperturaPlayoffs.rounds[updatedCups.aperturaPlayoffs.rounds.length - 1];
                     simulationResult.updatedSchedule.push(...nextRound.fixtures);
                 }
             }
 
-            // Clausura Regular Phase ends at Week 36 -> Generate Playoffs for Week 37
-            if (newWeek === 37 && (!updatedCups.clausuraPlayoffs || updatedCups.clausuraPlayoffs.rounds.length === 0)) {
+            // 3. Clausura Regular Phase ends at Week 36 -> Generate Playoffs for Week 37
+            if (simulatedWeek >= 36 && (!updatedCups.clausuraPlayoffs || !updatedCups.clausuraPlayoffs.rounds || updatedCups.clausuraPlayoffs.rounds.length === 0)) {
                 const argTable = simulationResult.updatedLeagueTables[LeagueId.LIGA_ARGENTINA] || [];
                 const zoneATeams = argTable.filter(r => r.zone === 'A').map(r => restoredTeams.find(t => t.id === r.teamId)!).filter(Boolean);
                 const zoneBTeams = argTable.filter(r => r.zone === 'B').map(r => restoredTeams.find(t => t.id === r.teamId)!).filter(Boolean);
@@ -240,7 +246,7 @@ export function useSimulation(
                         name: 'Playoffs Clausura',
                         type: 'knockout',
                         phase: 'knockout',
-                        rounds: [{ name: 'Octavos de Final', fixtures: octavosFixtures, completed: false }],
+                        rounds: [{ name: 'Round of 16', fixtures: octavosFixtures, completed: false }],
                         currentRoundIndex: 0,
                         statistics: { topScorers: [], championsHistory: [] }
                     };
@@ -248,11 +254,11 @@ export function useSimulation(
                 }
             }
 
-            // Advance Clausura Playoffs (Weeks 37 Octavos -> 38 Cuartos -> 39 Semis -> 40 Final)
-            const clausuraPlayoffMatches = matchesThisWeek.filter(m => m.competition === 'Playoffs_Clausura');
-            if (clausuraPlayoffMatches.length > 0 && clausuraPlayoffMatches.every(m => m.result !== undefined) && updatedCups.clausuraPlayoffs) {
+            // 4. Advance Clausura Playoffs (Weeks 37 Octavos -> 38 Cuartos -> 39 Semis -> 40 Final -> Champion crowned)
+            if (updatedCups.clausuraPlayoffs && updatedCups.clausuraPlayoffs.rounds && updatedCups.clausuraPlayoffs.rounds.length > 0 && !updatedCups.clausuraPlayoffs.winnerId) {
                 const prevRoundsCount = updatedCups.clausuraPlayoffs.rounds.length;
-                updatedCups.clausuraPlayoffs = advanceCupRound(updatedCups.clausuraPlayoffs, simulationResult.updatedAllTeams, newWeek, matchesThisWeek);
+                const nextPlayoffWeek = Math.min(40, Math.max(37, simulatedWeek) + 1);
+                updatedCups.clausuraPlayoffs = advanceCupRound(updatedCups.clausuraPlayoffs, simulationResult.updatedAllTeams, nextPlayoffWeek, simulationResult.updatedSchedule);
                 if (updatedCups.clausuraPlayoffs.rounds.length > prevRoundsCount) {
                     const nextRound = updatedCups.clausuraPlayoffs.rounds[updatedCups.clausuraPlayoffs.rounds.length - 1];
                     simulationResult.updatedSchedule.push(...nextRound.fixtures);
@@ -260,7 +266,7 @@ export function useSimulation(
             }
 
             // Primera Nacional: Week 34 ends -> Generate Primer Ascenso Final & Reducido Phase 1 for Week 35
-            if (newWeek === 35 && (!updatedCups.nacionalPrimerAscenso || !updatedCups.nacionalPrimerAscenso.rounds.length)) {
+            if (simulatedWeek >= 34 && (!updatedCups.nacionalPrimerAscenso || !updatedCups.nacionalPrimerAscenso.rounds.length)) {
                 const pnTable = simulationResult.updatedLeagueTables[LeagueId.PRIMERA_NACIONAL] || [];
                 const zoneATeams = pnTable.filter(r => r.zone === 'A').map(r => restoredTeams.find(t => t.id === r.teamId)!).filter(Boolean);
                 const zoneBTeams = pnTable.filter(r => r.zone === 'B').map(r => restoredTeams.find(t => t.id === r.teamId)!).filter(Boolean);
@@ -273,7 +279,7 @@ export function useSimulation(
                         name: 'Final 1º Ascenso',
                         type: 'knockout',
                         phase: 'knockout',
-                        rounds: [{ name: 'Final por el 1º Ascenso', fixtures: [finalPrimerAscensoFixture], completed: false }],
+                        rounds: [{ name: 'Final', fixtures: [finalPrimerAscensoFixture], completed: false }],
                         currentRoundIndex: 0,
                         statistics: { topScorers: [], championsHistory: [] }
                     };
@@ -286,7 +292,7 @@ export function useSimulation(
                         name: 'Torneo Reducido',
                         type: 'knockout',
                         phase: 'knockout',
-                        rounds: [{ name: 'Fase 1', fixtures: reducidoPhase1Fixtures, completed: false }],
+                        rounds: [{ name: 'Round of 16', fixtures: reducidoPhase1Fixtures, completed: false }],
                         currentRoundIndex: 0,
                         statistics: { topScorers: [], championsHistory: [] }
                     };
@@ -295,48 +301,48 @@ export function useSimulation(
             }
 
             // Primera Nacional: Week 35 matches finished -> Winner of 1st Ascenso is set, and Loser joins Reducido Cuartos at Week 36
-            const primerAscensoMatches = matchesThisWeek.filter(m => m.competition === 'Nacional_Primer_Ascenso');
-            const reducidoPhase1Matches = matchesThisWeek.filter(m => m.competition === 'Nacional_Reducido' && newWeek === 36);
-            if (primerAscensoMatches.length > 0 && primerAscensoMatches.every(m => m.result !== undefined) &&
-                reducidoPhase1Matches.length > 0 && reducidoPhase1Matches.every(m => m.result !== undefined) &&
-                updatedCups.nacionalPrimerAscenso && updatedCups.nacionalReducido) {
+            if (updatedCups.nacionalPrimerAscenso && !updatedCups.nacionalPrimerAscenso.winnerId) {
+                const primerAscensoMatches = simulationResult.updatedSchedule.filter(m => m.competition === 'Nacional_Primer_Ascenso' && m.result !== undefined);
+                const reducidoPhase1Matches = simulationResult.updatedSchedule.filter(m => m.competition === 'Nacional_Reducido' && m.result !== undefined);
+                
+                if (primerAscensoMatches.length > 0 && reducidoPhase1Matches.length >= 7 && updatedCups.nacionalReducido && updatedCups.nacionalReducido.rounds.length === 1) {
+                    const finalMatch = primerAscensoMatches[0];
+                    const winnerId = determineCupWinner(finalMatch);
+                    const loserId = winnerId === finalMatch.homeTeamId ? finalMatch.awayTeamId : finalMatch.homeTeamId;
+                    const loserTeam = restoredTeams.find(t => t.id === loserId)!;
 
-                const finalMatch = primerAscensoMatches[0];
-                const winnerId = determineCupWinner(finalMatch);
-                const loserId = winnerId === finalMatch.homeTeamId ? finalMatch.awayTeamId : finalMatch.homeTeamId;
-                const loserTeam = restoredTeams.find(t => t.id === loserId)!;
+                    // Mark Primer Ascenso Cup completed
+                    updatedCups.nacionalPrimerAscenso = {
+                        ...updatedCups.nacionalPrimerAscenso,
+                        winnerId: winnerId || undefined,
+                        rounds: [{ ...updatedCups.nacionalPrimerAscenso.rounds[0], completed: true }]
+                    };
 
-                // Mark Primer Ascenso Cup completed
-                updatedCups.nacionalPrimerAscenso = {
-                    ...updatedCups.nacionalPrimerAscenso,
-                    winnerId: winnerId || undefined,
-                    rounds: [{ ...updatedCups.nacionalPrimerAscenso.rounds[0], completed: true }]
-                };
+                    // Determine 7 winners of Reducido Phase 1
+                    const winnersPhase1 = reducidoPhase1Matches.map(m => {
+                        const wId = determineCupWinner(m);
+                        return restoredTeams.find(t => t.id === wId)!;
+                    }).filter(Boolean);
 
-                // Determine 7 winners of Reducido Phase 1
-                const winnersPhase1 = reducidoPhase1Matches.map(m => {
-                    const wId = determineCupWinner(m);
-                    return restoredTeams.find(t => t.id === wId)!;
-                }).filter(Boolean);
-
-                // Generate Cuartos de Final with 8 teams (7 winners + loser of primer ascenso) for Week 36
-                const cuartosFixtures = generateNacionalReducidoCuartos(winnersPhase1, loserTeam, 36);
-                updatedCups.nacionalReducido = {
-                    ...updatedCups.nacionalReducido,
-                    rounds: [
-                        { ...updatedCups.nacionalReducido.rounds[0], completed: true },
-                        { name: 'Cuartos de Final', fixtures: cuartosFixtures, completed: false }
-                    ],
-                    currentRoundIndex: 1
-                };
-                simulationResult.updatedSchedule.push(...cuartosFixtures);
+                    // Generate Cuartos de Final with 8 teams (7 winners + loser of primer ascenso) for Week 36
+                    const cuartosFixtures = generateNacionalReducidoCuartos(winnersPhase1, loserTeam, 36);
+                    updatedCups.nacionalReducido = {
+                        ...updatedCups.nacionalReducido,
+                        rounds: [
+                            { ...updatedCups.nacionalReducido.rounds[0], completed: true },
+                            { name: 'Quarter-Final', fixtures: cuartosFixtures, completed: false }
+                        ],
+                        currentRoundIndex: 1
+                    };
+                    simulationResult.updatedSchedule.push(...cuartosFixtures);
+                }
             }
 
             // Advance Reducido Semis & Final (Weeks 36, 37, 38)
-            const generalReducidoMatches = matchesThisWeek.filter(m => m.competition === 'Nacional_Reducido' && newWeek >= 37);
-            if (generalReducidoMatches.length > 0 && generalReducidoMatches.every(m => m.result !== undefined) && updatedCups.nacionalReducido) {
+            if (updatedCups.nacionalReducido && updatedCups.nacionalReducido.rounds && updatedCups.nacionalReducido.rounds.length > 1 && !updatedCups.nacionalReducido.winnerId) {
                 const prevRoundsCount = updatedCups.nacionalReducido.rounds.length;
-                updatedCups.nacionalReducido = advanceCupRound(updatedCups.nacionalReducido, simulationResult.updatedAllTeams, newWeek, matchesThisWeek);
+                const nextReducidoWeek = Math.min(38, Math.max(36, simulatedWeek) + 1);
+                updatedCups.nacionalReducido = advanceCupRound(updatedCups.nacionalReducido, simulationResult.updatedAllTeams, nextReducidoWeek, simulationResult.updatedSchedule);
                 if (updatedCups.nacionalReducido.rounds.length > prevRoundsCount) {
                     const nextRound = updatedCups.nacionalReducido.rounds[updatedCups.nacionalReducido.rounds.length - 1];
                     simulationResult.updatedSchedule.push(...nextRound.fixtures);

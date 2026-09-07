@@ -97,13 +97,13 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                 {/* Cabecera y Buscador */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     {/* Competición Activa */}
-                    <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-xl bg-white/5 p-1.5 flex items-center justify-center shrink-0 border border-white/10">
-                            <img src={resolvedLogo} alt="" className="w-full h-full object-contain drop-shadow-md" />
+                    <div className="flex items-center gap-3.5">
+                        <div className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center shrink-0 drop-shadow-[0_4px_14px_rgba(0,0,0,0.6)]">
+                            <img src={resolvedLogo} alt="" className="w-full h-full object-contain" />
                         </div>
                         <div>
                             <div className="flex items-center gap-2">
-                                <h1 className="text-base sm:text-lg font-black text-white uppercase tracking-tight">
+                                <h1 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight">
                                     {selectedCompDef?.name || 'Tabla de Posiciones'}
                                 </h1>
                                 {selectedCompDef?.isFirstDiv && (

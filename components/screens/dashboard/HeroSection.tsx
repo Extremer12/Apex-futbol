@@ -65,38 +65,59 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     const opponentId = isHome ? nextMatch.awayTeamId : nextMatch.homeTeamId;
     const opponent = gameState.allTeams.find(t => t.id === opponentId);
 
+    const homeTeamObj = isHome ? gameState.team : opponent;
+    const awayTeamObj = !isHome ? gameState.team : opponent;
+
     return (
         <div className="apex-card p-6 relative overflow-hidden group min-h-[280px] flex flex-col justify-center">
             <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
                 <TrophyIcon className="w-48 h-48 text-[var(--apex-gold)]" />
             </div>
             
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex justify-between items-center mb-4">
                 <span className="text-[9px] font-black tracking-[0.3em] text-[var(--apex-gold)] uppercase">Próximo Partido</span>
                 <span className="text-[9px] font-black tracking-[0.2em] text-white/40 uppercase">{nextMatch.competition || 'Liga'}</span>
             </div>
 
-            <div className="flex items-center justify-around flex-1 mb-8">
-                <div className="flex flex-col items-center gap-3">
-                    <div className="w-20 h-20 md:w-24 md:h-24 drop-shadow-[0_0_20px_rgba(255,255,255,0.1)]">
-                        <TeamLogo team={isHome ? gameState.team : opponent} className="w-full h-full object-contain" />
+            {/* Symmetrical Matchup Grid */}
+            <div className="grid grid-cols-11 items-center mb-6 w-full">
+                {/* Home Team (Cols 1-5) */}
+                <div className="col-span-5 flex flex-col items-center text-center px-1">
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center mb-2.5 drop-shadow-[0_4px_16px_rgba(0,0,0,0.5)]">
+                        {homeTeamObj && <TeamLogo team={homeTeamObj} className="w-full h-full object-contain" />}
                     </div>
-                    <span className="text-xs font-black text-white uppercase tracking-tighter">{isHome ? gameState.team.shortName || gameState.team.name : opponent?.shortName || opponent?.name}</span>
+                    <span className="text-xs sm:text-sm font-black text-white uppercase tracking-tight line-clamp-1 w-full text-center" title={homeTeamObj?.name}>
+                        {homeTeamObj?.shortName || homeTeamObj?.name || 'Local'}
+                    </span>
+                    {homeTeamObj?.id === gameState.team.id && (
+                        <span className="text-[8px] font-black uppercase text-[var(--apex-gold)] bg-[var(--apex-gold)]/10 px-1.5 py-0.5 rounded border border-[var(--apex-gold)]/20 mt-1">
+                            Tu Club
+                        </span>
+                    )}
                 </div>
 
-                <div className="flex flex-col items-center">
-                    <span className="text-4xl font-black italic text-white/10">VS</span>
+                {/* VS Center (Col 6) */}
+                <div className="col-span-1 flex flex-col items-center justify-center text-center">
+                    <span className="text-2xl sm:text-3xl font-black italic text-white/20 select-none">VS</span>
                 </div>
 
-                <div className="flex flex-col items-center gap-3">
-                    <div className="w-20 h-20 md:w-24 md:h-24 drop-shadow-[0_0_20px_rgba(255,255,255,0.1)]">
-                        <TeamLogo team={!isHome ? gameState.team : opponent} className="w-full h-full object-contain" />
+                {/* Away Team (Cols 7-11) */}
+                <div className="col-span-5 flex flex-col items-center text-center px-1">
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center mb-2.5 drop-shadow-[0_4px_16px_rgba(0,0,0,0.5)]">
+                        {awayTeamObj && <TeamLogo team={awayTeamObj} className="w-full h-full object-contain" />}
                     </div>
-                    <span className="text-xs font-black text-white uppercase tracking-tighter">{!isHome ? gameState.team.shortName || gameState.team.name : opponent?.shortName || opponent?.name}</span>
+                    <span className="text-xs sm:text-sm font-black text-white uppercase tracking-tight line-clamp-1 w-full text-center" title={awayTeamObj?.name}>
+                        {awayTeamObj?.shortName || awayTeamObj?.name || 'Visitante'}
+                    </span>
+                    {awayTeamObj?.id === gameState.team.id && (
+                        <span className="text-[8px] font-black uppercase text-[var(--apex-gold)] bg-[var(--apex-gold)]/10 px-1.5 py-0.5 rounded border border-[var(--apex-gold)]/20 mt-1">
+                            Tu Club
+                        </span>
+                    )}
                 </div>
             </div>
 
-            <div className="flex flex-col items-center gap-1 mb-8">
+            <div className="flex flex-col items-center gap-1 mb-6">
                 <span className="text-[10px] font-black text-white uppercase">Jornada {nextWeek} • 16:30</span>
                 <div className="flex items-center gap-2 text-white/40">
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" strokeWidth={2} /></svg>
