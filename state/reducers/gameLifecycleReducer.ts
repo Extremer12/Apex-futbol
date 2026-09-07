@@ -5,6 +5,7 @@ import { generateRandomCoach, generateCoachMarket } from '../../services/coachin
 import { generateStadium, generateSponsorMarket, calculateFinancialBreakdown, getNetWeeklyIncome } from '../../services/economy';
 import { initializeGame } from '../../services/gameFactory';
 import { startNewSeason } from '../../services/seasonManager';
+import { evaluateAchievements } from '../../services/achievementService';
 import type { GameAction } from '../reducer';
 
 // Actions handled by this reducer
