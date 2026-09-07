@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { customPacksService } from '../../../services/customPacks/packService';
-import { Download, Upload, Link2, AlertCircle, CheckCircle2, RotateCcw } from 'lucide-react';
+import { Download, Upload, Link2, AlertCircle, CheckCircle2, RotateCcw, Shield, Sparkles, Trash2 } from 'lucide-react';
+import { ARG_PACK_CDN } from '../../../services/customPacks/argentineLogos';
 
-const OFFICIAL_COMMUNITY_PACK_URL = 'https://github.com/Extremer12/community-data-packs/releases/download/v1.0.0/football-logos-master.zip';
+const OFFICIAL_GLOBAL_PACK_ZIP = 'https://github.com/Extremer12/community-data-packs/releases/download/v1.0.0/football-logos-master.zip';
 
 export const CommunityPacksSection: React.FC = () => {
     const [stats, setStats] = useState({ teams: 0, competitions: 0, players: 0, total: 0 });
+    const [isArgPackActive, setIsArgPackActive] = useState<boolean>(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [progressPercent, setProgressPercent] = useState(0);
     const [progressStatus, setProgressStatus] = useState('');
@@ -15,26 +17,50 @@ export const CommunityPacksSection: React.FC = () => {
     
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const refreshStats = async () => {
+    const refreshState = async () => {
         const s = await customPacksService.getStats();
         setStats(s);
+        setIsArgPackActive(customPacksService.isArgentinePackActive());
     };
 
     useEffect(() => {
-        refreshStats();
-        const unsubscribe = customPacksService.subscribe(refreshStats);
+        refreshState();
+        const unsubscribe = customPacksService.subscribe(refreshState);
         return () => unsubscribe();
     }, []);
 
-    const handleInstallOfficialPack = async () => {
+    // Toggle Argentine Pack (jsDelivr CDN)
+    const handleToggleArgPack = (enable: boolean) => {
+        setIsProcessing(true);
+        try {
+            customPacksService.setArgentinePackActive(enable);
+            setIsArgPackActive(enable);
+            setFeedbackMessage({
+                type: 'success',
+                text: enable 
+                    ? '¡Pack de Fútbol Argentino activado! Se cargaron los escudos oficiales vectoriales.' 
+                    : 'Pack de Fútbol Argentino desinstalado. Se restauraron los escudos genéricos neutros.'
+            });
+        } catch (err: any) {
+            setFeedbackMessage({
+                type: 'error',
+                text: 'Error al cambiar el estado del pack: ' + (err.message || err)
+            });
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    // Download full ZIP pack
+    const handleInstallGlobalPack = async () => {
         setIsProcessing(true);
         setProgressPercent(0);
-        setProgressStatus('Iniciando descarga del paquete...');
+        setProgressStatus('Iniciando descarga del paquete global...');
         setFeedbackMessage(null);
 
         try {
             const result = await customPacksService.downloadAndImportZipPack(
-                OFFICIAL_COMMUNITY_PACK_URL,
+                OFFICIAL_GLOBAL_PACK_ZIP,
                 (pct, status) => {
                     setProgressPercent(pct);
                     setProgressStatus(status);
@@ -43,9 +69,9 @@ export const CommunityPacksSection: React.FC = () => {
 
             setFeedbackMessage({
                 type: 'success',
-                text: `¡Éxito! Se instalaron ${result.importedCount} escudos y logos oficiales.`
+                text: `¡Éxito! Se instalaron ${result.importedCount} escudos y logos de la comunidad.`
             });
-            await refreshStats();
+            await refreshState();
         } catch (err: any) {
             setFeedbackMessage({
                 type: 'error',
@@ -77,7 +103,7 @@ export const CommunityPacksSection: React.FC = () => {
                 type: 'success',
                 text: `¡Éxito! Se importaron ${result.importedCount} imágenes al juego.`
             });
-            await refreshStats();
+            await refreshState();
         } catch (err: any) {
             setFeedbackMessage({
                 type: 'error',
@@ -108,7 +134,7 @@ export const CommunityPacksSection: React.FC = () => {
                 text: `¡Éxito! Se cargaron ${result.importedCount} logos desde la URL.`
             });
             setUrlInput('');
-            await refreshStats();
+            await refreshState();
         } catch (err: any) {
             setFeedbackMessage({
                 type: 'error',
@@ -120,78 +146,204 @@ export const CommunityPacksSection: React.FC = () => {
     };
 
     const handleClearAll = async () => {
-        if (!window.confirm('¿Deseas restablecer todos los escudos a los valores por defecto?')) {
+        if (!window.confirm('¿Deseas restablecer todos los escudos y volver al modo genérico por defecto?')) {
             return;
         }
 
         try {
             await customPacksService.clearAllPacks();
-            setFeedbackMessage({ type: 'success', text: 'Se restablecieron todos los logos.' });
-            await refreshStats();
+            setIsArgPackActive(false);
+            setFeedbackMessage({ type: 'success', text: 'Se restablecieron todos los escudos a genéricos neutros.' });
+            await refreshState();
         } catch (err: any) {
-            setFeedbackMessage({ type: 'error', text: 'Error al limpiar logos: ' + err.message });
+            setFeedbackMessage({ type: 'error', text: 'Error al restablecer: ' + err.message });
         }
     };
 
     return (
-        <div className="space-y-5">
-            {/* 🌟 Tarjeta Principal: 1-Clic Instalador Oficial */}
-            <div className="rounded-2xl bg-gradient-to-b from-[#161D2E] to-[#0E131F] border border-white/10 p-5 shadow-2xl relative overflow-hidden">
+        <div className="space-y-4">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                        <Shield className="w-4 h-4 text-[var(--apex-gold)]" /> Packs de la Comunidad
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                        Modelo World Soccer Champs & Super Kickoff (Licencias & UGC).
+                    </p>
+                </div>
+                {(isArgPackActive || stats.total > 0) && (
+                    <button
+                        onClick={handleClearAll}
+                        disabled={isProcessing}
+                        className="text-[11px] font-bold text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors cursor-pointer"
+                        title="Restablecer todo a genéricos"
+                    >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>Restablecer Todo</span>
+                    </button>
+                )}
+            </div>
+
+            {/* 🌟 Tarjeta 1: Pack de Fútbol Argentino (jsDelivr CDN) */}
+            <div className={`rounded-2xl border p-5 transition-all shadow-xl relative overflow-hidden ${
+                isArgPackActive 
+                    ? 'bg-gradient-to-b from-[#101A2B] to-[#0A101C] border-sky-500/40' 
+                    : 'bg-gradient-to-b from-[#161D2E] to-[#0E131F] border-white/10'
+            }`}>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-[var(--apex-gold)] bg-[var(--apex-gold)]/10 px-2 py-0.5 rounded-md border border-[var(--apex-gold)]/20">
-                                Oficial • v1.0.0
+                    <div className="space-y-1.5 flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-md border border-sky-500/20">
+                                Fútbol Argentino • 2026
                             </span>
-                            {stats.total > 0 && (
-                                <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
-                                    <CheckCircle2 className="w-3 h-3" /> {stats.total} logos activos
+                            {isArgPackActive ? (
+                                <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-500/30">
+                                    <CheckCircle2 className="w-3 h-3" /> Pack Activo (65+ escudos .SVG)
+                                </span>
+                            ) : (
+                                <span className="text-[10px] font-bold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700">
+                                    Escudos Genéricos Activos
                                 </span>
                             )}
                         </div>
-                        <h2 className="text-base sm:text-lg font-black text-white uppercase tracking-tight">
-                            Pack Oficial de Escudos y Ligas
-                        </h2>
-                        <p className="text-xs text-slate-400">
-                            Premier League, La Liga, Serie A, Libertadores y más de 100 clubes.
+                        <h4 className="text-base font-black text-white uppercase tracking-tight">
+                            Pack de Fútbol Argentino
+                        </h4>
+                        <p className="text-xs text-slate-400 leading-relaxed">
+                            Incluye los 30 clubes de Primera División, 36 clubes de Primera Nacional y logos de torneo desde el catálogo comunitario en jsDelivr.
                         </p>
                     </div>
 
-                    <button
-                        onClick={handleInstallOfficialPack}
-                        disabled={isProcessing}
-                        className="w-full sm:w-auto px-6 py-3.5 bg-[var(--apex-gold)] hover:bg-[#FFE57F] disabled:opacity-50 text-[#0A0E17] text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 flex-shrink-0 cursor-pointer"
-                    >
-                        {isProcessing ? (
-                            <>
-                                <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
-                                <span>{progressPercent}% Instalando...</span>
-                            </>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                        {isArgPackActive ? (
+                            <button
+                                onClick={() => handleToggleArgPack(false)}
+                                disabled={isProcessing}
+                                className="w-full sm:w-auto px-4 py-3 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 text-red-300 hover:text-red-100 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                                <span>Desinstalar Pack</span>
+                            </button>
                         ) : (
-                            <>
-                                <Download className="w-4 h-4 text-black stroke-[2.5]" />
-                                <span>Instalar en 1 Clic</span>
-                            </>
+                            <button
+                                onClick={() => handleToggleArgPack(true)}
+                                disabled={isProcessing}
+                                className="w-full sm:w-auto px-5 py-3 bg-[var(--apex-gold)] hover:bg-[#FFE57F] text-[#0A0E17] text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                                <Sparkles className="w-4 h-4 text-black stroke-[2.5]" />
+                                <span>Instalar Pack Argentino</span>
+                            </button>
                         )}
+                    </div>
+                </div>
+            </div>
+
+            {/* 📦 Tarjeta 2: Pack Global / Personalizado */}
+            <div className="rounded-2xl bg-slate-900/60 border border-white/10 p-4 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                Pack Global (.ZIP / URL)
+                            </span>
+                            {stats.total > 0 && (
+                                <span className="text-[10px] font-bold text-emerald-400">
+                                    • {stats.total} archivos personalizados en storage
+                                </span>
+                            )}
+                        </div>
+                        <h5 className="text-xs font-bold text-white uppercase mt-0.5">
+                            Cargar Packs Externos de la Comunidad
+                        </h5>
+                    </div>
+
+                    <button
+                        onClick={handleInstallGlobalPack}
+                        disabled={isProcessing}
+                        className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold uppercase tracking-wider rounded-lg border border-slate-700 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                        <Download className="w-3.5 h-3.5 text-slate-300" />
+                        <span>Descargar Pack Global .ZIP</span>
                     </button>
                 </div>
 
-                {/* Barra de progreso */}
-                {isProcessing && (
-                    <div className="mt-4 pt-3 border-t border-white/5 space-y-1.5 animate-fade-in">
-                        <div className="flex justify-between text-[11px] font-bold">
-                            <span className="text-slate-300 truncate">{progressStatus}</span>
-                            <span className="text-[var(--apex-gold)]">{progressPercent}%</span>
+                {/* Subir ZIP local o Pegar Enlace */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                    <div
+                        onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+                        onDragLeave={() => setIsDragOver(false)}
+                        onDrop={(e) => {
+                            e.preventDefault();
+                            setIsDragOver(false);
+                            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                                handleFileSelect(e.dataTransfer.files[0]);
+                            }
+                        }}
+                        onClick={() => fileInputRef.current?.click()}
+                        className={`rounded-xl border border-dashed p-3 flex items-center gap-3 transition-all cursor-pointer ${
+                            isDragOver 
+                                ? 'border-[var(--apex-gold)] bg-[var(--apex-gold)]/10' 
+                                : 'border-white/10 bg-[#0F1423]/60 hover:border-white/25 hover:bg-[#121828]'
+                        }`}
+                    >
+                        <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])} 
+                            accept=".zip" 
+                            className="hidden" 
+                        />
+                        <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0 text-slate-300">
+                            <Upload className="w-3.5 h-3.5" />
                         </div>
-                        <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                            <div 
-                                className="bg-[var(--apex-gold)] h-full transition-all duration-300 rounded-full" 
-                                style={{ width: `${progressPercent}%` }}
-                            />
+                        <div className="text-left flex-1 min-w-0">
+                            <div className="text-[11px] font-bold text-white uppercase tracking-wider truncate">
+                                Subir Pack .ZIP Local
+                            </div>
+                            <div className="text-[10px] text-slate-400 truncate">
+                                Selecciona archivo desde tu dispositivo
+                            </div>
                         </div>
                     </div>
-                )}
+
+                    <form onSubmit={handleUrlImport} className="rounded-xl border border-white/10 bg-[#0F1423]/60 p-2 flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0 text-slate-300">
+                            <Link2 className="w-3.5 h-3.5" />
+                        </div>
+                        <input 
+                            type="text" 
+                            placeholder="Pegar URL de pack (.json / .zip)..." 
+                            value={urlInput}
+                            onChange={(e) => setUrlInput(e.target.value)}
+                            disabled={isProcessing}
+                            className="flex-1 bg-transparent text-xs text-white placeholder-slate-500 focus:outline-none min-w-0"
+                        />
+                        <button
+                            type="submit"
+                            disabled={isProcessing || !urlInput.trim()}
+                            className="px-3 py-1.5 bg-white/10 hover:bg-white/20 disabled:opacity-30 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors cursor-pointer flex-shrink-0"
+                        >
+                            Cargar
+                        </button>
+                    </form>
+                </div>
             </div>
+
+            {/* Barra de progreso de descarga / proceso */}
+            {isProcessing && progressPercent > 0 && (
+                <div className="pt-2 border-t border-white/5 space-y-1.5 animate-fade-in">
+                    <div className="flex justify-between text-[11px] font-bold">
+                        <span className="text-slate-300 truncate">{progressStatus}</span>
+                        <span className="text-[var(--apex-gold)]">{progressPercent}%</span>
+                    </div>
+                    <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                        <div 
+                            className="bg-[var(--apex-gold)] h-full transition-all duration-300 rounded-full" 
+                            style={{ width: `${progressPercent}%` }}
+                        />
+                    </div>
+                </div>
+            )}
 
             {/* Mensajes de Feedback */}
             {feedbackMessage && (
@@ -207,105 +359,13 @@ export const CommunityPacksSection: React.FC = () => {
                     )}
                     <div className="flex-1 space-y-1">
                         <span>{feedbackMessage.text}</span>
-                        {feedbackMessage.type === 'error' && (
-                            <div className="pt-1">
-                                <a 
-                                    href={OFFICIAL_COMMUNITY_PACK_URL} 
-                                    target="_blank" 
-                                    rel="noreferrer"
-                                    className="text-[11px] text-[var(--apex-gold)] underline hover:opacity-80 block"
-                                >
-                                    📥 O haz clic aquí para descargar el .ZIP directamente y cargarlo abajo
-                                </a>
-                            </div>
-                        )}
                     </div>
-                </div>
-            )}
-
-            {/* Opciones Secundarias Limpias: Subir ZIP o Pegar Enlace */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Botón Subir ZIP */}
-                <div
-                    onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
-                    onDragLeave={() => setIsDragOver(false)}
-                    onDrop={(e) => {
-                        e.preventDefault();
-                        setIsDragOver(false);
-                        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                            handleFileSelect(e.dataTransfer.files[0]);
-                        }
-                    }}
-                    onClick={() => fileInputRef.current?.click()}
-                    className={`rounded-xl border border-dashed p-4 flex items-center gap-3.5 transition-all cursor-pointer ${
-                        isDragOver 
-                            ? 'border-[var(--apex-gold)] bg-[var(--apex-gold)]/10' 
-                            : 'border-white/10 bg-[#0F1423]/60 hover:border-white/25 hover:bg-[#121828]'
-                    }`}
-                >
-                    <input 
-                        type="file" 
-                        ref={fileInputRef} 
-                        onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])} 
-                        accept=".zip" 
-                        className="hidden" 
-                    />
-                    <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0 text-slate-300">
-                        <Upload className="w-4 h-4" />
-                    </div>
-                    <div className="text-left flex-1 min-w-0">
-                        <div className="text-xs font-bold text-white uppercase tracking-wider truncate">
-                            Subir Archivo .ZIP Local
-                        </div>
-                        <div className="text-[10px] text-slate-400 truncate">
-                            Arrastra o examina tu dispositivo
-                        </div>
-                    </div>
-                </div>
-
-                {/* Formulario URL */}
-                <form onSubmit={handleUrlImport} className="rounded-xl border border-white/10 bg-[#0F1423]/60 p-2.5 flex items-center gap-2">
-                    <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0 text-slate-300">
-                        <Link2 className="w-4 h-4" />
-                    </div>
-                    <input 
-                        type="text" 
-                        placeholder="Pegar URL de imagen o .json..." 
-                        value={urlInput}
-                        onChange={(e) => setUrlInput(e.target.value)}
-                        disabled={isProcessing}
-                        className="flex-1 bg-transparent text-xs text-white placeholder-slate-500 focus:outline-none min-w-0"
-                    />
-                    <button
-                        type="submit"
-                        disabled={isProcessing || !urlInput.trim()}
-                        className="px-3 py-1.5 bg-white/10 hover:bg-white/20 disabled:opacity-30 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors cursor-pointer flex-shrink-0"
-                    >
-                        Cargar
-                    </button>
-                </form>
-            </div>
-
-            {/* Acciones de Restablecimiento */}
-            {stats.total > 0 && (
-                <div className="flex items-center justify-between pt-1">
-                    <span className="text-[11px] text-slate-400 font-medium">
-                        {stats.teams} clubes • {stats.competitions} ligas aplicadas
-                    </span>
-                    <button
-                        onClick={handleClearAll}
-                        disabled={isProcessing}
-                        className="text-[11px] font-bold text-red-400 hover:text-red-300 flex items-center gap-1.5 transition-colors cursor-pointer"
-                    >
-                        <RotateCcw className="w-3.5 h-3.5" />
-                        <span>Restablecer por defecto</span>
-                    </button>
                 </div>
             )}
 
             {/* Descargo de Responsabilidad Minimalista */}
-            <p className="text-[10px] text-slate-500 text-center leading-relaxed pt-2">
-                ⚖️ Apex AI no está afiliado con FIFA, UEFA ni clubes oficiales. Los escudos son aportes comunitarios guardados exclusivamente en tu almacenamiento local (UGC).
+            <p className="text-[10px] text-slate-500 text-center leading-relaxed">
+                ⚖️ Apex AI no incluye escudos comerciales oficiales de fábrica. El contenido descargado es generado por la comunidad (UGC) y se almacena localmente en tu navegador.
             </p>
         </div>
     );

@@ -2,7 +2,7 @@ import JSZip from 'jszip';
 import { StoredAsset, saveStoredAssetsBatch, getAllStoredAssets, clearAllStoredAssets, getStoredAssetsCount } from './storage';
 import { normalizeKey, getTeamMatchKeys, getCompetitionMatchKeys } from './matcher';
 
-import { ARG_CLUB_LOGOS_BY_ID, ARG_COMPETITION_LOGOS } from './argentineLogos';
+import { ARG_CLUB_LOGOS_BY_ID, ARG_CLUB_LOGOS_BY_NAME, ARG_COMPETITION_LOGOS } from './argentineLogos';
 
 export type PackUpdateListener = () => void;
 
@@ -20,6 +20,29 @@ class CustomPacksService {
 
     private notifyListeners() {
         this.listeners.forEach(fn => fn());
+    }
+
+    public isArgentinePackActive(): boolean {
+        if (typeof window === 'undefined') return false;
+        try {
+            return localStorage.getItem('apex_pack_argentine_active') === 'true';
+        } catch {
+            return false;
+        }
+    }
+
+    public setArgentinePackActive(active: boolean): void {
+        if (typeof window === 'undefined') return;
+        try {
+            if (active) {
+                localStorage.setItem('apex_pack_argentine_active', 'true');
+            } else {
+                localStorage.removeItem('apex_pack_argentine_active');
+            }
+        } catch (e) {
+            console.error('Failed to save pack state:', e);
+        }
+        this.notifyListeners();
     }
 
     public async init(): Promise<void> {
@@ -58,25 +81,47 @@ class CustomPacksService {
         return undefined;
     }
 
-    public resolveTeamLogo(team?: { id?: number | string; name?: string; shortName?: string; logo?: string }): string {
-        if (!team) return '/sinlogo.png';
+    public resolveTeamLogo(team?: { id?: number | string; name?: string; shortName?: string; logo?: string }): string | undefined {
+        if (!team) return undefined;
         const keys = getTeamMatchKeys(team);
         const custom = this.getCustomLogo('teams', keys);
         if (custom) return custom;
-        if (team.id && ARG_CLUB_LOGOS_BY_ID[team.id]) {
-            return ARG_CLUB_LOGOS_BY_ID[team.id];
+
+        if (this.isArgentinePackActive()) {
+            if (team.id !== undefined && team.id !== null && ARG_CLUB_LOGOS_BY_ID[team.id]) {
+                return ARG_CLUB_LOGOS_BY_ID[team.id];
+            }
+            if (team.name) {
+                const norm = normalizeKey(team.name);
+                if (norm && ARG_CLUB_LOGOS_BY_NAME[norm]) {
+                    return ARG_CLUB_LOGOS_BY_NAME[norm];
+                }
+                const lower = team.name.toLowerCase().trim();
+                if (ARG_CLUB_LOGOS_BY_NAME[lower]) {
+                    return ARG_CLUB_LOGOS_BY_NAME[lower];
+                }
+            }
         }
-        return team.logo || '/sinlogo.png';
+
+        return undefined;
     }
 
-    public resolveCompetitionLogo(competitionId: string, name?: string, defaultLogo?: string): string {
+    public resolveCompetitionLogo(competitionId: string, name?: string, defaultLogo?: string): string | undefined {
         const keys = getCompetitionMatchKeys(competitionId, name);
         const custom = this.getCustomLogo('competitions', keys);
         if (custom) return custom;
-        if (ARG_COMPETITION_LOGOS[competitionId]) {
-            return ARG_COMPETITION_LOGOS[competitionId];
+
+        if (this.isArgentinePackActive()) {
+            if (ARG_COMPETITION_LOGOS[competitionId]) {
+                return ARG_COMPETITION_LOGOS[competitionId];
+            }
+            const norm = normalizeKey(competitionId);
+            if (ARG_COMPETITION_LOGOS[norm]) {
+                return ARG_COMPETITION_LOGOS[norm];
+            }
         }
-        return defaultLogo || '/sinlogo.png';
+
+        return defaultLogo || undefined;
     }
 
     public resolvePlayerPhoto(player?: { id?: number | string; name?: string; photo?: string }): string {
@@ -355,6 +400,7 @@ class CustomPacksService {
      * Clear all custom packs
      */
     public async clearAllPacks(): Promise<void> {
+        this.setArgentinePackActive(false);
         await clearAllStoredAssets();
         await this.reloadCache();
     }
