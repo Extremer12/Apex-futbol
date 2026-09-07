@@ -12,6 +12,7 @@ export const CommunityPacksSection: React.FC = () => {
     const [isSpaPackActive, setIsSpaPackActive] = useState<boolean>(false);
     const [isBraPackActive, setIsBraPackActive] = useState<boolean>(false);
     const [isGerPackActive, setIsGerPackActive] = useState<boolean>(false);
+    const [isFrePackActive, setIsFrePackActive] = useState<boolean>(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [progressPercent, setProgressPercent] = useState(0);
     const [progressStatus, setProgressStatus] = useState('');
@@ -30,6 +31,7 @@ export const CommunityPacksSection: React.FC = () => {
         setIsSpaPackActive(customPacksService.isSpanishPackActive());
         setIsBraPackActive(customPacksService.isBrazilianPackActive());
         setIsGerPackActive(customPacksService.isGermanPackActive());
+        setIsFrePackActive(customPacksService.isFrenchPackActive());
     };
 
     useEffect(() => {
@@ -170,6 +172,28 @@ export const CommunityPacksSection: React.FC = () => {
         }
     };
 
+    // Toggle French Pack (jsDelivr CDN)
+    const handleToggleFrePack = (enable: boolean) => {
+        setIsProcessing(true);
+        try {
+            customPacksService.setFrenchPackActive(enable);
+            setIsFrePackActive(enable);
+            setFeedbackMessage({
+                type: 'success',
+                text: enable 
+                    ? '¡Pack de Fútbol Francés activado! Se cargaron los escudos de Ligue 1 y Ligue 2.' 
+                    : 'Pack de Fútbol Francés desinstalado. Se restauraron los escudos genéricos neutros.'
+            });
+        } catch (err: any) {
+            setFeedbackMessage({
+                type: 'error',
+                text: 'Error al cambiar el estado del pack: ' + (err.message || err)
+            });
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
     // Enable all community packs
     const handleEnableAllPacks = () => {
         setIsProcessing(true);
@@ -180,15 +204,17 @@ export const CommunityPacksSection: React.FC = () => {
             customPacksService.setSpanishPackActive(true);
             customPacksService.setBrazilianPackActive(true);
             customPacksService.setGermanPackActive(true);
+            customPacksService.setFrenchPackActive(true);
             setIsArgPackActive(true);
             setIsEngPackActive(true);
             setIsItaPackActive(true);
             setIsSpaPackActive(true);
             setIsBraPackActive(true);
             setIsGerPackActive(true);
+            setIsFrePackActive(true);
             setFeedbackMessage({
                 type: 'success',
-                text: '¡Todos los packs comunitarios activos! (Argentina, Inglaterra, España, Italia, Brasil y Alemania).'
+                text: '¡Todos los packs comunitarios activos! (Argentina, Inglaterra, España, Italia, Brasil, Alemania y Francia).'
             });
         } catch (err: any) {
             setFeedbackMessage({ type: 'error', text: err.message || 'Error al activar los packs.' });
@@ -657,6 +683,58 @@ export const CommunityPacksSection: React.FC = () => {
                             >
                                 <Globe className="w-3.5 h-3.5 text-white stroke-[2.5]" />
                                 <span>Instalar Alemania</span>
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* Tarjeta 7: Fútbol Francés */}
+                <div className={`rounded-2xl border p-4 transition-all shadow-xl relative overflow-hidden flex flex-col justify-between ${
+                    isFrePackActive 
+                        ? 'bg-gradient-to-b from-[#101828] to-[#0A101C] border-blue-500/40' 
+                        : 'bg-gradient-to-b from-[#161D2E] to-[#0E131F] border-white/10'
+                }`}>
+                    <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-500/20">
+                                Francia • 38+ Escudos
+                            </span>
+                            {isFrePackActive ? (
+                                <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-500/30">
+                                    <CheckCircle2 className="w-3 h-3" /> Activo
+                                </span>
+                            ) : (
+                                <span className="text-[10px] font-bold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700">
+                                    Genérico
+                                </span>
+                            )}
+                        </div>
+                        <h4 className="text-sm font-black text-white uppercase tracking-tight">
+                            Ligue 1 & Ligue 2
+                        </h4>
+                        <p className="text-xs text-slate-400 leading-relaxed">
+                            PSG, Marseille, Monaco, Lyon, Lille, Nice, Lens, Rennes y Ligue 2.
+                        </p>
+                    </div>
+
+                    <div className="pt-3 mt-2 border-t border-white/5">
+                        {isFrePackActive ? (
+                            <button
+                                onClick={() => handleToggleFrePack(false)}
+                                disabled={isProcessing}
+                                className="w-full py-2 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 text-red-300 hover:text-red-100 text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+                            >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>Desinstalar</span>
+                            </button>
+                        ) : (
+                            <button
+                                onClick={() => handleToggleFrePack(true)}
+                                disabled={isProcessing}
+                                className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-black uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                                <Globe className="w-3.5 h-3.5 text-white stroke-[2.5]" />
+                                <span>Instalar Francia</span>
                             </button>
                         )}
                     </div>

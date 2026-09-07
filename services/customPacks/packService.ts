@@ -160,6 +160,29 @@ class CustomPacksService {
         this.notifyListeners();
     }
 
+    public isFrenchPackActive(): boolean {
+        if (typeof window === 'undefined') return false;
+        try {
+            return localStorage.getItem('apex_pack_french_active') === 'true';
+        } catch {
+            return false;
+        }
+    }
+
+    public setFrenchPackActive(active: boolean): void {
+        if (typeof window === 'undefined') return;
+        try {
+            if (active) {
+                localStorage.setItem('apex_pack_french_active', 'true');
+            } else {
+                localStorage.removeItem('apex_pack_french_active');
+            }
+        } catch (e) {
+            console.error('Failed to save french pack state:', e);
+        }
+        this.notifyListeners();
+    }
+
     public async init(): Promise<void> {
         if (this.isInitialized) return;
         await this.reloadCache();
@@ -208,8 +231,9 @@ class CustomPacksService {
         const isSpaActive = this.isSpanishPackActive();
         const isBraActive = this.isBrazilianPackActive();
         const isGerActive = this.isGermanPackActive();
+        const isFreActive = this.isFrenchPackActive();
 
-        if (isArgActive || isEngActive || isItaActive || isSpaActive || isBraActive || isGerActive) {
+        if (isArgActive || isEngActive || isItaActive || isSpaActive || isBraActive || isGerActive || isFreActive) {
             // Check by numeric/string ID
             if (team.id !== undefined && team.id !== null) {
                 const idNum = Number(team.id);
@@ -235,6 +259,10 @@ class CustomPacksService {
                 }
                 // German IDs: 401-420 (Bundesliga) and 931-950 (2. Bundesliga)
                 if (isGerActive && ((idNum >= 401 && idNum <= 420) || (idNum >= 931 && idNum <= 950)) && ARG_CLUB_LOGOS_BY_ID[team.id]) {
+                    return ARG_CLUB_LOGOS_BY_ID[team.id];
+                }
+                // French IDs: 601-618 (Ligue 1) and 651-670 (Ligue 2)
+                if (isFreActive && ((idNum >= 601 && idNum <= 618) || (idNum >= 651 && idNum <= 670)) && ARG_CLUB_LOGOS_BY_ID[team.id]) {
                     return ARG_CLUB_LOGOS_BY_ID[team.id];
                 }
                 // General lookup if pack active
@@ -264,7 +292,7 @@ class CustomPacksService {
         const custom = this.getCustomLogo('competitions', keys);
         if (custom) return custom;
 
-        if (this.isArgentinePackActive() || this.isEnglishPackActive() || this.isItalianPackActive() || this.isSpanishPackActive() || this.isBrazilianPackActive() || this.isGermanPackActive()) {
+        if (this.isArgentinePackActive() || this.isEnglishPackActive() || this.isItalianPackActive() || this.isSpanishPackActive() || this.isBrazilianPackActive() || this.isGermanPackActive() || this.isFrenchPackActive()) {
             if (ARG_COMPETITION_LOGOS[competitionId]) {
                 return ARG_COMPETITION_LOGOS[competitionId];
             }
