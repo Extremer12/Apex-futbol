@@ -91,6 +91,29 @@ class CustomPacksService {
         this.notifyListeners();
     }
 
+    public isSpanishPackActive(): boolean {
+        if (typeof window === 'undefined') return false;
+        try {
+            return localStorage.getItem('apex_pack_spanish_active') === 'true';
+        } catch {
+            return false;
+        }
+    }
+
+    public setSpanishPackActive(active: boolean): void {
+        if (typeof window === 'undefined') return;
+        try {
+            if (active) {
+                localStorage.setItem('apex_pack_spanish_active', 'true');
+            } else {
+                localStorage.removeItem('apex_pack_spanish_active');
+            }
+        } catch (e) {
+            console.error('Failed to save spanish pack state:', e);
+        }
+        this.notifyListeners();
+    }
+
     public isBrazilianPackActive(): boolean {
         if (typeof window === 'undefined') return false;
         try {
@@ -159,9 +182,10 @@ class CustomPacksService {
         const isArgActive = this.isArgentinePackActive();
         const isEngActive = this.isEnglishPackActive();
         const isItaActive = this.isItalianPackActive();
+        const isSpaActive = this.isSpanishPackActive();
         const isBraActive = this.isBrazilianPackActive();
 
-        if (isArgActive || isEngActive || isItaActive || isBraActive) {
+        if (isArgActive || isEngActive || isItaActive || isSpaActive || isBraActive) {
             // Check by numeric/string ID
             if (team.id !== undefined && team.id !== null) {
                 const idNum = Number(team.id);
@@ -175,6 +199,10 @@ class CustomPacksService {
                 }
                 // Italian IDs: 501-520 (Serie A) and 961-978 (Serie B)
                 if (isItaActive && ((idNum >= 501 && idNum <= 520) || (idNum >= 961 && idNum <= 978)) && ARG_CLUB_LOGOS_BY_ID[team.id]) {
+                    return ARG_CLUB_LOGOS_BY_ID[team.id];
+                }
+                // Spanish IDs: 201-220 (La Liga) and 901-922 (Segunda División)
+                if (isSpaActive && ((idNum >= 201 && idNum <= 220) || (idNum >= 901 && idNum <= 922)) && ARG_CLUB_LOGOS_BY_ID[team.id]) {
                     return ARG_CLUB_LOGOS_BY_ID[team.id];
                 }
                 // Brazilian IDs: 801-820 (Serie A) and 851-870 (Serie B)
@@ -208,7 +236,7 @@ class CustomPacksService {
         const custom = this.getCustomLogo('competitions', keys);
         if (custom) return custom;
 
-        if (this.isArgentinePackActive() || this.isEnglishPackActive() || this.isItalianPackActive() || this.isBrazilianPackActive()) {
+        if (this.isArgentinePackActive() || this.isEnglishPackActive() || this.isItalianPackActive() || this.isSpanishPackActive() || this.isBrazilianPackActive()) {
             if (ARG_COMPETITION_LOGOS[competitionId]) {
                 return ARG_COMPETITION_LOGOS[competitionId];
             }
@@ -500,6 +528,7 @@ class CustomPacksService {
         this.setArgentinePackActive(false);
         this.setEnglishPackActive(false);
         this.setItalianPackActive(false);
+        this.setSpanishPackActive(false);
         this.setBrazilianPackActive(false);
         await clearAllStoredAssets();
         await this.reloadCache();

@@ -9,6 +9,7 @@ export const CommunityPacksSection: React.FC = () => {
     const [isArgPackActive, setIsArgPackActive] = useState<boolean>(false);
     const [isEngPackActive, setIsEngPackActive] = useState<boolean>(false);
     const [isItaPackActive, setIsItaPackActive] = useState<boolean>(false);
+    const [isSpaPackActive, setIsSpaPackActive] = useState<boolean>(false);
     const [isBraPackActive, setIsBraPackActive] = useState<boolean>(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [progressPercent, setProgressPercent] = useState(0);
@@ -25,6 +26,7 @@ export const CommunityPacksSection: React.FC = () => {
         setIsArgPackActive(customPacksService.isArgentinePackActive());
         setIsEngPackActive(customPacksService.isEnglishPackActive());
         setIsItaPackActive(customPacksService.isItalianPackActive());
+        setIsSpaPackActive(customPacksService.isSpanishPackActive());
         setIsBraPackActive(customPacksService.isBrazilianPackActive());
     };
 
@@ -100,6 +102,28 @@ export const CommunityPacksSection: React.FC = () => {
         }
     };
 
+    // Toggle Spanish Pack (jsDelivr CDN)
+    const handleToggleSpaPack = (enable: boolean) => {
+        setIsProcessing(true);
+        try {
+            customPacksService.setSpanishPackActive(enable);
+            setIsSpaPackActive(enable);
+            setFeedbackMessage({
+                type: 'success',
+                text: enable 
+                    ? '¡Pack de Fútbol Español activado! Se cargaron los escudos de La Liga y La Liga 2 (Segunda División).' 
+                    : 'Pack de Fútbol Español desinstalado. Se restauraron los escudos genéricos neutros.'
+            });
+        } catch (err: any) {
+            setFeedbackMessage({
+                type: 'error',
+                text: 'Error al cambiar el estado del pack: ' + (err.message || err)
+            });
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
     // Toggle Brazilian Pack (jsDelivr CDN)
     const handleToggleBraPack = (enable: boolean) => {
         setIsProcessing(true);
@@ -129,14 +153,16 @@ export const CommunityPacksSection: React.FC = () => {
             customPacksService.setArgentinePackActive(true);
             customPacksService.setEnglishPackActive(true);
             customPacksService.setItalianPackActive(true);
+            customPacksService.setSpanishPackActive(true);
             customPacksService.setBrazilianPackActive(true);
             setIsArgPackActive(true);
             setIsEngPackActive(true);
             setIsItaPackActive(true);
+            setIsSpaPackActive(true);
             setIsBraPackActive(true);
             setFeedbackMessage({
                 type: 'success',
-                text: '¡Todos los packs comunitarios activos! (Argentina, Inglaterra, Italia y Brasil).'
+                text: '¡Todos los packs comunitarios activos! (Argentina, Inglaterra, España, Italia y Brasil).'
             });
         } catch (err: any) {
             setFeedbackMessage({ type: 'error', text: err.message || 'Error al activar los packs.' });
@@ -249,6 +275,7 @@ export const CommunityPacksSection: React.FC = () => {
             setIsArgPackActive(false);
             setIsEngPackActive(false);
             setIsItaPackActive(false);
+            setIsSpaPackActive(false);
             setIsBraPackActive(false);
             setFeedbackMessage({ type: 'success', text: 'Se restablecieron todos los escudos a genéricos neutros.' });
             await refreshState();
@@ -270,7 +297,7 @@ export const CommunityPacksSection: React.FC = () => {
                 </div>
                 
                 <div className="flex items-center gap-2">
-                    {(!isArgPackActive || !isEngPackActive || !isItaPackActive || !isBraPackActive) && (
+                    {(!isArgPackActive || !isEngPackActive || !isItaPackActive || !isSpaPackActive || !isBraPackActive) && (
                         <button
                             onClick={handleEnableAllPacks}
                             disabled={isProcessing}
@@ -280,7 +307,7 @@ export const CommunityPacksSection: React.FC = () => {
                             <span>Activar Todos</span>
                         </button>
                     )}
-                    {(isArgPackActive || isEngPackActive || isItaPackActive || isBraPackActive || stats.total > 0) && (
+                    {(isArgPackActive || isEngPackActive || isItaPackActive || isSpaPackActive || isBraPackActive || stats.total > 0) && (
                         <button
                             onClick={handleClearAll}
                             disabled={isProcessing}
@@ -295,7 +322,7 @@ export const CommunityPacksSection: React.FC = () => {
             </div>
 
             {/* 🌟 Grid de Packs Oficiales Disponibles en jsDelivr */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
                 {/* Tarjeta 1: Fútbol Argentino */}
                 <div className={`rounded-2xl border p-4 transition-all shadow-xl relative overflow-hidden flex flex-col justify-between ${
                     isArgPackActive 
@@ -400,7 +427,59 @@ export const CommunityPacksSection: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Tarjeta 3: Fútbol Italiano */}
+                {/* Tarjeta 3: Fútbol Español */}
+                <div className={`rounded-2xl border p-4 transition-all shadow-xl relative overflow-hidden flex flex-col justify-between ${
+                    isSpaPackActive 
+                        ? 'bg-gradient-to-b from-[#2B1010] to-[#1A0A0A] border-rose-500/40' 
+                        : 'bg-gradient-to-b from-[#161D2E] to-[#0E131F] border-white/10'
+                }`}>
+                    <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-md border border-rose-500/20">
+                                España • 42+ Escudos
+                            </span>
+                            {isSpaPackActive ? (
+                                <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-500/30">
+                                    <CheckCircle2 className="w-3 h-3" /> Activo
+                                </span>
+                            ) : (
+                                <span className="text-[10px] font-bold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700">
+                                    Genérico
+                                </span>
+                            )}
+                        </div>
+                        <h4 className="text-sm font-black text-white uppercase tracking-tight">
+                            La Liga & La Liga 2
+                        </h4>
+                        <p className="text-xs text-slate-400 leading-relaxed">
+                            Real Madrid, FC Barcelona, Atlético, Athletic Club, Betis, Sevilla y más.
+                        </p>
+                    </div>
+
+                    <div className="pt-3 mt-2 border-t border-white/5">
+                        {isSpaPackActive ? (
+                            <button
+                                onClick={() => handleToggleSpaPack(false)}
+                                disabled={isProcessing}
+                                className="w-full py-2 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 text-red-300 hover:text-red-100 text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+                            >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>Desinstalar</span>
+                            </button>
+                        ) : (
+                            <button
+                                onClick={() => handleToggleSpaPack(true)}
+                                disabled={isProcessing}
+                                className="w-full py-2 bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-black uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                                <Globe className="w-3.5 h-3.5 text-white stroke-[2.5]" />
+                                <span>Instalar España</span>
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* Tarjeta 4: Fútbol Italiano */}
                 <div className={`rounded-2xl border p-4 transition-all shadow-xl relative overflow-hidden flex flex-col justify-between ${
                     isItaPackActive 
                         ? 'bg-gradient-to-b from-[#10241A] to-[#0A160F] border-emerald-500/40' 
@@ -452,7 +531,7 @@ export const CommunityPacksSection: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Tarjeta 4: Fútbol Brasileño */}
+                {/* Tarjeta 5: Fútbol Brasileño */}
                 <div className={`rounded-2xl border p-4 transition-all shadow-xl relative overflow-hidden flex flex-col justify-between ${
                     isBraPackActive 
                         ? 'bg-gradient-to-b from-[#222410] to-[#14160A] border-yellow-500/40' 
