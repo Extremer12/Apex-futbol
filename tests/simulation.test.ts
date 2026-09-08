@@ -421,3 +421,96 @@ test('isSeasonCompleted returns true only when all scheduled matches are played 
     assert.equal(isSeasonCompleted(mockGameState), false);
 });
 
+test('startNewSeason successfully transitions seasons without crash and initializes Europa League', async () => {
+    const { startNewSeason } = await import('../services/seasonManager');
+    const { getBaseWeeklyIncome, calculatePrizeMoney } = await import('../services/economy');
+
+    // Verify all 14 leagues have defined positive base weekly income and prize pools
+    for (const lid of Object.values(LeagueId)) {
+        const weekly = getBaseWeeklyIncome(lid);
+        assert.ok(weekly > 100_000, `League ${lid} should have weekly income > 100k, got ${weekly}`);
+        const prize1 = calculatePrizeMoney(lid, 1);
+        const prizeLast = calculatePrizeMoney(lid, 20);
+        assert.ok(prize1 > prizeLast, `Champion prize must be greater than last place for ${lid}`);
+    }
+
+    const testTeam: Team = {
+        id: 701,
+        name: 'Boca Juniors',
+        logo: '',
+        leagueId: LeagueId.LIGA_ARGENTINA,
+        zone: 'A',
+        budget: 50,
+        transferBudget: 25,
+        tier: 'Top',
+        teamMorale: 'Contento',
+        primaryColor: '#003366',
+        secondaryColor: '#FFCC00',
+        squad: [
+            {
+                id: 1,
+                name: 'Wonderkid',
+                position: 'DEL',
+                rating: 74,
+                potential: 75,
+                value: 5,
+                wage: 5000,
+                morale: 'Muy Contento',
+                contractYears: 3,
+                age: 19,
+                stats: { goals: 25, assists: 10, minutes: 2000, appearances: 25, yellowCards: 1, redCards: 0 }
+            }
+        ]
+    };
+
+    const mockGameState: any = {
+        team: testTeam,
+        allTeams: [testTeam],
+        youthAcademy: [],
+        season: 2024,
+        currentDate: new Date('2024-05-30'),
+        currentWeek: 40,
+        currentTurn: 'weekend',
+        schedule: [],
+        leagueTables: {
+            [LeagueId.LIGA_ARGENTINA]: [
+                { teamId: 701, position: 1, played: 30, won: 20, drawn: 5, lost: 5, goalsFor: 50, goalsAgainst: 20, goalDifference: 30, points: 65, promedio: 2.1 }
+            ]
+        },
+        newsFeed: [],
+        electoralPromises: [
+            { id: 'p1', description: 'Mejorar estadio', type: 'stadium', target: 30000, deadline: 2, fulfilled: false, impact: 15 }
+        ],
+        mandate: { startYear: 2024, currentYear: 1, nextElectionSeason: 2028, isElectionYear: false, totalMandates: 1 },
+        fanApproval: { rating: 75, trend: 'up', factors: { results: 5, transfers: 0, finances: 0, promises: 0 } },
+        finances: { balance: 20_000_000, weeklyWages: 200_000, transferBudget: 15_000_000, seasonTickets: 5_000_000 },
+        stadium: { name: 'La Bombonera', capacity: 54000, ticketPrice: 50, maintenanceCost: 100000, facilityLevel: 2 },
+        sponsors: [],
+        cups: {
+            copaLibertadores: { id: 'copa_libertadores', name: 'Libertadores', type: 'groups', phase: 'finished', winnerId: 701, rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
+            championsLeague: { id: 'champions_league', name: 'Champions', type: 'swiss', phase: 'finished', winnerId: 1, rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } }
+        },
+        cinematicQueue: []
+    };
+
+    const nextSeasonState = startNewSeason(mockGameState);
+
+    // Verify season advanced
+    assert.equal(nextSeasonState.season, 2025);
+    assert.equal(nextSeasonState.currentWeek, 0);
+
+    // Verify rating growth respected potential ceiling (rating was 74, potential 75)
+    const playerInNextSeason = nextSeasonState.team.squad.find(p => p.id === 1);
+    assert.ok(playerInNextSeason);
+    assert.ok((playerInNextSeason?.rating ?? 0) <= 75, `Player rating ${playerInNextSeason?.rating} must not exceed potential 75`);
+
+    // Verify Europa League was generated
+    assert.ok(nextSeasonState.cups.europaLeague);
+    assert.equal(nextSeasonState.cups.europaLeague.type, 'swiss');
+
+    // Verify stadium promise was fulfilled
+    const stadiumPromise = nextSeasonState.electoralPromises.find(p => p.id === 'p1');
+    assert.equal(stadiumPromise?.fulfilled, true);
+});
+
+

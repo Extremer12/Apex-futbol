@@ -222,7 +222,12 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
 
         case 'START_NEW_SEASON': {
             if (!state) return null;
-            return startNewSeason(state);
+            try {
+                return startNewSeason(state);
+            } catch (error) {
+                console.error("Error crítico al iniciar nueva temporada:", error);
+                return state;
+            }
         }
 
         default:

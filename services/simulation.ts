@@ -141,13 +141,13 @@ export const simulateMatch = (
     // Apply match effects to players (minutes, appearances, fatigue)
     const processMatchParticipation = (squad: { starters: Player[], subs: Player[] }) => {
         squad.starters.forEach(p => {
-            if (!p.stats) p.stats = { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 };
+            p.stats = p.stats ? { ...p.stats } : { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 };
             p.stats.appearances += 1;
             p.stats.minutes += 90;
             p.condition = Math.max(10, (p.condition ?? 100) - (15 + Math.random() * 15)); // Reduce condition by 15-30
         });
         squad.subs.forEach(p => {
-            if (!p.stats) p.stats = { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 };
+            p.stats = p.stats ? { ...p.stats } : { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 };
             p.stats.appearances += 1;
             p.stats.minutes += 30; // Average sub minutes
             p.condition = Math.max(10, (p.condition ?? 100) - (5 + Math.random() * 10)); // Reduce condition by 5-15
@@ -239,9 +239,11 @@ export const simulateMatch = (
 
             // Cards
             if (Math.random() < 0.15) { // Yellow card
-                if (p.stats) p.stats.yellowCards++;
+                p.stats = p.stats ? { ...p.stats } : { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 };
+                p.stats.yellowCards++;
             } else if (Math.random() < 0.01) { // Red card
-                if (p.stats) p.stats.redCards++;
+                p.stats = p.stats ? { ...p.stats } : { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 };
+                p.stats.redCards++;
                 p.isSuspended = true;
                 p.suspensionWeeksRemaining = 1 + Math.floor(Math.random() * 3);
                 if (isUserMatch) {
@@ -263,8 +265,12 @@ export const simulateMatch = (
             const scorer = getScorer(homeSquad);
             const assister = getAssister(homeSquad, scorer);
             
-            if (scorer.stats) scorer.stats.goals++;
-            if (assister && assister.stats) assister.stats.assists++;
+            scorer.stats = scorer.stats ? { ...scorer.stats } : { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 };
+            scorer.stats.goals++;
+            if (assister) {
+                assister.stats = assister.stats ? { ...assister.stats } : { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 };
+                assister.stats.assists++;
+            }
             
             scorers.push({ playerId: scorer.id, playerName: scorer.name, minute });
             if (isUserMatch) {
@@ -292,8 +298,12 @@ export const simulateMatch = (
             const scorer = getScorer(awaySquad);
             const assister = getAssister(awaySquad, scorer);
             
-            if (scorer.stats) scorer.stats.goals++;
-            if (assister && assister.stats) assister.stats.assists++;
+            scorer.stats = scorer.stats ? { ...scorer.stats } : { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 };
+            scorer.stats.goals++;
+            if (assister) {
+                assister.stats = assister.stats ? { ...assister.stats } : { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 };
+                assister.stats.assists++;
+            }
 
             scorers.push({ playerId: scorer.id, playerName: scorer.name, minute });
             if (isUserMatch) {
@@ -383,9 +393,15 @@ export const simulateMatch = (
                 if (Math.random() > 0.2) homePens++;
                 if (Math.random() > 0.2) awayPens++;
             }
-            while (homePens === awayPens) {
+            let suddenDeathRounds = 0;
+            while (homePens === awayPens && suddenDeathRounds < 25) {
                 if (Math.random() > 0.2) homePens++;
                 if (Math.random() > 0.2) awayPens++;
+                suddenDeathRounds++;
+            }
+            if (homePens === awayPens) {
+                if (Math.random() > 0.5) homePens++;
+                else awayPens++;
             }
             penaltiesResult = { home: homePens, away: awayPens };
             if (isUserMatch) events.push(`🏁 Penales: ${homeTeam.name} ${homePens} - ${awayPens} ${awayTeam.name}`);

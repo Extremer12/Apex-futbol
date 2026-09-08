@@ -449,6 +449,7 @@ export interface GameState {
   preferredLanguage: 'en' | 'es'; // Added for Phase 7: i18n
   achievements?: Achievement[];
   seasonHistory?: SeasonHistoryRecord[];
+  triggeredEventIds?: string[];
 }
 
 export type AchievementCategory = 'trophies' | 'management' | 'transfers' | 'special';

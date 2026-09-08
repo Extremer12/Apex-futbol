@@ -105,6 +105,11 @@ class EventEngine {
      * Trigger a random event if conditions are met
      */
     triggerEvent(gameState: GameState): TriggeredEvent | null {
+        // Hydrate from gameState if present
+        if (gameState.triggeredEventIds) {
+            gameState.triggeredEventIds.forEach(id => this.triggeredEventIds.add(id));
+        }
+
         // Filter events that haven't been triggered and meet conditions
         const eligibleEvents = this.events.filter(event =>
             !this.triggeredEventIds.has(event.id) && this.checkConditions(event, gameState)

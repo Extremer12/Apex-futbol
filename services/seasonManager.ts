@@ -191,8 +191,11 @@ export function startNewSeason(currentState: GameState): GameState {
         const ageMultiplier = p.age && p.age < 23 ? 1.5 : p.age && p.age > 30 ? 0.8 : 1.0;
         p.value = Math.max(0.1, p.value + (performanceBonus * ageMultiplier) - (p.age && p.age > 32 ? 2 : 0));
         
-        // Dynamic Rating Update
-        if (p.age && p.age < 25 && p.stats.appearances > 10) p.rating = Math.min(99, p.rating + Math.floor(Math.random() * 3));
+        // Dynamic Rating Update (bounded by potential if present)
+        if (p.age && p.age < 25 && p.stats.appearances > 10) {
+            const maxRating = p.potential ? Math.min(99, p.potential) : 99;
+            p.rating = Math.min(maxRating, p.rating + Math.floor(Math.random() * 3));
+        }
         if (p.age && p.age > 32) p.rating = Math.max(40, p.rating - Math.floor(Math.random() * 3));
 
         // Reset stats
@@ -316,6 +319,15 @@ export function startNewSeason(currentState: GameState): GameState {
             .filter(Boolean) as Team[];
     };
 
+    const getTeamsRange = (lid: LeagueId, start: number, count: number) => {
+        const table = currentState.leagueTables[lid];
+        if (!table) return [];
+        return [...table].sort((a,b) => b.points - a.points || b.goalDifference - a.goalDifference)
+            .slice(start, start + count)
+            .map(row => teamsAfterProRel.find(t => t.id === row.teamId))
+            .filter(Boolean) as Team[];
+    };
+
     // Champions League Qualification (36 teams for 2026 format)
     const clTeams = [
         ...getTopTeams(LeagueId.PREMIER_LEAGUE, 7),
@@ -327,6 +339,16 @@ export function startNewSeason(currentState: GameState): GameState {
         ...getTopTeams(LeagueId.BRASILEIRAO, 1)
     ].slice(0, 36);
 
+    // Europa League Qualification (36 teams for 2026 format)
+    const elTeams = [
+        ...getTeamsRange(LeagueId.PREMIER_LEAGUE, 7, 7),
+        ...getTeamsRange(LeagueId.LA_LIGA, 7, 7),
+        ...getTeamsRange(LeagueId.BUNDESLIGA, 7, 7),
+        ...getTeamsRange(LeagueId.SERIE_A, 7, 7),
+        ...getTeamsRange(LeagueId.LIGUE_1, 6, 6),
+        ...getTopTeams(LeagueId.CHAMPIONSHIP, 2)
+    ].slice(0, 36);
+
     // Copa Libertadores Qualification (32 teams)
     const libTeams = [
         ...getTopTeams(LeagueId.LIGA_ARGENTINA, 12),
@@ -336,9 +358,11 @@ export function startNewSeason(currentState: GameState): GameState {
     ].slice(0, 32);
 
     const clSwiss = generateSwissPhase(clTeams, 'Champions_League', 8); // 8 matches as per real 2026 format
+    const elSwiss = generateSwissPhase(elTeams, 'Europa_League', 8);
     const libGroups = generateGroupPhase(libTeams, 'Copa_Libertadores'); 
 
     const clFixtures = clSwiss.fixtures.map(m => ({ ...m, week: m.week + 5, isMidweek: true }));
+    const elFixtures = elSwiss.fixtures.map(m => ({ ...m, week: m.week + 5, isMidweek: true }));
     
     // Libertadores group fixtures
     const libGroupFixtures: Match[] = [];
@@ -371,7 +395,7 @@ export function startNewSeason(currentState: GameState): GameState {
     const fullSchedule = [
         ...newSeasonSchedule, 
         ...faCupFixtures, ...carabaoCupFixtures, ...copaDelReyFixtures, ...dfbPokalFixtures, ...coppaItaliaFixtures, ...copaArgentinaFixtures,
-        ...clFixtures, ...libGroupFixtures, ...intercontinentalFixtures
+        ...clFixtures, ...elFixtures, ...libGroupFixtures, ...intercontinentalFixtures
     ];
 
     // 6. Create news items
@@ -461,9 +485,8 @@ export function startNewSeason(currentState: GameState): GameState {
         } else if (promise.type === 'stadium') {
             // Check if stadium capacity increased or upgraded
             const hasExpanded = currentState.stadium && (
-                (currentState.stadium.capacity > (updatedPlayerTeam.stadiumCapacity || 20000)) ||
-                (currentState.stadium.level || 1) > 1 ||
-                (currentState.stadium.upgrades && currentState.stadium.upgrades.length > 0)
+                (currentState.stadium.facilityLevel > 1) ||
+                (currentState.stadium.capacity > (Number(promise.target) || 25000))
             );
             if (hasExpanded) {
                 newlyFulfilled = true;
@@ -601,6 +624,7 @@ export function startNewSeason(currentState: GameState): GameState {
     // Collect promoted/relegated team names for the cinematic summary (focused on user's league context)
     const relegatedTeamNames: string[] = [];
     const promotedTeamNames: string[] = [];
+    const userLeagueId = currentState.team.leagueId;
 
     const userPair = PROMOTION_RELEGATION_PAIRS.find(([d1, d2]) => d1 === userLeagueId || d2 === userLeagueId);
     if (userPair) {
@@ -657,7 +681,6 @@ export function startNewSeason(currentState: GameState): GameState {
     });
 
     // 7.6 Build Season History Record
-    const userLeagueId = currentState.team.leagueId;
     const userTable = currentState.leagueTables[userLeagueId] || [];
     const sortedUserTable = [...userTable].sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference);
     const userRow = sortedUserTable.find(r => r.teamId === currentState.team.id);
@@ -813,6 +836,8 @@ export function startNewSeason(currentState: GameState): GameState {
             europaLeague: {
                 id: 'europa_league', name: 'Europa League', 
                 type: 'swiss', phase: 'swiss',
+                swissTable: elSwiss.table,
+                swissFixtures: elFixtures,
                 rounds: [],
                 currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.europaLeague?.statistics?.championsHistory || [] }
             },

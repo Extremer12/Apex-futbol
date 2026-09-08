@@ -46,7 +46,8 @@ export type GameAction =
     | { type: 'HIRE_SCOUT'; payload: Scout }
     | { type: 'SCOUT_PLAYER'; payload: { playerId: number } }
     | { type: 'SET_CURRENCY'; payload: 'EUR' | 'USD' }
-    | { type: 'SET_LANGUAGE'; payload: 'en' | 'es' };
+    | { type: 'SET_LANGUAGE'; payload: 'en' | 'es' }
+    | { type: 'RECORD_TRIGGERED_EVENT'; payload: string };
 
 export const initialState: GameState | null = null;
 
@@ -67,6 +68,15 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
 
     // All other actions require state to exist
     if (!state) return null;
+
+    if (action.type === 'RECORD_TRIGGERED_EVENT') {
+        const existing = state.triggeredEventIds || [];
+        if (existing.includes(action.payload)) return state;
+        return {
+            ...state,
+            triggeredEventIds: [...existing, action.payload]
+        };
+    }
 
     // UPDATE_TEAM is a simple inline action
     if (action.type === 'UPDATE_TEAM') {

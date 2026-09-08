@@ -49,6 +49,7 @@ function AppLogic() {
     const [coachReport, setCoachReport] = useState<CoachReport | null>(null);
     const [isCoachMeetingOpen, setIsCoachMeetingOpen] = useState(false);
     const [isSeasonEndModalOpen, setIsSeasonEndModalOpen] = useState(false);
+    const [isStartingSeason, setIsStartingSeason] = useState(false);
 
     const [currentEvent, setCurrentEvent] = useState<TriggeredEvent | null>(null);
 
@@ -166,8 +167,10 @@ function AppLogic() {
     }, [performSaveGame, saveMode, closeSaveModal]);
 
     const handleQuitToMenu = useCallback(() => {
-        resetGameData();
-        setAppState('START_SCREEN');
+        if (window.confirm('¿Seguro que deseas salir al menú principal? Los progresos no guardados se perderán.')) {
+            resetGameData();
+            setAppState('START_SCREEN');
+        }
     }, [resetGameData]);
 
     const handleElectionComplete = () => {
@@ -197,9 +200,12 @@ function AppLogic() {
             dispatch({ type: 'UPDATE_STADIUM', payload: updates.stadium });
         }
 
+        // Record event as triggered to prevent duplicates across reloads
+        dispatch({ type: 'RECORD_TRIGGERED_EVENT', payload: currentEvent.event.id });
+
         showNotification(`Evento: ${currentEvent.event.title} - Decisión tomada`);
         setCurrentEvent(null);
-    }, [gameState, currentEvent, showNotification]);
+    }, [gameState, currentEvent, showNotification, dispatch]);
 
     const handleApprovePromotion = useCallback((player: Player) => {
         dispatch({ type: 'PROMOTE_YOUTH', payload: player.id });
@@ -223,9 +229,13 @@ function AppLogic() {
     }, [handleWeekComplete, pendingResults]);
 
     const handleStartNewSeason = useCallback(() => {
-        dispatch({ type: 'START_NEW_SEASON' });
-        setIsSeasonEndModalOpen(false);
-        showNotification('¡Ha comenzado la nueva temporada!', 'success');
+        setIsStartingSeason(true);
+        setTimeout(() => {
+            dispatch({ type: 'START_NEW_SEASON' });
+            setIsSeasonEndModalOpen(false);
+            setIsStartingSeason(false);
+            showNotification('¡Ha comenzado la nueva temporada!', 'success');
+        }, 80);
     }, [dispatch, showNotification]);
 
     const { notification, hideNotification } = useNotification();
@@ -269,6 +279,7 @@ function AppLogic() {
                     gameState={gameState}
                     onClose={() => setIsSeasonEndModalOpen(false)}
                     onStartNewSeason={handleStartNewSeason}
+                    isStarting={isStartingSeason}
                 />
             )}
             
