@@ -4,22 +4,27 @@ import { FullScreenMatchSimulation } from './gameflow/FullScreenMatchSimulation'
 import { GameAction } from '../state/reducer';
 import { Header } from './ui/Header';
 import { BottomNav } from './ui/BottomNav';
-const Dashboard = React.lazy(() => import('./screens/Dashboard').then(m => ({ default: m.Dashboard })));
-const SquadScreen = React.lazy(() => import('./screens/SquadScreen').then(m => ({ default: m.SquadScreen })));
-const TransfersScreen = React.lazy(() => import('./screens/TransfersScreen').then(m => ({ default: m.TransfersScreen })));
+
+// Core screens imported statically for zero-latency instant tab switching
+import { Dashboard } from './screens/Dashboard';
+import { SquadScreen } from './screens/SquadScreen';
+import { TransfersScreen } from './screens/TransfersScreen';
+import { LeagueScreen } from './screens/LeagueScreen';
+import { StaffScreen } from './screens/StaffScreen';
+
+// Secondary screens lazy loaded on-demand
 const FinancesScreen = React.lazy(() => import('./screens/FinancesScreen').then(m => ({ default: m.FinancesScreen })));
-const LeagueScreen = React.lazy(() => import('./screens/LeagueScreen').then(m => ({ default: m.LeagueScreen })));
 const CalendarScreen = React.lazy(() => import('./screens/CalendarScreen').then(m => ({ default: m.CalendarScreen })));
 const StatisticsScreen = React.lazy(() => import('./screens/StatisticsScreen').then(m => ({ default: m.StatisticsScreen })));
 const SettingsScreen = React.lazy(() => import('./screens/SettingsScreen').then(m => ({ default: m.SettingsScreen })));
 const StadiumScreen = React.lazy(() => import('./screens/StadiumScreen').then(m => ({ default: m.StadiumScreen })));
 const SponsorshipScreen = React.lazy(() => import('./screens/SponsorshipScreen').then(m => ({ default: m.SponsorshipScreen })));
 const ElectionScreen = React.lazy(() => import('./screens/ElectionScreen').then(m => ({ default: m.ElectionScreen })));
-import { StaffScreen } from './screens/StaffScreen';
 const ClubHubScreen = React.lazy(() => import('./screens/ClubHubScreen').then(m => ({ default: m.ClubHubScreen })));
 const TrophyRoomScreen = React.lazy(() => import('./screens/TrophyRoomScreen').then(m => ({ default: m.TrophyRoomScreen })));
 
 import { LoadingSpinner } from './icons';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface MainLayoutProps {
     gameState: GameState;
@@ -36,9 +41,8 @@ interface MainLayoutProps {
     currentSaveName: string | null;
     lastSaved: Date | null;
     onElectionComplete: () => void;
+    isSimulating?: boolean;
 }
-
-import { motion, AnimatePresence } from 'framer-motion';
 
 export const MainLayout: React.FC<MainLayoutProps> = ({
     gameState,
@@ -54,7 +58,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
     onQuitToMenu,
     currentSaveName,
     lastSaved,
-    onElectionComplete
+    onElectionComplete,
+    isSimulating
 }) => {
     const renderContent = () => {
         switch (activeScreen) {
@@ -67,6 +72,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                     onWeekComplete={onWeekComplete}
                     allPlayers={allPlayers}
                     dispatch={dispatch}
+                    isSimulating={isSimulating}
                 />;
             case Screen.Squad: return <SquadScreen gameState={gameState} dispatch={dispatch} />;
             case Screen.Transfers: return <TransfersScreen gameState={gameState} dispatch={dispatch} />;
@@ -92,7 +98,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
             );
             case Screen.Club: return <ClubHubScreen gameState={gameState} dispatch={dispatch} />;
             case Screen.Trophies: return <TrophyRoomScreen gameState={gameState} />;
-            default: return <Dashboard gameState={gameState} onPlayMatch={onPlayMatch} matchPhase={matchPhase} pendingResults={pendingResults} onWeekComplete={onWeekComplete} allPlayers={allPlayers} dispatch={dispatch} />;
+            default: return <Dashboard gameState={gameState} onPlayMatch={onPlayMatch} matchPhase={matchPhase} pendingResults={pendingResults} onWeekComplete={onWeekComplete} allPlayers={allPlayers} dispatch={dispatch} isSimulating={isSimulating} />;
         }
     };
 
@@ -123,13 +129,13 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                 <div className="max-w-md mx-auto min-h-screen relative shadow-2xl" style={{ background: 'var(--apex-dark)' }}>
                     <Header gameState={gameState} />
                     <main className="pb-24 overflow-x-hidden">
-                        <AnimatePresence mode="wait">
+                        <AnimatePresence mode="popLayout" initial={false}>
                             <motion.div
                                 key={activeScreen}
-                                initial={{ opacity: 0, x: 10, scale: 0.98 }}
-                                animate={{ opacity: 1, x: 0, scale: 1 }}
-                                exit={{ opacity: 0, x: -10, scale: 0.98 }}
-                                transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
+                                initial={{ opacity: 0, y: 6 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.12, ease: 'easeOut' }}
                             >
                                 <React.Suspense fallback={<div className="flex items-center justify-center py-20"><LoadingSpinner /></div>}>
                                     {renderContent()}

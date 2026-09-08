@@ -63,7 +63,7 @@ function AppLogic() {
     const { showNotification } = useNotification();
     const { viewingPlayer, isSaveModalOpen, saveMode, openSaveModal, closeSaveModal, closePlayerModal } = useModal();
 
-    const allPlayers = useMemo(() => gameState ? gameState.allTeams.flatMap(t => t.squad) : [], [gameState]);
+    const allPlayers = useMemo(() => gameState ? gameState.allTeams.flatMap(t => t.squad) : [], [gameState?.allTeams]);
 
     // Custom Hooks
     const { matchPhase, setMatchPhase, pendingResults, setPendingResults, isSimulating, handlePlayMatch, handleWeekComplete } = useSimulation(gameState, dispatch, setAppState, showNotification, setCurrentEvent);
@@ -297,6 +297,7 @@ function AppLogic() {
                         currentSaveName={currentSaveName}
                         lastSaved={lastSaved}
                         onElectionComplete={handleElectionComplete}
+                        isSimulating={isSimulating}
                     />
                 )}
             </AppRouter>

@@ -21,21 +21,45 @@ interface DashboardProps {
     onWeekComplete: () => void;
     allPlayers: Player[];
     dispatch: React.Dispatch<GameAction>;
+    isSimulating?: boolean;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({
+export const Dashboard: React.FC<DashboardProps> = React.memo(({
     gameState,
     onPlayMatch,
     matchPhase,
     pendingResults,
     onWeekComplete,
     allPlayers,
-    dispatch
+    dispatch,
+    isSimulating = false
 }) => {
     const handlePlayerClick = (playerName: string) => {
         const player = allPlayers.find(p => p.name === playerName);
         if (player) dispatch({ type: 'SET_VIEWING_PLAYER', payload: player });
     };
+
+    // Memoize top market targets with early-exit loop to avoid flatMapping 7,500 players every render
+    const marketTargets = React.useMemo(() => {
+        const playerTeamId = gameState.team.id;
+        const targets: { id: number; name: string; position: string; clubName: string; rating: number }[] = [];
+        for (const t of gameState.allTeams) {
+            if (t.id === playerTeamId) continue;
+            for (const p of t.squad) {
+                if (p.rating >= 80) {
+                    targets.push({ id: p.id, name: p.name, position: p.position, clubName: t.name, rating: p.rating });
+                    if (targets.length >= 3) break;
+                }
+            }
+            if (targets.length >= 3) break;
+        }
+
+        return targets.length >= 3 ? targets : [
+            { id: 9901, name: 'K. Mbappé', position: 'DEL', clubName: 'Real Madrid', rating: 92 },
+            { id: 9902, name: 'H. Kane', position: 'DEL', clubName: 'Bayern München', rating: 90 },
+            { id: 9903, name: 'F. Wirtz', position: 'CEN', clubName: 'Bayer Leverkusen', rating: 88 }
+        ];
+    }, [gameState.team.id, gameState.allTeams]);
 
     return (
         <div className="relative min-h-screen">
@@ -83,6 +107,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             matchPhase={matchPhase} 
                             pendingResults={pendingResults} 
                             dispatch={dispatch} 
+                            isSimulating={isSimulating}
                         />
                     </div>
                     <div className="lg:col-span-5">
@@ -151,26 +176,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             <span className="text-[9px] font-black tracking-[0.2em] text-white/40 uppercase">Actualizaciones de Mercado</span>
                         </div>
                         <div className="p-4 space-y-3">
-                            {(() => {
-                                const playerTeamId = gameState.team.id;
-                                const otherTeams = gameState.allTeams.filter(t => t.id !== playerTeamId);
-                                const otherPlayers = otherTeams.flatMap(t => t.squad.map(p => ({ ...p, clubName: t.name })));
-                                const targets = otherPlayers
-                                    .filter(p => p.rating >= 80)
-                                    .slice(0, 3);
-
-                                const displayList = targets.length >= 3 ? targets : [
-                                    { id: 9901, name: 'K. Mbappé', position: 'DEL', clubName: 'Real Madrid', rating: 92 },
-                                    { id: 9902, name: 'H. Kane', position: 'DEL', clubName: 'Bayern München', rating: 90 },
-                                    { id: 9903, name: 'F. Wirtz', position: 'CEN', clubName: 'Bayer Leverkusen', rating: 88 }
-                                ];
-
-                                return displayList.map((p, i) => (
-                                    <div 
-                                        key={p.id || i} 
-                                        onClick={() => handlePlayerClick(p.name)}
-                                        className="flex items-center gap-3 p-2.5 bg-black/20 rounded-xl border border-white/5 hover:border-white/10 transition-colors cursor-pointer group"
-                                    >
+                            {marketTargets.map((p, i) => (
+                                <div 
+                                    key={p.id || i} 
+                                    onClick={() => handlePlayerClick(p.name)}
+                                    className="flex items-center gap-3 p-2.5 bg-black/20 rounded-xl border border-white/5 hover:border-white/10 transition-colors cursor-pointer group"
+                                >
                                         <div className="w-10 h-10 rounded-full border border-white/10 bg-slate-800 flex items-center justify-center shrink-0 overflow-hidden">
                                             <img 
                                                 src={getPlayerImage(p.name)} 
@@ -189,12 +200,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                             {i % 2 === 0 ? 'Objetivo' : 'Rumor'}
                                         </span>
                                     </div>
-                                ));
-                            })()}
+                                ))}
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     );
-};
+});

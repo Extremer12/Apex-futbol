@@ -15,6 +15,7 @@ interface HeroSectionProps {
     matchPhase: MatchPhase;
     pendingResults: PendingSimulationResults | null;
     dispatch: React.Dispatch<GameAction>;
+    isSimulating?: boolean;
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
@@ -23,7 +24,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     onWeekComplete,
     matchPhase,
     pendingResults,
-    dispatch
+    dispatch,
+    isSimulating = false
 }) => {
     useEffect(() => {
         // Auto-advance logic for weeks without player matches
@@ -53,9 +55,17 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 <p className="text-[10px] text-white/40 uppercase tracking-[0.2em] mb-8 max-w-xs">No hay partidos programados. La plantilla está enfocada en entrenamiento táctico y recuperación.</p>
                 <button 
                     onClick={onPlayMatch}
-                    className="apex-btn-gold w-full max-w-xs"
+                    disabled={isSimulating}
+                    className={`apex-btn-gold w-full max-w-xs flex items-center justify-center gap-2 ${isSimulating ? 'opacity-70 cursor-not-allowed' : ''}`}
                 >
-                    Simular Semana
+                    {isSimulating ? (
+                        <>
+                            <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                            <span>Simulando...</span>
+                        </>
+                    ) : (
+                        <span>Simular Semana</span>
+                    )}
                 </button>
             </div>
         );
@@ -249,10 +259,20 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
             <button 
                 onClick={onPlayMatch}
-                className="w-full py-4 bg-gradient-to-r from-[var(--apex-gold)] to-yellow-600 text-black font-black text-xs uppercase tracking-[0.2em] rounded-xl shadow-[0_10px_30px_rgba(200,168,78,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group/btn cursor-pointer"
+                disabled={isSimulating}
+                className={`w-full py-4 bg-gradient-to-r from-[var(--apex-gold)] to-yellow-600 text-black font-black text-xs uppercase tracking-[0.2em] rounded-xl shadow-[0_10px_30px_rgba(200,168,78,0.3)] transition-all flex items-center justify-center gap-2 group/btn ${isSimulating ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98] cursor-pointer'}`}
             >
-                <span>{playButtonText}</span>
-                <svg className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" /></svg>
+                {isSimulating ? (
+                    <>
+                        <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                        <span>Simulando...</span>
+                    </>
+                ) : (
+                    <>
+                        <span>{playButtonText}</span>
+                        <svg className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    </>
+                )}
             </button>
         </div>
     );
