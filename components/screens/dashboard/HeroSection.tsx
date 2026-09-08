@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react';
-import { GameState, MatchPhase } from '../../../types';
+import { GameState, MatchPhase, CupCompetition } from '../../../types';
 import { GameAction } from '../../../state/reducer';
 import { TrophyIcon, UsersIcon } from '../../icons';
 import { TeamLogo } from '../../../data/teams/helpers';
+import { isSeasonCompleted, getSeasonSummaryData } from '../../../services/seasonUtils';
 
 export interface PendingSimulationResults {
     playerMatchResult: { homeScore: number; awayScore: number; events?: string[] } | null;
@@ -16,6 +17,8 @@ interface HeroSectionProps {
     pendingResults: PendingSimulationResults | null;
     dispatch: React.Dispatch<GameAction>;
     isSimulating?: boolean;
+    onStartNewSeason?: () => void;
+    onOpenSeasonEndModal?: () => void;
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
@@ -25,21 +28,113 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     matchPhase,
     pendingResults,
     dispatch,
-    isSimulating = false
+    isSimulating = false,
+    onStartNewSeason,
+    onOpenSeasonEndModal
 }) => {
+    const isSeasonEnd = isSeasonCompleted(gameState);
+
     useEffect(() => {
-        // Auto-advance logic for weeks without player matches
-        if (matchPhase === 'LIVE' && pendingResults && !pendingResults.playerMatchResult) {
-            // Check if there are important things to stop for
-            const hasNewOffers = gameState.incomingOffers.length > 0;
-            const isTransferWindow = [0, 6, 7].includes(new Date(gameState.currentDate).getMonth());
-            
-            // If it's transfer window AND we have offers, maybe we should stop? 
-            // Actually, the user wants it fast, so we only stop if they HAVE to play a match or if there's a major event.
-            // But if there's NO match result, it means it's a simulated week.
+        // Auto-advance logic for weeks without player matches (only during regular season)
+        if (!isSeasonEnd && matchPhase === 'LIVE' && pendingResults && !pendingResults.playerMatchResult) {
             onWeekComplete();
         }
-    }, [matchPhase, pendingResults, onWeekComplete, gameState.incomingOffers.length, gameState.currentDate]);
+    }, [matchPhase, pendingResults, onWeekComplete, isSeasonEnd]);
+
+    if (isSeasonEnd) {
+        const summary = getSeasonSummaryData(gameState);
+        return (
+            <div className="apex-card p-6 sm:p-8 flex flex-col justify-between min-h-[300px] relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none -mr-16 -mt-16" />
+                
+                <div>
+                    <div className="flex items-center justify-between mb-4">
+                        <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1.5">
+                            <TrophyIcon className="w-3.5 h-3.5 text-amber-400" />
+                            Fin de Temporada {summary.season}
+                        </span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                            Torneo Concluido
+                        </span>
+                    </div>
+
+                    <h2 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight mb-2">
+                        Temporada {summary.season} Finalizada
+                    </h2>
+                    <p className="text-xs text-slate-300/80 max-w-lg mb-6 leading-relaxed">
+                        Se han disputado todos los partidos oficiales. Se han definido los títulos, descensos a Primera Nacional y ascensos a la máxima categoría.
+                    </p>
+
+                    {/* Quick highlights */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                        {summary.isArgentina ? (
+                            <>
+                                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between">
+                                    <span className="text-[10px] font-bold uppercase text-amber-400">Campeón Apertura</span>
+                                    <span className="text-xs font-black text-white truncate max-w-[140px] text-right">
+                                        {summary.aperturaChampion?.name || 'En Disputa'}
+                                    </span>
+                                </div>
+                                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between">
+                                    <span className="text-[10px] font-bold uppercase text-amber-400">Campeón Clausura</span>
+                                    <span className="text-xs font-black text-white truncate max-w-[140px] text-right">
+                                        {summary.clausuraChampion?.name || 'En Disputa'}
+                                    </span>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between sm:col-span-2">
+                                <span className="text-[10px] font-bold uppercase text-amber-400">Campeón de Liga</span>
+                                <span className="text-xs font-black text-white">
+                                    {summary.leagueChampion?.name || 'Desconocido'}
+                                </span>
+                            </div>
+                        )}
+
+                        <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between">
+                            <span className="text-[10px] font-bold uppercase text-emerald-400">⬆ Ascienden a 1ª</span>
+                            <span className="text-xs font-bold text-white truncate max-w-[140px] text-right">
+                                {summary.promotedTeams.map(t => t.name).join(', ') || '-'}
+                            </span>
+                        </div>
+                        <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-between">
+                            <span className="text-[10px] font-bold uppercase text-rose-400">⬇ Descienden</span>
+                            <span className="text-xs font-bold text-white truncate max-w-[140px] text-right">
+                                {summary.relegatedTeams.map(t => t.name).join(', ') || '-'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+                    <button
+                        onClick={onStartNewSeason}
+                        disabled={isSimulating}
+                        className="apex-btn-gold w-full sm:w-auto px-6 py-3 flex-1 flex items-center justify-center gap-2 font-black text-xs uppercase tracking-wider"
+                    >
+                        {isSimulating ? (
+                            <>
+                                <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                                <span>Iniciando Temporada {summary.season + 1}...</span>
+                            </>
+                        ) : (
+                            <span>Comenzar Temporada {summary.season + 1} ➔</span>
+                        )}
+                    </button>
+
+                    {onOpenSeasonEndModal && (
+                        <button
+                            onClick={onOpenSeasonEndModal}
+                            className="w-full sm:w-auto px-4 py-3 rounded-xl border border-white/10 hover:border-white/20 bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase tracking-wider transition-colors"
+                        >
+                            Ver Resumen Detallado
+                        </button>
+                    )}
+                </div>
+            </div>
+        );
+    }
 
     const nextWeek = gameState.currentTurn === 'midweek' ? gameState.currentWeek + 1 : gameState.currentWeek;
     const isMidweek = gameState.currentTurn === 'midweek';
@@ -80,11 +175,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
     // Analyze match stage details (Playoffs, Finals, Semis, Cups, League)
     const getMatchStageDetails = () => {
-        const allCups = Object.values(gameState.cups || {});
+        const allCups = Object.values(gameState.cups || {}) as Array<CupCompetition | undefined>;
         for (const cup of allCups) {
             if (!cup || !cup.rounds) continue;
             for (let rIdx = 0; rIdx < cup.rounds.length; rIdx++) {
                 const round = cup.rounds[rIdx];
+                if (!round) continue;
                 const found = round.fixtures?.some(f => 
                     f.week === nextMatch.week && 
                     !!f.isMidweek === !!nextMatch.isMidweek && 

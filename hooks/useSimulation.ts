@@ -7,6 +7,7 @@ import { eventEngine, TriggeredEvent } from '../services/eventEngine';
 import { handleCupProgression } from '../services/simulation/cupProgressionHandler';
 import { detectCinematicEvents } from '../services/simulation/cinematicsDetector';
 import { generateWeeklyNewsAndOffers } from '../services/simulation/simulationNewsHandler';
+import { isSeasonCompleted } from '../services/seasonUtils';
 
 export function useSimulation(
     gameState: GameState | null,
@@ -21,6 +22,11 @@ export function useSimulation(
 
     const handlePlayMatch = useCallback(async () => {
         if (!gameState || isSimulating) return;
+
+        if (isSeasonCompleted(gameState)) {
+            showNotification('La temporada ha finalizado. Inicia la nueva temporada desde el panel.', 'info');
+            return;
+        }
 
         try {
             setIsSimulating(true);

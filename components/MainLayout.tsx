@@ -42,6 +42,8 @@ interface MainLayoutProps {
     lastSaved: Date | null;
     onElectionComplete: () => void;
     isSimulating?: boolean;
+    onStartNewSeason?: () => void;
+    onOpenSeasonEndModal?: () => void;
 }
 
 export const MainLayout: React.FC<MainLayoutProps> = ({
@@ -59,7 +61,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
     currentSaveName,
     lastSaved,
     onElectionComplete,
-    isSimulating
+    isSimulating,
+    onStartNewSeason,
+    onOpenSeasonEndModal
 }) => {
     const renderContent = () => {
         switch (activeScreen) {
@@ -73,6 +77,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                     allPlayers={allPlayers}
                     dispatch={dispatch}
                     isSimulating={isSimulating}
+                    onStartNewSeason={onStartNewSeason}
+                    onOpenSeasonEndModal={onOpenSeasonEndModal}
                 />;
             case Screen.Squad: return <SquadScreen gameState={gameState} dispatch={dispatch} />;
             case Screen.Transfers: return <TransfersScreen gameState={gameState} dispatch={dispatch} />;
@@ -98,7 +104,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
             );
             case Screen.Club: return <ClubHubScreen gameState={gameState} dispatch={dispatch} />;
             case Screen.Trophies: return <TrophyRoomScreen gameState={gameState} />;
-            default: return <Dashboard gameState={gameState} onPlayMatch={onPlayMatch} matchPhase={matchPhase} pendingResults={pendingResults} onWeekComplete={onWeekComplete} allPlayers={allPlayers} dispatch={dispatch} isSimulating={isSimulating} />;
+            default: return <Dashboard gameState={gameState} onPlayMatch={onPlayMatch} matchPhase={matchPhase} pendingResults={pendingResults} onWeekComplete={onWeekComplete} allPlayers={allPlayers} dispatch={dispatch} isSimulating={isSimulating} onStartNewSeason={onStartNewSeason} onOpenSeasonEndModal={onOpenSeasonEndModal} />;
         }
     };
 

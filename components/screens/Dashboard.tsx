@@ -22,6 +22,8 @@ interface DashboardProps {
     allPlayers: Player[];
     dispatch: React.Dispatch<GameAction>;
     isSimulating?: boolean;
+    onStartNewSeason?: () => void;
+    onOpenSeasonEndModal?: () => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = React.memo(({
@@ -32,7 +34,9 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({
     onWeekComplete,
     allPlayers,
     dispatch,
-    isSimulating = false
+    isSimulating = false,
+    onStartNewSeason,
+    onOpenSeasonEndModal
 }) => {
     const handlePlayerClick = (playerName: string) => {
         const player = allPlayers.find(p => p.name === playerName);
@@ -108,6 +112,8 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({
                             pendingResults={pendingResults} 
                             dispatch={dispatch} 
                             isSimulating={isSimulating}
+                            onStartNewSeason={onStartNewSeason}
+                            onOpenSeasonEndModal={onOpenSeasonEndModal}
                         />
                     </div>
                     <div className="lg:col-span-5">

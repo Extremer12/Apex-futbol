@@ -216,8 +216,37 @@ export function startNewSeason(currentState: GameState): GameState {
             const sorted1 = [...div1Table].sort((a,b) => b.points - a.points || b.goalDifference - a.goalDifference);
             const sorted2 = [...div2Table].sort((a,b) => b.points - a.points || b.goalDifference - a.goalDifference);
             
-            const relegatedNames = sorted1.slice(-3).map(r => processedTeams.find(t => t.id === r.teamId)?.name).filter(Boolean);
-            const promotedNames = sorted2.slice(0, 3).map(p => processedTeams.find(t => t.id === p.teamId)?.name).filter(Boolean);
+            let relegatedNames: string[] = [];
+            let promotedNames: string[] = [];
+
+            if (div1 === LeagueId.LIGA_ARGENTINA) {
+                const lastAnual = sorted1[sorted1.length - 1];
+                if (lastAnual) {
+                    const t = processedTeams.find(tm => tm.id === lastAnual.teamId);
+                    if (t) relegatedNames.push(t.name);
+                }
+                const sortedByPromedio = [...div1Table].sort((a, b) => (a.promedio ?? 0) - (b.promedio ?? 0));
+                for (const r of sortedByPromedio) {
+                    if (!lastAnual || r.teamId !== lastAnual.teamId) {
+                        const t = processedTeams.find(tm => tm.id === r.teamId);
+                        if (t) relegatedNames.push(t.name);
+                        break;
+                    }
+                }
+                const promo1Id = currentState.cups.nacionalPrimerAscenso?.winnerId || div2Table.filter(r => r.zone === 'A').sort((a,b) => b.points - a.points)[0]?.teamId;
+                const promo2Id = currentState.cups.nacionalReducido?.winnerId || div2Table.filter(r => r.zone === 'B').sort((a,b) => b.points - a.points)[0]?.teamId;
+                if (promo1Id) {
+                    const t = processedTeams.find(tm => tm.id === promo1Id);
+                    if (t) promotedNames.push(t.name);
+                }
+                if (promo2Id && promo2Id !== promo1Id) {
+                    const t = processedTeams.find(tm => tm.id === promo2Id);
+                    if (t) promotedNames.push(t.name);
+                }
+            } else {
+                relegatedNames = sorted1.slice(-3).map(r => processedTeams.find(t => t.id === r.teamId)?.name).filter(Boolean) as string[];
+                promotedNames = sorted2.slice(0, 3).map(p => processedTeams.find(t => t.id === p.teamId)?.name).filter(Boolean) as string[];
+            }
             
             if (relegatedNames.length > 0 || promotedNames.length > 0) {
                 const leagueName = div1.replace(/_/g, ' ');
@@ -320,8 +349,8 @@ export function startNewSeason(currentState: GameState): GameState {
     });
 
     // Intercontinental Cup
-    const lastLibertadoresWinner = currentState.cups.copaLibertadores.winnerId;
-    const lastChampionsWinner = currentState.cups.championsLeague.winnerId;
+    const lastLibertadoresWinner = currentState.cups.copaLibertadores?.winnerId;
+    const lastChampionsWinner = currentState.cups.championsLeague?.winnerId;
     
     let intercontinentalFixtures: Match[] = [];
     if (lastLibertadoresWinner && lastChampionsWinner) {
@@ -569,21 +598,49 @@ export function startNewSeason(currentState: GameState): GameState {
         }
     }
 
-    // Collect promoted/relegated team names for the cinematic summary
+    // Collect promoted/relegated team names for the cinematic summary (focused on user's league context)
     const relegatedTeamNames: string[] = [];
     const promotedTeamNames: string[] = [];
-    PROMOTION_RELEGATION_PAIRS.forEach(([div1, div2]) => {
-        const d1t = currentState.leagueTables[div1] || [];
-        const d2t = currentState.leagueTables[div2] || [];
-        if (d1t.length > 0) {
+
+    const userPair = PROMOTION_RELEGATION_PAIRS.find(([d1, d2]) => d1 === userLeagueId || d2 === userLeagueId);
+    if (userPair) {
+        const [div1, div2] = userPair;
+        if (div1 === LeagueId.LIGA_ARGENTINA) {
+            const d1t = currentState.leagueTables[div1] || [];
+            const d2t = currentState.leagueTables[div2] || [];
             const s1 = [...d1t].sort((a,b) => b.points - a.points || b.goalDifference - a.goalDifference);
-            s1.slice(-3).forEach(r => { const t = processedTeams.find(tm => tm.id === r.teamId); if (t) relegatedTeamNames.push(t.name); });
-        }
-        if (d2t.length > 0) {
+            const lastAnual = s1[s1.length - 1];
+            if (lastAnual) {
+                const t = processedTeams.find(tm => tm.id === lastAnual.teamId);
+                if (t) relegatedTeamNames.push(t.name);
+            }
+            const sProm = [...d1t].sort((a, b) => (a.promedio ?? 0) - (b.promedio ?? 0));
+            for (const r of sProm) {
+                if (!lastAnual || r.teamId !== lastAnual.teamId) {
+                    const t = processedTeams.find(tm => tm.id === r.teamId);
+                    if (t) relegatedTeamNames.push(t.name);
+                    break;
+                }
+            }
+            const promo1Id = currentState.cups.nacionalPrimerAscenso?.winnerId || d2t.filter(r => r.zone === 'A').sort((a,b) => b.points - a.points)[0]?.teamId;
+            const promo2Id = currentState.cups.nacionalReducido?.winnerId || d2t.filter(r => r.zone === 'B').sort((a,b) => b.points - a.points)[0]?.teamId;
+            if (promo1Id) {
+                const t = processedTeams.find(tm => tm.id === promo1Id);
+                if (t) promotedTeamNames.push(t.name);
+            }
+            if (promo2Id && promo2Id !== promo1Id) {
+                const t = processedTeams.find(tm => tm.id === promo2Id);
+                if (t) promotedTeamNames.push(t.name);
+            }
+        } else {
+            const d1t = currentState.leagueTables[div1] || [];
+            const d2t = currentState.leagueTables[div2] || [];
+            const s1 = [...d1t].sort((a,b) => b.points - a.points || b.goalDifference - a.goalDifference);
             const s2 = [...d2t].sort((a,b) => b.points - a.points || b.goalDifference - a.goalDifference);
+            s1.slice(-3).forEach(r => { const t = processedTeams.find(tm => tm.id === r.teamId); if (t) relegatedTeamNames.push(t.name); });
             s2.slice(0, 3).forEach(r => { const t = processedTeams.find(tm => tm.id === r.teamId); if (t) promotedTeamNames.push(t.name); });
         }
-    });
+    }
 
     // Season summary (always at the end of the queue)
     newCinematicQueue.push({
@@ -664,6 +721,7 @@ export function startNewSeason(currentState: GameState): GameState {
         season: newSeasonYear,
         currentDate: newDate,
         currentWeek: 0,
+        currentTurn: 'weekend',
         schedule: fullSchedule,
         leagueTables: newLeagueTables,
         newsFeed: finalNewsFeed.slice(0, 20),
@@ -688,13 +746,13 @@ export function startNewSeason(currentState: GameState): GameState {
                 id: 'fa_cup', name: 'FA Cup', 
                 type: 'knockout', phase: 'knockout',
                 rounds: [{ name: 'Round 1', fixtures: faCupFixtures, completed: false }],
-                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.faCup.statistics?.championsHistory || [] }
+                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.faCup?.statistics?.championsHistory || [] }
             },
             carabaoCup: {
                 id: 'carabao_cup', name: 'Carabao Cup', 
                 type: 'knockout', phase: 'knockout',
                 rounds: [{ name: 'Round 1', fixtures: carabaoCupFixtures, completed: false }],
-                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.carabaoCup.statistics?.championsHistory || [] }
+                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.carabaoCup?.statistics?.championsHistory || [] }
             },
             copaDelRey: {
                 id: 'copa_del_rey', name: 'Copa del Rey', 
@@ -719,6 +777,30 @@ export function startNewSeason(currentState: GameState): GameState {
                 type: 'knockout', phase: 'knockout',
                 rounds: [{ name: 'Round 1', fixtures: copaArgentinaFixtures, completed: false }],
                 currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.copaArgentina?.statistics?.championsHistory || [] }
+            },
+            aperturaPlayoffs: {
+                id: 'apertura_playoffs', name: 'Playoffs Apertura', 
+                type: 'knockout', phase: 'knockout',
+                rounds: [],
+                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.aperturaPlayoffs?.statistics?.championsHistory || [] }
+            },
+            clausuraPlayoffs: {
+                id: 'clausura_playoffs', name: 'Playoffs Clausura', 
+                type: 'knockout', phase: 'knockout',
+                rounds: [],
+                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.clausuraPlayoffs?.statistics?.championsHistory || [] }
+            },
+            nacionalPrimerAscenso: {
+                id: 'nacional_primer_ascenso', name: 'Final 1º Ascenso', 
+                type: 'knockout', phase: 'knockout',
+                rounds: [],
+                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.nacionalPrimerAscenso?.statistics?.championsHistory || [] }
+            },
+            nacionalReducido: {
+                id: 'nacional_reducido', name: 'Torneo Reducido', 
+                type: 'knockout', phase: 'knockout',
+                rounds: [],
+                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.nacionalReducido?.statistics?.championsHistory || [] }
             },
             championsLeague: {
                 id: 'champions_league', name: 'Champions League', 

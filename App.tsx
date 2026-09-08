@@ -21,6 +21,7 @@ import { EventModal } from './components/ui/EventModal';
 import { CoachMeetingModal } from './components/ui/CoachMeetingModal';
 import { CoachReport, Player } from './types';
 import { CinematicOverlay } from './components/cinematics/CinematicOverlay';
+import { SeasonEndModal } from './components/screens/season/SeasonEndModal';
 
 // Services
 import { ElectionResponse, generateNews, generateMatchReport, generateTransferOffer, generatePlayerOfTheWeekNews, generateImportantNews } from './services/gameLogic';
@@ -47,6 +48,7 @@ function AppLogic() {
     // Coach Meeting State
     const [coachReport, setCoachReport] = useState<CoachReport | null>(null);
     const [isCoachMeetingOpen, setIsCoachMeetingOpen] = useState(false);
+    const [isSeasonEndModalOpen, setIsSeasonEndModalOpen] = useState(false);
 
     const [currentEvent, setCurrentEvent] = useState<TriggeredEvent | null>(null);
 
@@ -220,6 +222,12 @@ function AppLogic() {
         }
     }, [handleWeekComplete, pendingResults]);
 
+    const handleStartNewSeason = useCallback(() => {
+        dispatch({ type: 'START_NEW_SEASON' });
+        setIsSeasonEndModalOpen(false);
+        showNotification('¡Ha comenzado la nueva temporada!', 'success');
+    }, [dispatch, showNotification]);
+
     const { notification, hideNotification } = useNotification();
 
     return (
@@ -254,6 +262,13 @@ function AppLogic() {
                     report={coachReport}
                     coachName={gameState.team.coach?.name || 'el Míster'}
                     onApprovePromotion={handleApprovePromotion}
+                />
+            )}
+            {isSeasonEndModalOpen && gameState && (
+                <SeasonEndModal
+                    gameState={gameState}
+                    onClose={() => setIsSeasonEndModalOpen(false)}
+                    onStartNewSeason={handleStartNewSeason}
                 />
             )}
             
@@ -298,6 +313,8 @@ function AppLogic() {
                         lastSaved={lastSaved}
                         onElectionComplete={handleElectionComplete}
                         isSimulating={isSimulating}
+                        onStartNewSeason={handleStartNewSeason}
+                        onOpenSeasonEndModal={() => setIsSeasonEndModalOpen(true)}
                     />
                 )}
             </AppRouter>

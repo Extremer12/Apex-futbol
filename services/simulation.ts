@@ -1192,16 +1192,30 @@ export const handlePromotionRelegation = (allTeams: Team[], leagueTables: Record
             promotedIds = sortedDiv2.slice(0, 3).map(r => r.teamId);
         }
 
-        // Get zones of relegated teams to assign to promoted teams in Liga Argentina
+        // Preserve zone balance for Liga Argentina (15 in A, 15 in B) and Primera Nacional (19 in A, 19 in B)
         const relegatedZones = relegatedIds.map(id => allTeams.find(t => t.id === id)?.zone || 'A');
+        const promotedZones = promotedIds.map(id => allTeams.find(t => t.id === id)?.zone || 'A');
 
-        let promotedIndex = 0;
+        const relZoneMap = new Map<number, 'A' | 'B'>();
+        const promZoneMap = new Map<number, 'A' | 'B'>();
+
+        // Promoted teams take the zones vacated by relegated teams in div1
+        promotedIds.forEach((pId, idx) => {
+            promZoneMap.set(pId, (relegatedZones[idx] || (idx % 2 === 0 ? 'A' : 'B')) as 'A' | 'B');
+        });
+
+        // Relegated teams take the zones vacated by promoted teams in div2
+        relegatedIds.forEach((rId, idx) => {
+            relZoneMap.set(rId, (promotedZones[idx] || (idx % 2 === 0 ? 'A' : 'B')) as 'A' | 'B');
+        });
+
         updatedTeams = updatedTeams.map(team => {
             if (relegatedIds.includes(team.id)) {
-                return { ...team, leagueId: div2, zone: relegatedZones[promotedIndex % 2] || 'A' };
+                const newZone = div1 === LeagueId.LIGA_ARGENTINA ? relZoneMap.get(team.id) || 'A' : team.zone;
+                return { ...team, leagueId: div2, zone: newZone };
             }
             if (promotedIds.includes(team.id)) {
-                const assignedZone = div1 === LeagueId.LIGA_ARGENTINA ? relegatedZones[promotedIndex++] || 'A' : undefined;
+                const assignedZone = div1 === LeagueId.LIGA_ARGENTINA ? promZoneMap.get(team.id) || 'A' : undefined;
                 return { ...team, leagueId: div1, zone: assignedZone };
             }
             return team;

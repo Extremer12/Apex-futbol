@@ -312,3 +312,112 @@ test('handlePromotionRelegation promotes top teams and relegates bottom teams', 
     assert.equal(updatedTeams.find(t => t.id === 102)?.leagueId, LeagueId.PREMIER_LEAGUE);
     assert.equal(updatedTeams.find(t => t.id === 103)?.leagueId, LeagueId.PREMIER_LEAGUE);
 });
+
+test('handlePromotionRelegation preserves exact 15 Zone A and 15 Zone B teams for Liga Argentina', () => {
+    // 30 teams for Liga Argentina: 15 in Zone A, 15 in Zone B
+    const argTeams: Team[] = Array.from({ length: 30 }, (_, i) => ({
+        id: 700 + i + 1,
+        name: `Arg Team ${i + 1}`,
+        leagueId: LeagueId.LIGA_ARGENTINA,
+        zone: i < 15 ? 'A' : 'B',
+        budget: 1000000,
+        transferBudget: 500000,
+        tier: 'Mid',
+        teamMorale: 'Normal',
+        squad: []
+    }));
+
+    // 38 teams for Primera Nacional: 19 in Zone A, 19 in Zone B
+    const pnTeams: Team[] = Array.from({ length: 38 }, (_, i) => ({
+        id: 800 + i + 1,
+        name: `PN Team ${i + 1}`,
+        leagueId: LeagueId.PRIMERA_NACIONAL,
+        zone: i < 19 ? 'A' : 'B',
+        budget: 500000,
+        transferBudget: 100000,
+        tier: 'Lower',
+        teamMorale: 'Normal',
+        squad: []
+    }));
+
+    const allTeams = [...argTeams, ...pnTeams];
+
+    // Arg table: last place team 730 (Zone B), worst promedio team 715 (Zone A)
+    const argTable: LeagueTableRow[] = argTeams.map((t, idx) => ({
+        teamId: t.id,
+        position: idx + 1,
+        played: 32,
+        won: 30 - idx,
+        drawn: 0,
+        lost: idx + 2,
+        goalsFor: 40,
+        goalsAgainst: 20 + idx,
+        goalDifference: 20 - idx,
+        points: (30 - idx) * 3,
+        form: [],
+        zone: t.zone,
+        promedio: idx === 14 ? 0.5 : (30 - idx) * 0.1 // idx 14 is team 715 (Zone A) with worst promedio
+    }));
+
+    const pnTable: LeagueTableRow[] = pnTeams.map((t, idx) => ({
+        teamId: t.id,
+        position: idx + 1,
+        played: 38,
+        won: 38 - idx,
+        drawn: 0,
+        lost: idx,
+        goalsFor: 50,
+        goalsAgainst: 20,
+        goalDifference: 30,
+        points: (38 - idx) * 3,
+        form: [],
+        zone: t.zone
+    }));
+
+    const leagueTables: any = {
+        [LeagueId.LIGA_ARGENTINA]: argTable,
+        [LeagueId.PRIMERA_NACIONAL]: pnTable
+    };
+
+    const updated = handlePromotionRelegation(allTeams, leagueTables);
+
+    const newArgTeams = updated.filter(t => t.leagueId === LeagueId.LIGA_ARGENTINA);
+    const newPnTeams = updated.filter(t => t.leagueId === LeagueId.PRIMERA_NACIONAL);
+
+    assert.equal(newArgTeams.length, 30, 'Liga Argentina must have exactly 30 teams');
+    assert.equal(newArgTeams.filter(t => t.zone === 'A').length, 15, 'Liga Argentina Zone A must have exactly 15 teams');
+    assert.equal(newArgTeams.filter(t => t.zone === 'B').length, 15, 'Liga Argentina Zone B must have exactly 15 teams');
+
+    assert.equal(newPnTeams.length, 38, 'Primera Nacional must have exactly 38 teams');
+    assert.equal(newPnTeams.filter(t => t.zone === 'A').length, 19, 'Primera Nacional Zone A must have exactly 19 teams');
+    assert.equal(newPnTeams.filter(t => t.zone === 'B').length, 19, 'Primera Nacional Zone B must have exactly 19 teams');
+});
+
+test('isSeasonCompleted returns true only when all scheduled matches are played and season has advanced', async () => {
+    const { isSeasonCompleted } = await import('../services/seasonUtils');
+
+    const mockGameState: any = {
+        season: 2024,
+        currentWeek: 40,
+        team: { id: 701, leagueId: LeagueId.LIGA_ARGENTINA },
+        cups: {
+            clausuraPlayoffs: { rounds: [{ name: 'Final', completed: true }], winnerId: 701 }
+        },
+        schedule: [
+            { week: 1, homeTeamId: 701, awayTeamId: 702, result: { homeScore: 2, awayScore: 1 } },
+            { week: 40, homeTeamId: 701, awayTeamId: 703, result: { homeScore: 1, awayScore: 0 } }
+        ]
+    };
+
+    assert.equal(isSeasonCompleted(mockGameState), true);
+
+    // If there is an unplayed match
+    mockGameState.schedule.push({ week: 41, homeTeamId: 701, awayTeamId: 704, result: undefined });
+    assert.equal(isSeasonCompleted(mockGameState), false);
+
+    // If week is early in the season (< 20)
+    mockGameState.schedule.pop();
+    mockGameState.currentWeek = 10;
+    assert.equal(isSeasonCompleted(mockGameState), false);
+});
+
