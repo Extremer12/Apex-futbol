@@ -409,16 +409,40 @@ export function startNewSeason(currentState: GameState): GameState {
                 newlyFulfilled = true;
             }
         } else if (promise.type === 'trophy') {
-            const wonFaCup = currentState.cups.faCup.winnerId === updatedPlayerTeam.id;
-            const wonCarabaoCup = currentState.cups.carabaoCup.winnerId === updatedPlayerTeam.id;
+            // Check if player's team won ANY cup competition in any country or Europe, or the league title
+            const wonAnyCup = Object.values(currentState.cups || {}).some((cup: any) => cup?.winnerId === updatedPlayerTeam.id);
             const wonLeague = playerPosition === 1;
             
-            if (String(promise.target).includes('Cup') && (wonFaCup || wonCarabaoCup)) newlyFulfilled = true;
-            if (String(promise.target).includes('League') && wonLeague) newlyFulfilled = true;
-            if (promise.target === 'Any' && (wonFaCup || wonCarabaoCup || wonLeague)) newlyFulfilled = true;
+            if (promise.target === 'QuarterFinal') {
+                newlyFulfilled = wonAnyCup || playerPosition <= 8;
+            } else if (String(promise.target).includes('Cup') && wonAnyCup) {
+                newlyFulfilled = true;
+            } else if (String(promise.target).includes('League') && wonLeague) {
+                newlyFulfilled = true;
+            } else if (promise.target === 'Any' && (wonAnyCup || wonLeague)) {
+                newlyFulfilled = true;
+            }
+        } else if (promise.type === 'transfer') {
+            // Check if user has signed a top rated player in the squad
+            const minRating = Number(promise.target) || 80;
+            const hasStarSigning = updatedPlayerTeam.squad.some(p => p.rating >= minRating);
+            if (hasStarSigning) {
+                newlyFulfilled = true;
+            }
+        } else if (promise.type === 'stadium') {
+            // Check if stadium capacity increased or upgraded
+            const hasExpanded = currentState.stadium && (
+                (currentState.stadium.capacity > (updatedPlayerTeam.stadiumCapacity || 20000)) ||
+                (currentState.stadium.level || 1) > 1 ||
+                (currentState.stadium.upgrades && currentState.stadium.upgrades.length > 0)
+            );
+            if (hasExpanded) {
+                newlyFulfilled = true;
+            }
         } else if (promise.type === 'finances') {
-             // Let's assume a generic finance target logic if it existed, for now just skip or resolve based on balance
-             if (currentState.finances.balance > Number(promise.target)) newlyFulfilled = true;
+            if (currentState.finances.balance >= Number(promise.target)) {
+                newlyFulfilled = true;
+            }
         }
 
         if (newlyFulfilled) {
