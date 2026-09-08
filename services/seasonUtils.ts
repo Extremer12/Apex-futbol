@@ -19,35 +19,84 @@ export interface SeasonSummaryData {
 
 /**
  * Checks if the current season has finished all matches and competitions.
+ * Determines completion based on the user's league context and team schedule,
+ * preventing unrelated fixtures in other countries from locking the season transition.
  */
 export const isSeasonCompleted = (gameState: GameState | null): boolean => {
     if (!gameState || !gameState.schedule || gameState.schedule.length === 0) {
         return false;
     }
 
-    // Must have advanced past mid-season (week >= 20)
-    if (gameState.currentWeek < 20) {
+    const currentWeek = gameState.currentWeek;
+    const userLeagueId = gameState.team.leagueId;
+
+    // 1. Must have reached mid-season minimum
+    if (currentWeek < 20) {
         return false;
     }
 
-    // Check if there are any unplayed matches remaining in the schedule
-    const hasUnplayedMatches = gameState.schedule.some(m => m.result === undefined);
-    if (hasUnplayedMatches) {
+    // 2. Check if the user's team still has any pending unplayed matches in the schedule
+    const userHasUnplayedMatches = gameState.schedule.some(
+        m => (m.homeTeamId === gameState.team.id || m.awayTeamId === gameState.team.id) && m.result === undefined
+    );
+    if (userHasUnplayedMatches) {
         return false;
     }
 
-    // If it's Argentina, ensure Apertura and Clausura playoffs are finished if they were created
-    if (gameState.team.leagueId === LeagueId.LIGA_ARGENTINA || gameState.team.leagueId === LeagueId.PRIMERA_NACIONAL) {
-        if (gameState.currentWeek < 36) {
+    // 3. League-specific completion rules
+    if (userLeagueId === LeagueId.LIGA_ARGENTINA) {
+        // Torneo Apertura (1-16) + Clausura (21-36). Regular matches end at week 36.
+        if (currentWeek < 36) {
             return false;
         }
-        // If Clausura playoffs have rounds, ensure a winner was decided
-        if (gameState.cups.clausuraPlayoffs?.rounds?.length && !gameState.cups.clausuraPlayoffs.winnerId) {
-            return false;
+
+        // Check Clausura playoffs if they exist
+        const clausura = gameState.cups?.clausuraPlayoffs;
+        if (clausura && clausura.rounds && clausura.rounds.length > 0) {
+            // If playoffs have a winner decided OR we reached week 40, season is complete
+            if (!clausura.winnerId && currentWeek < 40) {
+                return false;
+            }
         }
+        return true;
     }
 
-    return true;
+    if (userLeagueId === LeagueId.PRIMERA_NACIONAL) {
+        // Regular season is 34 matchdays
+        if (currentWeek < 34) {
+            return false;
+        }
+        const reducido = gameState.cups?.nacionalReducido;
+        if (reducido && reducido.rounds && reducido.rounds.length > 0) {
+            if (!reducido.winnerId && currentWeek < 38) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // 34-matchday European leagues (Bundesliga, 2. Bundesliga, Ligue 1)
+    if (userLeagueId === LeagueId.BUNDESLIGA || userLeagueId === LeagueId.ZWEITE_BUNDESLIGA || userLeagueId === LeagueId.LIGUE_1) {
+        return currentWeek >= 34;
+    }
+
+    // Championship has 46 matchdays
+    if (userLeagueId === LeagueId.CHAMPIONSHIP) {
+        return currentWeek >= 46;
+    }
+
+    // Segunda División has 42 matchdays
+    if (userLeagueId === LeagueId.SEGUNDA_DIVISION_ESP) {
+        return currentWeek >= 42;
+    }
+
+    // Standard 38-matchday leagues (Premier League, La Liga, Serie A, Serie B, Ligue 2, Brasileirão, Série B)
+    if (currentWeek >= 38) {
+        return true;
+    }
+
+    // Fallback safety cap
+    return currentWeek >= 42;
 };
 
 /**

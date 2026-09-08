@@ -143,8 +143,9 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
 
         let updatedCups = { ...cups };
 
+        const userPlayedThisWeek = matchesThisWeek.some(m => m.homeTeamId === playerTeamId || m.awayTeamId === playerTeamId);
         const weeklyNet = (finances.weeklyIncome - finances.weeklyWages) / 1_000_000;
-        let confidenceChange = weeklyNet > 0 ? 1 : -1;
+        let confidenceChange = weeklyNet > 0 ? 1 : (userPlayedThisWeek ? -1 : 0);
 
         let playerMatchResult: { 
             homeTeamId?: number;

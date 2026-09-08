@@ -103,35 +103,11 @@ class EventEngine {
 
     /**
      * Trigger a random event if conditions are met
+     * NOTA: Desactivado temporalmente a petición del usuario para garantizar
+     * la estabilidad y foco en la simulación multi-temporada básica.
      */
-    triggerEvent(gameState: GameState): TriggeredEvent | null {
-        // Hydrate from gameState if present
-        if (gameState.triggeredEventIds) {
-            gameState.triggeredEventIds.forEach(id => this.triggeredEventIds.add(id));
-        }
-
-        // Filter events that haven't been triggered and meet conditions
-        const eligibleEvents = this.events.filter(event =>
-            !this.triggeredEventIds.has(event.id) && this.checkConditions(event, gameState)
-        );
-
-        if (eligibleEvents.length === 0) return null;
-
-        // Select random event from eligible ones
-        const event = eligibleEvents[Math.floor(Math.random() * eligibleEvents.length)];
-
-        // Mark as triggered
-        this.triggeredEventIds.add(event.id);
-
-        return {
-            event,
-            onChoice: (choiceIndex: number) => {
-                if (choiceIndex < 0 || choiceIndex >= event.choices.length) {
-                    throw new Error('Invalid choice index');
-                }
-                return event.choices[choiceIndex].effects;
-            }
-        };
+    triggerEvent(_gameState: GameState): TriggeredEvent | null {
+        return null;
     }
 
     /**

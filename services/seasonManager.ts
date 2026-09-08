@@ -204,6 +204,33 @@ export function startNewSeason(currentState: GameState): GameState {
 
     const updatedPlayerTeamWithTrophies = processedTeams.find(t => t.id === currentState.team.id)!;
 
+    // 2.5 Finalize any unplayed league matches across all 14 leagues so all tables are 100% complete
+    const unplayedLeagueMatches = currentState.schedule.filter(m => m.result === undefined && !m.isCupMatch);
+    if (unplayedLeagueMatches.length > 0) {
+        unplayedLeagueMatches.forEach(m => {
+            const hScore = Math.floor(Math.random() * 3);
+            const aScore = Math.floor(Math.random() * 3);
+            m.result = { homeScore: hScore, awayScore: aScore, events: [], scorers: [] };
+            const hTeam = processedTeams.find(t => t.id === m.homeTeamId);
+            const aTeam = processedTeams.find(t => t.id === m.awayTeamId);
+            if (hTeam && aTeam && currentState.leagueTables[hTeam.leagueId]) {
+                const table = currentState.leagueTables[hTeam.leagueId];
+                const hRow = table.find(r => r.teamId === hTeam.id);
+                const aRow = table.find(r => r.teamId === aTeam.id);
+                if (hRow && aRow) {
+                    hRow.played++; aRow.played++;
+                    hRow.goalsFor += hScore; aRow.goalsAgainst += aScore;
+                    aRow.goalsFor += aScore; aRow.goalsAgainst += hScore;
+                    hRow.goalDifference = hRow.goalsFor - hRow.goalsAgainst;
+                    aRow.goalDifference = aRow.goalsFor - aRow.goalsAgainst;
+                    if (hScore > aScore) { hRow.won++; hRow.points += 3; aRow.lost++; }
+                    else if (aScore > hScore) { aRow.won++; aRow.points += 3; hRow.lost++; }
+                    else { hRow.drawn++; hRow.points += 1; aRow.drawn++; aRow.points += 1; }
+                }
+            }
+        });
+    }
+
     // 3. Process Promotion/Relegation (All leagues)
     const teamsAfterProRel = handlePromotionRelegation(
         processedTeams,

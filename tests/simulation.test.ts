@@ -419,6 +419,11 @@ test('isSeasonCompleted returns true only when all scheduled matches are played 
     mockGameState.schedule.pop();
     mockGameState.currentWeek = 10;
     assert.equal(isSeasonCompleted(mockGameState), false);
+
+    // If week is 40 and Argentine season is complete, unrelated matches in other leagues (e.g. English Championship) must NOT block it!
+    mockGameState.currentWeek = 40;
+    mockGameState.schedule.push({ week: 44, homeTeamId: 101, awayTeamId: 102, result: undefined }); // Championship match
+    assert.equal(isSeasonCompleted(mockGameState), true, 'Unrelated foreign matches must not block Argentine season completion');
 });
 
 test('startNewSeason successfully transitions seasons without crash and initializes Europa League', async () => {

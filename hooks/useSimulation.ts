@@ -87,11 +87,11 @@ export function useSimulation(
                 celebrationCinematics
             );
 
-            // 6. Check Random Events
-            const triggeredEvent = eventEngine.triggerEvent(gameState);
-            if (triggeredEvent) {
-                setCurrentEvent(triggeredEvent);
-            }
+            // 6. Check Random Events (Desactivado temporalmente por solicitud del usuario)
+            // const triggeredEvent = eventEngine.triggerEvent(gameState);
+            // if (triggeredEvent) {
+            //     setCurrentEvent(triggeredEvent);
+            // }
 
             // 7. Generate Coach Report
             const coachReport = generateCoachReport(gameState);
