@@ -92,15 +92,15 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
     const AVAILABLE_LEAGUES = Object.values(LeagueId);
 
     return (
-        <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto pb-24 animate-fade-in">
+        <div className="px-0 sm:px-4 md:px-6 py-2 sm:py-6 space-y-4 sm:space-y-6 max-w-7xl mx-auto pb-24 animate-fade-in w-full">
             {/* League Selector */}
-            <div className="flex overflow-x-auto gap-2 pb-2 custom-scrollbar hide-scrollbar-mobile">
+            <div className="flex overflow-x-auto gap-2 pb-2 custom-scrollbar hide-scrollbar-mobile px-2 sm:px-0">
                 {AVAILABLE_LEAGUES.map(league => (
                     <motion.button
                         whileTap={{ scale: 0.95 }}
                         key={league}
                         onClick={() => setSelectedLeague(league)}
-                        className={`whitespace-nowrap px-6 py-2.5 rounded-xl text-[10px] uppercase font-black tracking-widest transition-all duration-300 border ${
+                        className={`whitespace-nowrap px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl text-[10px] uppercase font-black tracking-widest transition-all duration-300 border cursor-pointer ${
                             selectedLeague === league 
                             ? `bg-[var(--apex-gold)] text-black border-[var(--apex-gold)] shadow-[0_0_15px_rgba(200,168,78,0.4)]` 
                             : 'bg-black/30 text-white/50 border-white/5 hover:bg-black/50 hover:text-white hover:border-white/10'
@@ -118,73 +118,71 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.3 }}
-                    className="space-y-6"
+                    className="space-y-4 sm:space-y-6 w-full"
                 >
                     {/* Header Section */}
-                    <div className="relative overflow-hidden apex-card p-6 md:p-8 shadow-2xl transition-all duration-500 group">
+                    <div className="relative overflow-hidden apex-card mx-2 sm:mx-0 p-5 sm:p-8 shadow-2xl transition-all duration-500 group rounded-2xl">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--apex-gold)]/10 blur-[80px] rounded-full translate-x-1/3 -translate-y-1/3 group-hover:bg-[var(--apex-gold)]/20 transition-all duration-700"></div>
-                        <div className="relative flex flex-col md:flex-row items-center md:items-start gap-6">
-                            <div className="w-20 h-20 md:w-24 md:h-24 p-3 bg-black/40 rounded-2xl border border-white/10 flex items-center justify-center shadow-xl">
+                        <div className="relative flex flex-col md:flex-row items-center md:items-start gap-4 sm:gap-6">
+                            <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 p-2.5 bg-black/40 rounded-2xl border border-white/10 flex items-center justify-center shadow-xl shrink-0">
                                 <img 
                                     src={LEAGUE_LOGOS[selectedLeague]} 
                                     alt="League" 
                                     className="w-full h-full object-contain drop-shadow-lg" 
                                 />
                             </div>
-                            <div className="text-center md:text-left pt-2">
+                            <div className="text-center md:text-left pt-1">
                                 <h2 className="text-[10px] font-black text-gold-gradient tracking-[0.3em] uppercase mb-1">
-                                    {LEAGUE_NAMES[selectedLeague]} • Temporada 2024/25
+                                    {LEAGUE_NAMES[selectedLeague]} • Temporada {gameState.season}
                                 </h2>
-                                <h1 className="text-3xl md:text-5xl font-black text-white tracking-tighter uppercase italic leading-none mb-2">
+                                <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-white tracking-tighter uppercase italic leading-none mb-1">
                                     Estadísticas <span className="text-[var(--apex-gold)]">Élite</span>
                                 </h1>
                             </div>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* Top Scorers Card */}
-                        <div className="apex-card overflow-hidden">
-                            <div className="bg-black/40 px-6 py-5 border-b border-white/5 flex items-center justify-between">
-                                <h3 className="text-white font-black text-sm uppercase tracking-widest italic flex items-center gap-3">
-                                    <span className="text-xl">⚽</span> Máximos Goleadores
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full">
+                        {/* Top Scorers Card - Full width edge-to-edge on mobile */}
+                        <div className="bg-[#0E131F] border-y sm:border sm:border-white/10 border-x-0 sm:border-x rounded-none sm:rounded-2xl overflow-hidden shadow-xl w-full">
+                            <div className="bg-black/40 px-4 sm:px-6 py-3.5 sm:py-5 border-b border-white/5 flex items-center justify-between">
+                                <h3 className="text-white font-black text-xs sm:text-sm uppercase tracking-widest italic flex items-center gap-2 sm:gap-3">
+                                    <span className="text-base sm:text-xl">⚽</span> Máximos Goleadores
                                 </h3>
                             </div>
-                            <div className="p-0 overflow-x-auto custom-scrollbar">
-                                <table className="w-full text-sm whitespace-nowrap">
+                            <div className="p-0 w-full overflow-hidden">
+                                <table className="w-full table-fixed text-xs sm:text-sm">
                                     <thead>
-                                        <tr className="text-white/40 text-[9px] font-black uppercase tracking-[0.2em] border-b border-white/5 bg-black/20">
-                                            <th className="px-6 py-4 text-left">Jugador</th>
-                                            <th className="px-6 py-4 text-center">Club</th>
-                                            <th className="px-6 py-4 text-right">Goles</th>
+                                        <tr className="text-white/40 text-[9px] font-black uppercase tracking-[0.15em] border-b border-white/5 bg-black/20">
+                                            <th className="px-3 sm:px-6 py-2.5 sm:py-3 text-left">Jugador</th>
+                                            <th className="w-12 sm:w-16 px-1 py-2.5 sm:py-3 text-center">Club</th>
+                                            <th className="w-14 sm:w-20 px-3 sm:px-6 py-2.5 sm:py-3 text-right">Goles</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-white/5">
                                         {topScorers.length > 0 ? topScorers.map((stat, idx) => (
-                                            <tr key={stat.player.id} className="group hover:bg-white/5 transition-all duration-300">
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-4">
-                                                        <span className={`text-sm font-black w-4 text-center ${idx === 0 ? 'text-[var(--apex-gold)] drop-shadow-[0_0_5px_rgba(200,168,78,0.5)]' : idx === 1 ? 'text-slate-300' : idx === 2 ? 'text-orange-400' : 'text-white/30'}`}>
+                                            <tr key={stat.player.id} className="group hover:bg-white/5 transition-colors">
+                                                <td className="px-3 sm:px-6 py-2.5 sm:py-3.5">
+                                                    <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                                                        <span className={`text-xs sm:text-sm font-black w-4 text-center shrink-0 ${idx === 0 ? 'text-[var(--apex-gold)] drop-shadow-[0_0_5px_rgba(200,168,78,0.5)]' : idx === 1 ? 'text-slate-300' : idx === 2 ? 'text-orange-400' : 'text-white/30'}`}>
                                                             {idx + 1}
                                                         </span>
-                                                        <div>
-                                                            <div className="font-bold text-white group-hover:text-[var(--apex-gold)] transition-colors text-sm">{stat.player.name}</div>
-                                                            <div className="text-[9px] text-white/40 font-black uppercase tracking-[0.2em] mt-0.5">{stat.player.position}</div>
+                                                        <div className="min-w-0 flex-1">
+                                                            <div className="font-bold text-white group-hover:text-[var(--apex-gold)] transition-colors text-xs sm:text-sm truncate">{stat.player.name}</div>
+                                                            <div className="text-[8px] sm:text-[9px] text-white/40 font-black uppercase tracking-wider">{stat.player.position}</div>
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-3">
-                                                    <div className="flex justify-center group-hover:scale-110 transition-transform">
-                                                        <div className="w-8 h-8 bg-black/30 p-1.5 rounded border border-white/5">
-                                                            <TeamLogo team={{ logo: stat.teamLogo, name: stat.teamName }} />
-                                                        </div>
+                                                <td className="w-12 sm:w-16 px-1 py-2 sm:py-3">
+                                                    <div className="w-6 h-6 sm:w-7 sm:h-7 mx-auto flex items-center justify-center shrink-0">
+                                                        <TeamLogo team={{ logo: stat.teamLogo, name: stat.teamName }} className="w-full h-full object-contain drop-shadow" />
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4 text-right font-black text-2xl text-[var(--apex-gold)] italic drop-shadow-sm">{stat.goals}</td>
+                                                <td className="w-14 sm:w-20 px-3 sm:px-6 py-2 sm:py-3 text-right font-black text-lg sm:text-2xl text-[var(--apex-gold)] italic drop-shadow-sm">{stat.goals}</td>
                                             </tr>
                                         )) : (
                                             <tr>
-                                                <td colSpan={3} className="px-6 py-12 text-center text-white/30 font-black text-[10px] uppercase tracking-widest">Sin datos registrados</td>
+                                                <td colSpan={3} className="px-4 py-8 text-center text-white/30 font-black text-[10px] uppercase tracking-widest">Sin datos registrados</td>
                                             </tr>
                                         )}
                                     </tbody>
@@ -192,48 +190,46 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
                             </div>
                         </div>
 
-                        {/* Top Assists Card */}
-                        <div className="apex-card overflow-hidden">
-                            <div className="bg-black/40 px-6 py-5 border-b border-white/5 flex items-center justify-between">
-                                <h3 className="text-white font-black text-sm uppercase tracking-widest italic flex items-center gap-3">
-                                    <span className="text-xl">👟</span> Máximos Asistentes
+                        {/* Top Assists Card - Full width edge-to-edge on mobile */}
+                        <div className="bg-[#0E131F] border-y sm:border sm:border-white/10 border-x-0 sm:border-x rounded-none sm:rounded-2xl overflow-hidden shadow-xl w-full">
+                            <div className="bg-black/40 px-4 sm:px-6 py-3.5 sm:py-5 border-b border-white/5 flex items-center justify-between">
+                                <h3 className="text-white font-black text-xs sm:text-sm uppercase tracking-widest italic flex items-center gap-2 sm:gap-3">
+                                    <span className="text-base sm:text-xl">👟</span> Máximos Asistentes
                                 </h3>
                             </div>
-                            <div className="p-0 overflow-x-auto custom-scrollbar">
-                                <table className="w-full text-sm whitespace-nowrap">
+                            <div className="p-0 w-full overflow-hidden">
+                                <table className="w-full table-fixed text-xs sm:text-sm">
                                     <thead>
-                                        <tr className="text-white/40 text-[9px] font-black uppercase tracking-[0.2em] border-b border-white/5 bg-black/20">
-                                            <th className="px-6 py-4 text-left">Jugador</th>
-                                            <th className="px-6 py-4 text-center">Club</th>
-                                            <th className="px-6 py-4 text-right">Asistencias</th>
+                                        <tr className="text-white/40 text-[9px] font-black uppercase tracking-[0.15em] border-b border-white/5 bg-black/20">
+                                            <th className="px-3 sm:px-6 py-2.5 sm:py-3 text-left">Jugador</th>
+                                            <th className="w-12 sm:w-16 px-1 py-2.5 sm:py-3 text-center">Club</th>
+                                            <th className="w-14 sm:w-20 px-3 sm:px-6 py-2.5 sm:py-3 text-right">Asistencias</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-white/5">
                                         {topAssists.length > 0 ? topAssists.map((stat, idx) => (
-                                            <tr key={stat.player.id} className="group hover:bg-white/5 transition-all duration-300">
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-4">
-                                                        <span className={`text-sm font-black w-4 text-center ${idx === 0 ? 'text-[var(--apex-gold)] drop-shadow-[0_0_5px_rgba(200,168,78,0.5)]' : idx === 1 ? 'text-slate-300' : idx === 2 ? 'text-orange-400' : 'text-white/30'}`}>
+                                            <tr key={stat.player.id} className="group hover:bg-white/5 transition-colors">
+                                                <td className="px-3 sm:px-6 py-2.5 sm:py-3.5">
+                                                    <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                                                        <span className={`text-xs sm:text-sm font-black w-4 text-center shrink-0 ${idx === 0 ? 'text-[var(--apex-gold)] drop-shadow-[0_0_5px_rgba(200,168,78,0.5)]' : idx === 1 ? 'text-slate-300' : idx === 2 ? 'text-orange-400' : 'text-white/30'}`}>
                                                             {idx + 1}
                                                         </span>
-                                                        <div>
-                                                            <div className="font-bold text-white group-hover:text-[var(--apex-gold)] transition-colors text-sm">{stat.player.name}</div>
-                                                            <div className="text-[9px] text-white/40 font-black uppercase tracking-[0.2em] mt-0.5">{stat.player.position}</div>
+                                                        <div className="min-w-0 flex-1">
+                                                            <div className="font-bold text-white group-hover:text-[var(--apex-gold)] transition-colors text-xs sm:text-sm truncate">{stat.player.name}</div>
+                                                            <div className="text-[8px] sm:text-[9px] text-white/40 font-black uppercase tracking-wider">{stat.player.position}</div>
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-3">
-                                                    <div className="flex justify-center group-hover:scale-110 transition-transform">
-                                                        <div className="w-8 h-8 bg-black/30 p-1.5 rounded border border-white/5">
-                                                            <TeamLogo team={{ logo: stat.teamLogo, name: stat.teamName }} />
-                                                        </div>
+                                                <td className="w-12 sm:w-16 px-1 py-2 sm:py-3">
+                                                    <div className="w-6 h-6 sm:w-7 sm:h-7 mx-auto flex items-center justify-center shrink-0">
+                                                        <TeamLogo team={{ logo: stat.teamLogo, name: stat.teamName }} className="w-full h-full object-contain drop-shadow" />
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4 text-right font-black text-2xl text-[var(--apex-gold)] italic drop-shadow-sm">{stat.assists}</td>
+                                                <td className="w-14 sm:w-20 px-3 sm:px-6 py-2 sm:py-3 text-right font-black text-lg sm:text-2xl text-[var(--apex-gold)] italic drop-shadow-sm">{stat.assists}</td>
                                             </tr>
                                         )) : (
                                             <tr>
-                                                <td colSpan={3} className="px-6 py-12 text-center text-white/30 font-black text-[10px] uppercase tracking-widest">Sin datos registrados</td>
+                                                <td colSpan={3} className="px-4 py-8 text-center text-white/30 font-black text-[10px] uppercase tracking-widest">Sin datos registrados</td>
                                             </tr>
                                         )}
                                     </tbody>
@@ -241,11 +237,11 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
                             </div>
                         </div>
 
-                        {/* Team Performance Card */}
-                        <div className="space-y-6 lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="apex-card p-6 relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--apex-green)]/10 blur-[40px] rounded-full group-hover:bg-[var(--apex-green)]/20 transition-all duration-500"></div>
-                                <h3 className="text-white font-black text-sm uppercase tracking-widest mb-6 flex items-center gap-3">
+                        {/* Team Performance Cards - Full width on mobile without container box around logos */}
+                        <div className="space-y-4 sm:space-y-6 lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 w-full">
+                            <div className="bg-[#0E131F] border-y sm:border sm:border-white/10 border-x-0 sm:border-x rounded-none sm:rounded-2xl p-4 sm:p-6 relative overflow-hidden group shadow-xl">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--apex-green)]/10 blur-[40px] rounded-full group-hover:bg-[var(--apex-green)]/20 transition-all duration-500 pointer-events-none"></div>
+                                <h3 className="text-white font-black text-xs sm:text-sm uppercase tracking-widest mb-4 flex items-center gap-2.5">
                                     <div className="w-1.5 h-4 bg-[var(--apex-green)] rounded-sm"></div>
                                     Poder Ofensivo
                                 </h3>
@@ -254,26 +250,26 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
                                     const bestAttack = [...currentTable].sort((a, b) => b.goalsFor - a.goalsFor)[0];
                                     const team = gameState.allTeams.find(t => t.id === bestAttack?.teamId);
                                     return team ? (
-                                        <div className="flex items-center gap-5 p-4 bg-black/30 rounded-xl border border-white/5 group-hover:bg-white/5 transition-all">
-                                            <div className="w-14 h-14 bg-black/40 p-2 rounded-lg border border-white/10 group-hover:scale-110 transition-transform">
-                                                <TeamLogo team={team} />
+                                        <div className="flex items-center gap-3 sm:gap-4 p-3.5 bg-black/40 rounded-xl border border-white/5 transition-all">
+                                            <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center shrink-0">
+                                                <TeamLogo team={team} className="w-full h-full object-contain drop-shadow" />
                                             </div>
-                                            <div className="flex-1">
-                                                <div className="text-[9px] font-black text-[var(--apex-green)] uppercase tracking-[0.2em] mb-1">Más Goles Anotados</div>
-                                                <div className="text-lg font-black text-white leading-none">{team.name}</div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="text-[8px] sm:text-[9px] font-black text-[var(--apex-green)] uppercase tracking-wider mb-0.5">Más Goles Anotados</div>
+                                                <div className="text-sm sm:text-base font-black text-white leading-none truncate">{team.name}</div>
                                             </div>
-                                            <div className="text-right">
-                                                <div className="text-3xl font-black text-[var(--apex-green)] italic">{bestAttack.goalsFor}</div>
-                                                <div className="text-[8px] text-white/40 uppercase tracking-[0.2em] font-black">Goles</div>
+                                            <div className="text-right shrink-0">
+                                                <div className="text-2xl sm:text-3xl font-black text-[var(--apex-green)] italic">{bestAttack.goalsFor}</div>
+                                                <div className="text-[8px] text-white/40 uppercase tracking-widest font-black">Goles</div>
                                             </div>
                                         </div>
                                     ) : null;
                                 })()}
                             </div>
 
-                            <div className="apex-card p-6 relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/10 blur-[40px] rounded-full group-hover:bg-sky-500/20 transition-all duration-500"></div>
-                                <h3 className="text-white font-black text-sm uppercase tracking-widest mb-6 flex items-center gap-3">
+                            <div className="bg-[#0E131F] border-y sm:border sm:border-white/10 border-x-0 sm:border-x rounded-none sm:rounded-2xl p-4 sm:p-6 relative overflow-hidden group shadow-xl">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/10 blur-[40px] rounded-full group-hover:bg-sky-500/20 transition-all duration-500 pointer-events-none"></div>
+                                <h3 className="text-white font-black text-xs sm:text-sm uppercase tracking-widest mb-4 flex items-center gap-2.5">
                                     <div className="w-1.5 h-4 bg-sky-500 rounded-sm"></div>
                                     Muro Defensivo
                                 </h3>
@@ -282,17 +278,17 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
                                     const bestDefense = [...currentTable].sort((a, b) => a.goalsAgainst - b.goalsAgainst)[0];
                                     const team = gameState.allTeams.find(t => t.id === bestDefense?.teamId);
                                     return team ? (
-                                        <div className="flex items-center gap-5 p-4 bg-black/30 rounded-xl border border-white/5 group-hover:bg-white/5 transition-all">
-                                            <div className="w-14 h-14 bg-black/40 p-2 rounded-lg border border-white/10 group-hover:scale-110 transition-transform">
-                                                <TeamLogo team={team} />
+                                        <div className="flex items-center gap-3 sm:gap-4 p-3.5 bg-black/40 rounded-xl border border-white/5 transition-all">
+                                            <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center shrink-0">
+                                                <TeamLogo team={team} className="w-full h-full object-contain drop-shadow" />
                                             </div>
-                                            <div className="flex-1">
-                                                <div className="text-[9px] font-black text-sky-400 uppercase tracking-[0.2em] mb-1">Menos Goles Concedidos</div>
-                                                <div className="text-lg font-black text-white leading-none">{team.name}</div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="text-[8px] sm:text-[9px] font-black text-sky-400 uppercase tracking-wider mb-0.5">Menos Goles Concedidos</div>
+                                                <div className="text-sm sm:text-base font-black text-white leading-none truncate">{team.name}</div>
                                             </div>
-                                            <div className="text-right">
-                                                <div className="text-3xl font-black text-sky-400 italic">{bestDefense.goalsAgainst}</div>
-                                                <div className="text-[8px] text-white/40 uppercase tracking-[0.2em] font-black">Goles</div>
+                                            <div className="text-right shrink-0">
+                                                <div className="text-2xl sm:text-3xl font-black text-sky-400 italic">{bestDefense.goalsAgainst}</div>
+                                                <div className="text-[8px] text-white/40 uppercase tracking-widest font-black">Goles</div>
                                             </div>
                                         </div>
                                     ) : null;

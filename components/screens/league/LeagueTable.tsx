@@ -285,7 +285,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
     };
 
     return (
-        <div className={`bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 border-2 border-${theme}-500/30 rounded-2xl shadow-2xl overflow-hidden animate-fade-in`}>
+        <div className={`bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 border-y sm:border-2 border-x-0 sm:border-x border-${theme}-500/30 rounded-none sm:rounded-2xl shadow-2xl overflow-hidden animate-fade-in w-full`}>
             {/* Cabecera Principal */}
             <div className={`bg-gradient-to-r from-${theme}-600 via-${theme}-500 to-${theme}-600 px-4 sm:px-6 py-3.5 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3`}>
                 <div className="flex items-center gap-3 sm:gap-4">

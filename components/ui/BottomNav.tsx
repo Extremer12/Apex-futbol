@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
-import { Screen } from '../../types';
-import { DashboardIcon, SquadIcon, TransfersIcon, FinancesIcon, LeagueIcon, ChartBarIcon, SettingsIcon, CalendarIcon, BriefcaseIcon, TrophyIcon } from '../icons';
+import { Screen, Team } from '../../types';
+import { DashboardIcon, SquadIcon, TransfersIcon, FinancesIcon, LeagueIcon, ChartBarIcon, SettingsIcon, CalendarIcon, BriefcaseIcon } from '../icons';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield } from 'lucide-react';
+import { History, Shield } from 'lucide-react';
+import { TeamLogo } from '../../data/teams/helpers';
 
 interface BottomNavProps {
     activeScreen: Screen;
     onNavigate: (screen: Screen) => void;
-    teamLogo?: string;
-    teamName?: string;
+    team?: Team;
 }
 
-export const BottomNav: React.FC<BottomNavProps> = ({ activeScreen, onNavigate, teamLogo, teamName }) => {
+export const BottomNav: React.FC<BottomNavProps> = ({ activeScreen, onNavigate, team }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     const primaryItems = [
@@ -23,7 +23,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeScreen, onNavigate, 
 
     const secondaryItems = [
         { screen: Screen.Club, isClub: true, label: 'Club' },
-        { screen: Screen.Trophies, icon: TrophyIcon, label: 'Historial' },
+        { screen: Screen.Trophies, icon: History, label: 'Historial' },
         { screen: Screen.Calendar, icon: CalendarIcon, label: 'Calendario' },
         { screen: Screen.Statistics, icon: ChartBarIcon, label: 'Estadísticas' },
         { screen: Screen.Finances, icon: FinancesIcon, label: 'Finanzas' },
@@ -74,21 +74,16 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeScreen, onNavigate, 
                                                 whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
                                                 key={item.screen}
                                                 onClick={() => handleNavigate(item.screen)}
-                                                className="flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-xl transition-colors duration-200"
+                                                className="flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-xl transition-colors duration-200 cursor-pointer"
                                                 style={{
                                                     background: isActive ? 'rgba(200,168,78,0.1)' : 'rgba(255,255,255,0.03)',
                                                     border: `1px solid ${isActive ? 'var(--apex-gold)' : 'var(--apex-border)'}`
                                                 }}
                                             >
                                                 {item.isClub ? (
-                                                    teamLogo ? (
-                                                        <div className="w-6 h-6 flex items-center justify-center shrink-0">
-                                                            <img 
-                                                                src={teamLogo} 
-                                                                alt={teamName || 'Club'} 
-                                                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                                                                className="w-full h-full object-contain drop-shadow" 
-                                                            />
+                                                    team ? (
+                                                        <div className="w-7 h-7 flex items-center justify-center shrink-0">
+                                                            <TeamLogo team={team} className="w-full h-full object-contain drop-shadow" />
                                                         </div>
                                                     ) : (
                                                         <Shield className="w-5 h-5 text-[var(--apex-gold)]" />
@@ -121,7 +116,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeScreen, onNavigate, 
                                 whileTap={{ scale: 0.9 }}
                                 key={item.screen}
                                 onClick={() => handleNavigate(item.screen)}
-                                className="relative flex flex-col items-center justify-center flex-1 py-3"
+                                className="relative flex flex-col items-center justify-center flex-1 py-3 cursor-pointer"
                             >
                                 {isActive && (
                                     <motion.div 
@@ -152,7 +147,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeScreen, onNavigate, 
                     <motion.button
                         whileTap={{ scale: 0.9 }}
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className="relative flex flex-col items-center justify-center flex-1 py-3"
+                        className="relative flex flex-col items-center justify-center flex-1 py-3 cursor-pointer"
                     >
                         {isMenuOpen && (
                             <div className="absolute top-0 h-[2px] w-8 rounded-b-full shadow-[0_0_10px_rgba(200,168,78,0.5)]"

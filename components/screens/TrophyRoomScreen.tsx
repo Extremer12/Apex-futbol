@@ -76,16 +76,18 @@ export const TrophyRoomScreen: React.FC<TrophyRoomScreenProps> = ({ gameState })
     };
 
     return (
-        <div className="p-4 md:p-6 space-y-8 pb-24 max-w-7xl mx-auto">
+        <div className="px-0 sm:px-4 md:px-6 space-y-6 sm:space-y-8 pb-24 max-w-7xl mx-auto w-full">
             {/* Header with Cinematic Glow */}
             <motion.div 
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="relative overflow-hidden apex-card p-6 md:p-10 shadow-2xl group"
+                className="relative overflow-hidden apex-card mx-2 sm:mx-0 p-6 md:p-10 shadow-2xl group rounded-2xl"
             >
-                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 group-hover:opacity-10 transition-all duration-1000 pointer-events-none">
-                    <TrophyIcon className="w-64 h-64 text-[var(--apex-gold)] grayscale" />
-                </div>
+                {team.logo && (
+                    <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 group-hover:opacity-10 transition-all duration-1000 pointer-events-none w-64 h-64">
+                        <img src={team.logo} alt="" className="w-full h-full object-contain filter grayscale" />
+                    </div>
+                )}
                 
                 {/* Animated Particles Background */}
                 <div className="absolute inset-0 pointer-events-none overflow-hidden">

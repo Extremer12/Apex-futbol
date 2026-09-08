@@ -65,11 +65,12 @@ export const UsersIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 export const TrophyIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9a9.75 9.75 0 0 1 9 0Z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M18.375 18.75c.934 0 1.688-.753 1.688-1.688V11.25c0-1.573-1.277-2.85-2.85-2.85S15.525 9.677 15.525 11.25v5.812c0 .935.754 1.688 1.688 1.688Z M5.625 18.75c-.934 0-1.688-.753-1.688-1.688V11.25c0-1.573 1.277-2.85 2.85-2.85s2.85 1.277 2.85 2.85v5.812c0 .935-.754 1.688-1.688 1.688Z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 1.5a5.25 5.25 0 0 1 5.25 5.25v1.875c0 .54.435.975.975.975h.05a.975.975 0 0 1 .975.975v3.375c0 .54-.435.975-.975.975h-.05a.975.975 0 0 1-.975-.975V12a5.25 5.25 0 0 1-5.25-5.25V1.5Z M15 1.5a5.25 5.25 0 0 0-5.25 5.25v1.875c0 .54-.435.975-.975.975h-.05a.975.975 0 0 0-.975.975v3.375c0 .54.435.975.975.975h.05a.975.975 0 0 0 .975.975V12a5.25 5.25 0 0 0 5.25-5.25V1.5Z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 21.75v-1.5" />
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+        <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+        <path d="M4 22h16" />
+        <path d="M10 14.66V17c0 .55-.45.99-.98 1.01A5 5 0 0 1 4 13V4h16v9a5 5 0 0 1-5.02 5.01c-.53-.02-.98-.46-.98-1.01v-2.34" />
+        <path d="M12 17v5" />
     </svg>
 );
 

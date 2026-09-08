@@ -91,9 +91,9 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
         : '/sinlogo.png';
 
     return (
-        <div className="p-2 sm:p-4 md:p-6 max-w-[1400px] w-full overflow-x-hidden mx-auto min-h-screen animate-fade-in space-y-4">
+        <div className="px-0 sm:px-4 md:px-6 py-2 sm:py-4 max-w-[1400px] w-full overflow-x-hidden mx-auto min-h-screen animate-fade-in space-y-3 sm:space-y-4">
             {/* Top Bar: Selector y Buscador */}
-            <div className="rounded-2xl bg-[#0E131F] border border-white/10 p-3 sm:p-4 shadow-xl space-y-3">
+            <div className="mx-2 sm:mx-0 rounded-2xl bg-[#0E131F] border border-white/10 p-3 sm:p-4 shadow-xl space-y-3">
                 {/* Cabecera y Buscador */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     {/* Competición Activa */}

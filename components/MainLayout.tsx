@@ -152,8 +152,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                     <BottomNav
                         activeScreen={activeScreen}
                         onNavigate={setActiveScreen}
-                        teamLogo={gameState.team?.logo}
-                        teamName={gameState.team?.name}
+                        team={gameState.team}
                     />
                 </div>
             )}

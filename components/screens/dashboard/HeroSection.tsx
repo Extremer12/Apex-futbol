@@ -282,10 +282,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
     return (
         <div className="apex-card p-6 relative overflow-hidden group min-h-[280px] flex flex-col justify-center">
-            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-                <TrophyIcon className="w-48 h-48 text-[var(--apex-gold)]" />
-            </div>
-            
             <div className="flex justify-between items-center mb-4">
                 <span className="text-[9px] font-black tracking-[0.3em] text-[var(--apex-gold)] uppercase">Próximo Partido</span>
                 <span className="text-[10px] font-black tracking-[0.15em] text-white/80 uppercase bg-white/5 px-2.5 py-0.5 rounded-lg border border-white/10">
