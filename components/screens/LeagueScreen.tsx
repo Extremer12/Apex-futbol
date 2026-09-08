@@ -1,12 +1,11 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo } from 'react';
 import { GameState } from '../../types';
 import { TrophyIcon } from '../icons';
-import { ALL_COMPETITIONS, CompetitionItem } from './league/constants';
+import { ALL_COMPETITIONS } from './league/constants';
 import { LeagueTable } from './league/LeagueTable';
 import { CupView } from './league/CupView';
-import { CompetitionHistoryView } from './league/CompetitionHistoryView';
 import { customPacksService } from '../../services/customPacks/packService';
-import { Search, Trophy, Globe, ChevronRight, History, Table } from 'lucide-react';
+import { Search, Trophy, Globe, ChevronRight } from 'lucide-react';
 
 interface LeagueScreenProps {
     gameState: GameState;
@@ -50,7 +49,6 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
     const [activeCountry, setActiveCountry] = useState<string>('MY_LEAGUE');
     const [searchQuery, setSearchQuery] = useState('');
     const [cupTab, setCupTab] = useState<'ROUNDS' | 'STATS'>('ROUNDS');
-    const [mainTab, setMainTab] = useState<'CURRENT' | 'HISTORY'>('CURRENT');
 
     const selectedCompDef = useMemo(() => {
         return ALL_COMPETITIONS.find(c => c.id === selectedCompetitionId);
@@ -115,77 +113,48 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                                 )}
                             </div>
                             <p className="text-[11px] text-slate-400">
-                                {selectedCompDef?.country || 'Torneo Oficial'} • {selectedCompDef?.type === 'LEAGUE' ? 'Liga' : 'Torneo Eliminatorio'}
+                                {selectedCompDef?.country || 'Torneo Oficial'} • {selectedCompDef?.type === 'LEAGUE' ? 'Tabla de Posiciones' : 'Fase Eliminatoria'}
                             </p>
                         </div>
                     </div>
 
-                    {/* Switch Modo: Torneo Actual vs Historial y Buscador */}
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
-                        {/* Selector Torneo Actual vs Historial */}
-                        <div className="flex items-center bg-[#161D2E] p-1 rounded-xl border border-white/10 shrink-0">
-                            <button
-                                onClick={() => setMainTab('CURRENT')}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
-                                    mainTab === 'CURRENT'
-                                        ? 'bg-[var(--apex-gold)] text-slate-950 shadow-md'
-                                        : 'text-slate-400 hover:text-white'
-                                }`}
-                            >
-                                <Table className="w-3.5 h-3.5" />
-                                <span>Torneo Actual</span>
-                            </button>
-                            <button
-                                onClick={() => setMainTab('HISTORY')}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
-                                    mainTab === 'HISTORY'
-                                        ? 'bg-[var(--apex-gold)] text-slate-950 shadow-md'
-                                        : 'text-slate-400 hover:text-white'
-                                }`}
-                            >
-                                <History className="w-3.5 h-3.5" />
-                                <span>Historial</span>
-                            </button>
+                    {/* Buscador Rápido */}
+                    <div className="relative w-full sm:w-72">
+                        <div className="relative">
+                            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                            <input
+                                type="text"
+                                placeholder="Buscar competición..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full bg-[#161D2E] border border-white/10 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[var(--apex-gold)] transition-colors"
+                            />
                         </div>
 
-                        {/* Buscador Rápido */}
-                        <div className="relative w-full sm:w-60">
-                            <div className="relative">
-                                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                                <input
-                                    type="text"
-                                    placeholder="Buscar competición..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full bg-[#161D2E] border border-white/10 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[var(--apex-gold)] transition-colors"
-                                />
+                        {/* Dropdown de Resultados de Búsqueda */}
+                        {searchResults.length > 0 && (
+                            <div className="absolute top-full left-0 right-0 mt-1.5 bg-[#121828] border border-white/15 rounded-xl shadow-2xl p-1.5 z-50 max-h-60 overflow-y-auto custom-scrollbar space-y-1">
+                                {searchResults.map((c) => {
+                                    const logo = customPacksService.resolveCompetitionLogo(c.id, c.name, c.logo);
+                                    return (
+                                        <button
+                                            key={c.id}
+                                            onClick={() => handleSelectComp(c.id, c.country || 'INTERNATIONAL')}
+                                            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-white/10 text-left transition-colors cursor-pointer"
+                                        >
+                                            <div className="w-6 h-6 shrink-0">
+                                                <img src={logo} alt="" className="w-full h-full object-contain" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="text-xs font-bold text-white truncate">{c.name}</div>
+                                                <div className="text-[10px] text-slate-400">{c.country || 'Internacional'}</div>
+                                            </div>
+                                            <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
+                                        </button>
+                                    );
+                                })}
                             </div>
-
-                            {/* Dropdown de Resultados de Búsqueda */}
-                            {searchResults.length > 0 && (
-                                <div className="absolute top-full left-0 right-0 mt-1.5 bg-[#121828] border border-white/15 rounded-xl shadow-2xl p-1.5 z-50 max-h-60 overflow-y-auto custom-scrollbar space-y-1">
-                                    {searchResults.map((c) => {
-                                        const logo = customPacksService.resolveCompetitionLogo(c.id, c.name, c.logo);
-                                        return (
-                                            <button
-                                                key={c.id}
-                                                onClick={() => handleSelectComp(c.id, c.country || 'INTERNATIONAL')}
-                                                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-white/10 text-left transition-colors cursor-pointer"
-                                            >
-                                                <div className="w-6 h-6 shrink-0">
-                                                    <img src={logo} alt="" className="w-full h-full object-contain" />
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="text-xs font-bold text-white truncate">{c.name}</div>
-                                                    <div className="text-[10px] text-slate-400">{c.country || 'Internacional'}</div>
-                                                </div>
-                                                <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
+                        )}
                     </div>
                 </div>
 
@@ -246,7 +215,7 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                 </div>
             </div>
 
-            {/* Contenido Principal: Torneo Actual (Tablas/Brackets) vs Apartado de Historial */}
+            {/* Contenido Principal: Tabla de Posiciones / Vista de Copa (Directo, Limpio y a Ancho Completo) */}
             <div className="w-full min-w-0 animate-fade-in">
                 {!selectedCompDef ? (
                     <div className="flex flex-col items-center justify-center min-h-[350px] bg-[#0E131F] border border-white/10 rounded-2xl p-6 text-center">
@@ -254,11 +223,6 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                         <h3 className="text-base font-black text-white uppercase tracking-wider">Selecciona una competición</h3>
                         <p className="text-slate-400 text-xs mt-1">Usa los botones superiores para cambiar de liga o país.</p>
                     </div>
-                ) : mainTab === 'HISTORY' ? (
-                    <CompetitionHistoryView
-                        competition={selectedCompDef}
-                        gameState={gameState}
-                    />
                 ) : selectedCompDef.type === 'LEAGUE' ? (
                     <LeagueTable
                         table={gameState.leagueTables[selectedCompDef.id]}

@@ -3,6 +3,7 @@ import { GameState, Screen, ElectoralPromise } from '../../types';
 import { GameAction } from '../../state/reducer';
 import { formatCurrency, formatCurrencyShort } from '../../utils';
 import { TrophyIcon, UsersIcon, TrendingUpIcon } from '../icons';
+import { TeamLogo } from '../../data/teams/helpers';
 
 interface ClubHubScreenProps {
     gameState: GameState;
@@ -39,22 +40,29 @@ export const ClubHubScreen: React.FC<ClubHubScreenProps> = ({ gameState, dispatc
         <div className="p-4 md:p-6 space-y-6 pb-24 animate-fade-in">
             {/* Header / Mandate Banner */}
             <div className="relative overflow-hidden apex-card p-6 md:p-8">
-                <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-                    <TrophyIcon className="w-48 h-48 text-[var(--apex-gold)] grayscale" />
-                </div>
-                <div className="relative z-10">
-                    <h2 className="text-[10px] font-black text-gold-gradient tracking-[0.3em] uppercase mb-1">Oficina Presidencial</h2>
-                    <h1 className="text-3xl md:text-4xl font-black text-white mb-4 uppercase italic tracking-tighter">Centro del Club</h1>
-                    <div className="flex flex-wrap items-center gap-3">
-                        <span className="bg-[var(--apex-gold)]/10 text-[var(--apex-gold)] px-3 py-1.5 rounded text-[10px] font-black border border-[var(--apex-gold)]/30 uppercase tracking-widest">
-                            MANDATO #{mandate.totalMandates}
-                        </span>
-                        <span className="flex items-center gap-2 text-xs font-bold text-white/70 uppercase tracking-widest">
-                            <span className="w-1.5 h-1.5 bg-[var(--apex-green)] rounded-full animate-pulse shadow-[0_0_10px_rgba(46,204,113,0.5)]"></span>
-                            Año {mandate.currentYear} de 4
-                        </span>
-                        <span className="text-white/20 hidden md:inline">|</span>
-                        <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest bg-black/40 px-3 py-1.5 rounded border border-white/5">Próxima Elección: Temporada {mandate.nextElectionSeason}</span>
+                {team.logo && (
+                    <div className="absolute -right-6 -bottom-6 w-48 h-48 opacity-10 pointer-events-none">
+                        <img src={team.logo} alt="" className="w-full h-full object-contain filter grayscale" />
+                    </div>
+                )}
+                <div className="relative z-10 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-black/40 border border-white/10 p-2.5 flex items-center justify-center shrink-0 shadow-xl">
+                        <TeamLogo team={team} className="w-full h-full object-contain drop-shadow-md" />
+                    </div>
+                    <div>
+                        <h2 className="text-[10px] font-black text-gold-gradient tracking-[0.3em] uppercase mb-1">Oficina Presidencial</h2>
+                        <h1 className="text-2xl sm:text-4xl font-black text-white uppercase italic tracking-tighter">{team.name}</h1>
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-2">
+                            <span className="bg-[var(--apex-gold)]/10 text-[var(--apex-gold)] px-2.5 py-1 rounded text-[10px] font-black border border-[var(--apex-gold)]/30 uppercase tracking-widest">
+                                MANDATO #{mandate.totalMandates}
+                            </span>
+                            <span className="flex items-center gap-1.5 text-xs font-bold text-white/70 uppercase tracking-widest">
+                                <span className="w-1.5 h-1.5 bg-[var(--apex-green)] rounded-full animate-pulse shadow-[0_0_10px_rgba(46,204,113,0.5)]"></span>
+                                Año {mandate.currentYear} de 4
+                            </span>
+                            <span className="text-white/20 hidden md:inline">|</span>
+                            <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest bg-black/40 px-2.5 py-1 rounded border border-white/5">Próxima Elección: T.{mandate.nextElectionSeason}</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -165,7 +173,7 @@ export const ClubHubScreen: React.FC<ClubHubScreenProps> = ({ gameState, dispatc
                                         </div>
                                         
                                         <div className="flex justify-between items-center mt-auto">
-                                            <span className="text-[9px] font-bold text-white/50 uppercase tracking-widest">Impact: <span className="text-[var(--apex-gold)] font-black">+{promise.impact}</span></span>
+                                            <span className="text-[9px] font-bold text-white/50 uppercase tracking-widest">Impacto: <span className="text-[var(--apex-gold)] font-black">+{promise.impact}</span></span>
                                             <span className="bg-white/5 text-white/40 px-2 py-1 rounded border border-white/5 text-[9px] font-black uppercase tracking-widest">T.{promise.deadline}</span>
                                         </div>
 

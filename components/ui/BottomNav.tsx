@@ -2,29 +2,33 @@ import React, { useState } from 'react';
 import { Screen } from '../../types';
 import { DashboardIcon, SquadIcon, TransfersIcon, FinancesIcon, LeagueIcon, ChartBarIcon, SettingsIcon, CalendarIcon, BriefcaseIcon, TrophyIcon } from '../icons';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Shield } from 'lucide-react';
 
 interface BottomNavProps {
     activeScreen: Screen;
     onNavigate: (screen: Screen) => void;
+    teamLogo?: string;
+    teamName?: string;
 }
 
-export const BottomNav: React.FC<BottomNavProps> = ({ activeScreen, onNavigate }) => {
+export const BottomNav: React.FC<BottomNavProps> = ({ activeScreen, onNavigate, teamLogo, teamName }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     const primaryItems = [
-        { screen: Screen.Dashboard, icon: DashboardIcon, label: 'Dashboard' },
-        { screen: Screen.Squad, icon: SquadIcon, label: 'Squad' },
-        { screen: Screen.Transfers, icon: TransfersIcon, label: 'Transfers' },
-        { screen: Screen.League, icon: LeagueIcon, label: 'Comps' },
+        { screen: Screen.Dashboard, icon: DashboardIcon, label: 'Inicio' },
+        { screen: Screen.Squad, icon: SquadIcon, label: 'Plantel' },
+        { screen: Screen.Transfers, icon: TransfersIcon, label: 'Fichajes' },
+        { screen: Screen.League, icon: LeagueIcon, label: 'Torneos' },
     ];
 
     const secondaryItems = [
-        { screen: Screen.Club, icon: TrophyIcon, label: 'Club' },
-        { screen: Screen.Calendar, icon: CalendarIcon, label: 'Calendar' },
-        { screen: Screen.Statistics, icon: ChartBarIcon, label: 'Stats' },
-        { screen: Screen.Finances, icon: FinancesIcon, label: 'Finances' },
-        { screen: Screen.Staff, icon: BriefcaseIcon, label: 'Staff' },
-        { screen: Screen.Settings, icon: SettingsIcon, label: 'Settings' },
+        { screen: Screen.Club, isClub: true, label: 'Club' },
+        { screen: Screen.Trophies, icon: TrophyIcon, label: 'Historial' },
+        { screen: Screen.Calendar, icon: CalendarIcon, label: 'Calendario' },
+        { screen: Screen.Statistics, icon: ChartBarIcon, label: 'Estadísticas' },
+        { screen: Screen.Finances, icon: FinancesIcon, label: 'Finanzas' },
+        { screen: Screen.Staff, icon: BriefcaseIcon, label: 'Personal' },
+        { screen: Screen.Settings, icon: SettingsIcon, label: 'Ajustes' },
     ];
 
     const handleNavigate = (screen: Screen) => {
@@ -61,7 +65,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeScreen, onNavigate }
                         <div className="max-w-md mx-auto px-4 mb-2">
                             <div className="rounded-2xl shadow-2xl p-4"
                                  style={{ background: 'rgba(15,20,35,0.95)', backdropFilter: 'blur(20px)', border: '1px solid var(--apex-border)', borderBottom: 'none' }}>
-                                <div className="grid grid-cols-3 gap-3">
+                                <div className="grid grid-cols-4 gap-2 sm:gap-2.5">
                                     {secondaryItems.map(item => {
                                         const isActive = activeScreen === item.screen;
                                         return (
@@ -70,14 +74,29 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeScreen, onNavigate }
                                                 whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
                                                 key={item.screen}
                                                 onClick={() => handleNavigate(item.screen)}
-                                                className="flex flex-col items-center justify-center gap-2 p-3 rounded-xl transition-colors duration-200"
+                                                className="flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-xl transition-colors duration-200"
                                                 style={{
                                                     background: isActive ? 'rgba(200,168,78,0.1)' : 'rgba(255,255,255,0.03)',
                                                     border: `1px solid ${isActive ? 'var(--apex-gold)' : 'var(--apex-border)'}`
                                                 }}
                                             >
-                                                <item.icon className="h-5 w-5" style={{ color: isActive ? 'var(--apex-gold)' : 'var(--apex-text)' }} />
-                                                <span className="font-bold text-[9px] uppercase tracking-wider"
+                                                {item.isClub ? (
+                                                    teamLogo ? (
+                                                        <div className="w-6 h-6 flex items-center justify-center shrink-0">
+                                                            <img 
+                                                                src={teamLogo} 
+                                                                alt={teamName || 'Club'} 
+                                                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                                                className="w-full h-full object-contain drop-shadow" 
+                                                            />
+                                                        </div>
+                                                    ) : (
+                                                        <Shield className="w-5 h-5 text-[var(--apex-gold)]" />
+                                                    )
+                                                ) : item.icon ? (
+                                                    <item.icon className="h-5 w-5" style={{ color: isActive ? 'var(--apex-gold)' : 'var(--apex-text)' }} />
+                                                ) : null}
+                                                <span className="font-bold text-[8px] sm:text-[9px] uppercase tracking-wider truncate w-full text-center"
                                                       style={{ color: isActive ? 'var(--apex-gold)' : 'var(--apex-text-secondary)' }}>
                                                     {item.label}
                                                 </span>
@@ -158,7 +177,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeScreen, onNavigate }
                         </div>
                         <span className="text-[9px] font-bold uppercase tracking-wider"
                               style={{ color: isMenuOpen ? 'var(--apex-gold)' : 'var(--apex-text-muted)' }}>
-                            More
+                            Más
                         </span>
                     </motion.button>
                 </div>

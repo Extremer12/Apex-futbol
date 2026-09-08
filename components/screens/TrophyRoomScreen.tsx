@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { GameState, AchievementCategory } from '../../types';
 import { TrophyIcon, SparklesIcon, ChartBarIcon } from '../icons';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ALL_COMPETITIONS, CompetitionItem } from './league/constants';
+import { CompetitionHistoryView } from './league/CompetitionHistoryView';
+import { customPacksService } from '../../services/customPacks/packService';
+import { Search } from 'lucide-react';
 
 interface TrophyRoomScreenProps {
     gameState: GameState;
 }
 
-type TabType = 'TROPHIES' | 'ACHIEVEMENTS' | 'HISTORY';
+type TabType = 'COMPETITIONS' | 'TROPHIES' | 'ACHIEVEMENTS' | 'HISTORY';
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -31,12 +35,27 @@ const itemVariants = {
 
 export const TrophyRoomScreen: React.FC<TrophyRoomScreenProps> = ({ gameState }) => {
     const { team, achievements = [], seasonHistory = [] } = gameState;
-    const [activeTab, setActiveTab] = useState<TabType>('TROPHIES');
+    const [activeTab, setActiveTab] = useState<TabType>('COMPETITIONS');
     const [selectedCategory, setSelectedCategory] = useState<AchievementCategory | 'ALL'>('ALL');
+    const [selectedCompId, setSelectedCompId] = useState<string>(team.leagueId || 'PREMIER_LEAGUE');
+    const [compSearch, setCompSearch] = useState<string>('');
 
     const trophies = team.trophyCabinet || [];
     const leagueTrophies = trophies.filter(t => t.type === 'league');
     const cupTrophies = trophies.filter(t => t.type === 'cup');
+
+    const selectedCompetitionDef = useMemo(() => {
+        return ALL_COMPETITIONS.find(c => c.id === selectedCompId) || ALL_COMPETITIONS[0];
+    }, [selectedCompId]);
+
+    const filteredCompetitions = useMemo(() => {
+        if (!compSearch.trim()) return ALL_COMPETITIONS;
+        const q = compSearch.toLowerCase();
+        return ALL_COMPETITIONS.filter(c => 
+            c.name.toLowerCase().includes(q) || 
+            (c.country && c.country.toLowerCase().includes(q))
+        );
+    }, [compSearch]);
 
     // Achievements calculation
     const unlockedAchievementsCount = achievements.filter(a => a.isUnlocked).length;
@@ -130,8 +149,19 @@ export const TrophyRoomScreen: React.FC<TrophyRoomScreenProps> = ({ gameState })
             {/* Navigation Tabs */}
             <div className="flex items-center justify-center sm:justify-start gap-2 border-b border-white/10 pb-4 overflow-x-auto">
                 <button
+                    onClick={() => setActiveTab('COMPETITIONS')}
+                    className={`flex items-center gap-2.5 px-5 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all whitespace-nowrap cursor-pointer ${
+                        activeTab === 'COMPETITIONS'
+                            ? 'bg-[var(--apex-gold)] text-black shadow-[0_0_20px_rgba(200,168,78,0.4)]'
+                            : 'bg-white/5 text-white/60 hover:text-white hover:bg-white/10 border border-white/5'
+                    }`}
+                >
+                    <TrophyIcon className="w-4 h-4" />
+                    Palmarés de Torneos
+                </button>
+                <button
                     onClick={() => setActiveTab('TROPHIES')}
-                    className={`flex items-center gap-2.5 px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${
+                    className={`flex items-center gap-2.5 px-5 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all whitespace-nowrap cursor-pointer ${
                         activeTab === 'TROPHIES'
                             ? 'bg-[var(--apex-gold)] text-black shadow-[0_0_20px_rgba(200,168,78,0.4)]'
                             : 'bg-white/5 text-white/60 hover:text-white hover:bg-white/10 border border-white/5'
@@ -141,28 +171,90 @@ export const TrophyRoomScreen: React.FC<TrophyRoomScreenProps> = ({ gameState })
                     Vitrina ({trophies.length})
                 </button>
                 <button
-                    onClick={() => setActiveTab('ACHIEVEMENTS')}
-                    className={`flex items-center gap-2.5 px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${
-                        activeTab === 'ACHIEVEMENTS'
-                            ? 'bg-[var(--apex-gold)] text-black shadow-[0_0_20px_rgba(200,168,78,0.4)]'
-                            : 'bg-white/5 text-white/60 hover:text-white hover:bg-white/10 border border-white/5'
-                    }`}
-                >
-                    <SparklesIcon className="w-4 h-4" />
-                    Logros & Desafíos ({unlockedAchievementsCount}/{totalAchievementsCount})
-                </button>
-                <button
                     onClick={() => setActiveTab('HISTORY')}
-                    className={`flex items-center gap-2.5 px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${
+                    className={`flex items-center gap-2.5 px-5 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all whitespace-nowrap cursor-pointer ${
                         activeTab === 'HISTORY'
                             ? 'bg-[var(--apex-gold)] text-black shadow-[0_0_20px_rgba(200,168,78,0.4)]'
                             : 'bg-white/5 text-white/60 hover:text-white hover:bg-white/10 border border-white/5'
                     }`}
                 >
                     <ChartBarIcon className="w-4 h-4" />
-                    Historial de Temporadas ({seasonHistory.length})
+                    Temporadas ({seasonHistory.length})
+                </button>
+                <button
+                    onClick={() => setActiveTab('ACHIEVEMENTS')}
+                    className={`flex items-center gap-2.5 px-5 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all whitespace-nowrap cursor-pointer ${
+                        activeTab === 'ACHIEVEMENTS'
+                            ? 'bg-[var(--apex-gold)] text-black shadow-[0_0_20px_rgba(200,168,78,0.4)]'
+                            : 'bg-white/5 text-white/60 hover:text-white hover:bg-white/10 border border-white/5'
+                    }`}
+                >
+                    <SparklesIcon className="w-4 h-4" />
+                    Logros ({unlockedAchievementsCount}/{totalAchievementsCount})
                 </button>
             </div>
+
+            {/* TAB 0: COMPETITIONS / PALMARÉS DE TORNEOS */}
+            {activeTab === 'COMPETITIONS' && (
+                <div className="space-y-5 animate-fade-in">
+                    {/* Selector de Competición */}
+                    <div className="rounded-2xl bg-[#0E131F] border border-white/10 p-4 shadow-xl space-y-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div>
+                                <h3 className="text-sm font-black text-white uppercase tracking-wider">
+                                    Historial y Palmarés por Torneo
+                                </h3>
+                                <p className="text-[11px] text-slate-400">
+                                    Selecciona cualquier torneo o copa para consultar su palmarés histórico y ediciones finalizadas.
+                                </p>
+                            </div>
+                            {/* Buscador */}
+                            <div className="relative w-full sm:w-64">
+                                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                                <input
+                                    type="text"
+                                    placeholder="Buscar liga o copa..."
+                                    value={compSearch}
+                                    onChange={(e) => setCompSearch(e.target.value)}
+                                    className="w-full bg-[#161D2E] border border-white/10 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[var(--apex-gold)] transition-colors"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Pills de Torneos */}
+                        <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1 custom-scrollbar">
+                            {filteredCompetitions.map(c => {
+                                const isSelected = selectedCompId === c.id;
+                                const cLogo = customPacksService.resolveCompetitionLogo(c.id, c.name, c.logo);
+                                return (
+                                    <button
+                                        key={c.id}
+                                        onClick={() => setSelectedCompId(c.id)}
+                                        className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 shrink-0 transition-all cursor-pointer ${
+                                            isSelected
+                                                ? 'bg-[var(--apex-gold)] text-slate-950 shadow-md font-black'
+                                                : 'bg-white/5 text-slate-300 hover:bg-white/10 border border-white/5'
+                                        }`}
+                                    >
+                                        <div className="w-4 h-4 shrink-0">
+                                            <img src={cLogo} alt="" className="w-full h-full object-contain" />
+                                        </div>
+                                        <span>{c.name}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Vista Detallada de Historial */}
+                    {selectedCompetitionDef && (
+                        <CompetitionHistoryView
+                            competition={selectedCompetitionDef}
+                            gameState={gameState}
+                        />
+                    )}
+                </div>
+            )}
 
             {/* TAB 1: TROPHIES */}
             {activeTab === 'TROPHIES' && (

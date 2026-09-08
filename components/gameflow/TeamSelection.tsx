@@ -24,76 +24,76 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
         }[];
     }> = {
         ENG: {
-            title: 'The Home of Football',
+            title: 'La Cuna del Fútbol',
             leagues: [
-                { id: LeagueId.PREMIER_LEAGUE, name: 'Premier League', logo: '/logos/Premier League.png', teams: '20', div: '1st Division' },
-                { id: LeagueId.CHAMPIONSHIP, name: 'Championship', logo: '/logos/Sky Bet Championship.png', teams: '24', div: '2nd Division' }
+                { id: LeagueId.PREMIER_LEAGUE, name: 'Premier League', logo: '/logos/Premier League.png', teams: '20', div: '1ª División' },
+                { id: LeagueId.CHAMPIONSHIP, name: 'Championship', logo: '/logos/Sky Bet Championship.png', teams: '24', div: '2ª División' }
             ]
         },
         ARG: {
             title: 'Pasión Argentina',
             leagues: [
-                { id: LeagueId.LIGA_ARGENTINA, name: 'Liga Argentina', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/primera_division/argentina_argentina-primera-division.football-logos.cc.svg', teams: '30', div: '1st Division' },
-                { id: LeagueId.PRIMERA_NACIONAL, name: 'Primera Nacional', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/primera_nacional/argentina_primera-nacional.football-logos.cc.svg', teams: '36', div: '2nd Division' }
+                { id: LeagueId.LIGA_ARGENTINA, name: 'Liga Argentina', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/primera_division/argentina_argentina-primera-division.football-logos.cc.svg', teams: '30', div: '1ª División' },
+                { id: LeagueId.PRIMERA_NACIONAL, name: 'Primera Nacional', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/primera_nacional/argentina_primera-nacional.football-logos.cc.svg', teams: '36', div: '2ª División' }
             ]
         },
         BRA: {
             title: 'O Jogo Bonito',
             leagues: [
-                { id: LeagueId.BRASILEIRAO, name: 'Brasileirão', logo: 'https://tmssl.akamaized.net/images/logo/header/bra1.png', teams: '20', div: '1st Division' },
-                { id: LeagueId.SERIE_B_BR, name: 'Série B', logo: 'https://tmssl.akamaized.net/images/logo/header/bra2.png', teams: '20', div: '2nd Division' }
+                { id: LeagueId.BRASILEIRAO, name: 'Brasileirão', logo: 'https://tmssl.akamaized.net/images/logo/header/bra1.png', teams: '20', div: '1ª División' },
+                { id: LeagueId.SERIE_B_BR, name: 'Série B', logo: 'https://tmssl.akamaized.net/images/logo/header/bra2.png', teams: '20', div: '2ª División' }
             ]
         },
         ESP: {
             title: 'La Pasión Española',
             leagues: [
-                { id: LeagueId.LA_LIGA, name: 'La Liga', logo: 'https://tmssl.akamaized.net/images/logo/header/es1.png', teams: '20', div: '1st Division' },
-                { id: LeagueId.SEGUNDA_DIVISION_ESP, name: 'Segunda División', logo: 'https://tmssl.akamaized.net/images/logo/header/es2.png', teams: '22', div: '2nd Division' }
+                { id: LeagueId.LA_LIGA, name: 'La Liga', logo: 'https://tmssl.akamaized.net/images/logo/header/es1.png', teams: '20', div: '1ª División' },
+                { id: LeagueId.SEGUNDA_DIVISION_ESP, name: 'Segunda División', logo: 'https://tmssl.akamaized.net/images/logo/header/es2.png', teams: '22', div: '2ª División' }
             ]
         },
         GER: {
             title: 'Deutsche Fußball',
             leagues: [
-                { id: LeagueId.BUNDESLIGA, name: 'Bundesliga', logo: 'https://tmssl.akamaized.net/images/logo/header/l1.png', teams: '18', div: '1st Division' },
-                { id: LeagueId.ZWEITE_BUNDESLIGA, name: '2. Bundesliga', logo: 'https://tmssl.akamaized.net/images/logo/header/l2.png', teams: '18', div: '2nd Division' }
+                { id: LeagueId.BUNDESLIGA, name: 'Bundesliga', logo: 'https://tmssl.akamaized.net/images/logo/header/l1.png', teams: '18', div: '1ª División' },
+                { id: LeagueId.ZWEITE_BUNDESLIGA, name: '2. Bundesliga', logo: 'https://tmssl.akamaized.net/images/logo/header/l2.png', teams: '18', div: '2ª División' }
             ]
         },
         ITA: {
             title: 'Il Calcio Italiano',
             leagues: [
-                { id: LeagueId.SERIE_A, name: 'Serie A', logo: 'https://tmssl.akamaized.net/images/logo/header/it1.png', teams: '20', div: '1st Division' },
-                { id: LeagueId.SERIE_B_ITA, name: 'Serie B', logo: 'https://tmssl.akamaized.net/images/logo/header/it2.png', teams: '20', div: '2nd Division' }
+                { id: LeagueId.SERIE_A, name: 'Serie A', logo: 'https://tmssl.akamaized.net/images/logo/header/it1.png', teams: '20', div: '1ª División' },
+                { id: LeagueId.SERIE_B_ITA, name: 'Serie B', logo: 'https://tmssl.akamaized.net/images/logo/header/it2.png', teams: '20', div: '2ª División' }
             ]
         },
         FRA: {
             title: 'Le Football Français',
             leagues: [
-                { id: LeagueId.LIGUE_1, name: 'Ligue 1', logo: 'https://tmssl.akamaized.net/images/logo/header/fr1.png', teams: '18', div: '1st Division' },
-                { id: LeagueId.LIGUE_2, name: 'Ligue 2', logo: 'https://tmssl.akamaized.net/images/logo/header/fr2.png', teams: '20', div: '2nd Division' }
+                { id: LeagueId.LIGUE_1, name: 'Ligue 1', logo: 'https://tmssl.akamaized.net/images/logo/header/fr1.png', teams: '18', div: '1ª División' },
+                { id: LeagueId.LIGUE_2, name: 'Ligue 2', logo: 'https://tmssl.akamaized.net/images/logo/header/fr2.png', teams: '20', div: '2ª División' }
             ]
         }
     };
 
     const COUNTRIES = [
-        { id: 'ENG' as CountryCode, name: 'England', flagUrl: 'https://flagcdn.com/gb-eng.svg' },
-        { id: 'ESP' as CountryCode, name: 'Spain', flagUrl: 'https://flagcdn.com/es.svg' },
-        { id: 'GER' as CountryCode, name: 'Germany', flagUrl: 'https://flagcdn.com/de.svg' },
-        { id: 'ITA' as CountryCode, name: 'Italy', flagUrl: 'https://flagcdn.com/it.svg' },
-        { id: 'FRA' as CountryCode, name: 'France', flagUrl: 'https://flagcdn.com/fr.svg' },
+        { id: 'ENG' as CountryCode, name: 'Inglaterra', flagUrl: 'https://flagcdn.com/gb-eng.svg' },
+        { id: 'ESP' as CountryCode, name: 'España', flagUrl: 'https://flagcdn.com/es.svg' },
+        { id: 'GER' as CountryCode, name: 'Alemania', flagUrl: 'https://flagcdn.com/de.svg' },
+        { id: 'ITA' as CountryCode, name: 'Italia', flagUrl: 'https://flagcdn.com/it.svg' },
+        { id: 'FRA' as CountryCode, name: 'Francia', flagUrl: 'https://flagcdn.com/fr.svg' },
         { id: 'ARG' as CountryCode, name: 'Argentina', flagUrl: 'https://flagcdn.com/ar.svg' },
-        { id: 'BRA' as CountryCode, name: 'Brazil', flagUrl: 'https://flagcdn.com/br.svg' },
+        { id: 'BRA' as CountryCode, name: 'Brasil', flagUrl: 'https://flagcdn.com/br.svg' },
     ];
 
     const FAN_EXPECTATIONS: Record<Team['tier'], string> = {
-        Top: 'Win the League',
-        Mid: 'Win Trophies',
-        Lower: 'Qualify Europe',
+        Top: 'Ganar la Liga',
+        Mid: 'Pelear Títulos',
+        Lower: 'Clasificar a Copas',
     };
 
     const FINANCIAL_STATUS: Record<Team['tier'], { label: string; color: string }> = {
-        Top: { label: 'Very Strong', color: 'var(--apex-green)' },
-        Mid: { label: 'Strong', color: 'var(--apex-green-light)' },
-        Lower: { label: 'Stable', color: 'var(--apex-gold)' },
+        Top: { label: 'Muy Sólidas', color: 'var(--apex-green)' },
+        Mid: { label: 'Sólidas', color: 'var(--apex-green-light)' },
+        Lower: { label: 'Estables', color: 'var(--apex-gold)' },
     };
 
     const teamsByLeague = useMemo(() => {
@@ -130,8 +130,8 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                         </button>
                     )}
                     <div className="flex-1 text-center">
-                        <h1 className="text-lg font-extrabold tracking-[0.15em] uppercase text-white">Choose Your Club</h1>
-                        <p className="text-[10px] font-semibold tracking-[0.15em] uppercase" style={{ color: 'var(--apex-text-secondary)' }}>Build Your Legacy</p>
+                        <h1 className="text-lg font-extrabold tracking-[0.15em] uppercase text-white">Elige Tu Club</h1>
+                        <p className="text-[10px] font-semibold tracking-[0.15em] uppercase" style={{ color: 'var(--apex-text-secondary)' }}>Construye Tu Legado</p>
                     </div>
                     {currentStep > 1 && <div className="w-9" />}
                 </div>
@@ -139,8 +139,8 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                 {/* Stepper */}
                 <div className="flex items-center justify-center gap-0 mb-4">
                     {[
-                        { num: 1, label: 'COUNTRY' },
-                        { num: 2, label: 'LEAGUE' },
+                        { num: 1, label: 'PAÍS' },
+                        { num: 2, label: 'LIGA' },
                         { num: 3, label: 'CLUB' }
                     ].map((step, i) => (
                         <React.Fragment key={step.num}>
@@ -332,7 +332,7 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                         onClick={() => onSelectTeam(selectedTeam)}
                         className="apex-btn-gold"
                     >
-                        CONFIRM SELECTION
+                        CONFIRMAR ELECCIÓN
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
                         </svg>
