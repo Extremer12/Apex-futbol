@@ -22,6 +22,7 @@ const SponsorshipScreen = React.lazy(() => import('./screens/SponsorshipScreen')
 const ElectionScreen = React.lazy(() => import('./screens/ElectionScreen').then(m => ({ default: m.ElectionScreen })));
 const ClubHubScreen = React.lazy(() => import('./screens/ClubHubScreen').then(m => ({ default: m.ClubHubScreen })));
 const TrophyRoomScreen = React.lazy(() => import('./screens/TrophyRoomScreen').then(m => ({ default: m.TrophyRoomScreen })));
+const ProfileScreen = React.lazy(() => import('./screens/ProfileScreen').then(m => ({ default: m.ProfileScreen })));
 
 import { LoadingSpinner } from './icons';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -104,6 +105,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
             );
             case Screen.Club: return <ClubHubScreen gameState={gameState} dispatch={dispatch} />;
             case Screen.Trophies: return <TrophyRoomScreen gameState={gameState} />;
+            case Screen.Profile: return <ProfileScreen gameState={gameState} dispatch={dispatch} />;
             default: return <Dashboard gameState={gameState} onPlayMatch={onPlayMatch} matchPhase={matchPhase} pendingResults={pendingResults} onWeekComplete={onWeekComplete} allPlayers={allPlayers} dispatch={dispatch} isSimulating={isSimulating} onStartNewSeason={onStartNewSeason} onOpenSeasonEndModal={onOpenSeasonEndModal} />;
         }
     };
@@ -133,7 +135,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
             {/* Regular Layout - Hidden during Fullscreen Live Match Simulation */}
             {!isLiveMatch && (
                 <div className="max-w-md mx-auto min-h-screen relative shadow-2xl" style={{ background: 'var(--apex-dark)' }}>
-                    <Header gameState={gameState} />
+                    <Header gameState={gameState} onNavigate={setActiveScreen} />
                     <main className="pb-24 overflow-x-hidden">
                         <AnimatePresence mode="popLayout" initial={false}>
                             <motion.div

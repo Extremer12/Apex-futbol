@@ -14,8 +14,10 @@ export const COMMUNITY_PACK_CDN = 'https://cdn.jsdelivr.net/gh/Extremer12/commun
 export const ARG_PACK_CDN = COMMUNITY_PACK_CDN; // Backwards-compatible alias
 
 export const ARG_COMPETITION_LOGOS: Record<string, string> = {
+    // Ligas Nacionales
     LIGA_ARGENTINA: `${COMMUNITY_PACK_CDN}/Argentina/primera_division/argentina_argentina-primera-division.football-logos.cc.svg`,
     PRIMERA_NACIONAL: `${COMMUNITY_PACK_CDN}/Argentina/primera_nacional/argentina_primera-nacional.football-logos.cc.svg`,
+    COPA_DE_PRIMERA: `${COMMUNITY_PACK_CDN}/Copa%20de%20Primera/paraguay_copa-de-primera.football-logos.cc.svg`,
     PREMIER_LEAGUE: `${COMMUNITY_PACK_CDN}/Premier%20League/england_english-premier-league.football-logos.cc.svg`,
     CHAMPIONSHIP: `${COMMUNITY_PACK_CDN}/Championship/england_efl-championship.football-logos.cc.svg`,
     SERIE_A: `${COMMUNITY_PACK_CDN}/Serie%20A/italy_serie-a.football-logos.cc.svg`,
@@ -29,8 +31,31 @@ export const ARG_COMPETITION_LOGOS: Record<string, string> = {
     ZWEITE_BUNDESLIGA: `${COMMUNITY_PACK_CDN}/Bundesliga%202/germany_2-bundesliga.football-logos.cc.svg`,
     LIGUE_1: `${COMMUNITY_PACK_CDN}/Ligue%201/france_ligue-1.football-logos.cc.svg`,
     LIGUE_2: `${COMMUNITY_PACK_CDN}/Ligue%202/france_ligue-2.football-logos.cc.svg`,
+    
+    // Torneos y Copas Internacionales
+    CHAMPIONS_LEAGUE: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_uefa-champions-league.football-logos.cc.svg`,
+    COPA_LIBERTADORES: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_conmebol-libertadores.football-logos.cc.svg`,
+    COPA_SUDAMERICANA: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_conmebol-copa-sudamericana.football-logos.cc.svg`,
+    EUROPA_LEAGUE: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_uefa-europa-league.football-logos.cc.svg`,
+    CONFERENCE_LEAGUE: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_uefa-conference-league.football-logos.cc.svg`,
+    SUPER_CUP: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_uefa-super-cup.football-logos.cc.svg`,
+    COPA_INTERCONTINENTAL: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_fifa-intercontinental-cup.football-logos.cc.svg`,
+    CLUB_WORLD_CUP: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_fifa-club-world-cup.football-logos.cc.svg`,
+    CONCACAF_CHAMPIONS_CUP: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_concacaf-champions-cup.football-logos.cc.svg`,
+    CONCACAF_NATIONS_LEAGUE: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_concacaf-nations-league.football-logos.cc.svg`,
+    LEAGUES_CUP: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_leagues-cup.football-logos.cc.svg`,
+    CAF_CHAMPIONS_LEAGUE: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_caf-champions-league.football-logos.cc.svg`,
+    AFC_ASIAN_CUP: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_afc-asian-cup.football-logos.cc.svg`,
+    ASEAN_CHAMPIONSHIP: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_asean-championship.football-logos.cc.svg`,
+    WORLD_CUP_2026: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_fifa-world-cup-2026.football-logos.cc.svg`,
+    WORLD_CUP_2030: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_fifa-world-cup-2030.football-logos.cc.svg`,
+    UEFA_EURO: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_uefa-euro-2028.football-logos.cc.svg`,
+    UEFA_NATIONS_LEAGUE: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_uefa-nations-league.football-logos.cc.svg`,
+
+    // Alias en minúsculas
     'liga-argentina': `${COMMUNITY_PACK_CDN}/Argentina/primera_division/argentina_argentina-primera-division.football-logos.cc.svg`,
     'primera-nacional': `${COMMUNITY_PACK_CDN}/Argentina/primera_nacional/argentina_primera-nacional.football-logos.cc.svg`,
+    'copa-de-primera': `${COMMUNITY_PACK_CDN}/Copa%20de%20Primera/paraguay_copa-de-primera.football-logos.cc.svg`,
     'premier-league': `${COMMUNITY_PACK_CDN}/Premier%20League/england_english-premier-league.football-logos.cc.svg`,
     'championship': `${COMMUNITY_PACK_CDN}/Championship/england_efl-championship.football-logos.cc.svg`,
     'serie-a': `${COMMUNITY_PACK_CDN}/Serie%20A/italy_serie-a.football-logos.cc.svg`,
@@ -47,6 +72,10 @@ export const ARG_COMPETITION_LOGOS: Record<string, string> = {
     'bundesliga-2': `${COMMUNITY_PACK_CDN}/Bundesliga%202/germany_2-bundesliga.football-logos.cc.svg`,
     'ligue-1': `${COMMUNITY_PACK_CDN}/Ligue%201/france_ligue-1.football-logos.cc.svg`,
     'ligue-2': `${COMMUNITY_PACK_CDN}/Ligue%202/france_ligue-2.football-logos.cc.svg`,
+    'champions_league': `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_uefa-champions-league.football-logos.cc.svg`,
+    'copa_libertadores': `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_conmebol-libertadores.football-logos.cc.svg`,
+    'copa_sudamericana': `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_conmebol-copa-sudamericana.football-logos.cc.svg`,
+    'copa_intercontinental': `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_fifa-intercontinental-cup.football-logos.cc.svg`,
 };
 
 export const ARG_CLUB_LOGOS_BY_ID: Record<number | string, string> = {
@@ -88,6 +117,7 @@ export const ARG_CLUB_LOGOS_BY_ID: Record<number | string, string> = {
     // ==========================================
     // Primera Nacional (IDs 750+)
     // ==========================================
+    751: `${COMMUNITY_PACK_CDN}/otros%20Argentina/argentina_san-martin-san-juan.football-logos.cc.svg`,
     752: `${COMMUNITY_PACK_CDN}/otros%20Argentina/argentina_san-martin-san-juan.football-logos.cc.svg`,
     753: `${COMMUNITY_PACK_CDN}/Argentina/primera_nacional/argentina_chaco-for-ever.football-logos.cc.svg`,
     754: `${COMMUNITY_PACK_CDN}/Argentina/primera_nacional/argentina_nueva-chicago.football-logos.cc.svg`,
@@ -385,9 +415,65 @@ export const ARG_CLUB_LOGOS_BY_ID: Record<number | string, string> = {
     665: `${COMMUNITY_PACK_CDN}/Ligue%202/france_red-star-fc.football-logos.cc.svg`,
     667: `${COMMUNITY_PACK_CDN}/Ligue%202/france_annecy.football-logos.cc.svg`,
     668: `${COMMUNITY_PACK_CDN}/Ligue%202/france_guingamp.football-logos.cc.svg`,
+    // ==========================================
+    // Copa de Primera (Paraguay) (IDs 981-994)
+    // ==========================================
+    981: `${COMMUNITY_PACK_CDN}/Copa%20de%20Primera/paraguay_olimpia.football-logos.cc.svg`,
+    982: `${COMMUNITY_PACK_CDN}/Copa%20de%20Primera/paraguay_cerro-porteno.football-logos.cc.svg`,
+    983: `${COMMUNITY_PACK_CDN}/Copa%20de%20Primera/paraguay_libertad.football-logos.cc.svg`,
+    984: `${COMMUNITY_PACK_CDN}/Copa%20de%20Primera/paraguay_guarani.football-logos.cc.svg`,
+    985: `${COMMUNITY_PACK_CDN}/Copa%20de%20Primera/paraguay_nacional.football-logos.cc.svg`,
+    986: `${COMMUNITY_PACK_CDN}/Copa%20de%20Primera/paraguay_sportivo-luqueno.football-logos.cc.svg`,
+    987: `${COMMUNITY_PACK_CDN}/Copa%20de%20Primera/paraguay_sportivo-ameliano.football-logos.cc.svg`,
+    988: `${COMMUNITY_PACK_CDN}/Copa%20de%20Primera/paraguay_trinidense.football-logos.cc.svg`,
+    989: `${COMMUNITY_PACK_CDN}/Copa%20de%20Primera/paraguay_2-de-mayo.football-logos.cc.svg`,
+    990: `${COMMUNITY_PACK_CDN}/Copa%20de%20Primera/paraguay_general-caballero-jlm.football-logos.cc.svg`,
+    991: `${COMMUNITY_PACK_CDN}/Copa%20de%20Primera/paraguay_deportivo-recoleta.football-logos.cc.svg`,
+    992: `${COMMUNITY_PACK_CDN}/Copa%20de%20Primera/paraguay_club-atletico-tembetary.football-logos.cc.svg`,
+    993: `${COMMUNITY_PACK_CDN}/Copa%20de%20Primera/paraguay_rubio-nu.football-logos.cc.svg`,
+    994: `${COMMUNITY_PACK_CDN}/Copa%20de%20Primera/paraguay_sportivo-san-lorenzo.football-logos.cc.svg`,
 };
 
 export const ARG_CLUB_LOGOS_BY_NAME: Record<string, string> = {
+    // Paraguay - Copa de Primera
+    'olimpia': ARG_CLUB_LOGOS_BY_ID[981],
+    'club olimpia': ARG_CLUB_LOGOS_BY_ID[981],
+    'cerro porteno': ARG_CLUB_LOGOS_BY_ID[982],
+    'cerro porteño': ARG_CLUB_LOGOS_BY_ID[982],
+    'club cerro porteno': ARG_CLUB_LOGOS_BY_ID[982],
+    'libertad': ARG_CLUB_LOGOS_BY_ID[983],
+    'club libertad': ARG_CLUB_LOGOS_BY_ID[983],
+    'guarani': ARG_CLUB_LOGOS_BY_ID[984],
+    'guaraní': ARG_CLUB_LOGOS_BY_ID[984],
+    'club guarani': ARG_CLUB_LOGOS_BY_ID[984],
+    'club guaraní': ARG_CLUB_LOGOS_BY_ID[984],
+    'nacional': ARG_CLUB_LOGOS_BY_ID[985],
+    'club nacional': ARG_CLUB_LOGOS_BY_ID[985],
+    'nacional py': ARG_CLUB_LOGOS_BY_ID[985],
+    'nacional asuncion': ARG_CLUB_LOGOS_BY_ID[985],
+    'sportivo luqueno': ARG_CLUB_LOGOS_BY_ID[986],
+    'sportivo luqueño': ARG_CLUB_LOGOS_BY_ID[986],
+    'luqueno': ARG_CLUB_LOGOS_BY_ID[986],
+    'luqueño': ARG_CLUB_LOGOS_BY_ID[986],
+    'sportivo ameliano': ARG_CLUB_LOGOS_BY_ID[987],
+    'ameliano': ARG_CLUB_LOGOS_BY_ID[987],
+    'sportivo trinidense': ARG_CLUB_LOGOS_BY_ID[988],
+    'trinidense': ARG_CLUB_LOGOS_BY_ID[988],
+    '2 de mayo': ARG_CLUB_LOGOS_BY_ID[989],
+    'dos de mayo': ARG_CLUB_LOGOS_BY_ID[989],
+    'general caballero': ARG_CLUB_LOGOS_BY_ID[990],
+    'general caballero jlm': ARG_CLUB_LOGOS_BY_ID[990],
+    'gral caballero': ARG_CLUB_LOGOS_BY_ID[990],
+    'deportivo recoleta': ARG_CLUB_LOGOS_BY_ID[991],
+    'recoleta': ARG_CLUB_LOGOS_BY_ID[991],
+    'club atletico tembetary': ARG_CLUB_LOGOS_BY_ID[992],
+    'club atlético tembetary': ARG_CLUB_LOGOS_BY_ID[992],
+    'tembetary': ARG_CLUB_LOGOS_BY_ID[992],
+    'rubio nu': ARG_CLUB_LOGOS_BY_ID[993],
+    'rubio ñu': ARG_CLUB_LOGOS_BY_ID[993],
+    'sportivo san lorenzo': ARG_CLUB_LOGOS_BY_ID[994],
+    'san lorenzo py': ARG_CLUB_LOGOS_BY_ID[994],
+
     // Argentina - Primera División
     'boca juniors': ARG_CLUB_LOGOS_BY_ID[701],
     'river plate': ARG_CLUB_LOGOS_BY_ID[702],
@@ -476,6 +562,31 @@ export const ARG_CLUB_LOGOS_BY_NAME: Record<string, string> = {
     'san martin de tucuman': ARG_CLUB_LOGOS_BY_ID[788],
     'san martin tucuman': ARG_CLUB_LOGOS_BY_ID[788],
     'tristan suarez': ARG_CLUB_LOGOS_BY_ID[789],
+
+    // otros Argentina (Federal A, Ascenso y Regionales)
+    'san martin san juan': ARG_CLUB_LOGOS_BY_ID[751],
+    'san martin de san juan': ARG_CLUB_LOGOS_BY_ID[751],
+    'san martin sj': ARG_CLUB_LOGOS_BY_ID[751],
+    'guillermo brown': ARG_CLUB_LOGOS_BY_ID[772],
+    'guillermo brown de puerto madryn': ARG_CLUB_LOGOS_BY_ID[772],
+    'guillermo brown puerto madryn': ARG_CLUB_LOGOS_BY_ID[772],
+    'brown de puerto madryn': ARG_CLUB_LOGOS_BY_ID[772],
+    'villa dalmine': ARG_CLUB_LOGOS_BY_ID[790],
+    'villa mitre': ARG_CLUB_LOGOS_BY_ID[791],
+    'villa mitre de bahia blanca': ARG_CLUB_LOGOS_BY_ID[791],
+    'douglas haig': ARG_CLUB_LOGOS_BY_ID[792],
+    'douglas haig de pergamino': ARG_CLUB_LOGOS_BY_ID[792],
+    'deportivo merlo': ARG_CLUB_LOGOS_BY_ID[793],
+    'merlo': ARG_CLUB_LOGOS_BY_ID[793],
+    'atletico policial': ARG_CLUB_LOGOS_BY_ID[794],
+    'policial': ARG_CLUB_LOGOS_BY_ID[794],
+    'libertad sunchales': ARG_CLUB_LOGOS_BY_ID[795],
+    'libertad de sunchales': ARG_CLUB_LOGOS_BY_ID[795],
+    'racing de olavarria': ARG_CLUB_LOGOS_BY_ID[796],
+    'racing olavarria': ARG_CLUB_LOGOS_BY_ID[796],
+    'sportivo desamparados': ARG_CLUB_LOGOS_BY_ID[797],
+    'desamparados': ARG_CLUB_LOGOS_BY_ID[797],
+    'desamparados san juan': ARG_CLUB_LOGOS_BY_ID[797],
 
     // England - Premier League
     'arsenal': ARG_CLUB_LOGOS_BY_ID[1],
@@ -934,23 +1045,6 @@ export const ARG_CLUB_LOGOS_BY_NAME: Record<string, string> = {
     'osnabruck': `${COMMUNITY_PACK_CDN}/Bundesliga%202/germany_osnabruck.football-logos.cc.svg`,
     'osnabrück': `${COMMUNITY_PACK_CDN}/Bundesliga%202/germany_osnabruck.football-logos.cc.svg`,
     'vfl osnabruck': `${COMMUNITY_PACK_CDN}/Bundesliga%202/germany_osnabruck.football-logos.cc.svg`,
-
-    // Argentina - Otros Clubes
-    'san martin de san juan': ARG_CLUB_LOGOS_BY_ID[752],
-    'san martin san juan': ARG_CLUB_LOGOS_BY_ID[752],
-    'san martin sj': ARG_CLUB_LOGOS_BY_ID[752],
-    'guillermo brown': ARG_CLUB_LOGOS_BY_ID[772],
-    'villa dalmine': ARG_CLUB_LOGOS_BY_ID[790],
-    'villa dálmine': ARG_CLUB_LOGOS_BY_ID[790],
-    'villa mitre': ARG_CLUB_LOGOS_BY_ID[791],
-    'douglas haig': ARG_CLUB_LOGOS_BY_ID[792],
-    'deportivo merlo': ARG_CLUB_LOGOS_BY_ID[793],
-    'atletico policial': ARG_CLUB_LOGOS_BY_ID[794],
-    'atlético policial': ARG_CLUB_LOGOS_BY_ID[794],
-    'libertad sunchales': ARG_CLUB_LOGOS_BY_ID[795],
-    'racing de olavarria': ARG_CLUB_LOGOS_BY_ID[796],
-    'racing de olavarría': ARG_CLUB_LOGOS_BY_ID[796],
-    'sportivo desamparados': ARG_CLUB_LOGOS_BY_ID[797],
 
     // Francia - Ligue 1
     'psg': ARG_CLUB_LOGOS_BY_ID[601],

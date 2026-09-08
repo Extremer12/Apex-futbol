@@ -725,8 +725,33 @@ export const generateSeasonSchedule = (allTeams: Team[]): Match[] => {
     return fullSchedule;
 };
 
-export const generateCupDraw = (teams: Team[], roundName: string, competition: Match['competition'] = 'FA_Cup'): Match[] => {
-    const shuffled = [...teams].sort(() => 0.5 - Math.random());
+export const generateCupDraw = (
+    teams: Team[], 
+    roundName: string, 
+    competition: Match['competition'] = 'FA_Cup',
+    playerTeamId?: number
+): Match[] => {
+    // Determine the largest power of 2 <= teams.length (capped at 32 for tournament UI symmetry)
+    const allowedSizes = [32, 16, 8, 4, 2];
+    const targetSize = allowedSizes.find(size => teams.length >= size) || (teams.length >= 2 ? 2 : 0);
+    
+    if (targetSize < 2) return [];
+
+    let selectedTeams = [...teams];
+    // If we have more teams than targetSize, prioritize player's team and select top/shuffled teams
+    if (selectedTeams.length > targetSize) {
+        const playerTeam = playerTeamId ? selectedTeams.find(t => t.id === playerTeamId) : null;
+        const otherTeams = selectedTeams.filter(t => t.id !== playerTeamId);
+        // Shuffle other teams
+        const shuffledOthers = [...otherTeams].sort(() => 0.5 - Math.random());
+        if (playerTeam) {
+            selectedTeams = [playerTeam, ...shuffledOthers.slice(0, targetSize - 1)];
+        } else {
+            selectedTeams = shuffledOthers.slice(0, targetSize);
+        }
+    }
+
+    const shuffled = [...selectedTeams].sort(() => 0.5 - Math.random());
     const fixtures: Match[] = [];
 
     for (let i = 0; i < shuffled.length; i += 2) {

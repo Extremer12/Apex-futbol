@@ -82,7 +82,8 @@ export function startNewSeason(currentState: GameState): GameState {
         [LeagueId.LIGA_ARGENTINA]: 'Liga Profesional de Fútbol',
         [LeagueId.PRIMERA_NACIONAL]: 'Primera Nacional',
         [LeagueId.BRASILEIRAO]: 'Brasileirão Série A',
-        [LeagueId.SERIE_B_BR]: 'Brasileirão Série B'
+        [LeagueId.SERIE_B_BR]: 'Brasileirão Série B',
+        [LeagueId.COPA_DE_PRIMERA]: 'Copa de Primera (Paraguay)'
     };
 
     // Leagues
@@ -298,7 +299,8 @@ export function startNewSeason(currentState: GameState): GameState {
         'SERIE_A', 'SERIE_B_ITA',
         'LIGUE_1', 'LIGUE_2',
         'LIGA_ARGENTINA', 'PRIMERA_NACIONAL',
-        'BRASILEIRAO', 'SERIE_B_BR'
+        'BRASILEIRAO', 'SERIE_B_BR',
+        'COPA_DE_PRIMERA'
     ].forEach(lid => {
         const teams = getLeagueTeams(lid);
         newLeagueTables[lid] = createInitialLeagueTable(teams);
@@ -322,12 +324,13 @@ export function startNewSeason(currentState: GameState): GameState {
     const italianTeamsNewSeason = [...newItaTeams, ...newSerieBTeams];
     const argentinianTeamsNewSeason = [...newArgTeams, ...newNacTeams];
 
-    const faCupRound1 = generateCupDraw(englishTeamsNewSeason, 'Round 1', 'FA_Cup');
-    const carabaoCupRound1 = generateCupDraw(englishTeamsNewSeason, 'Round 1', 'Carabao_Cup');
-    const copaDelReyRound1 = generateCupDraw(spanishTeamsNewSeason, 'Round 1', 'Copa_del_Rey');
-    const dfbPokalRound1 = generateCupDraw(germanTeamsNewSeason, 'Round 1', 'DFB_Pokal');
-    const coppaItaliaRound1 = generateCupDraw(italianTeamsNewSeason, 'Round 1', 'Coppa_Italia');
-    const copaArgentinaRound1 = generateCupDraw(argentinianTeamsNewSeason, 'Round 1', 'Copa_Argentina');
+    const playerTeamId = currentState.team?.id;
+    const faCupRound1 = generateCupDraw(englishTeamsNewSeason, 'Round 1', 'FA_Cup', playerTeamId);
+    const carabaoCupRound1 = generateCupDraw(englishTeamsNewSeason, 'Round 1', 'Carabao_Cup', playerTeamId);
+    const copaDelReyRound1 = generateCupDraw(spanishTeamsNewSeason, 'Round 1', 'Copa_del_Rey', playerTeamId);
+    const dfbPokalRound1 = generateCupDraw(germanTeamsNewSeason, 'Round 1', 'DFB_Pokal', playerTeamId);
+    const coppaItaliaRound1 = generateCupDraw(italianTeamsNewSeason, 'Round 1', 'Coppa_Italia', playerTeamId);
+    const copaArgentinaRound1 = generateCupDraw(argentinianTeamsNewSeason, 'Round 1', 'Copa_Argentina', playerTeamId);
 
     const faCupFixtures = faCupRound1.map(m => ({ ...m, week: 5 }));
     const carabaoCupFixtures = carabaoCupRound1.map(m => ({ ...m, week: 2 }));
@@ -376,12 +379,13 @@ export function startNewSeason(currentState: GameState): GameState {
         ...getTopTeams(LeagueId.CHAMPIONSHIP, 2)
     ].slice(0, 36);
 
-    // Copa Libertadores Qualification (32 teams)
+    // Copa Libertadores Qualification (32 teams: Argentina, Brasil, Paraguay)
     const libTeams = [
         ...getTopTeams(LeagueId.LIGA_ARGENTINA, 12),
         ...getTopTeams(LeagueId.BRASILEIRAO, 12),
-        ...getTopTeams(LeagueId.LIGA_ARGENTINA, 4), // Extra spots from lower ranks
-        ...getTopTeams(LeagueId.BRASILEIRAO, 4)
+        ...getTopTeams(LeagueId.COPA_DE_PRIMERA, 4),
+        ...getTopTeams(LeagueId.LIGA_ARGENTINA, 2),
+        ...getTopTeams(LeagueId.BRASILEIRAO, 2)
     ].slice(0, 32);
 
     const clSwiss = generateSwissPhase(clTeams, 'Champions_League', 8); // 8 matches as per real 2026 format

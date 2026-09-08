@@ -71,6 +71,12 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                 { id: LeagueId.LIGUE_1, name: 'Ligue 1', logo: 'https://tmssl.akamaized.net/images/logo/header/fr1.png', teams: '18', div: '1ª División' },
                 { id: LeagueId.LIGUE_2, name: 'Ligue 2', logo: 'https://tmssl.akamaized.net/images/logo/header/fr2.png', teams: '20', div: '2ª División' }
             ]
+        },
+        PAR: {
+            title: 'Fútbol Paraguayo',
+            leagues: [
+                { id: LeagueId.COPA_DE_PRIMERA, name: 'Copa de Primera', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Copa%20de%20Primera/paraguay_copa-de-primera.football-logos.cc.svg', teams: '14', div: '1ª División' }
+            ]
         }
     };
 
@@ -82,6 +88,7 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
         { id: 'FRA' as CountryCode, name: 'Francia', flagUrl: 'https://flagcdn.com/fr.svg' },
         { id: 'ARG' as CountryCode, name: 'Argentina', flagUrl: 'https://flagcdn.com/ar.svg' },
         { id: 'BRA' as CountryCode, name: 'Brasil', flagUrl: 'https://flagcdn.com/br.svg' },
+        { id: 'PAR' as CountryCode, name: 'Paraguay', flagUrl: 'https://flagcdn.com/py.svg' },
     ];
 
     const FAN_EXPECTATIONS: Record<Team['tier'], string> = {

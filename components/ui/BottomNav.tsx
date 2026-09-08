@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Screen, Team } from '../../types';
 import { DashboardIcon, SquadIcon, TransfersIcon, FinancesIcon, LeagueIcon, ChartBarIcon, SettingsIcon, CalendarIcon, BriefcaseIcon } from '../icons';
 import { motion, AnimatePresence } from 'framer-motion';
-import { History, Shield } from 'lucide-react';
+import { History, Shield, Award } from 'lucide-react';
 import { TeamLogo } from '../../data/teams/helpers';
 
 interface BottomNavProps {
@@ -22,6 +22,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeScreen, onNavigate, 
     ];
 
     const secondaryItems = [
+        { screen: Screen.Profile, icon: Award, label: 'Perfil' },
         { screen: Screen.Club, isClub: true, label: 'Club' },
         { screen: Screen.Trophies, icon: History, label: 'Historial' },
         { screen: Screen.Calendar, icon: CalendarIcon, label: 'Calendario' },

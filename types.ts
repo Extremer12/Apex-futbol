@@ -80,10 +80,11 @@ export enum LeagueId {
   LIGA_ARGENTINA = 'LIGA_ARGENTINA',
   PRIMERA_NACIONAL = 'PRIMERA_NACIONAL',
   BRASILEIRAO = 'BRASILEIRAO',
-  SERIE_B_BR = 'SERIE_B_BR'
+  SERIE_B_BR = 'SERIE_B_BR',
+  COPA_DE_PRIMERA = 'COPA_DE_PRIMERA'
 }
 
-export type CountryCode = 'ENG' | 'ESP' | 'GER' | 'ITA' | 'FRA' | 'ARG' | 'BRA';
+export type CountryCode = 'ENG' | 'ESP' | 'GER' | 'ITA' | 'FRA' | 'ARG' | 'BRA' | 'PAR';
 
 export const LEAGUE_COUNTRY: Record<LeagueId, CountryCode> = {
   [LeagueId.PREMIER_LEAGUE]: 'ENG',
@@ -99,7 +100,8 @@ export const LEAGUE_COUNTRY: Record<LeagueId, CountryCode> = {
   [LeagueId.LIGA_ARGENTINA]: 'ARG',
   [LeagueId.PRIMERA_NACIONAL]: 'ARG',
   [LeagueId.BRASILEIRAO]: 'BRA',
-  [LeagueId.SERIE_B_BR]: 'BRA'
+  [LeagueId.SERIE_B_BR]: 'BRA',
+  [LeagueId.COPA_DE_PRIMERA]: 'PAR'
 };
 
 export interface Team {
@@ -158,10 +160,34 @@ export interface Scout {
   hiringFee: number;
 }
 
+export interface PresidentialStint {
+  clubId: number;
+  clubName: string;
+  clubLogo?: string;
+  startSeason: number;
+  endSeason?: number;
+  seasonsManaged: number;
+  mandatesCompleted: number;
+  trophiesWon: string[];
+  winPercentage: number;
+  totalMatches: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  electionsWon: number;
+  status: 'ACTIVE' | 'REELECTED' | 'RESIGNED' | 'DEFEATED' | 'SACKED';
+}
+
 export interface PlayerProfile {
   name: string;
   experience: number; // Starts at 0
   photo?: string;     // Custom avatar image DataURL or URL
+  nationality?: string;
+  style?: string;     // 'Pragmático' | 'Canterano' | 'Galáctico' | 'Equilibrado'
+  careerStints?: PresidentialStint[];
+  careerWins?: number;
+  careerDraws?: number;
+  careerLosses?: number;
 }
 
 export interface NewsItem {
@@ -500,6 +526,7 @@ export enum Screen {
   Sponsorships = 'PATROCINIOS',
   Stadium = 'ESTADIO',
   Trophies = 'TROFEOS',
+  Profile = 'PERFIL',
 }
 
 export type MatchPhase = 'PRE' | 'LIVE' | 'POST';

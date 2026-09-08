@@ -7,6 +7,9 @@ const OFFICIAL_GLOBAL_PACK_ZIP = 'https://github.com/Extremer12/community-data-p
 export const CommunityPacksSection: React.FC = () => {
     const [stats, setStats] = useState({ teams: 0, competitions: 0, players: 0, total: 0 });
     const [isArgPackActive, setIsArgPackActive] = useState<boolean>(false);
+    const [isOtrosArgActive, setIsOtrosArgActive] = useState<boolean>(false);
+    const [isParaguayPackActive, setIsParaguayPackActive] = useState<boolean>(false);
+    const [isCompetitionsPackActive, setIsCompetitionsPackActive] = useState<boolean>(false);
     const [isEngPackActive, setIsEngPackActive] = useState<boolean>(false);
     const [isItaPackActive, setIsItaPackActive] = useState<boolean>(false);
     const [isSpaPackActive, setIsSpaPackActive] = useState<boolean>(false);
@@ -26,6 +29,9 @@ export const CommunityPacksSection: React.FC = () => {
         const s = await customPacksService.getStats();
         setStats(s);
         setIsArgPackActive(customPacksService.isArgentinePackActive());
+        setIsOtrosArgActive(customPacksService.isOtrosArgentinaPackActive());
+        setIsParaguayPackActive(customPacksService.isParaguayPackActive());
+        setIsCompetitionsPackActive(customPacksService.isCompetitionsPackActive());
         setIsEngPackActive(customPacksService.isEnglishPackActive());
         setIsItaPackActive(customPacksService.isItalianPackActive());
         setIsSpaPackActive(customPacksService.isSpanishPackActive());
@@ -46,11 +52,78 @@ export const CommunityPacksSection: React.FC = () => {
         try {
             customPacksService.setArgentinePackActive(enable);
             setIsArgPackActive(enable);
+            setIsOtrosArgActive(enable);
             setFeedbackMessage({
                 type: 'success',
                 text: enable 
                     ? '¡Pack de Fútbol Argentino activado! Se cargaron los escudos oficiales vectoriales (Primera División + Primera Nacional).' 
                     : 'Pack de Fútbol Argentino desinstalado. Se restauraron los escudos genéricos neutros.'
+            });
+        } catch (err: any) {
+            setFeedbackMessage({
+                type: 'error',
+                text: 'Error al cambiar el estado del pack: ' + (err.message || err)
+            });
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    // Toggle Otros Argentina Pack (jsDelivr CDN)
+    const handleToggleOtrosArgPack = (enable: boolean) => {
+        setIsProcessing(true);
+        try {
+            customPacksService.setOtrosArgentinaPackActive(enable);
+            setIsOtrosArgActive(enable);
+            setFeedbackMessage({
+                type: 'success',
+                text: enable 
+                    ? '¡Pack Otros Clubes de Argentina activado! Se cargaron los escudos de Godoy Cruz, Platense, San Martín (SJ), Guillermo Brown, Villa Dálmine, Douglas Haig y más.' 
+                    : 'Pack Otros Clubes de Argentina desinstalado. Se restauraron los escudos genéricos neutros.'
+            });
+        } catch (err: any) {
+            setFeedbackMessage({
+                type: 'error',
+                text: 'Error al cambiar el estado del pack: ' + (err.message || err)
+            });
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    // Toggle Paraguay Pack (jsDelivr CDN)
+    const handleToggleParaguayPack = (enable: boolean) => {
+        setIsProcessing(true);
+        try {
+            customPacksService.setParaguayPackActive(enable);
+            setIsParaguayPackActive(enable);
+            setFeedbackMessage({
+                type: 'success',
+                text: enable 
+                    ? '¡Pack de Fútbol Paraguayo activado! Se cargaron los escudos de Olimpia, Cerro Porteño, Libertad, Guaraní y 14 clubes de la Copa de Primera.' 
+                    : 'Pack de Fútbol Paraguayo desinstalado. Se restauraron los escudos genéricos neutros.'
+            });
+        } catch (err: any) {
+            setFeedbackMessage({
+                type: 'error',
+                text: 'Error al cambiar el estado del pack: ' + (err.message || err)
+            });
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    // Toggle International Competitions Pack (jsDelivr CDN)
+    const handleToggleCompetitionsPack = (enable: boolean) => {
+        setIsProcessing(true);
+        try {
+            customPacksService.setCompetitionsPackActive(enable);
+            setIsCompetitionsPackActive(enable);
+            setFeedbackMessage({
+                type: 'success',
+                text: enable 
+                    ? '¡Pack de Competiciones Internacionales activado! Se cargaron los logos de Champions League, Libertadores, Sudamericana, Mundial de Clubes, Intercontinental y más.' 
+                    : 'Pack de Competiciones Internacionales desinstalado. Se restauraron los logos genéricos.'
             });
         } catch (err: any) {
             setFeedbackMessage({
@@ -199,6 +272,9 @@ export const CommunityPacksSection: React.FC = () => {
         setIsProcessing(true);
         try {
             customPacksService.setArgentinePackActive(true);
+            customPacksService.setOtrosArgentinaPackActive(true);
+            customPacksService.setParaguayPackActive(true);
+            customPacksService.setCompetitionsPackActive(true);
             customPacksService.setEnglishPackActive(true);
             customPacksService.setItalianPackActive(true);
             customPacksService.setSpanishPackActive(true);
@@ -206,6 +282,9 @@ export const CommunityPacksSection: React.FC = () => {
             customPacksService.setGermanPackActive(true);
             customPacksService.setFrenchPackActive(true);
             setIsArgPackActive(true);
+            setIsOtrosArgActive(true);
+            setIsParaguayPackActive(true);
+            setIsCompetitionsPackActive(true);
             setIsEngPackActive(true);
             setIsItaPackActive(true);
             setIsSpaPackActive(true);
@@ -214,7 +293,7 @@ export const CommunityPacksSection: React.FC = () => {
             setIsFrePackActive(true);
             setFeedbackMessage({
                 type: 'success',
-                text: '¡Todos los packs comunitarios activos! (Argentina, Inglaterra, España, Italia, Brasil, Alemania y Francia).'
+                text: '¡Todos los packs comunitarios activos! (Argentina, Paraguay, Torneos Internacionales, Inglaterra, España, Italia, Brasil, Alemania y Francia).'
             });
         } catch (err: any) {
             setFeedbackMessage({ type: 'error', text: err.message || 'Error al activar los packs.' });
@@ -325,12 +404,16 @@ export const CommunityPacksSection: React.FC = () => {
         try {
             await customPacksService.clearAllPacks();
             setIsArgPackActive(false);
+            setIsOtrosArgActive(false);
+            setIsParaguayPackActive(false);
+            setIsCompetitionsPackActive(false);
             setIsEngPackActive(false);
             setIsItaPackActive(false);
             setIsSpaPackActive(false);
             setIsBraPackActive(false);
             setIsGerPackActive(false);
-            setFeedbackMessage({ type: 'success', text: 'Se restablecieron todos los escudos a genéricos neutros.' });
+            setIsFrePackActive(false);
+            setFeedbackMessage({ type: 'success', text: 'Se restablecieron todos los escudos y logos a genéricos neutros.' });
             await refreshState();
         } catch (err: any) {
             setFeedbackMessage({ type: 'error', text: 'Error al restablecer: ' + err.message });
@@ -350,7 +433,7 @@ export const CommunityPacksSection: React.FC = () => {
                 </div>
                 
                 <div className="flex items-center gap-2">
-                    {(!isArgPackActive || !isEngPackActive || !isItaPackActive || !isSpaPackActive || !isBraPackActive || !isGerPackActive) && (
+                    {(!isArgPackActive || !isOtrosArgActive || !isParaguayPackActive || !isCompetitionsPackActive || !isEngPackActive || !isItaPackActive || !isSpaPackActive || !isBraPackActive || !isGerPackActive || !isFrePackActive) && (
                         <button
                             onClick={handleEnableAllPacks}
                             disabled={isProcessing}
@@ -360,7 +443,7 @@ export const CommunityPacksSection: React.FC = () => {
                             <span>Activar Todos</span>
                         </button>
                     )}
-                    {(isArgPackActive || isEngPackActive || isItaPackActive || isSpaPackActive || isBraPackActive || isGerPackActive || stats.total > 0) && (
+                    {(isArgPackActive || isOtrosArgActive || isParaguayPackActive || isCompetitionsPackActive || isEngPackActive || isItaPackActive || isSpaPackActive || isBraPackActive || isGerPackActive || isFrePackActive || stats.total > 0) && (
                         <button
                             onClick={handleClearAll}
                             disabled={isProcessing}
@@ -375,7 +458,7 @@ export const CommunityPacksSection: React.FC = () => {
             </div>
 
             {/* 🌟 Grid de Packs Oficiales Disponibles en jsDelivr */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-6 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                 {/* Tarjeta 1: Fútbol Argentino */}
                 <div className={`rounded-2xl border p-4 transition-all shadow-xl relative overflow-hidden flex flex-col justify-between ${
                     isArgPackActive 
@@ -423,6 +506,58 @@ export const CommunityPacksSection: React.FC = () => {
                             >
                                 <Sparkles className="w-3.5 h-3.5 text-black stroke-[2.5]" />
                                 <span>Instalar Argentina</span>
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* Tarjeta 1b: Otros Clubes Argentina */}
+                <div className={`rounded-2xl border p-4 transition-all shadow-xl relative overflow-hidden flex flex-col justify-between ${
+                    isOtrosArgActive 
+                        ? 'bg-gradient-to-b from-[#101E2E] to-[#0A131F] border-cyan-500/40' 
+                        : 'bg-gradient-to-b from-[#161D2E] to-[#0E131F] border-white/10'
+                }`}>
+                    <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-md border border-cyan-500/20">
+                                Argentina • 12 Escudos
+                            </span>
+                            {isOtrosArgActive ? (
+                                <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-500/30">
+                                    <CheckCircle2 className="w-3 h-3" /> Activo
+                                </span>
+                            ) : (
+                                <span className="text-[10px] font-bold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700">
+                                    Genérico
+                                </span>
+                            )}
+                        </div>
+                        <h4 className="text-sm font-black text-white uppercase tracking-tight">
+                            Otros Clubes de Argentina
+                        </h4>
+                        <p className="text-xs text-slate-400 leading-relaxed">
+                            Godoy Cruz, Platense, San Martín (SJ), Guillermo Brown, Villa Dálmine, Douglas Haig y más.
+                        </p>
+                    </div>
+
+                    <div className="pt-3 mt-2 border-t border-white/5">
+                        {isOtrosArgActive ? (
+                            <button
+                                onClick={() => handleToggleOtrosArgPack(false)}
+                                disabled={isProcessing}
+                                className="w-full py-2 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 text-red-300 hover:text-red-100 text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+                            >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>Desinstalar</span>
+                            </button>
+                        ) : (
+                            <button
+                                onClick={() => handleToggleOtrosArgPack(true)}
+                                disabled={isProcessing}
+                                className="w-full py-2 bg-cyan-500 hover:bg-cyan-400 text-[#0A0E17] text-[11px] font-black uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                                <Sparkles className="w-3.5 h-3.5 text-black stroke-[2.5]" />
+                                <span>Instalar Otros Arg</span>
                             </button>
                         )}
                     </div>
@@ -735,6 +870,110 @@ export const CommunityPacksSection: React.FC = () => {
                             >
                                 <Globe className="w-3.5 h-3.5 text-white stroke-[2.5]" />
                                 <span>Instalar Francia</span>
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* Tarjeta 8: Fútbol Paraguayo */}
+                <div className={`rounded-2xl border p-4 transition-all shadow-xl relative overflow-hidden flex flex-col justify-between ${
+                    isParaguayPackActive 
+                        ? 'bg-gradient-to-b from-[#2B1014] to-[#170A0D] border-rose-500/40' 
+                        : 'bg-gradient-to-b from-[#161D2E] to-[#0E131F] border-white/10'
+                }`}>
+                    <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-md border border-rose-500/20">
+                                Paraguay • 14 Escudos
+                            </span>
+                            {isParaguayPackActive ? (
+                                <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-500/30">
+                                    <CheckCircle2 className="w-3 h-3" /> Activo
+                                </span>
+                            ) : (
+                                <span className="text-[10px] font-bold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700">
+                                    Genérico
+                                </span>
+                            )}
+                        </div>
+                        <h4 className="text-sm font-black text-white uppercase tracking-tight">
+                            Copa de Primera
+                        </h4>
+                        <p className="text-xs text-slate-400 leading-relaxed">
+                            Olimpia, Cerro Porteño, Libertad, Guaraní, Nacional, Luqueño, Ameliano y más.
+                        </p>
+                    </div>
+
+                    <div className="pt-3 mt-2 border-t border-white/5">
+                        {isParaguayPackActive ? (
+                            <button
+                                onClick={() => handleToggleParaguayPack(false)}
+                                disabled={isProcessing}
+                                className="w-full py-2 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 text-red-300 hover:text-red-100 text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+                            >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>Desinstalar</span>
+                            </button>
+                        ) : (
+                            <button
+                                onClick={() => handleToggleParaguayPack(true)}
+                                disabled={isProcessing}
+                                className="w-full py-2 bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-black uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                                <Sparkles className="w-3.5 h-3.5 text-white stroke-[2.5]" />
+                                <span>Instalar Paraguay</span>
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* Tarjeta 9: Competiciones y Torneos Internacionales */}
+                <div className={`rounded-2xl border p-4 transition-all shadow-xl relative overflow-hidden flex flex-col justify-between ${
+                    isCompetitionsPackActive 
+                        ? 'bg-gradient-to-b from-[#1C182B] to-[#0D0B17] border-amber-500/40' 
+                        : 'bg-gradient-to-b from-[#161D2E] to-[#0E131F] border-white/10'
+                }`}>
+                    <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+                                Internacional • 18+ Copas
+                            </span>
+                            {isCompetitionsPackActive ? (
+                                <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-500/30">
+                                    <CheckCircle2 className="w-3 h-3" /> Activo
+                                </span>
+                            ) : (
+                                <span className="text-[10px] font-bold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700">
+                                    Genérico
+                                </span>
+                            )}
+                        </div>
+                        <h4 className="text-sm font-black text-white uppercase tracking-tight">
+                            Torneos & Copas Oficiales
+                        </h4>
+                        <p className="text-xs text-slate-400 leading-relaxed">
+                            Champions League, Libertadores, Sudamericana, Mundial de Clubes, Intercontinental y Mundiales.
+                        </p>
+                    </div>
+
+                    <div className="pt-3 mt-2 border-t border-white/5">
+                        {isCompetitionsPackActive ? (
+                            <button
+                                onClick={() => handleToggleCompetitionsPack(false)}
+                                disabled={isProcessing}
+                                className="w-full py-2 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 text-red-300 hover:text-red-100 text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+                            >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>Desinstalar</span>
+                            </button>
+                        ) : (
+                            <button
+                                onClick={() => handleToggleCompetitionsPack(true)}
+                                disabled={isProcessing}
+                                className="w-full py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] font-black uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                                <Sparkles className="w-3.5 h-3.5 text-black stroke-[2.5]" />
+                                <span>Instalar Torneos</span>
                             </button>
                         )}
                     </div>

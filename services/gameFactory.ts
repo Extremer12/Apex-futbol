@@ -103,27 +103,28 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
     const primeraNacTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.PRIMERA_NACIONAL);
     const brasileiraoTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.BRASILEIRAO);
     const serieBBrTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.SERIE_B_BR);
+    const paraguayTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.COPA_DE_PRIMERA);
 
     // International competitions (Champions League, Copa Libertadores) are NOT generated
     // in season 1. They will be created by seasonManager.ts from season 2 onwards
     // based on actual league standings.
 
-    // Generate national cup draws for all leagues
+    // Generate national cup draws for all leagues (capped at 32 teams for bracket symmetry)
     const englishTeams = [...plTeams, ...chTeams];
-    const faCupRound1 = generateCupDraw(englishTeams, 'Round 1', 'FA_Cup');
-    const carabaoCupRound1 = generateCupDraw(englishTeams, 'Round 1', 'Carabao_Cup');
+    const faCupRound1 = generateCupDraw(englishTeams, 'Round 1', 'FA_Cup', playerTeamCopy.id);
+    const carabaoCupRound1 = generateCupDraw(englishTeams, 'Round 1', 'Carabao_Cup', playerTeamCopy.id);
 
     const spanishTeams = [...laTeams, ...seg2EspTeams];
-    const copaDelReyRound1 = generateCupDraw(spanishTeams, 'Round 1', 'Copa_del_Rey');
+    const copaDelReyRound1 = generateCupDraw(spanishTeams, 'Round 1', 'Copa_del_Rey', playerTeamCopy.id);
 
     const germanTeams = [...gerTeams, ...zweiteTeams];
-    const dfbPokalRound1 = generateCupDraw(germanTeams, 'Round 1', 'DFB_Pokal');
+    const dfbPokalRound1 = generateCupDraw(germanTeams, 'Round 1', 'DFB_Pokal', playerTeamCopy.id);
 
     const italianTeams = [...itaTeams, ...serieBItaTeams];
-    const coppaItaliaRound1 = generateCupDraw(italianTeams, 'Round 1', 'Coppa_Italia');
+    const coppaItaliaRound1 = generateCupDraw(italianTeams, 'Round 1', 'Coppa_Italia', playerTeamCopy.id);
 
     const argentinianTeams = [...ligaArgTeams, ...primeraNacTeams];
-    const copaArgentinaRound1 = generateCupDraw(argentinianTeams, 'Round 1', 'Copa_Argentina');
+    const copaArgentinaRound1 = generateCupDraw(argentinianTeams, 'Round 1', 'Copa_Argentina', playerTeamCopy.id);
 
     // Assign cup fixtures to specific weeks
     const faCupFixtures = faCupRound1.map(m => ({ ...m, week: 5 }));
@@ -169,6 +170,7 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
             [LeagueId.PRIMERA_NACIONAL]: createInitialLeagueTable(primeraNacTeams),
             [LeagueId.BRASILEIRAO]: createInitialLeagueTable(brasileiraoTeams),
             [LeagueId.SERIE_B_BR]: createInitialLeagueTable(serieBBrTeams),
+            [LeagueId.COPA_DE_PRIMERA]: createInitialLeagueTable(paraguayTeams),
         },
         finances: {
             balance: selectedTeam.budget,

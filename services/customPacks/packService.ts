@@ -36,11 +36,36 @@ class CustomPacksService {
         try {
             if (active) {
                 localStorage.setItem('apex_pack_argentine_active', 'true');
+                localStorage.setItem('apex_pack_otros_arg_active', 'true');
             } else {
                 localStorage.removeItem('apex_pack_argentine_active');
+                localStorage.removeItem('apex_pack_otros_arg_active');
             }
         } catch (e) {
             console.error('Failed to save pack state:', e);
+        }
+        this.notifyListeners();
+    }
+
+    public isOtrosArgentinaPackActive(): boolean {
+        if (typeof window === 'undefined') return false;
+        try {
+            return localStorage.getItem('apex_pack_otros_arg_active') === 'true' || localStorage.getItem('apex_pack_argentine_active') === 'true';
+        } catch {
+            return false;
+        }
+    }
+
+    public setOtrosArgentinaPackActive(active: boolean): void {
+        if (typeof window === 'undefined') return;
+        try {
+            if (active) {
+                localStorage.setItem('apex_pack_otros_arg_active', 'true');
+            } else {
+                localStorage.removeItem('apex_pack_otros_arg_active');
+            }
+        } catch (e) {
+            console.error('Failed to save otros arg pack state:', e);
         }
         this.notifyListeners();
     }
@@ -183,6 +208,52 @@ class CustomPacksService {
         this.notifyListeners();
     }
 
+    public isParaguayPackActive(): boolean {
+        if (typeof window === 'undefined') return false;
+        try {
+            return localStorage.getItem('apex_pack_paraguay_active') === 'true';
+        } catch {
+            return false;
+        }
+    }
+
+    public setParaguayPackActive(active: boolean): void {
+        if (typeof window === 'undefined') return;
+        try {
+            if (active) {
+                localStorage.setItem('apex_pack_paraguay_active', 'true');
+            } else {
+                localStorage.removeItem('apex_pack_paraguay_active');
+            }
+        } catch (e) {
+            console.error('Failed to save paraguay pack state:', e);
+        }
+        this.notifyListeners();
+    }
+
+    public isCompetitionsPackActive(): boolean {
+        if (typeof window === 'undefined') return false;
+        try {
+            return localStorage.getItem('apex_pack_competitions_active') === 'true';
+        } catch {
+            return false;
+        }
+    }
+
+    public setCompetitionsPackActive(active: boolean): void {
+        if (typeof window === 'undefined') return;
+        try {
+            if (active) {
+                localStorage.setItem('apex_pack_competitions_active', 'true');
+            } else {
+                localStorage.removeItem('apex_pack_competitions_active');
+            }
+        } catch (e) {
+            console.error('Failed to save competitions pack state:', e);
+        }
+        this.notifyListeners();
+    }
+
     public async init(): Promise<void> {
         if (this.isInitialized) return;
         await this.reloadCache();
@@ -226,6 +297,8 @@ class CustomPacksService {
         if (custom) return custom;
 
         const isArgActive = this.isArgentinePackActive();
+        const isOtrosArgActive = this.isOtrosArgentinaPackActive();
+        const isParActive = this.isParaguayPackActive();
         const isEngActive = this.isEnglishPackActive();
         const isItaActive = this.isItalianPackActive();
         const isSpaActive = this.isSpanishPackActive();
@@ -233,12 +306,16 @@ class CustomPacksService {
         const isGerActive = this.isGermanPackActive();
         const isFreActive = this.isFrenchPackActive();
 
-        if (isArgActive || isEngActive || isItaActive || isSpaActive || isBraActive || isGerActive || isFreActive) {
+        if (isArgActive || isOtrosArgActive || isParActive || isEngActive || isItaActive || isSpaActive || isBraActive || isGerActive || isFreActive) {
             // Check by numeric/string ID
             if (team.id !== undefined && team.id !== null) {
                 const idNum = Number(team.id);
+                // Paraguayan IDs: 981-994
+                if (isParActive && idNum >= 981 && idNum <= 994 && ARG_CLUB_LOGOS_BY_ID[team.id]) {
+                    return ARG_CLUB_LOGOS_BY_ID[team.id];
+                }
                 // Argentine IDs: 701-799
-                if (isArgActive && idNum >= 700 && idNum < 800 && ARG_CLUB_LOGOS_BY_ID[team.id]) {
+                if ((isArgActive || isOtrosArgActive) && idNum >= 700 && idNum < 800 && ARG_CLUB_LOGOS_BY_ID[team.id]) {
                     return ARG_CLUB_LOGOS_BY_ID[team.id];
                 }
                 // English IDs: 1-20 (Premier) and 101-124 (Championship)
@@ -292,13 +369,19 @@ class CustomPacksService {
         const custom = this.getCustomLogo('competitions', keys);
         if (custom) return custom;
 
-        if (this.isArgentinePackActive() || this.isEnglishPackActive() || this.isItalianPackActive() || this.isSpanishPackActive() || this.isBrazilianPackActive() || this.isGermanPackActive() || this.isFrenchPackActive()) {
+        if (this.isCompetitionsPackActive() || this.isParaguayPackActive() || this.isArgentinePackActive() || this.isEnglishPackActive() || this.isItalianPackActive() || this.isSpanishPackActive() || this.isBrazilianPackActive() || this.isGermanPackActive() || this.isFrenchPackActive()) {
             if (ARG_COMPETITION_LOGOS[competitionId]) {
                 return ARG_COMPETITION_LOGOS[competitionId];
             }
             const norm = normalizeKey(competitionId);
             if (ARG_COMPETITION_LOGOS[norm]) {
                 return ARG_COMPETITION_LOGOS[norm];
+            }
+            if (name) {
+                const nameNorm = normalizeKey(name);
+                if (ARG_COMPETITION_LOGOS[nameNorm]) {
+                    return ARG_COMPETITION_LOGOS[nameNorm];
+                }
             }
         }
 

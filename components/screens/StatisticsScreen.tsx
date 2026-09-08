@@ -70,6 +70,7 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
         PRIMERA_NACIONAL: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/primera_nacional/argentina_primera-nacional.football-logos.cc.svg',
         BRASILEIRAO: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Brasileirao_Serie_A_logo.png/200px-Brasileirao_Serie_A_logo.png',
         SERIE_B_BR: 'https://upload.wikimedia.org/wikipedia/en/thumb/f/f6/Brasileir%C3%A3o_S%C3%A9rie_B_logo.png/200px-Brasileir%C3%A3o_S%C3%A9rie_B_logo.png',
+        COPA_DE_PRIMERA: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Copa%20de%20Primera/paraguay_copa-de-primera.football-logos.cc.svg',
     };
 
     const LEAGUE_NAMES: Record<string, string> = {
@@ -86,7 +87,8 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
         LIGA_ARGENTINA: 'Liga Argentina',
         PRIMERA_NACIONAL: 'Primera Nacional',
         BRASILEIRAO: 'Brasileirão',
-        SERIE_B_BR: 'Série B BR'
+        SERIE_B_BR: 'Série B BR',
+        COPA_DE_PRIMERA: 'Copa de Primera (Paraguay)'
     };
 
     const AVAILABLE_LEAGUES = Object.values(LeagueId);

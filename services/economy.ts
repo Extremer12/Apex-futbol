@@ -218,6 +218,9 @@ export const getBaseWeeklyIncome = (leagueId: string): number => {
         case LeagueId.PRIMERA_NACIONAL:
         case 'PRIMERA_NACIONAL':
             return 160_000;
+        case LeagueId.COPA_DE_PRIMERA:
+        case 'COPA_DE_PRIMERA':
+            return 400_000;
         default:
             return 500_000;
     }
@@ -271,6 +274,9 @@ export const calculatePrizeMoney = (leagueId: string, position: number): number 
         case LeagueId.PRIMERA_NACIONAL:
         case 'PRIMERA_NACIONAL':
             baseAmount = 8_000_000; break;
+        case LeagueId.COPA_DE_PRIMERA:
+        case 'COPA_DE_PRIMERA':
+            baseAmount = 20_000_000; break;
         default:
             baseAmount = 25_000_000;
     }

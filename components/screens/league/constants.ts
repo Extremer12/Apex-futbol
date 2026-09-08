@@ -13,6 +13,7 @@ export const LEAGUE_THEMES: Record<string, string> = {
     PRIMERA_NACIONAL: 'cyan',
     BRASILEIRAO: 'green',
     SERIE_B_BR: 'green',
+    COPA_DE_PRIMERA: 'rose',
 };
 
 export const LEAGUE_LOGOS: Record<string, string> = {
@@ -30,12 +31,14 @@ export const LEAGUE_LOGOS: Record<string, string> = {
     PRIMERA_NACIONAL: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/primera_nacional/argentina_primera-nacional.football-logos.cc.svg',
     BRASILEIRAO: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Brasileirao_Serie_A_logo.png/200px-Brasileirao_Serie_A_logo.png',
     SERIE_B_BR: 'https://upload.wikimedia.org/wikipedia/en/thumb/f/f6/Brasileir%C3%A3o_S%C3%A9rie_B_logo.png/200px-Brasileir%C3%A3o_S%C3%A9rie_B_logo.png',
+    COPA_DE_PRIMERA: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Copa%20de%20Primera/paraguay_copa-de-primera.football-logos.cc.svg',
 };
 
 export const CUP_LOGOS: Record<string, string> = {
-    champions_league: 'https://tmssl.akamaized.net/images/logo/header/cl.png',
-    copa_libertadores: 'https://tmssl.akamaized.net/images/logo/header/cli.png',
-    copa_intercontinental: 'https://upload.wikimedia.org/wikipedia/en/5/5b/FIFA_Intercontinental_Cup_%28logo%29.png',
+    champions_league: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Football%20Tournament%20%26%20Competition%20Logos/tournaments_uefa-champions-league.football-logos.cc.svg',
+    copa_libertadores: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Football%20Tournament%20%26%20Competition%20Logos/tournaments_conmebol-libertadores.football-logos.cc.svg',
+    copa_sudamericana: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Football%20Tournament%20%26%20Competition%20Logos/tournaments_conmebol-copa-sudamericana.football-logos.cc.svg',
+    copa_intercontinental: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Football%20Tournament%20%26%20Competition%20Logos/tournaments_fifa-intercontinental-cup.football-logos.cc.svg',
     fa_cup: '/logos/The Emirates FA Cup.png',
     carabao_cup: '/logos/carabao_cup_logo.png',
     copa_del_rey: 'https://tmssl.akamaized.net/images/logo/header/cdr.png',
@@ -109,4 +112,7 @@ export const ALL_COMPETITIONS: CompetitionItem[] = [
     // Brasil
     { id: 'BRASILEIRAO', name: 'Brasileirão', type: 'LEAGUE', logo: LEAGUE_LOGOS.BRASILEIRAO, country: 'Brasil', flagUrl: 'https://flagcdn.com/br.svg', category: 'DOMESTIC', isFirstDiv: true },
     { id: 'SERIE_B_BR', name: 'Série B BR', type: 'LEAGUE', logo: LEAGUE_LOGOS.SERIE_B_BR, country: 'Brasil', flagUrl: 'https://flagcdn.com/br.svg', category: 'DOMESTIC', isFirstDiv: false },
+
+    // Paraguay
+    { id: 'COPA_DE_PRIMERA', name: 'Copa de Primera', type: 'LEAGUE', logo: LEAGUE_LOGOS.COPA_DE_PRIMERA, country: 'Paraguay', flagUrl: 'https://flagcdn.com/py.svg', category: 'DOMESTIC', isFirstDiv: true },
 ];
