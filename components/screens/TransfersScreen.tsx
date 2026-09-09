@@ -8,6 +8,7 @@ import {
 } from '../../services/gameLogic';
 import { Modal } from '../ui/Modal';
 import { 
+    formatCurrency,
     formatCurrencyShort, 
     formatWeeklyWage, 
     formatTransferFee,
@@ -114,7 +115,7 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
         
         const newAttempts = clubAttempts + 1;
         setClubAttempts(newAttempts);
-        setClubChatHistory(prev => [...prev, { sender: 'user', text: `Oferta formal de traspaso: €${clubOfferFee}M` }]);
+        setClubChatHistory(prev => [...prev, { sender: 'user', text: `Oferta formal de traspaso: ${formatCurrency(clubOfferFee)}` }]);
         
         const response = await generateTransferNegotiationResponse(negotiatingPlayer, clubOfferFee, myTeam, sellingTeam, newAttempts);
         
@@ -123,7 +124,7 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
             setClubChatHistory(prev => [
                 ...prev, 
                 { sender: 'rival', text: response.message },
-                { sender: 'system', text: `✅ ¡Acuerdo económico alcanzado con el club (€${clubOfferFee}M)! Pasando a negociar el contrato del jugador.` }
+                { sender: 'system', text: `Acuerdo económico alcanzado con el club (${formatCurrency(clubOfferFee)}). Pasando a negociar el contrato del jugador.` }
             ]);
             setTimeout(() => {
                 setNegotiationPhase('CONTRACT');
@@ -136,7 +137,7 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
             setClubChatHistory(prev => [
                 ...prev, 
                 { sender: 'rival', text: response.message },
-                { sender: 'system', text: `❌ Las negociaciones se han roto definitivamente.` }
+                { sender: 'system', text: `Las negociaciones se han roto definitivamente.` }
             ]);
         } else {
             if (response.counterOffer) {
@@ -159,9 +160,9 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
             ...prev,
             { 
                 sender: 'user', 
-                text: `Propuesta de contrato: ${formatWeeklyWage(offeredWage)}/sem, ${offeredYears} años, Rol: ${
+                text: `Propuesta de contrato: ${formatWeeklyWage(offeredWage)}, ${offeredYears} años, Rol: ${
                     offeredRole === 'Key' ? 'Jugador Clave' : offeredRole === 'FirstTeam' ? 'Titular' : offeredRole === 'Rotation' ? 'Rotación' : 'Promesa'
-                }${offeredBonus > 0 ? `, Prima: €${offeredBonus}M` : ''}` 
+                }${offeredBonus > 0 ? `, Prima: ${formatCurrency(offeredBonus * 1_000_000)}` : ''}` 
             }
         ]);
 
@@ -237,7 +238,7 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
         const player = myTeam.squad.find(p => p.id === offer.playerId);
         const offeringTeam = allTeams.find(t => t.id === offer.offeringTeamId);
         dispatch({ type: 'ACCEPT_OFFER', payload: { offerId: offer.id } });
-        showToast(`Traspaso de ${player?.name || 'Jugador'} al ${offeringTeam?.name || 'club rival'} cerrado por €${offer.counterOfferValue || offer.offerValue}M.`, 'success');
+        showToast(`Traspaso de ${player?.name || 'Jugador'} al ${offeringTeam?.name || 'club rival'} cerrado por ${formatCurrency(offer.counterOfferValue || offer.offerValue)}.`, 'success');
     };
 
     const handleRejectIncomingOffer = (offer: Offer) => {
@@ -265,7 +266,7 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
                 type: 'UPDATE_OFFER',
                 payload: { ...offer, offerValue: counterValue, status: 'accepted', message: result.message }
             });
-            showToast(`¡El ${buyer.name} aceptó la contraoferta de €${counterValue}M!`, 'success');
+            showToast(`¡El ${buyer.name} aceptó la contraoferta de ${formatCurrency(counterValue)}!`, 'success');
             setCounterOfferModal(null);
         } else if (result.decision === 'rejected') {
             dispatch({ type: 'REJECT_OFFER', payload: { offerId: offer.id } });
@@ -277,7 +278,7 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
                 type: 'UPDATE_OFFER',
                 payload: { ...offer, offerValue: newFee, status: 'negotiating', message: result.message }
             });
-            showToast(`El ${buyer.name} contraofertó €${newFee}M.`, 'info');
+            showToast(`El ${buyer.name} contraofertó ${formatCurrency(newFee)}.`, 'info');
             setCounterOfferModal(null);
         }
     };
@@ -437,7 +438,7 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
 
                             <div className="text-right">
                                 <span className="text-[9px] text-white/40 font-bold uppercase tracking-wider block">Presupuesto</span>
-                                <span className="text-xs font-black text-[var(--apex-gold)]">€{finances.transferBudget.toFixed(1)}M</span>
+                                <span className="text-xs font-black text-[var(--apex-gold)]">{formatCurrency(finances.transferBudget)}</span>
                             </div>
                         </div>
 

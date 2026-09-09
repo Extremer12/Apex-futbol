@@ -1,7 +1,7 @@
 import React from 'react';
 import { Player, SquadRole } from '../../../types';
 import { LoadingSpinner } from '../../icons';
-import { formatWeeklyWage } from '../../../utils';
+import { formatWeeklyWage, formatCurrency } from '../../../utils';
 
 export interface AgentChatMessage {
     sender: 'user' | 'agent' | 'system';
@@ -90,7 +90,7 @@ export const ContractNegotiationModal: React.FC<ContractNegotiationModalProps> =
                         <div className="bg-emerald-500/10 border border-emerald-500/30 p-3 rounded-xl text-center">
                             <h4 className="text-emerald-400 font-black uppercase text-xs">¡Acuerdo Total Alcanzado!</h4>
                             <p className="text-white/70 text-[11px]">
-                                Traspaso: €{agreedFee}M • Salario: {formatWeeklyWage(offeredWage)}/sem • Duración: {offeredYears} años
+                                Traspaso: {agreedFee ? formatCurrency(agreedFee) : 'Libre'} • Salario: {formatWeeklyWage(offeredWage)} • Duración: {offeredYears} años
                             </p>
                         </div>
                         <button
@@ -199,10 +199,10 @@ export const ContractNegotiationModal: React.FC<ContractNegotiationModalProps> =
                                     onChange={e => setOfferedRole(e.target.value as SquadRole)}
                                     className="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-lg text-white font-black text-xs focus:outline-none focus:border-[var(--apex-gold)] cursor-pointer"
                                 >
-                                    <option value="Key" className="bg-slate-900">⭐ Jugador Clave</option>
-                                    <option value="FirstTeam" className="bg-slate-900">⚽ Titular Habitual</option>
-                                    <option value="Rotation" className="bg-slate-900">🔄 Rotación</option>
-                                    <option value="Prospect" className="bg-slate-900">🌱 Joven Promesa</option>
+                                    <option value="Key" className="bg-slate-900">Jugador Clave</option>
+                                    <option value="FirstTeam" className="bg-slate-900">Titular Habitual</option>
+                                    <option value="Rotation" className="bg-slate-900">Rotación</option>
+                                    <option value="Prospect" className="bg-slate-900">Joven Promesa</option>
                                 </select>
                             </div>
 
@@ -213,7 +213,7 @@ export const ContractNegotiationModal: React.FC<ContractNegotiationModalProps> =
                                         Prima de Fichaje
                                     </label>
                                     <span className="text-xs font-black text-amber-300">
-                                        €{offeredBonus}M
+                                        {offeredBonus > 0 ? formatCurrency(offeredBonus * 1_000_000) : 'Sin Prima'}
                                     </span>
                                 </div>
                                 <div className="flex items-center gap-1">
@@ -228,7 +228,7 @@ export const ContractNegotiationModal: React.FC<ContractNegotiationModalProps> =
                                                     : 'bg-white/5 text-slate-300 hover:bg-white/10 border border-white/5'
                                             }`}
                                         >
-                                            {b === 0 ? 'Sin Prima' : `€${b}M`}
+                                            {b === 0 ? 'Sin Prima' : formatCurrency(b * 1_000_000)}
                                         </button>
                                     ))}
                                 </div>

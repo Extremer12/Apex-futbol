@@ -94,9 +94,9 @@ const NEGOTIATION_REJECTED_MESSAGES = [
 ];
 
 const NEGOTIATION_COUNTER_MESSAGES = [
-    (amount: number) => `Estamos dispuestos a negociar, pero queremos £${amount}M.`,
-    (amount: number) => `Acérquense a £${amount}M y podremos cerrar el trato.`,
-    (amount: number) => `Nuestra valoración es de £${amount}M. ¿Pueden igualarla?`,
+    (amount: number) => `Estamos dispuestos a negociar, pero queremos ${formatCurrency(amount)}.`,
+    (amount: number) => `Acérquense a ${formatCurrency(amount)} y podremos cerrar el trato.`,
+    (amount: number) => `Nuestra valoración es de ${formatCurrency(amount)}. ¿Pueden igualarla?`,
 ];
 
 
@@ -300,7 +300,7 @@ export const generatePlayerContractNegotiationResponse = async (
         const targetBonus = Math.round(((expectedWage * 8) / 1000000) * 10) / 10;
         return {
             decision: 'counter',
-            message: `Estamos cerca de un acuerdo. ${player.name} solicita ${formatWeeklyWage(targetWage)}/sem y una prima de fichaje de €${targetBonus}M para comprometerse.`,
+            message: `Estamos cerca de un acuerdo. ${player.name} solicita ${formatWeeklyWage(targetWage)} y una prima de fichaje de ${formatCurrency(targetBonus * 1_000_000)} para comprometerse.`,
             counterOffer: {
                 wage: targetWage,
                 contractYears: targetYears,
@@ -324,18 +324,18 @@ export const generateCounterOfferDecision = async (
     if (counterValue <= buyerTeam.transferBudget && ratioToVal <= 1.35) {
         return {
             decision: 'accepted',
-            message: `El ${buyerTeam.name} acepta vuestras exigencias y pagará €${counterValue}M por el traspaso de ${player.name}.`
+            message: `El ${buyerTeam.name} acepta vuestras exigencias y pagará ${formatCurrency(counterValue)} por el traspaso de ${player.name}.`
         };
     } else if (ratioToVal > 1.9 || counterValue > buyerTeam.transferBudget * 1.4) {
         return {
             decision: 'rejected',
-            message: `El ${buyerTeam.name} considera inaceptable pedir €${counterValue}M y cancela su interés por ${player.name}.`
+            message: `El ${buyerTeam.name} considera inaceptable pedir ${formatCurrency(counterValue)} y cancela su interés por ${player.name}.`
         };
     } else {
         const newOffer = Math.min(buyerTeam.transferBudget, Math.round(((originalOffer + counterValue) / 2) * 10) / 10);
         return {
             decision: 'counter',
-            message: `El ${buyerTeam.name} no alcanza los €${counterValue}M, pero ofrece una contrapropuesta final de €${newOffer}M.`,
+            message: `El ${buyerTeam.name} no alcanza los ${formatCurrency(counterValue)}, pero ofrece una contrapropuesta final de ${formatCurrency(newOffer)}.`,
             newOfferValue: newOffer
         };
     }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { GameState, ElectoralPromise } from '../../types';
 import { GameAction } from '../../state/reducer';
+import { formatCurrency } from '../../utils';
 
 interface ElectionScreenProps {
     gameState: GameState;
@@ -217,8 +218,8 @@ export const ElectionScreen: React.FC<ElectionScreenProps> = ({ gameState, dispa
                         </div>
                         <div>
                             <div className="text-slate-400 text-sm">Balance Financiero</div>
-                            <div className={`text-2xl font-bold ${(gameState.finances?.balance || 0) > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                {(gameState.finances?.balance || 0) > 0 ? '+' : ''}{(gameState.finances?.balance || 0).toFixed(1)}M
+                            <div className={`text-2xl font-bold ${(gameState.finances?.balance || 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                {formatCurrency(gameState.finances?.balance || 0)}
                             </div>
                         </div>
                     </div>

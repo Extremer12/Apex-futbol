@@ -3,6 +3,7 @@ import { GameState, Sponsor } from '../../types';
 import { GameAction } from '../../state/reducer';
 import { formatCurrency, formatCurrencyShort } from '../../utils';
 import { calculateFinancialBreakdown, getNetWeeklyIncome } from '../../services/economy';
+import { AlertTriangle, Building2, Users, FileText } from 'lucide-react';
 
 interface FinancesScreenProps {
     gameState: GameState;
@@ -86,7 +87,7 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = ({ gameState, dispa
             {finances.balance < 0 && (
                 <div className="bg-[var(--apex-red)]/10 border border-[var(--apex-red)]/30 rounded-xl p-4 flex items-center gap-4 animate-pulse">
                     <div className="w-10 h-10 rounded-full bg-[var(--apex-red)]/20 flex items-center justify-center flex-shrink-0">
-                        <span className="text-xl">⚠️</span>
+                        <AlertTriangle className="w-5 h-5 text-[var(--apex-red)]" />
                     </div>
                     <div>
                         <p className="text-[var(--apex-red)] font-black uppercase tracking-wider text-sm">Alerta de Balance Negativo</p>
@@ -165,7 +166,9 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = ({ gameState, dispa
             {/* Stadium Management */}
             <div className="apex-card p-6 border-l-4 border-l-[var(--apex-gold)]">
                 <h3 className="text-lg font-black text-white mb-6 uppercase tracking-tight flex items-center gap-3">
-                    <span className="p-2 bg-white/5 rounded-lg border border-white/10">🏟️</span> 
+                    <span className="p-2 bg-white/5 rounded-lg border border-white/10 flex items-center justify-center">
+                        <Building2 className="w-4 h-4 text-[var(--apex-gold)]" />
+                    </span> 
                     Gestión de Estadio
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -216,7 +219,9 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = ({ gameState, dispa
             <div className="space-y-8">
                 <div>
                     <h3 className="text-lg font-black text-white mb-4 flex items-center gap-3 uppercase tracking-tight">
-                        <span className="p-2 bg-white/5 rounded-lg border border-white/10">🤝</span> 
+                        <span className="p-2 bg-white/5 rounded-lg border border-white/10 flex items-center justify-center">
+                            <Users className="w-4 h-4 text-[var(--apex-green)]" />
+                        </span> 
                         Patrocinadores Activos
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -242,7 +247,9 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = ({ gameState, dispa
 
                 <div>
                     <h3 className="text-lg font-black text-white mb-4 flex items-center gap-3 uppercase tracking-tight">
-                        <span className="p-2 bg-[var(--apex-gold)]/10 border border-[var(--apex-gold)]/20 rounded-lg">📋</span> 
+                        <span className="p-2 bg-[var(--apex-gold)]/10 border border-[var(--apex-gold)]/20 rounded-lg flex items-center justify-center">
+                            <FileText className="w-4 h-4 text-[var(--apex-gold)]" />
+                        </span> 
                         Ofertas Comerciales
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

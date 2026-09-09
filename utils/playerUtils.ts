@@ -39,32 +39,32 @@ export const getTierBadge = (tier: PotentialTier) => {
     switch (tier) {
         case 'Wonderkid':
             return {
-                label: '⭐ Promesa',
-                longLabel: '⭐ Promesa Mundial',
-                color: 'text-amber-400 bg-amber-500/10 border-amber-500/30 shadow-[0_0_12px_rgba(245,158,11,0.2)]',
-                icon: '⭐'
+                label: 'Promesa',
+                longLabel: 'Promesa Mundial',
+                color: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
+                icon: ''
             };
         case 'Star':
             return {
-                label: '🌟 Estrella',
-                longLabel: '🌟 Clase Mundial',
-                color: 'text-purple-400 bg-purple-500/10 border-purple-500/30 shadow-[0_0_12px_rgba(168,85,247,0.2)]',
-                icon: '🌟'
+                label: 'Estrella',
+                longLabel: 'Clase Mundial',
+                color: 'text-purple-400 bg-purple-500/10 border-purple-500/30',
+                icon: ''
             };
         case 'Veteran':
             return {
-                label: '🛡️ Veterano',
-                longLabel: '🛡️ Líder Veterano',
+                label: 'Veterano',
+                longLabel: 'Líder Veterano',
                 color: 'text-slate-300 bg-slate-500/10 border-slate-500/30',
-                icon: '🛡️'
+                icon: ''
             };
         case 'Solid':
         default:
             return {
-                label: '⚽ Titular',
-                longLabel: '⚽ Jugador de Club',
+                label: 'Titular',
+                longLabel: 'Jugador de Club',
                 color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
-                icon: '⚽'
+                icon: ''
             };
     }
 };

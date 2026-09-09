@@ -72,7 +72,7 @@ export const TransfersOffersTab: React.FC<TransfersOffersTabProps> = ({
                             </div>
                             {isCountered && (
                                 <span className="text-[9px] font-black text-amber-400 uppercase tracking-widest block">
-                                    ⚡ Negociación en curso (Contraoferta)
+                                    Contraoferta en curso
                                 </span>
                             )}
                             <p className="text-xs text-white/80 italic pt-1 border-t border-white/5">"{offer.message}"</p>
@@ -81,9 +81,9 @@ export const TransfersOffersTab: React.FC<TransfersOffersTabProps> = ({
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={() => onAcceptOffer(offer)}
-                                className="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/20"
+                                className="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/20 cursor-pointer"
                             >
-                                <CheckCircle2 className="w-4 h-4" /> Aceptar {formatTransferFee(displayValue)}
+                                <CheckCircle2 className="w-4 h-4" /> Aceptar Oferta
                             </button>
                             <button
                                 onClick={() => onOpenCounterOffer(offer)}

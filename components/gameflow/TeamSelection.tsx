@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { TEAMS } from '../../constants';
 import { Team, PlayerProfile, LeagueId, CountryCode } from '../../types';
 import { TeamLogo } from '../../data/teams/helpers';
+import { formatCurrency } from '../../utils';
 
 interface TeamSelectionProps {
     player: PlayerProfile;
@@ -288,7 +289,7 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="text-xs font-black text-white uppercase leading-tight truncate">{team.name}</div>
-                                            <div className="text-[10px] text-slate-400 truncate mt-0.5">€{team.budget}M Presupuesto</div>
+                                            <div className="text-[10px] text-slate-400 truncate mt-0.5">{formatCurrency(team.budget)} Presupuesto</div>
                                         </div>
                                     </div>
 
@@ -338,11 +339,11 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                             <div className="grid grid-cols-4 gap-2 pt-3 border-t border-white/10 text-center">
                                 <div className="bg-white/[0.03] py-2 px-1 rounded-xl border border-white/5">
                                     <div className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Presupuesto</div>
-                                    <div className="text-xs font-black text-white mt-0.5">€{selectedTeam.budget}M</div>
+                                    <div className="text-xs font-black text-white mt-0.5">{formatCurrency(selectedTeam.budget)}</div>
                                 </div>
                                 <div className="bg-white/[0.03] py-2 px-1 rounded-xl border border-white/5">
                                     <div className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Fichajes</div>
-                                    <div className="text-xs font-black text-emerald-400 mt-0.5">€{selectedTeam.transferBudget}M</div>
+                                    <div className="text-xs font-black text-emerald-400 mt-0.5">{formatCurrency(selectedTeam.transferBudget)}</div>
                                 </div>
                                 <div className="bg-white/[0.03] py-2 px-1 rounded-xl border border-white/5">
                                     <div className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Finanzas</div>

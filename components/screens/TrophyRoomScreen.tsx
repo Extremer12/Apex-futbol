@@ -6,6 +6,7 @@ import { CompetitionHistoryView } from './league/CompetitionHistoryView';
 import { customPacksService } from '../../services/customPacks/packService';
 import { Search, History, Shield, Award, CheckCircle2, Lock } from 'lucide-react';
 import { TeamLogo } from '../../data/teams/helpers';
+import { formatCurrency } from '../../utils';
 
 interface TrophyRoomScreenProps {
     gameState: GameState;
@@ -287,7 +288,7 @@ export const TrophyRoomScreen: React.FC<TrophyRoomScreenProps> = ({ gameState })
                                         <div className="bg-black/40 p-2.5 rounded-lg border border-white/5">
                                             <span className="text-[10px] text-slate-400 font-bold uppercase block">Balance Cierre</span>
                                             <span className="font-bold text-emerald-400 font-mono">
-                                                €{rec.endBalance.toFixed(1)}M
+                                                {formatCurrency(rec.endBalance)}
                                             </span>
                                         </div>
                                     </div>

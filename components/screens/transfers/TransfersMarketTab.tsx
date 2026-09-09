@@ -15,16 +15,9 @@ import {
     getExpectedWage 
 } from '../../../utils/playerUtils';
 import { 
-    Sparkles, 
-    TrendingUp, 
-    DollarSign, 
-    Shield, 
-    Clock, 
     Search, 
-    Briefcase, 
     ChevronLeft, 
-    ChevronRight,
-    Users
+    ChevronRight
 } from 'lucide-react';
 import { useToast } from '../../common/ToastProvider';
 
@@ -147,18 +140,17 @@ export const TransfersMarketTab: React.FC<TransfersMarketTabProps> = ({
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-5">
             {/* Category Filter Pills */}
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-1.5">
                 {[
-                    { id: 'ALL', label: 'Todos', icon: Users },
-                    { id: 'WONDERKIDS', label: '⭐ Promesas (<22a)', icon: Sparkles },
-                    { id: 'PRIME', label: '🔥 En Prime (23-29a)', icon: TrendingUp },
-                    { id: 'VETERANS', label: '🛡️ Veteranos (30+a)', icon: Shield },
-                    { id: 'EXPIRING', label: '⏳ Fin de Contrato', icon: Clock },
-                    { id: 'AFFORDABLE', label: '💰 En Presupuesto', icon: DollarSign },
+                    { id: 'ALL', label: 'Todos' },
+                    { id: 'WONDERKIDS', label: 'Promesas (<22a)' },
+                    { id: 'PRIME', label: 'Plenitud (23-29a)' },
+                    { id: 'VETERANS', label: 'Veteranos (30+a)' },
+                    { id: 'EXPIRING', label: 'Fin de Contrato' },
+                    { id: 'AFFORDABLE', label: 'En Presupuesto' },
                 ].map(cat => {
-                    const Icon = cat.icon;
                     const isActive = filterCategory === cat.id;
                     return (
                         <button
@@ -167,13 +159,12 @@ export const TransfersMarketTab: React.FC<TransfersMarketTabProps> = ({
                                 setFilterCategory(cat.id as CategoryFilter);
                                 setCurrentPage(1);
                             }}
-                            className={`px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 border ${
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
                                 isActive 
-                                    ? 'bg-[var(--apex-gold)]/20 text-[var(--apex-gold)] border-[var(--apex-gold)] shadow-[0_0_15px_rgba(200,168,78,0.2)]' 
-                                    : 'bg-black/30 text-white/50 border-white/5 hover:bg-white/5 hover:text-white'
+                                    ? 'bg-[var(--apex-gold)] text-black border-[var(--apex-gold)] shadow-sm' 
+                                    : 'bg-white/[0.03] text-white/60 border-white/5 hover:bg-white/[0.08] hover:text-white'
                             }`}
                         >
-                            <Icon className="w-3.5 h-3.5" />
                             {cat.label}
                         </button>
                     );
@@ -225,11 +216,11 @@ export const TransfersMarketTab: React.FC<TransfersMarketTabProps> = ({
                         onChange={e => setSortOption(e.target.value as SortOption)}
                         className="bg-transparent text-white text-xs font-bold focus:outline-none cursor-pointer"
                     >
-                        <option value="rating" className="bg-slate-900 text-white">⭐ Valoración Media</option>
-                        <option value="potential" className="bg-slate-900 text-white">✨ Mayor Potencial</option>
-                        <option value="value" className="bg-slate-900 text-white">💶 Valor de Mercado</option>
-                        <option value="age" className="bg-slate-900 text-white">👶 Juventud (Edad)</option>
-                        <option value="wage" className="bg-slate-900 text-white">💼 Salario Actual</option>
+                        <option value="rating" className="bg-slate-900 text-white">Valoración Media</option>
+                        <option value="potential" className="bg-slate-900 text-white">Mayor Potencial</option>
+                        <option value="value" className="bg-slate-900 text-white">Valor de Mercado</option>
+                        <option value="age" className="bg-slate-900 text-white">Juventud (Edad)</option>
+                        <option value="wage" className="bg-slate-900 text-white">Salario Actual</option>
                     </select>
                 </div>
             </div>
@@ -275,13 +266,13 @@ export const TransfersMarketTab: React.FC<TransfersMarketTabProps> = ({
                                 </div>
 
                                 {/* Badges & Contract Status */}
-                                <div className="flex flex-wrap items-center gap-1.5 mb-4">
+                                <div className="flex flex-wrap items-center gap-1.5 mb-3">
                                     <span className={`text-[9px] font-black px-2 py-0.5 rounded-md border uppercase ${tierBadge.color}`}>
                                         {tierBadge.label}
                                     </span>
                                     {player.contractYears <= 1 && (
                                         <span className="text-[9px] font-black px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/30 uppercase">
-                                            ⏳ Expira ({player.contractYears}a)
+                                            Expira ({player.contractYears}a)
                                         </span>
                                     )}
                                 </div>
@@ -319,9 +310,9 @@ export const TransfersMarketTab: React.FC<TransfersMarketTabProps> = ({
                                 )}
                                 <button
                                     onClick={() => onStartNegotiation(player)}
-                                    className="flex-1 py-2 rounded-xl bg-[var(--apex-gold)] text-black hover:bg-yellow-400 font-black text-xs uppercase tracking-wider transition-all shadow-md shadow-[var(--apex-gold)]/20 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                                    className="flex-1 py-2.5 rounded-xl bg-[var(--apex-gold)] text-black hover:bg-yellow-400 font-black text-xs uppercase tracking-wider transition-all shadow-md shadow-[var(--apex-gold)]/20 flex items-center justify-center cursor-pointer active:scale-95"
                                 >
-                                    <Briefcase className="w-3.5 h-3.5" /> Fichar ({formatTransferFee(player.value)})
+                                    Fichar
                                 </button>
                             </div>
                         </div>

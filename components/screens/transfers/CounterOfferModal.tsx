@@ -21,6 +21,8 @@ export const CounterOfferModal: React.FC<CounterOfferModalProps> = ({
     onSendCounterToBuyer,
     onClose,
 }) => {
+    const displayMillions = Number((counterValue / 1_000_000).toFixed(2));
+
     return (
         <Modal 
             title={`Contraoferta: ${data.player.name}`} 
@@ -38,15 +40,16 @@ export const CounterOfferModal: React.FC<CounterOfferModalProps> = ({
 
                 <div className="space-y-1">
                     <label className="text-[10px] font-black text-white/60 uppercase tracking-wider block">
-                        Tu Contrapropuesta (€M)
+                        Tu Contrapropuesta
                     </label>
                     <div className="relative">
                         <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-[var(--apex-gold)]">€</span>
                         <input 
                             type="number" 
                             step="0.5"
-                            value={counterValue} 
-                            onChange={e => setCounterValue(Number(e.target.value))}
+                            min="0.1"
+                            value={displayMillions} 
+                            onChange={e => setCounterValue(Math.max(100_000, Math.round(Number(e.target.value) * 1_000_000)))}
                             className="w-full pl-8 pr-12 py-3 bg-black/50 border border-white/10 rounded-xl text-white font-black text-sm focus:outline-none focus:border-[var(--apex-gold)]"
                             disabled={isEvaluatingCounter}
                         />
@@ -64,9 +67,9 @@ export const CounterOfferModal: React.FC<CounterOfferModalProps> = ({
                     <button
                         onClick={onSendCounterToBuyer}
                         disabled={isEvaluatingCounter || counterValue <= 0}
-                        className="flex-1 py-3 rounded-xl bg-[var(--apex-gold)] hover:bg-yellow-400 text-black font-black text-xs uppercase tracking-wider disabled:opacity-40 flex items-center justify-center"
+                        className="flex-1 py-3 rounded-xl bg-[var(--apex-gold)] hover:bg-yellow-400 text-black font-black text-xs uppercase tracking-wider disabled:opacity-40 flex items-center justify-center cursor-pointer"
                     >
-                        {isEvaluatingCounter ? <LoadingSpinner /> : 'ENVIAR AL CLUB'}
+                        {isEvaluatingCounter ? <LoadingSpinner /> : `ENVIAR (${formatTransferFee(counterValue)})`}
                     </button>
                 </div>
             </div>

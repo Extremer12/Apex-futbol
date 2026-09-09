@@ -12,45 +12,40 @@ export const setGlobalCurrency = (currency: 'EUR' | 'USD') => {
 export const formatCurrency = (amount: number | undefined | null): string => {
     const symbol = GLOBAL_CURRENCY === 'EUR' ? '€' : '$';
     const val = amount || 0;
-    if (Math.abs(val) >= 1_000_000) {
+    const absVal = Math.abs(val);
+
+    if (absVal >= 1_000_000_000) {
+        return `${symbol}${(val / 1_000_000_000).toFixed(1).replace(/\.0$/, '')}B`;
+    }
+    if (absVal >= 1_000_000) {
         return `${symbol}${(val / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
     }
-    if (Math.abs(val) >= 1_000) {
+    if (absVal >= 1_000) {
         return `${symbol}${(val / 1_000).toFixed(0)}K`;
     }
-    return new Intl.NumberFormat(GLOBAL_CURRENCY === 'EUR' ? 'es-ES' : 'en-US', {
-        style: 'currency',
-        currency: GLOBAL_CURRENCY,
-        maximumFractionDigits: 0,
-    }).format(val);
+    // Small non-zero numbers represent millions in certain compact inputs (e.g. 12 -> 12M)
+    if (absVal > 0) {
+        return `${symbol}${val}M`;
+    }
+    return `${symbol}0`;
 };
 
-export const formatTransferFee = (millions: number | undefined | null): string => {
-    const val = millions || 0;
-    const symbol = GLOBAL_CURRENCY === 'EUR' ? '€' : '$';
-    if (Math.abs(val) >= 1_000_000) {
-        return `${symbol}${(val / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
-    }
-    return `${symbol}${val}M`;
+export const formatTransferFee = (amount: number | undefined | null): string => {
+    return formatCurrency(amount);
 };
 
 export const formatCurrencyShort = (amount: number | undefined | null): string => {
-    const val = amount || 0;
-    const symbol = GLOBAL_CURRENCY === 'EUR' ? '€' : '$';
-    if (Math.abs(val) >= 1_000_000) {
-        return `${symbol}${(val / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
-    }
-    if (Math.abs(val) >= 1_000) {
-        return `${symbol}${(val / 1_000).toFixed(0)}K`;
-    }
-    // If it's a small number representing millions (e.g. transfer budget 80)
-    return `${symbol}${val}M`;
+    return formatCurrency(amount);
 };
 
 export const formatWeeklyWage = (amount: number | undefined | null): string => {
     const val = amount || 0;
     const symbol = GLOBAL_CURRENCY === 'EUR' ? '€' : '$';
-    if (Math.abs(val) >= 1_000) {
+    const absVal = Math.abs(val);
+    if (absVal >= 1_000_000) {
+        return `${symbol}${(val / 1_000_000).toFixed(1).replace(/\.0$/, '')}M/sem`;
+    }
+    if (absVal >= 1_000) {
         return `${symbol}${(val / 1000).toFixed(0)}K/sem`;
     }
     return `${symbol}${val}/sem`;

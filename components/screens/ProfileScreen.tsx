@@ -22,6 +22,7 @@ import {
     Landmark
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatCurrency } from '../../utils';
 
 interface ProfileScreenProps {
     gameState: GameState;
@@ -700,7 +701,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ gameState, dispatc
                                         <div>
                                             <h5 className="text-sm font-bold text-white uppercase">{club.name}</h5>
                                             <span className="text-[10px] text-slate-400">
-                                                Presupuesto: €{(club.budget / 1000000).toFixed(1)}M • Nivel Requerido: {club.tier === 'Top' ? 'Nv. 4+' : 'Nv. 2+'}
+                                                Presupuesto: {formatCurrency(club.budget)} • Nivel Requerido: {club.tier === 'Top' ? 'Nv. 4+' : 'Nv. 2+'}
                                             </span>
                                         </div>
                                     </div>

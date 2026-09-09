@@ -76,11 +76,11 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({ player, di
                     </div>
                     <div>
                         <p className="text-[10px] text-slate-400 uppercase font-bold">Valor</p>
-                        <p className="text-base font-black text-emerald-400 mt-2">€{player.value}M</p>
+                        <p className="text-base font-black text-emerald-400 mt-2">{formatCurrency(player.value)}</p>
                     </div>
                     <div>
                         <p className="text-[10px] text-slate-400 uppercase font-bold">Salario</p>
-                        <p className="text-xs font-black text-orange-400 mt-2.5">{formatWeeklyWage(player.wage)}/sem</p>
+                        <p className="text-xs font-black text-orange-400 mt-2.5">{formatWeeklyWage(player.wage)}</p>
                     </div>
                 </div>
 
@@ -96,18 +96,18 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({ player, di
                     </div>
                     <div className="flex justify-between">
                         <span className="text-white/60">Cláusula de Rescisión:</span> 
-                        <span className="font-black text-[var(--apex-gold)]">€{releaseClause}M</span>
+                        <span className="font-black text-[var(--apex-gold)]">{formatCurrency(releaseClause)}</span>
                     </div>
                     {player.isInjured && (
                         <div className="flex justify-between">
                             <span className="text-white/60">Estado Físico:</span> 
-                            <span className="font-black text-rose-400">🚑 Lesionado ({player.injuryWeeksRemaining} sem)</span>
+                            <span className="font-black text-rose-400">Lesionado ({player.injuryWeeksRemaining} sem)</span>
                         </div>
                     )}
                     {player.isSuspended && (
                         <div className="flex justify-between">
                             <span className="text-white/60">Disciplina:</span> 
-                            <span className="font-black text-rose-500">🟥 Suspendido ({player.suspensionWeeksRemaining} par)</span>
+                            <span className="font-black text-rose-500">Suspendido ({player.suspensionWeeksRemaining} par)</span>
                         </div>
                     )}
                 </div>
