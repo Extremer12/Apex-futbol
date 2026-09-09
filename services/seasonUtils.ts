@@ -1,4 +1,5 @@
 import { GameState, LeagueId, Team } from '../types';
+import { computeArgentineRelegation, computeArgentineInternationalQualification } from './argentinaRegulations';
 
 export interface SeasonSummaryData {
     season: number;
@@ -168,24 +169,11 @@ export const getSeasonSummaryData = (gameState: GameState): SeasonSummaryData =>
     if (userLeagueId === LeagueId.LIGA_ARGENTINA || userLeagueId === LeagueId.PRIMERA_NACIONAL) {
         const argTable = gameState.leagueTables[LeagueId.LIGA_ARGENTINA] || [];
         const pnTable = gameState.leagueTables[LeagueId.PRIMERA_NACIONAL] || [];
-
-        const sortedArg = [...argTable].sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference);
         const sortedPn = [...pnTable].sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference);
 
-        // 1 by Tabla Anual (30th)
-        const lastTablaAnualId = sortedArg[sortedArg.length - 1]?.teamId;
-        const rel1 = findTeam(lastTablaAnualId);
-        if (rel1) relegatedTeams.push(rel1);
-
-        // 1 by Promedio
-        const sortedByPromedio = [...argTable].sort((a, b) => (a.promedio ?? 0) - (b.promedio ?? 0));
-        for (const row of sortedByPromedio) {
-            if (row.teamId !== lastTablaAnualId) {
-                const rel2 = findTeam(row.teamId);
-                if (rel2) relegatedTeams.push(rel2);
-                break;
-            }
-        }
+        // Exact AFA relegation (1 Promedios + 1 Tabla Anual with priority shift)
+        const relResult = computeArgentineRelegation(argTable);
+        relegatedTeams = relResult.relegatedIds.map(id => findTeam(id)).filter(Boolean) as Team[];
 
         // Promoted from Primera Nacional
         const primerAscensoId = gameState.cups.nacionalPrimerAscenso?.winnerId;
@@ -220,20 +208,20 @@ export const getSeasonSummaryData = (gameState: GameState): SeasonSummaryData =>
         promotedTeams = sortedDiv2.slice(0, 3).map(r => findTeam(r.teamId)).filter(Boolean) as Team[];
     }
 
-    // International qualifications (for Argentina / South America)
+    // International qualifications
     const libertadoresQualified: Team[] = [];
     const sudamericanaQualified: Team[] = [];
     const championsLeagueQualified: Team[] = [];
 
     if (isArgentina) {
-        // Top 4 in Tabla Anual -> Libertadores
-        sortedTable.slice(0, 4).forEach(r => {
-            const t = findTeam(r.teamId);
+        const argTable = gameState.leagueTables[LeagueId.LIGA_ARGENTINA] || [];
+        const qualification = computeArgentineInternationalQualification(argTable, gameState.cups);
+        qualification.libertadores.forEach(entry => {
+            const t = findTeam(entry.teamId);
             if (t && !libertadoresQualified.some(q => q.id === t.id)) libertadoresQualified.push(t);
         });
-        // 5 to 10 in Tabla Anual -> Sudamericana
-        sortedTable.slice(4, 10).forEach(r => {
-            const t = findTeam(r.teamId);
+        qualification.sudamericana.forEach(entry => {
+            const t = findTeam(entry.teamId);
             if (t && !sudamericanaQualified.some(q => q.id === t.id)) sudamericanaQualified.push(t);
         });
     } else {

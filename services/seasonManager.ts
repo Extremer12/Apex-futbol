@@ -5,6 +5,7 @@
 
 import { GameState, Team, Player, NewsItem, EuropeanCompetition, EuropeanTableRow, Match, CupCompetition, CupChampion, LeagueId, SeasonHistoryRecord } from '../types';
 import { generateYouthPlayer, generateSeasonSchedule, generateCupDraw, createInitialLeagueTable, handlePromotionRelegation, generateSwissPhase, generateGroupPhase, createInitialEuropeanTable, sortArgentineZones } from './simulation';
+import { computeArgentineRelegation, computeArgentineInternationalQualification } from './argentinaRegulations';
 import { calculatePrizeMoney, generateSponsorMarket } from './economy';
 import { formatDate, formatCurrency } from '../utils';
 import { evaluateAchievements } from './achievementService';
@@ -251,19 +252,11 @@ export function startNewSeason(currentState: GameState): GameState {
             let promotedNames: string[] = [];
 
             if (div1 === LeagueId.LIGA_ARGENTINA) {
-                const lastAnual = sorted1[sorted1.length - 1];
-                if (lastAnual) {
-                    const t = processedTeams.find(tm => tm.id === lastAnual.teamId);
-                    if (t) relegatedNames.push(t.name);
-                }
-                const sortedByPromedio = [...div1Table].sort((a, b) => (a.promedio ?? 0) - (b.promedio ?? 0));
-                for (const r of sortedByPromedio) {
-                    if (!lastAnual || r.teamId !== lastAnual.teamId) {
-                        const t = processedTeams.find(tm => tm.id === r.teamId);
-                        if (t) relegatedNames.push(t.name);
-                        break;
-                    }
-                }
+                const relResult = computeArgentineRelegation(div1Table);
+                relegatedNames = relResult.relegatedIds
+                    .map(id => processedTeams.find(tm => tm.id === id)?.name)
+                    .filter(Boolean) as string[];
+
                 const promo1Id = currentState.cups.nacionalPrimerAscenso?.winnerId || div2Table.filter(r => r.zone === 'A').sort((a,b) => b.points - a.points)[0]?.teamId;
                 const promo2Id = currentState.cups.nacionalReducido?.winnerId || div2Table.filter(r => r.zone === 'B').sort((a,b) => b.points - a.points)[0]?.teamId;
                 if (promo1Id) {
@@ -297,7 +290,33 @@ export function startNewSeason(currentState: GameState): GameState {
     const newLeagueTables: Record<LeagueId, any[]> = {} as any;
     Object.values(LeagueId).forEach(lid => {
         const teams = getLeagueTeams(lid);
-        newLeagueTables[lid] = createInitialLeagueTable(teams);
+        const initialTable = createInitialLeagueTable(teams);
+        if (lid === LeagueId.LIGA_ARGENTINA) {
+            const prevArgTable = currentState.leagueTables[LeagueId.LIGA_ARGENTINA] || [];
+            initialTable.forEach(row => {
+                const prevRow = prevArgTable.find(r => r.teamId === row.teamId);
+                if (prevRow) {
+                    // Accumulate completed season into rolling 3-season history (AFA regulation)
+                    let playedTotal = (prevRow.playedTotal || 0) + prevRow.played;
+                    let pointsTotal = (prevRow.pointsTotal || 0) + prevRow.points;
+                    // Cap rolling window to approx. 3 seasons (32 matches/year * 3 = 96 matches)
+                    if (playedTotal > 96) {
+                        const factor = 96 / playedTotal;
+                        playedTotal = 96;
+                        pointsTotal = Math.round(pointsTotal * factor);
+                    }
+                    row.playedTotal = playedTotal;
+                    row.pointsTotal = pointsTotal;
+                    row.promedio = playedTotal > 0 ? Number((pointsTotal / playedTotal).toFixed(3)) : 0;
+                } else {
+                    // Newly promoted team divides only by matches played in new season
+                    row.playedTotal = 0;
+                    row.pointsTotal = 0;
+                    row.promedio = 0;
+                }
+            });
+        }
+        newLeagueTables[lid] = initialTable;
     });
 
     const newPlTeams = getLeagueTeams(LeagueId.PREMIER_LEAGUE);
@@ -378,12 +397,24 @@ export function startNewSeason(currentState: GameState): GameState {
     const elTeams = Array.from(elTeamsMap.values()).slice(0, 36);
 
     // Copa Libertadores Qualification (32 unique teams: Argentina, Brasil, Paraguay)
+    // Copa Libertadores Qualification (32 unique teams: Argentina, Brasil, Paraguay)
+    const argTable = currentState.leagueTables[LeagueId.LIGA_ARGENTINA] || [];
+    const argQual = computeArgentineInternationalQualification(argTable, currentState.cups);
+    const argLibTeams = argQual.libertadores
+        .map(q => teamsAfterProRel.find(t => t.id === q.teamId))
+        .filter(Boolean) as Team[];
+
     const libTeamsMap = new Map<number, Team>();
+    argLibTeams.forEach(t => libTeamsMap.set(t.id, t));
     [
-        ...getTopTeams(LeagueId.LIGA_ARGENTINA, 14),
         ...getTopTeams(LeagueId.BRASILEIRAO, 14),
-        ...getTopTeams(LeagueId.COPA_DE_PRIMERA, 4)
-    ].forEach(t => libTeamsMap.set(t.id, t));
+        ...getTopTeams(LeagueId.COPA_DE_PRIMERA, 4),
+        ...getTopTeams(LeagueId.LIGA_ARGENTINA, 14)
+    ].forEach(t => {
+        if (libTeamsMap.size < 32) {
+            libTeamsMap.set(t.id, t);
+        }
+    });
     const libTeams = Array.from(libTeamsMap.values()).slice(0, 32);
 
     const clSwiss = generateSwissPhase(clTeams, 'Champions_League', 8); // 8 matches as per real 2026 format
@@ -661,20 +692,11 @@ export function startNewSeason(currentState: GameState): GameState {
         if (div1 === LeagueId.LIGA_ARGENTINA) {
             const d1t = currentState.leagueTables[div1] || [];
             const d2t = currentState.leagueTables[div2] || [];
-            const s1 = [...d1t].sort((a,b) => b.points - a.points || b.goalDifference - a.goalDifference);
-            const lastAnual = s1[s1.length - 1];
-            if (lastAnual) {
-                const t = processedTeams.find(tm => tm.id === lastAnual.teamId);
+            const relResult = computeArgentineRelegation(d1t);
+            relResult.relegatedIds.forEach(id => {
+                const t = processedTeams.find(tm => tm.id === id);
                 if (t) relegatedTeamNames.push(t.name);
-            }
-            const sProm = [...d1t].sort((a, b) => (a.promedio ?? 0) - (b.promedio ?? 0));
-            for (const r of sProm) {
-                if (!lastAnual || r.teamId !== lastAnual.teamId) {
-                    const t = processedTeams.find(tm => tm.id === r.teamId);
-                    if (t) relegatedTeamNames.push(t.name);
-                    break;
-                }
-            }
+            });
             const promo1Id = currentState.cups.nacionalPrimerAscenso?.winnerId || d2t.filter(r => r.zone === 'A').sort((a,b) => b.points - a.points)[0]?.teamId;
             const promo2Id = currentState.cups.nacionalReducido?.winnerId || d2t.filter(r => r.zone === 'B').sort((a,b) => b.points - a.points)[0]?.teamId;
             if (promo1Id) {
@@ -764,6 +786,26 @@ export function startNewSeason(currentState: GameState): GameState {
     };
     const { updatedAchievements } = evaluateAchievements(tempStateForAchievements);
 
+    // Archive completed cup winners into championsHistory if not already present
+    const buildArchiveChampions = (cup?: CupCompetition) => {
+        const existing = cup?.statistics?.championsHistory || [];
+        if (cup?.winnerId) {
+            const alreadyIn = existing.some(c => c.season === currentSeason);
+            if (!alreadyIn) {
+                const winnerTeam = processedTeams.find(t => t.id === cup.winnerId);
+                return [
+                    {
+                        season: currentSeason,
+                        winnerId: cup.winnerId,
+                        winnerName: winnerTeam?.name || 'Desconocido'
+                    },
+                    ...existing
+                ].slice(0, 10);
+            }
+        }
+        return existing;
+    };
+
     // 8. Return updated state
     return {
         ...currentState,
@@ -798,61 +840,61 @@ export function startNewSeason(currentState: GameState): GameState {
                 id: 'fa_cup', name: 'FA Cup', 
                 type: 'knockout', phase: 'knockout',
                 rounds: [{ name: 'Round 1', fixtures: faCupFixtures, completed: false }],
-                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.faCup?.statistics?.championsHistory || [] }
+                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: buildArchiveChampions(currentState.cups.faCup) }
             },
             carabaoCup: {
                 id: 'carabao_cup', name: 'Carabao Cup', 
                 type: 'knockout', phase: 'knockout',
                 rounds: [{ name: 'Round 1', fixtures: carabaoCupFixtures, completed: false }],
-                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.carabaoCup?.statistics?.championsHistory || [] }
+                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: buildArchiveChampions(currentState.cups.carabaoCup) }
             },
             copaDelRey: {
                 id: 'copa_del_rey', name: 'Copa del Rey', 
                 type: 'knockout', phase: 'knockout',
                 rounds: [{ name: 'Round 1', fixtures: copaDelReyFixtures, completed: false }],
-                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.copaDelRey?.statistics?.championsHistory || [] }
+                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: buildArchiveChampions(currentState.cups.copaDelRey) }
             },
             dfbPokal: {
                 id: 'dfb_pokal', name: 'DFB-Pokal', 
                 type: 'knockout', phase: 'knockout',
                 rounds: [{ name: 'Round 1', fixtures: dfbPokalFixtures, completed: false }],
-                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.dfbPokal?.statistics?.championsHistory || [] }
+                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: buildArchiveChampions(currentState.cups.dfbPokal) }
             },
             coppaItalia: {
                 id: 'coppa_italia', name: 'Coppa Italia', 
                 type: 'knockout', phase: 'knockout',
                 rounds: [{ name: 'Round 1', fixtures: coppaItaliaFixtures, completed: false }],
-                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.coppaItalia?.statistics?.championsHistory || [] }
+                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: buildArchiveChampions(currentState.cups.coppaItalia) }
             },
             copaArgentina: {
                 id: 'copa_argentina', name: 'Copa Argentina', 
                 type: 'knockout', phase: 'knockout',
                 rounds: [{ name: 'Round 1', fixtures: copaArgentinaFixtures, completed: false }],
-                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.copaArgentina?.statistics?.championsHistory || [] }
+                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: buildArchiveChampions(currentState.cups.copaArgentina) }
             },
             aperturaPlayoffs: {
                 id: 'apertura_playoffs', name: 'Playoffs Apertura', 
                 type: 'knockout', phase: 'knockout',
                 rounds: [],
-                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.aperturaPlayoffs?.statistics?.championsHistory || [] }
+                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: buildArchiveChampions(currentState.cups.aperturaPlayoffs) }
             },
             clausuraPlayoffs: {
                 id: 'clausura_playoffs', name: 'Playoffs Clausura', 
                 type: 'knockout', phase: 'knockout',
                 rounds: [],
-                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.clausuraPlayoffs?.statistics?.championsHistory || [] }
+                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: buildArchiveChampions(currentState.cups.clausuraPlayoffs) }
             },
             nacionalPrimerAscenso: {
                 id: 'nacional_primer_ascenso', name: 'Final 1º Ascenso', 
                 type: 'knockout', phase: 'knockout',
                 rounds: [],
-                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.nacionalPrimerAscenso?.statistics?.championsHistory || [] }
+                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: buildArchiveChampions(currentState.cups.nacionalPrimerAscenso) }
             },
             nacionalReducido: {
                 id: 'nacional_reducido', name: 'Torneo Reducido', 
                 type: 'knockout', phase: 'knockout',
                 rounds: [],
-                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.nacionalReducido?.statistics?.championsHistory || [] }
+                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: buildArchiveChampions(currentState.cups.nacionalReducido) }
             },
             championsLeague: {
                 id: 'champions_league', name: 'Champions League', 
@@ -860,7 +902,7 @@ export function startNewSeason(currentState: GameState): GameState {
                 swissTable: clSwiss.table, 
                 swissFixtures: clFixtures,
                 rounds: [],
-                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.championsLeague?.statistics?.championsHistory || [] }
+                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: buildArchiveChampions(currentState.cups.championsLeague) }
             },
             europaLeague: {
                 id: 'europa_league', name: 'Europa League', 
@@ -868,20 +910,20 @@ export function startNewSeason(currentState: GameState): GameState {
                 swissTable: elSwiss.table,
                 swissFixtures: elFixtures,
                 rounds: [],
-                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.europaLeague?.statistics?.championsHistory || [] }
+                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: buildArchiveChampions(currentState.cups.europaLeague) }
             },
             copaLibertadores: {
                 id: 'copa_libertadores', name: 'Copa Libertadores', 
                 type: 'groups', phase: 'groups',
                 groups: libGroups,
                 rounds: [],
-                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.copaLibertadores?.statistics?.championsHistory || [] }
+                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: buildArchiveChampions(currentState.cups.copaLibertadores) }
             },
             copaIntercontinental: {
                 id: 'copa_intercontinental', name: 'Copa Intercontinental', 
                 type: 'knockout', phase: 'knockout',
                 rounds: intercontinentalFixtures.length > 0 ? [{ name: 'Final', fixtures: intercontinentalFixtures, completed: false }] : [],
-                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: currentState.cups.copaIntercontinental?.statistics?.championsHistory || [] }
+                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: buildArchiveChampions(currentState.cups.copaIntercontinental) }
             }
         },
         finances: {

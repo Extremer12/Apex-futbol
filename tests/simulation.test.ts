@@ -12,7 +12,10 @@ import {
     sortArgentineZones,
     generateArgentineTournamentSchedule,
     generateLeagueSchedule,
-    ARGENTINE_CLASSIC_PAIRS
+    ARGENTINE_CLASSIC_PAIRS,
+    computeArgentineRelegation,
+    computeArgentineInternationalQualification,
+    calculateTournamentStandings
 } from '../services/simulation';
 import { initializeGame } from '../services/gameFactory';
 import { TEAMS } from '../constants';
@@ -641,6 +644,126 @@ test('national cup fixtures have isMidweek: true to prevent dashboard conflicts'
     faCupMatches.forEach(m => {
         assert.equal(m.isMidweek, true, 'FA Cup match must have isMidweek: true');
     });
+});
+
+test('computeArgentineRelegation: 2 relegations with priority shift when same team is last in both', () => {
+    // 30 teams
+    const mockTable: LeagueTableRow[] = Array.from({ length: 30 }, (_, i) => ({
+        teamId: i + 1,
+        position: i + 1,
+        played: 32,
+        won: 10,
+        drawn: 10,
+        lost: 12,
+        goalsFor: 30,
+        goalsAgainst: 30,
+        goalDifference: 0,
+        points: 60 - i, // Team 1 has 60 pts, Team 30 has 31 pts
+        form: [],
+        promedio: (60 - i) / 32,
+        playedTotal: 32,
+        pointsTotal: 60 - i
+    }));
+
+    // Case 1: Different teams.
+    // Make Team 25 have worst promedio, Team 30 has worst anual points
+    mockTable.find(t => t.teamId === 25)!.promedio = 0.5; // Lowest promedio
+    const res1 = computeArgentineRelegation(mockTable);
+    assert.equal(res1.relegatedPromedioId, 25);
+    assert.equal(res1.relegatedAnualId, 30);
+    assert.deepEqual(res1.relegatedIds.sort((a, b) => a - b), [25, 30]);
+
+    // Case 2: Same team is worst in both (Team 30).
+    // Reset Team 25 promedio
+    mockTable.find(t => t.teamId === 25)!.promedio = (60 - 24) / 32;
+    mockTable.find(t => t.teamId === 30)!.promedio = 0.1; // Lowest promedio AND lowest points
+    const res2 = computeArgentineRelegation(mockTable);
+    assert.equal(res2.relegatedPromedioId, 30, 'Relegates via Promedios');
+    assert.equal(res2.relegatedAnualId, 29, 'Second relegation shifts strictly to the penultimate (29th) of Tabla Anual');
+    assert.deepEqual(res2.relegatedIds.sort((a, b) => a - b), [29, 30]);
+});
+
+test('computeArgentineInternationalQualification: exact 6 Libertadores + 6 Sudamericana with Cascada', () => {
+    // 30 teams with descending points (Team 1 has 65 pts ... Team 30 has 10 pts)
+    const mockTable: LeagueTableRow[] = Array.from({ length: 30 }, (_, i) => ({
+        teamId: i + 1,
+        position: i + 1,
+        played: 32,
+        won: 15,
+        drawn: 10,
+        lost: 7,
+        goalsFor: 40,
+        goalsAgainst: 25,
+        goalDifference: 15,
+        points: 65 - i,
+        form: []
+    }));
+
+    // Case 1: Direct champions who are not in top positions
+    const cups1 = {
+        aperturaPlayoffs: { id: 'ap', name: 'Ap', type: 'knockout' as const, phase: 'finished' as const, winnerId: 20, rounds: [], currentRoundIndex: 0 },
+        clausuraPlayoffs: { id: 'cl', name: 'Cl', type: 'knockout' as const, phase: 'finished' as const, winnerId: 21, rounds: [], currentRoundIndex: 0 },
+        copaArgentina: { id: 'ca', name: 'CA', type: 'knockout' as const, phase: 'finished' as const, winnerId: 22, rounds: [], currentRoundIndex: 0 },
+    };
+
+    const qual1 = computeArgentineInternationalQualification(mockTable, cups1);
+    assert.equal(qual1.libertadores.length, 6, 'Must qualify exactly 6 to Libertadores');
+    assert.equal(qual1.sudamericana.length, 6, 'Must qualify exactly 6 to Sudamericana');
+
+    const libIds1 = qual1.libertadores.map(q => q.teamId);
+    // Champions: 20, 21, 22 + Top 3 non-champions from Anual: 1, 2, 3
+    assert.deepEqual(libIds1.sort((a, b) => a - b), [1, 2, 3, 20, 21, 22]);
+
+    const sudIds1 = qual1.sudamericana.map(q => q.teamId);
+    // Next 6 non-qualified from Anual: 4, 5, 6, 7, 8, 9
+    assert.deepEqual(sudIds1.sort((a, b) => a - b), [4, 5, 6, 7, 8, 9]);
+
+    // Case 2: Cascada! Team 1 wins Apertura and Clausura and finishes 1st in Tabla Anual.
+    // Copa Argentina won by Team 2 (2nd in Tabla Anual).
+    const cups2 = {
+        aperturaPlayoffs: { id: 'ap', name: 'Ap', type: 'knockout' as const, phase: 'finished' as const, winnerId: 1, rounds: [], currentRoundIndex: 0 },
+        clausuraPlayoffs: { id: 'cl', name: 'Cl', type: 'knockout' as const, phase: 'finished' as const, winnerId: 1, rounds: [], currentRoundIndex: 0 },
+        copaArgentina: { id: 'ca', name: 'CA', type: 'knockout' as const, phase: 'finished' as const, winnerId: 2, rounds: [], currentRoundIndex: 0 },
+    };
+
+    const qual2 = computeArgentineInternationalQualification(mockTable, cups2);
+    assert.equal(qual2.libertadores.length, 6, 'Must qualify exactly 6 to Libertadores with Cascada');
+    assert.equal(qual2.sudamericana.length, 6, 'Must qualify exactly 6 to Sudamericana with Cascada');
+
+    const libIds2 = qual2.libertadores.map(q => q.teamId);
+    // Champions: Team 1 (Champ 1), Team 2 (Copa Argentina).
+    // Champ 2 was also Team 1 -> spot liberated to Tabla Anual!
+    // Non-champions taken: Team 3, Team 4, Team 5, Team 6 (4 spots from Anual because Team 1 took both Champ 1 and 2).
+    assert.deepEqual(libIds2.sort((a, b) => a - b), [1, 2, 3, 4, 5, 6]);
+
+    const sudIds2 = qual2.sudamericana.map(q => q.teamId);
+    // Next 6 from Anual: 7, 8, 9, 10, 11, 12
+    assert.deepEqual(sudIds2.sort((a, b) => a - b), [7, 8, 9, 10, 11, 12]);
+});
+
+test('calculateTournamentStandings separates Apertura and Clausura points correctly', () => {
+    const teams: Team[] = [
+        { id: 1, name: 'Boca Juniors', zone: 'A', leagueId: LeagueId.LIGA_ARGENTINA, rating: 80, tier: 1, budget: 10, stadium: 'La Bombonera', squad: [] },
+        { id: 2, name: 'River Plate', zone: 'B', leagueId: LeagueId.LIGA_ARGENTINA, rating: 80, tier: 1, budget: 10, stadium: 'Monumental', squad: [] },
+    ];
+
+    const schedule: Match[] = [
+        // Apertura matches
+        { week: 1, homeTeamId: 1, awayTeamId: 2, competition: 'Torneo_Apertura', result: { homeScore: 3, awayScore: 0, events: [], scorers: [] } },
+        // Clausura matches
+        { week: 21, homeTeamId: 2, awayTeamId: 1, competition: 'Torneo_Clausura', result: { homeScore: 2, awayScore: 0, events: [], scorers: [] } },
+    ];
+
+    const apStandings = calculateTournamentStandings(schedule, 'Torneo_Apertura', teams);
+    const bocaAp = apStandings.zoneA.find(r => r.id === 1);
+    assert.equal(bocaAp?.points, 3, 'Boca should have 3 points in Apertura');
+    assert.equal(bocaAp?.played, 1, 'Boca should have 1 match in Apertura');
+
+    const clStandings = calculateTournamentStandings(schedule, 'Torneo_Clausura', teams);
+    const riverCl = clStandings.zoneB.find(r => r.id === 2);
+    assert.equal(riverCl?.points, 3, 'River should have 3 points in Clausura');
+    const bocaCl = clStandings.zoneA.find(r => r.id === 1);
+    assert.equal(bocaCl?.points, 0, 'Boca should have 0 points in Clausura');
 });
 
 

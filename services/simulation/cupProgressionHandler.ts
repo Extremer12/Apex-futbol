@@ -7,7 +7,8 @@ import {
     generateNacionalPrimerAscenso, 
     generateNacionalReducidoPhase1, 
     generateNacionalReducidoCuartos, 
-    determineCupWinner 
+    determineCupWinner,
+    calculateTournamentStandings
 } from '../simulation';
 
 export interface CupProgressionResult {
@@ -151,12 +152,10 @@ export function handleCupProgression(
 
     // 6. Argentine Playoffs (Torneo Apertura)
     if (simulatedWeek >= 16 && (!updatedCups.aperturaPlayoffs || !updatedCups.aperturaPlayoffs.rounds || updatedCups.aperturaPlayoffs.rounds.length === 0)) {
-        const argTable = leagueTables[LeagueId.LIGA_ARGENTINA] || [];
-        const zoneATeams = argTable.filter(r => r.zone === 'A').map(r => teams.find(t => t.id === r.teamId)!).filter(Boolean);
-        const zoneBTeams = argTable.filter(r => r.zone === 'B').map(r => teams.find(t => t.id === r.teamId)!).filter(Boolean);
+        const { zoneA, zoneB } = calculateTournamentStandings(updatedSchedule, 'Torneo_Apertura', teams);
 
-        if (zoneATeams.length >= 8 && zoneBTeams.length >= 8) {
-            const octavosFixtures = generateArgentinePlayoffs(zoneATeams.slice(0, 8), zoneBTeams.slice(0, 8), 'Playoffs_Apertura', 17);
+        if (zoneA.length >= 8 && zoneB.length >= 8) {
+            const octavosFixtures = generateArgentinePlayoffs(zoneA.slice(0, 8), zoneB.slice(0, 8), 'Playoffs_Apertura', 17);
             updatedCups.aperturaPlayoffs = {
                 id: 'apertura_playoffs',
                 name: 'Playoffs Apertura',
@@ -164,7 +163,7 @@ export function handleCupProgression(
                 phase: 'knockout',
                 rounds: [{ name: 'Round of 16', fixtures: octavosFixtures, completed: false }],
                 currentRoundIndex: 0,
-                statistics: { topScorers: [], championsHistory: [] }
+                statistics: { topScorers: [], championsHistory: updatedCups.aperturaPlayoffs?.statistics?.championsHistory || [] }
             };
             updatedSchedule.push(...octavosFixtures);
         }
@@ -182,12 +181,10 @@ export function handleCupProgression(
 
     // 7. Argentine Playoffs (Torneo Clausura)
     if (simulatedWeek >= 36 && (!updatedCups.clausuraPlayoffs || !updatedCups.clausuraPlayoffs.rounds || updatedCups.clausuraPlayoffs.rounds.length === 0)) {
-        const argTable = leagueTables[LeagueId.LIGA_ARGENTINA] || [];
-        const zoneATeams = argTable.filter(r => r.zone === 'A').map(r => teams.find(t => t.id === r.teamId)!).filter(Boolean);
-        const zoneBTeams = argTable.filter(r => r.zone === 'B').map(r => teams.find(t => t.id === r.teamId)!).filter(Boolean);
+        const { zoneA, zoneB } = calculateTournamentStandings(updatedSchedule, 'Torneo_Clausura', teams);
 
-        if (zoneATeams.length >= 8 && zoneBTeams.length >= 8) {
-            const octavosFixtures = generateArgentinePlayoffs(zoneATeams.slice(0, 8), zoneBTeams.slice(0, 8), 'Playoffs_Clausura', 37);
+        if (zoneA.length >= 8 && zoneB.length >= 8) {
+            const octavosFixtures = generateArgentinePlayoffs(zoneA.slice(0, 8), zoneB.slice(0, 8), 'Playoffs_Clausura', 37);
             updatedCups.clausuraPlayoffs = {
                 id: 'clausura_playoffs',
                 name: 'Playoffs Clausura',
@@ -195,7 +192,7 @@ export function handleCupProgression(
                 phase: 'knockout',
                 rounds: [{ name: 'Round of 16', fixtures: octavosFixtures, completed: false }],
                 currentRoundIndex: 0,
-                statistics: { topScorers: [], championsHistory: [] }
+                statistics: { topScorers: [], championsHistory: updatedCups.clausuraPlayoffs?.statistics?.championsHistory || [] }
             };
             updatedSchedule.push(...octavosFixtures);
         }

@@ -2,6 +2,17 @@
 import { Team, Match, LeagueTableRow, Morale, Player, CupCompetition, CupRound, LeagueId, EuropeanTableRow, CupGroup } from '../types';
 import { getTacticalMatchup } from './coaching';
 import { generateRandomName } from '../utils';
+import {
+    computeArgentineRelegation,
+    computeArgentineInternationalQualification,
+    calculateTournamentStandings
+} from './argentinaRegulations';
+export {
+    computeArgentineRelegation,
+    computeArgentineInternationalQualification,
+    calculateTournamentStandings
+};
+export type { ArgentineQualification, ArgentineRelegationResult } from './argentinaRegulations';
 
 const FORMATION_CONFIG: Record<string, Record<Player['position'], number>> = {
     '4-3-3': { 'POR': 1, 'DEF': 4, 'CEN': 3, 'DEL': 3 },
@@ -998,6 +1009,7 @@ export const advanceCupRound = (
             const played = recentMatches.find(m => 
                 m.homeTeamId === f.homeTeamId && 
                 m.awayTeamId === f.awayTeamId && 
+                m.competition === f.competition &&
                 m.result !== undefined
             );
             return played ? { ...f, result: played.result, penalties: played.penalties || played.result?.penalties } : f;
@@ -1019,8 +1031,8 @@ export const advanceCupRound = (
         }
     });
 
-    // If this was the final (only 1 winner remaining), set winner and finalize cup
-    if (winners.length === 1) {
+    // If this was the final (only 1 fixture and 1 winner remaining), set winner and finalize cup
+    if (winners.length === 1 && (currentRound.fixtures.length === 1 || currentRound.name.toLowerCase().includes('final'))) {
         const winnerTeam = allTeams.find(t => t.id === winners[0]);
         const updatedStatistics = {
             ...cup.statistics,
@@ -1327,18 +1339,9 @@ export const handlePromotionRelegation = (allTeams: Team[], leagueTables: Record
         let promotedIds: number[] = [];
 
         if (div1 === LeagueId.LIGA_ARGENTINA) {
-            // Relegation 1: Last place in Tabla Anual (30th place)
-            const lastTablaAnual = sortedDiv1[sortedDiv1.length - 1]?.teamId;
-            if (lastTablaAnual) relegatedIds.push(lastTablaAnual);
-
-            // Relegation 2: Lowest Promedio (pointsTotal / playedTotal)
-            const sortedByPromedio = [...div1Table].sort((a, b) => (a.promedio ?? 0) - (b.promedio ?? 0));
-            for (const r of sortedByPromedio) {
-                if (!relegatedIds.includes(r.teamId)) {
-                    relegatedIds.push(r.teamId);
-                    break;
-                }
-            }
+            // Official AFA regulation: 2 descensos (Promedios + Tabla Anual con prioridad de Promedios)
+            const argRelegation = computeArgentineRelegation(div1Table);
+            relegatedIds = [...argRelegation.relegatedIds];
 
             // 2 Promoted teams from Primera Nacional (Leaders of Reducido/Final or top positions)
             const zoneATable = div2Table.filter(r => r.zone === 'A').sort((a, b) => b.points - a.points);

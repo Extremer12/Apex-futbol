@@ -7,6 +7,7 @@ import { LEAGUE_THEMES } from './constants';
 import { customPacksService } from '../../../services/customPacks/packService';
 import { Trophy, Shield, Flame, Activity } from 'lucide-react';
 import { TournamentBracket } from '../../ui/TournamentBracket';
+import { computeArgentineInternationalQualification, computeArgentineRelegation } from '../../../services/argentinaRegulations';
 
 interface LeagueTableProps {
     table?: LeagueTableRow[];
@@ -68,6 +69,16 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
 
         return table;
     }, [table, isZonalLeague, argView]);
+
+    const argInternationalQual = useMemo(() => {
+        if (!isArgentina || !table) return null;
+        return computeArgentineInternationalQualification(table, gameState.cups);
+    }, [isArgentina, table, gameState.cups]);
+
+    const argRelegation = useMemo(() => {
+        if (!isArgentina || !table) return null;
+        return computeArgentineRelegation(table);
+    }, [isArgentina, table]);
 
     const renderNacionalReducido = () => {
         const finalPrimerAscenso = gameState.cups.nacionalPrimerAscenso;
@@ -202,6 +213,17 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
 
     const renderAperturaPlayoffs = () => {
         const apertura = gameState.cups.aperturaPlayoffs;
+        const currentChampName = apertura?.winnerId ? getTeamById(apertura.winnerId)?.name : null;
+        const historyChampName = apertura?.statistics?.championsHistory?.[0]?.winnerName;
+        
+        let statusBadgeText = 'Por disputarse (Fecha 17 a 20)';
+        if (currentChampName) {
+            statusBadgeText = `🏆 Campeón Apertura: ${currentChampName}`;
+        } else if (gameState.currentWeek >= 17 && gameState.currentWeek <= 20) {
+            statusBadgeText = 'En Disputa (Fecha 17 a 20)';
+        } else if (historyChampName) {
+            statusBadgeText = `🏆 Último Campeón: ${historyChampName}`;
+        }
 
         return (
             <div className="p-3 sm:p-6 space-y-4">
@@ -217,7 +239,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
                             </div>
                         </div>
                         <span className="text-xs font-bold text-amber-300 bg-amber-500/15 px-3 py-1.5 rounded-xl border border-amber-500/30 shadow-sm">
-                            {apertura?.winnerId ? `🏆 Campeón Apertura: ${getTeamById(apertura.winnerId)?.name}` : 'En Disputa (Fecha 17 a 20)'}
+                            {statusBadgeText}
                         </span>
                     </div>
 
@@ -244,6 +266,17 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
 
     const renderClausuraPlayoffs = () => {
         const clausura = gameState.cups.clausuraPlayoffs;
+        const currentChampName = clausura?.winnerId ? getTeamById(clausura.winnerId)?.name : null;
+        const historyChampName = clausura?.statistics?.championsHistory?.[0]?.winnerName;
+        
+        let statusBadgeText = 'Por disputarse (Fecha 37 a 40)';
+        if (currentChampName) {
+            statusBadgeText = `🏆 Campeón Clausura: ${currentChampName}`;
+        } else if (gameState.currentWeek >= 37 && gameState.currentWeek <= 40) {
+            statusBadgeText = 'En Disputa (Fecha 37 a 40)';
+        } else if (historyChampName) {
+            statusBadgeText = `🏆 Último Campeón: ${historyChampName}`;
+        }
 
         return (
             <div className="p-3 sm:p-6 space-y-4">
@@ -259,7 +292,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
                             </div>
                         </div>
                         <span className="text-xs font-bold text-cyan-300 bg-cyan-500/15 px-3 py-1.5 rounded-xl border border-cyan-500/30 shadow-sm">
-                            {clausura?.winnerId ? `🏆 Campeón Clausura: ${getTeamById(clausura.winnerId)?.name}` : 'En Disputa (Fecha 37 a 40)'}
+                            {statusBadgeText}
                         </span>
                     </div>
 
@@ -445,20 +478,25 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
                                             zoneLabel = 'Clasifica a Octavos de Final (Playoffs)';
                                         }
                                     } else if (argView === 'TABLA_ANUAL') {
-                                        if (row.position <= 4) {
+                                        const lib = argInternationalQual?.libertadores.find(l => l.teamId === row.teamId);
+                                        const sud = argInternationalQual?.sudamericana.find(s => s.teamId === row.teamId);
+                                        const isRelegatedAnual = argRelegation?.relegatedAnualId === row.teamId;
+
+                                        if (lib) {
                                             zoneColor = 'bg-amber-500';
-                                            zoneLabel = 'Copa Libertadores';
-                                        } else if (row.position <= 10) {
+                                            zoneLabel = `Copa Libertadores (${lib.reason})`;
+                                        } else if (sud) {
                                             zoneColor = 'bg-blue-500';
-                                            zoneLabel = 'Copa Sudamericana';
-                                        } else if (row.position === displayedRows.length) {
+                                            zoneLabel = `Copa Sudamericana (${sud.reason})`;
+                                        } else if (isRelegatedAnual) {
                                             zoneColor = 'bg-red-500';
-                                            zoneLabel = 'Descenso por Tabla Anual';
+                                            zoneLabel = 'Descenso por Tabla Anual (AFA)';
                                         }
                                     } else if (argView === 'PROMEDIOS') {
-                                        if (row.position === displayedRows.length) {
+                                        const isRelegatedPromedio = argRelegation?.relegatedPromedioId === row.teamId;
+                                        if (isRelegatedPromedio) {
                                             zoneColor = 'bg-red-500';
-                                            zoneLabel = 'Descenso por Promedio';
+                                            zoneLabel = 'Descenso por Promedio (AFA)';
                                         }
                                     }
                                 } else if (isPrimeraNacional) {
@@ -557,22 +595,22 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
                                     <>
                                         <div className="flex items-center gap-2">
                                             <div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div>
-                                            <span>1º al 4º Copa Libertadores</span>
+                                            <span>6 cupos Copa Libertadores (Campeones y Mejores Anual con Cascada AFA)</span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
-                                            <span>5º al 10º Copa Sudamericana</span>
+                                            <span>6 cupos Copa Sudamericana (Siguientes 6 de la Tabla Anual)</span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
-                                            <span>30º Descenso por Tabla Anual</span>
+                                            <span>Descenso Tabla Anual (o 29º si el 30º desciende por Promedio)</span>
                                         </div>
                                     </>
                                 )}
                                 {argView === 'PROMEDIOS' && (
                                     <div className="flex items-center gap-2">
                                         <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
-                                        <span>Último promedio desciende a Primera Nacional</span>
+                                        <span>Último puesto de la Tabla de Promedios desciende a Primera Nacional</span>
                                     </div>
                                 )}
                             </>
