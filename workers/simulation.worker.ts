@@ -193,7 +193,26 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                 const dummyRow: LeagueTableRow = { teamId: 0, position: 0, played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0, form: [] };
 
                 const isUserMatch = match.homeTeamId === playerTeamId || match.awayTeamId === playerTeamId;
-                const result = simulateMatch(homeTeam, awayTeam, homeRow || dummyRow, awayRow || dummyRow, match.isCupMatch || false, isUserMatch);
+
+                // Determine if this match is a genuine elimination / knockout match (prórroga y penales)
+                // Matches for points (regular league, Champions/Europa league stage, Libertadores groups) always end at 90'
+                const isKnockoutMatch = !!match.isCupMatch && (
+                    match.competition === 'FA_Cup' ||
+                    match.competition === 'Carabao_Cup' ||
+                    match.competition === 'Copa_Del_Rey' ||
+                    match.competition === 'DFB_Pokal' ||
+                    match.competition === 'Coppa_Italia' ||
+                    match.competition === 'Copa_Argentina' ||
+                    match.competition === 'Playoffs_Apertura' ||
+                    match.competition === 'Playoffs_Clausura' ||
+                    match.competition === 'Nacional_Primer_Ascenso' ||
+                    match.competition === 'Nacional_Reducido' ||
+                    match.competition === 'Copa_Intercontinental' ||
+                    ((match.competition === 'Champions_League' || match.competition === 'Europa_League') && updatedCups[match.competition === 'Champions_League' ? 'championsLeague' : 'europaLeague']?.currentPhase !== 'league') ||
+                    (match.competition === 'Copa_Libertadores' && updatedCups['copaLibertadores']?.phase !== 'groups')
+                );
+
+                const result = simulateMatch(homeTeam, awayTeam, homeRow || dummyRow, awayRow || dummyRow, isKnockoutMatch, isUserMatch);
 
                 const matchIndex = scheduleIndexMap.get(`${match.homeTeamId}_${match.awayTeamId}`);
                 if (matchIndex !== undefined && newSchedule[matchIndex]) {
@@ -269,23 +288,36 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                         if (awayResult === 'L') confidenceChange -= 2;
                     }
                 } else if (match.isCupMatch) {
-                    let homeWin = result.homeScore > result.awayScore;
-                    if (result.homeScore === result.awayScore && result.penalties) {
-                        homeWin = result.penalties.home > result.penalties.away;
-                    }
+                    let homeResult: 'W' | 'D' | 'L';
+                    let awayResult: 'W' | 'D' | 'L';
 
-                    const homeResult = homeWin ? 'W' : 'L';
-                    const awayResult = homeWin ? 'L' : 'W';
+                    if (result.homeScore > result.awayScore) {
+                        homeResult = 'W';
+                        awayResult = 'L';
+                    } else if (result.awayScore > result.homeScore) {
+                        homeResult = 'L';
+                        awayResult = 'W';
+                    } else if (result.penalties) {
+                        const homeWonPens = result.penalties.home > result.penalties.away;
+                        homeResult = homeWonPens ? 'W' : 'L';
+                        awayResult = homeWonPens ? 'L' : 'W';
+                    } else {
+                        // Regular tie in group or league stage of cups
+                        homeResult = 'D';
+                        awayResult = 'D';
+                    }
 
                     homeTeam.teamMorale = updateTeamMorale(homeTeam.teamMorale, homeResult);
                     awayTeam.teamMorale = updateTeamMorale(awayTeam.teamMorale, awayResult);
 
                     if (homeTeam.id === playerTeamId) {
                         if (homeResult === 'W') confidenceChange += 3;
+                        if (homeResult === 'D') confidenceChange += 0;
                         if (homeResult === 'L') confidenceChange -= 2;
                     }
                     if (awayTeam.id === playerTeamId) {
                         if (awayResult === 'W') confidenceChange += 3;
+                        if (awayResult === 'D') confidenceChange += 0;
                         if (awayResult === 'L') confidenceChange -= 2;
                     }
 
@@ -333,8 +365,8 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                         // European League Table Update
                         if (match.competition === 'Champions_League' || match.competition === 'Europa_League') {
                             if (currentCup.currentPhase === 'league') {
-                                const homeEuRow = currentCup.leagueTable.find((r: any) => r.teamId === match.homeTeamId);
-                                const awayEuRow = currentCup.leagueTable.find((r: any) => r.teamId === match.awayTeamId);
+                                const homeEuRow = currentCup.leagueTable?.find((r: any) => r.teamId === match.homeTeamId);
+                                const awayEuRow = currentCup.leagueTable?.find((r: any) => r.teamId === match.awayTeamId);
                                 if (homeEuRow && awayEuRow) {
                                     homeEuRow.played++; awayEuRow.played++;
                                     homeEuRow.goalsFor += result.homeScore; awayEuRow.goalsFor += result.awayScore;
@@ -344,6 +376,25 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                                     if (result.homeScore > result.awayScore) { homeEuRow.won++; homeEuRow.points += 3; awayEuRow.lost++; }
                                     else if (result.awayScore > result.homeScore) { awayEuRow.won++; awayEuRow.points += 3; homeEuRow.lost++; }
                                     else { homeEuRow.drawn++; homeEuRow.points += 1; awayEuRow.drawn++; awayEuRow.points += 1; }
+                                }
+                            }
+                        }
+
+                        // Copa Libertadores Group Table Update
+                        if (match.competition === 'Copa_Libertadores' && currentCup.phase === 'groups' && currentCup.groups) {
+                            for (const group of currentCup.groups) {
+                                const homeLibRow = group.table?.find((r: any) => r.teamId === match.homeTeamId);
+                                const awayLibRow = group.table?.find((r: any) => r.teamId === match.awayTeamId);
+                                if (homeLibRow && awayLibRow) {
+                                    homeLibRow.played++; awayLibRow.played++;
+                                    homeLibRow.goalsFor += result.homeScore; awayLibRow.goalsFor += result.awayScore;
+                                    homeLibRow.goalsAgainst += result.awayScore; awayLibRow.goalsAgainst += result.homeScore;
+                                    homeLibRow.goalDifference = homeLibRow.goalsFor - homeLibRow.goalsAgainst;
+                                    awayLibRow.goalDifference = awayLibRow.goalsFor - awayLibRow.goalsAgainst;
+                                    if (result.homeScore > result.awayScore) { homeLibRow.won++; homeLibRow.points += 3; awayLibRow.lost++; }
+                                    else if (result.awayScore > result.homeScore) { awayLibRow.won++; awayLibRow.points += 3; homeLibRow.lost++; }
+                                    else { homeLibRow.drawn++; homeLibRow.points += 1; awayLibRow.drawn++; awayLibRow.points += 1; }
+                                    break;
                                 }
                             }
                         }

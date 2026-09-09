@@ -132,35 +132,69 @@ export const getSeasonSummaryData = (gameState: GameState): SeasonSummaryData =>
     // Champions
     const leagueChampId = sortedTable[0]?.teamId;
     const leagueChampion = findTeam(leagueChampId);
-    const aperturaChampion = findTeam(gameState.cups.aperturaPlayoffs?.winnerId);
-    const clausuraChampion = findTeam(gameState.cups.clausuraPlayoffs?.winnerId);
+
+    const resolveCupChampion = (cup?: CupCompetition): Team | null => {
+        if (!cup) return null;
+        if (cup.winnerId) {
+            const t = findTeam(cup.winnerId);
+            if (t) return t;
+        }
+        // Check final match in completed rounds if winnerId wasn't set
+        if (cup.rounds && cup.rounds.length > 0) {
+            const lastRound = cup.rounds[cup.rounds.length - 1];
+            if (lastRound.fixtures?.length === 1 && lastRound.fixtures[0].result) {
+                const finalMatch = lastRound.fixtures[0];
+                const hScore = finalMatch.result.homeScore;
+                const aScore = finalMatch.result.awayScore;
+                let champId = 0;
+                if (hScore > aScore) champId = finalMatch.homeTeamId;
+                else if (aScore > hScore) champId = finalMatch.awayTeamId;
+                else if (finalMatch.penalties) {
+                    champId = finalMatch.penalties.home > finalMatch.penalties.away ? finalMatch.homeTeamId : finalMatch.awayTeamId;
+                }
+                if (champId) {
+                    const t = findTeam(champId);
+                    if (t) return t;
+                }
+            }
+        }
+        // Fallback to championsHistory (e.g. after season transition or archiving)
+        const historyWinner = cup.statistics?.championsHistory?.[0];
+        if (historyWinner?.winnerId) {
+            const t = findTeam(historyWinner.winnerId);
+            if (t) return t;
+        }
+        if (historyWinner?.winnerName) {
+            const t = gameState.allTeams.find(team => team.name.toLowerCase() === historyWinner.winnerName.toLowerCase());
+            if (t) return t;
+        }
+        return null;
+    };
+
+    const aperturaChampion = resolveCupChampion(gameState.cups.aperturaPlayoffs);
+    const clausuraChampion = resolveCupChampion(gameState.cups.clausuraPlayoffs);
 
     // Cups
+    const cupsToCheck: [string, CupCompetition | undefined][] = [
+        ['Copa Argentina', gameState.cups.copaArgentina],
+        ['FA Cup', gameState.cups.faCup],
+        ['Carabao Cup', gameState.cups.carabaoCup],
+        ['Copa del Rey', gameState.cups.copaDelRey],
+        ['DFB-Pokal', gameState.cups.dfbPokal],
+        ['Coppa Italia', gameState.cups.coppaItalia],
+        ['Copa Libertadores', gameState.cups.copaLibertadores],
+        ['UEFA Champions League', gameState.cups.championsLeague],
+        ['UEFA Europa League', gameState.cups.europaLeague],
+        ['Copa Intercontinental', gameState.cups.copaIntercontinental],
+    ];
+
     const cupWinners: { cupName: string; winnerTeam: Team | null }[] = [];
-    if (gameState.cups.copaArgentina?.winnerId) {
-        cupWinners.push({ cupName: 'Copa Argentina', winnerTeam: findTeam(gameState.cups.copaArgentina.winnerId) });
-    }
-    if (gameState.cups.faCup?.winnerId) {
-        cupWinners.push({ cupName: 'FA Cup', winnerTeam: findTeam(gameState.cups.faCup.winnerId) });
-    }
-    if (gameState.cups.carabaoCup?.winnerId) {
-        cupWinners.push({ cupName: 'Carabao Cup', winnerTeam: findTeam(gameState.cups.carabaoCup.winnerId) });
-    }
-    if (gameState.cups.copaDelRey?.winnerId) {
-        cupWinners.push({ cupName: 'Copa del Rey', winnerTeam: findTeam(gameState.cups.copaDelRey.winnerId) });
-    }
-    if (gameState.cups.dfbPokal?.winnerId) {
-        cupWinners.push({ cupName: 'DFB-Pokal', winnerTeam: findTeam(gameState.cups.dfbPokal.winnerId) });
-    }
-    if (gameState.cups.coppaItalia?.winnerId) {
-        cupWinners.push({ cupName: 'Coppa Italia', winnerTeam: findTeam(gameState.cups.coppaItalia.winnerId) });
-    }
-    if (gameState.cups.copaLibertadores?.winnerId) {
-        cupWinners.push({ cupName: 'Copa Libertadores', winnerTeam: findTeam(gameState.cups.copaLibertadores.winnerId) });
-    }
-    if (gameState.cups.championsLeague?.winnerId) {
-        cupWinners.push({ cupName: 'UEFA Champions League', winnerTeam: findTeam(gameState.cups.championsLeague.winnerId) });
-    }
+    cupsToCheck.forEach(([name, cup]) => {
+        const champ = resolveCupChampion(cup);
+        if (champ) {
+            cupWinners.push({ cupName: name, winnerTeam: champ });
+        }
+    });
 
     // Ascensos y Descensos calculation specifically for active context
     let relegatedTeams: Team[] = [];

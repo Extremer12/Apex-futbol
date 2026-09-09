@@ -745,6 +745,7 @@ export const generateArgentinePlayoffs = (
             awayTeamId: away.id,
             competition,
             isCupMatch: true,
+            isMidweek: false,
         }));
 };
 
@@ -771,6 +772,7 @@ export const generateNacionalPrimerAscenso = (leaderA: Team, leaderB: Team, week
         awayTeamId: leaderB.id,
         competition: 'Nacional_Primer_Ascenso',
         isCupMatch: true,
+        isMidweek: false,
     };
 };
 
@@ -794,6 +796,7 @@ export const generateNacionalReducidoPhase1 = (zoneATeams: Team[], zoneBTeams: T
             awayTeamId: away.id,
             competition: 'Nacional_Reducido',
             isCupMatch: true,
+            isMidweek: false,
         }));
 };
 
@@ -814,6 +817,7 @@ export const generateNacionalReducidoCuartos = (winnersPhase1: Team[], loserPrim
                 awayTeamId: all8[a].id,
                 competition: 'Nacional_Reducido',
                 isCupMatch: true,
+                isMidweek: false,
             });
         }
     });
@@ -1075,6 +1079,12 @@ export const advanceCupRound = (
     if (cup.id === 'copa_libertadores') competitionType = 'Copa_Libertadores';
     if (cup.id === 'copa_intercontinental') competitionType = 'Copa_Intercontinental';
 
+    const isMidweekCompetition = 
+        competitionType !== 'Playoffs_Apertura' &&
+        competitionType !== 'Playoffs_Clausura' &&
+        competitionType !== 'Nacional_Primer_Ascenso' &&
+        competitionType !== 'Nacional_Reducido';
+
     // Pair winners in exact bracket tree order (Match 0 winner vs Match 1 winner, Match 2 vs Match 3, etc.)
     const nextRoundFixtures: Match[] = [];
     for (let i = 0; i < winnerTeams.length; i += 2) {
@@ -1085,7 +1095,7 @@ export const advanceCupRound = (
                 awayTeamId: winnerTeams[i + 1].id,
                 competition: competitionType,
                 isCupMatch: true,
-                isMidweek: true
+                isMidweek: isMidweekCompetition
             });
         }
     }

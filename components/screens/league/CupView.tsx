@@ -9,15 +9,11 @@ import { customPacksService } from '../../../services/customPacks/packService';
 interface CupViewProps {
     cup?: CupCompetition;
     gameState: GameState;
-    cupTab: 'ROUNDS' | 'STATS';
-    setCupTab: (tab: 'ROUNDS' | 'STATS') => void;
 }
 
 export const CupView: React.FC<CupViewProps> = ({
     cup,
-    gameState,
-    cupTab,
-    setCupTab
+    gameState
 }) => {
     if (!cup) return null;
     const theme = CUP_THEMES[cup.id] || CUP_THEMES.fa_cup;
@@ -84,7 +80,6 @@ export const CupView: React.FC<CupViewProps> = ({
 
     const currentRound = cup.rounds[cup.currentRoundIndex];
     const isFinished = !!cup.winnerId;
-    const winner = cup.winnerId ? getTeamById(cup.winnerId) : null;
 
     const roundNameMap: Record<string, string> = {
         'Final': 'Gran Final',
@@ -120,54 +115,27 @@ export const CupView: React.FC<CupViewProps> = ({
                             </div>
                         </div>
                     </div>
-                    <div className="flex gap-2 bg-black/30 p-1 rounded-xl shrink-0 self-start md:self-auto">
-                        <button onClick={() => setCupTab('ROUNDS')} className={`px-4 py-2 rounded-lg font-bold text-xs md:text-sm transition-all ${cupTab === 'ROUNDS' ? 'bg-white text-slate-950' : 'text-slate-400 hover:text-white'}`}>Llaves</button>
-                        <button onClick={() => setCupTab('STATS')} className={`px-4 py-2 rounded-lg font-bold text-xs md:text-sm transition-all ${cupTab === 'STATS' ? 'bg-white text-slate-950' : 'text-slate-400 hover:text-white'}`}>Historial</button>
-                    </div>
                 </div>
             </div>
 
             <div className="p-3 sm:p-6">
-                {cupTab === 'ROUNDS' ? (
-                    <div className="space-y-4">
-                        {isFinished && winner && (
-                            <div className={`flex items-center gap-4 p-4 sm:p-5 rounded-2xl border ${theme.border} bg-white/5 mb-4 sm:mb-6`}>
-                                <div className="w-10 h-10 sm:w-12 sm:h-12 shrink-0"><TrophyIcon className={`w-full h-full ${theme.accent}`} /></div>
-                                <div>
-                                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Campeón</p>
-                                    <p className="text-white font-black text-xl sm:text-2xl">{winner.name}</p>
-                                </div>
-                            </div>
-                        )}
-                        {!currentRound && !isFinished && (
-                            <div className="text-center py-16 text-slate-500">
-                                <TrophyIcon className="w-16 h-16 mx-auto mb-4 opacity-20" />
-                                <p className="font-bold uppercase tracking-widest">La competición no ha comenzado</p>
-                            </div>
-                        )}
-                        <div className="w-full overflow-hidden">
-                            <TournamentBracket
-                                cup={cup}
-                                getTeamById={getTeamById}
-                                playerTeamId={gameState.team.id}
-                                theme={theme}
-                                logoUrl={logo}
-                            />
+                <div className="space-y-4">
+                    {!currentRound && !isFinished && (
+                        <div className="text-center py-16 text-slate-500">
+                            <TrophyIcon className="w-16 h-16 mx-auto mb-4 opacity-20" />
+                            <p className="font-bold uppercase tracking-widest">La competición no ha comenzado</p>
                         </div>
+                    )}
+                    <div className="w-full overflow-hidden">
+                        <TournamentBracket
+                            cup={cup}
+                            getTeamById={getTeamById}
+                            playerTeamId={gameState.team.id}
+                            theme={theme}
+                            logoUrl={logo}
+                        />
                     </div>
-                ) : (
-                    <div className="space-y-3">
-                        {cup.statistics.championsHistory.length === 0 ? (
-                            <p className="text-center text-slate-600 py-8 text-sm font-bold uppercase tracking-widest">Sin historial todavía</p>
-                        ) : cup.statistics.championsHistory.map((c, i) => (
-                            <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-slate-900/40 border border-white/5">
-                                <span className="text-slate-500 font-bold text-sm">{c.season}</span>
-                                <span className="font-black text-white">{c.winnerName}</span>
-                                <TrophyIcon className={`w-5 h-5 ${theme.accent}`} />
-                            </div>
-                        ))}
-                    </div>
-                )}
+                </div>
             </div>
         </div>
     );

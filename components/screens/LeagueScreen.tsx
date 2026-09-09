@@ -50,7 +50,6 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
     const [isExplorerOpen, setIsExplorerOpen] = useState(false);
     const [activeCountry, setActiveCountry] = useState<string>('MY_LEAGUE');
     const [searchQuery, setSearchQuery] = useState('');
-    const [cupTab, setCupTab] = useState<'ROUNDS' | 'STATS'>('ROUNDS');
 
     const selectedCompDef = useMemo(() => {
         return ALL_COMPETITIONS.find(c => c.id === selectedCompetitionId);
@@ -363,8 +362,6 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                     <CupView
                         cup={(gameState.cups as any)[selectedCompDef.cupKey]}
                         gameState={gameState}
-                        cupTab={cupTab}
-                        setCupTab={setCupTab}
                     />
                 ) : null}
             </div>

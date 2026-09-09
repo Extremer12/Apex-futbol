@@ -257,20 +257,15 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
             {/* Winner Banner */}
             {winner && (
                 <div className={`flex items-center justify-between px-4 py-3 rounded-2xl border ${theme.border} bg-gradient-to-r from-amber-500/15 via-slate-900 to-black shadow-lg`}>
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 p-2 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center">
-                            <Trophy className={`w-6 h-6 ${theme.accent}`} />
+                    <div className="flex items-center gap-3.5">
+                        <div className="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center p-1.5 shrink-0">
+                            <TeamLogo team={winner} />
                         </div>
                         <div>
                             <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400">Campeón del Torneo</span>
                             <h3 className="text-base sm:text-lg font-black text-white leading-tight">{winner.name}</h3>
                         </div>
                     </div>
-                    {logoUrl && (
-                        <div className="w-10 h-10 shrink-0 flex items-center justify-center">
-                            <img src={logoUrl} alt="" className="w-full h-full object-contain drop-shadow" />
-                        </div>
-                    )}
                 </div>
             )}
 

@@ -60,7 +60,7 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
     const [minute, setMinute] = useState(0);
     const [displayScore, setDisplayScore] = useState({ home: 0, away: 0 });
     const [isFinished, setIsFinished] = useState(false);
-    const [speedMultiplier, setSpeedMultiplier] = useState<1 | 2 | 4>(() => {
+    const [speedMultiplier] = useState<1 | 2 | 4>(() => {
         try {
             const saved = localStorage.getItem('apex_match_speed');
             if (saved === '2') return 2;
@@ -70,13 +70,6 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
             return 1;
         }
     });
-
-    const handleSetSpeed = (s: 1 | 2 | 4) => {
-        setSpeedMultiplier(s);
-        try {
-            localStorage.setItem('apex_match_speed', String(s));
-        } catch (_) {}
-    };
     const [activeTab, setActiveTab] = useState<'ticker' | 'stats'>('ticker');
     const [commentary, setCommentary] = useState<ParsedEvent[]>([]);
     const [stats, setStats] = useState({
@@ -327,44 +320,8 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
                     </div>
                 </div>
 
-                {/* Speed Controls & Skip Button */}
+                {/* Match Complete Header Button */}
                 <div className="flex items-center gap-2">
-                    {!isFinished && (
-                        <>
-                            <div className="flex items-center bg-slate-900 rounded-lg p-0.5 border border-slate-800 text-xs">
-                                <button
-                                    onClick={() => handleSetSpeed(1)}
-                                    className={`px-2 py-1 rounded font-bold transition-all ${speedMultiplier === 1 ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
-                                    title="Velocidad Normal (1x)"
-                                >
-                                    1x
-                                </button>
-                                <button
-                                    onClick={() => handleSetSpeed(2)}
-                                    className={`px-2 py-1 rounded font-bold transition-all ${speedMultiplier === 2 ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
-                                    title="Velocidad Rápida (2x)"
-                                >
-                                    2x
-                                </button>
-                                <button
-                                    onClick={() => handleSetSpeed(4)}
-                                    className={`px-2 py-1 rounded font-bold transition-all ${speedMultiplier === 4 ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
-                                    title="Velocidad Ultra (4x)"
-                                >
-                                    4x
-                                </button>
-                            </div>
-                            <button
-                                onClick={handleSkipToEnd}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 text-xs font-bold transition-all shadow-sm"
-                            >
-                                <span>⏩</span>
-                                <span className="hidden sm:inline">Saltar Simulación</span>
-                                <span className="sm:hidden">Saltar</span>
-                            </button>
-                        </>
-                    )}
-
                     {isFinished && (
                         <button
                             onClick={onMatchComplete}
@@ -380,49 +337,49 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
             </header>
 
             {/* 2. THE SCOREBOARD BANNER (HERO) */}
-            <section className="relative z-10 px-4 sm:px-8 py-5 sm:py-8 border-b border-white/5 bg-gradient-to-b from-slate-900/70 via-slate-900/40 to-transparent">
-                <div className="max-w-5xl mx-auto flex items-center justify-between gap-3 sm:gap-8">
+            <section className="relative z-10 px-3 sm:px-8 py-5 sm:py-7 border-b border-white/5 bg-gradient-to-b from-slate-900/70 via-slate-900/40 to-transparent">
+                <div className="max-w-5xl mx-auto grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-6 w-full">
                     {/* Home Team */}
-                    <div className="flex-1 flex flex-col items-center sm:items-end text-center sm:text-right">
-                        <div className="w-16 h-16 sm:w-24 sm:h-24 md:w-28 md:h-28 flex items-center justify-center mb-2 sm:mb-3 drop-shadow-[0_4px_20px_rgba(0,0,0,0.7)]">
+                    <div className="min-w-0 w-full flex flex-col items-center sm:items-end text-center sm:text-right overflow-hidden">
+                        <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 shrink-0 flex items-center justify-center mb-1.5 sm:mb-2.5 drop-shadow-[0_4px_20px_rgba(0,0,0,0.7)]">
                             <TeamLogo team={homeTeam} />
                         </div>
-                        <h2 className="text-base sm:text-2xl md:text-3xl font-black tracking-tight text-white line-clamp-1">
+                        <h2 className="text-sm sm:text-xl md:text-2xl font-black tracking-tight text-white truncate max-w-full">
                             {homeTeam.name}
                         </h2>
-                        <div className="text-[10px] sm:text-xs text-slate-400 font-semibold mt-0.5 hidden sm:block">
+                        <div className="text-[10px] sm:text-xs text-slate-400 font-semibold mt-0.5 hidden sm:block truncate max-w-full">
                             {homeTeam.coach?.style || 'Equilibrado'} • {homeTeam.coach?.preferredFormation || '4-3-3'}
                         </div>
                         {homeTeam.id === gameState.team.id && (
-                            <span className="mt-1 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-[var(--apex-gold)]/10 text-[var(--apex-gold)] border border-[var(--apex-gold)]/30">
+                            <span className="mt-1 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-[var(--apex-gold)]/10 text-[var(--apex-gold)] border border-[var(--apex-gold)]/30 shrink-0">
                                 Tu Club
                             </span>
                         )}
                     </div>
 
                     {/* Score Center Panel */}
-                    <div className="flex flex-col items-center shrink-0 px-2 sm:px-6">
-                        <div className="flex items-center gap-2 sm:gap-5 px-4 sm:px-8 py-2.5 sm:py-4 rounded-2xl bg-slate-950/90 border-2 border-slate-800/80 shadow-2xl backdrop-blur-xl">
-                            <span className={`text-4xl sm:text-7xl font-mono font-black tracking-tight text-white ${isFinished ? 'text-yellow-400' : ''}`}>
+                    <div className="flex flex-col items-center shrink-0 px-2 sm:px-4">
+                        <div className="flex items-center gap-2 sm:gap-4 px-3 sm:px-7 py-2 sm:py-3.5 rounded-2xl bg-slate-950/90 border-2 border-slate-800/80 shadow-2xl backdrop-blur-xl">
+                            <span className={`text-3xl sm:text-6xl font-mono font-black tracking-tight text-white ${isFinished ? 'text-yellow-400' : ''}`}>
                                 {displayScore.home}
                             </span>
-                            <span className="text-slate-600 text-2xl sm:text-4xl font-light">-</span>
-                            <span className={`text-4xl sm:text-7xl font-mono font-black tracking-tight text-white ${isFinished ? 'text-yellow-400' : ''}`}>
+                            <span className="text-slate-600 text-xl sm:text-3xl font-light">-</span>
+                            <span className={`text-3xl sm:text-6xl font-mono font-black tracking-tight text-white ${isFinished ? 'text-yellow-400' : ''}`}>
                                 {displayScore.away}
                             </span>
                         </div>
 
                         {/* Minute / Status Badge */}
-                        <div className="mt-3">
+                        <div className="mt-2.5">
                             {isFinished ? (
-                                <div className={`px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest shadow-lg ${
+                                <div className={`px-3 py-1 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest shadow-lg ${
                                     playerWon
                                         ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-emerald-500/20'
                                         : isDraw
                                         ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/40 shadow-yellow-500/20'
                                         : 'bg-red-500/20 text-red-300 border border-red-500/40 shadow-red-500/20'
                                 }`}>
-                                    {playerWon ? '¡Victoria!' : isDraw ? 'Empate' : 'Derrota'} • 90' Final
+                                    {playerWon ? '¡Victoria!' : isDraw ? 'Empate' : 'Derrota'} • {totalMatchMinutes}' Final
                                 </div>
                             ) : (
                                 <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300">
@@ -432,26 +389,26 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
                             )}
                         </div>
 
-                        {finalResult?.penalties && (
-                            <div className="text-[10px] font-bold text-yellow-400 mt-1">
+                        {isFinished && finalResult?.penalties && (
+                            <div className="text-[10px] sm:text-xs font-bold text-yellow-400 mt-1 animate-fade-in">
                                 Penales: {finalResult.penalties.home} - {finalResult.penalties.away}
                             </div>
                         )}
                     </div>
 
                     {/* Away Team */}
-                    <div className="flex-1 flex flex-col items-center sm:items-start text-center sm:text-left">
-                        <div className="w-16 h-16 sm:w-24 sm:h-24 md:w-28 md:h-28 flex items-center justify-center mb-2 sm:mb-3 drop-shadow-[0_4px_20px_rgba(0,0,0,0.7)]">
+                    <div className="min-w-0 w-full flex flex-col items-center sm:items-start text-center sm:text-left overflow-hidden">
+                        <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 shrink-0 flex items-center justify-center mb-1.5 sm:mb-2.5 drop-shadow-[0_4px_20px_rgba(0,0,0,0.7)]">
                             <TeamLogo team={awayTeam} />
                         </div>
-                        <h2 className="text-base sm:text-2xl md:text-3xl font-black tracking-tight text-white line-clamp-1">
+                        <h2 className="text-sm sm:text-xl md:text-2xl font-black tracking-tight text-white truncate max-w-full">
                             {awayTeam.name}
                         </h2>
-                        <div className="text-[10px] sm:text-xs text-slate-400 font-semibold mt-0.5 hidden sm:block">
+                        <div className="text-[10px] sm:text-xs text-slate-400 font-semibold mt-0.5 hidden sm:block truncate max-w-full">
                             {awayTeam.coach?.style || 'Equilibrado'} • {awayTeam.coach?.preferredFormation || '4-3-3'}
                         </div>
                         {awayTeam.id === gameState.team.id && (
-                            <span className="mt-1 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-[var(--apex-gold)]/10 text-[var(--apex-gold)] border border-[var(--apex-gold)]/30">
+                            <span className="mt-1 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-[var(--apex-gold)]/10 text-[var(--apex-gold)] border border-[var(--apex-gold)]/30 shrink-0">
                                 Tu Club
                             </span>
                         )}
