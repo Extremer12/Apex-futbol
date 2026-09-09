@@ -9,6 +9,7 @@ import { ligaArgentinaTeams, primeraNacionalTeams } from './data/teams/ligaArgen
 import { brasileiraoTeams, serieBBrTeams } from './data/teams/brasileirao';
 import { copaDePrimeraTeams } from './data/teams/copaDePrimera';
 import { segundaDivisionTeams, zweiteBundesligaTeams, serieBItaTeams } from './data/teams/secondDivisions';
+import { SOUTH_AMERICAN_EXTRA_TEAMS } from './data/teams/southAmericanClubs';
 
 export * from './data/teams/helpers';
 
@@ -28,6 +29,7 @@ export const TEAMS: Team[] = [
   ...(brasileiraoTeams || []),
   ...(serieBBrTeams || []),
   ...(copaDePrimeraTeams || []),
+  ...(SOUTH_AMERICAN_EXTRA_TEAMS || []),
 ];
 
 // Safety guard for sorting to prevent crashes if any team object is malformed

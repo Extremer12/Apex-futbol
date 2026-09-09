@@ -380,9 +380,43 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                             }
                         }
 
-                        // Copa Libertadores Group Table Update
+                        // Sync fixture in cup rounds if existing
+                        if (currentCup.rounds) {
+                            for (const round of currentCup.rounds) {
+                                const f = round.fixtures?.find((fix: any) =>
+                                    (fix.id && fix.id === match.id) ||
+                                    (fix.homeTeamId === match.homeTeamId && fix.awayTeamId === match.awayTeamId && fix.week === match.week)
+                                );
+                                if (f) {
+                                    f.result = {
+                                        homeScore: result.homeScore,
+                                        awayScore: result.awayScore,
+                                        events: result.events,
+                                        scorers: result.scorers
+                                    };
+                                    f.penalties = result.penalties;
+                                    break;
+                                }
+                            }
+                        }
+
+                        // Copa Libertadores Group Table & Fixtures Update
                         if (match.competition === 'Copa_Libertadores' && currentCup.phase === 'groups' && currentCup.groups) {
                             for (const group of currentCup.groups) {
+                                const gFix = group.fixtures?.find((fix: any) =>
+                                    (fix.id && fix.id === match.id) ||
+                                    (fix.homeTeamId === match.homeTeamId && fix.awayTeamId === match.awayTeamId && fix.week === match.week)
+                                );
+                                if (gFix) {
+                                    gFix.result = {
+                                        homeScore: result.homeScore,
+                                        awayScore: result.awayScore,
+                                        events: result.events,
+                                        scorers: result.scorers
+                                    };
+                                    gFix.penalties = result.penalties;
+                                }
+
                                 const homeLibRow = group.table?.find((r: any) => r.teamId === match.homeTeamId);
                                 const awayLibRow = group.table?.find((r: any) => r.teamId === match.awayTeamId);
                                 if (homeLibRow && awayLibRow) {

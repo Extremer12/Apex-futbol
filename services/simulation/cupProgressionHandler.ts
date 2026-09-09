@@ -101,21 +101,24 @@ export function handleCupProgression(
     }
 
     // 3. Copa Libertadores
-    const libertadoresMatches = justPlayedMatches.filter(m => m.competition === 'Copa_Libertadores');
-    if (libertadoresMatches.length > 0 && libertadoresMatches.every(m => m.result !== undefined)) {
-        const nextCupWeek = newWeek + 4;
-        const result = progressInternationalCup(updatedCups.copaLibertadores, teams, nextCupWeek);
-        updatedCups.copaLibertadores = result;
+    if (updatedCups.copaLibertadores && !updatedCups.copaLibertadores.winnerId) {
+        const libertadoresMatches = justPlayedMatches.filter(m => m.competition === 'Copa_Libertadores');
+        const shouldCheckProgression = libertadoresMatches.length > 0 || (updatedCups.copaLibertadores.phase === 'groups' && simulatedWeek >= 18);
+        if (shouldCheckProgression) {
+            const nextCupWeek = newWeek + 4;
+            const result = progressInternationalCup(updatedCups.copaLibertadores, teams, nextCupWeek, updatedSchedule);
+            updatedCups.copaLibertadores = result;
 
-        if (result.newFixtures) {
-            updatedSchedule.push(...result.newFixtures);
-            cinematicEvents.push({ 
-                id: `libertadores_ko_${Date.now()}`,
-                type: 'CUP_KICKOFF',
-                title: 'Copa Libertadores',
-                subtitle: '¡Comienzan las eliminatorias!',
-                metadata: { accentColor: '#FACC15', bgClass: 'from-yellow-900 via-slate-950 to-slate-950' }
-            });
+            if (result.newFixtures) {
+                updatedSchedule.push(...result.newFixtures);
+                cinematicEvents.push({ 
+                    id: `libertadores_ko_${Date.now()}`,
+                    type: 'CUP_KICKOFF',
+                    title: 'Copa Libertadores',
+                    subtitle: '¡Comienzan las eliminatorias!',
+                    metadata: { accentColor: '#FACC15', bgClass: 'from-yellow-900 via-slate-950 to-slate-950' }
+                });
+            }
         }
     }
 
@@ -123,7 +126,7 @@ export function handleCupProgression(
     const championsLeagueMatches = justPlayedMatches.filter(m => m.competition === 'Champions_League');
     if (championsLeagueMatches.length > 0 && championsLeagueMatches.every(m => m.result !== undefined)) {
         const nextCupWeek = newWeek + 5;
-        const result = progressInternationalCup(updatedCups.championsLeague, teams, nextCupWeek);
+        const result = progressInternationalCup(updatedCups.championsLeague, teams, nextCupWeek, updatedSchedule);
         updatedCups.championsLeague = result;
 
         if (result.newFixtures) {

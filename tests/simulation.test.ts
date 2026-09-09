@@ -766,5 +766,115 @@ test('calculateTournamentStandings separates Apertura and Clausura points correc
     assert.equal(bocaCl?.points, 0, 'Boca should have 0 points in Clausura');
 });
 
+test('Copa Libertadores: initializes 47 participants into 8 groups of 4 with 6 matchdays', async () => {
+    const { initializeLibertadoresSeason } = await import('../services/libertadoresEngine');
+    const { TEAMS } = await import('../constants');
+
+    const result = initializeLibertadoresSeason({
+        allTeams: TEAMS,
+        lastLibertadoresWinnerId: 701 // Boca
+    });
+
+    assert.ok(result.cup, 'Cup must be created');
+    assert.equal(result.cup.phase, 'groups');
+    assert.equal(result.cup.groups?.length, 8, 'Must have 8 groups (A-H)');
+
+    result.cup.groups?.forEach(g => {
+        assert.equal(g.teams.length, 4, 'Each group must have 4 teams');
+        assert.equal(g.fixtures.length, 12, 'Each group must have 12 matches (6 matchdays x 2 matches)');
+    });
+
+    // Verify Boca (defending champ) is in Grupo A
+    const groupA = result.cup.groups?.[0];
+    assert.ok(groupA?.teams.includes(701), 'Defending champion Boca Juniors must be placed in Grupo A');
+});
+
+test('Copa Libertadores: advances from group stage to Round of 16 with 16 qualified teams', async () => {
+    const { initializeLibertadoresSeason } = await import('../services/libertadoresEngine');
+    const { progressInternationalCup } = await import('../services/simulation');
+    const { TEAMS } = await import('../constants');
+
+    const init = initializeLibertadoresSeason({ allTeams: TEAMS });
+    const cup = init.cup;
+
+    // Simulate all group matches as played
+    cup.groups?.forEach(g => {
+        g.fixtures.forEach(f => {
+            f.result = { homeScore: 2, awayScore: 1, events: [], scorers: [] };
+        });
+        g.table.forEach((row, idx) => {
+            row.played = 6;
+            row.points = (4 - idx) * 3;
+            row.goalDifference = (4 - idx) * 2;
+            row.goalsFor = (4 - idx) * 4;
+        });
+    });
+
+    const progressed = progressInternationalCup(cup, TEAMS, 22, init.fixtures);
+    assert.equal(progressed.phase, 'knockout', 'Phase must transition to knockout');
+    assert.equal(progressed.rounds.length, 1, 'Must have 1 round initialized (Round of 16)');
+    assert.equal(progressed.rounds[0].name, 'Round of 16');
+    assert.equal(progressed.rounds[0].fixtures.length, 8, 'Round of 16 must have 8 knockout matches');
+    assert.equal(progressed.rounds[0].fixtures[0].week, 22, 'Knockout fixtures must be scheduled for week 22');
+});
+
+test('SeasonEnd: getSeasonSummaryData resolves Clausura champion and compiles allChampions across all regions', async () => {
+    const { getSeasonSummaryData } = await import('../services/seasonUtils');
+    const { ligaArgentinaTeams } = await import('../data/teams/ligaArgentina');
+
+    const mockState: any = {
+        season: 2024,
+        currentWeek: 40,
+        team: ligaArgentinaTeams[0],
+        allTeams: ligaArgentinaTeams,
+        leagueTables: {
+            [LeagueId.LIGA_ARGENTINA]: [
+                { teamId: 701, points: 65, goalDifference: 30, goalsFor: 50, played: 30 }
+            ]
+        },
+        cups: {
+            aperturaPlayoffs: {
+                id: 'apertura_playoffs',
+                name: 'Playoffs Apertura',
+                rounds: [{
+                    name: 'Final',
+                    fixtures: [{
+                        homeTeamId: 701,
+                        awayTeamId: 702,
+                        result: { homeScore: 2, awayScore: 1, events: [], scorers: [] }
+                    }]
+                }]
+            },
+            clausuraPlayoffs: {
+                id: 'clausura_playoffs',
+                name: 'Playoffs Clausura',
+                rounds: [{
+                    name: 'Final',
+                    fixtures: [{
+                        homeTeamId: 702,
+                        awayTeamId: 703,
+                        result: { homeScore: 1, awayScore: 1, events: [], scorers: [] },
+                        penalties: { home: 5, away: 4 }
+                    }]
+                }]
+            }
+        }
+    };
+
+    const summary = getSeasonSummaryData(mockState);
+    assert.equal(summary.aperturaChampion?.id, 701, 'Apertura champion should be 701');
+    assert.equal(summary.clausuraChampion?.id, 702, 'Clausura champion should be 702 resolved from penalties');
+    assert.ok(summary.allChampions.length > 10, 'allChampions must cover competitions from all countries');
+
+    const libEntry = summary.allChampions.find(c => c.name === 'Copa Libertadores');
+    assert.ok(libEntry, 'Copa Libertadores must be in allChampions list');
+    assert.equal(libEntry?.region, 'Internacional');
+
+    const argClausuraEntry = summary.allChampions.find(c => c.name === 'Torneo Clausura');
+    assert.ok(argClausuraEntry, 'Torneo Clausura must be in allChampions list');
+    assert.equal(argClausuraEntry?.team?.id, 702, 'Torneo Clausura in allChampions must have team 702');
+});
+
+
 
 

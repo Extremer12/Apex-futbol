@@ -5,6 +5,7 @@ import { TournamentBracket } from '../../ui/TournamentBracket';
 import { EuropeanTable } from './EuropeanTable';
 import { CUP_LOGOS, CUP_THEMES } from './constants';
 import { customPacksService } from '../../../services/customPacks/packService';
+import { TeamLogo } from '../../../data/teams/helpers';
 
 interface CupViewProps {
     cup?: CupCompetition;
@@ -60,9 +61,12 @@ export const CupView: React.FC<CupViewProps> = ({
                                         const isPlayer = team?.id === gameState.team.id;
                                         return (
                                             <tr key={rIdx} className={isPlayer ? 'bg-amber-500/10' : ''}>
-                                                <td className="px-3 py-2 flex items-center gap-2">
-                                                    <span className="text-[10px] text-slate-500 w-3">{rIdx + 1}</span>
-                                                    <span className={`font-bold ${isPlayer ? 'text-white' : 'text-slate-300'}`}>{team?.name}</span>
+                                                <td className="px-3 py-2 flex items-center gap-2 min-w-0">
+                                                    <span className="text-[10px] text-slate-500 w-3 shrink-0">{rIdx + 1}</span>
+                                                    <div className="w-5 h-5 shrink-0 flex items-center justify-center">
+                                                        <TeamLogo team={team} className="w-full h-full object-contain" />
+                                                    </div>
+                                                    <span className={`font-bold truncate ${isPlayer ? 'text-white' : 'text-slate-300'}`}>{team?.name}</span>
                                                 </td>
                                                 <td className="px-2 py-2 text-center text-slate-400">{row.played}</td>
                                                 <td className="px-2 py-2 text-center font-black text-white">{row.points}</td>
