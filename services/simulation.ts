@@ -415,7 +415,9 @@ export const simulateMatch = (
 
 // Helper to generate a round-robin schedule for a single league
 export const generateLeagueSchedule = (teams: Team[], leagueId: string): Match[] => {
-    const teamIds = teams.map(t => t.id);
+    // Shuffle teams before round-robin generation so match calendar varies every season
+    const shuffledTeams = [...teams].sort(() => 0.5 - Math.random());
+    const teamIds = shuffledTeams.map(t => t.id);
     if (teamIds.length % 2 !== 0) return []; // Should handle odd teams with byes ideally
     const schedule: Match[] = [];
     const numWeeks = teamIds.length - 1;
@@ -449,37 +451,148 @@ export const generateLeagueSchedule = (teams: Team[], leagueId: string): Match[]
     return [...schedule, ...secondHalf];
 };
 
-// Helper to generate Argentine 2026 30-team format schedule (Apertura & Clausura)
-export const generateArgentineTournamentSchedule = (teams: Team[]): Match[] => {
-    const zoneA = teams.filter(t => t.zone === 'A');
-    const zoneB = teams.filter(t => t.zone === 'B');
+// Fixed rivalry pairs for Argentine Football (AFA Interzonal Derbies)
+export const ARGENTINE_CLASSIC_PAIRS: [number, number][] = [
+    [701, 702], // Boca Juniors vs River Plate
+    [704, 703], // Independiente vs Racing Club
+    [705, 708], // San Lorenzo vs Huracán
+    [710, 709], // Newell's Old Boys vs Rosario Central
+    [706, 729], // Estudiantes LP vs Gimnasia LP
+    [711, 716], // Talleres vs Belgrano
+    [715, 730], // Lanús vs Banfield
+    [707, 726], // Vélez Sarsfield vs Argentinos Juniors
+    [722, 723], // Platense vs Tigre
+    [724, 712], // Unión SF vs Atlético Tucumán
+    [717, 733], // Instituto vs Estudiantes Río Cuarto
+    [728, 731], // Gimnasia Mendoza vs Independiente Rivadavia
+    [719, 718], // Central Córdoba SdE vs Sarmiento Junín
+    [714, 720], // Defensa y Justicia vs Barracas Central
+    [727, 732], // Deportivo Riestra vs Aldosivi
+];
 
-    // Fallback if zones not properly populated
+// Historical / regional rivalry fallback pairs if teams are promoted from Primera Nacional
+export const ARGENTINE_SECONDARY_DERBIES: [number, number][] = [
+    [724, 767], // Unión vs Colón
+    [728, 769], // Gimnasia Mza vs Godoy Cruz
+    [731, 769], // Ind. Rivadavia vs Godoy Cruz
+    [712, 788], // Atl. Tucumán vs San Martín Tuc
+    [764, 779], // Chacarita vs Atlanta
+    [754, 756], // Nueva Chicago vs All Boys
+    [760, 707], // Ferro vs Vélez
+    [770, 765], // Quilmes vs Temperley
+];
+
+/**
+ * Sorts Argentine Primera División teams into Zona A and Zona B using the authentic AFA algorithm:
+ * 1. Matches fixed rivalry pairs (e.g. Boca vs River, Racing vs Independiente).
+ * 2. Pairs remaining clubs by secondary/geographic rivalry.
+ * 3. 50/50 coin flip per pair: one team goes to Zona A, the rival goes to Zona B.
+ * Guarantees that Boca and River (and each pair of rivals) never land in the same zone.
+ */
+export const sortArgentineZones = (teams: Team[]): { zoneA: Team[]; zoneB: Team[]; pairs: [number, number][] } => {
+    const teamsMap = new Map(teams.map(t => [t.id, t]));
+    const unassigned = new Set(teams.map(t => t.id));
+    const activePairs: [number, number][] = [];
+
+    // 1. Establish direct classics present in Primera
+    const allRivalries = [...ARGENTINE_CLASSIC_PAIRS, ...ARGENTINE_SECONDARY_DERBIES];
+    for (const [idA, idB] of allRivalries) {
+        if (unassigned.has(idA) && unassigned.has(idB)) {
+            activePairs.push([idA, idB]);
+            unassigned.delete(idA);
+            unassigned.delete(idB);
+        }
+    }
+
+    // 2. Pair remaining unassigned clubs (administrative / secondary geographic pairings)
+    const remainingIds = Array.from(unassigned);
+    const shuffledRemaining = [...remainingIds].sort(() => 0.5 - Math.random());
+    for (let i = 0; i < shuffledRemaining.length; i += 2) {
+        if (i + 1 < shuffledRemaining.length) {
+            activePairs.push([shuffledRemaining[i], shuffledRemaining[i + 1]]);
+            unassigned.delete(shuffledRemaining[i]);
+            unassigned.delete(shuffledRemaining[i + 1]);
+        }
+    }
+
+    // 3. 50/50 assignment per pair
+    const zoneA: Team[] = [];
+    const zoneB: Team[] = [];
+
+    activePairs.forEach(([idA, idB]) => {
+        const teamA = teamsMap.get(idA);
+        const teamB = teamsMap.get(idB);
+        if (!teamA || !teamB) return;
+
+        if (Math.random() < 0.5) {
+            teamA.zone = 'A';
+            teamB.zone = 'B';
+            zoneA.push(teamA);
+            zoneB.push(teamB);
+        } else {
+            teamA.zone = 'B';
+            teamB.zone = 'A';
+            zoneA.push(teamB);
+            zoneB.push(teamA);
+        }
+    });
+
+    // Handle any odd leftover team (if odd number of teams)
+    unassigned.forEach(id => {
+        const leftover = teamsMap.get(id);
+        if (leftover) {
+            if (zoneA.length <= zoneB.length) {
+                leftover.zone = 'A';
+                zoneA.push(leftover);
+            } else {
+                leftover.zone = 'B';
+                zoneB.push(leftover);
+            }
+        }
+    });
+
+    return { zoneA, zoneB, pairs: activePairs };
+};
+
+// Helper to generate Argentine 2026 30-team format schedule (Apertura & Clausura)
+export const generateArgentineTournamentSchedule = (teams: Team[], season: number = 2024): Match[] => {
+    let zoneA = teams.filter(t => t.zone === 'A');
+    let zoneB = teams.filter(t => t.zone === 'B');
+
+    let derbyPairs = ARGENTINE_CLASSIC_PAIRS;
+
+    // If zones not properly populated (e.g. at start or after promotion/relegation), run authentic AFA lottery
+    if (zoneA.length !== 15 || zoneB.length !== 15) {
+        const sorted = sortArgentineZones(teams);
+        zoneA = sorted.zoneA;
+        zoneB = sorted.zoneB;
+        derbyPairs = sorted.pairs;
+    } else {
+        // Collect active derby pairs present in current teams
+        const activePairs: [number, number][] = [];
+        const teamIdSet = new Set(teams.map(t => t.id));
+        const allRivalries = [...ARGENTINE_CLASSIC_PAIRS, ...ARGENTINE_SECONDARY_DERBIES];
+        const used = new Set<number>();
+        for (const [idA, idB] of allRivalries) {
+            if (teamIdSet.has(idA) && teamIdSet.has(idB) && !used.has(idA) && !used.has(idB)) {
+                activePairs.push([idA, idB]);
+                used.add(idA);
+                used.add(idB);
+            }
+        }
+        if (activePairs.length > 0) derbyPairs = activePairs;
+    }
+
+    // Fallback if still invalid
     if (zoneA.length !== 15 || zoneB.length !== 15) {
         return generateLeagueSchedule(teams, LeagueId.LIGA_ARGENTINA);
     }
 
-    const CLASSIC_DERBY_PAIRS: [number, number][] = [
-        [701, 702], // Boca vs River
-        [704, 703], // Independiente vs Racing
-        [705, 708], // San Lorenzo vs Huracán
-        [706, 729], // Estudiantes LP vs Gimnasia LP
-        [710, 709], // Newell's vs Rosario Central
-        [715, 730], // Lanús vs Banfield
-        [711, 716], // Talleres vs Belgrano
-        [722, 723], // Platense vs Tigre
-        [707, 726], // Vélez vs Argentinos Jrs
-        [717, 733], // Instituto vs Estudiantes Río Cuarto
-        [728, 731], // Gimnasia Mza vs Ind. Rivadavia
-        [724, 712], // Unión SF vs Atlético Tucumán
-        [719, 718], // Central Córdoba SdE vs Sarmiento Junín
-        [714, 720], // Defensa y Justicia vs Barracas Central
-        [727, 732], // Deportivo Riestra vs Aldosivi
-    ];
-
     // Build 15-round Berger schedule for 16 slots (15 teams + 1 dummy slot at index 15)
+    // Randomize team slots inside each zone every season to avoid fixed schedules (e.g. playing Aldosivi on matchday 1)
     const getZoneRoundRobin = (zoneTeams: Team[]) => {
-        const slots: (number | null)[] = zoneTeams.map(t => t.id);
+        const shuffled = [...zoneTeams].sort(() => 0.5 - Math.random());
+        const slots: (number | null)[] = shuffled.map(t => t.id);
         slots.push(null); // Slot 15 is dummy (bye)
         const rounds: { fixtures: { home: number; away: number }[]; byeTeamId: number }[] = [];
         const n = 16;
@@ -549,8 +662,8 @@ export const generateArgentineTournamentSchedule = (teams: Team[]): Match[] => {
         if (byeA && byeB) {
             aperturaMatches.push({
                 week,
-                homeTeamId: r % 2 === 0 ? byeA : byeB,
-                awayTeamId: r % 2 === 0 ? byeB : byeA,
+                homeTeamId: (r + (season % 2)) % 2 === 0 ? byeA : byeB,
+                awayTeamId: (r + (season % 2)) % 2 === 0 ? byeB : byeA,
                 competition: 'Torneo_Apertura',
                 isCupMatch: false,
             });
@@ -558,17 +671,21 @@ export const generateArgentineTournamentSchedule = (teams: Team[]): Match[] => {
     }
 
     // Round 16: Fecha de Clásicos (Week 16)
-    CLASSIC_DERBY_PAIRS.forEach(([idA, idB], idx) => {
+    // Alternate home/away venue between seasons (even/odd season year)
+    // E.g. in 2024 at La Bombonera, in 2025 at El Monumental
+    const invertDerbyHome = (season % 2 !== 0);
+    derbyPairs.forEach(([idA, idB], idx) => {
+        const pickFirst = (idx % 2 === 0) ? !invertDerbyHome : invertDerbyHome;
         aperturaMatches.push({
             week: 16,
-            homeTeamId: idx % 2 === 0 ? idA : idB,
-            awayTeamId: idx % 2 === 0 ? idB : idA,
+            homeTeamId: pickFirst ? idA : idB,
+            awayTeamId: pickFirst ? idB : idA,
             competition: 'Torneo_Apertura',
             isCupMatch: false,
         });
     });
 
-    // Torneo Clausura (Weeks 21 to 36): Inverted venues
+    // Torneo Clausura (Weeks 21 to 36): Inverted venues from Apertura
     const clausuraMatches: Match[] = aperturaMatches.map(m => ({
         week: m.week + 20, // Weeks 21 to 36
         homeTeamId: m.awayTeamId,
@@ -693,7 +810,7 @@ export const generateNacionalReducidoCuartos = (winnersPhase1: Team[], loserPrim
     return fixtures;
 };
 
-export const generateSeasonSchedule = (allTeams: Team[]): Match[] => {
+export const generateSeasonSchedule = (allTeams: Team[], season: number = 2024): Match[] => {
     const leaguesToSchedule = [
         LeagueId.PREMIER_LEAGUE, LeagueId.CHAMPIONSHIP,
         LeagueId.LA_LIGA, LeagueId.SEGUNDA_DIVISION_ESP,
@@ -701,7 +818,8 @@ export const generateSeasonSchedule = (allTeams: Team[]): Match[] => {
         LeagueId.SERIE_A, LeagueId.SERIE_B_ITA,
         LeagueId.LIGUE_1, LeagueId.LIGUE_2,
         LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
-        LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR
+        LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
+        LeagueId.COPA_DE_PRIMERA
     ];
 
     let fullSchedule: Match[] = [];
@@ -710,7 +828,7 @@ export const generateSeasonSchedule = (allTeams: Team[]): Match[] => {
         const teamsInLeague = allTeams.filter(t => t.leagueId === leagueId);
         if (teamsInLeague.length > 0) {
             if (leagueId === LeagueId.LIGA_ARGENTINA) {
-                const schedule = generateArgentineTournamentSchedule(teamsInLeague);
+                const schedule = generateArgentineTournamentSchedule(teamsInLeague, season);
                 fullSchedule = [...fullSchedule, ...schedule];
             } else if (leagueId === LeagueId.PRIMERA_NACIONAL) {
                 const schedule = generatePrimeraNacionalSchedule(teamsInLeague);
@@ -761,7 +879,8 @@ export const generateCupDraw = (
                 homeTeamId: shuffled[i].id,
                 awayTeamId: shuffled[i + 1].id,
                 competition: competition,
-                isCupMatch: true
+                isCupMatch: true,
+                isMidweek: true
             });
         }
     }
@@ -953,7 +1072,8 @@ export const advanceCupRound = (
                 homeTeamId: winnerTeams[i].id,
                 awayTeamId: winnerTeams[i + 1].id,
                 competition: competitionType,
-                isCupMatch: true
+                isCupMatch: true,
+                isMidweek: true
             });
         }
     }

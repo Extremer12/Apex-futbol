@@ -60,7 +60,23 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
     const [minute, setMinute] = useState(0);
     const [displayScore, setDisplayScore] = useState({ home: 0, away: 0 });
     const [isFinished, setIsFinished] = useState(false);
-    const [speedMultiplier, setSpeedMultiplier] = useState<1 | 2>(1);
+    const [speedMultiplier, setSpeedMultiplier] = useState<1 | 2 | 4>(() => {
+        try {
+            const saved = localStorage.getItem('apex_match_speed');
+            if (saved === '2') return 2;
+            if (saved === '4') return 4;
+            return 1;
+        } catch (_) {
+            return 1;
+        }
+    });
+
+    const handleSetSpeed = (s: 1 | 2 | 4) => {
+        setSpeedMultiplier(s);
+        try {
+            localStorage.setItem('apex_match_speed', String(s));
+        } catch (_) {}
+    };
     const [activeTab, setActiveTab] = useState<'ticker' | 'stats'>('ticker');
     const [commentary, setCommentary] = useState<ParsedEvent[]>([]);
     const [stats, setStats] = useState({
@@ -317,16 +333,25 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
                         <>
                             <div className="flex items-center bg-slate-900 rounded-lg p-0.5 border border-slate-800 text-xs">
                                 <button
-                                    onClick={() => setSpeedMultiplier(1)}
-                                    className={`px-2.5 py-1 rounded font-bold transition-all ${speedMultiplier === 1 ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
+                                    onClick={() => handleSetSpeed(1)}
+                                    className={`px-2 py-1 rounded font-bold transition-all ${speedMultiplier === 1 ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
+                                    title="Velocidad Normal (1x)"
                                 >
                                     1x
                                 </button>
                                 <button
-                                    onClick={() => setSpeedMultiplier(2)}
-                                    className={`px-2.5 py-1 rounded font-bold transition-all ${speedMultiplier === 2 ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
+                                    onClick={() => handleSetSpeed(2)}
+                                    className={`px-2 py-1 rounded font-bold transition-all ${speedMultiplier === 2 ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
+                                    title="Velocidad Rápida (2x)"
                                 >
                                     2x
+                                </button>
+                                <button
+                                    onClick={() => handleSetSpeed(4)}
+                                    className={`px-2 py-1 rounded font-bold transition-all ${speedMultiplier === 4 ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
+                                    title="Velocidad Ultra (4x)"
+                                >
+                                    4x
                                 </button>
                             </div>
                             <button

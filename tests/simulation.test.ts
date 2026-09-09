@@ -8,8 +8,14 @@ import {
     determineCupWinner,
     advanceCupRound,
     simulateMatch,
-    handlePromotionRelegation
+    handlePromotionRelegation,
+    sortArgentineZones,
+    generateArgentineTournamentSchedule,
+    generateLeagueSchedule,
+    ARGENTINE_CLASSIC_PAIRS
 } from '../services/simulation';
+import { initializeGame } from '../services/gameFactory';
+import { TEAMS } from '../constants';
 import { Team, Player, Match, LeagueTableRow, CupCompetition, LeagueId } from '../types';
 
 // Helper to create a dummy player
@@ -563,5 +569,79 @@ test('full Boca Juniors season simulation transitions cleanly without endless we
     assert.ok(season2.leagueTables[LeagueId.LIGA_ARGENTINA].length === 30, 'Liga Argentina must maintain 30 teams');
     assert.ok(season2.cups.copaArgentina.rounds[0].fixtures.length > 0, 'Copa Argentina must have fixtures in Season 2');
 });
+
+test('sortArgentineZones strictly keeps Boca and River (and rivalry pairs) in opposite zones', () => {
+    const argTeams = TEAMS.filter(t => t.leagueId === LeagueId.LIGA_ARGENTINA);
+    assert.equal(argTeams.length, 30, 'Must have 30 Argentine teams');
+
+    // Run the lottery 10 times to verify consistency and stochastic behavior
+    for (let run = 0; run < 10; run++) {
+        const { zoneA, zoneB } = sortArgentineZones(argTeams);
+        assert.equal(zoneA.length, 15, 'Zona A must have exactly 15 teams');
+        assert.equal(zoneB.length, 15, 'Zona B must have exactly 15 teams');
+
+        const bocaInA = zoneA.some(t => t.id === 701);
+        const riverInA = zoneA.some(t => t.id === 702);
+        const bocaInB = zoneB.some(t => t.id === 701);
+        const riverInB = zoneB.some(t => t.id === 702);
+
+        assert.ok(
+            (bocaInA && riverInB) || (bocaInB && riverInA),
+            'Boca and River must NEVER be in the same zone'
+        );
+
+        // Verify all 15 classic pairs are split
+        for (const [idA, idB] of ARGENTINE_CLASSIC_PAIRS) {
+            const teamAInZoneA = zoneA.some(t => t.id === idA);
+            const teamBInZoneA = zoneA.some(t => t.id === idB);
+            assert.notEqual(teamAInZoneA, teamBInZoneA, `Pair [${idA}, ${idB}] must be in different zones`);
+        }
+    }
+});
+
+test('generateArgentineTournamentSchedule alternates derby venues between seasons and shuffles fixtures', () => {
+    const argTeams = TEAMS.filter(t => t.leagueId === LeagueId.LIGA_ARGENTINA);
+    sortArgentineZones(argTeams);
+
+    const schedule2024 = generateArgentineTournamentSchedule(argTeams, 2024);
+    const schedule2025 = generateArgentineTournamentSchedule(argTeams, 2025);
+
+    // Superclásico in Fecha 16 (Round 16)
+    const derby2024 = schedule2024.find(m => m.week === 16 && ((m.homeTeamId === 701 && m.awayTeamId === 702) || (m.homeTeamId === 702 && m.awayTeamId === 701)));
+    const derby2025 = schedule2025.find(m => m.week === 16 && ((m.homeTeamId === 701 && m.awayTeamId === 702) || (m.homeTeamId === 702 && m.awayTeamId === 701)));
+
+    assert.ok(derby2024, 'Superclasico must exist in Fecha 16 for 2024');
+    assert.ok(derby2025, 'Superclasico must exist in Fecha 16 for 2025');
+    assert.notEqual(derby2024!.homeTeamId, derby2025!.homeTeamId, 'Derby venue must invert between seasons');
+});
+
+test('generateLeagueSchedule produces randomized fixture sequences', () => {
+    const plTeams = TEAMS.filter(t => t.leagueId === LeagueId.PREMIER_LEAGUE);
+    const sched1 = generateLeagueSchedule(plTeams, LeagueId.PREMIER_LEAGUE);
+    const sched2 = generateLeagueSchedule(plTeams, LeagueId.PREMIER_LEAGUE);
+
+    assert.equal(sched1.length, sched2.length);
+    // At least some matches in week 1 should differ between independent shuffles
+    const week1Sched1 = sched1.filter(m => m.week === 1).map(m => `${m.homeTeamId}_${m.awayTeamId}`).sort().join(',');
+    const week1Sched2 = sched2.filter(m => m.week === 1).map(m => `${m.homeTeamId}_${m.awayTeamId}`).sort().join(',');
+    // With 20 teams and random shuffle, probability of exact match is ~ 1 / 20!
+    assert.notEqual(week1Sched1, week1Sched2, 'Schedule fixture sequence must vary randomly');
+});
+
+test('national cup fixtures have isMidweek: true to prevent dashboard conflicts', () => {
+    const gameState = initializeGame({ selectedTeam: TEAMS[0] });
+    const copaArgentinaMatches = gameState.schedule.filter(m => m.competition === 'Copa_Argentina');
+    assert.ok(copaArgentinaMatches.length > 0, 'Copa Argentina fixtures must exist');
+    copaArgentinaMatches.forEach(m => {
+        assert.equal(m.isMidweek, true, 'National cup match must have isMidweek: true');
+    });
+
+    const faCupMatches = gameState.schedule.filter(m => m.competition === 'FA_Cup');
+    assert.ok(faCupMatches.length > 0, 'FA Cup fixtures must exist');
+    faCupMatches.forEach(m => {
+        assert.equal(m.isMidweek, true, 'FA Cup match must have isMidweek: true');
+    });
+});
+
 
 

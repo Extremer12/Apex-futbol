@@ -29,6 +29,20 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onSaveGame, onQu
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [matchSpeed, setMatchSpeed] = useState<'1' | '2' | '4'>(() => {
+        try {
+            return (localStorage.getItem('apex_match_speed') as any) || '1';
+        } catch (_) {
+            return '1';
+        }
+    });
+
+    const handleSpeedChange = (speed: '1' | '2' | '4') => {
+        setMatchSpeed(speed);
+        try {
+            localStorage.setItem('apex_match_speed', speed);
+        } catch (_) {}
+    };
 
     const handleClearData = async () => {
         setIsDeleting(true);
@@ -264,6 +278,51 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onSaveGame, onQu
                         </div>
                         <p className="text-xs text-slate-400">Vuelve a la pantalla de inicio. ¡Guarda antes!</p>
                     </button>
+                </div>
+            </div>
+
+            {/* Match Speed Settings */}
+            <div className="space-y-4">
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Velocidad de Partidos</h3>
+                <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                    <p className="text-slate-400 text-sm mb-4">
+                        Ajusta la velocidad de la retransmisión en vivo cuando juegas o simulas partidos interactivos.
+                    </p>
+                    <div className="grid grid-cols-3 gap-3">
+                        <button
+                            onClick={() => handleSpeedChange('1')}
+                            className={`flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl border-2 font-black transition-all ${
+                                matchSpeed === '1'
+                                    ? 'bg-[var(--apex-gold)]/10 border-[var(--apex-gold)] text-[var(--apex-gold)] shadow-lg shadow-yellow-500/10'
+                                    : 'border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white bg-slate-950/40'
+                            }`}
+                        >
+                            <span className="text-lg sm:text-xl font-black">1x</span>
+                            <span className="text-[10px] uppercase font-bold text-slate-400 mt-1">Normal</span>
+                        </button>
+                        <button
+                            onClick={() => handleSpeedChange('2')}
+                            className={`flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl border-2 font-black transition-all ${
+                                matchSpeed === '2'
+                                    ? 'bg-[var(--apex-gold)]/10 border-[var(--apex-gold)] text-[var(--apex-gold)] shadow-lg shadow-yellow-500/10'
+                                    : 'border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white bg-slate-950/40'
+                            }`}
+                        >
+                            <span className="text-lg sm:text-xl font-black">2x</span>
+                            <span className="text-[10px] uppercase font-bold text-slate-400 mt-1">Rápida</span>
+                        </button>
+                        <button
+                            onClick={() => handleSpeedChange('4')}
+                            className={`flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl border-2 font-black transition-all ${
+                                matchSpeed === '4'
+                                    ? 'bg-[var(--apex-gold)]/10 border-[var(--apex-gold)] text-[var(--apex-gold)] shadow-lg shadow-yellow-500/10'
+                                    : 'border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white bg-slate-950/40'
+                            }`}
+                        >
+                            <span className="text-lg sm:text-xl font-black">4x</span>
+                            <span className="text-[10px] uppercase font-bold text-slate-400 mt-1">Ultra Flash</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 

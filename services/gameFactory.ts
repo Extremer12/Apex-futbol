@@ -6,7 +6,7 @@
 import { GameState, Team, Player, PlayerProfile, NewsItem, LeagueId } from '../types';
 import { TEAMS } from '../constants';
 import { generateRandomCoach, generateCoachMarket } from './coaching';
-import { generateYouthPlayer, generateSeasonSchedule, generateCupDraw, createInitialLeagueTable, generateSwissPhase, generateGroupPhase, createInitialEuropeanTable } from './simulation';
+import { generateYouthPlayer, generateSeasonSchedule, generateCupDraw, createInitialLeagueTable, generateSwissPhase, generateGroupPhase, createInitialEuropeanTable, sortArgentineZones } from './simulation';
 import { getBaseWeeklyIncome, generateStadium, generateSponsor, generateSponsorMarket } from './economy';
 import { formatDate } from '../utils';
 import { getInitialAchievements } from './achievementService';
@@ -100,6 +100,8 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
     const ligue1Teams = allTeamsCopy.filter(t => t.leagueId === LeagueId.LIGUE_1);
     const ligue2Teams = allTeamsCopy.filter(t => t.leagueId === LeagueId.LIGUE_2);
     const ligaArgTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.LIGA_ARGENTINA);
+    // Authentic AFA zone lottery: fixed rivalry pairings (e.g. Boca vs River) distributed 50/50 across Zona A and B
+    sortArgentineZones(ligaArgTeams);
     const primeraNacTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.PRIMERA_NACIONAL);
     const brasileiraoTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.BRASILEIRAO);
     const serieBBrTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.SERIE_B_BR);
@@ -126,13 +128,13 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
     const argentinianTeams = [...ligaArgTeams, ...primeraNacTeams];
     const copaArgentinaRound1 = generateCupDraw(argentinianTeams, 'Round 1', 'Copa_Argentina', playerTeamCopy.id);
 
-    // Assign cup fixtures to specific weeks
-    const faCupFixtures = faCupRound1.map(m => ({ ...m, week: 5 }));
-    const carabaoCupFixtures = carabaoCupRound1.map(m => ({ ...m, week: 2 }));
-    const copaDelReyFixtures = copaDelReyRound1.map(m => ({ ...m, week: 4 }));
-    const dfbPokalFixtures = dfbPokalRound1.map(m => ({ ...m, week: 3 }));
-    const coppaItaliaFixtures = coppaItaliaRound1.map(m => ({ ...m, week: 4 }));
-    const copaArgentinaFixtures = copaArgentinaRound1.map(m => ({ ...m, week: 5 }));
+    // Assign cup fixtures to specific weeks (always midweek to prevent clashing with weekend league matches)
+    const faCupFixtures = faCupRound1.map(m => ({ ...m, week: 5, isMidweek: true }));
+    const carabaoCupFixtures = carabaoCupRound1.map(m => ({ ...m, week: 2, isMidweek: true }));
+    const copaDelReyFixtures = copaDelReyRound1.map(m => ({ ...m, week: 4, isMidweek: true }));
+    const dfbPokalFixtures = dfbPokalRound1.map(m => ({ ...m, week: 3, isMidweek: true }));
+    const coppaItaliaFixtures = coppaItaliaRound1.map(m => ({ ...m, week: 4, isMidweek: true }));
+    const copaArgentinaFixtures = copaArgentinaRound1.map(m => ({ ...m, week: 5, isMidweek: true }));
     
     // Generate full season schedule (league + national cups only in season 1)
     const initialSchedule = [

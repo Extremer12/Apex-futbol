@@ -138,7 +138,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
     const nextWeek = gameState.currentTurn === 'midweek' ? gameState.currentWeek + 1 : gameState.currentWeek;
     const isMidweek = gameState.currentTurn === 'midweek';
-    const nextMatch = gameState.schedule.find(m => m.week === nextWeek && !!m.isMidweek === isMidweek && (m.homeTeamId === gameState.team.id || m.awayTeamId === gameState.team.id));
+    const nextMatch = gameState.schedule.find(m => !m.result && m.week === nextWeek && !!m.isMidweek === isMidweek && (m.homeTeamId === gameState.team.id || m.awayTeamId === gameState.team.id));
 
     if (!nextMatch) {
         return (
