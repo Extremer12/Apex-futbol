@@ -329,9 +329,9 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ gameState }) => 
                                                 </div>
 
                                                 {/* Middle Row: Symmetrical Teams & Score */}
-                                                <div className="grid grid-cols-7 items-center gap-2 py-1">
-                                                    {/* My Club (3 cols) */}
-                                                    <div className="col-span-3 flex items-center justify-end gap-2 min-w-0">
+                                                <div className="flex items-center justify-between gap-2 py-1">
+                                                    {/* My Club */}
+                                                    <div className="flex-1 flex items-center justify-end gap-2 min-w-0">
                                                         <span className="text-xs sm:text-sm font-bold text-white truncate text-right">
                                                             {gameState.team.name}
                                                         </span>
@@ -340,28 +340,28 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ gameState }) => 
                                                         </div>
                                                     </div>
 
-                                                    {/* Score / VS (1 col) */}
-                                                    <div className="col-span-1 flex flex-col items-center justify-center">
+                                                    {/* Score / VS */}
+                                                    <div className="w-16 flex-shrink-0 flex flex-col items-center justify-center">
                                                         {isPlayed ? (
                                                             <div className="flex flex-col items-center">
-                                                                <span className="px-2 py-0.5 rounded bg-black/80 border border-white/15 text-center font-black text-xs sm:text-sm text-white">
+                                                                <span className="px-2 py-0.5 rounded bg-black/80 border border-white/15 text-center font-black text-xs sm:text-sm text-white whitespace-nowrap font-mono">
                                                                     {isHome ? match.result!.homeScore : match.result!.awayScore} - {isHome ? match.result!.awayScore : match.result!.homeScore}
                                                                 </span>
                                                                 {match.penalties && (
-                                                                    <span className="text-[8px] font-bold text-amber-400 mt-0.5">
+                                                                    <span className="text-[8px] font-bold text-amber-400 mt-0.5 whitespace-nowrap">
                                                                         ({isHome ? match.penalties.home : match.penalties.away}-{isHome ? match.penalties.away : match.penalties.home} p.)
                                                                     </span>
                                                                 )}
                                                             </div>
                                                         ) : (
-                                                            <span className="text-[9px] font-bold text-slate-500 bg-white/5 px-2 py-0.5 rounded border border-white/10 uppercase">
+                                                            <span className="text-[9px] font-bold text-slate-500 bg-white/5 px-2 py-0.5 rounded border border-white/10 uppercase whitespace-nowrap">
                                                                 VS
                                                             </span>
                                                         )}
                                                     </div>
 
-                                                    {/* Opponent (3 cols) */}
-                                                    <div className="col-span-3 flex items-center justify-start gap-2 min-w-0">
+                                                    {/* Opponent */}
+                                                    <div className="flex-1 flex items-center justify-start gap-2 min-w-0">
                                                         <div className="w-8 h-8 flex-shrink-0 bg-black/60 p-1 rounded-lg border border-white/10 flex items-center justify-center">
                                                             <TeamLogo team={opponent} />
                                                         </div>
@@ -546,27 +546,27 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ gameState }) => 
                             const home = getTeamById(selectedDetailMatch.homeTeamId);
                             const away = getTeamById(selectedDetailMatch.awayTeamId);
                             return (
-                                <div className="p-3.5 rounded-xl bg-black/50 border border-white/10 grid grid-cols-7 items-center gap-2">
-                                    <div className="col-span-3 flex flex-col items-center text-center">
-                                        <div className="w-10 h-10 bg-black/60 p-1.5 rounded-xl border border-white/10 mb-1.5 flex items-center justify-center">
+                                <div className="p-3.5 rounded-xl bg-black/50 border border-white/10 flex items-center justify-between gap-2">
+                                    <div className="flex-1 flex flex-col items-center text-center min-w-0">
+                                        <div className="w-10 h-10 bg-black/60 p-1.5 rounded-xl border border-white/10 mb-1.5 flex items-center justify-center flex-shrink-0">
                                             <TeamLogo team={home} />
                                         </div>
                                         <span className="text-xs font-bold text-white truncate max-w-full">{home?.name}</span>
                                     </div>
 
-                                    <div className="col-span-1 flex flex-col items-center justify-center">
-                                        <span className="text-xl font-black text-white">
+                                    <div className="w-20 flex-shrink-0 flex flex-col items-center justify-center">
+                                        <span className="text-xl font-black text-white whitespace-nowrap font-mono">
                                             {selectedDetailMatch.result?.homeScore} - {selectedDetailMatch.result?.awayScore}
                                         </span>
                                         {selectedDetailMatch.penalties && (
-                                            <span className="text-[8px] font-bold text-amber-400 uppercase mt-0.5">
+                                            <span className="text-[8px] font-bold text-amber-400 uppercase mt-0.5 whitespace-nowrap">
                                                 Pen: {selectedDetailMatch.penalties.home}-{selectedDetailMatch.penalties.away}
                                             </span>
                                         )}
                                     </div>
 
-                                    <div className="col-span-3 flex flex-col items-center text-center">
-                                        <div className="w-10 h-10 bg-black/60 p-1.5 rounded-xl border border-white/10 mb-1.5 flex items-center justify-center">
+                                    <div className="flex-1 flex flex-col items-center text-center min-w-0">
+                                        <div className="w-10 h-10 bg-black/60 p-1.5 rounded-xl border border-white/10 mb-1.5 flex items-center justify-center flex-shrink-0">
                                             <TeamLogo team={away} />
                                         </div>
                                         <span className="text-xs font-bold text-white truncate max-w-full">{away?.name}</span>
