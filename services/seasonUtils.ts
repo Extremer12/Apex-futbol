@@ -20,7 +20,8 @@ export interface SeasonSummaryData {
 /**
  * Checks if the current season has finished all matches and competitions.
  * Determines completion based on the user's league context and team schedule,
- * preventing unrelated fixtures in other countries from locking the season transition.
+ * preventing unrelated fixtures in other countries from locking the season transition
+ * and guaranteeing that the season strictly culminates without infinite empty weeks.
  */
 export const isSeasonCompleted = (gameState: GameState | null): boolean => {
     if (!gameState || !gameState.schedule || gameState.schedule.length === 0) {
@@ -35,68 +36,78 @@ export const isSeasonCompleted = (gameState: GameState | null): boolean => {
         return false;
     }
 
-    // 2. Check if the user's team still has any pending unplayed matches in the schedule
-    const userHasUnplayedMatches = gameState.schedule.some(
-        m => (m.homeTeamId === gameState.team.id || m.awayTeamId === gameState.team.id) && m.result === undefined
+    // 2. Maximum season duration per league
+    let maxLeagueWeek = 38;
+    if (userLeagueId === LeagueId.LIGA_ARGENTINA) maxLeagueWeek = 40;
+    else if (userLeagueId === LeagueId.PRIMERA_NACIONAL) maxLeagueWeek = 38;
+    else if (userLeagueId === LeagueId.CHAMPIONSHIP) maxLeagueWeek = 46;
+    else if (userLeagueId === LeagueId.SEGUNDA_DIVISION_ESP) maxLeagueWeek = 42;
+    else if (userLeagueId === LeagueId.BUNDESLIGA || userLeagueId === LeagueId.ZWEITE_BUNDESLIGA || userLeagueId === LeagueId.LIGUE_1) maxLeagueWeek = 34;
+
+    // 3. Absolute hard cap: If currentWeek has reached or passed the league's max season week, season is strictly complete
+    if (currentWeek >= maxLeagueWeek) {
+        return true;
+    }
+
+    // 4. Check if the user's team still has any upcoming pending matches in the active season
+    const userHasPendingMatches = gameState.schedule.some(
+        m => (m.homeTeamId === gameState.team.id || m.awayTeamId === gameState.team.id) &&
+             m.week >= currentWeek &&
+             m.week <= maxLeagueWeek &&
+             m.result === undefined
     );
-    if (userHasUnplayedMatches) {
+    if (userHasPendingMatches) {
         return false;
     }
 
-    // 3. League-specific completion rules
+    // 5. League-specific completion rules when user has no more pending matches
     if (userLeagueId === LeagueId.LIGA_ARGENTINA) {
-        // Torneo Apertura (1-16) + Clausura (21-36). Regular matches end at week 36.
+        // Regular season ends at week 36 (Apertura 1-16, Clausura 21-36).
         if (currentWeek < 36) {
             return false;
         }
 
-        // Check Clausura playoffs if they exist
         const clausura = gameState.cups?.clausuraPlayoffs;
+        // If Clausura playoffs have a winner decided OR we reached week 40, season is complete
         if (clausura && clausura.rounds && clausura.rounds.length > 0) {
-            // If playoffs have a winner decided OR we reached week 40, season is complete
-            if (!clausura.winnerId && currentWeek < 40) {
-                return false;
+            if (clausura.winnerId || currentWeek >= 40) {
+                return true;
             }
+            return false;
         }
-        return true;
+        // If no playoffs exist and we are past week 36, season is complete
+        return currentWeek >= 36;
     }
 
     if (userLeagueId === LeagueId.PRIMERA_NACIONAL) {
-        // Regular season is 34 matchdays
         if (currentWeek < 34) {
             return false;
         }
         const reducido = gameState.cups?.nacionalReducido;
         if (reducido && reducido.rounds && reducido.rounds.length > 0) {
-            if (!reducido.winnerId && currentWeek < 38) {
-                return false;
+            if (reducido.winnerId || currentWeek >= 38) {
+                return true;
             }
+            return false;
         }
-        return true;
+        return currentWeek >= 34;
     }
 
-    // 34-matchday European leagues (Bundesliga, 2. Bundesliga, Ligue 1)
+    // Standard European leagues without playoffs
     if (userLeagueId === LeagueId.BUNDESLIGA || userLeagueId === LeagueId.ZWEITE_BUNDESLIGA || userLeagueId === LeagueId.LIGUE_1) {
         return currentWeek >= 34;
     }
 
-    // Championship has 46 matchdays
     if (userLeagueId === LeagueId.CHAMPIONSHIP) {
         return currentWeek >= 46;
     }
 
-    // Segunda División has 42 matchdays
     if (userLeagueId === LeagueId.SEGUNDA_DIVISION_ESP) {
         return currentWeek >= 42;
     }
 
-    // Standard 38-matchday leagues (Premier League, La Liga, Serie A, Serie B, Ligue 2, Brasileirão, Série B)
-    if (currentWeek >= 38) {
-        return true;
-    }
-
-    // Fallback safety cap
-    return currentWeek >= 42;
+    // Standard 38-matchday leagues (Premier League, La Liga, Serie A, Serie B, Ligue 2, Brasileirão, Série B, Paraguay)
+    return currentWeek >= 38;
 };
 
 /**

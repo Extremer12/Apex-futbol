@@ -289,33 +289,24 @@ export function startNewSeason(currentState: GameState): GameState {
     // 4. Generate new season schedule and tables
     const newSeasonSchedule = generateSeasonSchedule(teamsAfterProRel);
 
-    const getLeagueTeams = (id: string) => teamsAfterProRel.filter(t => t.leagueId === id);
+    const getLeagueTeams = (id: LeagueId) => teamsAfterProRel.filter(t => t.leagueId === id);
 
-    const newLeagueTables: Record<string, any[]> = {};
-    [
-        'PREMIER_LEAGUE', 'CHAMPIONSHIP',
-        'LA_LIGA', 'SEGUNDA_DIVISION_ESP',
-        'BUNDESLIGA', 'ZWEITE_BUNDESLIGA',
-        'SERIE_A', 'SERIE_B_ITA',
-        'LIGUE_1', 'LIGUE_2',
-        'LIGA_ARGENTINA', 'PRIMERA_NACIONAL',
-        'BRASILEIRAO', 'SERIE_B_BR',
-        'COPA_DE_PRIMERA'
-    ].forEach(lid => {
+    const newLeagueTables: Record<LeagueId, any[]> = {} as any;
+    Object.values(LeagueId).forEach(lid => {
         const teams = getLeagueTeams(lid);
         newLeagueTables[lid] = createInitialLeagueTable(teams);
     });
 
-    const newPlTeams = getLeagueTeams('PREMIER_LEAGUE');
-    const newChTeams = getLeagueTeams('CHAMPIONSHIP');
-    const newLaTeams = getLeagueTeams('LA_LIGA');
-    const newSegTeams = getLeagueTeams('SEGUNDA_DIVISION_ESP');
-    const newGerTeams = getLeagueTeams('BUNDESLIGA');
-    const newZweiteTeams = getLeagueTeams('ZWEITE_BUNDESLIGA');
-    const newItaTeams = getLeagueTeams('SERIE_A');
-    const newSerieBTeams = getLeagueTeams('SERIE_B_ITA');
-    const newArgTeams = getLeagueTeams('LIGA_ARGENTINA');
-    const newNacTeams = getLeagueTeams('PRIMERA_NACIONAL');
+    const newPlTeams = getLeagueTeams(LeagueId.PREMIER_LEAGUE);
+    const newChTeams = getLeagueTeams(LeagueId.CHAMPIONSHIP);
+    const newLaTeams = getLeagueTeams(LeagueId.LA_LIGA);
+    const newSegTeams = getLeagueTeams(LeagueId.SEGUNDA_DIVISION_ESP);
+    const newGerTeams = getLeagueTeams(LeagueId.BUNDESLIGA);
+    const newZweiteTeams = getLeagueTeams(LeagueId.ZWEITE_BUNDESLIGA);
+    const newItaTeams = getLeagueTeams(LeagueId.SERIE_A);
+    const newSerieBTeams = getLeagueTeams(LeagueId.SERIE_B_ITA);
+    const newArgTeams = getLeagueTeams(LeagueId.LIGA_ARGENTINA);
+    const newNacTeams = getLeagueTeams(LeagueId.PRIMERA_NACIONAL);
 
     // 5. Generate new cup draws (National Cups)
     const englishTeamsNewSeason = [...newPlTeams, ...newChTeams];
@@ -358,35 +349,38 @@ export function startNewSeason(currentState: GameState): GameState {
             .filter(Boolean) as Team[];
     };
 
-    // Champions League Qualification (36 teams for 2026 format)
-    const clTeams = [
+    // Champions League Qualification (36 unique teams for 2026 format)
+    const clTeamsMap = new Map<number, Team>();
+    [
         ...getTopTeams(LeagueId.PREMIER_LEAGUE, 7),
         ...getTopTeams(LeagueId.LA_LIGA, 7),
         ...getTopTeams(LeagueId.BUNDESLIGA, 7),
         ...getTopTeams(LeagueId.SERIE_A, 7),
         ...getTopTeams(LeagueId.LIGUE_1, 6),
-        ...getTopTeams(LeagueId.LIGA_ARGENTINA, 1), // Wildcards or prestige
-        ...getTopTeams(LeagueId.BRASILEIRAO, 1)
-    ].slice(0, 36);
+        ...getTopTeams(LeagueId.CHAMPIONSHIP, 2)
+    ].forEach(t => clTeamsMap.set(t.id, t));
+    const clTeams = Array.from(clTeamsMap.values()).slice(0, 36);
 
-    // Europa League Qualification (36 teams for 2026 format)
-    const elTeams = [
+    // Europa League Qualification (36 unique teams for 2026 format)
+    const elTeamsMap = new Map<number, Team>();
+    [
         ...getTeamsRange(LeagueId.PREMIER_LEAGUE, 7, 7),
         ...getTeamsRange(LeagueId.LA_LIGA, 7, 7),
         ...getTeamsRange(LeagueId.BUNDESLIGA, 7, 7),
         ...getTeamsRange(LeagueId.SERIE_A, 7, 7),
         ...getTeamsRange(LeagueId.LIGUE_1, 6, 6),
-        ...getTopTeams(LeagueId.CHAMPIONSHIP, 2)
-    ].slice(0, 36);
+        ...getTeamsRange(LeagueId.CHAMPIONSHIP, 2, 2)
+    ].filter(t => !clTeamsMap.has(t.id)).forEach(t => elTeamsMap.set(t.id, t));
+    const elTeams = Array.from(elTeamsMap.values()).slice(0, 36);
 
-    // Copa Libertadores Qualification (32 teams: Argentina, Brasil, Paraguay)
-    const libTeams = [
-        ...getTopTeams(LeagueId.LIGA_ARGENTINA, 12),
-        ...getTopTeams(LeagueId.BRASILEIRAO, 12),
-        ...getTopTeams(LeagueId.COPA_DE_PRIMERA, 4),
-        ...getTopTeams(LeagueId.LIGA_ARGENTINA, 2),
-        ...getTopTeams(LeagueId.BRASILEIRAO, 2)
-    ].slice(0, 32);
+    // Copa Libertadores Qualification (32 unique teams: Argentina, Brasil, Paraguay)
+    const libTeamsMap = new Map<number, Team>();
+    [
+        ...getTopTeams(LeagueId.LIGA_ARGENTINA, 14),
+        ...getTopTeams(LeagueId.BRASILEIRAO, 14),
+        ...getTopTeams(LeagueId.COPA_DE_PRIMERA, 4)
+    ].forEach(t => libTeamsMap.set(t.id, t));
+    const libTeams = Array.from(libTeamsMap.values()).slice(0, 32);
 
     const clSwiss = generateSwissPhase(clTeams, 'Champions_League', 8); // 8 matches as per real 2026 format
     const elSwiss = generateSwissPhase(elTeams, 'Europa_League', 8);

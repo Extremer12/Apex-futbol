@@ -411,8 +411,9 @@ test('isSeasonCompleted returns true only when all scheduled matches are played 
 
     assert.equal(isSeasonCompleted(mockGameState), true);
 
-    // If there is an unplayed match
-    mockGameState.schedule.push({ week: 41, homeTeamId: 701, awayTeamId: 704, result: undefined });
+    // If there is an upcoming unplayed match during the season (e.g. week 35 when currentWeek is 30)
+    mockGameState.currentWeek = 30;
+    mockGameState.schedule.push({ week: 35, homeTeamId: 701, awayTeamId: 704, result: undefined });
     assert.equal(isSeasonCompleted(mockGameState), false);
 
     // If week is early in the season (< 20)
@@ -424,6 +425,10 @@ test('isSeasonCompleted returns true only when all scheduled matches are played 
     mockGameState.currentWeek = 40;
     mockGameState.schedule.push({ week: 44, homeTeamId: 101, awayTeamId: 102, result: undefined }); // Championship match
     assert.equal(isSeasonCompleted(mockGameState), true, 'Unrelated foreign matches must not block Argentine season completion');
+
+    // Hard safety cap: When week 40 is reached in Argentina, season is complete even if orphan matches exist
+    mockGameState.schedule.push({ week: 45, homeTeamId: 701, awayTeamId: 705, result: undefined });
+    assert.equal(isSeasonCompleted(mockGameState), true, 'Hard cap at week 40 guarantees completion');
 });
 
 test('startNewSeason successfully transitions seasons without crash and initializes Europa League', async () => {
@@ -516,6 +521,47 @@ test('startNewSeason successfully transitions seasons without crash and initiali
     // Verify stadium promise was fulfilled
     const stadiumPromise = nextSeasonState.electoralPromises.find(p => p.id === 'p1');
     assert.equal(stadiumPromise?.fulfilled, true);
+
+    // Verify all 15 league tables are correctly created and indexed by LeagueId enum in season 2
+    Object.values(LeagueId).forEach(lid => {
+        assert.ok(Array.isArray(nextSeasonState.leagueTables[lid]), `League table for ${lid} must exist in Season 2`);
+    });
+});
+
+test('full Boca Juniors season simulation transitions cleanly without endless weeks', async () => {
+    const { initializeGame } = await import('../services/gameFactory');
+    const { startNewSeason } = await import('../services/seasonManager');
+    const { isSeasonCompleted } = await import('../services/seasonUtils');
+    const { ligaArgentinaTeams } = await import('../data/teams/ligaArgentina');
+
+    const boca = ligaArgentinaTeams.find(t => t.id === 701)!;
+    assert.ok(boca, 'Boca Juniors must exist');
+
+    const state = initializeGame({
+        selectedTeam: boca,
+        playerProfile: { name: 'Juan Román', country: 'ARG', age: 45, style: 'balanced', difficulty: 'normal' }
+    });
+
+    // Simulate progress to week 40
+    state.currentWeek = 40;
+    // Mark all Argentine matches as played
+    state.schedule.forEach(m => {
+        if (m.competition?.includes('Apertura') || m.competition?.includes('Clausura') || m.competition === 'Copa_Argentina') {
+            m.result = { homeScore: 2, awayScore: 1 };
+        }
+    });
+
+    // Verify season is marked as completed
+    const completed = isSeasonCompleted(state);
+    assert.equal(completed, true, 'Season must be complete at week 40 for Boca Juniors');
+
+    // Transition to Season 2
+    const season2 = startNewSeason(state);
+    assert.equal(season2.season, 2025);
+    assert.equal(season2.currentWeek, 0);
+    assert.ok(season2.schedule.length > 0, 'Season 2 must have a new generated schedule');
+    assert.ok(season2.leagueTables[LeagueId.LIGA_ARGENTINA].length === 30, 'Liga Argentina must maintain 30 teams');
+    assert.ok(season2.cups.copaArgentina.rounds[0].fixtures.length > 0, 'Copa Argentina must have fixtures in Season 2');
 });
 
 
