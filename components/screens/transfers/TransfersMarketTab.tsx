@@ -4,7 +4,8 @@ import { GameAction } from '../../../state/reducer';
 import { TeamLogo, PlayerPhoto } from '../../../data/teams/helpers';
 import { 
     formatCurrencyShort, 
-    formatWeeklyWage 
+    formatWeeklyWage,
+    formatTransferFee 
 } from '../../../utils';
 import { 
     getPlayerAge, 
@@ -286,18 +287,18 @@ export const TransfersMarketTab: React.FC<TransfersMarketTabProps> = ({
                                 </div>
 
                                 {/* Stats Row: Rating, Value, Wages */}
-                                <div className="bg-black/30 p-2.5 rounded-xl border border-white/5 grid grid-cols-3 gap-2 text-center mb-4">
-                                    <div>
-                                        <span className="text-[8px] text-white/40 font-bold uppercase tracking-wider block">Nivel</span>
+                                <div className="bg-white/[0.03] p-2 rounded-xl border border-white/5 grid grid-cols-3 gap-1.5 text-center mb-3">
+                                    <div className="flex flex-col items-center justify-center">
+                                        <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider block mb-0.5">Nivel</span>
                                         {getRatingDisplay(player)}
                                     </div>
-                                    <div>
-                                        <span className="text-[8px] text-white/40 font-bold uppercase tracking-wider block">Valor</span>
-                                        <span className="text-xs font-black text-emerald-400 mt-1 block">€{player.value}M</span>
+                                    <div className="flex flex-col items-center justify-center border-x border-white/5 px-1">
+                                        <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider block mb-0.5">Valor</span>
+                                        <span className="text-xs font-black text-emerald-400 truncate w-full">{formatTransferFee(player.value)}</span>
                                     </div>
-                                    <div>
-                                        <span className="text-[8px] text-white/40 font-bold uppercase tracking-wider block">Salario</span>
-                                        <span className="text-[10px] font-black text-white/80 mt-1.5 block">{formatWeeklyWage(expectedWage)}/sem</span>
+                                    <div className="flex flex-col items-center justify-center">
+                                        <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider block mb-0.5">Salario</span>
+                                        <span className="text-[10px] font-black text-slate-200 truncate w-full">{formatWeeklyWage(expectedWage)}</span>
                                     </div>
                                 </div>
                             </div>
@@ -310,7 +311,7 @@ export const TransfersMarketTab: React.FC<TransfersMarketTabProps> = ({
                                             dispatch({ type: 'SCOUT_PLAYER', payload: { playerId: player.id } });
                                             showToast(`Ojeador asignado a observar a ${player.name}`, 'info');
                                         }}
-                                        className="px-3 py-2 rounded-xl bg-white/5 text-white/60 hover:text-white hover:bg-white/10 transition-all border border-white/10 text-[10px] font-bold uppercase flex items-center gap-1"
+                                        className="px-3 py-2 rounded-xl bg-white/5 text-white/60 hover:text-white hover:bg-white/10 transition-all border border-white/10 text-[10px] font-bold uppercase flex items-center gap-1 cursor-pointer active:scale-95"
                                         title="Observar y desbloquear informe completo"
                                     >
                                         <Search className="w-3 h-3" /> Ojear
@@ -318,9 +319,9 @@ export const TransfersMarketTab: React.FC<TransfersMarketTabProps> = ({
                                 )}
                                 <button
                                     onClick={() => onStartNegotiation(player)}
-                                    className="flex-1 py-2 rounded-xl bg-[var(--apex-gold)] text-black hover:bg-yellow-400 font-black text-xs uppercase tracking-wider transition-all shadow-md shadow-[var(--apex-gold)]/20 flex items-center justify-center gap-1.5"
+                                    className="flex-1 py-2 rounded-xl bg-[var(--apex-gold)] text-black hover:bg-yellow-400 font-black text-xs uppercase tracking-wider transition-all shadow-md shadow-[var(--apex-gold)]/20 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
                                 >
-                                    <Briefcase className="w-3.5 h-3.5" /> Negociar
+                                    <Briefcase className="w-3.5 h-3.5" /> Fichar ({formatTransferFee(player.value)})
                                 </button>
                             </div>
                         </div>

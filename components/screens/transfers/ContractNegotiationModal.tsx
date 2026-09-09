@@ -109,77 +109,138 @@ export const ContractNegotiationModal: React.FC<ContractNegotiationModalProps> =
                     </button>
                 ) : (
                     <div className="space-y-3">
-                        <div className="grid grid-cols-2 gap-3">
+                        {/* Summary Pill */}
+                        <div className="bg-white/[0.04] p-2.5 rounded-xl border border-white/5 flex items-center justify-between text-xs">
+                            <span className="text-slate-400 font-bold">Salario Anual Estimado:</span>
+                            <span className="font-black text-amber-300">€{((offeredWage * 52) / 1_000_000).toFixed(2)}M/año</span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             {/* Wage Input */}
-                            <div>
-                                <label className="text-[9px] font-black text-white/60 uppercase tracking-wider block mb-1">
-                                    Salario Semanal (€/sem)
-                                </label>
-                                <input 
-                                    type="number"
-                                    step="1000"
-                                    value={offeredWage}
-                                    onChange={e => setOfferedWage(Number(e.target.value))}
-                                    className="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-lg text-white font-black text-xs focus:outline-none focus:border-[var(--apex-gold)]"
-                                />
+                            <div className="space-y-1.5">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-[9px] font-black text-slate-300 uppercase tracking-wider">
+                                        Salario Semanal
+                                    </label>
+                                    <span className="text-xs font-black text-emerald-400">
+                                        {formatWeeklyWage(offeredWage)}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => setOfferedWage(Math.max(5000, offeredWage - 10000))}
+                                        className="px-2 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold text-white border border-white/5 cursor-pointer"
+                                    >
+                                        -10K
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setOfferedWage(Math.max(5000, offeredWage - 5000))}
+                                        className="px-2 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold text-white border border-white/5 cursor-pointer"
+                                    >
+                                        -5K
+                                    </button>
+                                    <input 
+                                        type="number"
+                                        step="1"
+                                        value={Math.round(offeredWage / 1000)}
+                                        onChange={e => setOfferedWage(Math.max(1000, Number(e.target.value) * 1000))}
+                                        className="flex-1 px-2 py-1.5 bg-black/50 border border-white/10 rounded-lg text-white font-black text-xs text-center focus:outline-none focus:border-[var(--apex-gold)]"
+                                    />
+                                    <span className="text-[10px] font-bold text-slate-400">K/sem</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setOfferedWage(offeredWage + 5000)}
+                                        className="px-2 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold text-white border border-white/5 cursor-pointer"
+                                    >
+                                        +5K
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setOfferedWage(offeredWage + 10000)}
+                                        className="px-2 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold text-white border border-white/5 cursor-pointer"
+                                    >
+                                        +10K
+                                    </button>
+                                </div>
                             </div>
 
                             {/* Contract Years */}
                             <div>
-                                <label className="text-[9px] font-black text-white/60 uppercase tracking-wider block mb-1">
+                                <label className="text-[9px] font-black text-slate-300 uppercase tracking-wider block mb-1.5">
                                     Duración del Contrato
                                 </label>
-                                <select
-                                    value={offeredYears}
-                                    onChange={e => setOfferedYears(Number(e.target.value))}
-                                    className="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-lg text-white font-black text-xs focus:outline-none focus:border-[var(--apex-gold)]"
-                                >
-                                    <option value={1}>1 Año</option>
-                                    <option value={2}>2 Años</option>
-                                    <option value={3}>3 Años</option>
-                                    <option value={4}>4 Años</option>
-                                    <option value={5}>5 Años</option>
-                                </select>
+                                <div className="grid grid-cols-5 gap-1">
+                                    {[1, 2, 3, 4, 5].map(yr => (
+                                        <button
+                                            key={yr}
+                                            type="button"
+                                            onClick={() => setOfferedYears(yr)}
+                                            className={`py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                                                offeredYears === yr
+                                                    ? 'bg-[var(--apex-gold)] text-black shadow-md'
+                                                    : 'bg-white/5 text-slate-300 hover:bg-white/10 border border-white/5'
+                                            }`}
+                                        >
+                                            {yr}a
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
 
                             {/* Squad Role */}
                             <div>
-                                <label className="text-[9px] font-black text-white/60 uppercase tracking-wider block mb-1">
+                                <label className="text-[9px] font-black text-slate-300 uppercase tracking-wider block mb-1.5">
                                     Rol en el Equipo
                                 </label>
                                 <select
                                     value={offeredRole}
                                     onChange={e => setOfferedRole(e.target.value as SquadRole)}
-                                    className="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-lg text-white font-black text-xs focus:outline-none focus:border-[var(--apex-gold)]"
+                                    className="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-lg text-white font-black text-xs focus:outline-none focus:border-[var(--apex-gold)] cursor-pointer"
                                 >
-                                    <option value="Key">⭐ Jugador Clave</option>
-                                    <option value="FirstTeam">⚽ Titular Habitual</option>
-                                    <option value="Rotation">🔄 Rotación</option>
-                                    <option value="Prospect">🌱 Joven Promesa</option>
+                                    <option value="Key" className="bg-slate-900">⭐ Jugador Clave</option>
+                                    <option value="FirstTeam" className="bg-slate-900">⚽ Titular Habitual</option>
+                                    <option value="Rotation" className="bg-slate-900">🔄 Rotación</option>
+                                    <option value="Prospect" className="bg-slate-900">🌱 Joven Promesa</option>
                                 </select>
                             </div>
 
                             {/* Signing Bonus */}
                             <div>
-                                <label className="text-[9px] font-black text-white/60 uppercase tracking-wider block mb-1">
-                                    Prima de Fichaje (€M)
-                                </label>
-                                <input 
-                                    type="number"
-                                    step="0.1"
-                                    value={offeredBonus}
-                                    onChange={e => setOfferedBonus(Number(e.target.value))}
-                                    className="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-lg text-white font-black text-xs focus:outline-none focus:border-[var(--apex-gold)]"
-                                />
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <label className="text-[9px] font-black text-slate-300 uppercase tracking-wider">
+                                        Prima de Fichaje
+                                    </label>
+                                    <span className="text-xs font-black text-amber-300">
+                                        €{offeredBonus}M
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                    {[0, 0.5, 1.0, 2.0].map(b => (
+                                        <button
+                                            key={b}
+                                            type="button"
+                                            onClick={() => setOfferedBonus(b)}
+                                            className={`flex-1 py-1.5 rounded-lg text-[10px] font-black transition-all cursor-pointer ${
+                                                offeredBonus === b
+                                                    ? 'bg-amber-400 text-black shadow-md'
+                                                    : 'bg-white/5 text-slate-300 hover:bg-white/10 border border-white/5'
+                                            }`}
+                                        >
+                                            {b === 0 ? 'Sin Prima' : `€${b}M`}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
 
                         <button
                             onClick={onSendAgentOffer}
                             disabled={isAgentNegotiating || offeredWage <= 0}
-                            className="w-full py-3 bg-[var(--apex-gold)] hover:bg-yellow-400 text-black font-black rounded-xl text-xs uppercase tracking-wider disabled:opacity-40 transition-all flex items-center justify-center"
+                            className="w-full py-3.5 bg-[var(--apex-gold)] hover:bg-yellow-400 text-black font-black rounded-xl text-xs uppercase tracking-wider disabled:opacity-40 transition-all flex items-center justify-center cursor-pointer active:scale-98 shadow-lg shadow-[var(--apex-gold)]/20"
                         >
-                            {isAgentNegotiating ? <LoadingSpinner /> : 'ENVIAR PROPUESTA AL AGENTE'}
+                            {isAgentNegotiating ? <LoadingSpinner /> : `ENVIAR OFERTA (${formatWeeklyWage(offeredWage)})`}
                         </button>
                     </div>
                 )}

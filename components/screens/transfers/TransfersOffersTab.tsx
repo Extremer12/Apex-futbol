@@ -6,6 +6,7 @@ import {
     CheckCircle2, 
     XCircle 
 } from 'lucide-react';
+import { formatTransferFee } from '../../../utils';
 
 interface TransfersOffersTabProps {
     incomingOffers: Offer[];
@@ -52,7 +53,7 @@ export const TransfersOffersTab: React.FC<TransfersOffersTabProps> = ({
                                 <div>
                                     <span className="text-[9px] font-black text-[var(--apex-gold)] tracking-widest uppercase">Oferta Formal de Compra</span>
                                     <h3 className="text-base font-black text-white leading-tight">{player?.name || 'Jugador'}</h3>
-                                    <p className="text-xs text-white/50">{player?.position} • Valor: €{player?.value}M</p>
+                                    <p className="text-xs text-white/50">{player?.position} • Valor: {formatTransferFee(player?.value)}</p>
                                 </div>
                             </div>
 
@@ -67,7 +68,7 @@ export const TransfersOffersTab: React.FC<TransfersOffersTabProps> = ({
                         <div className="bg-black/40 p-3 rounded-xl border border-white/5 space-y-1">
                             <div className="flex justify-between items-center">
                                 <span className="text-xs text-white/60 font-bold">Monto Ofertado:</span>
-                                <span className="text-lg font-black text-emerald-400">€{displayValue}M</span>
+                                <span className="text-lg font-black text-emerald-400">{formatTransferFee(displayValue)}</span>
                             </div>
                             {isCountered && (
                                 <span className="text-[9px] font-black text-amber-400 uppercase tracking-widest block">
@@ -82,7 +83,7 @@ export const TransfersOffersTab: React.FC<TransfersOffersTabProps> = ({
                                 onClick={() => onAcceptOffer(offer)}
                                 className="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/20"
                             >
-                                <CheckCircle2 className="w-4 h-4" /> Aceptar €{displayValue}M
+                                <CheckCircle2 className="w-4 h-4" /> Aceptar {formatTransferFee(displayValue)}
                             </button>
                             <button
                                 onClick={() => onOpenCounterOffer(offer)}

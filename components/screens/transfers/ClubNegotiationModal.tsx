@@ -38,6 +38,18 @@ export const ClubNegotiationModal: React.FC<ClubNegotiationModalProps> = ({
 }) => {
     return (
         <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Top Info Banner */}
+            <div className="px-4 py-2.5 bg-black/40 border-b border-white/10 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-1.5">
+                    <span className="text-slate-400 font-bold">Valor de Mercado:</span>
+                    <span className="font-black text-emerald-400">€{negotiatingPlayer.value}M</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                    <span className="text-slate-400 font-bold">Tu Presupuesto:</span>
+                    <span className="font-black text-[var(--apex-gold)]">€{transferBudget}M</span>
+                </div>
+            </div>
+
             {/* Chat Log */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
                 {clubChatHistory.map((msg, i) => {
@@ -79,18 +91,18 @@ export const ClubNegotiationModal: React.FC<ClubNegotiationModalProps> = ({
             </div>
 
             {/* Controls */}
-            <div className="p-4 bg-black/60 border-t border-white/10 space-y-3">
+            <div className="p-4 bg-black/70 border-t border-white/10 space-y-3">
                 {isNegotiationDead ? (
                     <button
                         onClick={onClose}
-                        className="w-full py-3 bg-white/10 text-white font-bold rounded-xl text-xs uppercase tracking-wider hover:bg-white/20"
+                        className="w-full py-3 bg-white/10 text-white font-bold rounded-xl text-xs uppercase tracking-wider hover:bg-white/20 cursor-pointer"
                     >
                         Cerrar Negociaciones
                     </button>
                 ) : agreedFee !== null ? (
                     <button
                         onClick={onProceedToContract}
-                        className="w-full py-3.5 bg-emerald-500 text-black font-black rounded-xl text-xs uppercase tracking-wider hover:bg-emerald-400 shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
+                        className="w-full py-3.5 bg-emerald-500 text-black font-black rounded-xl text-xs uppercase tracking-wider hover:bg-emerald-400 shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer active:scale-98"
                     >
                         Continuar a Términos Contractuales <ArrowRight className="w-4 h-4" />
                     </button>
@@ -102,8 +114,10 @@ export const ClubNegotiationModal: React.FC<ClubNegotiationModalProps> = ({
                                 <input 
                                     type="number" 
                                     step="0.5"
+                                    min="0.5"
+                                    max={transferBudget}
                                     value={clubOfferFee} 
-                                    onChange={e => setClubOfferFee(Number(e.target.value))}
+                                    onChange={e => setClubOfferFee(Math.max(0, Number(e.target.value)))}
                                     className="w-full pl-8 pr-12 py-3 bg-black/50 border border-white/10 rounded-xl text-white font-black text-sm focus:outline-none focus:border-[var(--apex-gold)]"
                                     disabled={isClubNegotiating}
                                 />
@@ -112,23 +126,44 @@ export const ClubNegotiationModal: React.FC<ClubNegotiationModalProps> = ({
                             <button
                                 onClick={onSendClubOffer}
                                 disabled={isClubNegotiating || clubOfferFee <= 0 || clubOfferFee > transferBudget}
-                                className="px-6 py-3 bg-[var(--apex-gold)] hover:bg-yellow-400 text-black font-black rounded-xl text-xs uppercase tracking-wider disabled:opacity-40 transition-all flex items-center justify-center min-w-[100px]"
+                                className="px-6 py-3 bg-[var(--apex-gold)] hover:bg-yellow-400 text-black font-black rounded-xl text-xs uppercase tracking-wider disabled:opacity-40 transition-all flex items-center justify-center min-w-[120px] cursor-pointer active:scale-95"
                             >
-                                {isClubNegotiating ? <LoadingSpinner /> : 'OFERTAR'}
+                                {isClubNegotiating ? <LoadingSpinner /> : `OFERTAR €${clubOfferFee}M`}
                             </button>
                         </div>
 
-                        {/* Quick Increment Buttons */}
-                        <div className="flex items-center gap-2">
-                            {[0.5, 1.0, 5.0, 10.0].map(inc => (
-                                <button
-                                    key={inc}
-                                    onClick={() => setClubOfferFee(prev => Math.round((prev + inc) * 10) / 10)}
-                                    className="px-2.5 py-1 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold text-white/70 border border-white/5"
-                                >
-                                    +€{inc}M
-                                </button>
-                            ))}
+                        {/* Quick Increment / Decrement Chips */}
+                        <div className="flex flex-wrap items-center gap-1.5">
+                            <button
+                                onClick={() => setClubOfferFee(prev => Math.max(0.5, Math.round((prev - 5) * 10) / 10))}
+                                className="px-2.5 py-1 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold text-white/70 border border-white/5 cursor-pointer"
+                            >
+                                -€5M
+                            </button>
+                            <button
+                                onClick={() => setClubOfferFee(prev => Math.max(0.5, Math.round((prev - 1) * 10) / 10))}
+                                className="px-2.5 py-1 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold text-white/70 border border-white/5 cursor-pointer"
+                            >
+                                -€1M
+                            </button>
+                            <button
+                                onClick={() => setClubOfferFee(negotiatingPlayer.value)}
+                                className="px-2.5 py-1 bg-[var(--apex-gold)]/10 text-[var(--apex-gold)] hover:bg-[var(--apex-gold)]/20 rounded-lg text-[10px] font-black border border-[var(--apex-gold)]/30 cursor-pointer"
+                            >
+                                Valor (€{negotiatingPlayer.value}M)
+                            </button>
+                            <button
+                                onClick={() => setClubOfferFee(prev => Math.min(transferBudget, Math.round((prev + 1) * 10) / 10))}
+                                className="px-2.5 py-1 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold text-white/70 border border-white/5 cursor-pointer"
+                            >
+                                +€1M
+                            </button>
+                            <button
+                                onClick={() => setClubOfferFee(prev => Math.min(transferBudget, Math.round((prev + 5) * 10) / 10))}
+                                className="px-2.5 py-1 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold text-white/70 border border-white/5 cursor-pointer"
+                            >
+                                +€5M
+                            </button>
                         </div>
                     </div>
                 )}

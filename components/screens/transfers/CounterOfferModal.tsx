@@ -2,6 +2,7 @@ import React from 'react';
 import { Player, Offer, Team } from '../../../types';
 import { LoadingSpinner } from '../../icons';
 import { Modal } from '../../ui/Modal';
+import { formatTransferFee } from '../../../utils';
 
 interface CounterOfferModalProps {
     data: { offer: Offer; player: Player; buyer: Team };
@@ -28,7 +29,7 @@ export const CounterOfferModal: React.FC<CounterOfferModalProps> = ({
             <div className="space-y-4 p-2">
                 <div className="bg-slate-800/60 p-4 rounded-xl border border-white/5 space-y-2">
                     <p className="text-xs text-white/70">
-                        El <strong className="text-white">{data.buyer.name}</strong> ofreció inicialmente <strong className="text-emerald-400">€{data.offer.offerValue}M</strong> por {data.player.name}.
+                        El <strong className="text-white">{data.buyer.name}</strong> ofreció inicialmente <strong className="text-emerald-400">{formatTransferFee(data.offer.offerValue)}</strong> por {data.player.name}.
                     </p>
                     <p className="text-[11px] text-white/50">
                         Introduce la cantidad que exigirías para aceptar el traspaso inmediato.

@@ -10,30 +10,50 @@ export const setGlobalCurrency = (currency: 'EUR' | 'USD') => {
 };
 
 export const formatCurrency = (amount: number | undefined | null): string => {
+    const symbol = GLOBAL_CURRENCY === 'EUR' ? '€' : '$';
+    const val = amount || 0;
+    if (Math.abs(val) >= 1_000_000) {
+        return `${symbol}${(val / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
+    }
+    if (Math.abs(val) >= 1_000) {
+        return `${symbol}${(val / 1_000).toFixed(0)}K`;
+    }
     return new Intl.NumberFormat(GLOBAL_CURRENCY === 'EUR' ? 'es-ES' : 'en-US', {
         style: 'currency',
         currency: GLOBAL_CURRENCY,
         maximumFractionDigits: 0,
-    }).format(amount || 0);
+    }).format(val);
+};
+
+export const formatTransferFee = (millions: number | undefined | null): string => {
+    const val = millions || 0;
+    const symbol = GLOBAL_CURRENCY === 'EUR' ? '€' : '$';
+    if (Math.abs(val) >= 1_000_000) {
+        return `${symbol}${(val / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
+    }
+    return `${symbol}${val}M`;
 };
 
 export const formatCurrencyShort = (amount: number | undefined | null): string => {
     const val = amount || 0;
+    const symbol = GLOBAL_CURRENCY === 'EUR' ? '€' : '$';
     if (Math.abs(val) >= 1_000_000) {
-        return (val / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+        return `${symbol}${(val / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
     }
     if (Math.abs(val) >= 1_000) {
-        return (val / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
+        return `${symbol}${(val / 1_000).toFixed(0)}K`;
     }
-    return val.toString();
+    // If it's a small number representing millions (e.g. transfer budget 80)
+    return `${symbol}${val}M`;
 };
 
 export const formatWeeklyWage = (amount: number | undefined | null): string => {
-    return new Intl.NumberFormat(GLOBAL_CURRENCY === 'EUR' ? 'es-ES' : 'en-US', {
-        style: 'currency',
-        currency: GLOBAL_CURRENCY,
-        maximumFractionDigits: 0,
-    }).format(amount || 0);
+    const val = amount || 0;
+    const symbol = GLOBAL_CURRENCY === 'EUR' ? '€' : '$';
+    if (Math.abs(val) >= 1_000) {
+        return `${symbol}${(val / 1000).toFixed(0)}K/sem`;
+    }
+    return `${symbol}${val}/sem`;
 };
 
 // --- Name Generation for Regens ---
