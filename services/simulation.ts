@@ -1127,6 +1127,7 @@ export const advanceCupRound = (
     if (cup.id === 'champions_league') competitionType = 'Champions_League';
     if (cup.id === 'europa_league') competitionType = 'Europa_League';
     if (cup.id === 'copa_libertadores') competitionType = 'Copa_Libertadores';
+    if (cup.id === 'copa_sudamericana') competitionType = 'Copa_Sudamericana';
     if (cup.id === 'copa_intercontinental') competitionType = 'Copa_Intercontinental';
 
     const isMidweekCompetition = 

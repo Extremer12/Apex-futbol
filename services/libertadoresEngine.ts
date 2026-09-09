@@ -12,6 +12,7 @@ export interface LibertadoresQualificationContext {
 export interface LibertadoresInitialState {
     cup: CupCompetition;
     fixtures: Match[];
+    phase3Losers: Team[];
 }
 
 /**
@@ -27,8 +28,8 @@ export function buildLibertadoresParticipants(context: LibertadoresQualification
     sudamericanaChampion?: Team;
 } {
     const { allTeams, lastLibertadoresWinnerId, lastSudamericanaWinnerId, argentineQualifiedIds = [] } = context;
-
-    const findTeam = (id?: number) => id ? allTeams.find(t => t.id === id) : undefined;
+    const allPool = [...(allTeams || []), ...SOUTH_AMERICAN_EXTRA_TEAMS];
+    const findTeam = (id?: number) => id ? allPool.find(t => t.id === id) : undefined;
     const defendingChampion = findTeam(lastLibertadoresWinnerId);
     const sudamericanaChampion = findTeam(lastSudamericanaWinnerId);
 
@@ -76,12 +77,12 @@ export function buildLibertadoresParticipants(context: LibertadoresQualification
     const phase2Direct: Team[] = [];
     const phase1Direct: Team[] = [];
 
-    // Defending champion
+    // Defending champion & Sudamericana champion
     if (defendingChampion) {
         directToGroups.push(defendingChampion);
         usedIds.add(defendingChampion.id);
     }
-    if (sudamericanaChampion && !usedIds.has(sudamericanaChampion.id)) {
+    if (sudamericanaChampion && sudamericanaChampion.id !== defendingChampion?.id) {
         directToGroups.push(sudamericanaChampion);
         usedIds.add(sudamericanaChampion.id);
     }
@@ -172,16 +173,18 @@ export function simulatePreliminaries(
     phase2Teams: Team[]
 ): {
     phase3Winners: Team[];
+    phase3Losers: Team[];
     preliminaryFixtures: Match[];
 } {
     const preliminaryFixtures: Match[] = [];
 
     // Helper to simulate one elimination key based on team rating
-    const resolveMatchWinner = (teamA: Team, teamB: Team, week: number): Team => {
+    const resolveMatchKey = (teamA: Team, teamB: Team, week: number): { winner: Team; loser: Team } => {
         const ratingA = teamA.squad.reduce((s, p) => s + p.rating, 0) / (teamA.squad.length || 1);
         const ratingB = teamB.squad.reduce((s, p) => s + p.rating, 0) / (teamB.squad.length || 1);
         const probA = 0.5 + (ratingA - ratingB) * 0.03;
         const winner = Math.random() < Math.max(0.2, Math.min(0.8, probA)) ? teamA : teamB;
+        const loser = winner.id === teamA.id ? teamB : teamA;
         
         const scoreWinner = 2 + Math.floor(Math.random() * 2);
         const scoreLoser = Math.floor(Math.random() * Math.min(2, scoreWinner));
@@ -199,31 +202,32 @@ export function simulatePreliminaries(
             }
         });
 
-        return winner;
+        return { winner, loser };
     };
 
     // Phase 1 (Week 2): 6 teams -> 3 winners
-    const e1 = resolveMatchWinner(phase1Teams[0] || phase2Teams[0], phase1Teams[1] || phase2Teams[1], 2);
-    const e2 = resolveMatchWinner(phase1Teams[2] || phase2Teams[2], phase1Teams[3] || phase2Teams[3], 2);
-    const e3 = resolveMatchWinner(phase1Teams[4] || phase2Teams[4], phase1Teams[5] || phase2Teams[5], 2);
+    const e1 = resolveMatchKey(phase1Teams[0] || phase2Teams[0], phase1Teams[1] || phase2Teams[1], 2);
+    const e2 = resolveMatchKey(phase1Teams[2] || phase2Teams[2], phase1Teams[3] || phase2Teams[3], 2);
+    const e3 = resolveMatchKey(phase1Teams[4] || phase2Teams[4], phase1Teams[5] || phase2Teams[5], 2);
 
     // Phase 2 (Week 4): 16 teams -> 8 winners (C1..C8)
-    const p2Pool = [...phase2Teams, e1, e2, e3];
+    const p2Pool = [...phase2Teams, e1.winner, e2.winner, e3.winner];
     const cWinners: Team[] = [];
     for (let i = 0; i < 8; i++) {
         const teamA = p2Pool[i * 2] || p2Pool[0];
         const teamB = p2Pool[i * 2 + 1] || p2Pool[1];
-        cWinners.push(resolveMatchWinner(teamA, teamB, 4));
+        cWinners.push(resolveMatchKey(teamA, teamB, 4).winner);
     }
 
     // Phase 3 (Week 6): 4 keys predefined (C1 vs C8, C2 vs C7, C3 vs C6, C4 vs C5)
-    const g1 = resolveMatchWinner(cWinners[0], cWinners[7], 6);
-    const g2 = resolveMatchWinner(cWinners[1], cWinners[6], 6);
-    const g3 = resolveMatchWinner(cWinners[2], cWinners[5], 6);
-    const g4 = resolveMatchWinner(cWinners[3], cWinners[4], 6);
+    const g1 = resolveMatchKey(cWinners[0], cWinners[7], 6);
+    const g2 = resolveMatchKey(cWinners[1], cWinners[6], 6);
+    const g3 = resolveMatchKey(cWinners[2], cWinners[5], 6);
+    const g4 = resolveMatchKey(cWinners[3], cWinners[4], 6);
 
     return {
-        phase3Winners: [g1, g2, g3, g4],
+        phase3Winners: [g1.winner, g2.winner, g3.winner, g4.winner],
+        phase3Losers: [g1.loser, g2.loser, g3.loser, g4.loser],
         preliminaryFixtures
     };
 }
@@ -427,12 +431,9 @@ export function sortLibertadoresGroupTable(table: CupGroup['table'], allTeams: T
 export function initializeLibertadoresSeason(
     context: LibertadoresQualificationContext,
     existingCup?: CupCompetition
-): {
-    cup: CupCompetition;
-    fixtures: Match[];
-} {
+): LibertadoresInitialState {
     const participants = buildLibertadoresParticipants(context);
-    const { phase3Winners, preliminaryFixtures } = simulatePreliminaries(
+    const { phase3Winners, phase3Losers, preliminaryFixtures } = simulatePreliminaries(
         participants.phase1Direct,
         participants.phase2Direct
     );
@@ -464,6 +465,7 @@ export function initializeLibertadoresSeason(
 
     return {
         cup,
-        fixtures: [...preliminaryFixtures, ...groupFixtures]
+        fixtures: [...preliminaryFixtures, ...groupFixtures],
+        phase3Losers
     };
 }

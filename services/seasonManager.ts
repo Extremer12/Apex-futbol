@@ -10,6 +10,7 @@ import { calculatePrizeMoney, generateSponsorMarket } from './economy';
 import { formatDate, formatCurrency } from '../utils';
 import { evaluateAchievements } from './achievementService';
 import { initializeLibertadoresSeason } from './libertadoresEngine';
+import { initializeSudamericanaSeason } from './sudamericanaEngine';
 
 // Define promotion/relegation pairs locally (mirrors simulation.ts)
 const PROMOTION_RELEGATION_PAIRS: [LeagueId, LeagueId][] = [
@@ -163,6 +164,9 @@ export function startNewSeason(currentState: GameState): GameState {
 
     const libWinner = getCupWinnerId(currentState.cups.copaLibertadores);
     if (libWinner) trophiesToAward.push({ teamId: libWinner, name: 'Copa Libertadores', type: 'cup' });
+
+    const sudWinner = getCupWinnerId(currentState.cups.copaSudamericana);
+    if (sudWinner) trophiesToAward.push({ teamId: sudWinner, name: 'Copa Sudamericana', type: 'cup' });
 
     const intWinner = getCupWinnerId(currentState.cups.copaIntercontinental);
     if (intWinner) trophiesToAward.push({ teamId: intWinner, name: 'Copa Intercontinental', type: 'cup' });
@@ -421,7 +425,6 @@ export function startNewSeason(currentState: GameState): GameState {
     const elTeams = Array.from(elTeamsMap.values()).slice(0, 36);
 
     // Copa Libertadores Qualification (32 unique teams: Argentina, Brasil, Paraguay)
-    // Copa Libertadores Qualification (32 unique teams: Argentina, Brasil, Paraguay)
     const argTable = currentState.leagueTables[LeagueId.LIGA_ARGENTINA] || [];
     const argQual = computeArgentineInternationalQualification(argTable, currentState.cups);
     const argLibTeams = argQual.libertadores
@@ -432,16 +435,39 @@ export function startNewSeason(currentState: GameState): GameState {
     const libInit = initializeLibertadoresSeason({
         allTeams: teamsAfterProRel,
         lastLibertadoresWinnerId: getCupWinnerId(currentState.cups.copaLibertadores) || undefined,
-        lastSudamericanaWinnerId: undefined
+        lastSudamericanaWinnerId: getCupWinnerId(currentState.cups.copaSudamericana) || undefined,
+        argentineQualifiedIds: argLibTeams.map(t => t.id)
     }, currentState.cups.copaLibertadores);
+
+    // CONMEBOL Copa Sudamericana (Official 56-team structure)
+    const argSudTeams = argQual.sudamericana
+        .map(q => teamsAfterProRel.find(t => t.id === q.teamId))
+        .filter(Boolean) as Team[];
+
+    const libParticipantIds = new Set<number>();
+    libInit.cup.groups?.forEach(g => g.teams.forEach(id => libParticipantIds.add(id)));
+    libInit.fixtures.forEach(m => {
+        libParticipantIds.add(m.homeTeamId);
+        libParticipantIds.add(m.awayTeamId);
+    });
+
+    const sudInit = initializeSudamericanaSeason({
+        allTeams: teamsAfterProRel,
+        lastSudamericanaWinnerId: getCupWinnerId(currentState.cups.copaSudamericana) || undefined,
+        argentineQualifiedIds: argSudTeams.map(t => t.id),
+        libertadoresPhase3Losers: libInit.phase3Losers,
+        excludedTeamIds: libParticipantIds
+    }, currentState.cups.copaSudamericana);
 
     const clSwiss = generateSwissPhase(clTeams, 'Champions_League', 8); // 8 matches as per real 2026 format
     const elSwiss = generateSwissPhase(elTeams, 'Europa_League', 8);
     const libGroups = libInit.cup.groups || []; 
+    const sudGroups = sudInit.cup.groups || [];
 
     const clFixtures = clSwiss.fixtures.map(m => ({ ...m, week: m.week + 5, isMidweek: true }));
     const elFixtures = elSwiss.fixtures.map(m => ({ ...m, week: m.week + 5, isMidweek: true }));
     const libGroupFixtures = libInit.fixtures;
+    const sudGroupFixtures = sudInit.fixtures;
 
     // Intercontinental Cup
     const lastLibertadoresWinner = currentState.cups.copaLibertadores?.winnerId;
@@ -466,7 +492,7 @@ export function startNewSeason(currentState: GameState): GameState {
     const fullSchedule = [
         ...newSeasonSchedule, 
         ...faCupFixtures, ...carabaoCupFixtures, ...copaDelReyFixtures, ...dfbPokalFixtures, ...coppaItaliaFixtures, ...copaArgentinaFixtures,
-        ...clFixtures, ...elFixtures, ...libGroupFixtures, ...intercontinentalFixtures
+        ...clFixtures, ...elFixtures, ...libGroupFixtures, ...sudGroupFixtures, ...intercontinentalFixtures
     ];
 
     // 6. Create news items
@@ -681,6 +707,27 @@ export function startNewSeason(currentState: GameState): GameState {
                     groups: [{
                         name: playerGroup.name,
                         teams: playerGroup.teams.map(tid => ({
+                            name: teamsAfterProRel.find(t => t.id === tid)?.name || 'Desconocido',
+                            isPlayer: tid === updatedPlayerTeam.id
+                        }))
+                    }]
+                }
+            });
+    }
+
+    // Check if player qualified for Sudamericana
+    const playerSudGroup = sudGroups.find(g => g.teams.includes(updatedPlayerTeam.id));
+    if (playerSudGroup) {
+        newCinematicQueue.push({
+                id: `cinematic_sud_draw_${newSeasonYear}`,
+                type: 'GROUP_DRAW',
+                title: `Copa Sudamericana`,
+                subtitle: `Sorteo de Fase de Grupos`,
+                metadata: {
+                    accentColor: '#d97706',
+                    groups: [{
+                        name: playerSudGroup.name,
+                        teams: playerSudGroup.teams.map(tid => ({
                             name: teamsAfterProRel.find(t => t.id === tid)?.name || 'Desconocido',
                             isPlayer: tid === updatedPlayerTeam.id
                         }))
@@ -927,6 +974,14 @@ export function startNewSeason(currentState: GameState): GameState {
                 groups: libGroups,
                 rounds: [],
                 currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: buildArchiveChampions(currentState.cups.copaLibertadores) }
+            },
+            copaSudamericana: {
+                id: 'copa_sudamericana', name: 'Copa Sudamericana', 
+                logo: 'https://tmssl.akamaized.net/images/logo/header/cpa.png',
+                type: 'groups', phase: 'groups',
+                groups: sudGroups,
+                rounds: [],
+                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: buildArchiveChampions(currentState.cups.copaSudamericana) }
             },
             copaIntercontinental: {
                 id: 'copa_intercontinental', name: 'Copa Intercontinental', 

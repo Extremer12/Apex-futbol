@@ -273,6 +273,17 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
                 currentRoundIndex: 0,
                 statistics: { topScorers: [], championsHistory: [] }
             },
+            copaSudamericana: {
+                id: 'copa_sudamericana',
+                name: 'Copa Sudamericana',
+                logo: 'https://tmssl.akamaized.net/images/logo/header/cpa.png',
+                type: 'groups',
+                phase: 'finished',
+                groups: [],
+                rounds: [],
+                currentRoundIndex: 0,
+                statistics: { topScorers: [], championsHistory: [] }
+            },
             championsLeague: {
                 id: 'champions_league',
                 name: 'UEFA Champions League',

@@ -108,6 +108,7 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
                 championsLeague: cups.championsLeague || { id: 'champions_league', name: 'Champions League', type: 'swiss', phase: 'finished', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
                 europaLeague: cups.europaLeague || { id: 'europa_league', name: 'Europa League', type: 'swiss', phase: 'finished', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
                 copaLibertadores: cups.copaLibertadores || { id: 'copa_libertadores', name: 'Copa Libertadores', type: 'groups', phase: 'finished', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
+                copaSudamericana: cups.copaSudamericana || { id: 'copa_sudamericana', name: 'Copa Sudamericana', type: 'groups', phase: 'finished', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
                 copaIntercontinental: cups.copaIntercontinental || { id: 'copa_intercontinental', name: 'Copa Intercontinental', type: 'knockout', phase: 'finished', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
             };
 

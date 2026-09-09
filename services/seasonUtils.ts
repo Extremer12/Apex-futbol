@@ -234,6 +234,13 @@ export const getSeasonSummaryData = (gameState: GameState): SeasonSummaryData =>
             statusBadge: 'Gloria Eterna'
         },
         {
+            name: 'Copa Sudamericana',
+            region: 'Internacional',
+            category: 'Copa',
+            team: resolveCupChampion(gameState.cups.copaSudamericana),
+            statusBadge: 'La Gran Conquista'
+        },
+        {
             name: 'UEFA Champions League',
             region: 'Internacional',
             category: 'Copa',

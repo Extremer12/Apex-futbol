@@ -460,6 +460,7 @@ export interface GameState {
     championsLeague: CupCompetition;
     europaLeague: CupCompetition;
     copaLibertadores: CupCompetition;
+    copaSudamericana?: CupCompetition;
     copaIntercontinental: CupCompetition;
   };
   availableCoaches: Coach[]; // Market of available coaches

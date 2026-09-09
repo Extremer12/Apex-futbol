@@ -334,6 +334,7 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                     if (match.competition === 'Champions_League') cupId = 'championsLeague';
                     if (match.competition === 'Europa_League') cupId = 'europaLeague';
                     if (match.competition === 'Copa_Libertadores') cupId = 'copaLibertadores';
+                    if (match.competition === 'Copa_Sudamericana') cupId = 'copaSudamericana';
                     if (match.competition === 'Copa_Intercontinental') cupId = 'copaIntercontinental';
 
                     const currentCup = updatedCups[cupId];
@@ -400,8 +401,8 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                             }
                         }
 
-                        // Copa Libertadores Group Table & Fixtures Update
-                        if (match.competition === 'Copa_Libertadores' && currentCup.phase === 'groups' && currentCup.groups) {
+                        // Copa Libertadores & Copa Sudamericana Group Table & Fixtures Update
+                        if ((match.competition === 'Copa_Libertadores' || match.competition === 'Copa_Sudamericana') && currentCup.phase === 'groups' && currentCup.groups) {
                             for (const group of currentCup.groups) {
                                 const gFix = group.fixtures?.find((fix: any) =>
                                     (fix.id && fix.id === match.id) ||

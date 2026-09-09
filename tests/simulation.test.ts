@@ -873,8 +873,114 @@ test('SeasonEnd: getSeasonSummaryData resolves Clausura champion and compiles al
     const argClausuraEntry = summary.allChampions.find(c => c.name === 'Torneo Clausura');
     assert.ok(argClausuraEntry, 'Torneo Clausura must be in allChampions list');
     assert.equal(argClausuraEntry?.team?.id, 702, 'Torneo Clausura in allChampions must have team 702');
+});test('Copa Sudamericana: initializes 56-team structure with national preliminaries and group stage', async () => {
+    const { initializeLibertadoresSeason } = await import('../services/libertadoresEngine');
+    const { 
+        initializeSudamericanaSeason, 
+        buildSudamericanaParticipants, 
+        simulateNationalPreliminaries, 
+        drawSudamericanaGroups 
+    } = await import('../services/sudamericanaEngine');
+    const { TEAMS } = await import('../constants');
+
+    const libInit = initializeLibertadoresSeason({ allTeams: TEAMS });
+    assert.equal(libInit.phase3Losers.length, 4, 'Libertadores must produce 4 Phase 3 losers');
+
+    const participants = buildSudamericanaParticipants({
+        allTeams: TEAMS,
+        libertadoresPhase3Losers: libInit.phase3Losers
+    });
+
+    assert.equal(participants.directToGroupsArg.length, 6, 'Argentina must have 6 direct group teams');
+    assert.equal(participants.directToGroupsBra.length, 6, 'Brasil must have 6 direct group teams');
+    assert.equal(Object.keys(participants.nationalPreliminaries).length, 8, 'Must have 8 non-Arg/Bra associations');
+    Object.values(participants.nationalPreliminaries).forEach(teams => {
+        assert.equal(teams.length, 4, 'Each association must have 4 teams in national prelims');
+    });
+
+    const { nationalWinners, preliminaryFixtures } = simulateNationalPreliminaries(participants.nationalPreliminaries);
+    assert.equal(nationalWinners.length, 16, 'National prelims must produce 16 winners (2 per country)');
+    assert.equal(preliminaryFixtures.length, 16, 'National prelims must have 16 single-leg matches');
+    assert.equal(preliminaryFixtures[0].week, 6, 'National prelims must be scheduled for week 6');
+
+    const directQualifiers = [...nationalWinners, ...participants.directToGroupsArg, ...participants.directToGroupsBra];
+    assert.equal(directQualifiers.length, 28, 'Must have 28 direct qualifiers (16 national + 6 ARG + 6 BRA)');
+
+    const groups = drawSudamericanaGroups(directQualifiers, libInit.phase3Losers);
+    assert.equal(groups.length, 8, 'Sudamericana must have 8 groups A-H');
+    groups.forEach(g => {
+        assert.equal(g.teams.length, 4, 'Each group must have 4 teams');
+        assert.equal(g.fixtures.length, 12, 'Each group must have 12 matches (6 matchdays x 2 matches)');
+    });
+
+    const sudInit = initializeSudamericanaSeason({
+        allTeams: TEAMS,
+        libertadoresPhase3Losers: libInit.phase3Losers
+    });
+    assert.equal(sudInit.cup.id, 'copa_sudamericana');
+    assert.equal(sudInit.cup.phase, 'groups');
+    assert.equal(sudInit.cup.groups?.length, 8);
+    assert.equal(sudInit.fixtures.length, 16 + (8 * 12), 'Total fixtures: 16 prelim + 96 group stage = 112 matches');
 });
 
+test('Copa Sudamericana: generates Playoff de Octavos (Week 20) with 8 2nd-place Sudamericana vs 8 3rd-place Libertadores', async () => {
+    const { generateSudamericanaPlayoff } = await import('../services/sudamericanaEngine');
+    const { TEAMS } = await import('../constants');
 
+    const sudRunnersUp = TEAMS.slice(0, 8).map((t, i) => ({
+        team: t,
+        points: 15 - i,
+        goalDifference: 10 - i,
+        goalsFor: 12 - i
+    }));
 
+    const libThirds = TEAMS.slice(8, 16).map((t, i) => ({
+        team: t,
+        points: 12 - i,
+        goalDifference: 6 - i,
+        goalsFor: 8 - i
+    }));
+
+    const playoffs = generateSudamericanaPlayoff(sudRunnersUp, libThirds, 20);
+    assert.equal(playoffs.length, 8, 'Playoff must have 8 matches');
+    assert.equal(playoffs[0].week, 20, 'Playoffs must be scheduled for week 20');
+
+    // Best Sudamericana (index 0) vs Worst Libertadores (index 7)
+    assert.equal(playoffs[0].homeTeamId, sudRunnersUp[0].team.id, 'Best Sudamericana runner-up plays at home');
+    assert.equal(playoffs[0].awayTeamId, libThirds[7].team.id, 'Plays against worst Libertadores 3rd place');
+
+    // Worst Sudamericana (index 7) vs Best Libertadores (index 0)
+    assert.equal(playoffs[7].homeTeamId, sudRunnersUp[7].team.id);
+    assert.equal(playoffs[7].awayTeamId, libThirds[0].team.id);
+});
+
+test('Copa Sudamericana: advances to Octavos de Final (Week 24) with group winners vs playoff winners', async () => {
+    const { drawSudamericanaOctavos } = await import('../services/sudamericanaEngine');
+    const { TEAMS } = await import('../constants');
+
+    const groupWinners = TEAMS.slice(0, 8);
+    const playoffWinners = TEAMS.slice(8, 16);
+
+    const octavos = drawSudamericanaOctavos(groupWinners, playoffWinners, 24);
+    assert.equal(octavos.length, 8, 'Octavos must have 8 matches');
+    assert.equal(octavos[0].week, 24, 'Octavos must be scheduled for week 24');
+    octavos.forEach(match => {
+        assert.ok(groupWinners.some(t => t.id === match.homeTeamId), 'Group winners play as home');
+        assert.ok(playoffWinners.some(t => t.id === match.awayTeamId), 'Playoff winners play as away');
+    });
+});
+
+test('Copa Sudamericana: champion earns qualification into Copa Libertadores Pot 2', async () => {
+    const { initializeLibertadoresSeason, buildLibertadoresParticipants } = await import('../services/libertadoresEngine');
+    const { TEAMS } = await import('../constants');
+
+    // Sudamericana champion is team 9130 (Everton de Viña)
+    const sudWinnerId = 9130;
+    const participants = buildLibertadoresParticipants({
+        allTeams: TEAMS,
+        lastSudamericanaWinnerId: sudWinnerId
+    });
+
+    assert.ok(participants.directToGroups.some(t => t.id === sudWinnerId), 'Sudamericana champion must qualify direct to Libertadores groups');
+});
 

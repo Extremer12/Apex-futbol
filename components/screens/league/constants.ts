@@ -52,6 +52,7 @@ export const CUP_LOGOS: Record<string, string> = {
 export const CUP_THEMES: Record<string, { accent: string; bg: string; border: string }> = {
     champions_league: { accent: 'text-indigo-400', bg: 'from-indigo-950 via-slate-950 to-slate-950', border: 'border-indigo-500/40' },
     copa_libertadores: { accent: 'text-amber-400', bg: 'from-amber-950 via-slate-950 to-slate-950', border: 'border-amber-500/40' },
+    copa_sudamericana: { accent: 'text-amber-500', bg: 'from-amber-950 via-slate-950 to-slate-950', border: 'border-amber-600/40' },
     copa_intercontinental: { accent: 'text-emerald-400', bg: 'from-emerald-950 via-slate-950 to-slate-950', border: 'border-emerald-500/40' },
     fa_cup: { accent: 'text-red-400', bg: 'from-red-950 via-slate-950 to-slate-950', border: 'border-red-500/40' },
     carabao_cup: { accent: 'text-green-400', bg: 'from-green-950 via-slate-950 to-slate-950', border: 'border-green-500/40' },
@@ -79,6 +80,7 @@ export const ALL_COMPETITIONS: CompetitionItem[] = [
     // Internacionales
     { id: 'CHAMPIONS_LEAGUE', name: 'Champions League', type: 'CUP', logo: CUP_LOGOS.champions_league, category: 'INTERNATIONAL', cupKey: 'championsLeague' },
     { id: 'COPA_LIBERTADORES', name: 'Copa Libertadores', type: 'CUP', logo: CUP_LOGOS.copa_libertadores, category: 'INTERNATIONAL', cupKey: 'copaLibertadores' },
+    { id: 'COPA_SUDAMERICANA', name: 'Copa Sudamericana', type: 'CUP', logo: CUP_LOGOS.copa_sudamericana, category: 'INTERNATIONAL', cupKey: 'copaSudamericana' },
     { id: 'COPA_INTERCONTINENTAL', name: 'Copa Intercontinental', type: 'CUP', logo: CUP_LOGOS.copa_intercontinental, category: 'INTERNATIONAL', cupKey: 'copaIntercontinental' },
 
     // Inglaterra

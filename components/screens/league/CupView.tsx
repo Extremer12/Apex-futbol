@@ -45,7 +45,7 @@ export const CupView: React.FC<CupViewProps> = ({
                         <div key={idx} className="bg-slate-900/50 border border-white/5 rounded-2xl overflow-hidden">
                             <div className="bg-amber-600/20 px-4 py-3 border-b border-amber-500/30 flex justify-between items-center">
                                 <h4 className="text-amber-400 font-black text-sm uppercase tracking-tighter">{group.name}</h4>
-                                <span className="text-[10px] font-bold text-amber-500/50 uppercase">Libertadores</span>
+                                <span className="text-[10px] font-bold text-amber-500/50 uppercase">{cup.name}</span>
                             </div>
                             <table className="w-full text-[11px]">
                                 <thead>
@@ -91,6 +91,7 @@ export const CupView: React.FC<CupViewProps> = ({
         'Quarter-Final': 'Cuartos de Final',
         'Round of 16': 'Octavos de Final',
         'Round of 32': 'Dieciseisavos de Final',
+        'Playoff Octavos': 'Playoff de Octavos de Final',
         'Final Intercontinental': 'Duelo por la Gloria Eterna'
     };
 
