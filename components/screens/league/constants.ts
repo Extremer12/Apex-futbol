@@ -17,8 +17,8 @@ export const LEAGUE_THEMES: Record<string, string> = {
 };
 
 export const LEAGUE_LOGOS: Record<string, string> = {
-    PREMIER_LEAGUE: '/logos/Premier League.png',
-    CHAMPIONSHIP: '/logos/Sky Bet Championship.png',
+    PREMIER_LEAGUE: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Premier%20League/england_english-premier-league.football-logos.cc.svg',
+    CHAMPIONSHIP: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Championship/england_efl-championship.football-logos.cc.svg',
     LA_LIGA: 'https://tmssl.akamaized.net/images/logo/header/es1.png',
     SEGUNDA_DIVISION_ESP: 'https://tmssl.akamaized.net/images/logo/header/es2.png',
     BUNDESLIGA: 'https://tmssl.akamaized.net/images/logo/header/l1.png',

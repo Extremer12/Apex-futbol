@@ -18,7 +18,46 @@ export function useGameSave(
     const [currentSaveName, setCurrentSaveName] = useState<string | null>(null);
     const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
-    // Debounced auto-saving effect to avoid freezing the main UI thread during week transition
+    // 1. Initial Auto-Save when entering a club for the first time
+    useEffect(() => {
+        if (appState === 'GAME_ACTIVE' && gameState && playerProfile && !currentSaveId) {
+            const autoId = `save_${Date.now()}`;
+            const autoName = `${gameState.team.name} - Temp ${gameState.season || 1}`;
+            setCurrentSaveId(autoId);
+            setCurrentSaveName(autoName);
+
+            const now = new Date();
+            const initialSaveData: SavedGameData = {
+                id: autoId,
+                saveName: autoName,
+                playerProfile,
+                gameState,
+                teamName: gameState.team.name,
+                lastSaved: now,
+            };
+
+            // Immediate local persistence
+            saveGame(initialSaveData)
+                .then(async () => {
+                    setLastSaved(now);
+                    // Immediate cloud upload if user has Supabase session
+                    try {
+                        const { data: { user } } = await supabase.auth.getUser();
+                        if (user) {
+                            await uploadSaveToCloud(autoId, autoName, gameState, playerProfile);
+                            showNotification(`Partida guardada en la nube (${gameState.team.name}) ☁️`, 'success');
+                        } else {
+                            showNotification(`Partida guardada automáticamente`, 'info');
+                        }
+                    } catch (cloudErr) {
+                        console.warn('Initial cloud sync notice:', cloudErr);
+                    }
+                })
+                .catch(err => console.error("Initial auto-save failed:", err));
+        }
+    }, [appState, gameState, playerProfile, currentSaveId, showNotification]);
+
+    // 2. Debounced auto-saving effect to avoid freezing the main UI thread during week transition
     useEffect(() => {
         if (appState === 'GAME_ACTIVE' && gameState && playerProfile && currentSaveId && currentSaveName && matchPhase === 'PRE') {
             const timeoutId = setTimeout(() => {

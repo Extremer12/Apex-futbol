@@ -51,7 +51,7 @@ export const TEAM_LOGOS: Record<string, string> = {
     'Everton': '/logos/Everton FC.png',
     'Fulham': '/logos/Fulham FC.png',
     'Ipswich Town': '/logos/Ipswich Town FC.png',
-    'Leicester City': '/logos/Leicester City FC.png',
+    'Leicester City': 'https://tmssl.akamaized.net/images/wappen/head/1003.png',
     'Liverpool': '/logos/Liverpool FC.png',
     'Manchester City': '/logos/Manchester City FC.png',
     'Manchester United': '/logos/Manchester United FC.png',

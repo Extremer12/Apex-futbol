@@ -5,7 +5,7 @@ import { ALL_COMPETITIONS } from './league/constants';
 import { LeagueTable } from './league/LeagueTable';
 import { CupView } from './league/CupView';
 import { customPacksService } from '../../services/customPacks/packService';
-import { Search, Trophy, Globe, ChevronRight } from 'lucide-react';
+import { Search, Trophy, Globe, ChevronRight, X, Layers } from 'lucide-react';
 
 interface LeagueScreenProps {
     gameState: GameState;
@@ -13,14 +13,15 @@ interface LeagueScreenProps {
 
 const COUNTRIES = [
     { id: 'MY_LEAGUE', label: 'Mi Liga', isSpecial: true },
+    { id: 'INTERNATIONAL', label: 'Copas Internacionales', isIntl: true },
+    { id: 'Argentina', label: 'Argentina', flag: 'https://flagcdn.com/ar.svg' },
     { id: 'Inglaterra', label: 'Inglaterra', flag: 'https://flagcdn.com/gb-eng.svg' },
     { id: 'España', label: 'España', flag: 'https://flagcdn.com/es.svg' },
+    { id: 'Brasil', label: 'Brasil', flag: 'https://flagcdn.com/br.svg' },
+    { id: 'Paraguay', label: 'Paraguay', flag: 'https://flagcdn.com/py.svg' },
     { id: 'Alemania', label: 'Alemania', flag: 'https://flagcdn.com/de.svg' },
     { id: 'Italia', label: 'Italia', flag: 'https://flagcdn.com/it.svg' },
     { id: 'Francia', label: 'Francia', flag: 'https://flagcdn.com/fr.svg' },
-    { id: 'Argentina', label: 'Argentina', flag: 'https://flagcdn.com/ar.svg' },
-    { id: 'Brasil', label: 'Brasil', flag: 'https://flagcdn.com/br.svg' },
-    { id: 'INTERNATIONAL', label: 'Copas Internacionales', isIntl: true },
 ];
 
 export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
@@ -46,6 +47,7 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
     }, [nextMatch, playerTeamLeague]);
 
     const [selectedCompetitionId, setSelectedCompetitionId] = useState<string>(initialCompetitionId);
+    const [isExplorerOpen, setIsExplorerOpen] = useState(false);
     const [activeCountry, setActiveCountry] = useState<string>('MY_LEAGUE');
     const [searchQuery, setSearchQuery] = useState('');
     const [cupTab, setCupTab] = useState<'ROUNDS' | 'STATS'>('ROUNDS');
@@ -54,8 +56,18 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
         return ALL_COMPETITIONS.find(c => c.id === selectedCompetitionId);
     }, [selectedCompetitionId]);
 
-    // Competitions for the currently active country/tab
-    const availableCompetitionsForTab = useMemo(() => {
+    // Fast domestic peers for the currently viewed competition
+    const domesticPeers = useMemo(() => {
+        if (!selectedCompDef) return [];
+        if (selectedCompDef.category === 'INTERNATIONAL') {
+            return ALL_COMPETITIONS.filter(c => c.category === 'INTERNATIONAL');
+        }
+        const country = selectedCompDef.country;
+        return ALL_COMPETITIONS.filter(c => c.country === country);
+    }, [selectedCompDef]);
+
+    // Competitions for the explorer modal active tab
+    const explorerCompetitions = useMemo(() => {
         if (activeCountry === 'MY_LEAGUE') {
             const myLeague = ALL_COMPETITIONS.find(c => c.id === playerTeamLeague);
             const myCountry = myLeague?.country;
@@ -67,7 +79,7 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
         return ALL_COMPETITIONS.filter(c => c.country === activeCountry);
     }, [activeCountry, playerTeamLeague]);
 
-    // Live search results
+    // Live search results inside explorer
     const searchResults = useMemo(() => {
         if (!searchQuery.trim()) return [];
         const q = searchQuery.toLowerCase();
@@ -81,6 +93,7 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
         setSelectedCompetitionId(id);
         setCupTab('ROUNDS');
         setSearchQuery('');
+        setIsExplorerOpen(false);
         if (country) {
             setActiveCountry(country);
         }
@@ -91,129 +104,243 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
         : '/sinlogo.png';
 
     return (
-        <div className="px-0 sm:px-4 md:px-6 py-2 sm:py-4 max-w-[1400px] w-full overflow-x-hidden mx-auto min-h-screen animate-fade-in space-y-3 sm:space-y-4">
-            {/* Top Bar: Selector y Buscador */}
-            <div className="mx-2 sm:mx-0 rounded-2xl bg-[#0E131F] border border-white/10 p-3 sm:p-4 shadow-xl space-y-3">
-                {/* Cabecera y Buscador */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    {/* Competición Activa */}
-                    <div className="flex items-center gap-3.5">
-                        <div className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center shrink-0 drop-shadow-[0_4px_14px_rgba(0,0,0,0.6)]">
+        <div className="px-0 sm:px-4 md:px-6 py-2 sm:py-3 max-w-[1400px] w-full overflow-x-hidden mx-auto min-h-screen animate-fade-in space-y-2.5 sm:space-y-3">
+            {/* Top Bar Compacta & Premium (No invade pantalla ni genera ruido) */}
+            <div className="mx-2 sm:mx-0 rounded-2xl bg-[#0E131F] border border-white/10 p-2.5 sm:p-3 shadow-lg">
+                <div className="flex items-center justify-between gap-3">
+                    {/* Competición Actual */}
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 shrink-0 flex items-center justify-center p-1 rounded-xl bg-white/[0.03] border border-white/5 drop-shadow-sm">
                             <img src={resolvedLogo} alt="" className="w-full h-full object-contain" />
                         </div>
-                        <div>
+                        <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                                <h1 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight">
+                                <h1 className="text-sm sm:text-base font-black text-white uppercase tracking-tight truncate">
                                     {selectedCompDef?.name || 'Tabla de Posiciones'}
                                 </h1>
                                 {selectedCompDef?.isFirstDiv && (
-                                    <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-[var(--apex-gold)]/15 text-[var(--apex-gold)] border border-[var(--apex-gold)]/30">
-                                        1ª División
+                                    <span className="text-[8px] sm:text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-[var(--apex-gold)]/15 text-[var(--apex-gold)] border border-[var(--apex-gold)]/30 shrink-0">
+                                        1ª Div
+                                    </span>
+                                )}
+                                {selectedCompDef?.type === 'CUP' && (
+                                    <span className="text-[8px] sm:text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
+                                        Copa
                                     </span>
                                 )}
                             </div>
-                            <p className="text-[11px] text-slate-400">
-                                {selectedCompDef?.country || 'Torneo Oficial'} • {selectedCompDef?.type === 'LEAGUE' ? 'Tabla de Posiciones' : 'Fase Eliminatoria'}
-                            </p>
+                            <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.5">
+                                <span>{selectedCompDef?.country || 'Internacional'}</span>
+                                <span>•</span>
+                                <span>{selectedCompDef?.type === 'LEAGUE' ? 'Tabla General' : 'Eliminatorias'}</span>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Buscador Rápido */}
-                    <div className="relative w-full sm:w-72">
-                        <div className="relative">
-                            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                            <input
-                                type="text"
-                                placeholder="Buscar competición..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full bg-[#161D2E] border border-white/10 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[var(--apex-gold)] transition-colors"
-                            />
+                    {/* Botón Principal: Explorar Torneos */}
+                    <button
+                        onClick={() => setIsExplorerOpen(true)}
+                        className="px-3 py-2 rounded-xl bg-gradient-to-r from-[var(--apex-gold)]/20 to-amber-500/10 hover:from-[var(--apex-gold)]/30 hover:to-amber-500/20 border border-[var(--apex-gold)]/40 hover:border-[var(--apex-gold)] text-white text-xs font-black uppercase tracking-wider flex items-center gap-2 shrink-0 shadow-md transition-all active:scale-95 cursor-pointer"
+                        title="Explorar ligas y copas de otros países"
+                    >
+                        <Globe className="w-4 h-4 text-[var(--apex-gold)]" />
+                        <span className="hidden sm:inline">Explorar Torneos</span>
+                        <span className="sm:hidden">Torneos</span>
+                        <ChevronRight className="w-3.5 h-3.5 text-[var(--apex-gold)]" />
+                    </button>
+                </div>
+
+                {/* Sub-Pills Limpias y Compactas (Solo torneos locales del país actual) */}
+                {domesticPeers.length > 1 && (
+                    <div className="flex items-center gap-1.5 overflow-x-auto pt-2 mt-2 border-t border-white/5 custom-scrollbar">
+                        {domesticPeers.map((comp) => {
+                            const isSelected = selectedCompetitionId === comp.id;
+                            const compLogo = customPacksService.resolveCompetitionLogo(comp.id, comp.name, comp.logo);
+                            return (
+                                <button
+                                    key={comp.id}
+                                    onClick={() => handleSelectComp(comp.id)}
+                                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold tracking-wide flex items-center gap-1.5 shrink-0 transition-all cursor-pointer ${
+                                        isSelected
+                                            ? 'bg-white/20 text-white border border-white/30 shadow'
+                                            : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-200 border border-transparent'
+                                    }`}
+                                >
+                                    <div className="w-3.5 h-3.5 shrink-0">
+                                        <img src={compLogo} alt="" className="w-full h-full object-contain" />
+                                    </div>
+                                    <span className="truncate max-w-[130px]">{comp.name}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+
+            {/* Modal / Drawer Premium de Exploración de Torneos */}
+            {isExplorerOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-md animate-fade-in">
+                    <div className="w-full max-w-2xl bg-[#0D121F] border border-white/15 rounded-3xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden animate-scale-in">
+                        {/* Modal Header */}
+                        <div className="p-4 sm:p-5 border-b border-white/10 flex items-center justify-between">
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-xl bg-[var(--apex-gold)]/15 border border-[var(--apex-gold)]/30 flex items-center justify-center text-[var(--apex-gold)]">
+                                    <Trophy className="w-4 h-4" />
+                                </div>
+                                <div>
+                                    <h2 className="text-base font-black text-white uppercase tracking-tight">Explorar Torneos</h2>
+                                    <p className="text-[10px] text-slate-400">Busca y consulta ligas y copas del mundo</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => { setIsExplorerOpen(false); setSearchQuery(''); }}
+                                className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-colors cursor-pointer"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
                         </div>
 
-                        {/* Dropdown de Resultados de Búsqueda */}
-                        {searchResults.length > 0 && (
-                            <div className="absolute top-full left-0 right-0 mt-1.5 bg-[#121828] border border-white/15 rounded-xl shadow-2xl p-1.5 z-50 max-h-60 overflow-y-auto custom-scrollbar space-y-1">
-                                {searchResults.map((c) => {
-                                    const logo = customPacksService.resolveCompetitionLogo(c.id, c.name, c.logo);
-                                    return (
-                                        <button
-                                            key={c.id}
-                                            onClick={() => handleSelectComp(c.id, c.country || 'INTERNATIONAL')}
-                                            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-white/10 text-left transition-colors cursor-pointer"
-                                        >
-                                            <div className="w-6 h-6 shrink-0">
-                                                <img src={logo} alt="" className="w-full h-full object-contain" />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="text-xs font-bold text-white truncate">{c.name}</div>
-                                                <div className="text-[10px] text-slate-400">{c.country || 'Internacional'}</div>
-                                            </div>
-                                            <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
-                                        </button>
-                                    );
-                                })}
+                        {/* Search Box */}
+                        <div className="p-3 sm:p-4 border-b border-white/5 bg-[#111726]">
+                            <div className="relative">
+                                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                                <input
+                                    type="text"
+                                    placeholder="Buscar por liga, copa o país (ej. Premier, Libertadores, Paraguay)..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    autoFocus
+                                    className="w-full bg-[#172033] border border-white/10 rounded-xl pl-10 pr-9 py-2.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-[var(--apex-gold)] transition-colors"
+                                />
+                                {searchQuery && (
+                                    <button
+                                        onClick={() => setSearchQuery('')}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                                    >
+                                        <X className="w-3.5 h-3.5" />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Search Results Mode */}
+                        {searchQuery.trim() ? (
+                            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-2">
+                                <div className="text-[10px] font-bold tracking-widest text-slate-400 uppercase mb-2">
+                                    Resultados ({searchResults.length})
+                                </div>
+                                {searchResults.length === 0 ? (
+                                    <div className="py-12 text-center text-slate-400 text-xs">
+                                        No se encontraron torneos con "{searchQuery}"
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        {searchResults.map((c) => {
+                                            const logo = customPacksService.resolveCompetitionLogo(c.id, c.name, c.logo);
+                                            const isSelected = selectedCompetitionId === c.id;
+                                            return (
+                                                <button
+                                                    key={c.id}
+                                                    onClick={() => handleSelectComp(c.id, c.country || 'INTERNATIONAL')}
+                                                    className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                                                        isSelected
+                                                            ? 'bg-[var(--apex-gold)]/10 border-[var(--apex-gold)] shadow-md'
+                                                            : 'bg-white/[0.03] hover:bg-white/[0.07] border-white/5'
+                                                    }`}
+                                                >
+                                                    <div className="w-8 h-8 shrink-0 flex items-center justify-center">
+                                                        <img src={logo} alt="" className="w-full h-full object-contain" />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="text-xs font-black text-white truncate uppercase">{c.name}</div>
+                                                        <div className="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                                                            <span>{c.country || 'Internacional'}</span>
+                                                            <span>•</span>
+                                                            <span className="text-[var(--apex-gold)] font-bold">
+                                                                {c.type === 'LEAGUE' ? (c.isFirstDiv ? '1ª Div' : '2ª Div') : 'Copa'}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <ChevronRight className="w-4 h-4 text-slate-500" />
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            /* Categorized Mode: Clean Country Tabs & Grid */
+                            <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                                {/* Country Selector Chips */}
+                                <div className="flex items-center gap-1.5 p-3 overflow-x-auto border-b border-white/5 custom-scrollbar bg-[#0A0E17]/40 shrink-0">
+                                    {COUNTRIES.map((cty) => {
+                                        const isActive = activeCountry === cty.id;
+                                        return (
+                                            <button
+                                                key={cty.id}
+                                                onClick={() => setActiveCountry(cty.id)}
+                                                className={`px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition-all cursor-pointer ${
+                                                    isActive
+                                                        ? 'bg-[var(--apex-gold)] text-slate-950 font-black shadow-md'
+                                                        : 'bg-white/[0.04] text-slate-300 hover:bg-white/[0.08] border border-white/5'
+                                                }`}
+                                            >
+                                                {cty.isSpecial ? (
+                                                    <span>🌟</span>
+                                                ) : cty.isIntl ? (
+                                                    <Trophy className="w-3.5 h-3.5" />
+                                                ) : cty.flag ? (
+                                                    <img src={cty.flag} alt="" className="w-4 h-3 object-cover rounded-[2px]" />
+                                                ) : (
+                                                    <Globe className="w-3.5 h-3.5" />
+                                                )}
+                                                <span>{cty.label}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Torneos Grid */}
+                                <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                        {explorerCompetitions.map((comp) => {
+                                            const isSelected = selectedCompetitionId === comp.id;
+                                            const compLogo = customPacksService.resolveCompetitionLogo(comp.id, comp.name, comp.logo);
+                                            return (
+                                                <button
+                                                    key={comp.id}
+                                                    onClick={() => handleSelectComp(comp.id)}
+                                                    className={`w-full flex items-center gap-3.5 p-3.5 rounded-2xl border text-left transition-all active:scale-[0.98] cursor-pointer ${
+                                                        isSelected
+                                                            ? 'bg-[var(--apex-gold)]/10 border-[var(--apex-gold)] shadow-lg'
+                                                            : 'bg-white/[0.03] hover:bg-white/[0.07] border-white/5'
+                                                    }`}
+                                                >
+                                                    <div className="w-10 h-10 shrink-0 flex items-center justify-center p-1 rounded-xl bg-white/[0.03]">
+                                                        <img src={compLogo} alt="" className="w-full h-full object-contain" />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="text-xs font-black text-white uppercase tracking-tight truncate">
+                                                            {comp.name}
+                                                        </div>
+                                                        <div className="flex items-center gap-2 mt-1 text-[10px] text-slate-400">
+                                                            <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/5">
+                                                                {comp.type === 'LEAGUE' ? (comp.isFirstDiv ? '1ª División' : '2ª División') : 'Torneo de Copa'}
+                                                            </span>
+                                                            {comp.country && <span>{comp.country}</span>}
+                                                        </div>
+                                                    </div>
+                                                    <ChevronRight className="w-4 h-4 text-slate-500" />
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>
                 </div>
-
-                {/* Tabs de Países y Categorías (Scroll Horizontal Limpio) */}
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 custom-scrollbar pt-1">
-                    {COUNTRIES.map((cty) => {
-                        const isActive = activeCountry === cty.id;
-                        return (
-                            <button
-                                key={cty.id}
-                                onClick={() => setActiveCountry(cty.id)}
-                                className={`px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 shrink-0 transition-all cursor-pointer ${
-                                    isActive
-                                        ? 'bg-[var(--apex-gold)] text-slate-950 shadow-md font-black'
-                                        : 'bg-[#161D2E] text-slate-300 hover:bg-[#1C253B] border border-white/5'
-                                }`}
-                            >
-                                {cty.isSpecial ? (
-                                    <span>🌟</span>
-                                ) : cty.isIntl ? (
-                                    <Trophy className="w-3.5 h-3.5" />
-                                ) : cty.flag ? (
-                                    <img src={cty.flag} alt="" className="w-4 h-3 object-cover rounded-[2px]" />
-                                ) : (
-                                    <Globe className="w-3.5 h-3.5" />
-                                )}
-                                <span>{cty.label}</span>
-                            </button>
-                        );
-                    })}
-                </div>
-
-                {/* Sub-Pills de Competiciones del País Seleccionado */}
-                <div className="flex items-center gap-2 overflow-x-auto pt-1 custom-scrollbar border-t border-white/5">
-                    {availableCompetitionsForTab.map((comp) => {
-                        const isSelected = selectedCompetitionId === comp.id;
-                        const compLogo = customPacksService.resolveCompetitionLogo(comp.id, comp.name, comp.logo);
-                        return (
-                            <button
-                                key={comp.id}
-                                onClick={() => handleSelectComp(comp.id)}
-                                className={`px-3 py-1.5 rounded-lg text-[11px] font-bold tracking-wide flex items-center gap-2 shrink-0 transition-all cursor-pointer ${
-                                    isSelected
-                                        ? 'bg-white/20 text-white border border-white/30 shadow'
-                                        : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-200 border border-transparent'
-                                }`}
-                            >
-                                <div className="w-4 h-4 shrink-0">
-                                    <img src={compLogo} alt="" className="w-full h-full object-contain" />
-                                </div>
-                                <span>{comp.name}</span>
-                                {comp.type === 'CUP' && (
-                                    <span className="text-[9px] text-amber-400 uppercase font-black">Copa</span>
-                                )}
-                            </button>
-                        );
-                    })}
-                </div>
-            </div>
+            )}
 
             {/* Contenido Principal: Tabla de Posiciones / Vista de Copa (Directo, Limpio y a Ancho Completo) */}
             <div className="w-full min-w-0 animate-fade-in">

@@ -26,8 +26,8 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
         ENG: {
             title: 'La Cuna del Fútbol',
             leagues: [
-                { id: LeagueId.PREMIER_LEAGUE, name: 'Premier League', logo: '/logos/Premier League.png', teams: '20', div: '1ª División' },
-                { id: LeagueId.CHAMPIONSHIP, name: 'Championship', logo: '/logos/Sky Bet Championship.png', teams: '24', div: '2ª División' }
+                { id: LeagueId.PREMIER_LEAGUE, name: 'Premier League', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Premier%20League/england_english-premier-league.football-logos.cc.svg', teams: '20', div: '1ª División' },
+                { id: LeagueId.CHAMPIONSHIP, name: 'Championship', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Championship/england_efl-championship.football-logos.cc.svg', teams: '24', div: '2ª División' }
             ]
         },
         ARG: {
@@ -92,15 +92,15 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
     ];
 
     const FAN_EXPECTATIONS: Record<Team['tier'], string> = {
-        Top: 'Ganar la Liga',
-        Mid: 'Pelear Títulos',
-        Lower: 'Clasificar a Copas',
+        Top: 'Ganar Liga',
+        Mid: 'Pelear Título',
+        Lower: 'Clasificar Copas',
     };
 
     const FINANCIAL_STATUS: Record<Team['tier'], { label: string; color: string }> = {
-        Top: { label: 'Muy Sólidas', color: 'var(--apex-green)' },
-        Mid: { label: 'Sólidas', color: 'var(--apex-green-light)' },
-        Lower: { label: 'Estables', color: 'var(--apex-gold)' },
+        Top: { label: 'Muy Sólidas', color: '#10B981' },
+        Mid: { label: 'Sólidas', color: '#3B82F6' },
+        Lower: { label: 'Estables', color: '#F59E0B' },
     };
 
     const teamsByLeague = useMemo(() => {
@@ -263,37 +263,48 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                                 <button
                                     key={team.id}
                                     onClick={() => setSelectedTeam(team)}
-                                    className="relative p-4 rounded-2xl text-left transition-all duration-300 active:scale-[0.97] animate-scale-in"
+                                    className="relative p-3.5 rounded-2xl text-left transition-all duration-300 active:scale-[0.97] animate-scale-in flex flex-col justify-between h-full group cursor-pointer"
                                     style={{
                                         animationDelay: `${i * 30}ms`,
-                                        background: isSelected ? 'rgba(200,168,78,0.06)' : 'var(--apex-card)',
-                                        border: `1px solid ${isSelected ? 'var(--apex-gold)' : 'var(--apex-border)'}`,
+                                        background: isSelected ? 'rgba(200,168,78,0.08)' : 'var(--apex-card)',
+                                        border: `1.5px solid ${isSelected ? 'var(--apex-gold)' : 'rgba(255,255,255,0.08)'}`,
+                                        boxShadow: isSelected ? '0 0 16px rgba(200,168,78,0.2)' : 'none',
                                     }}
                                 >
                                     {isSelected && (
-                                        <div className="absolute top-2 right-2">
-                                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--apex-gold)' }}>
-                                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                                            </svg>
+                                        <div className="absolute top-2.5 right-2.5">
+                                            <span className="w-5 h-5 rounded-full bg-[var(--apex-gold)] text-slate-950 flex items-center justify-center shadow-md">
+                                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                                                </svg>
+                                            </span>
                                         </div>
                                     )}
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <div className="w-10 h-10">
-                                            <TeamLogo team={team} className="w-full h-full" />
+
+                                    {/* Cabecera del club */}
+                                    <div className="flex items-center gap-2.5 mb-2.5 pr-4">
+                                        <div className="w-10 h-10 shrink-0 flex items-center justify-center drop-shadow-sm">
+                                            <TeamLogo team={team} className="w-full h-full object-contain" />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <div className="text-xs font-extrabold text-white uppercase leading-tight truncate">{team.name}</div>
+                                            <div className="text-xs font-black text-white uppercase leading-tight truncate">{team.name}</div>
+                                            <div className="text-[10px] text-slate-400 truncate mt-0.5">€{team.budget}M Presupuesto</div>
                                         </div>
                                     </div>
 
-                                    <div className="space-y-1.5">
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-[9px]" style={{ color: 'var(--apex-text-muted)' }}>Finanzas</span>
-                                            <span className="text-[9px] font-bold" style={{ color: FINANCIAL_STATUS[team.tier].color }}>{FINANCIAL_STATUS[team.tier].label}</span>
+                                    {/* Métricas Simétricas de 2 Columnas */}
+                                    <div className="w-full pt-2.5 border-t border-white/[0.08] grid grid-cols-2 gap-1.5 mt-auto">
+                                        <div className="bg-white/[0.03] rounded-xl py-1.5 px-1.5 flex flex-col items-center justify-center text-center">
+                                            <span className="text-[8px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Finanzas</span>
+                                            <span className="text-[10px] font-black tracking-tight truncate w-full" style={{ color: FINANCIAL_STATUS[team.tier].color }}>
+                                                {FINANCIAL_STATUS[team.tier].label}
+                                            </span>
                                         </div>
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-[9px]" style={{ color: 'var(--apex-text-muted)' }}>Expectativa</span>
-                                            <span className="text-[9px] font-bold" style={{ color: 'var(--apex-gold)' }}>{FAN_EXPECTATIONS[team.tier]}</span>
+                                        <div className="bg-white/[0.03] rounded-xl py-1.5 px-1.5 flex flex-col items-center justify-center text-center">
+                                            <span className="text-[8px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Objetivo</span>
+                                            <span className="text-[10px] font-black tracking-tight truncate w-full text-amber-300">
+                                                {FAN_EXPECTATIONS[team.tier]}
+                                            </span>
                                         </div>
                                     </div>
                                 </button>
@@ -303,29 +314,48 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
 
                     {/* Selected Team Detail */}
                     {selectedTeam && (
-                        <div className="apex-card p-4 mt-4 animate-slide-up">
-                            <div className="flex items-center gap-3 mb-2">
-                                <div className="w-8 h-8"><TeamLogo team={selectedTeam} className="w-full h-full" /></div>
-                                <div>
-                                    <div className="text-sm font-extrabold text-white uppercase">{selectedTeam.name}</div>
-                                    <div className="text-[10px]" style={{ color: 'var(--apex-text-secondary)' }}>
-                                        {selectedTeam.tier === 'Top' ? 'Uno de los clubes más icónicos del mundo.' :
-                                         selectedTeam.tier === 'Mid' ? 'Un club con ambición y gran potencial.' :
-                                         'Un proyecto en crecimiento listo para tu liderazgo.'}
+                        <div className="apex-card p-4 mt-4 animate-slide-up border border-[var(--apex-gold)]/40 shadow-2xl">
+                            <div className="flex items-center gap-3.5 mb-3">
+                                <div className="w-12 h-12 shrink-0 flex items-center justify-center drop-shadow-md">
+                                    <TeamLogo team={selectedTeam} className="w-full h-full object-contain" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                        <div className="text-base font-black text-white uppercase truncate">{selectedTeam.name}</div>
+                                        <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-[var(--apex-gold)]/15 text-[var(--apex-gold)] border border-[var(--apex-gold)]/30 shrink-0">
+                                            {selectedTeam.tier === 'Top' ? 'Élite' : selectedTeam.tier === 'Mid' ? 'Primera' : 'Ascenso / Copas'}
+                                        </span>
+                                    </div>
+                                    <div className="text-[11px] text-slate-400 mt-0.5 line-clamp-1">
+                                        {selectedTeam.tier === 'Top' ? 'Uno de los clubes con mayor historia y ambición continental.' :
+                                         selectedTeam.tier === 'Mid' ? 'Un club con bases firmes y aspiración de pelear arriba.' :
+                                         'Un proyecto desafiante preparado para tu visión de gestión.'}
                                     </div>
                                 </div>
                             </div>
-                            <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-white/5">
-                                {[
-                                    { icon: '🏆', label: 'Historia' },
-                                    { icon: '👥', label: 'Plantel' },
-                                    { icon: '💰', label: 'Finanzas' },
-                                ].map(item => (
-                                    <div key={item.label} className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-white/[0.02]">
-                                        <span className="text-sm">{item.icon}</span>
-                                        <span className="text-[10px] font-semibold text-white/75">{item.label}</span>
+
+                            {/* Desglose Simétrico de 4 Métricas */}
+                            <div className="grid grid-cols-4 gap-2 pt-3 border-t border-white/10 text-center">
+                                <div className="bg-white/[0.03] py-2 px-1 rounded-xl border border-white/5">
+                                    <div className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Presupuesto</div>
+                                    <div className="text-xs font-black text-white mt-0.5">€{selectedTeam.budget}M</div>
+                                </div>
+                                <div className="bg-white/[0.03] py-2 px-1 rounded-xl border border-white/5">
+                                    <div className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Fichajes</div>
+                                    <div className="text-xs font-black text-emerald-400 mt-0.5">€{selectedTeam.transferBudget}M</div>
+                                </div>
+                                <div className="bg-white/[0.03] py-2 px-1 rounded-xl border border-white/5">
+                                    <div className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Finanzas</div>
+                                    <div className="text-xs font-black mt-0.5 truncate" style={{ color: FINANCIAL_STATUS[selectedTeam.tier].color }}>
+                                        {FINANCIAL_STATUS[selectedTeam.tier].label}
                                     </div>
-                                ))}
+                                </div>
+                                <div className="bg-white/[0.03] py-2 px-1 rounded-xl border border-white/5">
+                                    <div className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Objetivo</div>
+                                    <div className="text-xs font-black text-amber-300 mt-0.5 truncate">
+                                        {FAN_EXPECTATIONS[selectedTeam.tier]}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}

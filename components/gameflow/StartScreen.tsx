@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { LoadingSpinner } from '../icons';
 import { AboutModal, PlaceholderModal } from './PlaceholderModals';
 import { getSavedGames } from '../../services/db';
+import { getCloudSaves } from '../../services/cloudSave';
+import { supabase } from '../../services/supabase';
 
 import { UserBadge } from '../auth/UserBadge';
 import { LeaderboardModal } from '../leaderboard/LeaderboardModal';
@@ -33,7 +35,15 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onNewGame, onLoadGameS
             setIsCheckingSaves(true);
             try {
                 const saves = await getSavedGames();
-                setHasSaves(saves.length > 0);
+                let hasAny = saves.length > 0;
+                if (!hasAny) {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (user) {
+                        const cloud = await getCloudSaves();
+                        hasAny = cloud.length > 0;
+                    }
+                }
+                setHasSaves(hasAny);
             } catch (e) {
                 console.error("Failed to check for saved games", e);
                 setHasSaves(false);

@@ -180,7 +180,7 @@ export const ARG_CLUB_LOGOS_BY_ID: Record<number | string, string> = {
     16: `${COMMUNITY_PACK_CDN}/Premier%20League/england_bournemouth.football-logos.cc.svg`,
     17: `${COMMUNITY_PACK_CDN}/Championship/england_wolves.football-logos.cc.svg`,
     18: `${COMMUNITY_PACK_CDN}/Premier%20League/england_ipswich.football-logos.cc.svg`,
-    19: `${COMMUNITY_PACK_CDN}/Premier%20League/england_english-premier-league.football-logos.cc.svg`,
+    19: 'https://tmssl.akamaized.net/images/wappen/head/1003.png',
     20: `${COMMUNITY_PACK_CDN}/Championship/england_southampton.football-logos.cc.svg`,
 
     // ==========================================
