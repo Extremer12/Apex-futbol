@@ -39,7 +39,16 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({
     onOpenSeasonEndModal
 }) => {
     const handlePlayerClick = (playerName: string) => {
-        const player = allPlayers.find(p => p.name === playerName);
+        let player = allPlayers.find(p => p.name === playerName);
+        if (!player && gameState) {
+            for (const t of gameState.allTeams) {
+                const found = t.squad.find(p => p.name === playerName);
+                if (found) {
+                    player = found;
+                    break;
+                }
+            }
+        }
         if (player) dispatch({ type: 'SET_VIEWING_PLAYER', payload: player });
     };
 

@@ -323,6 +323,18 @@ export function handleCupProgression(
             const nextRound = updatedCups.aperturaPlayoffs.rounds[updatedCups.aperturaPlayoffs.rounds.length - 1];
             updatedSchedule.push(...nextRound.fixtures);
         }
+
+        // Safety fallback: ensure final champion is crowned if final match completed
+        if (!updatedCups.aperturaPlayoffs.winnerId && updatedCups.aperturaPlayoffs.rounds.length > 0) {
+            const lastRound = updatedCups.aperturaPlayoffs.rounds[updatedCups.aperturaPlayoffs.rounds.length - 1];
+            if (lastRound.fixtures?.length === 1 && lastRound.fixtures[0].result !== undefined) {
+                const wId = determineCupWinner(lastRound.fixtures[0]);
+                if (wId) {
+                    updatedCups.aperturaPlayoffs.winnerId = wId;
+                    updatedCups.aperturaPlayoffs.phase = 'finished';
+                }
+            }
+        }
     }
 
     // 7. Argentine Playoffs (Torneo Clausura)
@@ -351,6 +363,18 @@ export function handleCupProgression(
         if (updatedCups.clausuraPlayoffs.rounds.length > prevRoundsCount) {
             const nextRound = updatedCups.clausuraPlayoffs.rounds[updatedCups.clausuraPlayoffs.rounds.length - 1];
             updatedSchedule.push(...nextRound.fixtures);
+        }
+
+        // Safety fallback: ensure final champion is crowned if final match completed
+        if (!updatedCups.clausuraPlayoffs.winnerId && updatedCups.clausuraPlayoffs.rounds.length > 0) {
+            const lastRound = updatedCups.clausuraPlayoffs.rounds[updatedCups.clausuraPlayoffs.rounds.length - 1];
+            if (lastRound.fixtures?.length === 1 && lastRound.fixtures[0].result !== undefined) {
+                const wId = determineCupWinner(lastRound.fixtures[0]);
+                if (wId) {
+                    updatedCups.clausuraPlayoffs.winnerId = wId;
+                    updatedCups.clausuraPlayoffs.phase = 'finished';
+                }
+            }
         }
     }
 

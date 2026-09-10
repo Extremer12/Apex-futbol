@@ -71,7 +71,7 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
             scoutedPlayerIds
         } = payload;
 
-        const nextWeek = currentTurn === 'midweek' ? currentWeek + 1 : currentWeek;
+        const nextWeek = currentWeek;
         const newSchedule = [...schedule];
 
         // Create Maps for easier update

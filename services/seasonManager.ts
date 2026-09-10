@@ -28,8 +28,18 @@ const PROMOTION_RELEGATION_PAIRS: [LeagueId, LeagueId][] = [
  * Handles aging, retirements, regens, promotion/relegation, and schedule generation
  */
 export function startNewSeason(currentState: GameState): GameState {
+    const isSouthAmerica = [
+        LeagueId.LIGA_ARGENTINA,
+        LeagueId.PRIMERA_NACIONAL,
+        LeagueId.BRASILEIRAO,
+        LeagueId.SERIE_B_BR,
+        LeagueId.COPA_DE_PRIMERA
+    ].includes(currentState.team.leagueId);
+
     const newSeasonYear = currentState.season + 1;
-    const newDate = new Date(`${newSeasonYear}-08-10`);
+    const newDate = isSouthAmerica 
+        ? new Date(`${newSeasonYear}-01-15T12:00:00`) 
+        : new Date(`${newSeasonYear}-08-10T12:00:00`);
 
     // 1. Process Aging & Retirements & Regens
     const processedTeams = currentState.allTeams.map(team => {

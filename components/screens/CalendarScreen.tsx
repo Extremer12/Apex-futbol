@@ -22,10 +22,20 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ gameState }) => 
 
     const getTeamById = (id: number): Team | undefined => gameState.allTeams.find(t => t.id === id);
 
+    const isSouthAmerica = [
+        LeagueId.LIGA_ARGENTINA,
+        LeagueId.PRIMERA_NACIONAL,
+        LeagueId.BRASILEIRAO,
+        LeagueId.SERIE_B_BR,
+        LeagueId.COPA_DE_PRIMERA
+    ].includes(gameState.team.leagueId);
+
     const getMonthName = (week: number) => {
-        const months = ['Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio'];
+        const europeanMonths = ['Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio'];
+        const southAmericanMonths = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        const months = isSouthAmerica ? southAmericanMonths : europeanMonths;
         const index = Math.min(Math.floor((week - 1) / 4), months.length - 1);
-        return months[Math.max(0, index)] || 'Junio';
+        return months[Math.max(0, index)] || months[months.length - 1];
     };
 
     const maxWeek = useMemo(() => {

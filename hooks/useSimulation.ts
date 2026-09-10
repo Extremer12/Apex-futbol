@@ -30,6 +30,8 @@ export function useSimulation(
 
         try {
             setIsSimulating(true);
+            // Yield to browser renderer so the button state switches immediately to 'Simulando...'
+            await new Promise(resolve => setTimeout(resolve, 30));
             setMatchPhase('LIVE');
 
             // 1. Worker simulation
@@ -38,7 +40,7 @@ export function useSimulation(
             const newDate = new Date(gameState.currentDate);
             newDate.setDate(newDate.getDate() + 7);
             const newWeek = gameState.currentWeek + 1;
-            const simulatedWeek = gameState.currentTurn === 'midweek' ? gameState.currentWeek + 1 : gameState.currentWeek;
+            const simulatedWeek = gameState.currentWeek;
 
             // 2. Restore React / JSX logos from previous state (logos stripped by Web Worker)
             const originalLogoMap = new Map(gameState.allTeams.map(t => [t.id, t.logo]));

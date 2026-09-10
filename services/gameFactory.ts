@@ -21,7 +21,15 @@ interface InitializeGameParams {
  * Creates the initial game state for a new game
  */
 export function initializeGame({ selectedTeam, playerProfile, initialPromises }: InitializeGameParams): GameState {
-    const now = new Date('2024-08-10');
+    const isSouthAmerica = [
+        LeagueId.LIGA_ARGENTINA,
+        LeagueId.PRIMERA_NACIONAL,
+        LeagueId.BRASILEIRAO,
+        LeagueId.SERIE_B_BR,
+        LeagueId.COPA_DE_PRIMERA
+    ].includes(selectedTeam.leagueId);
+
+    const now = isSouthAmerica ? new Date('2024-01-15T12:00:00') : new Date('2024-08-10T12:00:00');
 
     // Clone teams and assign ages and coaches
     const allTeamsCopy = TEAMS.map(t => ({

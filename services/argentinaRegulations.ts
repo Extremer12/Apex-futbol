@@ -1,4 +1,4 @@
-import { Team, Match, LeagueTableRow, CupCompetition } from '../types';
+import { Team, Match, LeagueTableRow, CupCompetition, LeagueId } from '../types';
 
 export interface ArgentineQualification {
     libertadores: { teamId: number; reason: string }[];
@@ -195,7 +195,7 @@ export function calculateTournamentStandings(
 
     const sortZone = (zoneName: 'A' | 'B'): TournamentStandingTeam[] => {
         return teams
-            .filter(t => t.zone === zoneName)
+            .filter(t => (t.leagueId === LeagueId.LIGA_ARGENTINA || !t.leagueId) && t.zone === zoneName)
             .map(t => {
                 const s = statsMap.get(t.id) || { points: 0, goalDiff: 0, goalsFor: 0, played: 0 };
                 return {

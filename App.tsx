@@ -62,7 +62,13 @@ function AppLogic() {
     const { showNotification } = useNotification();
     const { viewingPlayer, isSaveModalOpen, saveMode, openSaveModal, closeSaveModal, closePlayerModal } = useModal();
 
-    const allPlayers = useMemo(() => gameState ? gameState.allTeams.flatMap(t => t.squad) : [], [gameState?.allTeams]);
+    const activeLeaguePlayers = useMemo(() => {
+        if (!gameState) return [];
+        const userLeagueId = gameState.team.leagueId;
+        return gameState.allTeams
+            .filter(t => t.leagueId === userLeagueId || t.id === gameState.team.id)
+            .flatMap(t => t.squad);
+    }, [gameState?.allTeams, gameState?.team?.leagueId, gameState?.team?.id]);
 
     // Custom Hooks
     const { matchPhase, setMatchPhase, pendingResults, setPendingResults, isSimulating, handlePlayMatch, handleWeekComplete } = useSimulation(gameState, dispatch, setAppState, showNotification, setCurrentEvent);
@@ -312,7 +318,7 @@ function AppLogic() {
                         pendingResults={pendingResults}
                         onPlayMatch={handlePlayMatch}
                         onWeekComplete={onWeekComplete}
-                        allPlayers={allPlayers}
+                        allPlayers={activeLeaguePlayers}
                         dispatch={dispatch}
                         onSaveGame={openSaveModal}
                         onQuitToMenu={handleQuitToMenu}

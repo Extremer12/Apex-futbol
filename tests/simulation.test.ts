@@ -1059,4 +1059,66 @@ test('Save System: buildSaveSummary extracts rich metadata and slotType correctl
     assert.ok(!sanitized.allTeams.some((t: any) => typeof t.logo === 'object' && t.logo !== null && '$$typeof' in t.logo), 'React elements stripped from storage');
 });
 
+test('Regional calendar: South American leagues start in January while European leagues start in August', async () => {
+    const { initializeGame } = await import('../services/gameFactory');
+    const boca = TEAMS.find(t => t.id === 701)!; // Boca Juniors (Liga Argentina)
+    const arsenal = TEAMS.find(t => t.id === 1)!; // Arsenal (Premier League)
+
+    const bocaGame = initializeGame({ selectedTeam: boca });
+    const arsenalGame = initializeGame({ selectedTeam: arsenal });
+
+    assert.equal(bocaGame.currentDate.getMonth(), 0, 'South America must start in January (month 0)');
+    assert.equal(bocaGame.currentDate.getDate(), 15, 'South America start day must be 15');
+
+    assert.equal(arsenalGame.currentDate.getMonth(), 7, 'Europe must start in August (month 7)');
+    assert.equal(arsenalGame.currentDate.getDate(), 10, 'Europe start day must be 10');
+});
+
+test('Apertura Playoffs: calculateTournamentStandings excludes Primera Nacional teams and crowns champion', async () => {
+    const { calculateTournamentStandings } = await import('../services/argentinaRegulations');
+    const { handleCupProgression } = await import('../services/simulation/cupProgressionHandler');
+    const { simulateMatch } = await import('../services/simulation');
+    const { initializeGame } = await import('../services/gameFactory');
+
+    const boca = TEAMS.find(t => t.id === 701)!;
+    const game = initializeGame({ selectedTeam: boca });
+
+    // Verify calculateTournamentStandings filters only Liga Argentina teams
+    const standings = calculateTournamentStandings(game.schedule, 'Torneo_Apertura', game.allTeams);
+    assert.equal(standings.zoneA.length, 15, 'Zone A of Apertura must have exactly 15 Primera Division teams');
+    assert.equal(standings.zoneB.length, 15, 'Zone B of Apertura must have exactly 15 Primera Division teams');
+    assert.ok(standings.zoneA.every(t => t.leagueId === LeagueId.LIGA_ARGENTINA), 'Zone A must only contain Liga Argentina clubs');
+    assert.ok(standings.zoneB.every(t => t.leagueId === LeagueId.LIGA_ARGENTINA), 'Zone B must only contain Liga Argentina clubs');
+
+    // Simulate regular season (Weeks 1 to 16)
+    let schedule = [...game.schedule];
+    let cups = { ...game.cups };
+
+    for (let w = 1; w <= 20; w++) {
+        for (const turn of ['weekend', 'midweek'] as const) {
+            const isMidweek = turn === 'midweek';
+            const matches = schedule.filter(m => m.week === w && !!m.isMidweek === isMidweek);
+            matches.forEach(m => {
+                if (!m.result) {
+                    const home = game.allTeams.find(t => t.id === m.homeTeamId)!;
+                    const away = game.allTeams.find(t => t.id === m.awayTeamId)!;
+                    const dummyRow = { points: 0, form: [] } as any;
+                    const res = simulateMatch(home, away, dummyRow, dummyRow, !!m.isCupMatch, false);
+                    m.result = { homeScore: res.homeScore, awayScore: res.awayScore, events: res.events, scorers: res.scorers };
+                    m.penalties = res.penalties;
+                }
+            });
+
+            const cupRes = handleCupProgression(cups, schedule, game.allTeams, w, turn === 'midweek' ? w + 1 : w, game.leagueTables, turn);
+            cups = cupRes.updatedCups;
+            schedule = cupRes.updatedSchedule;
+        }
+    }
+
+    assert.ok(cups.aperturaPlayoffs, 'Apertura playoffs must be generated');
+    assert.equal(cups.aperturaPlayoffs.rounds.length, 4, 'Apertura playoffs must have 4 rounds: Octavos, Cuartos, Semis, Final');
+    assert.ok(cups.aperturaPlayoffs.winnerId, 'Apertura playoffs must have a winnerId crowned by Week 20');
+});
+
+
 

@@ -136,18 +136,42 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         );
     }
 
-    const nextWeek = gameState.currentTurn === 'midweek' ? gameState.currentWeek + 1 : gameState.currentWeek;
+    const targetWeek = gameState.currentWeek;
     const isMidweek = gameState.currentTurn === 'midweek';
-    const nextMatch = gameState.schedule.find(m => !m.result && m.week === nextWeek && !!m.isMidweek === isMidweek && (m.homeTeamId === gameState.team.id || m.awayTeamId === gameState.team.id));
+    const nextMatch = gameState.schedule.find(m => !m.result && m.week === targetWeek && !!m.isMidweek === isMidweek && (m.homeTeamId === gameState.team.id || m.awayTeamId === gameState.team.id));
 
     if (!nextMatch) {
+        // Detect if there is a playoff or cup tournament currently active in this week
+        let specialStageTitle = '';
+        let specialStageDesc = '';
+
+        if (gameState.team.leagueId === 'LIGA_ARGENTINA' || (gameState.team.leagueId as any) === 'liga_argentina') {
+            if (targetWeek >= 17 && targetWeek <= 20) {
+                const roundNames = ['Octavos de Final', 'Cuartos de Final', 'Semifinales', 'Gran Final'];
+                const roundIdx = Math.min(3, Math.max(0, targetWeek - 17));
+                const stageName = roundNames[roundIdx];
+                specialStageTitle = `Playoffs Apertura - ${stageName}`;
+                specialStageDesc = `Se disputan los ${stageName} del Torneo Apertura. Tu equipo no participa en esta instancia; el título se definirá entre los clasificados.`;
+            } else if (targetWeek >= 37 && targetWeek <= 40) {
+                const roundNames = ['Octavos de Final', 'Cuartos de Final', 'Semifinales', 'Gran Final'];
+                const roundIdx = Math.min(3, Math.max(0, targetWeek - 37));
+                const stageName = roundNames[roundIdx];
+                specialStageTitle = `Playoffs Clausura - ${stageName}`;
+                specialStageDesc = `Se disputan los ${stageName} del Torneo Clausura. Tu equipo no participa en esta instancia; el título se definirá entre los clasificados.`;
+            }
+        }
+
         return (
             <div className="apex-card p-10 flex flex-col items-center justify-center min-h-[280px] text-center group">
                 <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-6 border border-white/10 group-hover:border-[var(--apex-gold)]/50 transition-colors">
                     <UsersIcon className="w-8 h-8 text-[var(--apex-gold)] opacity-50" />
                 </div>
-                <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">Semana de Entrenamiento</h2>
-                <p className="text-[10px] text-white/40 uppercase tracking-[0.2em] mb-8 max-w-xs">No hay partidos programados. La plantilla está enfocada en entrenamiento táctico y recuperación.</p>
+                <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">
+                    {specialStageTitle || 'Semana de Entrenamiento'}
+                </h2>
+                <p className="text-[10px] text-white/40 uppercase tracking-[0.2em] mb-8 max-w-md">
+                    {specialStageDesc || 'No hay partidos programados. La plantilla está enfocada en entrenamiento táctico y recuperación.'}
+                </p>
                 <button 
                     onClick={onPlayMatch}
                     disabled={isSimulating}
@@ -159,7 +183,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                             <span>Simulando...</span>
                         </>
                     ) : (
-                        <span>Simular Semana</span>
+                        <span>{specialStageTitle ? 'Simular Instancia' : 'Simular Semana'}</span>
                     )}
                 </button>
             </div>
