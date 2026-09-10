@@ -128,7 +128,6 @@ export function useSimulation(
 
         const newConfidence = Math.max(0, Math.min(100, gameState.boardConfidence + pendingResults.confidenceChange));
 
-        dispatch({ type: 'ADVANCE_WEEK_START' });
         dispatch({
             type: 'ADVANCE_WEEK_SUCCESS',
             payload: {

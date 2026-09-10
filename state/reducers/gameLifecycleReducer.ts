@@ -13,7 +13,6 @@ type GameLifecycleAction = Extract<GameAction,
     | { type: 'INITIALIZE_GAME' }
     | { type: 'LOAD_GAME' }
     | { type: 'RESET_GAME' }
-    | { type: 'ADVANCE_WEEK_START' }
     | { type: 'ADVANCE_WEEK_SUCCESS' }
     | { type: 'START_NEW_SEASON' }
 >;
@@ -138,9 +137,6 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
 
         case 'RESET_GAME':
             return null;
-
-        case 'ADVANCE_WEEK_START':
-            return state;
 
         case 'ADVANCE_WEEK_SUCCESS': {
             if (!state) return null;

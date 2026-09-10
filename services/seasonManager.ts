@@ -4,7 +4,7 @@
  */
 
 import { GameState, Team, Player, NewsItem, EuropeanCompetition, EuropeanTableRow, Match, CupCompetition, CupChampion, LeagueId, SeasonHistoryRecord } from '../types';
-import { generateYouthPlayer, generateSeasonSchedule, generateCupDraw, createInitialLeagueTable, handlePromotionRelegation, generateSwissPhase, generateGroupPhase, createInitialEuropeanTable, sortArgentineZones } from './simulation';
+import { generateYouthPlayer, generateSeasonSchedule, generateCupDraw, createInitialLeagueTable, handlePromotionRelegation, generateSwissPhase, generateGroupPhase, createInitialEuropeanTable, sortArgentineZones, simulateMacroMatch } from './simulation';
 import { computeArgentineRelegation, computeArgentineInternationalQualification } from './argentinaRegulations';
 import { calculatePrizeMoney, generateSponsorMarket } from './economy';
 import { formatDate, formatCurrency } from '../utils';
@@ -247,25 +247,51 @@ export function startNewSeason(currentState: GameState): GameState {
     // 2.5 Finalize any unplayed league matches across all 14 leagues so all tables are 100% complete
     const unplayedLeagueMatches = currentState.schedule.filter(m => m.result === undefined && !m.isCupMatch);
     if (unplayedLeagueMatches.length > 0) {
+        const teamMap = new Map<number, Team>(processedTeams.map(t => [t.id, t]));
         unplayedLeagueMatches.forEach(m => {
-            const hScore = Math.floor(Math.random() * 3);
-            const aScore = Math.floor(Math.random() * 3);
-            m.result = { homeScore: hScore, awayScore: aScore, events: [], scorers: [] };
-            const hTeam = processedTeams.find(t => t.id === m.homeTeamId);
-            const aTeam = processedTeams.find(t => t.id === m.awayTeamId);
-            if (hTeam && aTeam && currentState.leagueTables[hTeam.leagueId]) {
-                const table = currentState.leagueTables[hTeam.leagueId];
-                const hRow = table.find(r => r.teamId === hTeam.id);
-                const aRow = table.find(r => r.teamId === aTeam.id);
-                if (hRow && aRow) {
-                    hRow.played++; aRow.played++;
-                    hRow.goalsFor += hScore; aRow.goalsAgainst += aScore;
-                    aRow.goalsFor += aScore; aRow.goalsAgainst += hScore;
-                    hRow.goalDifference = hRow.goalsFor - hRow.goalsAgainst;
-                    aRow.goalDifference = aRow.goalsFor - aRow.goalsAgainst;
-                    if (hScore > aScore) { hRow.won++; hRow.points += 3; aRow.lost++; }
-                    else if (aScore > hScore) { aRow.won++; aRow.points += 3; hRow.lost++; }
-                    else { hRow.drawn++; hRow.points += 1; aRow.drawn++; aRow.points += 1; }
+            const hTeam = teamMap.get(m.homeTeamId);
+            const aTeam = teamMap.get(m.awayTeamId);
+            if (!hTeam || !aTeam) return;
+
+            const table = currentState.leagueTables[hTeam.leagueId];
+            const hRow = table?.find(r => r.teamId === hTeam.id);
+            const aRow = table?.find(r => r.teamId === aTeam.id);
+
+            const simResult = simulateMacroMatch(hTeam, aTeam, hRow, aRow, false);
+            const hScore = simResult.homeScore;
+            const aScore = simResult.awayScore;
+
+            m.result = {
+                homeScore: hScore,
+                awayScore: aScore,
+                events: simResult.events,
+                scorers: simResult.scorers
+            };
+
+            if (hRow && aRow) {
+                hRow.played++; aRow.played++;
+                hRow.goalsFor += hScore;
+                hRow.goalsAgainst += aScore;
+                aRow.goalsFor += aScore;
+                aRow.goalsAgainst += hScore;
+                hRow.goalDifference = hRow.goalsFor - hRow.goalsAgainst;
+                aRow.goalDifference = aRow.goalsFor - aRow.goalsAgainst;
+
+                if (hScore > aScore) {
+                    hRow.won++; hRow.points += 3;
+                    aRow.lost++;
+                    hRow.form.unshift('W');
+                    aRow.form.unshift('L');
+                } else if (aScore > hScore) {
+                    aRow.won++; aRow.points += 3;
+                    hRow.lost++;
+                    aRow.form.unshift('W');
+                    hRow.form.unshift('L');
+                } else {
+                    hRow.drawn++; hRow.points += 1;
+                    aRow.drawn++; aRow.points += 1;
+                    hRow.form.unshift('D');
+                    aRow.form.unshift('D');
                 }
             }
         });

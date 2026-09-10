@@ -14,7 +14,6 @@ export type GameAction =
     | { type: 'INITIALIZE_GAME'; payload: { team: Team; playerProfile: PlayerProfile; initialPromises?: ElectoralPromise[] } }
     | { type: 'LOAD_GAME'; payload: GameState }
     | { type: 'RESET_GAME' }
-    | { type: 'ADVANCE_WEEK_START' }
     | { type: 'ADVANCE_WEEK_SUCCESS'; payload: { newsItems: NewsItem[]; newSchedule: Match[]; newLeagueTables: Record<LeagueId, LeagueTableRow[]>; newAllTeams: Team[]; newConfidence: number; newOffers: Offer[]; newCups?: GameState['cups']; coachReport?: CoachReport; newScoutedPlayerIds?: Record<number, number>; cinematicEvents?: CinematicEvent[] } }
     | { type: 'PROMOTE_YOUTH'; payload: number }
     | { type: 'START_NEW_SEASON' }
@@ -51,61 +50,84 @@ export type GameAction =
 
 export const initialState: GameState | null = null;
 
-// Action type sets for routing to sub-reducers
-const LIFECYCLE_ACTIONS = new Set(['INITIALIZE_GAME', 'LOAD_GAME', 'RESET_GAME', 'ADVANCE_WEEK_START', 'ADVANCE_WEEK_SUCCESS', 'START_NEW_SEASON']);
-const TRANSFER_ACTIONS = new Set(['ADD_OFFER', 'ACCEPT_OFFER', 'REJECT_OFFER', 'COUNTER_OFFER', 'UPDATE_OFFER', 'SIGN_PLAYER', 'TOGGLE_TRANSFER_LIST']);
-const STAFF_ACTIONS = new Set(['HIRE_COACH', 'FIRE_COACH', 'HIRE_SCOUT', 'SCOUT_PLAYER']);
-const ECONOMY_ACTIONS = new Set(['ACCEPT_SPONSOR', 'REMOVE_SPONSOR_OFFER', 'EXPAND_STADIUM', 'UPDATE_FINANCES', 'UPDATE_STADIUM']);
-const POLITICAL_ACTIONS = new Set(['TRIGGER_ELECTION', 'ELECTION_RESULT', 'UPDATE_FAN_APPROVAL', 'SET_FAN_APPROVAL', 'UPDATE_BOARD_CONFIDENCE']);
-const SQUAD_ACTIONS = new Set(['PROMOTE_PLAYER', 'PROMOTE_YOUTH', 'SET_VIEWING_PLAYER']);
-const UI_ACTIONS = new Set(['ADD_NEWS', 'POP_CINEMATIC', 'PUSH_CINEMATIC', 'SET_CURRENCY', 'SET_LANGUAGE']);
-
 export function gameReducer(state: GameState | null, action: GameAction): GameState | null {
-    // Lifecycle actions can handle null state (INITIALIZE_GAME, LOAD_GAME, RESET_GAME)
-    if (LIFECYCLE_ACTIONS.has(action.type)) {
-        return handleGameLifecycleAction(state, action as any);
-    }
+    switch (action.type) {
+        // Lifecycle actions can handle null state (INITIALIZE_GAME, LOAD_GAME, RESET_GAME)
+        case 'INITIALIZE_GAME':
+        case 'LOAD_GAME':
+        case 'RESET_GAME':
+        case 'ADVANCE_WEEK_SUCCESS':
+        case 'START_NEW_SEASON':
+            return handleGameLifecycleAction(state, action);
 
-    // All other actions require state to exist
-    if (!state) return null;
+        default: {
+            // All other actions require state to exist
+            if (!state) return null;
 
-    if (action.type === 'RECORD_TRIGGERED_EVENT') {
-        const existing = state.triggeredEventIds || [];
-        if (existing.includes(action.payload)) return state;
-        return {
-            ...state,
-            triggeredEventIds: [...existing, action.payload]
-        };
-    }
+            switch (action.type) {
+                case 'RECORD_TRIGGERED_EVENT': {
+                    const existing = state.triggeredEventIds || [];
+                    if (existing.includes(action.payload)) return state;
+                    return {
+                        ...state,
+                        triggeredEventIds: [...existing, action.payload]
+                    };
+                }
 
-    // UPDATE_TEAM is a simple inline action
-    if (action.type === 'UPDATE_TEAM') {
-        return {
-            ...state,
-            team: action.payload,
-            allTeams: state.allTeams.map(t => t.id === action.payload.id ? action.payload : t)
-        };
-    }
+                case 'UPDATE_TEAM':
+                    return {
+                        ...state,
+                        team: action.payload,
+                        allTeams: state.allTeams.map(t => t.id === action.payload.id ? action.payload : t)
+                    };
 
-    // Route to sub-reducers
-    if (TRANSFER_ACTIONS.has(action.type)) {
-        return handleTransferAction(state, action as any);
-    }
-    if (STAFF_ACTIONS.has(action.type)) {
-        return handleStaffAction(state, action as any);
-    }
-    if (ECONOMY_ACTIONS.has(action.type)) {
-        return handleEconomyAction(state, action as any);
-    }
-    if (POLITICAL_ACTIONS.has(action.type)) {
-        return handlePoliticalAction(state, action as any);
-    }
-    if (SQUAD_ACTIONS.has(action.type)) {
-        return handleSquadAction(state, action as any);
-    }
-    if (UI_ACTIONS.has(action.type)) {
-        return handleUIAction(state, action as any);
-    }
+                // Transfer actions
+                case 'ADD_OFFER':
+                case 'ACCEPT_OFFER':
+                case 'REJECT_OFFER':
+                case 'COUNTER_OFFER':
+                case 'UPDATE_OFFER':
+                case 'SIGN_PLAYER':
+                case 'TOGGLE_TRANSFER_LIST':
+                    return handleTransferAction(state, action);
 
-    return state;
+                // Staff actions
+                case 'HIRE_COACH':
+                case 'FIRE_COACH':
+                case 'HIRE_SCOUT':
+                case 'SCOUT_PLAYER':
+                    return handleStaffAction(state, action);
+
+                // Economy actions
+                case 'ACCEPT_SPONSOR':
+                case 'REMOVE_SPONSOR_OFFER':
+                case 'EXPAND_STADIUM':
+                case 'UPDATE_FINANCES':
+                case 'UPDATE_STADIUM':
+                    return handleEconomyAction(state, action);
+
+                // Political actions
+                case 'TRIGGER_ELECTION':
+                case 'ELECTION_RESULT':
+                case 'UPDATE_FAN_APPROVAL':
+                case 'SET_FAN_APPROVAL':
+                case 'UPDATE_BOARD_CONFIDENCE':
+                    return handlePoliticalAction(state, action);
+
+                // Squad actions
+                case 'PROMOTE_PLAYER':
+                case 'PROMOTE_YOUTH':
+                case 'SET_VIEWING_PLAYER':
+                    return handleSquadAction(state, action);
+
+                // UI actions
+                case 'ADD_NEWS':
+                case 'POP_CINEMATIC':
+                case 'PUSH_CINEMATIC':
+                case 'SET_CURRENCY':
+                case 'SET_LANGUAGE':
+                    return handleUIAction(state, action);
+            }
+        }
+    }
 }

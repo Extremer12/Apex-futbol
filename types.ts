@@ -321,6 +321,41 @@ export interface EuropeanCompetition {
   winnerId?: number;
 }
 
+export type CupKey =
+  | 'faCup'
+  | 'carabaoCup'
+  | 'copaDelRey'
+  | 'dfbPokal'
+  | 'coppaItalia'
+  | 'copaArgentina'
+  | 'aperturaPlayoffs'
+  | 'clausuraPlayoffs'
+  | 'nacionalPrimerAscenso'
+  | 'nacionalReducido'
+  | 'championsLeague'
+  | 'europaLeague'
+  | 'copaLibertadores'
+  | 'copaSudamericana'
+  | 'copaIntercontinental';
+
+export const COMPETITION_TO_CUP_KEY: Record<string, CupKey> = {
+  'FA_Cup': 'faCup',
+  'Carabao_Cup': 'carabaoCup',
+  'Copa_Del_Rey': 'copaDelRey',
+  'DFB_Pokal': 'dfbPokal',
+  'Coppa_Italia': 'coppaItalia',
+  'Copa_Argentina': 'copaArgentina',
+  'Playoffs_Apertura': 'aperturaPlayoffs',
+  'Playoffs_Clausura': 'clausuraPlayoffs',
+  'Nacional_Primer_Ascenso': 'nacionalPrimerAscenso',
+  'Nacional_Reducido': 'nacionalReducido',
+  'Champions_League': 'championsLeague',
+  'Europa_League': 'europaLeague',
+  'Copa_Libertadores': 'copaLibertadores',
+  'Copa_Sudamericana': 'copaSudamericana',
+  'Copa_Intercontinental': 'copaIntercontinental',
+};
+
 // Presidential System Types
 export interface PresidentialMandate {
   startYear: number;           // Año en que comenzó el mandato

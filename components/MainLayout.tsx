@@ -134,10 +134,10 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
 
             {/* Regular Layout - Hidden during Fullscreen Live Match Simulation */}
             {!isLiveMatch && (
-                <div className="max-w-md mx-auto min-h-screen relative shadow-2xl" style={{ background: 'var(--apex-dark)' }}>
+                <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto min-h-screen relative shadow-2xl transition-all duration-300" style={{ background: 'var(--apex-dark)' }}>
                     <Header gameState={gameState} onNavigate={setActiveScreen} />
-                    <main className="pb-24 overflow-x-hidden">
-                        <AnimatePresence mode="popLayout" initial={false}>
+                    <main className="pb-24 overflow-x-hidden min-h-[calc(100vh-140px)]">
+                        <AnimatePresence mode="wait" initial={false}>
                             <motion.div
                                 key={activeScreen}
                                 initial={{ opacity: 0, y: 6 }}

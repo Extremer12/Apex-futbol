@@ -222,9 +222,11 @@ function AppLogic() {
 
     const onWeekComplete = useCallback(() => {
         handleWeekComplete();
-        // Trigger auto-save immediately after week completion in background
-        performAutoSave();
-    }, [handleWeekComplete, performAutoSave]);
+        // Throttled auto-save: run every 4 weeks on weekend turn (or week 1) to avoid serializing ~30MB every single turn
+        if (gameState && (gameState.currentWeek % 4 === 0 || gameState.currentWeek === 1) && gameState.currentTurn === 'weekend') {
+            performAutoSave();
+        }
+    }, [handleWeekComplete, performAutoSave, gameState]);
 
     // Keyboard shortcut for Quick-Save (F5 or Ctrl+S)
     useEffect(() => {
@@ -245,8 +247,9 @@ function AppLogic() {
             setIsSeasonEndModalOpen(false);
             setIsStartingSeason(false);
             showNotification('¡Ha comenzado la nueva temporada!', 'success');
+            performAutoSave();
         }, 80);
-    }, [dispatch, showNotification]);
+    }, [dispatch, showNotification, performAutoSave]);
 
     const { notification, hideNotification } = useNotification();
 

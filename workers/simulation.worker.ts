@@ -1,7 +1,7 @@
 // Web Worker for match simulation
 // This runs in a separate thread to prevent UI freezing
 
-import { Team, LeagueTableRow, Match, Morale, LeagueId } from '../types';
+import { Team, LeagueTableRow, Match, Morale, LeagueId, COMPETITION_TO_CUP_KEY, CupKey } from '../types';
 import { simulateMatch, simulateMacroMatch } from '../services/simulation';
 import { updateTeamMorale } from '../services/morale';
 
@@ -13,7 +13,8 @@ interface SimulationInput {
     payload: {
         currentWeek: number;
         currentTurn: 'weekend' | 'midweek';
-        schedule: Match[];
+        weekMatches?: Match[];
+        schedule?: Match[];
         leagueTables: Record<LeagueId, LeagueTableRow[]>;
         allTeams: Team[];
         playerTeamId: number;
@@ -30,7 +31,8 @@ interface SimulationInput {
 interface SimulationOutput {
     type: 'SIMULATION_COMPLETE';
     payload: {
-        updatedSchedule: Match[];
+        updatedWeekMatches: Match[];
+        updatedSchedule?: Match[];
         updatedLeagueTables: Record<LeagueId, LeagueTableRow[]>;
         updatedAllTeams: Team[];
         confidenceChange: number;
@@ -61,6 +63,7 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
         const {
             currentWeek,
             currentTurn,
+            weekMatches,
             schedule,
             leagueTables,
             allTeams,
@@ -72,7 +75,8 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
         } = payload;
 
         const nextWeek = currentWeek;
-        const newSchedule = [...schedule];
+        const isMidweek = currentTurn === 'midweek';
+        const newSchedule = schedule ? [...schedule] : [];
 
         // Create Maps for easier update
         const leagueMaps: Record<string, Map<number, LeagueTableRow>> = {};
@@ -139,9 +143,9 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
             return t; // Return original reference if nothing changed
         });
         
-        // Filter matches by currentWeek AND currentTurn
-        const isMidweek = currentTurn === 'midweek';
-        const matchesThisWeek = newSchedule.filter(m => m.week === nextWeek && !!m.isMidweek === isMidweek);
+        // Filter matches by currentWeek AND currentTurn (use lightweight weekMatches if provided)
+        const matchesThisWeek = weekMatches || (schedule ? newSchedule.filter(m => m.week === nextWeek && !!m.isMidweek === isMidweek) : []);
+        const updatedWeekMatches: Match[] = [];
 
         let updatedCups = { ...cups };
 
@@ -165,13 +169,15 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
         // Pre-index teams for O(1) instant lookups
         const teamMap = new Map<number, Team>(updatedAllTeams.map(t => [t.id, t]));
 
-        // Pre-index schedule positions for this week's matches for O(1) lookups
+        // Pre-index schedule positions for this week's matches for O(1) lookups if full schedule is present
         const scheduleIndexMap = new Map<string, number>();
-        newSchedule.forEach((m, idx) => {
-            if (m.week === nextWeek && !!m.isMidweek === isMidweek) {
-                scheduleIndexMap.set(`${m.homeTeamId}_${m.awayTeamId}`, idx);
-            }
-        });
+        if (newSchedule.length > 0) {
+            newSchedule.forEach((m, idx) => {
+                if (m.week === nextWeek && !!m.isMidweek === isMidweek) {
+                    scheduleIndexMap.set(`${m.homeTeamId}_${m.awayTeamId}`, idx);
+                }
+            });
+        }
 
         if (matchesThisWeek.length > 0) {
             matchesThisWeek.forEach(match => {
@@ -229,18 +235,23 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                     ? simulateMacroMatch(homeTeam, awayTeam, homeRow || dummyRow, awayRow || dummyRow, isKnockoutMatch)
                     : simulateMatch(homeTeam, awayTeam, homeRow || dummyRow, awayRow || dummyRow, isKnockoutMatch, isUserMatch);
 
+                const matchResultData = { 
+                    homeScore: result.homeScore, 
+                    awayScore: result.awayScore, 
+                    events: result.events, 
+                    scorers: result.scorers 
+                };
+
+                const updatedMatch: Match = {
+                    ...match,
+                    result: matchResultData,
+                    penalties: result.penalties
+                };
+                updatedWeekMatches.push(updatedMatch);
+
                 const matchIndex = scheduleIndexMap.get(`${match.homeTeamId}_${match.awayTeamId}`);
                 if (matchIndex !== undefined && newSchedule[matchIndex]) {
-                    newSchedule[matchIndex] = {
-                        ...newSchedule[matchIndex],
-                        result: { 
-                            homeScore: result.homeScore, 
-                            awayScore: result.awayScore, 
-                            events: result.events,
-                            scorers: result.scorers 
-                        },
-                        penalties: result.penalties
-                    };
+                    newSchedule[matchIndex] = updatedMatch;
                 }
 
                 if (isUserMatch) {
@@ -336,21 +347,7 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                         if (awayResult === 'L') confidenceChange -= 2;
                     }
 
-                    let cupId = 'faCup';
-                    if (match.competition === 'Carabao_Cup') cupId = 'carabaoCup';
-                    if (match.competition === 'Copa_Del_Rey') cupId = 'copaDelRey';
-                    if (match.competition === 'DFB_Pokal') cupId = 'dfbPokal';
-                    if (match.competition === 'Coppa_Italia') cupId = 'coppaItalia';
-                    if (match.competition === 'Copa_Argentina') cupId = 'copaArgentina';
-                    if (match.competition === 'Playoffs_Apertura') cupId = 'aperturaPlayoffs';
-                    if (match.competition === 'Playoffs_Clausura') cupId = 'clausuraPlayoffs';
-                    if (match.competition === 'Nacional_Primer_Ascenso') cupId = 'nacionalPrimerAscenso';
-                    if (match.competition === 'Nacional_Reducido') cupId = 'nacionalReducido';
-                    if (match.competition === 'Champions_League') cupId = 'championsLeague';
-                    if (match.competition === 'Europa_League') cupId = 'europaLeague';
-                    if (match.competition === 'Copa_Libertadores') cupId = 'copaLibertadores';
-                    if (match.competition === 'Copa_Sudamericana') cupId = 'copaSudamericana';
-                    if (match.competition === 'Copa_Intercontinental') cupId = 'copaIntercontinental';
+                    const cupId: CupKey = (match.competition && COMPETITION_TO_CUP_KEY[match.competition]) || 'faCup';
 
                     const currentCup = updatedCups[cupId];
 
@@ -494,7 +491,8 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
         const output: SimulationOutput = {
             type: 'SIMULATION_COMPLETE',
             payload: {
-                updatedSchedule: newSchedule,
+                updatedWeekMatches,
+                updatedSchedule: newSchedule.length > 0 ? newSchedule : undefined,
                 updatedLeagueTables,
                 updatedAllTeams,
                 confidenceChange,

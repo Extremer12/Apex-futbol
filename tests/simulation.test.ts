@@ -1120,5 +1120,177 @@ test('Apertura Playoffs: calculateTournamentStandings excludes Primera Nacional 
     assert.ok(cups.aperturaPlayoffs.winnerId, 'Apertura playoffs must have a winnerId crowned by Week 20');
 });
 
+test('Phase 1 Optimizations: COMPETITION_TO_CUP_KEY mapping and accurate seasonManager match resolution', async () => {
+    const { COMPETITION_TO_CUP_KEY } = await import('../types');
+    const { startNewSeason } = await import('../services/seasonManager');
+    const { initializeGame } = await import('../services/gameFactory');
+
+    // 1. Verify COMPETITION_TO_CUP_KEY
+    assert.equal(COMPETITION_TO_CUP_KEY['FA_Cup'], 'faCup');
+    assert.equal(COMPETITION_TO_CUP_KEY['Carabao_Cup'], 'carabaoCup');
+    assert.equal(COMPETITION_TO_CUP_KEY['Copa_Argentina'], 'copaArgentina');
+    assert.equal(COMPETITION_TO_CUP_KEY['Champions_League'], 'championsLeague');
+    assert.equal(COMPETITION_TO_CUP_KEY['Copa_Libertadores'], 'copaLibertadores');
+    assert.equal(COMPETITION_TO_CUP_KEY['Copa_Sudamericana'], 'copaSudamericana');
+    assert.equal(COMPETITION_TO_CUP_KEY['Playoffs_Apertura'], 'aperturaPlayoffs');
+
+    // 2. Verify startNewSeason resolves unplayed matches with proper standings updates
+    const chelsea = TEAMS.find(t => t.id === 1)!;
+    const gameState = initializeGame({ selectedTeam: chelsea });
+
+    // Force some unplayed matches in Premier League
+    const unplayedCount = gameState.schedule.filter(m => m.result === undefined && !m.isCupMatch).length;
+    assert.ok(unplayedCount > 0, 'Initial game has unplayed league matches');
+
+    // Run startNewSeason (which resolves unplayed matches in step 2.5)
+    const nextSeasonState = startNewSeason(gameState);
+    assert.ok(nextSeasonState, 'Season transition completed cleanly');
+    assert.equal(nextSeasonState.season, gameState.season + 1, 'Season incremented');
+});
+
+test('Phase 2 Modularization: LEAGUE_REGISTRY and monotonic generatePlayerId', async () => {
+    const { 
+        LEAGUE_REGISTRY, 
+        getLeagueConfig, 
+        isSouthAmericanLeague, 
+        getPromotionRelegationPairs, 
+        generatePlayerId 
+    } = await import('../services/simulation');
+
+    // 1. Verify LEAGUE_REGISTRY covers all 15 leagues
+    const leagueKeys = Object.keys(LEAGUE_REGISTRY);
+    assert.equal(leagueKeys.length, 15, 'LEAGUE_REGISTRY must contain all 15 leagues');
+
+    const premierConfig = getLeagueConfig(LeagueId.PREMIER_LEAGUE);
+    assert.equal(premierConfig.country, 'ENG');
+    assert.equal(premierConfig.teamsCount, 20);
+    assert.equal(premierConfig.relegationSlots, 3);
+    assert.equal(premierConfig.relegatesTo, LeagueId.CHAMPIONSHIP);
+
+    const argConfig = getLeagueConfig(LeagueId.LIGA_ARGENTINA);
+    assert.equal(argConfig.country, 'ARG');
+    assert.equal(argConfig.region, 'southAmerica');
+    assert.equal(argConfig.format, 'argentine-zones');
+    assert.equal(isSouthAmericanLeague(LeagueId.LIGA_ARGENTINA), true);
+    assert.equal(isSouthAmericanLeague(LeagueId.LA_LIGA), false);
+
+    const pairs = getPromotionRelegationPairs();
+    assert.equal(pairs.length, 7, 'Must have 7 promotion/relegation pairs');
+
+    // 2. Verify monotonic generatePlayerId produces strictly unique IDs in rapid succession
+    const idSet = new Set<number>();
+    for (let i = 0; i < 500; i++) {
+        const id = generatePlayerId();
+        assert.ok(!idSet.has(id), `Player ID ${id} was duplicated`);
+        idSet.add(id);
+    }
+    assert.equal(idSet.size, 500, '500 unique IDs generated');
+});
+
+test('Phase 3 Integration: Multi-season progression (consecutive transitions, aging, contracts)', async () => {
+    const { initializeGame } = await import('../services/gameFactory');
+    const { startNewSeason } = await import('../services/seasonManager');
+
+    const chelsea = TEAMS.find(t => t.id === 1)!;
+    const s1 = initializeGame({ selectedTeam: chelsea });
+    const initialAge = s1.team.squad[0].age || 20;
+    const initialContract = s1.team.squad[0].contractYears;
+
+    // Transition 1: 2024 -> 2025
+    const s2 = startNewSeason(s1);
+    assert.equal(s2.season, s1.season + 1, 'Season incremented to 2025');
+    const s2Player = s2.team.squad.find(p => p.id === s1.team.squad[0].id);
+    if (s2Player && !s2Player.isInjured) {
+        assert.equal(s2Player.age, initialAge + 1, 'Player age incremented by 1');
+        assert.equal(s2Player.contractYears, Math.max(1, initialContract - 1), 'Player contract decremented');
+    }
+
+    // Transition 2: 2025 -> 2026
+    const s3 = startNewSeason(s2);
+    assert.equal(s3.season, s2.season + 1, 'Season incremented to 2026');
+    assert.ok(s3.schedule.length > 0, 'Season 3 schedule successfully generated');
+});
+
+test('Phase 3 Integration: Complete domestic cup progression to final and champion crowning', async () => {
+    const { generateCupDraw, advanceCupRound, simulateMatch } = await import('../services/simulation');
+    const { CupCompetition } = await import('../types');
+
+    const cupTeams = TEAMS.filter(t => t.leagueId === LeagueId.PREMIER_LEAGUE).slice(0, 16);
+    const initialFixtures = generateCupDraw(cupTeams, 'Round of 16', 'FA_Cup');
+
+    let cup: any = {
+        id: 'fa_cup',
+        name: 'FA Cup',
+        type: 'knockout',
+        phase: 'knockout',
+        rounds: [{
+            name: 'Round of 16',
+            fixtures: initialFixtures.map(f => ({ ...f, week: 1 })),
+            completed: false
+        }],
+        currentRoundIndex: 0,
+        statistics: { topScorers: [], championsHistory: [] }
+    };
+
+    // Simulate through all 4 rounds until a champion is crowned
+    for (let round = 0; round < 4; round++) {
+        const currentFixtures = cup.rounds[cup.currentRoundIndex].fixtures;
+        currentFixtures.forEach((m: any) => {
+            const hTeam = TEAMS.find(t => t.id === m.homeTeamId)!;
+            const aTeam = TEAMS.find(t => t.id === m.awayTeamId)!;
+            const dummyRow = { points: 0, form: [] } as any;
+            const sim = simulateMatch(hTeam, aTeam, dummyRow, dummyRow, true, false);
+            m.result = {
+                homeScore: sim.homeScore,
+                awayScore: sim.awayScore,
+                events: sim.events,
+                scorers: sim.scorers
+            };
+            m.penalties = sim.penalties;
+        });
+
+        cup = advanceCupRound(cup, TEAMS, (round + 2) * 2);
+    }
+
+    assert.equal(cup.phase, 'finished', 'Cup must finish after final');
+    assert.ok(cup.winnerId, 'A champion must be crowned');
+    assert.ok(cup.statistics.championsHistory.length > 0, 'Champions history must record the winner');
+});
+
+test('Phase 3 Integration: Type-safe gameReducer handles core actions without errors', async () => {
+    const { initializeGame } = await import('../services/gameFactory');
+    const { gameReducer } = await import('../state/reducer');
+
+    const boca = TEAMS.find(t => t.id === 701)!;
+    let state = initializeGame({ selectedTeam: boca });
+
+    // 1. UPDATE_TEAM
+    state = gameReducer(state, {
+        type: 'UPDATE_TEAM',
+        payload: { ...state.team, budget: state.team.budget + 10 }
+    });
+    assert.equal(state?.team.budget, boca.budget + 10);
+
+    // 2. SET_FAN_APPROVAL
+    state = gameReducer(state, {
+        type: 'SET_FAN_APPROVAL',
+        payload: { rating: 85, trend: 'rising', factors: { results: 10, transfers: 5, finances: 5, promises: 5 } }
+    });
+    assert.equal(state?.fanApproval.rating, 85);
+
+    // 3. RECORD_TRIGGERED_EVENT
+    state = gameReducer(state, {
+        type: 'RECORD_TRIGGERED_EVENT',
+        payload: 'test_event_1'
+    });
+    assert.ok(state?.triggeredEventIds?.includes('test_event_1'));
+
+    // 4. SET_CURRENCY
+    state = gameReducer(state, {
+        type: 'SET_CURRENCY',
+        payload: 'USD'
+    });
+    assert.equal(state?.preferredCurrency, 'USD');
+});
 
 

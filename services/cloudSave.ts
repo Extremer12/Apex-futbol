@@ -28,8 +28,14 @@ export async function uploadSaveToCloud(
 
     // Clean non-serializable objects (like functions or cyclical references)
     const replacer = (key: string, value: any) => (key === 'logo' ? undefined : value);
-    const rawJson = JSON.stringify(gameState, replacer);
-    const compressedData = compressString(rawJson);
+    
+    // Yield to browser execution so heavy stringification and LZW compression don't freeze frames
+    const rawJson = await new Promise<string>(resolve => {
+        setTimeout(() => resolve(JSON.stringify(gameState, replacer)), 0);
+    });
+    const compressedData = await new Promise<string>(resolve => {
+        setTimeout(() => resolve(compressString(rawJson)), 0);
+    });
 
     const storableGameState = {
         __compressed: true,

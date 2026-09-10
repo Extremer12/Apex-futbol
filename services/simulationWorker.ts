@@ -49,7 +49,20 @@ class SimulationWorkerManager {
             this.worker!.onmessage = (e) => {
                 clearTimeout(timeout);
                 if (e.data.type === 'SIMULATION_COMPLETE') {
-                    resolve(e.data.payload);
+                    const payload = e.data.payload;
+                    if (payload.updatedWeekMatches) {
+                        const matchMap = new Map<number, Match>();
+                        payload.updatedWeekMatches.forEach((m: Match) => {
+                            matchMap.set(m.id, m);
+                        });
+                        const updatedSchedule = gameState.schedule.map(m => matchMap.get(m.id) || m);
+                        resolve({
+                            ...payload,
+                            updatedSchedule
+                        });
+                    } else {
+                        resolve(payload);
+                    }
                 }
             };
 
@@ -58,14 +71,19 @@ class SimulationWorkerManager {
                 reject(error);
             };
 
+            const isMidweek = gameState.currentTurn === 'midweek';
+            const weekMatches = gameState.schedule.filter(
+                m => m.week === gameState.currentWeek && !!m.isMidweek === isMidweek
+            );
+
             this.worker!.postMessage({
                 type: 'SIMULATE_WEEK',
                 payload: {
                     currentWeek: gameState.currentWeek,
                     currentTurn: gameState.currentTurn,
-                    schedule: gameState.schedule,
+                    weekMatches,
                     leagueTables: gameState.leagueTables,
-                    allTeams: gameState.allTeams.map(t => ({ ...t, logo: undefined })),
+                    allTeams: gameState.allTeams.map(t => (t.logo ? { ...t, logo: undefined } : t)),
                     playerTeamId: gameState.team.id,
                     cups: gameState.cups,
                     finances: gameState.finances,
