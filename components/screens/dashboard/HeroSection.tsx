@@ -137,6 +137,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     }
 
     const targetWeek = gameState.currentWeek;
+    const nextWeek = targetWeek;
     const isMidweek = gameState.currentTurn === 'midweek';
     const nextMatch = gameState.schedule.find(m => !m.result && m.week === targetWeek && !!m.isMidweek === isMidweek && (m.homeTeamId === gameState.team.id || m.awayTeamId === gameState.team.id));
 
@@ -363,7 +364,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                         </span>
                     ) : (
                         <span className="text-[10px] sm:text-xs font-black text-white uppercase tracking-wider">
-                            Jornada {nextWeek} • 16:30
+                            Jornada {nextMatch.week} • 16:30
                         </span>
                     )}
                 </div>

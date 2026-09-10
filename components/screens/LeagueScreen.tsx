@@ -28,7 +28,7 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
     const playerTeamLeague = gameState.team.leagueId;
 
     // Determine league for next match or active league
-    const nextWeek = gameState.currentTurn === 'midweek' ? gameState.currentWeek + 1 : gameState.currentWeek;
+    const nextWeek = gameState.currentWeek;
     const isMidweek = gameState.currentTurn === 'midweek';
     const nextMatch = gameState.schedule.find(
         m => !m.result && m.week === nextWeek && !!m.isMidweek === isMidweek && (m.homeTeamId === gameState.team.id || m.awayTeamId === gameState.team.id)

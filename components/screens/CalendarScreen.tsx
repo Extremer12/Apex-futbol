@@ -286,7 +286,7 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ gameState }) => 
                                         const compDetails = getCompetitionDetails(match.competition, match.isCupMatch, match.isMidweek);
                                         const isPlayed = match.result !== undefined;
 
-                                        const nextWeek = gameState.currentTurn === 'midweek' ? gameState.currentWeek + 1 : gameState.currentWeek;
+                                        const nextWeek = gameState.currentWeek;
                                         const isMidweekTurn = gameState.currentTurn === 'midweek';
                                         const isCurrentMatch = !isPlayed && match.week === nextWeek && !!match.isMidweek === isMidweekTurn;
 
