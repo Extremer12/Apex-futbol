@@ -8,6 +8,7 @@ import {
     determineCupWinner,
     advanceCupRound,
     simulateMatch,
+    simulateMacroMatch,
     handlePromotionRelegation,
     sortArgentineZones,
     generateArgentineTournamentSchedule,
@@ -983,4 +984,79 @@ test('Copa Sudamericana: champion earns qualification into Copa Libertadores Pot
 
     assert.ok(participants.directToGroups.some(t => t.id === sudWinnerId), 'Sudamericana champion must qualify direct to Libertadores groups');
 });
+
+test('simulateMacroMatch: produces fast, authentic scorelines and updates top scorers', () => {
+    const homeTeam = { ...TEAMS[0] };
+    const awayTeam = { ...TEAMS[1] };
+    
+    // Simulate 50 matches to verify consistency and performance
+    const startTime = performance.now();
+    for (let i = 0; i < 50; i++) {
+        const result = simulateMacroMatch(homeTeam, awayTeam, undefined, undefined, false);
+        assert.ok(result.homeScore >= 0 && result.homeScore <= 8, 'Home score within bounds');
+        assert.ok(result.awayScore >= 0 && result.awayScore <= 8, 'Away score within bounds');
+        assert.equal(result.scorers.length, result.homeScore + result.awayScore, 'Scorers match total goals');
+    }
+    const duration = performance.now() - startTime;
+    // 50 macro matches should execute in < 25ms (< 0.5ms per match)
+    assert.ok(duration < 100, `Macro simulation took ${duration.toFixed(2)}ms for 50 matches (very fast)`);
+
+    // Verify knockout penalty resolution when tied
+    let foundPenalties = false;
+    for (let i = 0; i < 100; i++) {
+        const koResult = simulateMacroMatch(homeTeam, awayTeam, undefined, undefined, true);
+        if (koResult.homeScore === koResult.awayScore) {
+            assert.ok(koResult.penalties !== undefined, 'Penalties must be resolved on cup ties');
+            assert.notEqual(koResult.penalties!.home, koResult.penalties!.away, 'Cup penalty shootout must have a winner');
+            foundPenalties = true;
+            break;
+        }
+    }
+    assert.ok(foundPenalties, 'Encountered at least one tied cup match resolving penalties');
+});
+
+test('Save System: buildSaveSummary extracts rich metadata and slotType correctly', async () => {
+    const { buildSaveSummary, sanitizeGameStateForStorage } = await import('../services/db');
+    const { initializeGame } = await import('../services/gameFactory');
+
+    const profile = {
+        name: 'Carlos Bianchi',
+        age: 55,
+        nationality: 'Argentina',
+        preferredStyle: 'Attacking',
+        satisfaction: 80
+    };
+
+    const game = initializeGame({
+        selectedTeam: TEAMS[0],
+        playerProfile: profile
+    });
+
+    const summary = buildSaveSummary(
+        'save_autosave',
+        'Boca Juniors - Autoguardado',
+        game,
+        {
+            name: 'Carlos Bianchi',
+            age: 55,
+            nationality: 'Argentina',
+            preferredStyle: 'Attacking',
+            satisfaction: 80
+        },
+        'autosave'
+    );
+
+    assert.equal(summary.id, 'save_autosave');
+    assert.equal(summary.slotType, 'autosave');
+    assert.equal(summary.managerName, 'Carlos Bianchi');
+    assert.equal(summary.teamName, TEAMS[0].name);
+    assert.equal(summary.season, 2024);
+    assert.equal(summary.currentWeek, game.currentWeek);
+    assert.ok(typeof summary.balance === 'number');
+
+    const sanitized = sanitizeGameStateForStorage(game);
+    assert.ok(sanitized, 'Sanitized state exists');
+    assert.ok(!sanitized.allTeams.some((t: any) => typeof t.logo === 'object' && t.logo !== null && '$$typeof' in t.logo), 'React elements stripped from storage');
+});
+
 

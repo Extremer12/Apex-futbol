@@ -1,5 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { getSavedGames, deleteGame, SavedGameSummary } from '../../services/db';
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+    getSavedGames, 
+    deleteGame, 
+    SavedGameSummary, 
+    exportSaveToFile, 
+    importSaveFromFile 
+} from '../../services/db';
 import { getCloudSaves, deleteCloudSave, CloudSaveSummary } from '../../services/cloudSave';
 import { useAuth } from '../../contexts/AuthContext';
 import { TEAMS } from '../../constants';
@@ -14,8 +20,15 @@ import {
     Cloud, 
     HardDrive, 
     Calendar,
-    Sparkles
+    Sparkles,
+    Download,
+    Upload,
+    RotateCw,
+    Zap,
+    Trophy,
+    User
 } from 'lucide-react';
+import { formatCurrency } from '../../utils';
 
 interface LoadGameScreenProps {
     onLoadGame: (id: string, isCloud?: boolean) => void;
@@ -33,6 +46,7 @@ export const LoadGameScreen: React.FC<LoadGameScreenProps> = ({ onLoadGame, onBa
     const [cloudSaves, setCloudSaves] = useState<CloudSaveSummary[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const fetchSaves = async () => {
         setIsLoading(true);
@@ -68,9 +82,71 @@ export const LoadGameScreen: React.FC<LoadGameScreenProps> = ({ onLoadGame, onBa
         }
     };
 
+    const handleExport = async (e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        try {
+            const { blob, filename } = await exportSaveToFile(id);
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            alert('Error al exportar la partida: ' + String(err));
+        }
+    };
+
+    const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        try {
+            const imported = await importSaveFromFile(file);
+            alert(`Partida "${imported.saveName}" importada correctamente.`);
+            fetchSaves();
+        } catch (err) {
+            alert('Error al importar archivo: ' + String(err));
+        } finally {
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
+    const renderSlotBadge = (slotType: string) => {
+        if (slotType === 'autosave') {
+            return (
+                <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+                    <RotateCw className="w-2.5 h-2.5 animate-spin-reverse" />
+                    Autoguardado
+                </span>
+            );
+        }
+        if (slotType === 'quicksave') {
+            return (
+                <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-md border border-cyan-500/20">
+                    <Zap className="w-2.5 h-2.5" />
+                    Guardado Rápido
+                </span>
+            );
+        }
+        return (
+            <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase text-slate-400 bg-slate-800 px-2 py-0.5 rounded-md border border-slate-700">
+                Manual
+            </span>
+        );
+    };
+
     return (
         <div className="min-h-screen bg-[#0A0E17] text-white flex flex-col relative overflow-hidden select-none">
             {isAuthModalOpen && <AuthModal onClose={() => setIsAuthModalOpen(false)} />}
+            <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleImportFile} 
+                accept=".apexsave,.json" 
+                className="hidden" 
+            />
 
             {/* Ambient Background Layer */}
             <div 
@@ -83,25 +159,33 @@ export const LoadGameScreen: React.FC<LoadGameScreenProps> = ({ onLoadGame, onBa
 
             {/* 🌟 Top Navigation Bar */}
             <header className="sticky top-0 z-30 bg-[#0A0E17]/90 backdrop-blur-xl border-b border-white/5 px-4 sm:px-6 py-3.5">
-                <div className="max-w-3xl mx-auto flex items-center justify-between">
+                <div className="max-w-4xl mx-auto flex items-center justify-between">
                     <button
                         onClick={onBack}
                         className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-all text-xs font-bold uppercase tracking-wider active:scale-95 cursor-pointer border border-white/5 hover:border-white/15"
                         title="Volver al menú principal"
                     >
                         <ArrowLeft className="w-4 h-4 text-[var(--apex-gold)]" />
-                        <span>Volver al Menú</span>
+                        <span>Volver</span>
                     </button>
 
                     <div className="flex items-center gap-2">
                         <FolderOpen className="w-4 h-4 text-[var(--apex-gold)]" />
                         <span className="text-sm font-black uppercase tracking-wider text-white">
-                            Cargar Partida
+                            Gestión de Carreras
                         </span>
                     </div>
 
-                    <div className="w-24 text-right">
-                        <span className="text-[10px] font-bold text-slate-400 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5">
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs font-bold transition-all cursor-pointer"
+                            title="Importar partida desde un archivo .apexsave o .json"
+                        >
+                            <Upload className="w-3.5 h-3.5 text-sky-400" />
+                            <span>Importar</span>
+                        </button>
+                        <span className="text-[10px] font-bold text-slate-400 bg-white/5 px-2.5 py-1.5 rounded-lg border border-white/5">
                             {tab === 'local' ? `${localSaves.length} Locales` : `${cloudSaves.length} Nube`}
                         </span>
                     </div>
@@ -109,14 +193,14 @@ export const LoadGameScreen: React.FC<LoadGameScreenProps> = ({ onLoadGame, onBa
             </header>
 
             {/* 🎮 Central Content */}
-            <main className="flex-1 max-w-3xl w-full mx-auto p-4 sm:p-6 z-10 flex flex-col">
+            <main className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 z-10 flex flex-col">
                 {/* Title & Description Header */}
                 <div className="text-center space-y-1 mb-6">
                     <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase">
                         Tus Carreras Guardadas
                     </h1>
                     <p className="text-xs text-slate-400">
-                        Selecciona un archivo de guardado para retomar el control de tu club.
+                        Selecciona un archivo de guardado para retomar el control táctico y financiero de tu club.
                     </p>
                 </div>
 
@@ -147,7 +231,7 @@ export const LoadGameScreen: React.FC<LoadGameScreenProps> = ({ onLoadGame, onBa
                 </div>
 
                 {/* Saves List Container */}
-                <div className="flex-1 space-y-3 overflow-y-auto max-h-[60vh] pr-1 custom-scrollbar">
+                <div className="flex-1 space-y-3 overflow-y-auto max-h-[64vh] pr-1 custom-scrollbar">
                     {isLoading ? (
                         <div className="flex flex-col justify-center items-center h-56 gap-3">
                             <LoadingSpinner />
@@ -168,13 +252,22 @@ export const LoadGameScreen: React.FC<LoadGameScreenProps> = ({ onLoadGame, onBa
                                         Aún no has guardado ninguna partida en este dispositivo.
                                     </p>
                                 </div>
-                                <button
-                                    onClick={onBack}
-                                    className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-sky-600/20 inline-flex items-center gap-2 cursor-pointer"
-                                >
-                                    <Play className="w-3.5 h-3.5 fill-current" />
-                                    <span>Iniciar Nueva Partida</span>
-                                </button>
+                                <div className="flex justify-center gap-3 pt-2">
+                                    <button
+                                        onClick={onBack}
+                                        className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-sky-600/20 inline-flex items-center gap-2 cursor-pointer"
+                                    >
+                                        <Play className="w-3.5 h-3.5 fill-current" />
+                                        <span>Iniciar Nueva Partida</span>
+                                    </button>
+                                    <button
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase tracking-wider rounded-xl transition-all border border-slate-700 inline-flex items-center gap-2 cursor-pointer"
+                                    >
+                                        <Upload className="w-3.5 h-3.5 text-sky-400" />
+                                        <span>Importar Partida</span>
+                                    </button>
+                                </div>
                             </div>
                         ) : (
                             localSaves.map(save => {
@@ -185,19 +278,49 @@ export const LoadGameScreen: React.FC<LoadGameScreenProps> = ({ onLoadGame, onBa
                                         className="group rounded-2xl bg-[#0F1423]/90 hover:bg-[#131A2E] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-white/10 hover:border-sky-500/40 transition-all shadow-lg"
                                     >
                                         <div className="flex items-center gap-4 min-w-0">
-                                            <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 p-2 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
-                                                <TeamLogo team={team || { name: save.teamName }} className="w-full h-full object-contain" />
+                                            <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 p-2.5 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                                                <TeamLogo team={team || { name: save.teamName, logo: save.teamLogo }} className="w-full h-full object-contain" />
                                             </div>
-                                            <div className="space-y-0.5 min-w-0">
-                                                <h4 className="font-black text-sm sm:text-base text-white truncate group-hover:text-sky-300 transition-colors" title={save.saveName}>
-                                                    {save.saveName}
-                                                </h4>
-                                                <p className="text-xs font-bold text-slate-300 truncate">
-                                                    {save.teamName}
-                                                </p>
-                                                <div className="flex items-center gap-2 text-[10px] text-slate-400 pt-0.5">
-                                                    <Calendar className="w-3 h-3 text-slate-500" />
-                                                    <span>Guardado: {new Date(save.lastSaved).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })}</span>
+                                            <div className="space-y-1 min-w-0">
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <h4 className="font-black text-sm sm:text-base text-white truncate group-hover:text-sky-300 transition-colors" title={save.saveName}>
+                                                        {save.saveName}
+                                                    </h4>
+                                                    {renderSlotBadge(save.slotType)}
+                                                </div>
+                                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-300 font-medium">
+                                                    <span className="font-bold text-white">{save.teamName}</span>
+                                                    <span>•</span>
+                                                    <span>Temp. {save.season} (Sem. {save.currentWeek})</span>
+                                                    {save.leaguePosition && (
+                                                        <>
+                                                            <span>•</span>
+                                                            <span className="inline-flex items-center gap-1 text-sky-400 font-bold">
+                                                                <Trophy className="w-3 h-3" />
+                                                                {save.leaguePosition}º Puesto
+                                                            </span>
+                                                        </>
+                                                    )}
+                                                    {save.balance != null && (
+                                                        <>
+                                                            <span>•</span>
+                                                            <span className="text-emerald-400 font-bold">
+                                                                {formatCurrency(save.balance)}
+                                                            </span>
+                                                        </>
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center gap-4 text-[10px] text-slate-400 pt-0.5">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <Calendar className="w-3 h-3 text-slate-500" />
+                                                        <span>{new Date(save.lastSaved).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })}</span>
+                                                    </div>
+                                                    {save.managerName && (
+                                                        <div className="flex items-center gap-1">
+                                                            <User className="w-3 h-3 text-slate-500" />
+                                                            <span>{save.managerName}</span>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
@@ -209,6 +332,13 @@ export const LoadGameScreen: React.FC<LoadGameScreenProps> = ({ onLoadGame, onBa
                                             >
                                                 <Play className="w-3.5 h-3.5 fill-current" />
                                                 <span>Cargar</span>
+                                            </button>
+                                            <button 
+                                                onClick={(e) => handleExport(e, save.id)} 
+                                                title="Exportar Partida (Descargar archivo)" 
+                                                className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors border border-slate-700 cursor-pointer"
+                                            >
+                                                <Download className="w-4 h-4" />
                                             </button>
                                             <button 
                                                 onClick={() => handleDeleteLocal(save.id, save.saveName)} 
@@ -261,10 +391,10 @@ export const LoadGameScreen: React.FC<LoadGameScreenProps> = ({ onLoadGame, onBa
                                         className="group rounded-2xl bg-[#0F1423]/90 hover:bg-[#131A2E] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-[var(--apex-gold)]/20 hover:border-[var(--apex-gold)]/50 transition-all shadow-lg"
                                     >
                                         <div className="flex items-center gap-4 min-w-0">
-                                            <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 p-2 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                                            <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 p-2.5 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
                                                 <TeamLogo team={team || { name: save.teamName }} className="w-full h-full object-contain" />
                                             </div>
-                                            <div className="space-y-0.5 min-w-0">
+                                            <div className="space-y-1 min-w-0">
                                                 <div className="flex items-center gap-2">
                                                     <h4 className="font-black text-sm sm:text-base text-white truncate" title={save.saveName}>
                                                         {save.saveName}

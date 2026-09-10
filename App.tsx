@@ -71,7 +71,18 @@ function AppLogic() {
     // Custom Hooks
     const { matchPhase, setMatchPhase, pendingResults, setPendingResults, isSimulating, handlePlayMatch, handleWeekComplete } = useSimulation(gameState, dispatch, setAppState, showNotification, setCurrentEvent);
     
-    const { currentSaveId, currentSaveName, lastSaved, resetSaveState, performLoadGame, performLoadCloudGame, performSaveGame } = useGameSave(gameState, playerProfile, appState, matchPhase, dispatch, showNotification);
+    const { 
+        currentSaveId, 
+        currentSaveName, 
+        lastSaved, 
+        resetSaveState, 
+        performLoadGame, 
+        performLoadCloudGame, 
+        performSaveGame,
+        performAutoSave,
+        performQuickSave,
+        isSaving 
+    } = useGameSave(gameState, playerProfile, appState, matchPhase, dispatch, showNotification);
 
     const resetGameData = useCallback(() => {
         dispatch({ type: 'RESET_GAME' });
@@ -221,12 +232,26 @@ function AppLogic() {
     const onWeekCompleteWithCoach = useCallback(() => {
         const report = pendingResults?.coachReport;
         handleWeekComplete();
+        // Trigger auto-save immediately after week completion in background
+        performAutoSave();
         // Solo abrimos si hay ascensos (crítico) o con un 5% de probabilidad para revisión táctica
         if (report && (report.promotions.length > 0 || Math.random() < 0.05)) {
             setCoachReport(report);
             setIsCoachMeetingOpen(true);
         }
-    }, [handleWeekComplete, pendingResults]);
+    }, [handleWeekComplete, pendingResults, performAutoSave]);
+
+    // Keyboard shortcut for Quick-Save (F5 or Ctrl+S)
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (appState === 'GAME_ACTIVE' && gameState && (e.key === 'F5' || (e.ctrlKey && e.key.toLowerCase() === 's'))) {
+                e.preventDefault();
+                performQuickSave();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [appState, gameState, performQuickSave]);
 
     const handleStartNewSeason = useCallback(() => {
         setIsStartingSeason(true);

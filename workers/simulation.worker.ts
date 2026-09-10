@@ -2,7 +2,7 @@
 // This runs in a separate thread to prevent UI freezing
 
 import { Team, LeagueTableRow, Match, Morale, LeagueId } from '../types';
-import { simulateMatch } from '../services/simulation';
+import { simulateMatch, simulateMacroMatch } from '../services/simulation';
 import { updateTeamMorale } from '../services/morale';
 
 // Helpers removed as they are now imported from services/morale.ts
@@ -82,14 +82,25 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
             );
         });
 
-        // Deep clone teams and squad, and handle weekly condition/injury updates
-        // Optimized: only clone objects if they actually change
+        // Extract player team league for fast match routing
+        const playerTeam = allTeams.find(t => t.id === playerTeamId);
+        const playerLeagueId = playerTeam?.leagueId;
+
+        // Lazy condition & status updates: only allocate memory when status or condition genuinely changes
         let updatedAllTeams = allTeams.map(t => {
             let teamChanged = false;
             const updatedSquad = t.squad.map(p => {
-                let pChanged = false;
+                const needsHeal = (p.isInjured && p.injuryWeeksRemaining) || (p.isSuspended && p.suspensionWeeksRemaining);
+                const needsRecovery = !p.condition || p.condition < 100;
+                const needsStats = !p.stats;
+
+                if (!needsHeal && !needsRecovery && !needsStats) {
+                    return p;
+                }
+
+                teamChanged = true;
                 const newP = { ...p };
-                
+
                 // Heal injuries / suspensions if week advances
                 if (newP.isInjured && newP.injuryWeeksRemaining) {
                     newP.injuryWeeksRemaining -= 1;
@@ -97,7 +108,6 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                         newP.isInjured = false;
                         newP.injuryWeeksRemaining = 0;
                     }
-                    pChanged = true;
                 }
                 if (newP.isSuspended && newP.suspensionWeeksRemaining) {
                     newP.suspensionWeeksRemaining -= 1;
@@ -105,35 +115,27 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                         newP.isSuspended = false;
                         newP.suspensionWeeksRemaining = 0;
                     }
-                    pChanged = true;
                 }
 
-                // Recover condition slightly for all players at the start of the week
+                // Recover condition slightly for players at the start of the week
                 if (!newP.condition || newP.condition < 100) {
                     newP.condition = Math.min(100, (newP.condition || 100) + 15);
-                    pChanged = true;
                 }
-                
+
                 // Ensure stats exists
                 if (!newP.stats) {
                     newP.stats = { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 };
-                    pChanged = true;
+                } else {
+                    newP.stats = { ...newP.stats };
                 }
 
-                if (pChanged) {
-                    teamChanged = true;
-                    // Deep clone stats ONLY if the player changed
-                    newP.stats = { ...newP.stats };
-                    return newP;
-                }
-                
-                return p; // Return original reference if nothing changed
+                return newP;
             });
-            
+
             if (teamChanged) {
                 return { ...t, squad: updatedSquad };
             }
-            
+
             return t; // Return original reference if nothing changed
         });
         
@@ -209,10 +211,23 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                     match.competition === 'Nacional_Reducido' ||
                     match.competition === 'Copa_Intercontinental' ||
                     ((match.competition === 'Champions_League' || match.competition === 'Europa_League') && updatedCups[match.competition === 'Champions_League' ? 'championsLeague' : 'europaLeague']?.currentPhase !== 'league') ||
-                    (match.competition === 'Copa_Libertadores' && updatedCups['copaLibertadores']?.phase !== 'groups')
+                    (match.competition === 'Copa_Libertadores' && updatedCups['copaLibertadores']?.phase !== 'groups') ||
+                    (match.competition === 'Copa_Sudamericana' && updatedCups['copaSudamericana']?.phase !== 'groups')
                 );
 
-                const result = simulateMatch(homeTeam, awayTeam, homeRow || dummyRow, awayRow || dummyRow, isKnockoutMatch, isUserMatch);
+                const isUserLeagueMatch = !!(playerLeagueId && (homeTeam.leagueId === playerLeagueId || awayTeam.leagueId === playerLeagueId));
+                const isContinentalMatch = match.competition === 'Copa_Libertadores' || 
+                                           match.competition === 'Copa_Sudamericana' || 
+                                           match.competition === 'Champions_League' || 
+                                           match.competition === 'Europa_League';
+
+                // Use micro-simulation for user matches, user's active league, and continental tournaments
+                // Use fast macro-simulation (Poisson) for foreign AI-only leagues to save 85-90% CPU
+                const useMacroSimulation = !isUserMatch && !isUserLeagueMatch && !isContinentalMatch;
+
+                const result = useMacroSimulation
+                    ? simulateMacroMatch(homeTeam, awayTeam, homeRow || dummyRow, awayRow || dummyRow, isKnockoutMatch)
+                    : simulateMatch(homeTeam, awayTeam, homeRow || dummyRow, awayRow || dummyRow, isKnockoutMatch, isUserMatch);
 
                 const matchIndex = scheduleIndexMap.get(`${match.homeTeamId}_${match.awayTeamId}`);
                 if (matchIndex !== undefined && newSchedule[matchIndex]) {

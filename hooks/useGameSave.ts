@@ -1,8 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { GameState, PlayerProfile } from '../types';
 import { GameAction } from '../state/reducer';
-import { saveGame, loadGame, SavedGameData } from '../services/db';
-
+import { 
+    saveGame, 
+    loadGame, 
+    saveAutoGame, 
+    saveQuickGame, 
+    SavedGameData, 
+    AUTOSAVE_SLOT_ID, 
+    QUICKSAVE_SLOT_ID 
+} from '../services/db';
 import { uploadSaveToCloud, downloadCloudSave } from '../services/cloudSave';
 import { supabase } from '../services/supabase';
 
@@ -17,8 +24,9 @@ export function useGameSave(
     const [currentSaveId, setCurrentSaveId] = useState<string | null>(null);
     const [currentSaveName, setCurrentSaveName] = useState<string | null>(null);
     const [lastSaved, setLastSaved] = useState<Date | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
 
-    // 1. Initial Auto-Save when entering a club for the first time
+    // Initial Auto-Save on career start
     useEffect(() => {
         if (appState === 'GAME_ACTIVE' && gameState && playerProfile && !currentSaveId) {
             const autoId = `save_${Date.now()}`;
@@ -26,70 +34,74 @@ export function useGameSave(
             setCurrentSaveId(autoId);
             setCurrentSaveName(autoName);
 
-            const now = new Date();
             const initialSaveData: SavedGameData = {
                 id: autoId,
                 saveName: autoName,
                 playerProfile,
                 gameState,
                 teamName: gameState.team.name,
-                lastSaved: now,
+                slotType: 'manual',
+                lastSaved: new Date(),
             };
 
-            // Immediate local persistence
             saveGame(initialSaveData)
-                .then(async () => {
-                    setLastSaved(now);
-                    // Immediate cloud upload if user has Supabase session
-                    try {
-                        const { data: { user } } = await supabase.auth.getUser();
+                .then(() => {
+                    setLastSaved(new Date());
+                    // Cloud backup in background without blocking UI
+                    supabase.auth.getUser().then(({ data: { user } }) => {
                         if (user) {
-                            await uploadSaveToCloud(autoId, autoName, gameState, playerProfile);
-                            showNotification(`Partida guardada en la nube (${gameState.team.name}) ☁️`, 'success');
-                        } else {
-                            showNotification(`Partida guardada automáticamente`, 'info');
+                            uploadSaveToCloud(autoId, autoName, gameState, playerProfile).catch(() => {});
                         }
-                    } catch (cloudErr) {
-                        console.warn('Initial cloud sync notice:', cloudErr);
-                    }
+                    }).catch(() => {});
                 })
-                .catch(err => console.error("Initial auto-save failed:", err));
+                .catch(err => console.error("Initial save failed:", err));
         }
-    }, [appState, gameState, playerProfile, currentSaveId, showNotification]);
-
-    // 2. Debounced auto-saving effect to avoid freezing the main UI thread during week transition
-    useEffect(() => {
-        if (appState === 'GAME_ACTIVE' && gameState && playerProfile && currentSaveId && currentSaveName && matchPhase === 'PRE') {
-            const timeoutId = setTimeout(() => {
-                const saveData: SavedGameData = {
-                    id: currentSaveId,
-                    saveName: currentSaveName,
-                    playerProfile,
-                    gameState,
-                    teamName: gameState.team.name,
-                    lastSaved: new Date(),
-                };
-                saveGame(saveData)
-                    .then(async () => {
-                        setLastSaved(new Date());
-                        // Opportunistic cloud backup if logged in (deferred to background)
-                        const { data: { user } } = await supabase.auth.getUser();
-                        if (user) {
-                            uploadSaveToCloud(currentSaveId, currentSaveName, gameState, playerProfile).catch(() => {});
-                        }
-                    })
-                    .catch(err => console.error("Auto-save failed:", err));
-            }, 1200);
-
-            return () => clearTimeout(timeoutId);
-        }
-    }, [gameState, playerProfile, appState, currentSaveId, currentSaveName, matchPhase]);
+    }, [appState, gameState, playerProfile, currentSaveId]);
 
     const resetSaveState = useCallback(() => {
         setCurrentSaveId(null);
         setCurrentSaveName(null);
         setLastSaved(null);
+        setIsSaving(false);
     }, []);
+
+    // Controlled Auto-Save triggered at week completion or milestone
+    const performAutoSave = useCallback(async () => {
+        if (!gameState || !playerProfile) return;
+        try {
+            setIsSaving(true);
+            await saveAutoGame(gameState, playerProfile);
+            setLastSaved(new Date());
+            // Opportunistic background cloud backup
+            supabase.auth.getUser().then(({ data: { user } }) => {
+                if (user) {
+                    uploadSaveToCloud(AUTOSAVE_SLOT_ID, `${gameState.team.name} (Autoguardado)`, gameState, playerProfile).catch(() => {});
+                }
+            }).catch(() => {});
+        } catch (err) {
+            console.error("Autosave error:", err);
+        } finally {
+            setIsSaving(false);
+        }
+    }, [gameState, playerProfile]);
+
+    // Quick-Save triggered by user shortcut or button
+    const performQuickSave = useCallback(async () => {
+        if (!gameState || !playerProfile) return false;
+        try {
+            setIsSaving(true);
+            await saveQuickGame(gameState, playerProfile);
+            setLastSaved(new Date());
+            showNotification(`⚡ Guardado rápido: ${gameState.team.name}`, 'success');
+            return true;
+        } catch (err) {
+            console.error("Quick save error:", err);
+            showNotification('Error al realizar guardado rápido', 'error');
+            return false;
+        } finally {
+            setIsSaving(false);
+        }
+    }, [gameState, playerProfile, showNotification]);
 
     const performLoadGame = useCallback(async (id: string) => {
         const savedData = await loadGame(id);
@@ -105,7 +117,7 @@ export function useGameSave(
             setCurrentSaveId(savedData.id);
             setCurrentSaveName(savedData.saveName);
             setLastSaved(new Date(savedData.lastSaved));
-            showNotification(`Partida "${savedData.saveName}" cargada`);
+            showNotification(`Partida "${savedData.saveName}" cargada`, 'success');
             return savedData.playerProfile;
         } else {
             console.error("Failed to load game state.");
@@ -138,10 +150,11 @@ export function useGameSave(
                     playerProfile: cloudData.playerProfile,
                     gameState: rehydratedGameState,
                     teamName: rehydratedGameState.team.name,
+                    slotType: 'manual',
                     lastSaved: now,
                 });
 
-                showNotification(`Partida "${cloudData.saveName}" descargada desde la nube ☁️`);
+                showNotification(`Partida "${cloudData.saveName}" descargada desde la nube ☁️`, 'success');
                 return cloudData.playerProfile;
             }
         } catch (err: any) {
@@ -166,35 +179,41 @@ export function useGameSave(
             playerProfile,
             gameState,
             teamName: gameState.team.name,
+            slotType: 'manual',
             lastSaved: now,
         };
 
         try {
+            setIsSaving(true);
             await saveGame(saveData);
             setCurrentSaveId(saveId);
             setCurrentSaveName(saveName);
             setLastSaved(now);
 
-            // Cloud sync if user is logged into Supabase
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                uploadSaveToCloud(saveId, saveName, gameState, playerProfile)
-                    .then(() => {
-                        showNotification("Partida guardada y sincronizada en la nube ☁️");
-                    })
-                    .catch((err) => {
-                        console.warn("Cloud upload warning:", err);
-                        showNotification(saveMode === 'new' ? "Nueva partida guardada (local)" : "Partida guardada (local)");
-                    });
-            } else {
-                showNotification(saveMode === 'new' ? "Nueva partida guardada" : "Partida guardada correctamente");
-            }
+            // Cloud sync in background
+            supabase.auth.getUser().then(({ data: { user } }) => {
+                if (user) {
+                    uploadSaveToCloud(saveId, saveName, gameState, playerProfile)
+                        .then(() => {
+                            showNotification("Partida guardada y sincronizada en la nube ☁️", 'success');
+                        })
+                        .catch(() => {
+                            showNotification(saveMode === 'new' ? "Nueva partida guardada (local)" : "Partida guardada (local)", 'success');
+                        });
+                } else {
+                    showNotification(saveMode === 'new' ? "Nueva partida guardada" : "Partida guardada correctamente", 'success');
+                }
+            }).catch(() => {
+                showNotification("Partida guardada correctamente", 'success');
+            });
 
             return true;
         } catch (e) {
             console.error(e);
             showNotification("Error al guardar la partida", "error");
             return false;
+        } finally {
+            setIsSaving(false);
         }
     }, [gameState, playerProfile, currentSaveId, showNotification]);
 
@@ -202,7 +221,10 @@ export function useGameSave(
         currentSaveId,
         currentSaveName,
         lastSaved,
+        isSaving,
         resetSaveState,
+        performAutoSave,
+        performQuickSave,
         performLoadGame,
         performLoadCloudGame,
         performSaveGame

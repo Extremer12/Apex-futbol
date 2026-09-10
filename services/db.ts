@@ -1,12 +1,32 @@
-
-import { GameState, PlayerProfile } from '../types';
+import { GameState, PlayerProfile, Team } from '../types';
 
 const DB_NAME = 'ApexAIDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // Incremented for rich save slot metadata
 const STORE_NAME = 'savedGames';
 
 // Schema version for save data compatibility
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
+
+export type SaveSlotType = 'autosave' | 'quicksave' | 'manual';
+
+export const AUTOSAVE_SLOT_ID = 'save_autosave';
+export const QUICKSAVE_SLOT_ID = 'save_quicksave';
+
+export interface SavedGameSummary {
+    id: string;
+    saveName: string;
+    teamName: string;
+    teamId: number;
+    teamLogo?: string;
+    leagueId?: string;
+    season: number;
+    currentWeek: number;
+    leaguePosition?: number;
+    balance?: number;
+    managerName?: string;
+    slotType: SaveSlotType;
+    lastSaved: Date;
+}
 
 export interface SavedGameData {
     id: string;
@@ -14,23 +34,16 @@ export interface SavedGameData {
     playerProfile: PlayerProfile;
     gameState: GameState;
     teamName: string;
+    slotType?: SaveSlotType;
+    summary?: SavedGameSummary;
     lastSaved: Date;
-    schemaVersion?: number; // Optional for backward compatibility
+    schemaVersion?: number;
 }
-
-export interface SavedGameSummary {
-    id: string;
-    saveName: string;
-    teamName: string;
-    lastSaved: Date;
-    teamId: number;
-}
-
 
 const openDB = (): Promise<IDBDatabase> => {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
-        request.onerror = () => reject("Error opening DB");
+        request.onerror = () => reject("Error opening IndexedDB");
         request.onsuccess = () => resolve(request.result);
         request.onupgradeneeded = (event) => {
             const db = (event.target as IDBOpenDBRequest).result;
@@ -41,27 +54,141 @@ const openDB = (): Promise<IDBDatabase> => {
     });
 };
 
+/**
+ * Fast, non-blocking sanitizer that strips React nodes and non-cloneable references
+ * without doing a 30MB JSON.parse(JSON.stringify) on the main thread!
+ */
+function sanitizeTeamForStorage(team: Team): Team {
+    if (!team) return team;
+    if (typeof team.logo === 'string' || team.logo === undefined) {
+        return team;
+    }
+    const { logo, ...rest } = team;
+    return rest as Team;
+}
+
+export function sanitizeGameStateForStorage(gameState: GameState): GameState {
+    if (!gameState) return gameState;
+    const sanitizedTeam = sanitizeTeamForStorage(gameState.team);
+    const sanitizedAllTeams = gameState.allTeams?.map(sanitizeTeamForStorage) || [];
+    return {
+        ...gameState,
+        team: sanitizedTeam,
+        allTeams: sanitizedAllTeams
+    };
+}
+
+/**
+ * Builds rich metadata summary for quick display in load screens without reading entire state
+ */
+export function buildSaveSummary(
+    id: string,
+    saveName: string,
+    gameState: GameState,
+    playerProfile?: PlayerProfile,
+    slotType: SaveSlotType = 'manual'
+): SavedGameSummary {
+    const playerLeagueId = gameState.team?.leagueId;
+    const table = playerLeagueId && gameState.leagueTables ? gameState.leagueTables[playerLeagueId] || [] : [];
+    const sorted = [...table].sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference);
+    const position = sorted.findIndex(r => r.teamId === gameState.team?.id) + 1;
+    const logoStr = typeof gameState.team?.logo === 'string' ? gameState.team.logo : undefined;
+
+    return {
+        id,
+        saveName,
+        teamName: gameState.team?.name || 'Club Desconocido',
+        teamId: gameState.team?.id || 0,
+        teamLogo: logoStr,
+        leagueId: playerLeagueId,
+        season: gameState.season || 1,
+        currentWeek: gameState.currentWeek || 0,
+        leaguePosition: position > 0 ? position : undefined,
+        balance: gameState.finances?.balance,
+        managerName: playerProfile?.name || gameState.playerProfile?.name || 'Mánager',
+        slotType,
+        lastSaved: new Date()
+    };
+}
+
 export const saveGame = async (gameData: SavedGameData): Promise<void> => {
     const db = await openDB();
     return new Promise((resolve, reject) => {
-        const transaction = db.transaction(STORE_NAME, 'readwrite');
-        const store = transaction.objectStore(STORE_NAME);
-        // Clean non-storable parts like React components
-        const replacer = (key: string, value: any) => (key === 'logo' ? undefined : value);
-        const storableGameState = JSON.parse(JSON.stringify(gameData.gameState, replacer));
-        const storableData = { ...gameData, gameState: storableGameState, schemaVersion: SCHEMA_VERSION };
+        try {
+            const transaction = db.transaction(STORE_NAME, 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
 
-        const request = store.put(storableData);
-        transaction.oncomplete = () => {
+            // Fast shallow sanitization instead of blocking JSON double-stringify
+            const storableGameState = sanitizeGameStateForStorage(gameData.gameState);
+            const slotType: SaveSlotType = gameData.slotType || 
+                (gameData.id === AUTOSAVE_SLOT_ID ? 'autosave' : gameData.id === QUICKSAVE_SLOT_ID ? 'quicksave' : 'manual');
+
+            const summary = gameData.summary || buildSaveSummary(
+                gameData.id,
+                gameData.saveName,
+                storableGameState,
+                gameData.playerProfile,
+                slotType
+            );
+
+            const storableData: SavedGameData = {
+                ...gameData,
+                gameState: storableGameState,
+                slotType,
+                summary,
+                schemaVersion: SCHEMA_VERSION,
+                lastSaved: new Date()
+            };
+
+            const request = store.put(storableData);
+            transaction.oncomplete = () => {
+                db.close();
+                resolve();
+            };
+            transaction.onerror = () => {
+                console.error("Error saving game to IndexedDB:", transaction.error);
+                db.close();
+                reject(transaction.error);
+            };
+        } catch (err) {
             db.close();
-            resolve();
-        };
-        transaction.onerror = (event) => {
-            console.error("Error saving game:", transaction.error);
-            db.close();
-            reject(transaction.error);
-        };
+            reject(err);
+        }
     });
+};
+
+export const saveQuickGame = async (gameState: GameState, playerProfile: PlayerProfile): Promise<SavedGameData> => {
+    const saveName = `${gameState.team.name} - Guardado Rápido`;
+    const summary = buildSaveSummary(QUICKSAVE_SLOT_ID, saveName, gameState, playerProfile, 'quicksave');
+    const data: SavedGameData = {
+        id: QUICKSAVE_SLOT_ID,
+        saveName,
+        playerProfile,
+        gameState,
+        teamName: gameState.team.name,
+        slotType: 'quicksave',
+        summary,
+        lastSaved: new Date()
+    };
+    await saveGame(data);
+    return data;
+};
+
+export const saveAutoGame = async (gameState: GameState, playerProfile: PlayerProfile): Promise<SavedGameData> => {
+    const saveName = `${gameState.team.name} - Autoguardado`;
+    const summary = buildSaveSummary(AUTOSAVE_SLOT_ID, saveName, gameState, playerProfile, 'autosave');
+    const data: SavedGameData = {
+        id: AUTOSAVE_SLOT_ID,
+        saveName,
+        playerProfile,
+        gameState,
+        teamName: gameState.team.name,
+        slotType: 'autosave',
+        summary,
+        lastSaved: new Date()
+    };
+    await saveGame(data);
+    return data;
 };
 
 export const getSavedGames = async (): Promise<SavedGameSummary[]> => {
@@ -79,43 +206,31 @@ export const getSavedGames = async (): Promise<SavedGameSummary[]> => {
 
         request.onsuccess = () => {
             const result = request.result || [];
-            const summaries = result.map((fullSave: SavedGameData) => ({
-                id: fullSave.id,
-                saveName: fullSave.saveName,
-                teamName: fullSave.teamName,
-                lastSaved: fullSave.lastSaved,
-                teamId: fullSave.gameState.team.id,
-            })).sort((a, b) => new Date(b.lastSaved).getTime() - new Date(a.lastSaved).getTime());
+            const summaries = result.map((fullSave: SavedGameData) => {
+                if (fullSave.summary) {
+                    return {
+                        ...fullSave.summary,
+                        lastSaved: new Date(fullSave.summary.lastSaved || fullSave.lastSaved)
+                    };
+                }
+                const slotType: SaveSlotType = fullSave.id === AUTOSAVE_SLOT_ID ? 'autosave' : fullSave.id === QUICKSAVE_SLOT_ID ? 'quicksave' : 'manual';
+                return buildSaveSummary(
+                    fullSave.id,
+                    fullSave.saveName,
+                    fullSave.gameState,
+                    fullSave.playerProfile,
+                    slotType
+                );
+            }).sort((a, b) => {
+                // Priority: autosave and quicksave at top if recent, otherwise sort by timestamp
+                const timeA = new Date(a.lastSaved).getTime();
+                const timeB = new Date(b.lastSaved).getTime();
+                return timeB - timeA;
+            });
             db.close();
             resolve(summaries);
         };
     });
-};
-
-/**
- * Migrate saved game data from old schema versions to current version
- */
-const migrateGameData = (data: SavedGameData): SavedGameData => {
-    const currentVersion = data.schemaVersion || 0;
-
-    if (currentVersion === SCHEMA_VERSION) {
-        return data; // Already up to date
-    }
-
-    let migratedData = { ...data };
-
-    // Migration from version 0 (no version) to version 1
-    if (currentVersion < 1) {
-        // Add default values for new fields if needed
-        // Example: migratedData.gameState.newField = defaultValue;
-        console.log('Migrating save data from version 0 to 1');
-    }
-
-    // Future migrations would go here:
-    // if (currentVersion < 2) { ... }
-
-    migratedData.schemaVersion = SCHEMA_VERSION;
-    return migratedData;
 };
 
 export const loadGame = async (id: string): Promise<SavedGameData | null> => {
@@ -140,14 +255,15 @@ export const loadGame = async (id: string): Promise<SavedGameData | null> => {
                 return;
             }
 
-            // Migrate data if needed
-            try {
-                const migratedData = migrateGameData(rawData);
-                resolve(migratedData);
-            } catch (error) {
-                console.error('Error migrating save data:', error);
-                reject(error);
+            // Restore Date instances
+            if (rawData.gameState?.currentDate) {
+                rawData.gameState.currentDate = new Date(rawData.gameState.currentDate);
             }
+            if (rawData.lastSaved) {
+                rawData.lastSaved = new Date(rawData.lastSaved);
+            }
+
+            resolve(rawData);
         };
     });
 };
@@ -172,6 +288,34 @@ export const deleteGame = async (id: string): Promise<void> => {
     });
 };
 
+export const exportSaveToFile = async (id: string): Promise<{ blob: Blob; filename: string }> => {
+    const save = await loadGame(id);
+    if (!save) throw new Error('Partida no encontrada');
+    const safeName = save.saveName.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const filename = `apex_${safeName}_${Date.now()}.apexsave`;
+    const jsonString = JSON.stringify(save, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    return { blob, filename };
+};
+
+export const importSaveFromFile = async (file: File): Promise<SavedGameData> => {
+    const text = await file.text();
+    const rawData = JSON.parse(text);
+    if (!rawData.gameState || !rawData.gameState.team) {
+        throw new Error('El archivo seleccionado no es un guardado válido de Apex Fútbol.');
+    }
+    const id = `save_manual_${Date.now()}`;
+    const importedSave: SavedGameData = {
+        ...rawData,
+        id,
+        saveName: rawData.saveName ? `${rawData.saveName} (Importada)` : `Importada - ${rawData.teamName || 'Equipo'}`,
+        slotType: 'manual',
+        lastSaved: new Date()
+    };
+    await saveGame(importedSave);
+    return importedSave;
+};
+
 export const clearAllData = async (): Promise<void> => {
     const db = await openDB();
     return new Promise((resolve, reject) => {
@@ -188,6 +332,6 @@ export const clearAllData = async (): Promise<void> => {
         request.onsuccess = () => {
             db.close();
             resolve();
-        }
+        };
     });
-}
+};
