@@ -18,8 +18,7 @@ import { PlayerDetailModal } from './components/ui/PlayerDetailModal';
 import { SaveGameModal } from './components/ui/SaveGameModal';
 import { Notification } from './components/ui/Notification';
 import { EventModal } from './components/ui/EventModal';
-import { CoachMeetingModal } from './components/ui/CoachMeetingModal';
-import { CoachReport, Player } from './types';
+import { Player } from './types';
 import { CinematicOverlay } from './components/cinematics/CinematicOverlay';
 import { SeasonEndModal } from './components/screens/season/SeasonEndModal';
 
@@ -45,9 +44,6 @@ function AppLogic() {
     const [electionResult, setElectionResult] = useState<ElectionResponse | null>(null);
     const [activeScreen, setActiveScreen] = useState<Screen>(Screen.Dashboard);
 
-    // Coach Meeting State
-    const [coachReport, setCoachReport] = useState<CoachReport | null>(null);
-    const [isCoachMeetingOpen, setIsCoachMeetingOpen] = useState(false);
     const [isSeasonEndModalOpen, setIsSeasonEndModalOpen] = useState(false);
     const [isStartingSeason, setIsStartingSeason] = useState(false);
 
@@ -218,28 +214,11 @@ function AppLogic() {
         setCurrentEvent(null);
     }, [gameState, currentEvent, showNotification, dispatch]);
 
-    const handleApprovePromotion = useCallback((player: Player) => {
-        dispatch({ type: 'PROMOTE_YOUTH', payload: player.id });
-        showNotification(`${player.name} ha sido promovido al primer equipo`, 'success');
-        if (coachReport) {
-            setCoachReport({
-                ...coachReport,
-                promotions: coachReport.promotions.filter(p => p.id !== player.id)
-            });
-        }
-    }, [dispatch, showNotification, coachReport]);
-
-    const onWeekCompleteWithCoach = useCallback(() => {
-        const report = pendingResults?.coachReport;
+    const onWeekComplete = useCallback(() => {
         handleWeekComplete();
         // Trigger auto-save immediately after week completion in background
         performAutoSave();
-        // Solo abrimos si hay ascensos (crítico) o con un 5% de probabilidad para revisión táctica
-        if (report && (report.promotions.length > 0 || Math.random() < 0.05)) {
-            setCoachReport(report);
-            setIsCoachMeetingOpen(true);
-        }
-    }, [handleWeekComplete, pendingResults, performAutoSave]);
+    }, [handleWeekComplete, performAutoSave]);
 
     // Keyboard shortcut for Quick-Save (F5 or Ctrl+S)
     useEffect(() => {
@@ -290,15 +269,7 @@ function AppLogic() {
                     onClose={() => setCurrentEvent(null)}
                 />
             )}
-            {coachReport && gameState && (
-                <CoachMeetingModal
-                    isOpen={isCoachMeetingOpen}
-                    onClose={() => setIsCoachMeetingOpen(false)}
-                    report={coachReport}
-                    coachName={gameState.team.coach?.name || 'el Míster'}
-                    onApprovePromotion={handleApprovePromotion}
-                />
-            )}
+
             {isSeasonEndModalOpen && gameState && (
                 <SeasonEndModal
                     gameState={gameState}
@@ -340,7 +311,7 @@ function AppLogic() {
                         matchPhase={matchPhase}
                         pendingResults={pendingResults}
                         onPlayMatch={handlePlayMatch}
-                        onWeekComplete={onWeekCompleteWithCoach}
+                        onWeekComplete={onWeekComplete}
                         allPlayers={allPlayers}
                         dispatch={dispatch}
                         onSaveGame={openSaveModal}
