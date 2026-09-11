@@ -1293,4 +1293,56 @@ test('Phase 3 Integration: Type-safe gameReducer handles core actions without er
     assert.equal(state?.preferredCurrency, 'USD');
 });
 
+test('Bugfix: Schedule merge preserves week 2 matches and avoids loop in Argentine league', async () => {
+    const { initializeGame } = await import('../services/gameFactory');
+    const { LEAGUE_LOGOS, CUP_LOGOS } = await import('../components/screens/league/constants');
+
+    // 1. Verify Argentine logos include /Argentina/
+    assert.ok(LEAGUE_LOGOS.LIGA_ARGENTINA.includes('/Argentina/primera_division/'));
+    assert.ok(LEAGUE_LOGOS.PRIMERA_NACIONAL.includes('/Argentina/primera_nacional/'));
+    assert.ok(CUP_LOGOS.nacional_primer_ascenso.includes('/Argentina/primera_nacional/'));
+    assert.ok(CUP_LOGOS.nacional_reducido.includes('/Argentina/primera_nacional/'));
+
+    // 2. Initialize Argentine game (Boca Juniors)
+    const boca = TEAMS.find(t => t.id === 701)!;
+    const gameState = initializeGame({ selectedTeam: boca });
+
+    const totalScheduleMatches = gameState.schedule.length;
+    assert.ok(totalScheduleMatches > 1000, 'Schedule must contain complete match calendar');
+
+    // Week 1 matches
+    const w1Matches = gameState.schedule.filter(m => m.week === 1 && !m.isMidweek);
+    assert.ok(w1Matches.length > 0, 'Week 1 matches must exist');
+
+    // Simulate w1 matches
+    const updatedW1Matches = w1Matches.map(m => ({
+        ...m,
+        result: { homeScore: 2, awayScore: 1, events: [], scorers: [] }
+    }));
+
+    // Perform merge as done in simulationWorker.ts
+    const getMatchKey = (m: any) => `${m.week}_${m.homeTeamId}_${m.awayTeamId}_${m.competition || ''}_${!!m.isMidweek}`;
+    const matchMap = new Map<string, any>();
+    updatedW1Matches.forEach(m => {
+        matchMap.set(getMatchKey(m), m);
+    });
+    const updatedSchedule = gameState.schedule.map(m => matchMap.get(getMatchKey(m)) || m);
+
+    // Assert total count is identical
+    assert.equal(updatedSchedule.length, totalScheduleMatches, 'Schedule count must not change');
+
+    // Assert week 1 matches have results
+    const mergedW1 = updatedSchedule.filter(m => m.week === 1 && !m.isMidweek);
+    assert.ok(mergedW1.every(m => m.result !== undefined), 'All week 1 matches must have results');
+
+    // Assert week 2 matches STILL EXIST and have NO results
+    const w2Matches = updatedSchedule.filter(m => m.week === 2 && !m.isMidweek);
+    assert.ok(w2Matches.length > 0, 'Week 2 matches must remain in schedule');
+    assert.ok(w2Matches.every(m => m.result === undefined), 'Week 2 matches must not be pre-resolved');
+
+    // Assert Boca has a week 2 match scheduled
+    const bocaW2Match = w2Matches.find(m => m.homeTeamId === boca.id || m.awayTeamId === boca.id);
+    assert.ok(bocaW2Match, 'Boca Juniors must have a valid fixture for Fecha 2');
+});
+
 

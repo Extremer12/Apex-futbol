@@ -27,8 +27,8 @@ export const LEAGUE_LOGOS: Record<string, string> = {
     SERIE_B_ITA: 'https://tmssl.akamaized.net/images/logo/header/it2.png',
     LIGUE_1: 'https://tmssl.akamaized.net/images/logo/header/fr1.png',
     LIGUE_2: 'https://tmssl.akamaized.net/images/logo/header/fr2.png',
-    LIGA_ARGENTINA: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/primera_division/argentina_argentina-primera-division.football-logos.cc.svg',
-    PRIMERA_NACIONAL: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/primera_nacional/argentina_primera-nacional.football-logos.cc.svg',
+    LIGA_ARGENTINA: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Argentina/primera_division/argentina_argentina-primera-division.football-logos.cc.svg',
+    PRIMERA_NACIONAL: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Argentina/primera_nacional/argentina_primera-nacional.football-logos.cc.svg',
     BRASILEIRAO: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Brasileirao_Serie_A_logo.png/200px-Brasileirao_Serie_A_logo.png',
     SERIE_B_BR: 'https://upload.wikimedia.org/wikipedia/en/thumb/f/f6/Brasileir%C3%A3o_S%C3%A9rie_B_logo.png/200px-Brasileir%C3%A3o_S%C3%A9rie_B_logo.png',
     COPA_DE_PRIMERA: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Copa%20de%20Primera/paraguay_copa-de-primera.football-logos.cc.svg',
@@ -45,8 +45,8 @@ export const CUP_LOGOS: Record<string, string> = {
     dfb_pokal: 'https://tmssl.akamaized.net/images/logo/header/dfb.png',
     coppa_italia: 'https://tmssl.akamaized.net/images/logo/header/cit.png',
     copa_argentina: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Copa_Argentina_logo.png/200px-Copa_Argentina_logo.png',
-    nacional_primer_ascenso: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/primera_nacional/argentina_primera-nacional.football-logos.cc.svg',
-    nacional_reducido: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/primera_nacional/argentina_primera-nacional.football-logos.cc.svg',
+    nacional_primer_ascenso: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Argentina/primera_nacional/argentina_primera-nacional.football-logos.cc.svg',
+    nacional_reducido: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Argentina/primera_nacional/argentina_primera-nacional.football-logos.cc.svg',
 };
 
 export const CUP_THEMES: Record<string, { accent: string; bg: string; border: string }> = {

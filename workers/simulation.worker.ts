@@ -222,14 +222,10 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                 );
 
                 const isUserLeagueMatch = !!(playerLeagueId && (homeTeam.leagueId === playerLeagueId || awayTeam.leagueId === playerLeagueId));
-                const isContinentalMatch = match.competition === 'Copa_Libertadores' || 
-                                           match.competition === 'Copa_Sudamericana' || 
-                                           match.competition === 'Champions_League' || 
-                                           match.competition === 'Europa_League';
 
-                // Use micro-simulation for user matches, user's active league, and continental tournaments
-                // Use fast macro-simulation (Poisson) for foreign AI-only leagues to save 85-90% CPU
-                const useMacroSimulation = !isUserMatch && !isUserLeagueMatch && !isContinentalMatch;
+                // Use micro-simulation for matches involving the user or within the user's active league
+                // Use fast Poisson macro-simulation for all other AI matches (foreign leagues and non-user cup ties) to optimize speed
+                const useMacroSimulation = !isUserMatch && !isUserLeagueMatch;
 
                 const result = useMacroSimulation
                     ? simulateMacroMatch(homeTeam, awayTeam, homeRow || dummyRow, awayRow || dummyRow, isKnockoutMatch)

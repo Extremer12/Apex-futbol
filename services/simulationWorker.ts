@@ -51,11 +51,12 @@ class SimulationWorkerManager {
                 if (e.data.type === 'SIMULATION_COMPLETE') {
                     const payload = e.data.payload;
                     if (payload.updatedWeekMatches) {
-                        const matchMap = new Map<number, Match>();
+                        const getMatchKey = (m: Match) => `${m.week}_${m.homeTeamId}_${m.awayTeamId}_${m.competition || ''}_${!!m.isMidweek}`;
+                        const matchMap = new Map<string, Match>();
                         payload.updatedWeekMatches.forEach((m: Match) => {
-                            matchMap.set(m.id, m);
+                            matchMap.set(getMatchKey(m), m);
                         });
-                        const updatedSchedule = gameState.schedule.map(m => matchMap.get(m.id) || m);
+                        const updatedSchedule = gameState.schedule.map(m => matchMap.get(getMatchKey(m)) || m);
                         resolve({
                             ...payload,
                             updatedSchedule
