@@ -11,6 +11,8 @@ import { formatDate, formatCurrency } from '../utils';
 import { evaluateAchievements } from './achievementService';
 import { initializeLibertadoresSeason } from './libertadoresEngine';
 import { initializeSudamericanaSeason } from './sudamericanaEngine';
+import { SOUTH_AMERICAN_EXTRA_TEAMS } from '../data/teams/southAmericanClubs';
+import { TOURNAMENT_LOGOS } from './customPacks/argentineLogos';
 
 // Define promotion/relegation pairs locally (mirrors simulation.ts)
 const PROMOTION_RELEGATION_PAIRS: [LeagueId, LeagueId][] = [
@@ -704,6 +706,10 @@ export function startNewSeason(currentState: GameState): GameState {
     // 7.5 Generar Eventos Cinematográficos
     const newCinematicQueue = [...(currentState.cinematicQueue || [])];
     
+    // Pool of all available teams (including extra South American teams) to resolve full metadata & crests
+    const allDrawPoolTeams = [...currentState.allTeams, ...teamsAfterProRel, ...SOUTH_AMERICAN_EXTRA_TEAMS];
+    const getTeamForDraw = (id: number) => allDrawPoolTeams.find(t => t.id === id);
+
     // Check if player qualified for Champions League
     const playerInCL = clTeams.find(t => t.id === updatedPlayerTeam.id);
     if (playerInCL) {
@@ -712,8 +718,11 @@ export function startNewSeason(currentState: GameState): GameState {
             .map(m => {
                 const isHome = m.homeTeamId === updatedPlayerTeam.id;
                 const opponentId = isHome ? m.awayTeamId : m.homeTeamId;
+                const oppTeam = getTeamForDraw(opponentId);
                 return {
-                    name: teamsAfterProRel.find(t => t.id === opponentId)?.name || 'Desconocido',
+                    id: opponentId,
+                    name: oppTeam?.name || 'Desconocido',
+                    team: oppTeam,
                     venue: isHome ? 'home' : 'away'
                 };
             });
@@ -722,9 +731,12 @@ export function startNewSeason(currentState: GameState): GameState {
             id: `cinematic_cl_draw_${newSeasonYear}`,
             type: 'GROUP_DRAW',
             title: `UEFA Champions League`,
-            subtitle: `Sorteo de Fase de Liga 2026`,
+            subtitle: `Sorteo de Fase de Liga ${newSeasonYear}`,
             metadata: {
+                competition: 'champions_league',
+                logoUrl: TOURNAMENT_LOGOS.CHAMPIONS_LEAGUE,
                 accentColor: '#3b82f6',
+                bgClass: 'from-blue-950 via-slate-950 to-slate-950',
                 swissOpponents: playerOpponents
             }
         });
@@ -734,42 +746,60 @@ export function startNewSeason(currentState: GameState): GameState {
     const playerGroup = libGroups.find(g => g.teams.includes(updatedPlayerTeam.id));
     if (playerGroup) {
         newCinematicQueue.push({
-                id: `cinematic_lib_draw_${newSeasonYear}`,
-                type: 'GROUP_DRAW',
-                title: `Copa Libertadores`,
-                subtitle: `Sorteo de Fase de Grupos`,
-                metadata: {
-                    accentColor: '#facc15',
-                    groups: [{
-                        name: playerGroup.name,
-                        teams: playerGroup.teams.map(tid => ({
-                            name: teamsAfterProRel.find(t => t.id === tid)?.name || 'Desconocido',
+            id: `cinematic_lib_draw_${newSeasonYear}`,
+            type: 'GROUP_DRAW',
+            title: `CONMEBOL Libertadores`,
+            subtitle: `Sorteo de Fase de Grupos`,
+            metadata: {
+                competition: 'copa_libertadores',
+                logoUrl: TOURNAMENT_LOGOS.COPA_LIBERTADORES,
+                accentColor: '#facc15',
+                bgClass: 'from-amber-950/80 via-slate-950 to-slate-950',
+                groups: [{
+                    name: playerGroup.name,
+                    teams: playerGroup.teams.map((tid, potIdx) => {
+                        const tObj = getTeamForDraw(tid);
+                        return {
+                            id: tid,
+                            name: tObj?.name || 'Desconocido',
+                            team: tObj,
+                            pot: potIdx + 1,
                             isPlayer: tid === updatedPlayerTeam.id
-                        }))
-                    }]
-                }
-            });
+                        };
+                    })
+                }]
+            }
+        });
     }
 
     // Check if player qualified for Sudamericana
     const playerSudGroup = sudGroups.find(g => g.teams.includes(updatedPlayerTeam.id));
     if (playerSudGroup) {
         newCinematicQueue.push({
-                id: `cinematic_sud_draw_${newSeasonYear}`,
-                type: 'GROUP_DRAW',
-                title: `Copa Sudamericana`,
-                subtitle: `Sorteo de Fase de Grupos`,
-                metadata: {
-                    accentColor: '#d97706',
-                    groups: [{
-                        name: playerSudGroup.name,
-                        teams: playerSudGroup.teams.map(tid => ({
-                            name: teamsAfterProRel.find(t => t.id === tid)?.name || 'Desconocido',
+            id: `cinematic_sud_draw_${newSeasonYear}`,
+            type: 'GROUP_DRAW',
+            title: `CONMEBOL Sudamericana`,
+            subtitle: `Sorteo de Fase de Grupos`,
+            metadata: {
+                competition: 'copa_sudamericana',
+                logoUrl: TOURNAMENT_LOGOS.COPA_SUDAMERICANA,
+                accentColor: '#d97706',
+                bgClass: 'from-yellow-950/70 via-slate-950 to-slate-950',
+                groups: [{
+                    name: playerSudGroup.name,
+                    teams: playerSudGroup.teams.map((tid, potIdx) => {
+                        const tObj = getTeamForDraw(tid);
+                        return {
+                            id: tid,
+                            name: tObj?.name || 'Desconocido',
+                            team: tObj,
+                            pot: potIdx + 1,
                             isPlayer: tid === updatedPlayerTeam.id
-                        }))
-                    }]
-                }
-            });
+                        };
+                    })
+                }]
+            }
+        });
     }
 
     // Collect promoted/relegated team names for the cinematic summary (focused on user's league context)

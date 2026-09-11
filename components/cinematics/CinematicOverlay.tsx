@@ -4,15 +4,60 @@ import { Confetti } from '../ui/Confetti';
 import { TrophyIcon, TrendingUpIcon, TrendingDownIcon } from '../icons';
 import { formatCurrency } from '../../utils';
 import { TeamLogo } from '../../data/teams/helpers';
+import { TOURNAMENT_LOGOS } from '../../services/customPacks/argentineLogos';
 
 interface CinematicOverlayProps {
     event: CinematicEvent;
     onContinue: () => void;
 }
 
+const resolveCompetitionLogos = (comp?: string, title?: string, logoUrl?: string) => {
+    const raw = `${comp || ''} ${title || ''}`.toLowerCase();
+    
+    if (raw.includes('libertadores')) {
+        return {
+            primary: (logoUrl as string) || TOURNAMENT_LOGOS.COPA_LIBERTADORES,
+            fallback: 'https://upload.wikimedia.org/wikipedia/en/a/ac/Copa_Libertadores_logo.svg',
+            badge: 'CONMEBOL LIBERTADORES',
+            accent: '#F59E0B'
+        };
+    }
+    if (raw.includes('sudamericana')) {
+        return {
+            primary: (logoUrl as string) || TOURNAMENT_LOGOS.COPA_SUDAMERICANA,
+            fallback: 'https://upload.wikimedia.org/wikipedia/en/3/36/Copa_Sudamericana_logo.svg',
+            badge: 'CONMEBOL SUDAMERICANA',
+            accent: '#D97706'
+        };
+    }
+    if (raw.includes('champions')) {
+        return {
+            primary: (logoUrl as string) || TOURNAMENT_LOGOS.CHAMPIONS_LEAGUE,
+            fallback: 'https://tmssl.akamaized.net/images/logo/header/CL.png',
+            badge: 'UEFA CHAMPIONS LEAGUE',
+            accent: '#3B82F6'
+        };
+    }
+    if (raw.includes('intercontinental')) {
+        return {
+            primary: (logoUrl as string) || TOURNAMENT_LOGOS.COPA_INTERCONTINENTAL,
+            fallback: 'https://upload.wikimedia.org/wikipedia/en/5/5b/FIFA_Intercontinental_Cup_%28logo%29.png',
+            badge: 'FIFA INTERCONTINENTAL',
+            accent: '#10B981'
+        };
+    }
+    return {
+        primary: (logoUrl as string) || '',
+        fallback: '',
+        badge: title || 'COMPETICIÓN OFICIAL',
+        accent: '#F59E0B'
+    };
+};
+
 export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({ event, onContinue }) => {
     const [visible, setVisible] = useState(false);
     const [logoLoaded, setLogoLoaded] = useState(false);
+    const [compLogoSrc, setCompLogoSrc] = useState<string>('');
 
     useEffect(() => {
         const t = setTimeout(() => setVisible(true), 100);
@@ -80,50 +125,217 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({ event, onCon
                 );
             }
             case 'GROUP_DRAW': {
-                const accentColor = event.metadata?.accentColor || '#6366F1';
-                const groups = event.metadata?.groups || [];
-                const swissOpponents = event.metadata?.swissOpponents || [];
-                
+                const compInfo = resolveCompetitionLogos(
+                    event.metadata?.competition as string,
+                    event.title,
+                    event.metadata?.logoUrl as string
+                );
+                const accentColor = (event.metadata?.accentColor as string) || compInfo.accent || '#F59E0B';
+                const groups = (event.metadata?.groups as any[]) || [];
+                const swissOpponents = (event.metadata?.swissOpponents as any[]) || [];
+                const logoToRender = compLogoSrc || compInfo.primary;
+
                 return (
-                    <div className="flex flex-col items-center justify-center relative z-10 w-full max-w-4xl mx-auto">
+                    <div className="flex flex-col items-center justify-center relative z-10 w-full max-w-3xl mx-auto px-4">
+                        {/* Subtle ambient glow behind logo */}
                         <div
-                            className={`text-center mb-12 transition-all duration-700 ${visible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}
+                            className="absolute -top-10 w-56 h-56 sm:w-72 sm:h-72 rounded-full blur-3xl opacity-25 pointer-events-none"
+                            style={{ background: `radial-gradient(circle, ${accentColor} 0%, transparent 70%)` }}
+                        />
+
+                        {/* Tournament Logo */}
+                        <div
+                            className={`relative w-16 h-16 sm:w-20 sm:h-20 mb-1.5 flex items-center justify-center transition-all duration-700 transform ${
+                                visible ? 'scale-100 opacity-100 translate-y-0' : 'scale-75 opacity-0 translate-y-4'
+                            }`}
                         >
-                            <h1 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tighter mb-2">{event.title}</h1>
-                            <p className="text-lg font-bold uppercase tracking-widest" style={{ color: accentColor }}>{event.subtitle}</p>
+                            {logoToRender ? (
+                                <img
+                                    src={logoToRender}
+                                    alt={event.title}
+                                    className="w-full h-full object-contain filter drop-shadow-[0_8px_20px_rgba(0,0,0,0.85)]"
+                                    onError={() => {
+                                        if (compInfo.fallback && compLogoSrc !== compInfo.fallback) {
+                                            setCompLogoSrc(compInfo.fallback);
+                                        }
+                                    }}
+                                />
+                            ) : (
+                                <TrophyIcon className="w-16 h-16 text-amber-400 drop-shadow-[0_0_20px_rgba(245,158,11,0.5)]" />
+                            )}
                         </div>
 
-                        <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 w-full transition-all duration-700 delay-300 ${visible ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
+                        {/* Title & Subtitle Header */}
+                        <div
+                            className={`text-center mb-2.5 sm:mb-3 transition-all duration-700 delay-150 ${
+                                visible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+                            }`}
+                        >
+                            <h1 className="text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tight text-white drop-shadow-md leading-none">
+                                {event.title}
+                            </h1>
+                            <div className="flex items-center justify-center gap-2.5 mt-1">
+                                <div
+                                    className="h-px w-6 sm:w-10 rounded-full"
+                                    style={{ background: `linear-gradient(to right, transparent, ${accentColor})` }}
+                                />
+                                <p
+                                    className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em]"
+                                    style={{ color: accentColor }}
+                                >
+                                    {event.subtitle || 'Sorteo de Fase de Grupos'}
+                                </p>
+                                <div
+                                    className="h-px w-6 sm:w-10 rounded-full"
+                                    style={{ background: `linear-gradient(to left, transparent, ${accentColor})` }}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Centered Group Draw Card */}
+                        <div
+                            className={`w-full transition-all duration-700 delay-300 ${
+                                visible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
+                            }`}
+                        >
                             {groups.length > 0 ? (
-                                // Group Stage View
-                                groups.map((group: any, idx: number) => (
-                                    <div key={idx} className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md">
-                                        <h3 className="text-xl font-black text-white uppercase mb-4 flex items-center gap-2">
-                                            <span className="w-1.5 h-6 rounded-full" style={{ backgroundColor: accentColor }}></span>
-                                            {group.name}
-                                        </h3>
-                                        <div className="space-y-3">
-                                            {group.teams.map((team: any, tIdx: number) => (
-                                                <div key={tIdx} className="flex items-center gap-3">
-                                                    <span className="text-[10px] font-black text-slate-500 w-4">{tIdx + 1}</span>
-                                                    <span className={`text-sm font-bold ${team.isPlayer ? 'text-yellow-400' : 'text-slate-200'}`}>{team.name}</span>
-                                                </div>
-                                            ))}
+                                <div
+                                    className={
+                                        groups.length === 1
+                                            ? 'flex justify-center w-full'
+                                            : 'grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-3xl mx-auto'
+                                    }
+                                >
+                                    {groups.map((group: any, idx: number) => (
+                                        <div
+                                            key={idx}
+                                            className="w-full max-w-md bg-slate-900/90 border rounded-2xl p-3.5 sm:p-4.5 backdrop-blur-xl shadow-2xl relative overflow-hidden"
+                                            style={{ borderColor: `${accentColor}35` }}
+                                        >
+                                            {/* Subtle top accent line */}
+                                            <div
+                                                className="absolute top-0 inset-x-0 h-0.5"
+                                                style={{ background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)` }}
+                                            />
+
+                                            {/* Group Card Header */}
+                                            <div className="flex items-center justify-between mb-2.5 pb-2 border-b border-white/10">
+                                                <h3 className="text-base sm:text-lg font-black text-white uppercase tracking-wider flex items-center gap-2">
+                                                    <span
+                                                        className="w-1.5 h-5 rounded-full"
+                                                        style={{ backgroundColor: accentColor }}
+                                                    />
+                                                    {group.name}
+                                                </h3>
+                                                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-slate-300">
+                                                    {group.teams.length} Clubes
+                                                </span>
+                                            </div>
+
+                                            {/* Team List with Crests */}
+                                            <div className="space-y-1.5 sm:space-y-2">
+                                                {group.teams.map((team: any, tIdx: number) => {
+                                                    const isUser = Boolean(team.isPlayer);
+                                                    return (
+                                                        <div
+                                                            key={tIdx}
+                                                            className={`flex items-center justify-between p-2 sm:p-2.5 rounded-xl transition-all duration-300 ${
+                                                                isUser
+                                                                    ? 'bg-amber-500/15 border border-amber-400/50 shadow-md shadow-amber-950/40 ring-1 ring-amber-400/30'
+                                                                    : 'bg-white/[0.03] hover:bg-white/[0.06] border border-white/5'
+                                                            }`}
+                                                        >
+                                                            <div className="flex items-center gap-2.5 min-w-0">
+                                                                {/* Seed Badge */}
+                                                                <div
+                                                                    className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black shrink-0 ${
+                                                                        isUser
+                                                                            ? 'bg-amber-400 text-slate-950 shadow-sm'
+                                                                            : 'bg-white/10 text-slate-400 border border-white/10'
+                                                                    }`}
+                                                                >
+                                                                    {tIdx + 1}
+                                                                </div>
+
+                                                                {/* Club Logo / Crest */}
+                                                                <div className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center shrink-0">
+                                                                    <TeamLogo
+                                                                        team={team.team}
+                                                                        className="w-full h-full object-contain drop-shadow"
+                                                                    />
+                                                                </div>
+
+                                                                {/* Club Name */}
+                                                                <span
+                                                                    className={`text-xs sm:text-sm font-bold truncate ${
+                                                                        isUser
+                                                                            ? 'text-amber-200 font-black tracking-wide'
+                                                                            : 'text-slate-100'
+                                                                    }`}
+                                                                >
+                                                                    {team.name}
+                                                                </span>
+                                                            </div>
+
+                                                            {/* User Badge or Pot */}
+                                                            {isUser ? (
+                                                                <span className="ml-2 px-2 py-0.5 rounded-md bg-amber-400/25 border border-amber-400/60 text-amber-300 text-[9px] font-black uppercase tracking-wider shrink-0 shadow-sm flex items-center gap-1">
+                                                                    <span>★</span> TU CLUB
+                                                                </span>
+                                                            ) : (
+                                                                <span className="ml-2 text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase shrink-0">
+                                                                    Bombo {team.pot || tIdx + 1}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
                                         </div>
-                                    </div>
-                                ))
+                                    ))}
+                                </div>
                             ) : swissOpponents.length > 0 ? (
-                                // Swiss Format View
-                                <div className="md:col-span-2 bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-md">
-                                    <h3 className="text-2xl font-black text-white uppercase mb-6 text-center tracking-widest">Tus {swissOpponents.length} Rivales de Fase Regular</h3>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                // Swiss Format View (Champions League)
+                                <div className="w-full max-w-xl mx-auto bg-slate-900/90 border border-blue-500/20 rounded-2xl p-4 sm:p-5 backdrop-blur-xl shadow-2xl relative overflow-hidden">
+                                    <div
+                                        className="absolute top-0 inset-x-0 h-0.5"
+                                        style={{ background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)` }}
+                                    />
+                                    <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/10">
+                                        <h3 className="text-base sm:text-lg font-black text-white uppercase tracking-wider">
+                                            Rivales de Fase de Liga
+                                        </h3>
+                                        <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400">
+                                            {swissOpponents.length} Partidos
+                                        </span>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                         {swissOpponents.map((opponent: any, idx: number) => (
-                                            <div key={idx} className="flex items-center justify-between p-4 bg-black/40 rounded-xl border border-white/5">
-                                                <div className="flex items-center gap-4">
-                                                    <span className="text-xs font-black text-slate-500">{idx + 1}</span>
-                                                    <span className="text-sm font-bold text-white uppercase italic">{opponent.name}</span>
+                                            <div
+                                                key={idx}
+                                                className="flex items-center justify-between p-2 bg-black/40 rounded-xl border border-white/5 hover:border-white/15 transition-all"
+                                            >
+                                                <div className="flex items-center gap-2.5 min-w-0">
+                                                    <span className="text-[10px] font-black text-slate-500 w-3.5">{idx + 1}</span>
+                                                    <div className="w-6 h-6 flex items-center justify-center shrink-0">
+                                                        <TeamLogo
+                                                            team={opponent.team}
+                                                            className="w-full h-full object-contain drop-shadow"
+                                                        />
+                                                    </div>
+                                                    <span className="text-xs font-bold text-white uppercase italic truncate">
+                                                        {opponent.name}
+                                                    </span>
                                                 </div>
-                                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{opponent.venue === 'home' ? 'Local' : 'Visita'}</span>
+                                                <span
+                                                    className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                                                        opponent.venue === 'home'
+                                                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                                            : 'bg-white/10 text-slate-400 border border-white/10'
+                                                    }`}
+                                                >
+                                                    {opponent.venue === 'home' ? 'Local' : 'Visita'}
+                                                </span>
                                             </div>
                                         ))}
                                     </div>
@@ -287,44 +499,30 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({ event, onCon
         }
     };
 
-    // Dynamic background for CUP_KICKOFF and GROUP_DRAW
-    const bgGradient = (event.type === 'CUP_KICKOFF' || event.type === 'GROUP_DRAW')
-        ? `bg-gradient-to-br ${event.metadata?.bgClass || 'from-indigo-900 via-slate-950 to-slate-950'}`
-        : '';
+    const accentColor = event.metadata?.accentColor || '#6366F1';
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden">
-            {/* Background */}
-            <div className={`absolute inset-0 backdrop-blur-xl transition-all duration-1000 ${bgGradient || 'bg-slate-950/90'}`} />
-
-            {/* Animated diagonal lines for CUP_KICKOFF and GROUP_DRAW */}
-            {(event.type === 'CUP_KICKOFF' || event.type === 'GROUP_DRAW') && (
-                <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    {[...Array(8)].map((_, i) => (
-                        <div
-                            key={i}
-                            className="absolute h-px opacity-10 animate-pulse"
-                            style={{
-                                top: `${10 + i * 12}%`,
-                                left: '-10%',
-                                right: '-10%',
-                                background: `linear-gradient(to right, transparent, ${event.metadata?.accentColor || '#6366F1'}, transparent)`,
-                                animationDelay: `${i * 0.15}s`
-                            }}
-                        />
-                    ))}
-                </div>
-            )}
+        <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-slate-950 select-none">
+            {/* Ambient luxury backdrop without tacky lines */}
+            <div
+                className="fixed inset-0 transition-opacity duration-1000 pointer-events-none"
+                style={{
+                    background: `radial-gradient(ellipse 90% 70% at 50% 25%, ${accentColor}20 0%, rgba(15, 23, 42, 0.96) 65%, #020617 100%)`
+                }}
+            />
+            {/* Soft vignette */}
+            <div className="fixed inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40 pointer-events-none" />
             
-            {/* Main content */}
-            <div className="relative z-10 w-full h-full flex flex-col items-center justify-center p-6">
+            {/* Main content - perfectly centered and symmetrical */}
+            <div className="relative z-10 w-full max-h-screen flex flex-col items-center justify-center p-3 sm:p-4 my-auto">
                 {renderContent()}
 
                 <button
                     onClick={onContinue}
-                    className="mt-16 bg-white/10 hover:bg-white/20 border border-white/20 text-white px-8 py-4 rounded-full font-bold uppercase tracking-widest backdrop-blur-sm transition-all hover:scale-105 active:scale-95"
+                    className="mt-3 sm:mt-4 bg-white/10 hover:bg-white/20 border border-white/25 hover:border-white/45 text-white px-8 py-2.5 rounded-full font-black uppercase tracking-[0.2em] text-xs backdrop-blur-md transition-all hover:scale-105 active:scale-95 shadow-xl flex items-center gap-2 group"
                 >
-                    Continuar
+                    <span>Continuar</span>
+                    <span className="text-xs transition-transform duration-300 group-hover:translate-x-1">→</span>
                 </button>
             </div>
         </div>

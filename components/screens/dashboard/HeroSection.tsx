@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { GameState, MatchPhase, CupCompetition } from '../../../types';
 import { GameAction } from '../../../state/reducer';
 import { TrophyIcon, UsersIcon } from '../../icons';
+import { Trophy, Sparkles, ArrowRight, TrendingUp, TrendingDown, ArrowUpRight } from 'lucide-react';
 import { TeamLogo } from '../../../data/teams/helpers';
 import { isSeasonCompleted, getSeasonSummaryData } from '../../../services/seasonUtils';
 
@@ -44,74 +45,193 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     if (isSeasonEnd) {
         const summary = getSeasonSummaryData(gameState);
         return (
-            <div className="apex-card p-6 sm:p-8 flex flex-col justify-between min-h-[300px] relative overflow-hidden group">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none -mr-16 -mt-16" />
-                
-                <div>
-                    <div className="flex items-center justify-between mb-4">
-                        <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1.5">
-                            <TrophyIcon className="w-3.5 h-3.5 text-amber-400" />
-                            Fin de Temporada {summary.season}
-                        </span>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                            Torneo Concluido
-                        </span>
-                    </div>
+            <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#0c1322] via-[#090d16] to-[#060910] border border-amber-500/30 p-5 sm:p-7 shadow-2xl space-y-5 select-none">
+                {/* Ambient Golden Glows */}
+                <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
+                <div className="absolute bottom-0 left-0 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none -ml-20 -mb-20" />
 
-                    <h2 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight mb-2">
-                        Temporada {summary.season} Finalizada
-                    </h2>
-                    <p className="text-xs text-slate-300/80 max-w-lg mb-6 leading-relaxed">
-                        Se han disputado todos los partidos oficiales. Se han definido los títulos, descensos a Primera Nacional y ascensos a la máxima categoría.
-                    </p>
-
-                    {/* Quick highlights */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-                        {summary.isArgentina ? (
-                            <>
-                                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between">
-                                    <span className="text-[10px] font-bold uppercase text-amber-400">Campeón Apertura</span>
-                                    <span className="text-xs font-black text-white truncate max-w-[140px] text-right">
-                                        {summary.aperturaChampion?.name || 'En Disputa'}
-                                    </span>
-                                </div>
-                                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between">
-                                    <span className="text-[10px] font-bold uppercase text-amber-400">Campeón Clausura</span>
-                                    <span className="text-xs font-black text-white truncate max-w-[140px] text-right">
-                                        {summary.clausuraChampion?.name || 'En Disputa'}
-                                    </span>
-                                </div>
-                            </>
-                        ) : (
-                            <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between sm:col-span-2">
-                                <span className="text-[10px] font-bold uppercase text-amber-400">Campeón de Liga</span>
-                                <span className="text-xs font-black text-white">
-                                    {summary.leagueChampion?.name || 'Desconocido'}
-                                </span>
-                            </div>
-                        )}
-
-                        <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between">
-                            <span className="text-[10px] font-bold uppercase text-emerald-400">⬆ Ascienden a 1ª</span>
-                            <span className="text-xs font-bold text-white truncate max-w-[140px] text-right">
-                                {summary.promotedTeams.map(t => t.name).join(', ') || '-'}
+                {/* Header Row */}
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-4">
+                    <div className="space-y-1.5">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1.5 shadow-sm">
+                                <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                                Temporada {summary.season} Finalizada
+                            </span>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-white/5 px-2.5 py-1 rounded-full border border-white/5">
+                                Torneo Concluido
                             </span>
                         </div>
-                        <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-between">
-                            <span className="text-[10px] font-bold uppercase text-rose-400">⬇ Descienden</span>
-                            <span className="text-xs font-bold text-white truncate max-w-[140px] text-right">
-                                {summary.relegatedTeams.map(t => t.name).join(', ') || '-'}
+                        <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white uppercase tracking-tight">
+                            Balance Oficial de la Temporada
+                        </h2>
+                        <p className="text-xs text-slate-300/80 max-w-xl leading-relaxed">
+                            Se disputaron todas las competencias oficiales. A continuación se resumen los campeonatos, ascensos y descensos definidos.
+                        </p>
+                    </div>
+
+                    {/* User Club Performance Badge */}
+                    <div className="flex items-center gap-3 bg-white/[0.04] border border-white/10 rounded-2xl p-3 shrink-0 self-start md:self-auto">
+                        <div className="w-10 h-10 shrink-0 flex items-center justify-center">
+                            <TeamLogo team={summary.userTeam} className="w-full h-full object-contain drop-shadow" />
+                        </div>
+                        <div>
+                            <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block">
+                                Tu Club
                             </span>
+                            <span className="text-xs font-black text-white truncate block max-w-[130px]">
+                                {summary.userTeam.name}
+                            </span>
+                            <div className="flex items-center gap-1.5 text-[10px] mt-0.5">
+                                <span className="text-amber-400 font-extrabold">{summary.userPosition}º Puesto</span>
+                                <span className="text-slate-500">•</span>
+                                <span className="text-slate-300 font-bold">{summary.userPoints} Pts</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Actions */}
-                <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+                {/* Highlights Grid */}
+                <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Left Column: Títulos y Campeones */}
+                    <div className="space-y-2.5">
+                        <div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-amber-400">
+                            <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                            <span>Títulos y Campeones</span>
+                        </div>
+
+                        {summary.isArgentina ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                {/* Campeón Apertura */}
+                                <div className="bg-slate-900/80 border border-amber-500/25 hover:border-amber-500/40 rounded-2xl p-3 flex items-center gap-3 transition-colors shadow-sm">
+                                    <div className="w-9 h-9 shrink-0 flex items-center justify-center">
+                                        {summary.aperturaChampion ? (
+                                            <TeamLogo team={summary.aperturaChampion} className="w-full h-full object-contain drop-shadow" />
+                                        ) : (
+                                            <Trophy className="w-6 h-6 text-amber-400/40" />
+                                        )}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <span className="text-[9px] font-black uppercase tracking-wider text-amber-400/90 block truncate">
+                                            Campeón Apertura
+                                        </span>
+                                        <span className="text-xs sm:text-sm font-black text-white truncate block">
+                                            {summary.aperturaChampion?.name || 'En Disputa'}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Campeón Clausura */}
+                                <div className="bg-slate-900/80 border border-cyan-500/25 hover:border-cyan-500/40 rounded-2xl p-3 flex items-center gap-3 transition-colors shadow-sm">
+                                    <div className="w-9 h-9 shrink-0 flex items-center justify-center">
+                                        {summary.clausuraChampion ? (
+                                            <TeamLogo team={summary.clausuraChampion} className="w-full h-full object-contain drop-shadow" />
+                                        ) : (
+                                            <Trophy className="w-6 h-6 text-cyan-400/40" />
+                                        )}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <span className="text-[9px] font-black uppercase tracking-wider text-cyan-400/90 block truncate">
+                                            Campeón Clausura
+                                        </span>
+                                        <span className="text-xs sm:text-sm font-black text-white truncate block">
+                                            {summary.clausuraChampion?.name || 'En Disputa'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="bg-slate-900/80 border border-amber-500/25 rounded-2xl p-3.5 flex items-center gap-3.5 shadow-sm">
+                                <div className="w-10 h-10 shrink-0 flex items-center justify-center">
+                                    {summary.leagueChampion ? (
+                                        <TeamLogo team={summary.leagueChampion} className="w-full h-full object-contain drop-shadow" />
+                                    ) : (
+                                        <Trophy className="w-7 h-7 text-amber-400/40" />
+                                    )}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <span className="text-[9px] font-black uppercase tracking-wider text-amber-400/90 block truncate">
+                                        Campeón de Liga
+                                    </span>
+                                    <span className="text-sm font-black text-white truncate block">
+                                        {summary.leagueChampion?.name || 'Desconocido'}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Right Column: Movimientos (Ascensos & Descensos) */}
+                    <div className="space-y-2.5">
+                        <div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-slate-300">
+                            <ArrowUpRight className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>Movimientos de Categoría</span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            {/* Ascendidos */}
+                            <div className="bg-emerald-950/20 border border-emerald-500/20 rounded-2xl p-3 space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[9px] font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1">
+                                        <TrendingUp className="w-3.5 h-3.5" />
+                                        Ascensos a 1ª
+                                    </span>
+                                    <span className="text-[9px] font-bold text-emerald-400/70 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                                        {summary.promotedTeams.length} Clubes
+                                    </span>
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    {summary.promotedTeams.length === 0 ? (
+                                        <span className="text-[11px] text-slate-500 italic py-1">No determinados</span>
+                                    ) : (
+                                        summary.promotedTeams.map(t => (
+                                            <div key={t.id} className="flex items-center gap-2 bg-black/40 px-2 py-1.5 rounded-lg border border-emerald-500/15">
+                                                <div className="w-4 h-4 shrink-0 flex items-center justify-center">
+                                                    <TeamLogo team={t} className="w-full h-full object-contain" />
+                                                </div>
+                                                <span className="text-xs font-bold text-white truncate">{t.name}</span>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Descendidos */}
+                            <div className="bg-rose-950/20 border border-rose-500/20 rounded-2xl p-3 space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[9px] font-black uppercase tracking-wider text-rose-400 flex items-center gap-1">
+                                        <TrendingDown className="w-3.5 h-3.5" />
+                                        Descendidos
+                                    </span>
+                                    <span className="text-[9px] font-bold text-rose-400/70 bg-rose-500/10 px-1.5 py-0.5 rounded">
+                                        {summary.relegatedTeams.length} Clubes
+                                    </span>
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    {summary.relegatedTeams.length === 0 ? (
+                                        <span className="text-[11px] text-slate-500 italic py-1">No determinados</span>
+                                    ) : (
+                                        summary.relegatedTeams.map(t => (
+                                            <div key={t.id} className="flex items-center gap-2 bg-black/40 px-2 py-1.5 rounded-lg border border-rose-500/15">
+                                                <div className="w-4 h-4 shrink-0 flex items-center justify-center">
+                                                    <TeamLogo team={t} className="w-full h-full object-contain" />
+                                                </div>
+                                                <span className="text-xs font-bold text-white truncate">{t.name}</span>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Actions Footer */}
+                <div className="relative z-10 flex flex-col sm:flex-row items-center gap-3 pt-2">
                     <button
                         onClick={onStartNewSeason}
                         disabled={isSimulating}
-                        className="apex-btn-gold w-full sm:w-auto px-6 py-3 flex-1 flex items-center justify-center gap-2 font-black text-xs uppercase tracking-wider"
+                        className="apex-btn-gold w-full sm:w-auto px-6 py-3.5 flex-1 flex items-center justify-center gap-2 font-black text-xs uppercase tracking-widest shadow-lg shadow-amber-500/20 hover:scale-[1.01] active:scale-[0.99] transition-all"
                     >
                         {isSimulating ? (
                             <>
@@ -119,16 +239,21 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                                 <span>Iniciando Temporada {summary.season + 1}...</span>
                             </>
                         ) : (
-                            <span>Comenzar Temporada {summary.season + 1} ➔</span>
+                            <>
+                                <Sparkles className="w-4 h-4 text-black" />
+                                <span>Comenzar Temporada {summary.season + 1}</span>
+                                <ArrowRight className="w-4 h-4 text-black" />
+                            </>
                         )}
                     </button>
 
                     {onOpenSeasonEndModal && (
                         <button
                             onClick={onOpenSeasonEndModal}
-                            className="w-full sm:w-auto px-4 py-3 rounded-xl border border-white/10 hover:border-white/20 bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase tracking-wider transition-colors"
+                            className="w-full sm:w-auto px-5 py-3.5 rounded-xl border border-white/10 hover:border-white/25 bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2"
                         >
-                            Ver Resumen Detallado
+                            <Trophy className="w-4 h-4 text-amber-400" />
+                            <span>Ver Resumen Detallado</span>
                         </button>
                     )}
                 </div>

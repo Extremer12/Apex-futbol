@@ -296,69 +296,28 @@ class CustomPacksService {
         const custom = this.getCustomLogo('teams', keys);
         if (custom) return custom;
 
-        const isArgActive = this.isArgentinePackActive();
-        const isOtrosArgActive = this.isOtrosArgentinaPackActive();
-        const isParActive = this.isParaguayPackActive();
-        const isEngActive = this.isEnglishPackActive();
-        const isItaActive = this.isItalianPackActive();
-        const isSpaActive = this.isSpanishPackActive();
-        const isBraActive = this.isBrazilianPackActive();
-        const isGerActive = this.isGermanPackActive();
-        const isFreActive = this.isFrenchPackActive();
-
-        if (isArgActive || isOtrosArgActive || isParActive || isEngActive || isItaActive || isSpaActive || isBraActive || isGerActive || isFreActive) {
-            // Check by numeric/string ID
-            if (team.id !== undefined && team.id !== null) {
-                const idNum = Number(team.id);
-                // Paraguayan IDs: 981-994
-                if (isParActive && idNum >= 981 && idNum <= 994 && ARG_CLUB_LOGOS_BY_ID[team.id]) {
-                    return ARG_CLUB_LOGOS_BY_ID[team.id];
-                }
-                // Argentine IDs: 701-799
-                if ((isArgActive || isOtrosArgActive) && idNum >= 700 && idNum < 800 && ARG_CLUB_LOGOS_BY_ID[team.id]) {
-                    return ARG_CLUB_LOGOS_BY_ID[team.id];
-                }
-                // English IDs: 1-20 (Premier) and 101-124 (Championship)
-                if (isEngActive && ((idNum >= 1 && idNum <= 20) || (idNum >= 101 && idNum <= 124)) && ARG_CLUB_LOGOS_BY_ID[team.id]) {
-                    return ARG_CLUB_LOGOS_BY_ID[team.id];
-                }
-                // Italian IDs: 501-520 (Serie A) and 961-978 (Serie B)
-                if (isItaActive && ((idNum >= 501 && idNum <= 520) || (idNum >= 961 && idNum <= 978)) && ARG_CLUB_LOGOS_BY_ID[team.id]) {
-                    return ARG_CLUB_LOGOS_BY_ID[team.id];
-                }
-                // Spanish IDs: 201-220 (La Liga) and 901-922 (Segunda División)
-                if (isSpaActive && ((idNum >= 201 && idNum <= 220) || (idNum >= 901 && idNum <= 922)) && ARG_CLUB_LOGOS_BY_ID[team.id]) {
-                    return ARG_CLUB_LOGOS_BY_ID[team.id];
-                }
-                // Brazilian IDs: 801-820 (Serie A) and 851-870 (Serie B)
-                if (isBraActive && ((idNum >= 801 && idNum <= 820) || (idNum >= 851 && idNum <= 870)) && ARG_CLUB_LOGOS_BY_ID[team.id]) {
-                    return ARG_CLUB_LOGOS_BY_ID[team.id];
-                }
-                // German IDs: 401-420 (Bundesliga) and 931-950 (2. Bundesliga)
-                if (isGerActive && ((idNum >= 401 && idNum <= 420) || (idNum >= 931 && idNum <= 950)) && ARG_CLUB_LOGOS_BY_ID[team.id]) {
-                    return ARG_CLUB_LOGOS_BY_ID[team.id];
-                }
-                // French IDs: 601-618 (Ligue 1) and 651-670 (Ligue 2)
-                if (isFreActive && ((idNum >= 601 && idNum <= 618) || (idNum >= 651 && idNum <= 670)) && ARG_CLUB_LOGOS_BY_ID[team.id]) {
-                    return ARG_CLUB_LOGOS_BY_ID[team.id];
-                }
-                // General lookup if pack active
-                if (ARG_CLUB_LOGOS_BY_ID[team.id]) {
-                    return ARG_CLUB_LOGOS_BY_ID[team.id];
-                }
+        // 1. Direct lookup by ID in built-in data packs
+        if (team.id !== undefined && team.id !== null) {
+            if (ARG_CLUB_LOGOS_BY_ID[team.id]) {
+                return ARG_CLUB_LOGOS_BY_ID[team.id];
             }
+        }
 
-            // Check by team name
-            if (team.name) {
-                const norm = normalizeKey(team.name);
-                if (norm && ARG_CLUB_LOGOS_BY_NAME[norm]) {
-                    return ARG_CLUB_LOGOS_BY_NAME[norm];
-                }
-                const lower = team.name.toLowerCase().trim();
-                if (ARG_CLUB_LOGOS_BY_NAME[lower]) {
-                    return ARG_CLUB_LOGOS_BY_NAME[lower];
-                }
+        // 2. Direct lookup by team name in built-in data packs
+        if (team.name) {
+            const norm = normalizeKey(team.name);
+            if (norm && ARG_CLUB_LOGOS_BY_NAME[norm]) {
+                return ARG_CLUB_LOGOS_BY_NAME[norm];
             }
+            const lower = team.name.toLowerCase().trim();
+            if (ARG_CLUB_LOGOS_BY_NAME[lower]) {
+                return ARG_CLUB_LOGOS_BY_NAME[lower];
+            }
+        }
+
+        // 3. Fallback to team's explicit logo field
+        if (team.logo && team.logo.trim().length > 0) {
+            return team.logo;
         }
 
         return undefined;
@@ -369,19 +328,17 @@ class CustomPacksService {
         const custom = this.getCustomLogo('competitions', keys);
         if (custom) return custom;
 
-        if (this.isCompetitionsPackActive() || this.isParaguayPackActive() || this.isArgentinePackActive() || this.isEnglishPackActive() || this.isItalianPackActive() || this.isSpanishPackActive() || this.isBrazilianPackActive() || this.isGermanPackActive() || this.isFrenchPackActive()) {
-            if (ARG_COMPETITION_LOGOS[competitionId]) {
-                return ARG_COMPETITION_LOGOS[competitionId];
-            }
-            const norm = normalizeKey(competitionId);
-            if (ARG_COMPETITION_LOGOS[norm]) {
-                return ARG_COMPETITION_LOGOS[norm];
-            }
-            if (name) {
-                const nameNorm = normalizeKey(name);
-                if (ARG_COMPETITION_LOGOS[nameNorm]) {
-                    return ARG_COMPETITION_LOGOS[nameNorm];
-                }
+        if (ARG_COMPETITION_LOGOS[competitionId]) {
+            return ARG_COMPETITION_LOGOS[competitionId];
+        }
+        const norm = normalizeKey(competitionId);
+        if (ARG_COMPETITION_LOGOS[norm]) {
+            return ARG_COMPETITION_LOGOS[norm];
+        }
+        if (name) {
+            const nameNorm = normalizeKey(name);
+            if (ARG_COMPETITION_LOGOS[nameNorm]) {
+                return ARG_COMPETITION_LOGOS[nameNorm];
             }
         }
 

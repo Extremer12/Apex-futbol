@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { GameState } from '../../../types';
 import { getSeasonSummaryData } from '../../../services/seasonUtils';
 import { TeamLogo } from '../../../data/teams/helpers';
-import { TrophyIcon, TrendingUpIcon, TrendingDownIcon, CloseIcon, ShieldIcon, SparklesIcon } from '../../icons';
+import { Trophy, TrendingUp, TrendingDown, Sparkles, X, ArrowRight } from 'lucide-react';
 
 interface SeasonEndModalProps {
     gameState: GameState;
@@ -22,15 +22,15 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
 
     const regions = [
         { id: 'all', label: 'Todos los Torneos' },
-        { id: 'Internacional', label: '🌎 Internacionales' },
-        { id: 'Argentina', label: '🇦🇷 Argentina' },
-        { id: 'Inglaterra', label: '🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra' },
-        { id: 'España', label: '🇪🇸 España' },
-        { id: 'Italia', label: '🇮🇹 Italia' },
-        { id: 'Alemania', label: '🇩🇪 Alemania' },
-        { id: 'Francia', label: '🇫🇷 Francia' },
-        { id: 'Brasil', label: '🇧🇷 Brasil' },
-        { id: 'Paraguay', label: '🇵🇾 Paraguay' },
+        { id: 'Internacional', label: 'Internacionales' },
+        { id: 'Argentina', label: 'Argentina' },
+        { id: 'Inglaterra', label: 'Inglaterra' },
+        { id: 'España', label: 'España' },
+        { id: 'Italia', label: 'Italia' },
+        { id: 'Alemania', label: 'Alemania' },
+        { id: 'Francia', label: 'Francia' },
+        { id: 'Brasil', label: 'Brasil' },
+        { id: 'Paraguay', label: 'Paraguay' },
     ];
 
     const filteredChampions = selectedRegion === 'all'
@@ -49,12 +49,12 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
             {/* Top Navigation Bar */}
             <header className="sticky top-0 z-50 bg-slate-950/90 backdrop-blur-xl border-b border-white/10 px-4 sm:px-8 py-4 flex items-center justify-between shadow-2xl">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center shrink-0">
-                        <TrophyIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[var(--apex-gold)]" />
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center">
+                        <Trophy className="w-6 h-6 sm:w-7 sm:h-7 text-amber-400" />
                     </div>
                     <div>
                         <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--apex-gold)]">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">
                                 Cuadro Oficial de Temporada
                             </span>
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
@@ -72,14 +72,14 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
                         onClick={onClose}
                         className="px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-1.5"
                     >
-                        <CloseIcon className="w-4 h-4" />
+                        <X className="w-4 h-4" />
                         <span className="hidden sm:inline">Cerrar</span>
                     </button>
 
                     <button
                         onClick={onStartNewSeason}
                         disabled={isStarting}
-                        className="apex-btn-gold px-5 py-2.5 sm:px-7 sm:py-2.5 flex items-center gap-2 font-black text-xs uppercase tracking-widest shadow-lg shadow-amber-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                        className="apex-btn-gold px-5 py-2.5 sm:px-6 sm:py-2.5 flex items-center gap-2 font-black text-xs uppercase tracking-widest shadow-lg shadow-amber-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
                     >
                         {isStarting ? (
                             <>
@@ -88,8 +88,9 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
                             </>
                         ) : (
                             <>
-                                <SparklesIcon className="w-4 h-4" />
-                                <span>Comenzar Temporada {summary.season + 1} ➔</span>
+                                <Sparkles className="w-4 h-4 text-black" />
+                                <span>Comenzar Temporada {summary.season + 1}</span>
+                                <ArrowRight className="w-4 h-4 text-black" />
                             </>
                         )}
                     </button>
@@ -102,11 +103,11 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
                 <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900/90 to-amber-950/30 border border-white/10 p-6 sm:p-8 shadow-2xl">
                     <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                         <div className="flex items-center gap-4 sm:gap-6">
-                            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/5 border border-white/10 p-2.5 shrink-0 flex items-center justify-center shadow-xl">
-                                <TeamLogo team={summary.userTeam} className="w-full h-full object-contain" />
+                            <div className="w-14 h-14 sm:w-16 sm:h-16 shrink-0 flex items-center justify-center">
+                                <TeamLogo team={summary.userTeam} className="w-full h-full object-contain drop-shadow-xl" />
                             </div>
                             <div>
-                                <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-[var(--apex-gold)] block mb-0.5">
+                                <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-amber-400 block mb-0.5">
                                     Desempeño Oficial del Club
                                 </span>
                                 <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase">
@@ -176,12 +177,11 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
                                         className="bg-slate-900/70 border border-white/5 hover:border-amber-500/30 rounded-2xl p-4 transition-all hover:bg-slate-900 flex items-center justify-between gap-3 shadow-lg"
                                     >
                                         <div className="flex items-center gap-3 min-w-0">
-                                            {/* Fixed sized logo container */}
-                                            <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 shrink-0 flex items-center justify-center p-1">
+                                            <div className="w-9 h-9 shrink-0 flex items-center justify-center">
                                                 {item.team ? (
-                                                    <TeamLogo team={item.team} className="w-full h-full object-contain" />
+                                                    <TeamLogo team={item.team} className="w-full h-full object-contain drop-shadow" />
                                                 ) : (
-                                                    <ShieldIcon className="w-5 h-5 text-slate-600" />
+                                                    <Trophy className="w-6 h-6 text-amber-500/30" />
                                                 )}
                                             </div>
 
@@ -213,7 +213,7 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
                     {/* Movimientos de División */}
                     <div className="bg-slate-900/70 border border-white/5 rounded-3xl p-6 space-y-6">
                         <div className="flex items-center gap-2 border-b border-white/5 pb-4">
-                            <TrendingDownIcon className="w-5 h-5 text-rose-400" />
+                            <TrendingDown className="w-5 h-5 text-rose-400" />
                             <h3 className="text-base font-black uppercase tracking-wider text-white">
                                 Movimientos de División
                             </h3>
@@ -222,7 +222,7 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
                         {/* Ascendidos */}
                         <div className="space-y-3">
                             <span className="text-xs font-black text-emerald-400 flex items-center gap-1.5 uppercase">
-                                <TrendingUpIcon className="w-4 h-4" />
+                                <TrendingUp className="w-4 h-4" />
                                 {summary.isArgentina ? 'Ascensos a Primera División' : 'Ascendidos a 1ª División'}
                             </span>
                             {summary.promotedTeams.length === 0 ? (
@@ -230,26 +230,26 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
                             ) : (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     {summary.promotedTeams.map(team => (
-                                        <div key={team.id} className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                                            <div className="flex items-center gap-2 min-w-0">
-                                                <div className="w-6 h-6 shrink-0 flex items-center justify-center">
-                                                    <TeamLogo team={team} className="w-full h-full object-contain" />
-                                                </div>
-                                                <span className="text-xs font-bold text-white truncate">{team.name}</span>
-                                            </div>
-                                            <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 shrink-0">
-                                                ⬆ Ascenso
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
+                                         <div key={team.id} className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                                             <div className="flex items-center gap-2 min-w-0">
+                                                 <div className="w-6 h-6 shrink-0 flex items-center justify-center">
+                                                     <TeamLogo team={team} className="w-full h-full object-contain" />
+                                                 </div>
+                                                 <span className="text-xs font-bold text-white truncate">{team.name}</span>
+                                             </div>
+                                             <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 shrink-0 flex items-center gap-1">
+                                                 <TrendingUp className="w-3 h-3" /> Ascenso
+                                             </span>
+                                         </div>
+                                     ))}
+                                 </div>
                             )}
                         </div>
 
                         {/* Descendidos */}
                         <div className="space-y-3 pt-2">
                             <span className="text-xs font-black text-rose-400 flex items-center gap-1.5 uppercase">
-                                <TrendingDownIcon className="w-4 h-4" />
+                                <TrendingDown className="w-4 h-4" />
                                 {summary.isArgentina ? 'Descensos a Primera Nacional' : 'Descendidos de Categoría'}
                             </span>
                             {summary.relegatedTeams.length === 0 ? (
@@ -257,18 +257,18 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
                             ) : (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     {summary.relegatedTeams.map(team => (
-                                        <div key={team.id} className="flex items-center justify-between p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20">
-                                            <div className="flex items-center gap-2 min-w-0">
-                                                <div className="w-6 h-6 shrink-0 flex items-center justify-center">
-                                                    <TeamLogo team={team} className="w-full h-full object-contain" />
-                                                </div>
-                                                <span className="text-xs font-bold text-white truncate">{team.name}</span>
-                                            </div>
-                                            <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 shrink-0">
-                                                ⬇ Descenso
-                                            </span>
-                                        </div>
-                                    ))}
+                                         <div key={team.id} className="flex items-center justify-between p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20">
+                                             <div className="flex items-center gap-2 min-w-0">
+                                                 <div className="w-6 h-6 shrink-0 flex items-center justify-center">
+                                                     <TeamLogo team={team} className="w-full h-full object-contain" />
+                                                 </div>
+                                                 <span className="text-xs font-bold text-white truncate">{team.name}</span>
+                                             </div>
+                                             <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 shrink-0 flex items-center gap-1">
+                                                 <TrendingDown className="w-3 h-3" /> Descenso
+                                             </span>
+                                         </div>
+                                     ))}
                                 </div>
                             )}
                         </div>
@@ -277,7 +277,7 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
                     {/* Clasificados a Torneos Continentales */}
                     <div className="bg-slate-900/70 border border-white/5 rounded-3xl p-6 space-y-6">
                         <div className="flex items-center gap-2 border-b border-white/5 pb-4">
-                            <TrophyIcon className="w-5 h-5 text-amber-400" />
+                            <Trophy className="w-5 h-5 text-amber-400" />
                             <h3 className="text-base font-black uppercase tracking-wider text-white">
                                 Clasificaciones Continentales
                             </h3>
@@ -286,8 +286,9 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
                         {summary.isArgentina ? (
                             <div className="space-y-5">
                                 <div>
-                                    <span className="text-xs font-black text-amber-400 uppercase block mb-2">
-                                        🏆 Clasificados a Copa Libertadores
+                                    <span className="text-xs font-black text-amber-400 uppercase flex items-center gap-1.5 mb-2">
+                                        <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                                        Clasificados a Copa Libertadores
                                     </span>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                         {summary.libertadoresQualified.slice(0, 6).map(t => (
@@ -302,8 +303,9 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
                                 </div>
 
                                 <div>
-                                    <span className="text-xs font-black text-sky-400 uppercase block mb-2">
-                                        🥈 Clasificados a Copa Sudamericana
+                                    <span className="text-xs font-black text-sky-400 uppercase flex items-center gap-1.5 mb-2">
+                                        <Trophy className="w-3.5 h-3.5 text-sky-400" />
+                                        Clasificados a Copa Sudamericana
                                     </span>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                         {summary.sudamericanaQualified.slice(0, 6).map(t => (
@@ -319,8 +321,9 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
                             </div>
                         ) : (
                             <div>
-                                <span className="text-xs font-black text-blue-400 uppercase block mb-3">
-                                    ⭐ Clasificados a UEFA Champions League
+                                <span className="text-xs font-black text-blue-400 uppercase flex items-center gap-1.5 mb-3">
+                                    <Trophy className="w-3.5 h-3.5 text-blue-400" />
+                                    Clasificados a UEFA Champions League
                                 </span>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     {summary.championsLeagueQualified.map(t => (
@@ -337,37 +340,46 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
                     </div>
                 </div>
 
-                {/* Bottom CTA Banner */}
-                <div className="bg-gradient-to-r from-amber-600/20 via-amber-500/10 to-transparent border border-amber-500/30 rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6">
-                    <div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-amber-400 block mb-1">
-                            ¿Listo para una nueva temporada?
+                {/* Bottom Action Section */}
+                <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0e1626] via-[#0a0f1c] to-[#070b14] border border-amber-500/25 p-6 sm:p-7 flex flex-col lg:flex-row items-center justify-between gap-6 shadow-xl">
+                    <div className="space-y-1 text-center lg:text-left">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-amber-400 block">
+                            Cierre Oficial de Ciclo
                         </span>
                         <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">
                             Comenzar Temporada {summary.season + 1}
                         </h3>
-                        <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-xl">
-                            Se actualizarán los presupuestos, se procesarán los ascensos y descensos, los nuevos cupos continentales y el calendario oficial.
+                        <p className="text-xs text-slate-400 max-w-lg">
+                            Se actualizarán presupuestos, contratos, ascensos, descensos y el calendario de todas las competencias.
                         </p>
                     </div>
 
-                    <button
-                        onClick={onStartNewSeason}
-                        disabled={isStarting}
-                        className="apex-btn-gold px-8 py-4 flex items-center justify-center gap-2.5 font-black text-xs sm:text-sm uppercase tracking-widest shadow-xl shadow-amber-500/20 shrink-0 w-full sm:w-auto"
-                    >
-                        {isStarting ? (
-                            <>
-                                <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
-                                <span>Preparando Nueva Temporada...</span>
-                            </>
-                        ) : (
-                            <>
-                                <SparklesIcon className="w-5 h-5" />
-                                <span>Iniciar Temporada {summary.season + 1} ➔</span>
-                            </>
-                        )}
-                    </button>
+                    <div className="flex flex-wrap items-center justify-center gap-3 shrink-0">
+                        <button
+                            onClick={onClose}
+                            className="px-5 py-3 rounded-xl border border-white/10 hover:border-white/20 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider transition-all"
+                        >
+                            Volver
+                        </button>
+                        <button
+                            onClick={onStartNewSeason}
+                            disabled={isStarting}
+                            className="apex-btn-gold px-6 py-3 flex items-center gap-2 font-black text-xs uppercase tracking-widest shadow-lg shadow-amber-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                        >
+                            {isStarting ? (
+                                <>
+                                    <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                                    <span>Iniciando Temporada {summary.season + 1}...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Sparkles className="w-4 h-4 text-black" />
+                                    <span>Iniciar Temporada {summary.season + 1}</span>
+                                    <ArrowRight className="w-4 h-4 text-black" />
+                                </>
+                            )}
+                        </button>
+                    </div>
                 </div>
             </main>
         </div>

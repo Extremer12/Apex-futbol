@@ -85,10 +85,10 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
         const reducido = gameState.cups.nacionalReducido;
 
         return (
-            <div className="p-3 sm:p-5 space-y-6">
+            <div className="p-3 sm:p-6 space-y-6">
                 {/* Final por el Primer Ascenso */}
-                <div className="bg-slate-800/40 rounded-2xl p-3 sm:p-5 border border-white/10 space-y-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
+                <div className="space-y-3 pb-6 border-b border-white/10">
+                    <div className="flex flex-wrap items-center justify-between gap-2 pb-2">
                         <div className="flex items-center gap-2.5">
                             <Trophy className="w-5 h-5 text-amber-400" />
                             <h4 className="text-white font-black text-sm uppercase tracking-wide">Final por el Primer Ascenso (1ºA vs 1ºB)</h4>
@@ -115,8 +115,8 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
                 </div>
 
                 {/* Torneo Reducido por el Segundo Ascenso */}
-                <div className="bg-slate-800/40 rounded-2xl p-3 sm:p-5 border border-white/10 space-y-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
+                <div className="space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2 pb-2">
                         <div className="flex items-center gap-2.5">
                             <Trophy className="w-5 h-5 text-cyan-400" />
                             <h4 className="text-white font-black text-sm uppercase tracking-wide">Torneo Reducido - Segundo Ascenso</h4>
@@ -227,39 +227,35 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
 
         return (
             <div className="p-3 sm:p-6 space-y-4">
-                <div className="bg-slate-800/40 rounded-2xl p-4 sm:p-6 border border-white/10 space-y-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
-                                <Trophy className="w-6 h-6 text-amber-400" />
-                            </div>
-                            <div>
-                                <h4 className="text-white font-black text-base sm:text-lg uppercase tracking-wide">Playoffs - Torneo Apertura</h4>
-                                <span className="text-xs text-slate-400">16 Clasificados (8 de Zona A + 8 de Zona B) • Octavos, Cuartos, Semis y Gran Final</span>
-                            </div>
+                <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-white/10">
+                    <div className="flex items-center gap-3">
+                        <Trophy className="w-6 h-6 text-amber-400 shrink-0" />
+                        <div>
+                            <h4 className="text-white font-black text-base sm:text-lg uppercase tracking-wide">Playoffs - Torneo Apertura</h4>
+                            <span className="text-xs text-slate-400">16 Clasificados (8 de Zona A + 8 de Zona B) • Octavos, Cuartos, Semis y Gran Final</span>
                         </div>
-                        <span className="text-xs font-bold text-amber-300 bg-amber-500/15 px-3 py-1.5 rounded-xl border border-amber-500/30 shadow-sm">
-                            {statusBadgeText}
-                        </span>
                     </div>
-
-                    {(!apertura?.rounds || apertura.rounds.length === 0) ? (
-                        <div className="text-center py-14 text-slate-400 text-sm space-y-2">
-                            <p className="font-bold text-slate-200 text-base">Los Playoffs del Apertura comenzarán al finalizar la Fecha 16.</p>
-                            <p className="text-xs text-slate-400 max-w-md mx-auto">
-                                Clasificarán los mejores 8 equipos de la Zona A y los mejores 8 de la Zona B en cruces de eliminación directa a partido único.
-                            </p>
-                        </div>
-                    ) : (
-                        <TournamentBracket
-                            cup={apertura}
-                            getTeamById={getTeamById}
-                            playerTeamId={gameState.team.id}
-                            theme={{ accent: 'text-amber-400', bg: 'from-amber-950/40', border: 'border-amber-500/30' }}
-                            logoUrl={logo || '/sinlogo.png'}
-                        />
-                    )}
+                    <span className="text-xs font-bold text-amber-300 bg-amber-500/15 px-3 py-1.5 rounded-xl border border-amber-500/30 shadow-sm">
+                        {statusBadgeText}
+                    </span>
                 </div>
+
+                {(!apertura?.rounds || apertura.rounds.length === 0) ? (
+                    <div className="text-center py-14 text-slate-400 text-sm space-y-2">
+                        <p className="font-bold text-slate-200 text-base">Los Playoffs del Apertura comenzarán al finalizar la Fecha 16.</p>
+                        <p className="text-xs text-slate-400 max-w-md mx-auto">
+                            Clasificarán los mejores 8 equipos de la Zona A y los mejores 8 de la Zona B en cruces de eliminación directa a partido único.
+                        </p>
+                    </div>
+                ) : (
+                    <TournamentBracket
+                        cup={apertura}
+                        getTeamById={getTeamById}
+                        playerTeamId={gameState.team.id}
+                        theme={{ accent: 'text-amber-400', bg: 'from-amber-950/40', border: 'border-amber-500/30' }}
+                        logoUrl={logo || '/sinlogo.png'}
+                    />
+                )}
             </div>
         );
     };
@@ -280,39 +276,35 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
 
         return (
             <div className="p-3 sm:p-6 space-y-4">
-                <div className="bg-slate-800/40 rounded-2xl p-4 sm:p-6 border border-white/10 space-y-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
-                                <Trophy className="w-6 h-6 text-cyan-400" />
-                            </div>
-                            <div>
-                                <h4 className="text-white font-black text-base sm:text-lg uppercase tracking-wide">Playoffs - Torneo Clausura</h4>
-                                <span className="text-xs text-slate-400">16 Clasificados (8 de Zona A + 8 de Zona B) • Octavos, Cuartos, Semis y Gran Final</span>
-                            </div>
+                <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-white/10">
+                    <div className="flex items-center gap-3">
+                        <Trophy className="w-6 h-6 text-cyan-400 shrink-0" />
+                        <div>
+                            <h4 className="text-white font-black text-base sm:text-lg uppercase tracking-wide">Playoffs - Torneo Clausura</h4>
+                            <span className="text-xs text-slate-400">16 Clasificados (8 de Zona A + 8 de Zona B) • Octavos, Cuartos, Semis y Gran Final</span>
                         </div>
-                        <span className="text-xs font-bold text-cyan-300 bg-cyan-500/15 px-3 py-1.5 rounded-xl border border-cyan-500/30 shadow-sm">
-                            {statusBadgeText}
-                        </span>
                     </div>
-
-                    {(!clausura?.rounds || clausura.rounds.length === 0) ? (
-                        <div className="text-center py-14 text-slate-400 text-sm space-y-2">
-                            <p className="font-bold text-slate-200 text-base">Los Playoffs del Clausura comenzarán al finalizar la Fecha 36.</p>
-                            <p className="text-xs text-slate-400 max-w-md mx-auto">
-                                Clasificarán los 8 mejores de cada zona tras completarse la fase regular del Torneo Clausura.
-                            </p>
-                        </div>
-                    ) : (
-                        <TournamentBracket
-                            cup={clausura}
-                            getTeamById={getTeamById}
-                            playerTeamId={gameState.team.id}
-                            theme={{ accent: 'text-cyan-400', bg: 'from-cyan-950/40', border: 'border-cyan-500/30' }}
-                            logoUrl={logo || '/sinlogo.png'}
-                        />
-                    )}
+                    <span className="text-xs font-bold text-cyan-300 bg-cyan-500/15 px-3 py-1.5 rounded-xl border border-cyan-500/30 shadow-sm">
+                        {statusBadgeText}
+                    </span>
                 </div>
+
+                {(!clausura?.rounds || clausura.rounds.length === 0) ? (
+                    <div className="text-center py-14 text-slate-400 text-sm space-y-2">
+                        <p className="font-bold text-slate-200 text-base">Los Playoffs del Clausura comenzarán al finalizar la Fecha 36.</p>
+                        <p className="text-xs text-slate-400 max-w-md mx-auto">
+                            Clasificarán los 8 mejores de cada zona tras completarse la fase regular del Torneo Clausura.
+                        </p>
+                    </div>
+                ) : (
+                    <TournamentBracket
+                        cup={clausura}
+                        getTeamById={getTeamById}
+                        playerTeamId={gameState.team.id}
+                        theme={{ accent: 'text-cyan-400', bg: 'from-cyan-950/40', border: 'border-cyan-500/30' }}
+                        logoUrl={logo || '/sinlogo.png'}
+                    />
+                )}
             </div>
         );
     };

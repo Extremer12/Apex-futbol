@@ -256,25 +256,21 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
         <div className="w-full space-y-3 select-none">
             {/* Winner Banner */}
             {winner && (
-                <div className={`flex items-center justify-between px-4 py-3 rounded-2xl border ${theme.border} bg-gradient-to-r from-amber-500/15 via-slate-900 to-black shadow-lg`}>
-                    <div className="flex items-center gap-3.5">
-                        <div className="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center p-1.5 shrink-0">
-                            <TeamLogo team={winner} />
-                        </div>
-                        <div>
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400">Campeón del Torneo</span>
-                            <h3 className="text-base sm:text-lg font-black text-white leading-tight">{winner.name}</h3>
-                        </div>
+                <div className="flex items-center gap-3 px-1 py-1">
+                    <TeamLogo team={winner} className="w-10 h-10 object-contain shrink-0 drop-shadow-md" />
+                    <div>
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-400 block">Campeón del Torneo</span>
+                        <h3 className="text-base sm:text-lg font-black text-white leading-tight">{winner.name}</h3>
                     </div>
                 </div>
             )}
 
             {/* View Mode Switcher Pills */}
-            <div className="flex items-center justify-between gap-1 bg-[#0A0E17]/90 p-1.5 rounded-xl border border-white/10 text-[10px] font-bold overflow-x-auto">
+            <div className="flex items-center justify-between gap-1 bg-black/40 p-1 rounded-xl border border-white/5 text-[10px] font-bold overflow-x-auto">
                 <button
                     onClick={() => setViewMode('TREE')}
                     className={`flex-1 min-w-[70px] py-1.5 px-2 rounded-lg text-center transition-all flex items-center justify-center gap-1 ${
-                        viewMode === 'TREE' ? 'bg-amber-400 text-slate-950 font-black shadow-md' : 'text-slate-400 hover:text-white'
+                        viewMode === 'TREE' ? 'bg-amber-400 text-slate-950 font-black shadow-sm' : 'text-slate-400 hover:text-white'
                     }`}
                 >
                     <GitFork className="w-3.5 h-3.5" />
@@ -283,7 +279,7 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
                 <button
                     onClick={() => setViewMode('LEFT')}
                     className={`sm:hidden flex-1 min-w-[70px] py-1.5 px-2 rounded-lg text-center transition-all ${
-                        viewMode === 'LEFT' ? 'bg-amber-400 text-slate-950 font-black shadow-md' : 'text-slate-400 hover:text-white'
+                        viewMode === 'LEFT' ? 'bg-amber-400 text-slate-950 font-black shadow-sm' : 'text-slate-400 hover:text-white'
                     }`}
                 >
                     Cuadro Izq
@@ -291,7 +287,7 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
                 <button
                     onClick={() => setViewMode('FINAL')}
                     className={`sm:hidden flex-1 min-w-[70px] py-1.5 px-2 rounded-lg text-center transition-all flex items-center justify-center gap-1 ${
-                        viewMode === 'FINAL' ? 'bg-amber-400 text-slate-950 font-black shadow-md' : 'text-slate-400 hover:text-white'
+                        viewMode === 'FINAL' ? 'bg-amber-400 text-slate-950 font-black shadow-sm' : 'text-slate-400 hover:text-white'
                     }`}
                 >
                     🏆 Final
@@ -299,7 +295,7 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
                 <button
                     onClick={() => setViewMode('RIGHT')}
                     className={`sm:hidden flex-1 min-w-[70px] py-1.5 px-2 rounded-lg text-center transition-all ${
-                        viewMode === 'RIGHT' ? 'bg-amber-400 text-slate-950 font-black shadow-md' : 'text-slate-400 hover:text-white'
+                        viewMode === 'RIGHT' ? 'bg-amber-400 text-slate-950 font-black shadow-sm' : 'text-slate-400 hover:text-white'
                     }`}
                 >
                     Cuadro Der
@@ -307,7 +303,7 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
                 <button
                     onClick={() => setViewMode('ROUNDS')}
                     className={`flex-1 min-w-[75px] py-1.5 px-2 rounded-lg text-center transition-all flex items-center justify-center gap-1 ${
-                        viewMode === 'ROUNDS' ? 'bg-amber-400 text-slate-950 font-black shadow-md' : 'text-slate-400 hover:text-white'
+                        viewMode === 'ROUNDS' ? 'bg-amber-400 text-slate-950 font-black shadow-sm' : 'text-slate-400 hover:text-white'
                     }`}
                 >
                     <Layers className="w-3.5 h-3.5" />
@@ -317,7 +313,7 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
 
             {/* MAIN BIFURCATED BRACKET (TREE VIEW) */}
             {viewMode === 'TREE' && (
-                <div className="w-full bg-[#080C15]/95 border border-white/10 rounded-2xl p-2 sm:p-4 overflow-x-auto shadow-2xl">
+                <div className="w-full overflow-x-auto py-1">
                     <div className="flex items-stretch justify-between gap-2 sm:gap-3 min-w-[620px] w-full py-2">
                         {/* LEFT BRACKET */}
                         <div className="flex items-stretch justify-between flex-1 gap-2">
@@ -332,7 +328,7 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
                                     {/* Matches */}
                                     <div className="flex flex-col justify-around flex-1 gap-2 relative">
                                         {col.matches.map((match) => (
-                                            <div key={match.id} className="relative flex items-center">
+                                             <div key={match.id} className="relative flex items-center">
                                                 <MatchCard match={match} playerTeamId={playerTeamId} theme={theme} />
                                                 {/* Connector to next round */}
                                                 {cIdx < leftColumns.length - 1 && (
@@ -398,7 +394,7 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
 
             {/* MOBILE TAB: CUADRO IZQUIERDO */}
             {viewMode === 'LEFT' && (
-                <div className="bg-[#080C15]/95 border border-white/10 rounded-2xl p-3 space-y-3">
+                <div className="space-y-3 py-1">
                     <div className="flex items-center gap-2 pb-2 border-b border-white/10 text-xs font-black uppercase text-amber-400">
                         <ChevronLeft className="w-4 h-4" />
                         <span>Cuadro Izquierdo (Hacia la Final)</span>
@@ -422,9 +418,9 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
 
             {/* MOBILE TAB: GRAN FINAL */}
             {viewMode === 'FINAL' && (
-                <div className="bg-[#080C15]/95 border border-white/10 rounded-2xl p-4 space-y-4">
+                <div className="space-y-4 py-1">
                     <div className="text-center space-y-1">
-                        <div className="w-12 h-12 mx-auto p-2 bg-amber-500/20 border border-amber-500/30 rounded-2xl flex items-center justify-center">
+                        <div className="w-12 h-12 mx-auto flex items-center justify-center">
                             {logoUrl ? <img src={logoUrl} alt="" className="w-full h-full object-contain" /> : <Trophy className="w-7 h-7 text-amber-400" />}
                         </div>
                         <h4 className="text-sm font-black text-amber-400 uppercase tracking-widest">Definición del Título</h4>
@@ -458,7 +454,7 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
 
             {/* MOBILE TAB: CUADRO DERECHO (In natural chronological order) */}
             {viewMode === 'RIGHT' && (
-                <div className="bg-[#080C15]/95 border border-white/10 rounded-2xl p-3 space-y-3">
+                <div className="space-y-3 py-1">
                     <div className="flex items-center justify-between pb-2 border-b border-white/10 text-xs font-black uppercase text-amber-400">
                         <span>Cuadro Derecho (Hacia la Final)</span>
                         <ChevronRight className="w-4 h-4" />
@@ -482,7 +478,7 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
 
             {/* TAB: POR RONDAS (Clean List View with Full Details) */}
             {viewMode === 'ROUNDS' && (
-                <div className="bg-[#080C15]/95 border border-white/10 rounded-2xl p-3 space-y-3">
+                <div className="space-y-3 py-1">
                     {/* Round Pills Switcher */}
                     <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
                         {tournamentTree.map((r, idx) => (
@@ -515,21 +511,6 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
                     )}
                 </div>
             )}
-
-            {/* Footer Legend */}
-            <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-1 text-[9px] text-slate-400">
-                <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-sm bg-amber-500/30 border border-amber-400" />
-                        <span>Tu Equipo</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-sm bg-emerald-500/30 border border-emerald-500" />
-                        <span>Ganador</span>
-                    </div>
-                </div>
-                <span className="text-slate-500 italic">Llaves simétricas convergentes hacia la Gran Final</span>
-            </div>
         </div>
     );
 };
