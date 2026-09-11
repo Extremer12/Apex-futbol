@@ -34,30 +34,47 @@ export function buildLibertadoresParticipants(context: LibertadoresQualification
     const sudamericanaChampion = findTeam(lastSudamericanaWinnerId);
 
     const usedIds = new Set<number>();
-    if (defendingChampion) usedIds.add(defendingChampion.id);
-    if (sudamericanaChampion) usedIds.add(sudamericanaChampion.id);
 
     // Helpers to get clubs by country
     const getTeamsByCountry = (countryCode: string, minTierPriority: boolean = true): Team[] => {
         let teams: Team[] = [];
+        const seen = new Set<number>(usedIds);
+        if (defendingChampion) seen.add(defendingChampion.id);
+        if (sudamericanaChampion) seen.add(sudamericanaChampion.id);
+
         if (countryCode === 'ARG') {
             // Priority to argentineQualifiedIds
             argentineQualifiedIds.forEach(id => {
                 const t = findTeam(id);
-                if (t && !usedIds.has(t.id)) teams.push(t);
+                if (t && !seen.has(t.id)) {
+                    teams.push(t);
+                    seen.add(t.id);
+                }
             });
             // Fallback from league
-            const fallbacks = allTeams.filter(t => t.leagueId === LeagueId.LIGA_ARGENTINA && !usedIds.has(t.id));
-            teams.push(...fallbacks);
+            const fallbacks = allTeams.filter(t => t.leagueId === LeagueId.LIGA_ARGENTINA && !seen.has(t.id));
+            fallbacks.forEach(t => {
+                teams.push(t);
+                seen.add(t.id);
+            });
         } else if (countryCode === 'BRA') {
-            const brTeams = allTeams.filter(t => t.leagueId === LeagueId.BRASILEIRAO && !usedIds.has(t.id));
-            teams.push(...brTeams);
+            const brTeams = allTeams.filter(t => t.leagueId === LeagueId.BRASILEIRAO && !seen.has(t.id));
+            brTeams.forEach(t => {
+                teams.push(t);
+                seen.add(t.id);
+            });
         } else if (countryCode === 'PAR') {
-            const parTeams = allTeams.filter(t => t.leagueId === LeagueId.COPA_DE_PRIMERA && !usedIds.has(t.id));
-            teams.push(...parTeams);
+            const parTeams = allTeams.filter(t => t.leagueId === LeagueId.COPA_DE_PRIMERA && !seen.has(t.id));
+            parTeams.forEach(t => {
+                teams.push(t);
+                seen.add(t.id);
+            });
         } else {
-            const extras = SOUTH_AMERICAN_EXTRA_TEAMS.filter(t => t.country === countryCode && !usedIds.has(t.id));
-            teams.push(...extras);
+            const extras = SOUTH_AMERICAN_EXTRA_TEAMS.filter(t => t.country === countryCode && !seen.has(t.id));
+            extras.forEach(t => {
+                teams.push(t);
+                seen.add(t.id);
+            });
         }
 
         // Sort by CONMEBOL Ranking
@@ -210,7 +227,7 @@ export function simulatePreliminaries(
     const e2 = resolveMatchKey(phase1Teams[2] || phase2Teams[2], phase1Teams[3] || phase2Teams[3], 2);
     const e3 = resolveMatchKey(phase1Teams[4] || phase2Teams[4], phase1Teams[5] || phase2Teams[5], 2);
 
-    // Phase 2 (Week 4): 16 teams -> 8 winners (C1..C8)
+    // Phase 2 (Week 4): 16 teams (3 from P1 + 13 direct) -> 8 winners (C1..C8)
     const p2Pool = [...phase2Teams, e1.winner, e2.winner, e3.winner];
     const cWinners: Team[] = [];
     for (let i = 0; i < 8; i++) {
@@ -247,10 +264,27 @@ export function drawLibertadoresGroups(
     phase3Qualifiers: Team[],
     defendingChampionId?: number
 ): CupGroup[] {
-    const p3Ids = new Set(phase3Qualifiers.map(t => t.id));
+    const globalPlacedIds = new Set<number>();
+
+    // Deduplicate directQualifiers
+    const uniqueDirect: Team[] = [];
+    directQualifiers.forEach(t => {
+        if (!globalPlacedIds.has(t.id)) {
+            globalPlacedIds.add(t.id);
+            uniqueDirect.push(t);
+        }
+    });
+
+    // Fill up to 28 direct teams if needed
+    while (uniqueDirect.length < 28) {
+        const remaining = SOUTH_AMERICAN_EXTRA_TEAMS.filter(t => !globalPlacedIds.has(t.id));
+        if (remaining.length === 0) break;
+        uniqueDirect.push(remaining[0]);
+        globalPlacedIds.add(remaining[0].id);
+    }
 
     // Sort direct qualifiers by CONMEBOL ranking
-    const sortedDirect = [...directQualifiers].sort((a, b) => {
+    const sortedDirect = [...uniqueDirect].sort((a, b) => {
         if (a.id === defendingChampionId) return -1;
         if (b.id === defendingChampionId) return 1;
         return getTeamConmebolMeta(a).conmebolRanking - getTeamConmebolMeta(b).conmebolRanking;
@@ -258,6 +292,19 @@ export function drawLibertadoresGroups(
 
     // Make sure we have 28 direct teams
     const top28 = sortedDirect.slice(0, 28);
+    const top28Ids = new Set(top28.map(t => t.id));
+
+    // Ensure phase 3 qualifiers never duplicate a direct qualifier
+    const uniquePhase3 = phase3Qualifiers.filter(t => !top28Ids.has(t.id));
+    while (uniquePhase3.length < 4) {
+        const remaining = SOUTH_AMERICAN_EXTRA_TEAMS.filter(t => !top28Ids.has(t.id) && !uniquePhase3.some(p => p.id === t.id));
+        if (remaining.length === 0) break;
+        uniquePhase3.push(remaining[0]);
+    }
+    const p3Ids = new Set(uniquePhase3.map(t => t.id));
+
+    // Reset global tracking for actual group placement
+    globalPlacedIds.clear();
 
     // Build Pots:
     // Pot 1: Defending champ + 7 best ranking
@@ -267,7 +314,7 @@ export function drawLibertadoresGroups(
     // Pot 3: Next 8
     const pot3 = top28.slice(16, 24);
     // Pot 4: Last 4 direct + 4 from Phase 3
-    const pot4 = [...top28.slice(24, 28), ...phase3Qualifiers];
+    const pot4 = [...top28.slice(24, 28), ...uniquePhase3];
 
     // Initialize 8 empty groups
     const groups: {
@@ -282,8 +329,9 @@ export function drawLibertadoresGroups(
 
     // Pot 1: Place sequentially (Defending champ will be in Grupo A)
     pot1.forEach((team, idx) => {
-        if (groups[idx]) {
+        if (groups[idx] && !globalPlacedIds.has(team.id)) {
             groups[idx].teams.push(team);
+            globalPlacedIds.add(team.id);
         }
     });
 
@@ -293,6 +341,8 @@ export function drawLibertadoresGroups(
         const shuffled = [...pot].sort(() => 0.5 - Math.random());
 
         shuffled.forEach(team => {
+            if (globalPlacedIds.has(team.id)) return; // Strictly prevent placing team twice
+
             const isExempt = p3Ids.has(team.id);
             const teamCountry = getTeamConmebolMeta(team).country;
 
@@ -304,6 +354,7 @@ export function drawLibertadoresGroups(
 
                 if (isExempt) {
                     group.teams.push(team);
+                    globalPlacedIds.add(team.id);
                     placed = true;
                     break;
                 }
@@ -316,6 +367,7 @@ export function drawLibertadoresGroups(
 
                 if (!hasCountryConflict) {
                     group.teams.push(team);
+                    globalPlacedIds.add(team.id);
                     placed = true;
                     break;
                 }
@@ -326,9 +378,13 @@ export function drawLibertadoresGroups(
                 const firstAvailable = groups.find(g => g.teams.length < targetGroupSize);
                 if (firstAvailable) {
                     firstAvailable.teams.push(team);
+                    globalPlacedIds.add(team.id);
                 } else {
                     const anyFree = groups.find(g => g.teams.length < 4);
-                    if (anyFree) anyFree.teams.push(team);
+                    if (anyFree) {
+                        anyFree.teams.push(team);
+                        globalPlacedIds.add(team.id);
+                    }
                 }
             }
         });

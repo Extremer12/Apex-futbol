@@ -1345,4 +1345,45 @@ test('Bugfix: Schedule merge preserves week 2 matches and avoids loop in Argenti
     assert.ok(bocaW2Match, 'Boca Juniors must have a valid fixture for Fecha 2');
 });
 
+test('Bugfix: Copa Libertadores and Sudamericana groups contain 32 strictly unique teams with 0 duplicates', async () => {
+    const { initializeLibertadoresSeason } = await import('../services/libertadoresEngine');
+    const { initializeSudamericanaSeason } = await import('../services/sudamericanaEngine');
+
+    // Run 10 randomized seasons to thoroughly verify draw invariants
+    for (let i = 0; i < 10; i++) {
+        const lib = initializeLibertadoresSeason({
+            allTeams: TEAMS,
+            lastLibertadoresWinnerId: 701, // Boca Juniors
+            argentineQualifiedIds: [701, 702, 703, 704, 705, 706]
+        });
+
+        const allLibTeamIds = lib.cup.groups!.flatMap(g => g.teams);
+        const uniqueLibIds = new Set(allLibTeamIds);
+
+        assert.equal(allLibTeamIds.length, 32, 'Libertadores must have 32 total team slots in group stage');
+        assert.equal(uniqueLibIds.size, 32, 'All 32 teams in Libertadores group stage must be strictly unique (no duplicate Boca/River)');
+
+        // Check each group has 4 unique teams
+        lib.cup.groups!.forEach(g => {
+            assert.equal(g.teams.length, 4, `${g.name} must have exactly 4 teams`);
+            const gIds = new Set(g.teams);
+            assert.equal(gIds.size, 4, `${g.name} must contain 4 unique teams`);
+        });
+
+        // Sudamericana
+        const sud = initializeSudamericanaSeason({
+            allTeams: TEAMS,
+            argentineQualifiedIds: [707, 708, 709, 710, 711, 712],
+            libertadoresPhase3Losers: lib.phase3Losers,
+            excludedTeamIds: uniqueLibIds
+        });
+
+        const allSudTeamIds = sud.cup.groups!.flatMap(g => g.teams);
+        const uniqueSudIds = new Set(allSudTeamIds);
+
+        assert.equal(allSudTeamIds.length, 32, 'Sudamericana must have 32 total team slots in group stage');
+        assert.equal(uniqueSudIds.size, 32, 'All 32 teams in Sudamericana group stage must be strictly unique');
+    }
+});
+
 
