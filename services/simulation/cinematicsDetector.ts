@@ -1,9 +1,9 @@
-import { GameState, Team, CinematicEvent, LeagueId, Match } from '../../types';
+import { GameState, Team, CinematicEvent, LeagueId, Match, LeagueTableRow } from '../../types';
 
 export function detectCinematicEvents(
     gameState: GameState,
     updatedCups: GameState['cups'],
-    updatedLeagueTables: Record<LeagueId, any[]>,
+    updatedLeagueTables: Record<LeagueId, LeagueTableRow[]>,
     simulatedWeek: number,
     newWeek: number,
     justPlayedMatches: Match[]

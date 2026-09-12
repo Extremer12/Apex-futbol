@@ -447,8 +447,9 @@ class CustomPacksService {
                         updatedAt: now
                     });
                 }
-            } catch (err: any) {
-                errors.push(`Error al leer archivo ${filePath}: ${err.message}`);
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : String(err);
+                errors.push(`Error al leer archivo ${filePath}: ${message}`);
             }
         }
 
@@ -475,7 +476,7 @@ class CustomPacksService {
             `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
         ];
 
-        let lastError: any = null;
+        let lastError: Error | null = null;
 
         for (let i = 0; i < candidateUrls.length; i++) {
             const currentUrl = candidateUrls[i];
@@ -507,9 +508,10 @@ class CustomPacksService {
                 } else {
                     return await response.blob();
                 }
-            } catch (err: any) {
-                console.warn(`Fetch candidate ${i + 1} (${currentUrl}) failed:`, err);
-                lastError = err;
+            } catch (err: unknown) {
+                const errorObj = err instanceof Error ? err : new Error(String(err));
+                console.warn(`Fetch candidate ${i + 1} (${currentUrl}) failed:`, errorObj);
+                lastError = errorObj;
             }
         }
 

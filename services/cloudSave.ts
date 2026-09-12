@@ -2,6 +2,9 @@ import { supabase } from './supabase';
 import { GameState, PlayerProfile } from '../types';
 import { SCHEMA_VERSION } from './db';
 import { compressString, decompressString } from '../utils/compression';
+import type { Json } from '../types/supabase';
+
+export const MAX_CLOUD_SAVES = 3;
 
 export interface CloudSaveSummary {
     id: string;
@@ -26,8 +29,19 @@ export async function uploadSaveToCloud(
         throw new Error('Debes iniciar sesión con Google para guardar en la nube.');
     }
 
+    // Check existing saves count if this is a new slot
+    const { data: existingSaves } = await supabase
+        .from('cloud_saves')
+        .select('slot_id')
+        .eq('user_id', user.id);
+
+    const isExistingSlot = existingSaves?.some(s => s.slot_id === slotId);
+    if (!isExistingSlot && existingSaves && existingSaves.length >= MAX_CLOUD_SAVES) {
+        throw new Error(`Has alcanzado el límite máximo de ${MAX_CLOUD_SAVES} ranuras en la nube. Sobrescribe una existente o elimina una para continuar.`);
+    }
+
     // Clean non-serializable objects (like functions or cyclical references)
-    const replacer = (key: string, value: any) => (key === 'logo' ? undefined : value);
+    const replacer = (key: string, value: unknown) => (key === 'logo' ? undefined : value);
     
     // Yield to browser execution so heavy stringification and LZW compression don't freeze frames
     const rawJson = await new Promise<string>(resolve => {
@@ -54,7 +68,7 @@ export async function uploadSaveToCloud(
                 team_name: gameState.team.name,
                 season: gameState.season || 1,
                 game_date: String(gameState.currentDate),
-                game_state: storableGameState as any,
+                game_state: storableGameState as unknown as Json,
                 player_profile: storableProfile,
                 schema_version: SCHEMA_VERSION,
                 updated_at: new Date().toISOString(),

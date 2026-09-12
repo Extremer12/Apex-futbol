@@ -1,55 +1,57 @@
-import React, { useState, useCallback, useEffect, useMemo, useReducer } from 'react';
-import { GameState, Team, Screen, PlayerProfile, NewsItem, Offer, LeagueTableRow, Match, LeagueId, ElectoralPromise } from './types';
-import { gameReducer, initialState } from './state/reducer';
-import { saveGame, loadGame, SavedGameData } from './services/db';
+import React, { useCallback, useEffect } from 'react';
+import { GameState, Team, Screen, PlayerProfile, NewsItem, ElectoralPromise } from './types';
+import { useGameStore } from './state/gameStore';
 
-// Contexts
+// Contexts & Providers
 import { NotificationProvider, useNotification } from './contexts/NotificationContext';
 import { ModalProvider, useModal } from './contexts/ModalContext';
 import { ToastProvider } from './components/common/ToastProvider';
 import { AuthProvider } from './contexts/AuthContext';
+import { GameProvider, useActiveLeaguePlayers } from './contexts/GameContext';
 
 // Router and Layout
 import { AppRouter } from './components/AppRouter';
 import { MainLayout } from './components/MainLayout';
 
-// UI Components
+// UI Modals & Overlays
 import { PlayerDetailModal } from './components/ui/PlayerDetailModal';
 import { SaveGameModal } from './components/ui/SaveGameModal';
 import { Notification } from './components/ui/Notification';
 import { EventModal } from './components/ui/EventModal';
-import { Player } from './types';
 import { CinematicOverlay } from './components/cinematics/CinematicOverlay';
 import { SeasonEndModal } from './components/screens/season/SeasonEndModal';
 
 // Services
-import { ElectionResponse, generateNews, generateMatchReport, generateTransferOffer, generatePlayerOfTheWeekNews, generateImportantNews } from './services/gameLogic';
-import { advanceCupRound } from './services/simulation';
+import { generateNews } from './services/gameLogic';
 import { formatDate, setGlobalCurrency } from './utils';
-import { simulationWorker } from './services/simulationWorker';
-import { eventEngine, TriggeredEvent } from './services/eventEngine';
-
-
-type AppStateType = 'START_SCREEN' | 'LOAD_GAME' | 'PROFILE_CREATION' | 'TEAM_SELECTION' | 'ELECTION_PITCH' | 'ELECTION_RESULT' | 'PROMISE_SELECTION' | 'GAME_ACTIVE' | 'GAME_OVER';
+import { eventEngine } from './services/eventEngine';
 
 // Custom Hooks
 import { useGameSave } from './hooks/useGameSave';
 import { useSimulation } from './hooks/useSimulation';
 
-// --- Main App Logic Component ---
 function AppLogic() {
-    const [appState, setAppState] = useState<AppStateType>('START_SCREEN');
-    const [playerProfile, setPlayerProfile] = useState<PlayerProfile | null>(null);
-    const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
-    const [electionResult, setElectionResult] = useState<ElectionResponse | null>(null);
-    const [activeScreen, setActiveScreen] = useState<Screen>(Screen.Dashboard);
-
-    const [isSeasonEndModalOpen, setIsSeasonEndModalOpen] = useState(false);
-    const [isStartingSeason, setIsStartingSeason] = useState(false);
-
-    const [currentEvent, setCurrentEvent] = useState<TriggeredEvent | null>(null);
-
-    const [gameState, dispatch] = useReducer(gameReducer, initialState);
+    const {
+        appState,
+        setAppState,
+        playerProfile,
+        setPlayerProfile,
+        selectedTeam,
+        setSelectedTeam,
+        electionResult,
+        setElectionResult,
+        activeScreen,
+        setActiveScreen,
+        gameState,
+        dispatch,
+        currentEvent,
+        setCurrentEvent,
+        isSeasonEndModalOpen,
+        setIsSeasonEndModalOpen,
+        isStartingSeason,
+        setIsStartingSeason,
+        resetGameData
+    } = useGameStore();
 
     // Sync global currency formatters
     useEffect(() => {
@@ -58,23 +60,23 @@ function AppLogic() {
         }
     }, [gameState?.preferredCurrency]);
 
-    // Use contexts
-    const { showNotification } = useNotification();
-    const { viewingPlayer, isSaveModalOpen, saveMode, openSaveModal, closeSaveModal, closePlayerModal } = useModal();
+    // Contexts
+    const { notification, showNotification, hideNotification } = useNotification();
+    const { viewingPlayer, isSaveModalOpen, saveMode, openSaveModal, closeSaveModal } = useModal();
+    const activeLeaguePlayers = useActiveLeaguePlayers();
 
-    const activeLeaguePlayers = useMemo(() => {
-        if (!gameState) return [];
-        const userLeagueId = gameState.team.leagueId;
-        return gameState.allTeams
-            .filter(t => t.leagueId === userLeagueId || t.id === gameState.team.id)
-            .flatMap(t => t.squad);
-    }, [gameState?.allTeams, gameState?.team?.leagueId, gameState?.team?.id]);
-
-    // Custom Hooks
-    const { matchPhase, setMatchPhase, pendingResults, setPendingResults, isSimulating, handlePlayMatch, handleWeekComplete } = useSimulation(gameState, dispatch, setAppState, showNotification, setCurrentEvent);
+    // Simulation & Save hooks
+    const { 
+        matchPhase, 
+        setMatchPhase, 
+        pendingResults, 
+        setPendingResults, 
+        isSimulating, 
+        handlePlayMatch, 
+        handleWeekComplete 
+    } = useSimulation(gameState, dispatch, setAppState, showNotification, setCurrentEvent);
     
     const { 
-        currentSaveId, 
         currentSaveName, 
         lastSaved, 
         resetSaveState, 
@@ -82,25 +84,17 @@ function AppLogic() {
         performLoadCloudGame, 
         performSaveGame,
         performAutoSave,
-        performQuickSave,
-        isSaving 
+        performQuickSave
     } = useGameSave(gameState, playerProfile, appState, matchPhase, dispatch, showNotification);
 
-    const resetGameData = useCallback(() => {
-        dispatch({ type: 'RESET_GAME' });
-        setPlayerProfile(null);
-        setSelectedTeam(null);
-        setElectionResult(null);
-        setActiveScreen(Screen.Dashboard);
+    // Career lifecycle handlers
+    const handleNewGame = useCallback(() => {
+        resetGameData();
         resetSaveState();
         setMatchPhase('PRE');
         setPendingResults(null);
-    }, [dispatch, resetSaveState, setMatchPhase, setPendingResults]);
-
-    const handleNewGame = useCallback(() => {
-        resetGameData();
         setAppState('PROFILE_CREATION');
-    }, [resetGameData]);
+    }, [resetGameData, resetSaveState, setMatchPhase, setPendingResults, setAppState]);
 
     const handleLoadGame = useCallback(async (id: string, isCloud?: boolean) => {
         const loadedProfile = isCloud ? await performLoadCloudGame(id) : await performLoadGame(id);
@@ -110,7 +104,7 @@ function AppLogic() {
         } else {
             setAppState('START_SCREEN');
         }
-    }, [performLoadGame, performLoadCloudGame]);
+    }, [performLoadGame, performLoadCloudGame, setPlayerProfile, setAppState]);
 
     const handleProfileCreate = (profile: PlayerProfile) => {
         setPlayerProfile(profile);
@@ -124,24 +118,20 @@ function AppLogic() {
 
     const handlePitchSubmit = useCallback(async (debateSummary: string) => {
         if (!selectedTeam || !playerProfile) return;
-
         const isSuccess = debateSummary.includes('Won');
-
-        const result = {
+        setElectionResult({
             success: isSuccess,
             feedback: isSuccess
                 ? `¡Felicidades! Has ganado las elecciones del ${selectedTeam.name}.`
                 : `No has conseguido suficientes votos. Intenta con otro equipo.`
-        };
-
-        setElectionResult(result);
+        });
         setAppState('ELECTION_RESULT');
-    }, [selectedTeam, playerProfile]);
+    }, [selectedTeam, playerProfile, setElectionResult, setAppState]);
 
     const handleStartGame = useCallback(() => {
         if (!selectedTeam || !playerProfile) return;
         setAppState('PROMISE_SELECTION');
-    }, [selectedTeam, playerProfile]);
+    }, [selectedTeam, playerProfile, setAppState]);
 
     const handlePromisesSubmit = useCallback((promises: ElectoralPromise[]) => {
         if (!selectedTeam || !playerProfile) return;
@@ -154,7 +144,7 @@ function AppLogic() {
             } 
         });
         setAppState('GAME_ACTIVE');
-    }, [selectedTeam, playerProfile]);
+    }, [selectedTeam, playerProfile, dispatch, setAppState]);
 
     const handleRetryElection = () => {
         setSelectedTeam(null);
@@ -166,7 +156,7 @@ function AppLogic() {
         const initialNews = await generateNews(state);
         const newsItem: NewsItem = { ...initialNews, id: new Date().toISOString(), date: formatDate(state.currentDate) };
         dispatch({ type: 'ADD_NEWS', payload: newsItem });
-    }, []);
+    }, [dispatch]);
 
     useEffect(() => {
         if (gameState && gameState.newsFeed.length === 3) {
@@ -182,47 +172,29 @@ function AppLogic() {
     const handleQuitToMenu = useCallback(() => {
         if (window.confirm('¿Seguro que deseas salir al menú principal? Los progresos no guardados se perderán.')) {
             resetGameData();
+            resetSaveState();
             setAppState('START_SCREEN');
         }
-    }, [resetGameData]);
-
-    const handleElectionComplete = () => {
-        showNotification('¡Reelección exitosa! Nuevo mandato comenzado');
-    };
+    }, [resetGameData, resetSaveState, setAppState]);
 
     const handleEventChoice = useCallback((choiceIndex: number, effects: any) => {
         if (!gameState || !currentEvent) return;
-
-        // Apply event effects to game state
         const updates = eventEngine.applyEffects(effects, gameState);
 
-        // Dispatch updates
-        if (updates.finances) {
-            dispatch({ type: 'UPDATE_FINANCES', payload: updates.finances });
-        }
-        if (updates.team) {
-            dispatch({ type: 'UPDATE_TEAM', payload: updates.team });
-        }
-        if (updates.fanApproval) {
-            dispatch({ type: 'SET_FAN_APPROVAL', payload: updates.fanApproval });
-        }
-        if (updates.boardConfidence !== undefined) {
-            dispatch({ type: 'UPDATE_BOARD_CONFIDENCE', payload: updates.boardConfidence });
-        }
-        if (updates.stadium) {
-            dispatch({ type: 'UPDATE_STADIUM', payload: updates.stadium });
-        }
+        if (updates.finances) dispatch({ type: 'UPDATE_FINANCES', payload: updates.finances });
+        if (updates.team) dispatch({ type: 'UPDATE_TEAM', payload: updates.team });
+        if (updates.fanApproval) dispatch({ type: 'SET_FAN_APPROVAL', payload: updates.fanApproval });
+        if (updates.boardConfidence !== undefined) dispatch({ type: 'UPDATE_BOARD_CONFIDENCE', payload: updates.boardConfidence });
+        if (updates.stadium) dispatch({ type: 'UPDATE_STADIUM', payload: updates.stadium });
 
-        // Record event as triggered to prevent duplicates across reloads
         dispatch({ type: 'RECORD_TRIGGERED_EVENT', payload: currentEvent.event.id });
-
         showNotification(`Evento: ${currentEvent.event.title} - Decisión tomada`);
         setCurrentEvent(null);
-    }, [gameState, currentEvent, showNotification, dispatch]);
+    }, [gameState, currentEvent, showNotification, dispatch, setCurrentEvent]);
 
     const onWeekComplete = useCallback(() => {
         handleWeekComplete();
-        // Throttled auto-save: run every 4 weeks on weekend turn (or week 1) to avoid serializing ~30MB every single turn
+        // Throttled auto-save: run every 4 weeks on weekend turn (or week 1)
         if (gameState && (gameState.currentWeek % 4 === 0 || gameState.currentWeek === 1) && gameState.currentTurn === 'weekend') {
             performAutoSave();
         }
@@ -249,9 +221,7 @@ function AppLogic() {
             showNotification('¡Ha comenzado la nueva temporada!', 'success');
             performAutoSave();
         }, 80);
-    }, [dispatch, showNotification, performAutoSave]);
-
-    const { notification, hideNotification } = useNotification();
+    }, [dispatch, showNotification, performAutoSave, setIsStartingSeason, setIsSeasonEndModalOpen]);
 
     return (
         <>
@@ -327,7 +297,7 @@ function AppLogic() {
                         onQuitToMenu={handleQuitToMenu}
                         currentSaveName={currentSaveName}
                         lastSaved={lastSaved}
-                        onElectionComplete={handleElectionComplete}
+                        onElectionComplete={() => showNotification('¡Reelección exitosa! Nuevo mandato comenzado')}
                         isSimulating={isSimulating}
                         onStartNewSeason={handleStartNewSeason}
                         onOpenSeasonEndModal={() => setIsSeasonEndModalOpen(true)}
@@ -345,7 +315,9 @@ function App() {
             <NotificationProvider>
                 <ModalProvider>
                     <ToastProvider>
-                        <AppLogic />
+                        <GameProvider>
+                            <AppLogic />
+                        </GameProvider>
                     </ToastProvider>
                 </ModalProvider>
             </NotificationProvider>

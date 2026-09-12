@@ -3,7 +3,7 @@
  * Handles the initialization of a new game state
  */
 
-import { GameState, Team, Player, PlayerProfile, NewsItem, LeagueId } from '../types';
+import { GameState, Team, Player, PlayerProfile, NewsItem, LeagueId, ElectoralPromise } from '../types';
 import { TEAMS } from '../constants';
 import { generateRandomCoach, generateCoachMarket } from './coaching';
 import { generateYouthPlayer, generateSeasonSchedule, generateCupDraw, createInitialLeagueTable, generateSwissPhase, generateGroupPhase, createInitialEuropeanTable, sortArgentineZones } from './simulation';
@@ -14,7 +14,7 @@ import { getInitialAchievements } from './achievementService';
 interface InitializeGameParams {
     selectedTeam: Team;
     playerProfile?: PlayerProfile;
-    initialPromises?: any[];
+    initialPromises?: ElectoralPromise[];
 }
 
 /**

@@ -127,6 +127,9 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 case 'SET_CURRENCY':
                 case 'SET_LANGUAGE':
                     return handleUIAction(state, action);
+
+                default:
+                    return state;
             }
         }
     }

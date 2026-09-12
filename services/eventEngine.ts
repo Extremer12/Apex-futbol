@@ -114,7 +114,7 @@ class EventEngine {
      * Apply event effects to game state
      */
     applyEffects(effects: EventEffects, gameState: GameState): Partial<GameState> {
-        const updates: any = {};
+        const updates: Partial<GameState> = {};
 
         // Financial effects
         if (effects.balance !== undefined) {

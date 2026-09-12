@@ -21,6 +21,7 @@ import {
 import { initializeGame } from '../services/gameFactory';
 import { TEAMS } from '../constants';
 import { Team, Player, Match, LeagueTableRow, CupCompetition, LeagueId } from '../types';
+import { compressString, decompressString } from '../utils/compression';
 
 // Helper to create a dummy player
 const createMockPlayer = (id: number, pos: Player['position'], rating = 75): Player => ({
@@ -1385,5 +1386,23 @@ test('Bugfix: Copa Libertadores and Sudamericana groups contain 32 strictly uniq
         assert.equal(uniqueSudIds.size, 32, 'All 32 teams in Sudamericana group stage must be strictly unique');
     }
 });
+
+test('Compression: compressString and decompressString preserve complex JSON correctly', () => {
+    const samplePayload = JSON.stringify({
+        club: 'Boca Juniors',
+        president: 'Juan Román Riquelme',
+        finances: { balance: 15400000, currency: 'USD' },
+        trophies: ['Copa Libertadores', 'Supercopa Argentina'],
+        specialChars: 'Árbol, Niño, Fútbol & Ñandú — 100% auténtico 🏆'
+    });
+
+    const compressed = compressString(samplePayload);
+    assert.ok(compressed.length > 0, 'Compressed string should not be empty');
+    assert.ok(compressed !== samplePayload, 'Compressed output must differ from raw input');
+
+    const decompressed = decompressString(compressed);
+    assert.equal(decompressed, samplePayload, 'Decompressed string must match original payload exactly');
+});
+
 
 

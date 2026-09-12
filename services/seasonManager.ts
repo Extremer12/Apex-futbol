@@ -3,7 +3,7 @@
  * Handles season transitions, aging, retirements, and promotion/relegation
  */
 
-import { GameState, Team, Player, NewsItem, EuropeanCompetition, EuropeanTableRow, Match, CupCompetition, CupChampion, LeagueId, SeasonHistoryRecord } from '../types';
+import { GameState, Team, Player, NewsItem, EuropeanCompetition, EuropeanTableRow, Match, CupCompetition, CupChampion, LeagueId, SeasonHistoryRecord, LeagueTableRow } from '../types';
 import { generateYouthPlayer, generateSeasonSchedule, generateCupDraw, createInitialLeagueTable, handlePromotionRelegation, generateSwissPhase, generateGroupPhase, createInitialEuropeanTable, sortArgentineZones, simulateMacroMatch } from './simulation';
 import { computeArgentineRelegation, computeArgentineInternationalQualification } from './argentinaRegulations';
 import { calculatePrizeMoney, generateSponsorMarket } from './economy';
@@ -353,7 +353,7 @@ export function startNewSeason(currentState: GameState): GameState {
 
     const getLeagueTeams = (id: LeagueId) => teamsAfterProRel.filter(t => t.leagueId === id);
 
-    const newLeagueTables: Record<LeagueId, any[]> = {} as any;
+    const newLeagueTables: Record<LeagueId, LeagueTableRow[]> = {} as Record<LeagueId, LeagueTableRow[]>;
     Object.values(LeagueId).forEach(lid => {
         const teams = getLeagueTeams(lid);
         const initialTable = createInitialLeagueTable(teams);

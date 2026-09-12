@@ -1,7 +1,7 @@
 // Worker manager for simulation
 // Provides a clean API to communicate with the simulation worker
 
-import { GameState, LeagueTableRow, Match, Team, LeagueId } from '../types';
+import { GameState, LeagueTableRow, Match, Team, LeagueId, NewsItem } from '../types';
 
 interface SimulationResult {
     updatedSchedule: Match[];
@@ -22,7 +22,7 @@ interface SimulationResult {
     } | null;
     updatedCups: GameState['cups'];
     updatedScoutedPlayerIds: Record<number, number>;
-    newsToAdd?: any[];
+    newsToAdd?: NewsItem[];
 }
 
 class SimulationWorkerManager {

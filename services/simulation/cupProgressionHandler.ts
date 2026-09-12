@@ -1,4 +1,4 @@
-import { GameState, Team, Match, LeagueId, CinematicEvent } from '../../types';
+import { GameState, Team, Match, LeagueId, CinematicEvent, LeagueTableRow } from '../../types';
 import { 
     advanceCupRound, 
     progressInternationalCup, 
@@ -29,7 +29,7 @@ export function handleCupProgression(
     teams: Team[],
     simulatedWeek: number,
     newWeek: number,
-    leagueTables: Record<LeagueId, any[]>,
+    leagueTables: Record<LeagueId, LeagueTableRow[]>,
     currentTurn: 'weekend' | 'midweek'
 ): CupProgressionResult {
     const updatedCups: GameState['cups'] = { ...cups };

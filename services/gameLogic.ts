@@ -1,4 +1,4 @@
-import { GameState, Player, PlayerProfile, Team, CoachReport, SquadRole, ContractNegotiationResult } from '../types';
+import { GameState, Player, PlayerProfile, Team, CoachReport, CoachRequest, SquadRole, ContractNegotiationResult } from '../types';
 import { formatCurrency, formatWeeklyWage } from '../utils';
 import { getExpectedWage } from '../utils/playerUtils';
 
@@ -401,7 +401,7 @@ export const generateCoachReport = (gameState: GameState): CoachReport => {
     const tacticalUpdate = `Estamos implementando un sistema de ${coach.style} con formación ${coach.preferredFormation}. El equipo se está adaptando a la intensidad solicitada.`;
 
     // 3. Requests based on squad holes (Simplificado)
-    const requests: any[] = [];
+    const requests: CoachRequest[] = [];
     const positions: Player['position'][] = ['POR', 'DEF', 'CEN', 'DEL'];
     
     positions.forEach(pos => {
