@@ -4,6 +4,7 @@ import { CompetitionItem } from './constants';
 import { customPacksService } from '../../../services/customPacks/packService';
 import { Trophy, History, Shield, Award, Calendar, ChevronRight, Star } from 'lucide-react';
 import { TeamLogo } from '../../../data/teams/helpers';
+import { getCompetitionHistoricalRecord } from '../../../data/historicalHonours';
 
 interface CompetitionHistoryViewProps {
     competition: CompetitionItem;
@@ -18,8 +19,9 @@ export const CompetitionHistoryView: React.FC<CompetitionHistoryViewProps> = ({
     const cupData = isCup && competition.cupKey ? (gameState.cups as any)[competition.cupKey] : null;
     const seasonHistory = gameState.seasonHistory || [];
     const logo = customPacksService.resolveCompetitionLogo(competition.id, competition.name, competition.logo);
+    const historicalData = getCompetitionHistoricalRecord(competition.id);
 
-    // Get historical cup champions
+    // Get historical cup champions from gameplay
     const cupChampions = cupData?.statistics?.championsHistory || [];
 
     // Filter season records that match this league or cup
@@ -59,9 +61,18 @@ export const CompetitionHistoryView: React.FC<CompetitionHistoryViewProps> = ({
         return list;
     }, [cupChampions, cupSeasonRecords]);
 
-    // Calculate title tally for this competition
+    // Calculate title tally for this competition: seed with authentic official history, then add gameplay titles
     const titleTally = React.useMemo(() => {
         const counts: Record<string, number> = {};
+
+        // 1. Seed from authentic historical rankings
+        if (historicalData?.allTimeRanking) {
+            historicalData.allTimeRanking.forEach(item => {
+                counts[item.teamName] = item.titles;
+            });
+        }
+
+        // 2. Add titles won during gameplay
         if (isCup) {
             combinedCupHistory.forEach(c => {
                 counts[c.winnerName] = (counts[c.winnerName] || 0) + 1;
@@ -77,7 +88,7 @@ export const CompetitionHistoryView: React.FC<CompetitionHistoryViewProps> = ({
         return Object.entries(counts)
             .map(([name, count]) => ({ name, count }))
             .sort((a, b) => b.count - a.count);
-    }, [isCup, combinedCupHistory, leagueSeasonRecords]);
+    }, [isCup, combinedCupHistory, leagueSeasonRecords, historicalData]);
 
     return (
         <div className="space-y-6 animate-fade-in">
@@ -160,52 +171,48 @@ export const CompetitionHistoryView: React.FC<CompetitionHistoryViewProps> = ({
                             <h3 className="text-sm font-black text-white uppercase tracking-wider">Historial de Ediciones</h3>
                         </div>
                         <span className="text-[10px] font-bold text-slate-400 uppercase bg-white/5 px-2 py-0.5 rounded">
-                            {isCup ? combinedCupHistory.length : leagueSeasonRecords.length} Temporadas
+                            {isCup 
+                                ? (combinedCupHistory.length + (historicalData?.recentEditions?.length || 0))
+                                : (leagueSeasonRecords.length + (historicalData?.recentEditions?.length || 0))
+                            } Registros
                         </span>
                     </div>
 
+                    {/* Partidas Jugadas en Curso (In-Game) */}
                     {isCup ? (
-                        combinedCupHistory.length === 0 ? (
-                            <div className="text-center py-12 text-slate-500 space-y-2">
-                                <Trophy className="w-12 h-12 mx-auto opacity-25 text-slate-400" />
-                                <p className="text-sm font-bold text-slate-300 uppercase tracking-wider">Primera Temporada en Curso</p>
-                                <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                                    Al consagrarse el campeón de esta edición, el registro histórico se archivará automáticamente aquí.
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                {combinedCupHistory.map((c, i) => (
-                                    <div key={i} className="flex items-center justify-between p-3.5 rounded-xl bg-slate-900/80 border border-white/5">
-                                        <div className="flex items-center gap-3">
-                                            <div className="px-2.5 py-1 rounded-md bg-white/5 text-slate-400 text-xs font-bold border border-white/5">
-                                                T{c.season}
+                        combinedCupHistory.length > 0 && (
+                            <div className="space-y-2 mb-4">
+                                <div className="text-[10px] font-black uppercase text-[var(--apex-gold)] tracking-wider">
+                                    Ediciones en tu Partida
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                    {combinedCupHistory.map((c, i) => (
+                                        <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-slate-900/90 border border-amber-500/30">
+                                            <div className="flex items-center gap-3">
+                                                <div className="px-2 py-0.5 rounded-md bg-[var(--apex-gold)]/15 text-[var(--apex-gold)] text-xs font-bold font-mono">
+                                                    T{c.season}
+                                                </div>
+                                                <div>
+                                                    <div className="text-xs font-black text-white">{c.winnerName}</div>
+                                                    <div className="text-[10px] text-amber-400 font-bold uppercase">Campeón de Copa</div>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <div className="text-xs font-black text-white">{c.winnerName}</div>
-                                                <div className="text-[10px] text-amber-400 font-bold uppercase">Campeón</div>
-                                            </div>
+                                            <Trophy className="w-4 h-4 text-amber-400" />
                                         </div>
-                                        <Trophy className="w-4 h-4 text-amber-400" />
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
                         )
                     ) : (
-                        leagueSeasonRecords.length === 0 ? (
-                            <div className="text-center py-12 text-slate-500 space-y-2">
-                                <Trophy className="w-12 h-12 mx-auto opacity-25 text-slate-400" />
-                                <p className="text-sm font-bold text-slate-300 uppercase tracking-wider">Primera Temporada en Curso</p>
-                                <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                                    Las posiciones finales, ascensos, descensos y campeones de liga se archivarán aquí al concluir cada año.
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="space-y-3">
+                        leagueSeasonRecords.length > 0 && (
+                            <div className="space-y-3 mb-4">
+                                <div className="text-[10px] font-black uppercase text-[var(--apex-gold)] tracking-wider">
+                                    Temporadas Archivadas en tu Partida
+                                </div>
                                 {leagueSeasonRecords.map((rec, idx) => (
-                                    <div key={idx} className="p-4 rounded-xl bg-slate-900/80 border border-white/5 space-y-3">
+                                    <div key={idx} className="p-3.5 rounded-xl bg-slate-900/90 border border-amber-500/30 space-y-2.5">
                                         <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                                            <span className="text-xs font-black text-amber-400 uppercase tracking-wider">
+                                            <span className="text-xs font-black text-amber-400 uppercase tracking-wider font-mono">
                                                 Temporada {rec.season}
                                             </span>
                                             <span className="text-[11px] text-slate-400">
@@ -213,18 +220,18 @@ export const CompetitionHistoryView: React.FC<CompetitionHistoryViewProps> = ({
                                             </span>
                                         </div>
                                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-                                            <div className="bg-white/5 p-2.5 rounded-lg">
+                                            <div className="bg-white/5 p-2 rounded-lg">
                                                 <span className="text-[10px] text-slate-400 uppercase block">Campeón</span>
                                                 <span className="font-black text-amber-300">{rec.leagueChampion || 'N/A'}</span>
                                             </div>
                                             {rec.promotedTeams && rec.promotedTeams.length > 0 && (
-                                                <div className="bg-white/5 p-2.5 rounded-lg">
+                                                <div className="bg-white/5 p-2 rounded-lg">
                                                     <span className="text-[10px] text-emerald-400 uppercase block">Ascensos</span>
                                                     <span className="font-bold text-slate-200 truncate block">{rec.promotedTeams.join(', ')}</span>
                                                 </div>
                                             )}
                                             {rec.relegatedTeams && rec.relegatedTeams.length > 0 && (
-                                                <div className="bg-white/5 p-2.5 rounded-lg">
+                                                <div className="bg-white/5 p-2 rounded-lg">
                                                     <span className="text-[10px] text-rose-400 uppercase block">Descensos</span>
                                                     <span className="font-bold text-slate-200 truncate block">{rec.relegatedTeams.join(', ')}</span>
                                                 </div>
@@ -232,6 +239,53 @@ export const CompetitionHistoryView: React.FC<CompetitionHistoryViewProps> = ({
                                         </div>
                                     </div>
                                 ))}
+                            </div>
+                        )
+                    )}
+
+                    {/* Historial Oficial Reciente */}
+                    {historicalData?.recentEditions && historicalData.recentEditions.length > 0 ? (
+                        <div className="space-y-2.5">
+                            <div className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between">
+                                <span>Ediciones Oficiales Recientes</span>
+                                <span className="text-slate-500 font-normal">Archivo Histórico Oficial</span>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                {historicalData.recentEditions.map((ed, idx) => (
+                                    <div 
+                                        key={idx}
+                                        className="flex items-center justify-between p-3 rounded-xl bg-slate-900/60 border border-white/5 hover:border-white/15 transition-all"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <span className="px-2 py-0.5 rounded bg-black/60 text-slate-300 font-mono text-[11px] font-bold border border-white/10 shrink-0">
+                                                {ed.season}
+                                            </span>
+                                            <div className="min-w-0">
+                                                <span className="text-xs font-bold text-white block truncate">
+                                                    {ed.winnerName}
+                                                </span>
+                                                {ed.runnerUp && (
+                                                    <span className="text-[10px] text-slate-400 truncate block">
+                                                        Subcampeón: {ed.runnerUp} {ed.score ? `(${ed.score})` : ''}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
+                                            <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        combinedCupHistory.length === 0 && leagueSeasonRecords.length === 0 && (
+                            <div className="text-center py-12 text-slate-500 space-y-2">
+                                <Trophy className="w-12 h-12 mx-auto opacity-25 text-slate-400" />
+                                <p className="text-sm font-bold text-slate-300 uppercase tracking-wider">Primera Temporada en Curso</p>
+                                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                                    Al consagrarse el campeón de esta edición, el registro se archivará automáticamente aquí.
+                                </p>
                             </div>
                         )
                     )}

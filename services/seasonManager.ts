@@ -4,7 +4,7 @@
  */
 
 import { GameState, Team, Player, NewsItem, EuropeanCompetition, EuropeanTableRow, Match, CupCompetition, CupChampion, LeagueId, SeasonHistoryRecord, LeagueTableRow } from '../types';
-import { generateYouthPlayer, generateSeasonSchedule, generateCupDraw, createInitialLeagueTable, handlePromotionRelegation, generateSwissPhase, generateGroupPhase, createInitialEuropeanTable, sortArgentineZones, simulateMacroMatch } from './simulation';
+import { generateYouthPlayer, generateSeasonSchedule, generateCupDraw, createInitialLeagueTable, handlePromotionRelegation, generateSwissPhase, generateGroupPhase, createInitialEuropeanTable, sortArgentineZones, simulateMacroMatch, PROMOTION_RELEGATION_PAIRS } from './simulation';
 import { computeArgentineRelegation, computeArgentineInternationalQualification } from './argentinaRegulations';
 import { calculatePrizeMoney, generateSponsorMarket } from './economy';
 import { formatDate, formatCurrency } from '../utils';
@@ -13,17 +13,6 @@ import { initializeLibertadoresSeason } from './libertadoresEngine';
 import { initializeSudamericanaSeason } from './sudamericanaEngine';
 import { SOUTH_AMERICAN_EXTRA_TEAMS } from '../data/teams/southAmericanClubs';
 import { TOURNAMENT_LOGOS } from './customPacks/argentineLogos';
-
-// Define promotion/relegation pairs locally (mirrors simulation.ts)
-const PROMOTION_RELEGATION_PAIRS: [LeagueId, LeagueId][] = [
-    [LeagueId.PREMIER_LEAGUE, LeagueId.CHAMPIONSHIP],
-    [LeagueId.LA_LIGA, LeagueId.SEGUNDA_DIVISION_ESP],
-    [LeagueId.BUNDESLIGA, LeagueId.ZWEITE_BUNDESLIGA],
-    [LeagueId.SERIE_A, LeagueId.SERIE_B_ITA],
-    [LeagueId.LIGUE_1, LeagueId.LIGUE_2],
-    [LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL],
-    [LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR],
-];
 
 /**
  * Processes the transition to a new season

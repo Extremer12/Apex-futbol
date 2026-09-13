@@ -16,6 +16,8 @@ export const CommunityPacksSection: React.FC = () => {
     const [isBraPackActive, setIsBraPackActive] = useState<boolean>(false);
     const [isGerPackActive, setIsGerPackActive] = useState<boolean>(false);
     const [isFrePackActive, setIsFrePackActive] = useState<boolean>(false);
+    const [isMexPackActive, setIsMexPackActive] = useState<boolean>(false);
+    const [isFacesPackActive, setIsFacesPackActive] = useState<boolean>(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [progressPercent, setProgressPercent] = useState(0);
     const [progressStatus, setProgressStatus] = useState('');
@@ -34,6 +36,8 @@ export const CommunityPacksSection: React.FC = () => {
         setIsBraPackActive(customPacksService.isBrazilianPackActive());
         setIsGerPackActive(customPacksService.isGermanPackActive());
         setIsFrePackActive(customPacksService.isFrenchPackActive());
+        setIsMexPackActive(customPacksService.isMexicanPackActive());
+        setIsFacesPackActive(customPacksService.isPlayerFacesPackActive());
     };
 
     useEffect(() => {
@@ -263,20 +267,55 @@ export const CommunityPacksSection: React.FC = () => {
         }
     };
 
+    // Toggle Mexican Pack (jsDelivr CDN)
+    const handleToggleMexPack = (enable: boolean) => {
+        setIsProcessing(true);
+        try {
+            customPacksService.setMexicanPackActive(enable);
+            setIsMexPackActive(enable);
+            setFeedbackMessage({
+                type: 'success',
+                text: enable 
+                    ? '¡Pack de Fútbol Mexicano activado! Se cargaron los escudos oficiales vectoriales de Liga MX y Liga de Expansión MX.' 
+                    : 'Pack de Fútbol Mexicano desinstalado. Se restauraron los escudos genéricos neutros.'
+            });
+        } catch (err: any) {
+            setFeedbackMessage({
+                type: 'error',
+                text: 'Error al cambiar el estado del pack: ' + (err.message || err)
+            });
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    // Toggle Player Faces Pack (jsDelivr CDN)
+    const handleToggleFacesPack = (enable: boolean) => {
+        setIsProcessing(true);
+        try {
+            customPacksService.setPlayerFacesPackActive(enable);
+            setIsFacesPackActive(enable);
+            setFeedbackMessage({
+                type: 'success',
+                text: enable 
+                    ? '¡Pack de Rostros de Jugadores activado! Se cargaron las fotos reales de los futbolistas.' 
+                    : 'Pack de Rostros de Jugadores desinstalado. Se restauraron las siluetas neutras.'
+            });
+        } catch (err: any) {
+            setFeedbackMessage({
+                type: 'error',
+                text: 'Error al cambiar el estado del pack: ' + (err.message || err)
+            });
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
     // Enable all community packs
     const handleEnableAllPacks = () => {
         setIsProcessing(true);
         try {
-            customPacksService.setArgentinePackActive(true);
-            customPacksService.setOtrosArgentinaPackActive(true);
-            customPacksService.setParaguayPackActive(true);
-            customPacksService.setCompetitionsPackActive(true);
-            customPacksService.setEnglishPackActive(true);
-            customPacksService.setItalianPackActive(true);
-            customPacksService.setSpanishPackActive(true);
-            customPacksService.setBrazilianPackActive(true);
-            customPacksService.setGermanPackActive(true);
-            customPacksService.setFrenchPackActive(true);
+            customPacksService.setAllPacksActive(true);
             setIsArgPackActive(true);
             setIsOtrosArgActive(true);
             setIsParaguayPackActive(true);
@@ -287,9 +326,11 @@ export const CommunityPacksSection: React.FC = () => {
             setIsBraPackActive(true);
             setIsGerPackActive(true);
             setIsFrePackActive(true);
+            setIsMexPackActive(true);
+            setIsFacesPackActive(true);
             setFeedbackMessage({
                 type: 'success',
-                text: '¡Todos los packs comunitarios activos! (Argentina, Paraguay, Torneos Internacionales, Inglaterra, España, Italia, Brasil, Alemania y Francia).'
+                text: '¡Todos los packs comunitarios han sido instalados y activados! (+500 escudos y fotos de jugadores oficiales).'
             });
         } catch (err: any) {
             setFeedbackMessage({ type: 'error', text: err.message || 'Error al activar los packs.' });
@@ -348,12 +389,31 @@ export const CommunityPacksSection: React.FC = () => {
             setIsBraPackActive(false);
             setIsGerPackActive(false);
             setIsFrePackActive(false);
-            setFeedbackMessage({ type: 'success', text: 'Se restablecieron todos los escudos y logos a genéricos neutros.' });
+            setIsMexPackActive(false);
+            setIsFacesPackActive(false);
+            setFeedbackMessage({ type: 'success', text: 'Se restablecieron todos los escudos, logos y fotos a genéricos neutros.' });
             await refreshState();
         } catch (err: any) {
             setFeedbackMessage({ type: 'error', text: 'Error al restablecer: ' + err.message });
         }
     };
+
+    const activePacksCount = [
+        isArgPackActive,
+        isOtrosArgActive,
+        isParaguayPackActive,
+        isMexPackActive,
+        isEngPackActive,
+        isSpaPackActive,
+        isItaPackActive,
+        isBraPackActive,
+        isGerPackActive,
+        isFrePackActive,
+        isCompetitionsPackActive,
+        isFacesPackActive
+    ].filter(Boolean).length;
+
+    const areAllPacksActive = activePacksCount === 12;
 
     return (
         <div className="space-y-4">
@@ -368,7 +428,7 @@ export const CommunityPacksSection: React.FC = () => {
                 </div>
                 
                 <div className="flex items-center gap-2">
-                    {(!isArgPackActive || !isOtrosArgActive || !isParaguayPackActive || !isCompetitionsPackActive || !isEngPackActive || !isItaPackActive || !isSpaPackActive || !isBraPackActive || !isGerPackActive || !isFrePackActive) && (
+                    {!areAllPacksActive && (
                         <button
                             onClick={handleEnableAllPacks}
                             disabled={isProcessing}
@@ -378,7 +438,7 @@ export const CommunityPacksSection: React.FC = () => {
                             <span>Activar Todos</span>
                         </button>
                     )}
-                    {(isArgPackActive || isOtrosArgActive || isParaguayPackActive || isCompetitionsPackActive || isEngPackActive || isItaPackActive || isSpaPackActive || isBraPackActive || isGerPackActive || isFrePackActive || stats.total > 0) && (
+                    {(activePacksCount > 0 || stats.total > 0) && (
                         <button
                             onClick={handleClearAll}
                             disabled={isProcessing}
@@ -389,6 +449,52 @@ export const CommunityPacksSection: React.FC = () => {
                             <span>Restablecer Todo</span>
                         </button>
                     )}
+                </div>
+            </div>
+
+            {/* 🌟 HERO BANNER: Instalar Todos los Packs (1-Clic) */}
+            <div className="relative overflow-hidden rounded-2xl border border-amber-500/30 bg-gradient-to-r from-[#17231c] via-[#101c2e] to-[#251b12] p-4 sm:p-5 shadow-2xl">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div className="space-y-1.5 max-w-xl">
+                        <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-amber-300 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/30 flex items-center gap-1">
+                                <Sparkles className="w-3 h-3 text-amber-400" /> Instalación en 1-Clic
+                            </span>
+                            <span className="text-xs font-bold text-slate-300">
+                                {activePacksCount} de 12 Packs Activos
+                            </span>
+                        </div>
+                        <h4 className="text-base sm:text-lg font-black text-white tracking-tight">
+                            Instalar Todos los Packs (Escudos + Rostros)
+                        </h4>
+                        <p className="text-xs text-slate-400 leading-relaxed">
+                            Activa de una sola vez los escudos oficiales vectoriales y fotos de jugadores de todas las ligas disponibles: México, Argentina, Paraguay, Inglaterra, España, Italia, Alemania, Francia, Brasil, Copas Internacionales y Player Faces.
+                        </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 w-full md:w-auto flex-shrink-0">
+                        <button
+                            onClick={handleEnableAllPacks}
+                            disabled={isProcessing || areAllPacksActive}
+                            className={`w-full md:w-auto px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-xl flex items-center justify-center gap-2 cursor-pointer active:scale-95 ${
+                                areAllPacksActive
+                                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 opacity-80 cursor-default'
+                                    : 'bg-gradient-to-r from-[var(--apex-gold)] via-amber-400 to-yellow-500 hover:brightness-110 text-slate-950 shadow-amber-500/20 ring-2 ring-amber-400/40'
+                            }`}
+                        >
+                            {areAllPacksActive ? (
+                                <>
+                                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                                    <span>✓ Todos los Packs Instalados</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Sparkles className="w-4 h-4 text-slate-950 stroke-[2.5]" />
+                                    <span>⚡ Instalar Todos los Packs</span>
+                                </>
+                            )}
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -913,6 +1019,110 @@ export const CommunityPacksSection: React.FC = () => {
                         )}
                     </div>
                 </div>
+
+                {/* Tarjeta México: Liga MX & Liga de Expansión MX */}
+                <div className={`rounded-2xl border p-4 transition-all shadow-xl relative overflow-hidden flex flex-col justify-between ${
+                    isMexPackActive 
+                        ? 'bg-gradient-to-b from-[#10291d] to-[#0a1711] border-emerald-500/40' 
+                        : 'bg-gradient-to-b from-[#161D2E] to-[#0E131F] border-white/10'
+                }`}>
+                    <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                                🇲🇽 México • 32 Escudos
+                            </span>
+                            {isMexPackActive ? (
+                                <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-500/30">
+                                    <CheckCircle2 className="w-3 h-3" /> Activo
+                                </span>
+                            ) : (
+                                <span className="text-[10px] font-bold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700">
+                                    Genérico
+                                </span>
+                            )}
+                        </div>
+                        <h4 className="text-sm font-black text-white uppercase tracking-tight">
+                            Liga MX & Expansión MX
+                        </h4>
+                        <p className="text-xs text-slate-400 leading-relaxed">
+                            América, Chivas, Cruz Azul, Tigres, Monterrey, Pumas, Toluca, Pachuca y 32 clubes mexicanos.
+                        </p>
+                    </div>
+
+                    <div className="pt-3 mt-2 border-t border-white/5">
+                        {isMexPackActive ? (
+                            <button
+                                onClick={() => handleToggleMexPack(false)}
+                                disabled={isProcessing}
+                                className="w-full py-2 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 text-red-300 hover:text-red-100 text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+                            >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>Desinstalar</span>
+                            </button>
+                        ) : (
+                            <button
+                                onClick={() => handleToggleMexPack(true)}
+                                disabled={isProcessing}
+                                className="w-full py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-[11px] font-black uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                                <Sparkles className="w-3.5 h-3.5 text-black stroke-[2.5]" />
+                                <span>Instalar México</span>
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* Tarjeta 10: Player Faces Pack (Rostros de Jugadores) */}
+                <div className={`rounded-2xl border p-4 transition-all shadow-xl relative overflow-hidden flex flex-col justify-between ${
+                    isFacesPackActive 
+                        ? 'bg-gradient-to-b from-[#181329] to-[#0d0a17] border-purple-500/40' 
+                        : 'bg-gradient-to-b from-[#161D2E] to-[#0E131F] border-white/10'
+                }`}>
+                    <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-md border border-purple-500/20">
+                                👤 Jugadores • Rostros Reales
+                            </span>
+                            {isFacesPackActive ? (
+                                <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-500/30">
+                                    <CheckCircle2 className="w-3 h-3" /> Activo
+                                </span>
+                            ) : (
+                                <span className="text-[10px] font-bold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700">
+                                    Siluetas
+                                </span>
+                            )}
+                        </div>
+                        <h4 className="text-sm font-black text-white uppercase tracking-tight">
+                            Player Faces Pack (Fotos Reales)
+                        </h4>
+                        <p className="text-xs text-slate-400 leading-relaxed">
+                            Fotos oficiales de futbolistas (Cavani, Merentiel, Zenón, Malagón, Chicharito, Messi, Haaland, Mbappé y más) en cartas y alineación.
+                        </p>
+                    </div>
+
+                    <div className="pt-3 mt-2 border-t border-white/5">
+                        {isFacesPackActive ? (
+                            <button
+                                onClick={() => handleToggleFacesPack(false)}
+                                disabled={isProcessing}
+                                className="w-full py-2 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 text-red-300 hover:text-red-100 text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+                            >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>Desinstalar</span>
+                            </button>
+                        ) : (
+                            <button
+                                onClick={() => handleToggleFacesPack(true)}
+                                disabled={isProcessing}
+                                className="w-full py-2 bg-gradient-to-r from-purple-500 to-indigo-600 hover:brightness-110 text-white text-[11px] font-black uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                                <Sparkles className="w-3.5 h-3.5 text-white stroke-[2.5]" />
+                                <span>Instalar Rostros</span>
+                            </button>
+                        )}
+                    </div>
+                </div>
             </div>
 
             {/* 📦 Tarjeta 3: Pack Global Oficial Verificado */}
@@ -982,10 +1192,18 @@ export const CommunityPacksSection: React.FC = () => {
                 </div>
             )}
 
-            {/* Descargo de Responsabilidad Minimalista */}
-            <p className="text-[10px] text-slate-500 text-center leading-relaxed">
-                ⚖️ Apex AI no incluye escudos comerciales oficiales de fábrica. El contenido descargado es generado por la comunidad (UGC) y se almacena localmente en tu navegador.
-            </p>
+            {/* Descargo de Responsabilidad y Licencias de la Comunidad */}
+            <div className="p-4 rounded-xl bg-slate-900/40 border border-white/5 space-y-2 text-center sm:text-left">
+                <div className="flex items-center gap-2 justify-center sm:justify-start">
+                    <Shield className="w-4 h-4 text-slate-400" />
+                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-300">
+                        Aviso Legal de Licencias y Contenido Comunitario
+                    </span>
+                </div>
+                <p className="text-[10px] text-slate-400 leading-relaxed">
+                    Apex AI es un simulador de gestión deportiva independiente. Los escudos, marcas comerciales, nombres de competiciones y fotografías de futbolistas pertenecen a sus respectivos clubes, federaciones y titulares de derechos. Este software no distribuye contenido con derechos comerciales integrados; proporciona exclusivamente una arquitectura de personalización local mediante paquetes de datos (Option Files / Community Packs) gestionados por el propio usuario para uso personal, no lucrativo y de entretenimiento.
+                </p>
+            </div>
         </div>
     );
 };

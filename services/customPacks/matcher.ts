@@ -71,3 +71,28 @@ export function getCompetitionMatchKeys(competitionId: string, name?: string): s
 
     return keys;
 }
+
+export function getPlayerMatchKeys(player: { id?: number | string; name?: string }): string[] {
+    const keys: string[] = [];
+    if (player.id !== undefined && player.id !== null) {
+        keys.push(String(player.id));
+        keys.push(`player_${player.id}`);
+    }
+    if (player.name) {
+        const norm = normalizeKey(player.name);
+        if (norm) keys.push(norm);
+
+        const rawSlug = player.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+        if (rawSlug && !keys.includes(rawSlug)) keys.push(rawSlug);
+
+        // Also if name has "E. Cavani" or "Kevin De Bruyne" -> extract last name
+        const parts = player.name.trim().split(/\s+/);
+        if (parts.length > 1) {
+            const lastName = parts[parts.length - 1];
+            const lastNameNorm = normalizeKey(lastName);
+            if (lastNameNorm && !keys.includes(lastNameNorm)) keys.push(lastNameNorm);
+        }
+    }
+    return keys;
+}
+

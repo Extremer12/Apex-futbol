@@ -1,8 +1,9 @@
 import JSZip from 'jszip';
 import { StoredAsset, saveStoredAssetsBatch, getAllStoredAssets, clearAllStoredAssets, getStoredAssetsCount } from './storage';
-import { normalizeKey, getTeamMatchKeys, getCompetitionMatchKeys } from './matcher';
+import { normalizeKey, getTeamMatchKeys, getCompetitionMatchKeys, getPlayerMatchKeys } from './matcher';
 
 import { ARG_CLUB_LOGOS_BY_ID, ARG_CLUB_LOGOS_BY_NAME, ARG_COMPETITION_LOGOS } from './argentineLogos';
+import { PLAYER_PHOTOS_BY_ID, PLAYER_PHOTOS_BY_NAME } from './playerPhotos';
 
 export type PackUpdateListener = () => void;
 
@@ -10,6 +11,9 @@ class CustomPacksService {
     private inMemoryAssets: Map<string, string> = new Map(); // key -> objectURL or direct URL
     private listeners: Set<PackUpdateListener> = new Set();
     private isInitialized = false;
+    private teamLogoCache: Map<string, string | undefined> = new Map();
+    private competitionLogoCache: Map<string, string | undefined> = new Map();
+    private playerPhotoCache: Map<string, string> = new Map();
 
     public subscribe(listener: PackUpdateListener): () => void {
         this.listeners.add(listener);
@@ -19,6 +23,9 @@ class CustomPacksService {
     }
 
     private notifyListeners() {
+        this.teamLogoCache.clear();
+        this.competitionLogoCache.clear();
+        this.playerPhotoCache.clear();
         this.listeners.forEach(fn => fn());
     }
 
@@ -254,6 +261,82 @@ class CustomPacksService {
         this.notifyListeners();
     }
 
+    public isMexicanPackActive(): boolean {
+        if (typeof window === 'undefined') return false;
+        try {
+            return localStorage.getItem('apex_pack_mexican_active') === 'true';
+        } catch {
+            return false;
+        }
+    }
+
+    public setMexicanPackActive(active: boolean): void {
+        if (typeof window === 'undefined') return;
+        try {
+            if (active) {
+                localStorage.setItem('apex_pack_mexican_active', 'true');
+            } else {
+                localStorage.removeItem('apex_pack_mexican_active');
+            }
+        } catch (e) {
+            console.error('Failed to save mexican pack state:', e);
+        }
+        this.notifyListeners();
+    }
+
+    public isPlayerFacesPackActive(): boolean {
+        if (typeof window === 'undefined') return false;
+        try {
+            return localStorage.getItem('apex_pack_player_faces_active') === 'true';
+        } catch {
+            return false;
+        }
+    }
+
+    public setPlayerFacesPackActive(active: boolean): void {
+        if (typeof window === 'undefined') return;
+        try {
+            if (active) {
+                localStorage.setItem('apex_pack_player_faces_active', 'true');
+            } else {
+                localStorage.removeItem('apex_pack_player_faces_active');
+            }
+        } catch (e) {
+            console.error('Failed to save player faces pack state:', e);
+        }
+        this.notifyListeners();
+    }
+
+    public setAllPacksActive(active: boolean): void {
+        if (typeof window === 'undefined') return;
+        try {
+            const keys = [
+                'apex_pack_argentine_active',
+                'apex_pack_otros_arg_active',
+                'apex_pack_english_active',
+                'apex_pack_italian_active',
+                'apex_pack_spanish_active',
+                'apex_pack_brazilian_active',
+                'apex_pack_german_active',
+                'apex_pack_french_active',
+                'apex_pack_paraguay_active',
+                'apex_pack_competitions_active',
+                'apex_pack_mexican_active',
+                'apex_pack_player_faces_active',
+            ];
+            for (const key of keys) {
+                if (active) {
+                    localStorage.setItem(key, 'true');
+                } else {
+                    localStorage.removeItem(key);
+                }
+            }
+        } catch (e) {
+            console.error('Failed to set all packs state:', e);
+        }
+        this.notifyListeners();
+    }
+
     public async init(): Promise<void> {
         if (this.isInitialized) return;
         await this.reloadCache();
@@ -292,72 +375,108 @@ class CustomPacksService {
 
     public resolveTeamLogo(team?: { id?: number | string; name?: string; shortName?: string; logo?: string }): string | undefined {
         if (!team) return undefined;
-        const keys = getTeamMatchKeys(team);
-        const custom = this.getCustomLogo('teams', keys);
-        if (custom) return custom;
-
-        // 1. Direct lookup by ID in built-in data packs
-        if (team.id !== undefined && team.id !== null) {
-            if (ARG_CLUB_LOGOS_BY_ID[team.id]) {
-                return ARG_CLUB_LOGOS_BY_ID[team.id];
-            }
+        const cacheKey = `${team.id ?? ''}_${team.name ?? ''}_${team.logo ?? ''}`;
+        if (this.teamLogoCache.has(cacheKey)) {
+            return this.teamLogoCache.get(cacheKey);
         }
 
-        // 2. Direct lookup by team name in built-in data packs
-        if (team.name) {
+        let result: string | undefined;
+        const keys = getTeamMatchKeys(team);
+        const custom = this.getCustomLogo('teams', keys);
+        if (custom) {
+            result = custom;
+        } else if (team.id !== undefined && team.id !== null && ARG_CLUB_LOGOS_BY_ID[team.id]) {
+            // 1. Direct lookup by ID in built-in data packs
+            result = ARG_CLUB_LOGOS_BY_ID[team.id];
+        } else if (team.name) {
+            // 2. Direct lookup by team name in built-in data packs
             const norm = normalizeKey(team.name);
             if (norm && ARG_CLUB_LOGOS_BY_NAME[norm]) {
-                return ARG_CLUB_LOGOS_BY_NAME[norm];
-            }
-            const lower = team.name.toLowerCase().trim();
-            if (ARG_CLUB_LOGOS_BY_NAME[lower]) {
-                return ARG_CLUB_LOGOS_BY_NAME[lower];
+                result = ARG_CLUB_LOGOS_BY_NAME[norm];
+            } else {
+                const lower = team.name.toLowerCase().trim();
+                if (ARG_CLUB_LOGOS_BY_NAME[lower]) {
+                    result = ARG_CLUB_LOGOS_BY_NAME[lower];
+                }
             }
         }
 
         // 3. Fallback to team's explicit logo field
-        if (team.logo && team.logo.trim().length > 0) {
-            return team.logo;
+        if (!result && team.logo && team.logo.trim().length > 0) {
+            result = team.logo;
         }
 
-        return undefined;
+        this.teamLogoCache.set(cacheKey, result);
+        return result;
     }
 
     public resolveCompetitionLogo(competitionId: string, name?: string, defaultLogo?: string): string | undefined {
+        const cacheKey = `${competitionId}_${name ?? ''}_${defaultLogo ?? ''}`;
+        if (this.competitionLogoCache.has(cacheKey)) {
+            return this.competitionLogoCache.get(cacheKey);
+        }
+
+        let result: string | undefined;
         const keys = getCompetitionMatchKeys(competitionId, name);
         const custom = this.getCustomLogo('competitions', keys);
-        if (custom) return custom;
-
-        if (ARG_COMPETITION_LOGOS[competitionId]) {
-            return ARG_COMPETITION_LOGOS[competitionId];
-        }
-        const norm = normalizeKey(competitionId);
-        if (ARG_COMPETITION_LOGOS[norm]) {
-            return ARG_COMPETITION_LOGOS[norm];
-        }
-        if (name) {
-            const nameNorm = normalizeKey(name);
-            if (ARG_COMPETITION_LOGOS[nameNorm]) {
-                return ARG_COMPETITION_LOGOS[nameNorm];
+        if (custom) {
+            result = custom;
+        } else if (ARG_COMPETITION_LOGOS[competitionId]) {
+            result = ARG_COMPETITION_LOGOS[competitionId];
+        } else {
+            const norm = normalizeKey(competitionId);
+            if (ARG_COMPETITION_LOGOS[norm]) {
+                result = ARG_COMPETITION_LOGOS[norm];
+            } else if (name) {
+                const nameNorm = normalizeKey(name);
+                if (ARG_COMPETITION_LOGOS[nameNorm]) {
+                    result = ARG_COMPETITION_LOGOS[nameNorm];
+                }
             }
         }
 
-        return defaultLogo || undefined;
+        if (!result) {
+            result = defaultLogo || undefined;
+        }
+
+        this.competitionLogoCache.set(cacheKey, result);
+        return result;
     }
 
     public resolvePlayerPhoto(player?: { id?: number | string; name?: string; photo?: string }): string {
         if (!player) return '/sinrostro.png';
-        const keys: string[] = [];
-        if (player.id !== undefined && player.id !== null) {
-            keys.push(String(player.id));
+        const cacheKey = `${player.id ?? ''}_${player.name ?? ''}_${player.photo ?? ''}`;
+        if (this.playerPhotoCache.has(cacheKey)) {
+            return this.playerPhotoCache.get(cacheKey)!;
         }
-        if (player.name) {
-            keys.push(normalizeKey(player.name));
-            keys.push(player.name.toLowerCase().replace(/[^a-z0-9]/g, ''));
-        }
+
+        let result = player.photo || '/sinrostro.png';
+        const keys = getPlayerMatchKeys(player);
         const custom = this.getCustomLogo('players', keys);
-        if (custom) return custom;
-        return player.photo || '/sinrostro.png';
+        if (custom) {
+            result = custom;
+        } else if (this.isPlayerFacesPackActive()) {
+            // 1. Direct ID lookup in Player Faces Pack
+            if (player.id !== undefined && player.id !== null) {
+                const numId = Number(player.id);
+                if (PLAYER_PHOTOS_BY_ID[numId]) {
+                    result = PLAYER_PHOTOS_BY_ID[numId];
+                }
+            }
+
+            // 2. Name lookup in Player Faces Pack if not matched by ID
+            if (result === '/sinrostro.png' || result === player.photo) {
+                for (const k of keys) {
+                    if (PLAYER_PHOTOS_BY_NAME[k]) {
+                        result = PLAYER_PHOTOS_BY_NAME[k];
+                        break;
+                    }
+                }
+            }
+        }
+
+        this.playerPhotoCache.set(cacheKey, result);
+        return result;
     }
 
     /**
@@ -623,11 +742,7 @@ class CustomPacksService {
      * Clear all custom packs
      */
     public async clearAllPacks(): Promise<void> {
-        this.setArgentinePackActive(false);
-        this.setEnglishPackActive(false);
-        this.setItalianPackActive(false);
-        this.setSpanishPackActive(false);
-        this.setBrazilianPackActive(false);
+        this.setAllPacksActive(false);
         await clearAllStoredAssets();
         await this.reloadCache();
     }

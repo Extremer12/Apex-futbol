@@ -31,9 +31,6 @@ export default defineConfig({
             if (normalizedId.includes('@supabase')) {
               return 'vendor-supabase';
             }
-            if (normalizedId.includes('@google/genai')) {
-              return 'vendor-genai';
-            }
             if (normalizedId.includes('jszip')) {
               return 'vendor-jszip';
             }

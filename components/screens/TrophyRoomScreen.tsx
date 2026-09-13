@@ -4,9 +4,10 @@ import { TrophyIcon, SparklesIcon, ChartBarIcon } from '../icons';
 import { ALL_COMPETITIONS } from './league/constants';
 import { CompetitionHistoryView } from './league/CompetitionHistoryView';
 import { customPacksService } from '../../services/customPacks/packService';
-import { Search, History, Shield, Award, CheckCircle2, Lock } from 'lucide-react';
+import { Search, History, Shield, Award, CheckCircle2, Lock, Star } from 'lucide-react';
 import { TeamLogo } from '../../data/teams/helpers';
 import { formatCurrency } from '../../utils';
+import { getClubHistoricalHonours } from '../../data/historicalHonours';
 
 interface TrophyRoomScreenProps {
     gameState: GameState;
@@ -24,6 +25,8 @@ export const TrophyRoomScreen: React.FC<TrophyRoomScreenProps> = ({ gameState })
     const trophies = team.trophyCabinet || [];
     const leagueTrophies = trophies.filter(t => t.type === 'league');
     const cupTrophies = trophies.filter(t => t.type === 'cup');
+
+    const clubHonours = useMemo(() => getClubHistoricalHonours(team.name), [team.name]);
 
     const selectedCompetitionDef = useMemo(() => {
         return ALL_COMPETITIONS.find(c => c.id === selectedCompId) || ALL_COMPETITIONS[0];
@@ -72,7 +75,7 @@ export const TrophyRoomScreen: React.FC<TrophyRoomScreenProps> = ({ gameState })
                             <span>Historial y Palmarés</span>
                         </h1>
                         <p className="text-xs text-slate-400 mt-0.5">
-                            {team.name} • {trophies.length} Títulos • {seasonHistory.length} Temporadas archivadas
+                            {team.name} • {clubHonours ? `${clubHonours.totalOfficialTitles} Títulos Oficiales Históricos` : `${trophies.length} Títulos`} • {seasonHistory.length} Temporadas archivadas
                         </p>
                     </div>
                 </div>
@@ -87,7 +90,7 @@ export const TrophyRoomScreen: React.FC<TrophyRoomScreenProps> = ({ gameState })
                                 : 'text-white/50 hover:text-white'
                         }`}
                     >
-                        VITRINA ({trophies.length})
+                        VITRINA ({clubHonours ? clubHonours.totalOfficialTitles + trophies.length : trophies.length})
                     </button>
                     <button
                         onClick={() => setActiveTab('HISTORY')}
@@ -127,12 +130,89 @@ export const TrophyRoomScreen: React.FC<TrophyRoomScreenProps> = ({ gameState })
             {/* ========================================================================= */}
             {activeTab === 'TROPHIES' && (
                 <div className="space-y-6 flex-1 overflow-y-auto custom-scrollbar pr-1">
+                    {/* Club Historical Palmarès Card */}
+                    {clubHonours && (
+                        <div className="rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-amber-500/30 p-5 shadow-2xl relative overflow-hidden space-y-4">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                                        <span className="text-[10px] font-black uppercase text-amber-400 tracking-wider">
+                                            Palmarés Histórico Oficial
+                                        </span>
+                                    </div>
+                                    <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight mt-0.5">
+                                        Vitrinas de {clubHonours.clubName}
+                                    </h2>
+                                </div>
+                                <div className="flex items-center gap-2 self-start sm:self-auto bg-black/60 px-3.5 py-1.5 rounded-xl border border-amber-500/30">
+                                    <TrophyIcon className="w-5 h-5 text-[var(--apex-gold)]" />
+                                    <div>
+                                        <span className="text-lg font-black text-white leading-none block">
+                                            {clubHonours.totalOfficialTitles}
+                                        </span>
+                                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">
+                                            Títulos Oficiales
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Trophies breakdown counters */}
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                                <div className="bg-black/50 p-3 rounded-xl border border-white/5">
+                                    <span className="text-[10px] text-slate-400 font-bold uppercase block">Ligas Nacionales</span>
+                                    <span className="text-xl font-black text-white">{clubHonours.leagueTitles}</span>
+                                </div>
+                                <div className="bg-black/50 p-3 rounded-xl border border-white/5">
+                                    <span className="text-[10px] text-slate-400 font-bold uppercase block">Copas Nacionales</span>
+                                    <span className="text-xl font-black text-white">{clubHonours.domesticCups}</span>
+                                </div>
+                                <div className="bg-black/50 p-3 rounded-xl border border-white/5">
+                                    <span className="text-[10px] text-slate-400 font-bold uppercase block">Continentales (UCL/Lib)</span>
+                                    <span className="text-xl font-black text-amber-300">{clubHonours.continentalCups}</span>
+                                </div>
+                                <div className="bg-black/50 p-3 rounded-xl border border-white/5">
+                                    <span className="text-[10px] text-slate-400 font-bold uppercase block">Mundiales / Intercont.</span>
+                                    <span className="text-xl font-black text-emerald-400">{clubHonours.intercontinental}</span>
+                                </div>
+                            </div>
+
+                            {/* Highlights Badges */}
+                            {clubHonours.highlights && clubHonours.highlights.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5 pt-1">
+                                    {clubHonours.highlights.map((h, i) => (
+                                        <span 
+                                            key={i} 
+                                            className="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/20 text-xs font-bold"
+                                        >
+                                            🏆 {h}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Presidential Mandate Trophies Section Header */}
+                    <div className="flex items-center justify-between border-b border-white/10 pb-2 pt-2">
+                        <div className="flex items-center gap-2">
+                            <TrophyIcon className="w-5 h-5 text-[var(--apex-gold)]" />
+                            <h3 className="text-sm font-black text-white uppercase tracking-wider">
+                                Títulos Conquistados en tu Mandato
+                            </h3>
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase bg-white/5 px-2.5 py-1 rounded">
+                            {trophies.length} {trophies.length === 1 ? 'Título' : 'Títulos'}
+                        </span>
+                    </div>
+
                     {trophies.length === 0 ? (
-                        <div className="apex-card p-12 flex flex-col items-center justify-center text-center text-white/40 space-y-2">
-                            <TrophyIcon className="w-12 h-12 opacity-30 text-[var(--apex-gold)] mb-2" />
-                            <h3 className="text-sm font-black uppercase tracking-wider text-slate-300">Vitrina Sin Títulos</h3>
+                        <div className="apex-card p-8 flex flex-col items-center justify-center text-center text-white/40 space-y-2">
+                            <TrophyIcon className="w-10 h-10 opacity-30 text-[var(--apex-gold)] mb-1" />
+                            <h3 className="text-xs font-black uppercase tracking-wider text-slate-300">Sin Títulos Presidenciales Aún</h3>
                             <p className="text-xs text-slate-500 max-w-sm">
-                                El club aún no ha conquistado títulos en esta partida. Compite en liga y copas para sumar estrellas al palmarés oficial.
+                                Aún no has conquistado títulos durante tu presidencia en esta partida. Compite en liga y copas para sumar nuevas copas a las vitrinas del club.
                             </p>
                         </div>
                     ) : (

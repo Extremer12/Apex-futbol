@@ -19,6 +19,7 @@ const COUNTRIES = [
     { id: 'España', label: 'España', flag: 'https://flagcdn.com/es.svg' },
     { id: 'Brasil', label: 'Brasil', flag: 'https://flagcdn.com/br.svg' },
     { id: 'Paraguay', label: 'Paraguay', flag: 'https://flagcdn.com/py.svg' },
+    { id: 'México', label: 'México', flag: 'https://flagcdn.com/mx.svg' },
     { id: 'Alemania', label: 'Alemania', flag: 'https://flagcdn.com/de.svg' },
     { id: 'Italia', label: 'Italia', flag: 'https://flagcdn.com/it.svg' },
     { id: 'Francia', label: 'Francia', flag: 'https://flagcdn.com/fr.svg' },
@@ -90,7 +91,6 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
 
     const handleSelectComp = (id: string, country?: string) => {
         setSelectedCompetitionId(id);
-        setCupTab('ROUNDS');
         setSearchQuery('');
         setIsExplorerOpen(false);
         if (country) {
@@ -98,9 +98,11 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
         }
     };
 
-    const resolvedLogo = selectedCompDef 
-        ? customPacksService.resolveCompetitionLogo(selectedCompDef.id, selectedCompDef.name, selectedCompDef.logo)
-        : '/sinlogo.png';
+    const resolvedLogo = useMemo(() => {
+        return selectedCompDef 
+            ? (customPacksService.resolveCompetitionLogo(selectedCompDef.id, selectedCompDef.name, selectedCompDef.logo) || '/sinlogo.png')
+            : '/sinlogo.png';
+    }, [selectedCompDef]);
 
     return (
         <div className="px-0 sm:px-4 md:px-6 py-2 sm:py-3 max-w-[1400px] w-full overflow-x-hidden mx-auto min-h-screen animate-fade-in space-y-2.5 sm:space-y-3">
@@ -110,7 +112,7 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                     {/* Competición Actual */}
                     <div className="flex items-center gap-3 min-w-0">
                         <div className="w-10 h-10 sm:w-12 sm:h-12 shrink-0 flex items-center justify-center p-1 rounded-xl bg-white/[0.03] border border-white/5 drop-shadow-sm">
-                            <img src={resolvedLogo} alt="" className="w-full h-full object-contain" />
+                            <img src={resolvedLogo} alt="" className="w-full h-full object-contain" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.src = '/sinlogo.png'; }} />
                         </div>
                         <div className="min-w-0">
                             <div className="flex items-center gap-2">
@@ -166,7 +168,7 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                                     }`}
                                 >
                                     <div className="w-3.5 h-3.5 shrink-0">
-                                        <img src={compLogo} alt="" className="w-full h-full object-contain" />
+                                        <img src={compLogo} alt="" className="w-full h-full object-contain" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.src = '/sinlogo.png'; }} />
                                     </div>
                                     <span className="truncate max-w-[130px]">{comp.name}</span>
                                 </button>
@@ -248,7 +250,7 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                                                     }`}
                                                 >
                                                     <div className="w-8 h-8 shrink-0 flex items-center justify-center">
-                                                        <img src={logo} alt="" className="w-full h-full object-contain" />
+                                                        <img src={logo} alt="" className="w-full h-full object-contain" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.src = '/sinlogo.png'; }} />
                                                     </div>
                                                     <div className="flex-1 min-w-0">
                                                         <div className="text-xs font-black text-white truncate uppercase">{c.name}</div>
@@ -316,7 +318,7 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                                                     }`}
                                                 >
                                                     <div className="w-10 h-10 shrink-0 flex items-center justify-center p-1 rounded-xl bg-white/[0.03]">
-                                                        <img src={compLogo} alt="" className="w-full h-full object-contain" />
+                                                        <img src={compLogo} alt="" className="w-full h-full object-contain" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.src = '/sinlogo.png'; }} />
                                                     </div>
                                                     <div className="flex-1 min-w-0">
                                                         <div className="text-xs font-black text-white uppercase tracking-tight truncate">

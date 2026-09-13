@@ -7,36 +7,35 @@ const SPONSOR_NAMES = {
     kit: ['Macron', 'Joma', 'Hummel', 'Erreà']
 };
 
-export const generateStadium = (team: Team): Stadium => {
-    let baseCapacity = 0;
-    let ticketPrice = 0;
-    let maintenanceCost = 0;
+import { getTeamStadium } from '../data/stadiums';
 
+export const generateStadium = (team: Team): Stadium => {
+    const info = getTeamStadium(team);
+    const capacity = info.capacity;
+
+    let ticketPrice = 25;
     switch (team.tier) {
         case 'Top':
-            baseCapacity = 50000 + Math.floor(Math.random() * 20000);
-            ticketPrice = 60 + Math.floor(Math.random() * 40);
-            maintenanceCost = 150000;
+            ticketPrice = 50;
             break;
         case 'Mid':
-            baseCapacity = 30000 + Math.floor(Math.random() * 15000);
-            ticketPrice = 40 + Math.floor(Math.random() * 30);
-            maintenanceCost = 80000;
+            ticketPrice = 35;
             break;
         case 'Lower':
-            baseCapacity = 15000 + Math.floor(Math.random() * 10000);
-            ticketPrice = 25 + Math.floor(Math.random() * 20);
-            maintenanceCost = 40000;
+            ticketPrice = 20;
             break;
     }
 
+    const maintenanceCost = Math.max(25000, Math.floor(capacity * 2.5));
+
     return {
-        name: `${team.name} Stadium`,
-        capacity: baseCapacity,
+        name: info.name,
+        capacity,
+        city: info.city,
         ticketPrice,
         maintenanceCost,
-        expansionCost: baseCapacity * 1000, // £1000 per seat
-        expansionCapacity: Math.floor(baseCapacity * 1.2),
+        expansionCost: capacity * 1000, // £1000 per seat
+        expansionCapacity: Math.floor(capacity * 1.2),
         facilityLevel: 1
     };
 };
@@ -221,6 +220,12 @@ export const getBaseWeeklyIncome = (leagueId: string): number => {
         case LeagueId.COPA_DE_PRIMERA:
         case 'COPA_DE_PRIMERA':
             return 400_000;
+        case LeagueId.LIGA_MX:
+        case 'LIGA_MX':
+            return 750_000;
+        case LeagueId.LIGA_EXPANSION_MX:
+        case 'LIGA_EXPANSION_MX':
+            return 180_000;
         default:
             return 500_000;
     }
@@ -277,6 +282,12 @@ export const calculatePrizeMoney = (leagueId: string, position: number): number 
         case LeagueId.COPA_DE_PRIMERA:
         case 'COPA_DE_PRIMERA':
             baseAmount = 20_000_000; break;
+        case LeagueId.LIGA_MX:
+        case 'LIGA_MX':
+            baseAmount = 40_000_000; break;
+        case LeagueId.LIGA_EXPANSION_MX:
+        case 'LIGA_EXPANSION_MX':
+            baseAmount = 10_000_000; break;
         default:
             baseAmount = 25_000_000;
     }

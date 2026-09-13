@@ -12,16 +12,24 @@ interface CupViewProps {
     gameState: GameState;
 }
 
-export const CupView: React.FC<CupViewProps> = ({
+export const CupView: React.FC<CupViewProps> = React.memo(({
     cup,
     gameState
 }) => {
     if (!cup) return null;
     const theme = CUP_THEMES[cup.id] || CUP_THEMES.fa_cup;
     const defaultLogo = CUP_LOGOS[cup.id] || '';
-    const logo = customPacksService.resolveCompetitionLogo(cup.id, cup.name, defaultLogo) || '';
+    const logo = React.useMemo(() => customPacksService.resolveCompetitionLogo(cup.id, cup.name, defaultLogo) || '', [cup.id, cup.name, defaultLogo]);
 
-    const getTeamById = (id: number) => gameState.allTeams.find(t => t.id === id);
+    const teamsMap = React.useMemo(() => {
+        const map = new Map<number, typeof gameState.allTeams[0]>();
+        for (const t of gameState.allTeams) {
+            map.set(t.id, t);
+        }
+        return map;
+    }, [gameState.allTeams]);
+
+    const getTeamById = React.useCallback((id: number) => teamsMap.get(id), [teamsMap]);
 
     // If it's Champions League in Swiss phase
     if (cup.type === 'swiss' && cup.phase === 'swiss' && cup.swissTable) {
@@ -41,42 +49,45 @@ export const CupView: React.FC<CupViewProps> = ({
         return (
             <div className="space-y-8 animate-fade-in">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {cup.groups.map((group, idx) => (
-                        <div key={idx} className="bg-slate-900/50 border border-white/5 rounded-2xl overflow-hidden">
-                            <div className="bg-amber-600/20 px-4 py-3 border-b border-amber-500/30 flex justify-between items-center">
-                                <h4 className="text-amber-400 font-black text-sm uppercase tracking-tighter">{group.name}</h4>
-                                <span className="text-[10px] font-bold text-amber-500/50 uppercase">{cup.name}</span>
+                    {cup.groups.map((group, idx) => {
+                        const sortedTable = [...group.table].sort((a,b) => b.points - a.points || b.goalDifference - a.goalDifference);
+                        return (
+                            <div key={idx} className="bg-slate-900/50 border border-white/5 rounded-2xl overflow-hidden">
+                                <div className="bg-amber-600/20 px-4 py-3 border-b border-amber-500/30 flex justify-between items-center">
+                                    <h4 className="text-amber-400 font-black text-sm uppercase tracking-tighter">{group.name}</h4>
+                                    <span className="text-[10px] font-bold text-amber-500/50 uppercase">{cup.name}</span>
+                                </div>
+                                <table className="w-full text-[11px]">
+                                    <thead>
+                                        <tr className="text-slate-500 border-b border-white/5">
+                                            <th className="px-3 py-2 text-left">Club</th>
+                                            <th className="px-2 py-2 text-center">PJ</th>
+                                            <th className="px-2 py-2 text-center">Pts</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {sortedTable.map((row, rIdx) => {
+                                            const team = getTeamById(row.teamId);
+                                            const isPlayer = team?.id === gameState.team.id;
+                                            return (
+                                                <tr key={rIdx} className={isPlayer ? 'bg-amber-500/10' : ''}>
+                                                    <td className="px-3 py-2 flex items-center gap-2 min-w-0">
+                                                        <span className="text-[10px] text-slate-500 w-3 shrink-0">{rIdx + 1}</span>
+                                                        <div className="w-5 h-5 shrink-0 flex items-center justify-center">
+                                                            <TeamLogo team={team} className="w-full h-full object-contain" />
+                                                        </div>
+                                                        <span className={`font-bold truncate ${isPlayer ? 'text-white' : 'text-slate-300'}`}>{team?.name}</span>
+                                                    </td>
+                                                    <td className="px-2 py-2 text-center text-slate-400">{row.played}</td>
+                                                    <td className="px-2 py-2 text-center font-black text-white">{row.points}</td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
                             </div>
-                            <table className="w-full text-[11px]">
-                                <thead>
-                                    <tr className="text-slate-500 border-b border-white/5">
-                                        <th className="px-3 py-2 text-left">Club</th>
-                                        <th className="px-2 py-2 text-center">PJ</th>
-                                        <th className="px-2 py-2 text-center">Pts</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {group.table.sort((a,b) => b.points - a.points || b.goalDifference - a.goalDifference).map((row, rIdx) => {
-                                        const team = getTeamById(row.teamId);
-                                        const isPlayer = team?.id === gameState.team.id;
-                                        return (
-                                            <tr key={rIdx} className={isPlayer ? 'bg-amber-500/10' : ''}>
-                                                <td className="px-3 py-2 flex items-center gap-2 min-w-0">
-                                                    <span className="text-[10px] text-slate-500 w-3 shrink-0">{rIdx + 1}</span>
-                                                    <div className="w-5 h-5 shrink-0 flex items-center justify-center">
-                                                        <TeamLogo team={team} className="w-full h-full object-contain" />
-                                                    </div>
-                                                    <span className={`font-bold truncate ${isPlayer ? 'text-white' : 'text-slate-300'}`}>{team?.name}</span>
-                                                </td>
-                                                <td className="px-2 py-2 text-center text-slate-400">{row.played}</td>
-                                                <td className="px-2 py-2 text-center font-black text-white">{row.points}</td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
         );
@@ -144,4 +155,4 @@ export const CupView: React.FC<CupViewProps> = ({
             </div>
         </div>
     );
-};
+});

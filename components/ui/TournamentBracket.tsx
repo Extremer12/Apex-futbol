@@ -67,7 +67,7 @@ const getMatchWinnerId = (match?: Match): number | null => {
     return null;
 };
 
-export const TournamentBracket: React.FC<TournamentBracketProps> = ({
+export const TournamentBracket: React.FC<TournamentBracketProps> = React.memo(({
     cup,
     getTeamById,
     playerTeamId,
@@ -513,7 +513,7 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
             )}
         </div>
     );
-};
+});
 
 const formatCompactRoundName = (name: string): string => {
     const lower = name.toLowerCase();
@@ -531,7 +531,7 @@ const MatchCard: React.FC<{
     playerTeamId: number;
     theme: { accent: string; bg: string; border: string };
     isFinal?: boolean;
-}> = ({ match, playerTeamId, theme, isFinal }) => {
+}> = React.memo(({ match, playerTeamId, theme, isFinal }) => {
     const isPlayerMatch = match.isPlayerMatch;
     const isHomePlayer = match.home.team?.id === playerTeamId;
     const isAwayPlayer = match.away.team?.id === playerTeamId;
@@ -646,14 +646,14 @@ const MatchCard: React.FC<{
             )}
         </div>
     );
-};
+});
 
 // Detailed Match Row for "Por Rondas" view
 const DetailedMatchRow: React.FC<{
     match: ProjectedMatch;
     matchNumber: number;
     playerTeamId: number;
-}> = ({ match, matchNumber, playerTeamId }) => {
+}> = React.memo(({ match, matchNumber, playerTeamId }) => {
     const isHomePlayer = match.home.team?.id === playerTeamId;
     const isAwayPlayer = match.away.team?.id === playerTeamId;
 
@@ -730,4 +730,4 @@ const DetailedMatchRow: React.FC<{
             </div>
         </div>
     );
-};
+});

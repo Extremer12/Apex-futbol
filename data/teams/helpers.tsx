@@ -1,5 +1,6 @@
 import React from 'react';
 import { Player } from '../../types';
+import { PlayerAvatar } from '../../components/ui/PlayerAvatar';
 
 import { customPacksService } from '../../services/customPacks/packService';
 
@@ -26,7 +27,7 @@ export const GenericTeamShield: React.FC<{
   primaryColor?: string;
   secondaryColor?: string;
   className?: string;
-}> = ({ name = 'Club', primaryColor = '#1E293B', secondaryColor = '#3B82F6', className = 'w-full h-full' }) => {
+}> = React.memo(({ name = 'Club', primaryColor = '#1E293B', secondaryColor = '#3B82F6', className = 'w-full h-full' }) => {
   const initials = getTeamInitials(name);
   const pColor = primaryColor || '#1E293B';
   const sColor = secondaryColor || '#3B82F6';
@@ -102,7 +103,7 @@ export const GenericTeamShield: React.FC<{
       </svg>
     </div>
   );
-};
+});
 
 // Team Logo Component (Used for rendering with Community Pack support)
 export const TeamLogo: React.FC<{
@@ -115,7 +116,7 @@ export const TeamLogo: React.FC<{
     secondaryColor?: string;
   };
   className?: string;
-}> = ({ team, className = "w-full h-full" }) => {
+}> = React.memo(({ team, className = "w-full h-full" }) => {
   const [error, setError] = React.useState(false);
   const [, setTick] = React.useState(0);
 
@@ -154,41 +155,13 @@ export const TeamLogo: React.FC<{
       />
     </div>
   );
-};
+});
 
 // Player Photo Component (Used for rendering with Community Pack support)
-export const PlayerPhoto: React.FC<{ player?: { id?: number | string; name: string; photo?: string }, className?: string }> = ({ player, className = "w-10 h-10" }) => {
-  const [error, setError] = React.useState(false);
-  const [, setTick] = React.useState(0);
-
-  React.useEffect(() => {
-    return customPacksService.subscribe(() => {
-      setError(false);
-      setTick(t => t + 1);
-    });
-  }, []);
-
-  if (!player) {
-    return (
-      <div className={`${className} relative flex items-center justify-center shrink-0`}>
-        <img src="/sinrostro.png" alt="Foto jugador" className="w-full h-full object-cover rounded-full" />
-      </div>
-    );
-  }
-
-  const photoUrl = customPacksService.resolvePlayerPhoto(player);
-
-  return (
-    <div className={`${className} relative flex items-center justify-center shrink-0`}>
-      <img
-        src={!error && photoUrl ? photoUrl : "/sinrostro.png"}
-        alt={`${player.name} photo`}
-        onError={() => setError(true)}
-        className="w-full h-full object-cover rounded-full drop-shadow-md"
-      />
-    </div>
-  );
-};
+export { PlayerAvatar };
+export const PlayerPhoto: React.FC<{ player?: { id?: number | string; name: string; photo?: string; position?: string }; className?: string; primaryColor?: string }> = React.memo(({ player, className = "w-10 h-10", primaryColor }) => {
+  return <PlayerAvatar player={player} className={className} primaryColor={primaryColor} />;
+});
 
 export const createTeamLogo = (logoPath: string, teamName: string) => {
   return logoPath;
@@ -264,8 +237,28 @@ export const TEAM_LOGOS = {
   'Espanyol': '/logos/Espanyol.png',
 };
 
-// Helper to generate generic squad for Championship teams
-export const createGenericSquad = (startId: number, teamName: string): Player[] => {
+const FIRST_NAMES = [
+  'Lucas', 'Mateo', 'Martín', 'Santiago', 'Nicolás', 'Joaquín', 'Tomás', 'Agustín', 'Benjamín', 'Felipe',
+  'Enzo', 'Lautaro', 'Franco', 'Julian', 'Ignacio', 'Facundo', 'Rodrigo', 'Thiago', 'Matías', 'Gabriel',
+  'Ezequiel', 'Diego', 'Gonzalo', 'Bruno', 'Maximiliano', 'Nahuel', 'Federico', 'Leandro', 'Alexis', 'Alan',
+  'Cristian', 'Esteban', 'Álvaro', 'Marcos', 'Sebastián', 'Pablo', 'Manuel', 'Fernando', 'Guillermo', 'Javier'
+];
+
+const LAST_NAMES = [
+  'Fernández', 'Rodríguez', 'González', 'Gómez', 'López', 'Díaz', 'Martínez', 'Pérez', 'García', 'Sánchez',
+  'Romero', 'Sosa', 'Álvarez', 'Torres', 'Ruiz', 'Ramírez', 'Flores', 'Benítez', 'Acosta', 'Medina',
+  'Herrera', 'Aguirre', 'Pereyra', 'Gutiérrez', 'Giménez', 'Molina', 'Silva', 'Castro', 'Rojas', 'Ortiz',
+  'Nuñez', 'Luna', 'Juárez', 'Cabrera', 'Ríos', 'Morales', 'Godoy', 'Moreno', 'Ferreyra', 'Domínguez'
+];
+
+// Helper to generate generic squad for Championship, Second Division, and South American teams
+export const createGenericSquad = (
+  startId: number,
+  teamName: string,
+  avgRating: number = 70,
+  _primaryColor?: string,
+  _secondaryColor?: string
+): Player[] => {
   const positions: { pos: 'POR' | 'DEF' | 'CEN' | 'DEL', count: number }[] = [
     { pos: 'POR', count: 2 },
     { pos: 'DEF', count: 6 },
@@ -278,13 +271,19 @@ export const createGenericSquad = (startId: number, teamName: string): Player[] 
 
   positions.forEach(({ pos, count }) => {
     for (let i = 0; i < count; i++) {
+      const first = FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)];
+      const last = LAST_NAMES[Math.floor(Math.random() * LAST_NAMES.length)];
+      const rating = Math.max(55, Math.min(88, Math.floor(avgRating - 4 + Math.random() * 9)));
+      const value = Math.max(500000, Math.floor((rating - 55) * 450000 + Math.random() * 500000));
+      const wage = Math.max(3000, Math.floor((rating - 55) * 800 + Math.random() * 2000));
+
       squad.push({
         id: idCounter++,
-        name: `${teamName} ${pos} ${i + 1}`, // Placeholder name
+        name: `${first[0]}. ${last}`,
         position: pos,
-        rating: Math.floor(65 + Math.random() * 10), // Rating 65-75 for Championship
-        value: Math.floor(1 + Math.random() * 10),
-        wage: Math.floor(5000 + Math.random() * 15000),
+        rating,
+        value,
+        wage,
         morale: 'Normal',
         contractYears: Math.floor(1 + Math.random() * 3),
         age: Math.floor(18 + Math.random() * 15)

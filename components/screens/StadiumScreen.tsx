@@ -73,7 +73,9 @@ export const StadiumScreen: React.FC<StadiumScreenProps> = ({ gameState, dispatc
                     <div className="relative z-10 p-6 space-y-8">
                         <div>
                             <h3 className="text-4xl lg:text-5xl font-black text-white uppercase tracking-tighter leading-none mb-1">{stadium.name}</h3>
-                            <p className="text-[var(--apex-gold)] font-black uppercase tracking-[0.2em] text-[10px]">Sede Oficial</p>
+                            <p className="text-[var(--apex-gold)] font-black uppercase tracking-[0.2em] text-[10px]">
+                                Sede Oficial{stadium.city ? ` • ${stadium.city}` : ''}
+                            </p>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">

@@ -14,6 +14,8 @@ export const LEAGUE_THEMES: Record<string, string> = {
     BRASILEIRAO: 'green',
     SERIE_B_BR: 'green',
     COPA_DE_PRIMERA: 'rose',
+    LIGA_MX: 'emerald',
+    LIGA_EXPANSION_MX: 'amber',
 };
 
 export const LEAGUE_LOGOS: Record<string, string> = {
@@ -29,9 +31,11 @@ export const LEAGUE_LOGOS: Record<string, string> = {
     LIGUE_2: 'https://tmssl.akamaized.net/images/logo/header/fr2.png',
     LIGA_ARGENTINA: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Argentina/primera_division/argentina_argentina-primera-division.football-logos.cc.svg',
     PRIMERA_NACIONAL: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Argentina/primera_nacional/argentina_primera-nacional.football-logos.cc.svg',
-    BRASILEIRAO: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Brasileirao_Serie_A_logo.png/200px-Brasileirao_Serie_A_logo.png',
-    SERIE_B_BR: 'https://upload.wikimedia.org/wikipedia/en/thumb/f/f6/Brasileir%C3%A3o_S%C3%A9rie_B_logo.png/200px-Brasileir%C3%A3o_S%C3%A9rie_B_logo.png',
+    BRASILEIRAO: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Football%20Tournament%20%26%20Competition%20Logos/tournaments_campeonato-brasileiro-serie-a.football-logos.cc.svg',
+    SERIE_B_BR: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Football%20Tournament%20%26%20Competition%20Logos/tournaments_campeonato-brasileiro-serie-b.football-logos.cc.svg',
     COPA_DE_PRIMERA: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Copa%20de%20Primera/paraguay_copa-de-primera.football-logos.cc.svg',
+    LIGA_MX: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Liga%20MX/mexico_liga-mx.football-logos.cc.svg',
+    LIGA_EXPANSION_MX: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Liga%20de%20Expansi%C3%B3n%20MX/mexico_liga-de-expansion-mx.football-logos.cc.svg',
 };
 
 export const CUP_LOGOS: Record<string, string> = {
@@ -44,9 +48,10 @@ export const CUP_LOGOS: Record<string, string> = {
     copa_del_rey: 'https://tmssl.akamaized.net/images/logo/header/cdr.png',
     dfb_pokal: 'https://tmssl.akamaized.net/images/logo/header/dfb.png',
     coppa_italia: 'https://tmssl.akamaized.net/images/logo/header/cit.png',
-    copa_argentina: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Copa_Argentina_logo.png/200px-Copa_Argentina_logo.png',
+    copa_argentina: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Football%20Tournament%20%26%20Competition%20Logos/tournaments_copa-argentina.football-logos.cc.svg',
     nacional_primer_ascenso: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Argentina/primera_nacional/argentina_primera-nacional.football-logos.cc.svg',
     nacional_reducido: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Argentina/primera_nacional/argentina_primera-nacional.football-logos.cc.svg',
+    copa_mx: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Liga%20MX/mexico_copa-mx.football-logos.cc.svg',
 };
 
 export const CUP_THEMES: Record<string, { accent: string; bg: string; border: string }> = {
@@ -62,6 +67,7 @@ export const CUP_THEMES: Record<string, { accent: string; bg: string; border: st
     copa_argentina: { accent: 'text-cyan-400', bg: 'from-cyan-950 via-slate-950 to-slate-950', border: 'border-cyan-500/40' },
     nacional_primer_ascenso: { accent: 'text-amber-400', bg: 'from-amber-950 via-slate-950 to-slate-950', border: 'border-amber-500/40' },
     nacional_reducido: { accent: 'text-cyan-400', bg: 'from-cyan-950 via-slate-950 to-slate-950', border: 'border-cyan-500/40' },
+    copa_mx: { accent: 'text-emerald-400', bg: 'from-emerald-950 via-slate-950 to-slate-950', border: 'border-emerald-500/40' },
 };
 
 export type CompetitionItem = {
@@ -117,4 +123,9 @@ export const ALL_COMPETITIONS: CompetitionItem[] = [
 
     // Paraguay
     { id: 'COPA_DE_PRIMERA', name: 'Copa de Primera', type: 'LEAGUE', logo: LEAGUE_LOGOS.COPA_DE_PRIMERA, country: 'Paraguay', flagUrl: 'https://flagcdn.com/py.svg', category: 'DOMESTIC', isFirstDiv: true },
+
+    // México
+    { id: 'LIGA_MX', name: 'Liga MX', type: 'LEAGUE', logo: LEAGUE_LOGOS.LIGA_MX, country: 'México', flagUrl: 'https://flagcdn.com/mx.svg', category: 'DOMESTIC', isFirstDiv: true },
+    { id: 'LIGA_EXPANSION_MX', name: 'Liga de Expansión MX', type: 'LEAGUE', logo: LEAGUE_LOGOS.LIGA_EXPANSION_MX, country: 'México', flagUrl: 'https://flagcdn.com/mx.svg', category: 'DOMESTIC', isFirstDiv: false },
+    { id: 'COPA_MX', name: 'Copa MX', type: 'CUP', logo: CUP_LOGOS.copa_mx, country: 'México', flagUrl: 'https://flagcdn.com/mx.svg', category: 'DOMESTIC', cupKey: 'copaMx' },
 ];

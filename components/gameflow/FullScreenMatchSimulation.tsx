@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GameState, Team } from '../../types';
 import { TeamLogo } from '../../data/teams/helpers';
+import { getTeamStadium } from '../../data/stadiums';
 
 interface FullScreenMatchSimulationProps {
     gameState: GameState;
@@ -47,7 +48,9 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
 
     const isHome = homeTeam.id === gameState.team.id;
     const competitionName = finalResult?.competition || (gameState.currentTurn === 'midweek' ? 'Copa Nacional' : 'Liga');
-    const stadiumName = isHome ? (gameState.stadium?.name || gameState.team.stadiumName || 'Estadio Principal') : (homeTeam.stadiumName || `Estadio de ${homeTeam.name}`);
+    const stadiumName = isHome 
+        ? (gameState.stadium?.name || gameState.team.stadiumName || getTeamStadium(gameState.team).name) 
+        : (homeTeam.stadiumName || getTeamStadium(homeTeam).name);
 
     // Check if match had extra time (events after 90')
     const hasExtraTime = (finalResult?.events || []).some(e => {

@@ -65,19 +65,30 @@ const createMockTeam = (id: number, name: string, leagueId: LeagueId = LeagueId.
     return {
         id,
         name,
+        logo: '',
+        primaryColor: '#000000',
+        secondaryColor: '#FFFFFF',
+        teamMorale: 'Normal',
         leagueId,
         tier: 'Top',
-        rating,
         budget: 50,
+        transferBudget: 20,
         squad,
         coach: {
-            id: id * 10,
+            id: String(id * 10),
             name: `Coach ${name}`,
+            age: 45,
+            nationality: 'Argentina',
+            style: 'Balanced',
+            prestige: 70,
+            salary: 50000,
+            signingBonus: 100000,
             preferredFormation: '4-4-2',
+            youthDevelopment: 70,
+            riskTolerance: 50,
             satisfactionLevel: 90,
-            tacticalStyle: 'Balanceado',
-            wage: 50000,
-            contractYears: 2
+            requestedSignings: [],
+            tacticalNotes: ''
         },
         trophyCabinet: []
     };
@@ -203,6 +214,8 @@ test('advanceCupRound advances round to the next stage or crowns a champion in t
     const cup: CupCompetition = {
         id: 'fa_cup',
         name: 'FA Cup',
+        type: 'knockout',
+        phase: 'knockout',
         currentRoundIndex: 0,
         rounds: [
             {
@@ -308,7 +321,10 @@ test('handlePromotionRelegation promotes top teams and relegates bottom teams', 
         [LeagueId.LIGA_ARGENTINA]: [],
         [LeagueId.PRIMERA_NACIONAL]: [],
         [LeagueId.BRASILEIRAO]: [],
-        [LeagueId.SERIE_B_BR]: []
+        [LeagueId.SERIE_B_BR]: [],
+        [LeagueId.COPA_DE_PRIMERA]: [],
+        [LeagueId.LIGA_MX]: [],
+        [LeagueId.LIGA_EXPANSION_MX]: []
     };
 
     const updatedTeams = handlePromotionRelegation(allTeams, leagueTables);
@@ -329,6 +345,9 @@ test('handlePromotionRelegation preserves exact 15 Zone A and 15 Zone B teams fo
     const argTeams: Team[] = Array.from({ length: 30 }, (_, i) => ({
         id: 700 + i + 1,
         name: `Arg Team ${i + 1}`,
+        logo: '',
+        primaryColor: '#000000',
+        secondaryColor: '#FFFFFF',
         leagueId: LeagueId.LIGA_ARGENTINA,
         zone: i < 15 ? 'A' : 'B',
         budget: 1000000,
@@ -342,6 +361,9 @@ test('handlePromotionRelegation preserves exact 15 Zone A and 15 Zone B teams fo
     const pnTeams: Team[] = Array.from({ length: 38 }, (_, i) => ({
         id: 800 + i + 1,
         name: `PN Team ${i + 1}`,
+        logo: '',
+        primaryColor: '#000000',
+        secondaryColor: '#FFFFFF',
         leagueId: LeagueId.PRIMERA_NACIONAL,
         zone: i < 19 ? 'A' : 'B',
         budget: 500000,
@@ -476,7 +498,7 @@ test('startNewSeason successfully transitions seasons without crash and initiali
                 potential: 75,
                 value: 5,
                 wage: 5000,
-                morale: 'Muy Contento',
+                morale: 'Contento',
                 contractYears: 3,
                 age: 19,
                 stats: { goals: 25, assists: 10, minutes: 2000, appearances: 25, yellowCards: 1, redCards: 0 }
@@ -568,7 +590,7 @@ test('full Boca Juniors season simulation transitions cleanly without endless we
 
     // Transition to Season 2
     const season2 = startNewSeason(state);
-    assert.equal(season2.season, 2025);
+    assert.equal(season2.season, 2027);
     assert.equal(season2.currentWeek, 0);
     assert.ok(season2.schedule.length > 0, 'Season 2 must have a new generated schedule');
     assert.ok(season2.leagueTables[LeagueId.LIGA_ARGENTINA].length === 30, 'Liga Argentina must maintain 30 teams');
@@ -745,8 +767,8 @@ test('computeArgentineInternationalQualification: exact 6 Libertadores + 6 Sudam
 
 test('calculateTournamentStandings separates Apertura and Clausura points correctly', () => {
     const teams: Team[] = [
-        { id: 1, name: 'Boca Juniors', zone: 'A', leagueId: LeagueId.LIGA_ARGENTINA, rating: 80, tier: 1, budget: 10, stadium: 'La Bombonera', squad: [] },
-        { id: 2, name: 'River Plate', zone: 'B', leagueId: LeagueId.LIGA_ARGENTINA, rating: 80, tier: 1, budget: 10, stadium: 'Monumental', squad: [] },
+        { id: 1, name: 'Boca Juniors', logo: '', primaryColor: '#000000', secondaryColor: '#FFFFFF', teamMorale: 'Normal', zone: 'A', leagueId: LeagueId.LIGA_ARGENTINA, tier: 'Top', budget: 10, transferBudget: 5, stadiumName: 'La Bombonera', squad: [] },
+        { id: 2, name: 'River Plate', logo: '', primaryColor: '#000000', secondaryColor: '#FFFFFF', teamMorale: 'Normal', zone: 'B', leagueId: LeagueId.LIGA_ARGENTINA, tier: 'Top', budget: 10, transferBudget: 5, stadiumName: 'Monumental', squad: [] },
     ];
 
     const schedule: Match[] = [
@@ -1051,7 +1073,7 @@ test('Save System: buildSaveSummary extracts rich metadata and slotType correctl
     assert.equal(summary.slotType, 'autosave');
     assert.equal(summary.managerName, 'Carlos Bianchi');
     assert.equal(summary.teamName, TEAMS[0].name);
-    assert.equal(summary.season, 2024);
+    assert.equal(summary.season, 2026);
     assert.equal(summary.currentWeek, game.currentWeek);
     assert.ok(typeof summary.balance === 'number');
 
@@ -1158,15 +1180,21 @@ test('Phase 2 Modularization: LEAGUE_REGISTRY and monotonic generatePlayerId', a
         generatePlayerId 
     } = await import('../services/simulation');
 
-    // 1. Verify LEAGUE_REGISTRY covers all 15 leagues
+    // 1. Verify LEAGUE_REGISTRY covers all 17 leagues
     const leagueKeys = Object.keys(LEAGUE_REGISTRY);
-    assert.equal(leagueKeys.length, 15, 'LEAGUE_REGISTRY must contain all 15 leagues');
+    assert.equal(leagueKeys.length, 17, 'LEAGUE_REGISTRY must contain all 17 leagues');
 
     const premierConfig = getLeagueConfig(LeagueId.PREMIER_LEAGUE);
     assert.equal(premierConfig.country, 'ENG');
     assert.equal(premierConfig.teamsCount, 20);
     assert.equal(premierConfig.relegationSlots, 3);
     assert.equal(premierConfig.relegatesTo, LeagueId.CHAMPIONSHIP);
+
+    const mxConfig = getLeagueConfig(LeagueId.LIGA_MX);
+    assert.equal(mxConfig.country, 'MEX');
+    assert.equal(mxConfig.teamsCount, 18);
+    assert.equal(mxConfig.relegationSlots, 2);
+    assert.equal(mxConfig.relegatesTo, LeagueId.LIGA_EXPANSION_MX);
 
     const argConfig = getLeagueConfig(LeagueId.LIGA_ARGENTINA);
     assert.equal(argConfig.country, 'ARG');
@@ -1176,7 +1204,7 @@ test('Phase 2 Modularization: LEAGUE_REGISTRY and monotonic generatePlayerId', a
     assert.equal(isSouthAmericanLeague(LeagueId.LA_LIGA), false);
 
     const pairs = getPromotionRelegationPairs();
-    assert.equal(pairs.length, 7, 'Must have 7 promotion/relegation pairs');
+    assert.equal(pairs.length, 8, 'Must have 8 promotion/relegation pairs');
 
     // 2. Verify monotonic generatePlayerId produces strictly unique IDs in rapid succession
     const idSet = new Set<number>();
@@ -1214,7 +1242,6 @@ test('Phase 3 Integration: Multi-season progression (consecutive transitions, ag
 
 test('Phase 3 Integration: Complete domestic cup progression to final and champion crowning', async () => {
     const { generateCupDraw, advanceCupRound, simulateMatch } = await import('../services/simulation');
-    const { CupCompetition } = await import('../types');
 
     const cupTeams = TEAMS.filter(t => t.leagueId === LeagueId.PREMIER_LEAGUE).slice(0, 16);
     const initialFixtures = generateCupDraw(cupTeams, 'Round of 16', 'FA_Cup');

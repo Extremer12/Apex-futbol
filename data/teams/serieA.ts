@@ -14,10 +14,22 @@ export const serieATeams: Team[] = [
         primaryColor: '#0066B2',
         secondaryColor: '#000000',
         squad: [
-            { id: 50101, name: 'Yann Sommer', position: 'POR', rating: 85, value: 5000000, wage: 150000, morale: 'Feliz', contractYears: 3 },
-            { id: 50102, name: 'Lautaro Martínez', position: 'DEL', rating: 89, value: 110000000, wage: 350000, morale: 'Feliz', contractYears: 3 },
-            { id: 50103, name: 'Nicolò Barella', position: 'CEN', rating: 87, value: 80000000, wage: 200000, morale: 'Feliz', contractYears: 3 },
-            { id: 50104, name: 'Alessandro Bastoni', position: 'DEF', rating: 86, value: 70000000, wage: 180000, morale: 'Feliz', contractYears: 3 }
+            { id: 50101, name: 'Yann Sommer', position: 'POR', rating: 86, age: 36, value: 5000000, wage: 150000, morale: 'Feliz', contractYears: 2 },
+            { id: 50102, name: 'Josep Martínez', position: 'POR', rating: 79, age: 26, value: 12000000, wage: 50000, morale: 'Normal', contractYears: 4 },
+            { id: 50103, name: 'Alessandro Bastoni', position: 'DEF', rating: 87, age: 25, value: 75000000, wage: 180000, morale: 'Feliz', contractYears: 4 },
+            { id: 50104, name: 'Benjamin Pavard', position: 'DEF', rating: 85, age: 28, value: 45000000, wage: 160000, morale: 'Contento', contractYears: 3 },
+            { id: 50105, name: 'Stefan de Vrij', position: 'DEF', rating: 82, age: 32, value: 10000000, wage: 120000, morale: 'Normal', contractYears: 1 },
+            { id: 50106, name: 'Francesco Acerbi', position: 'DEF', rating: 81, age: 36, value: 5000000, wage: 90000, morale: 'Normal', contractYears: 1 },
+            { id: 50107, name: 'Federico Dimarco', position: 'DEF', rating: 85, age: 27, value: 55000000, wage: 140000, morale: 'Feliz', contractYears: 4 },
+            { id: 50108, name: 'Denzel Dumfries', position: 'DEF', rating: 82, age: 28, value: 25000000, wage: 110000, morale: 'Contento', contractYears: 3 },
+            { id: 50109, name: 'Nicolò Barella', position: 'CEN', rating: 87, age: 27, value: 80000000, wage: 200000, morale: 'Feliz', contractYears: 4 },
+            { id: 50110, name: 'Hakan Çalhanoğlu', position: 'CEN', rating: 86, age: 30, value: 45000000, wage: 190000, morale: 'Feliz', contractYears: 3 },
+            { id: 50111, name: 'Henrikh Mkhitaryan', position: 'CEN', rating: 82, age: 35, value: 8000000, wage: 110000, morale: 'Contento', contractYears: 1 },
+            { id: 50112, name: 'Davide Frattesi', position: 'CEN', rating: 82, age: 25, value: 35000000, wage: 100000, morale: 'Contento', contractYears: 4 },
+            { id: 50113, name: 'Piotr Zieliński', position: 'CEN', rating: 83, age: 30, value: 25000000, wage: 120000, morale: 'Normal', contractYears: 3 },
+            { id: 50114, name: 'Lautaro Martínez', position: 'DEL', rating: 89, age: 27, value: 110000000, wage: 350000, morale: 'Feliz', contractYears: 4 },
+            { id: 50115, name: 'Marcus Thuram', position: 'DEL', rating: 85, age: 27, value: 65000000, wage: 180000, morale: 'Feliz', contractYears: 4 },
+            { id: 50116, name: 'Mehdi Taremi', position: 'DEL', rating: 81, age: 32, value: 12000000, wage: 90000, morale: 'Normal', contractYears: 2 }
         ]
     },
     {
@@ -32,9 +44,21 @@ export const serieATeams: Team[] = [
         primaryColor: '#FB090B',
         secondaryColor: '#000000',
         squad: [
-            { id: 50201, name: 'Mike Maignan', position: 'POR', rating: 87, value: 45000000, wage: 140000, morale: 'Contento', contractYears: 3 },
-            { id: 50202, name: 'Rafael Leão', position: 'DEL', rating: 87, value: 90000000, wage: 200000, morale: 'Contento', contractYears: 3 },
-            { id: 50203, name: 'Theo Hernández', position: 'DEF', rating: 86, value: 60000000, wage: 160000, morale: 'Contento', contractYears: 3 }
+            { id: 50201, name: 'Mike Maignan', position: 'POR', rating: 87, age: 29, value: 45000000, wage: 150000, morale: 'Contento', contractYears: 3 },
+            { id: 50202, name: 'Marco Sportiello', position: 'POR', rating: 76, age: 32, value: 3000000, wage: 40000, morale: 'Normal', contractYears: 2 },
+            { id: 50203, name: 'Fikayo Tomori', position: 'DEF', rating: 83, age: 26, value: 35000000, wage: 120000, morale: 'Contento', contractYears: 3 },
+            { id: 50204, name: 'Strahinja Pavlović', position: 'DEF', rating: 81, age: 23, value: 25000000, wage: 80000, morale: 'Feliz', contractYears: 4 },
+            { id: 50205, name: 'Malick Thiaw', position: 'DEF', rating: 80, age: 23, value: 22000000, wage: 70000, morale: 'Contento', contractYears: 3 },
+            { id: 50206, name: 'Theo Hernández', position: 'DEF', rating: 86, age: 27, value: 60000000, wage: 180000, morale: 'Feliz', contractYears: 3 },
+            { id: 50207, name: 'Emerson Royal', position: 'DEF', rating: 79, age: 25, value: 18000000, wage: 75000, morale: 'Normal', contractYears: 4 },
+            { id: 50208, name: 'Tijjani Reijnders', position: 'CEN', rating: 84, age: 26, value: 40000000, wage: 110000, morale: 'Feliz', contractYears: 4 },
+            { id: 50209, name: 'Youssouf Fofana', position: 'CEN', rating: 82, age: 25, value: 30000000, wage: 95000, morale: 'Contento', contractYears: 4 },
+            { id: 50210, name: 'Ruben Loftus-Cheek', position: 'CEN', rating: 81, age: 28, value: 22000000, wage: 110000, morale: 'Normal', contractYears: 3 },
+            { id: 50211, name: 'Christian Pulisic', position: 'DEL', rating: 84, age: 26, value: 50000000, wage: 130000, morale: 'Feliz', contractYears: 3 },
+            { id: 50212, name: 'Rafael Leão', position: 'DEL', rating: 87, age: 25, value: 90000000, wage: 220000, morale: 'Feliz', contractYears: 4 },
+            { id: 50213, name: 'Samuel Chukwueze', position: 'DEL', rating: 79, age: 25, value: 20000000, wage: 80000, morale: 'Normal', contractYears: 3 },
+            { id: 50214, name: 'Álvaro Morata', position: 'DEL', rating: 83, age: 31, value: 22000000, wage: 160000, morale: 'Feliz', contractYears: 3 },
+            { id: 50215, name: 'Tammy Abraham', position: 'DEL', rating: 79, age: 26, value: 20000000, wage: 100000, morale: 'Normal', contractYears: 2 }
         ]
     },
     {
@@ -49,10 +73,21 @@ export const serieATeams: Team[] = [
         primaryColor: '#000000',
         secondaryColor: '#FFFFFF',
         squad: [
-            { id: 50301, name: 'Wojciech Szczęsny', position: 'POR', rating: 84, value: 8000000, wage: 200000, morale: 'Normal', contractYears: 3 },
-            { id: 50302, name: 'Dušan Vlahović', position: 'DEL', rating: 85, value: 65000000, wage: 250000, morale: 'Normal', contractYears: 3 },
-            { id: 50303, name: 'Federico Chiesa', position: 'DEL', rating: 84, value: 40000000, wage: 180000, morale: 'Normal', contractYears: 3 },
-            { id: 50304, name: 'Bremer', position: 'DEF', rating: 85, value: 60000000, wage: 170000, morale: 'Normal', contractYears: 3 }
+            { id: 50301, name: 'Michele Di Gregorio', position: 'POR', rating: 83, age: 27, value: 22000000, wage: 80000, morale: 'Feliz', contractYears: 4 },
+            { id: 50302, name: 'Mattia Perin', position: 'POR', rating: 78, age: 31, value: 4000000, wage: 50000, morale: 'Contento', contractYears: 2 },
+            { id: 50303, name: 'Bremer', position: 'DEF', rating: 86, age: 27, value: 65000000, wage: 180000, morale: 'Feliz', contractYears: 4 },
+            { id: 50304, name: 'Federico Gatti', position: 'DEF', rating: 81, age: 26, value: 25000000, wage: 75000, morale: 'Contento', contractYears: 4 },
+            { id: 50305, name: 'Pierre Kalulu', position: 'DEF', rating: 80, age: 24, value: 22000000, wage: 70000, morale: 'Contento', contractYears: 3 },
+            { id: 50306, name: 'Andrea Cambiaso', position: 'DEF', rating: 82, age: 24, value: 35000000, wage: 85000, morale: 'Feliz', contractYears: 4 },
+            { id: 50307, name: 'Danilo', position: 'DEF', rating: 80, age: 33, value: 8000000, wage: 110000, morale: 'Normal', contractYears: 1 },
+            { id: 50308, name: 'Manuel Locatelli', position: 'CEN', rating: 82, age: 26, value: 30000000, wage: 110000, morale: 'Contento', contractYears: 3 },
+            { id: 50309, name: 'Teun Koopmeiners', position: 'CEN', rating: 85, age: 26, value: 60000000, wage: 160000, morale: 'Feliz', contractYears: 5 },
+            { id: 50310, name: 'Douglas Luiz', position: 'CEN', rating: 83, age: 26, value: 50000000, wage: 140000, morale: 'Normal', contractYears: 4 },
+            { id: 50311, name: 'Khéphren Thuram', position: 'CEN', rating: 81, age: 23, value: 35000000, wage: 80000, morale: 'Contento', contractYears: 4 },
+            { id: 50312, name: 'Kenan Yıldız', position: 'DEL', rating: 80, age: 19, value: 40000000, wage: 50000, morale: 'Feliz', contractYears: 5 },
+            { id: 50313, name: 'Francisco Conceição', position: 'DEL', rating: 80, age: 21, value: 28000000, wage: 70000, morale: 'Contento', contractYears: 4 },
+            { id: 50314, name: 'Nicolás González', position: 'DEL', rating: 82, age: 26, value: 35000000, wage: 100000, morale: 'Contento', contractYears: 4 },
+            { id: 50315, name: 'Dušan Vlahović', position: 'DEL', rating: 85, age: 24, value: 65000000, wage: 250000, morale: 'Contento', contractYears: 3 }
         ]
     },
     {
@@ -67,8 +102,19 @@ export const serieATeams: Team[] = [
         primaryColor: '#8E1D2D',
         secondaryColor: '#F1B041',
         squad: [
-            { id: 50401, name: 'Paulo Dybala', position: 'DEL', rating: 86, value: 25000000, wage: 200000, morale: 'Normal', contractYears: 3 },
-            { id: 50402, name: 'Romelu Lukaku', position: 'DEL', rating: 84, value: 30000000, wage: 250000, morale: 'Normal', contractYears: 3 }
+            { id: 50401, name: 'Mile Svilar', position: 'POR', rating: 82, age: 25, value: 18000000, wage: 65000, morale: 'Feliz', contractYears: 3 },
+            { id: 50402, name: 'Gianluca Mancini', position: 'DEF', rating: 82, age: 28, value: 25000000, wage: 110000, morale: 'Contento', contractYears: 3 },
+            { id: 50403, name: 'Evan Ndicka', position: 'DEF', rating: 81, age: 25, value: 25000000, wage: 90000, morale: 'Contento', contractYears: 4 },
+            { id: 50404, name: 'Mats Hummels', position: 'DEF', rating: 82, age: 35, value: 8000000, wage: 100000, morale: 'Normal', contractYears: 1 },
+            { id: 50405, name: 'Angeliño', position: 'DEF', rating: 80, age: 27, value: 15000000, wage: 80000, morale: 'Contento', contractYears: 3 },
+            { id: 50406, name: 'Zeki Çelik', position: 'DEF', rating: 78, age: 27, value: 10000000, wage: 60000, morale: 'Normal', contractYears: 2 },
+            { id: 50407, name: 'Bryan Cristante', position: 'CEN', rating: 81, age: 29, value: 18000000, wage: 95000, morale: 'Normal', contractYears: 3 },
+            { id: 50408, name: 'Manu Koné', position: 'CEN', rating: 81, age: 23, value: 30000000, wage: 80000, morale: 'Feliz', contractYears: 4 },
+            { id: 50409, name: 'Lorenzo Pellegrini', position: 'CEN', rating: 82, age: 28, value: 25000000, wage: 130000, morale: 'Normal', contractYears: 2 },
+            { id: 50410, name: 'Paulo Dybala', position: 'DEL', rating: 86, age: 30, value: 25000000, wage: 200000, morale: 'Feliz', contractYears: 2 },
+            { id: 50411, name: 'Matías Soulé', position: 'DEL', rating: 80, age: 21, value: 30000000, wage: 65000, morale: 'Feliz', contractYears: 5 },
+            { id: 50412, name: 'Artem Dovbyk', position: 'DEL', rating: 84, age: 27, value: 40000000, wage: 120000, morale: 'Feliz', contractYears: 4 },
+            { id: 50413, name: 'Stephan El Shaarawy', position: 'DEL', rating: 79, age: 31, value: 8000000, wage: 80000, morale: 'Normal', contractYears: 2 }
         ]
     },
     {
@@ -83,12 +129,72 @@ export const serieATeams: Team[] = [
         primaryColor: '#003E9E',
         secondaryColor: '#FFFFFF',
         squad: [
-            { id: 50501, name: 'Khvicha Kvaratskhelia', position: 'DEL', rating: 86, value: 80000000, wage: 150000, morale: 'Contento', contractYears: 3 },
-            { id: 50502, name: 'Victor Osimhen', position: 'DEL', rating: 88, value: 110000000, wage: 250000, morale: 'Contento', contractYears: 3 }
+            { id: 50501, name: 'Alex Meret', position: 'POR', rating: 82, age: 27, value: 18000000, wage: 85000, morale: 'Contento', contractYears: 2 },
+            { id: 50502, name: 'Alessandro Buongiorno', position: 'DEF', rating: 83, age: 25, value: 40000000, wage: 100000, morale: 'Feliz', contractYears: 4 },
+            { id: 50503, name: 'Amir Rrahmani', position: 'DEF', rating: 81, age: 30, value: 18000000, wage: 85000, morale: 'Normal', contractYears: 2 },
+            { id: 50504, name: 'Giovanni Di Lorenzo', position: 'DEF', rating: 83, age: 31, value: 20000000, wage: 120000, morale: 'Feliz', contractYears: 3 },
+            { id: 50505, name: 'Leonardo Spinazzola', position: 'DEF', rating: 80, age: 31, value: 10000000, wage: 75000, morale: 'Normal', contractYears: 2 },
+            { id: 50506, name: 'Stanislav Lobotka', position: 'CEN', rating: 84, age: 29, value: 35000000, wage: 110000, morale: 'Contento', contractYears: 3 },
+            { id: 50507, name: 'André-Frank Zambo Anguissa', position: 'CEN', rating: 83, age: 28, value: 30000000, wage: 100000, morale: 'Contento', contractYears: 2 },
+            { id: 50508, name: 'Scott McTominay', position: 'CEN', rating: 83, age: 27, value: 35000000, wage: 115000, morale: 'Feliz', contractYears: 4 },
+            { id: 50509, name: 'Khvicha Kvaratskhelia', position: 'DEL', rating: 87, age: 23, value: 85000000, wage: 160000, morale: 'Feliz', contractYears: 3 },
+            { id: 50510, name: 'Matteo Politano', position: 'DEL', rating: 81, age: 31, value: 15000000, wage: 90000, morale: 'Normal', contractYears: 2 },
+            { id: 50511, name: 'Romelu Lukaku', position: 'DEL', rating: 84, age: 31, value: 30000000, wage: 200000, morale: 'Feliz', contractYears: 3 },
+            { id: 50512, name: 'David Neres', position: 'DEL', rating: 81, age: 27, value: 28000000, wage: 85000, morale: 'Contento', contractYears: 4 },
+            { id: 50513, name: 'Giacomo Raspadori', position: 'DEL', rating: 80, age: 24, value: 25000000, wage: 75000, morale: 'Normal', contractYears: 3 }
         ]
     },
-    { id: 506, name: 'Atalanta', logo: 'https://tmssl.akamaized.net/images/wappen/head/800.png', leagueId: LeagueId.SERIE_A, budget: 50000000, transferBudget: 20000000, tier: 'Top', teamMorale: 'Normal', primaryColor: '#12549E', secondaryColor: '#000000', squad: createGenericSquad(50600, 'Atalanta') },
-    { id: 507, name: 'Lazio', logo: 'https://tmssl.akamaized.net/images/wappen/head/398.png', leagueId: LeagueId.SERIE_A, budget: 45000000, transferBudget: 15000000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#87D8F7', secondaryColor: '#FFFFFF', squad: createGenericSquad(50700, 'Lazio') },
+    {
+        id: 506,
+        name: 'Atalanta',
+        logo: 'https://tmssl.akamaized.net/images/wappen/head/800.png',
+        leagueId: LeagueId.SERIE_A,
+        budget: 50000000,
+        transferBudget: 20000000,
+        tier: 'Top',
+        teamMorale: 'Feliz',
+        primaryColor: '#12549E',
+        secondaryColor: '#000000',
+        squad: [
+            { id: 50601, name: 'Marco Carnesecchi', position: 'POR', rating: 82, age: 24, value: 25000000, wage: 60000, morale: 'Feliz', contractYears: 4 },
+            { id: 50602, name: 'Isak Hien', position: 'DEF', rating: 81, age: 25, value: 22000000, wage: 65000, morale: 'Contento', contractYears: 4 },
+            { id: 50603, name: 'Berat Djimsiti', position: 'DEF', rating: 80, age: 31, value: 12000000, wage: 70000, morale: 'Normal', contractYears: 2 },
+            { id: 50604, name: 'Sead Kolašinac', position: 'DEF', rating: 80, age: 31, value: 10000000, wage: 75000, morale: 'Normal', contractYears: 2 },
+            { id: 50605, name: 'Raoul Bellanova', position: 'DEF', rating: 81, age: 24, value: 28000000, wage: 65000, morale: 'Feliz', contractYears: 4 },
+            { id: 50606, name: 'Marten de Roon', position: 'CEN', rating: 81, age: 33, value: 10000000, wage: 85000, morale: 'Feliz', contractYears: 2 },
+            { id: 50607, name: 'Éderson', position: 'CEN', rating: 83, age: 25, value: 45000000, wage: 95000, morale: 'Feliz', contractYears: 4 },
+            { id: 50608, name: 'Mario Pašalić', position: 'CEN', rating: 80, age: 29, value: 16000000, wage: 75000, morale: 'Normal', contractYears: 2 },
+            { id: 50609, name: 'Charles De Ketelaere', position: 'DEL', rating: 82, age: 23, value: 38000000, wage: 85000, morale: 'Feliz', contractYears: 4 },
+            { id: 50610, name: 'Ademola Lookman', position: 'DEL', rating: 85, age: 26, value: 55000000, wage: 120000, morale: 'Feliz', contractYears: 3 },
+            { id: 50611, name: 'Mateo Retegui', position: 'DEL', rating: 82, age: 25, value: 35000000, wage: 90000, morale: 'Feliz', contractYears: 4 },
+            { id: 50612, name: 'Nicolò Zaniolo', position: 'DEL', rating: 79, age: 25, value: 20000000, wage: 70000, morale: 'Normal', contractYears: 3 }
+        ]
+    },
+    {
+        id: 507,
+        name: 'Lazio',
+        logo: 'https://tmssl.akamaized.net/images/wappen/head/398.png',
+        leagueId: LeagueId.SERIE_A,
+        budget: 45000000,
+        transferBudget: 15000000,
+        tier: 'Mid',
+        teamMorale: 'Normal',
+        primaryColor: '#87D8F7',
+        secondaryColor: '#FFFFFF',
+        squad: [
+            { id: 50701, name: 'Ivan Provedel', position: 'POR', rating: 82, age: 30, value: 16000000, wage: 70000, morale: 'Contento', contractYears: 3 },
+            { id: 50702, name: 'Alessio Romagnoli', position: 'DEF', rating: 81, age: 29, value: 18000000, wage: 90000, morale: 'Contento', contractYears: 3 },
+            { id: 50703, name: 'Mario Gila', position: 'DEF', rating: 80, age: 24, value: 18000000, wage: 55000, morale: 'Feliz', contractYears: 4 },
+            { id: 50704, name: 'Manuel Lazzari', position: 'DEF', rating: 79, age: 30, value: 10000000, wage: 65000, morale: 'Normal', contractYears: 2 },
+            { id: 50705, name: 'Mattéo Guendouzi', position: 'CEN', rating: 82, age: 25, value: 32000000, wage: 90000, morale: 'Feliz', contractYears: 4 },
+            { id: 50706, name: 'Nicolò Rovella', position: 'CEN', rating: 80, age: 22, value: 25000000, wage: 65000, morale: 'Feliz', contractYears: 4 },
+            { id: 50707, name: 'Matías Vecino', position: 'CEN', rating: 78, age: 33, value: 6000000, wage: 60000, morale: 'Normal', contractYears: 1 },
+            { id: 50708, name: 'Mattia Zaccagni', position: 'DEL', rating: 82, age: 29, value: 25000000, wage: 95000, morale: 'Feliz', contractYears: 4 },
+            { id: 50709, name: 'Gustav Isaksen', position: 'DEL', rating: 78, age: 23, value: 15000000, wage: 50000, morale: 'Normal', contractYears: 4 },
+            { id: 50710, name: 'Boulaye Dia', position: 'DEL', rating: 81, age: 27, value: 22000000, wage: 80000, morale: 'Feliz', contractYears: 3 },
+            { id: 50711, name: 'Valentín Castellanos', position: 'DEL', rating: 80, age: 25, value: 20000000, wage: 75000, morale: 'Contento', contractYears: 4 }
+        ]
+    },
     { id: 508, name: 'Fiorentina', logo: 'https://tmssl.akamaized.net/images/wappen/head/430.png', leagueId: LeagueId.SERIE_A, budget: 40000000, transferBudget: 15000000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#4A2583', secondaryColor: '#FFFFFF', squad: createGenericSquad(50800, 'Fiorentina') },
     { id: 509, name: 'Torino', logo: 'https://tmssl.akamaized.net/images/wappen/head/416.png', leagueId: LeagueId.SERIE_A, budget: 30000000, transferBudget: 10000000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#8A1538', secondaryColor: '#FFFFFF', squad: createGenericSquad(50900, 'Torino') },
     { id: 510, name: 'Bologna', logo: 'https://tmssl.akamaized.net/images/wappen/head/1025.png', leagueId: LeagueId.SERIE_A, budget: 35000000, transferBudget: 12000000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#1A2F48', secondaryColor: '#A01D21', squad: createGenericSquad(51000, 'Bologna') },

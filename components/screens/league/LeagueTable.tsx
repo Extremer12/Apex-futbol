@@ -20,7 +20,7 @@ interface LeagueTableProps {
 
 type ArgViewMode = 'ZONA_A' | 'ZONA_B' | 'TABLA_ANUAL' | 'PROMEDIOS' | 'PLAYOFFS_APERTURA' | 'PLAYOFFS_CLAUSURA' | 'TABLA_GENERAL' | 'REDUCIDO';
 
-export const LeagueTable: React.FC<LeagueTableProps> = ({
+export const LeagueTable: React.FC<LeagueTableProps> = React.memo(({
     table,
     title,
     logoPath,
@@ -35,9 +35,17 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
     const isPrimeraNacional = leagueId === 'PRIMERA_NACIONAL';
     const isZonalLeague = isArgentina || isPrimeraNacional;
     const theme = LEAGUE_THEMES[leagueId] || 'purple';
-    const logo = customPacksService.resolveCompetitionLogo(leagueId, title, logoPath);
+    const logo = useMemo(() => customPacksService.resolveCompetitionLogo(leagueId, title, logoPath), [leagueId, title, logoPath]);
 
-    const getTeamById = (id: number) => gameState.allTeams.find(t => t.id === id);
+    const teamsMap = useMemo(() => {
+        const map = new Map<number, typeof gameState.allTeams[0]>();
+        for (const t of gameState.allTeams) {
+            map.set(t.id, t);
+        }
+        return map;
+    }, [gameState.allTeams]);
+
+    const getTeamById = React.useCallback((id: number) => teamsMap.get(id), [teamsMap]);
 
     // Derived table based on Argentine views or standard leagues
     const displayedRows = useMemo(() => {
@@ -74,6 +82,18 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
         if (!isArgentina || !table) return null;
         return computeArgentineInternationalQualification(table, gameState.cups);
     }, [isArgentina, table, gameState.cups]);
+
+    const argInternationalQualMap = useMemo(() => {
+        if (!argInternationalQual) return null;
+        const map = new Map<number, { type: 'libertadores' | 'sudamericana'; reason: string }>();
+        for (const l of argInternationalQual.libertadores) {
+            map.set(l.teamId, { type: 'libertadores', reason: l.reason });
+        }
+        for (const s of argInternationalQual.sudamericana) {
+            map.set(s.teamId, { type: 'sudamericana', reason: s.reason });
+        }
+        return map;
+    }, [argInternationalQual]);
 
     const argRelegation = useMemo(() => {
         if (!isArgentina || !table) return null;
@@ -470,16 +490,15 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
                                             zoneLabel = 'Clasifica a Octavos de Final (Playoffs)';
                                         }
                                     } else if (argView === 'TABLA_ANUAL') {
-                                        const lib = argInternationalQual?.libertadores.find(l => l.teamId === row.teamId);
-                                        const sud = argInternationalQual?.sudamericana.find(s => s.teamId === row.teamId);
+                                        const intl = argInternationalQualMap?.get(row.teamId);
                                         const isRelegatedAnual = argRelegation?.relegatedAnualId === row.teamId;
 
-                                        if (lib) {
+                                        if (intl?.type === 'libertadores') {
                                             zoneColor = 'bg-amber-500';
-                                            zoneLabel = `Copa Libertadores (${lib.reason})`;
-                                        } else if (sud) {
+                                            zoneLabel = `Copa Libertadores (${intl.reason})`;
+                                        } else if (intl?.type === 'sudamericana') {
                                             zoneColor = 'bg-blue-500';
-                                            zoneLabel = `Copa Sudamericana (${sud.reason})`;
+                                            zoneLabel = `Copa Sudamericana (${intl.reason})`;
                                         } else if (isRelegatedAnual) {
                                             zoneColor = 'bg-red-500';
                                             zoneLabel = 'Descenso por Tabla Anual (AFA)';
@@ -677,4 +696,4 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({
             )}
         </div>
     );
-};
+});

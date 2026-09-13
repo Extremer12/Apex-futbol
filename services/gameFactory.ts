@@ -3,10 +3,12 @@
  * Handles the initialization of a new game state
  */
 
-import { GameState, Team, Player, PlayerProfile, NewsItem, LeagueId, ElectoralPromise } from '../types';
+import { GameState, Team, Player, PlayerProfile, NewsItem, LeagueId, ElectoralPromise, Match } from '../types';
 import { TEAMS } from '../constants';
 import { generateRandomCoach, generateCoachMarket } from './coaching';
 import { generateYouthPlayer, generateSeasonSchedule, generateCupDraw, createInitialLeagueTable, generateSwissPhase, generateGroupPhase, createInitialEuropeanTable, sortArgentineZones } from './simulation';
+import { initializeLibertadoresSeason } from './libertadoresEngine';
+import { initializeSudamericanaSeason } from './sudamericanaEngine';
 import { getBaseWeeklyIncome, generateStadium, generateSponsor, generateSponsorMarket } from './economy';
 import { formatDate } from '../utils';
 import { getInitialAchievements } from './achievementService';
@@ -26,25 +28,33 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
         LeagueId.PRIMERA_NACIONAL,
         LeagueId.BRASILEIRAO,
         LeagueId.SERIE_B_BR,
-        LeagueId.COPA_DE_PRIMERA
+        LeagueId.COPA_DE_PRIMERA,
+        LeagueId.LIGA_MX,
+        LeagueId.LIGA_EXPANSION_MX
     ].includes(selectedTeam.leagueId);
 
-    const now = isSouthAmerica ? new Date('2024-01-15T12:00:00') : new Date('2024-08-10T12:00:00');
+    const now = isSouthAmerica ? new Date('2026-01-15T12:00:00') : new Date('2026-08-10T12:00:00');
 
-    // Clone teams and assign ages and coaches
-    const allTeamsCopy = TEAMS.map(t => ({
-        ...t,
-        logo: t.logo,
-        squad: t.squad.map(player => ({
-            ...player,
-            age: Math.floor(18 + Math.random() * 16), // Random age 18-33
-            stats: { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 },
-            condition: 100,
-            isInjured: false,
-            isSuspended: false
-        })),
-        coach: generateRandomCoach(t.tier)
-    }));
+    // Clone teams, assign authentic stadiums, ages and coaches
+    const allTeamsCopy = TEAMS.map(t => {
+        const s = generateStadium(t);
+        return {
+            ...t,
+            logo: t.logo,
+            stadiumName: s.name,
+            stadiumCapacity: s.capacity,
+            city: s.city,
+            squad: t.squad.map(player => ({
+                ...player,
+                age: Math.floor(18 + Math.random() * 16), // Random age 18-33
+                stats: { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 },
+                condition: 100,
+                isInjured: false,
+                isSuspended: false
+            })),
+            coach: generateRandomCoach(t.tier)
+        };
+    });
 
     const playerTeamCopy = allTeamsCopy.find(t => t.id === selectedTeam.id)!;
 
@@ -114,6 +124,8 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
     const brasileiraoTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.BRASILEIRAO);
     const serieBBrTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.SERIE_B_BR);
     const paraguayTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.COPA_DE_PRIMERA);
+    const ligaMxTeamsList = allTeamsCopy.filter(t => t.leagueId === LeagueId.LIGA_MX);
+    const expansionMxTeamsList = allTeamsCopy.filter(t => t.leagueId === LeagueId.LIGA_EXPANSION_MX);
 
     // International competitions (Champions League, Copa Libertadores) are NOT generated
     // in season 1. They will be created by seasonManager.ts from season 2 onwards
@@ -136,6 +148,9 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
     const argentinianTeams = [...ligaArgTeams, ...primeraNacTeams];
     const copaArgentinaRound1 = generateCupDraw(argentinianTeams, 'Round 1', 'Copa_Argentina', playerTeamCopy.id);
 
+    const mexicanTeams = [...ligaMxTeamsList, ...expansionMxTeamsList];
+    const copaMxRound1 = generateCupDraw(mexicanTeams, 'Round 1', 'Copa_MX', playerTeamCopy.id);
+
     // Assign cup fixtures to specific weeks (always midweek to prevent clashing with weekend league matches)
     const faCupFixtures = faCupRound1.map(m => ({ ...m, week: 5, isMidweek: true }));
     const carabaoCupFixtures = carabaoCupRound1.map(m => ({ ...m, week: 2, isMidweek: true }));
@@ -143,16 +158,112 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
     const dfbPokalFixtures = dfbPokalRound1.map(m => ({ ...m, week: 3, isMidweek: true }));
     const coppaItaliaFixtures = coppaItaliaRound1.map(m => ({ ...m, week: 4, isMidweek: true }));
     const copaArgentinaFixtures = copaArgentinaRound1.map(m => ({ ...m, week: 5, isMidweek: true }));
-    
-    // Generate full season schedule (league + national cups only in season 1)
+    const copaMxFixtures = copaMxRound1.map(m => ({ ...m, week: 6, isMidweek: true }));
+
+    // =========================================================================
+    // 🏆 International Competitions (Season 1 - 2026 Real Participants)
+    // =========================================================================
+    const getTopClubs = (teams: Team[], count: number): Team[] => {
+        const tierWeight = { 'Top': 3, 'Mid': 2, 'Lower': 1 };
+        return [...teams].sort((a, b) => {
+            const diff = (tierWeight[b.tier] || 1) - (tierWeight[a.tier] || 1);
+            if (diff !== 0) return diff;
+            return (b.budget || 0) - (a.budget || 0);
+        }).slice(0, count);
+    };
+
+    const getMidClubs = (teams: Team[], start: number, count: number): Team[] => {
+        const tierWeight = { 'Top': 3, 'Mid': 2, 'Lower': 1 };
+        return [...teams].sort((a, b) => {
+            const diff = (tierWeight[b.tier] || 1) - (tierWeight[a.tier] || 1);
+            if (diff !== 0) return diff;
+            return (b.budget || 0) - (a.budget || 0);
+        }).slice(start, start + count);
+    };
+
+    // UEFA Champions League (36 teams)
+    const clTeamsMap = new Map<number, Team>();
+    [
+        ...getTopClubs(plTeams, 7),
+        ...getTopClubs(laTeams, 7),
+        ...getTopClubs(gerTeams, 7),
+        ...getTopClubs(itaTeams, 7),
+        ...getTopClubs(ligue1Teams, 6),
+        ...getTopClubs(chTeams, 2)
+    ].forEach(t => clTeamsMap.set(t.id, t));
+    const clTeams = Array.from(clTeamsMap.values()).slice(0, 36);
+
+    // UEFA Europa League (36 teams)
+    const elTeamsMap = new Map<number, Team>();
+    [
+        ...getMidClubs(plTeams, 7, 7),
+        ...getMidClubs(laTeams, 7, 7),
+        ...getMidClubs(gerTeams, 7, 7),
+        ...getMidClubs(itaTeams, 7, 7),
+        ...getMidClubs(ligue1Teams, 6, 6),
+        ...getMidClubs(chTeams, 2, 2)
+    ].filter(t => !clTeamsMap.has(t.id)).forEach(t => elTeamsMap.set(t.id, t));
+    const elTeams = Array.from(elTeamsMap.values()).slice(0, 36);
+
+    const clSwiss = generateSwissPhase(clTeams, 'Champions_League', 8);
+    const elSwiss = generateSwissPhase(elTeams, 'Europa_League', 8);
+    const clFixtures = clSwiss.fixtures.map(m => ({ ...m, week: m.week + 5, isMidweek: true }));
+    const elFixtures = elSwiss.fixtures.map(m => ({ ...m, week: m.week + 5, isMidweek: true }));
+
+    // CONMEBOL Copa Libertadores (Official 47-team structure, 2026 realistic qualifiers)
+    // River Plate (702), Racing Club (703), Vélez Sarsfield (707), Estudiantes LP (706), Talleres (711), Central Córdoba (719)
+    const argLibertadoresIds = [702, 703, 707, 706, 711, 719];
+    const libInit = initializeLibertadoresSeason({
+        allTeams: allTeamsCopy,
+        lastLibertadoresWinnerId: 810, // Botafogo (Champion 2024)
+        lastSudamericanaWinnerId: 703, // Racing Club (Champion 2024)
+        argentineQualifiedIds: argLibertadoresIds
+    });
+
+    const libParticipantIds = new Set<number>();
+    libInit.cup.groups?.forEach(g => g.teams.forEach(id => libParticipantIds.add(id)));
+    libInit.fixtures.forEach(m => {
+        libParticipantIds.add(m.homeTeamId);
+        libParticipantIds.add(m.awayTeamId);
+    });
+
+    // CONMEBOL Copa Sudamericana (Official 56-team structure, 2026 realistic qualifiers)
+    // Boca Juniors (701), Independiente (704), Huracán (708), Godoy Cruz (721), Unión (724), Lanús (715), Defensa y Justicia (714)
+    const argSudamericanaIds = [701, 704, 708, 721, 724, 715, 714];
+    const sudInit = initializeSudamericanaSeason({
+        allTeams: allTeamsCopy,
+        argentineQualifiedIds: argSudamericanaIds,
+        libertadoresPhase3Losers: libInit.phase3Losers,
+        excludedTeamIds: libParticipantIds
+    });
+
+    // Intercontinental Cup: Real Madrid (201) vs Botafogo (810)
+    const realMadrid = allTeamsCopy.find(t => t.id === 201);
+    const botafogo = allTeamsCopy.find(t => t.id === 810);
+    const intercontinentalFixtures: Match[] = (realMadrid && botafogo) ? [{
+        week: 2,
+        homeTeamId: botafogo.id,
+        awayTeamId: realMadrid.id,
+        competition: 'Copa_Intercontinental',
+        isCupMatch: true,
+        isMidweek: true
+    }] : [];
+
+    // Full Season Schedule
     const initialSchedule = [
-        ...generateSeasonSchedule(allTeamsCopy),
+        ...generateSeasonSchedule(allTeamsCopy, 2026),
         ...faCupFixtures,
         ...carabaoCupFixtures,
         ...copaDelReyFixtures,
         ...dfbPokalFixtures,
         ...coppaItaliaFixtures,
-        ...copaArgentinaFixtures
+        ...copaArgentinaFixtures,
+        ...copaMxFixtures,
+        ...intercontinentalFixtures,
+        ...libInit.fixtures,
+        ...sudInit.fixtures,
+        ...clFixtures,
+        ...elFixtures
     ];
 
     // Build and return the initial game state
@@ -162,7 +273,7 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
         allTeams: allTeamsCopy,
         currentDate: now,
         currentWeek: 0,
-        season: 2024,
+        season: 2026,
         newsFeed: initialNews,
         schedule: initialSchedule,
         leagueTables: {
@@ -181,6 +292,8 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
             [LeagueId.BRASILEIRAO]: createInitialLeagueTable(brasileiraoTeams),
             [LeagueId.SERIE_B_BR]: createInitialLeagueTable(serieBBrTeams),
             [LeagueId.COPA_DE_PRIMERA]: createInitialLeagueTable(paraguayTeams),
+            [LeagueId.LIGA_MX]: createInitialLeagueTable(ligaMxTeamsList),
+            [LeagueId.LIGA_EXPANSION_MX]: createInitialLeagueTable(expansionMxTeamsList),
         },
         finances: {
             balance: selectedTeam.budget,
@@ -201,9 +314,9 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
             }
         },
         mandate: {
-            startYear: 1,
+            startYear: 2026,
             currentYear: 1,
-            nextElectionSeason: 4,
+            nextElectionSeason: 2030,
             isElectionYear: false,
             totalMandates: 1
         },
@@ -270,36 +383,16 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
             clausuraPlayoffs: { id: 'clausura_playoffs', name: 'Playoffs Clausura', type: 'knockout', phase: 'knockout', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
             nacionalPrimerAscenso: { id: 'nacional_primer_ascenso', name: 'Final 1º Ascenso', type: 'knockout', phase: 'knockout', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
             nacionalReducido: { id: 'nacional_reducido', name: 'Torneo Reducido', type: 'knockout', phase: 'knockout', rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } },
-            copaLibertadores: {
-                id: 'copa_libertadores',
-                name: 'Copa Libertadores',
-                logo: 'https://tmssl.akamaized.net/images/logo/header/cli.png',
-                type: 'groups',
-                phase: 'finished',
-                groups: [],
-                rounds: [],
-                currentRoundIndex: 0,
-                statistics: { topScorers: [], championsHistory: [] }
-            },
-            copaSudamericana: {
-                id: 'copa_sudamericana',
-                name: 'Copa Sudamericana',
-                logo: 'https://tmssl.akamaized.net/images/logo/header/cpa.png',
-                type: 'groups',
-                phase: 'finished',
-                groups: [],
-                rounds: [],
-                currentRoundIndex: 0,
-                statistics: { topScorers: [], championsHistory: [] }
-            },
+            copaLibertadores: libInit.cup,
+            copaSudamericana: sudInit.cup,
             championsLeague: {
                 id: 'champions_league',
                 name: 'UEFA Champions League',
                 logo: 'https://tmssl.akamaized.net/images/logo/header/cl.png',
                 type: 'swiss',
-                phase: 'finished',
-                swissTable: [],
-                swissFixtures: [],
+                phase: 'swiss',
+                swissTable: clSwiss.table,
+                swissFixtures: clSwiss.fixtures,
                 rounds: [],
                 currentRoundIndex: 0,
                 statistics: { topScorers: [], championsHistory: [] }
@@ -309,7 +402,9 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
                 name: 'UEFA Europa League',
                 logo: 'https://tmssl.akamaized.net/images/logo/header/el.png',
                 type: 'swiss',
-                phase: 'finished',
+                phase: 'swiss',
+                swissTable: elSwiss.table,
+                swissFixtures: elSwiss.fixtures,
                 rounds: [],
                 currentRoundIndex: 0,
                 statistics: { topScorers: [], championsHistory: [] }
@@ -320,19 +415,17 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
                 logo: 'https://tmssl.akamaized.net/images/logo/header/cwc.png',
                 type: 'knockout',
                 phase: 'knockout',
-                rounds: [],
+                rounds: intercontinentalFixtures.length > 0 ? [{
+                    name: 'Final',
+                    fixtures: intercontinentalFixtures,
+                    completed: false
+                }] : [],
                 currentRoundIndex: 0,
                 statistics: { topScorers: [], championsHistory: [] }
             },
         },
         availableCoaches: generateCoachMarket(5),
-        stadium: {
-            name: `${playerTeamCopy.name} Arena`,
-            capacity: playerTeamCopy.tier === 'Top' ? 60000 : playerTeamCopy.tier === 'Mid' ? 35000 : 15000,
-            ticketPrice: playerTeamCopy.tier === 'Top' ? 45 : playerTeamCopy.tier === 'Mid' ? 30 : 20,
-            maintenanceCost: playerTeamCopy.tier === 'Top' ? 150000 : playerTeamCopy.tier === 'Mid' ? 80000 : 30000,
-            facilityLevel: 1
-        },
+        stadium: generateStadium(playerTeamCopy),
         sponsors: [
             generateSponsor('shirt', playerTeamCopy.tier),
             generateSponsor('kit', playerTeamCopy.tier)

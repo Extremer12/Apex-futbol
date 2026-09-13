@@ -12,8 +12,8 @@ export const ARGENTINE_CLASSIC_PAIRS: [number, number][] = [
     [707, 726], // Vélez Sarsfield vs Argentinos Juniors
     [722, 723], // Platense vs Tigre
     [724, 712], // Unión SF vs Atlético Tucumán
-    [717, 733], // Instituto vs Estudiantes Río Cuarto
-    [728, 731], // Gimnasia Mendoza vs Independiente Rivadavia
+    [721, 731], // Godoy Cruz vs Independiente Rivadavia (Clásico Mendocino)
+    [717, 751], // Instituto vs San Martín (San Juan)
     [719, 718], // Central Córdoba SdE vs Sarmiento Junín
     [714, 720], // Defensa y Justicia vs Barracas Central
     [727, 732], // Deportivo Riestra vs Aldosivi
@@ -21,6 +21,8 @@ export const ARGENTINE_CLASSIC_PAIRS: [number, number][] = [
 
 // Historical / regional rivalry fallback pairs if teams are promoted from Primera Nacional
 export const ARGENTINE_SECONDARY_DERBIES: [number, number][] = [
+    [717, 733], // Instituto vs Estudiantes Río Cuarto
+    [728, 731], // Gimnasia Mendoza vs Independiente Rivadavia
     [724, 767], // Unión vs Colón
     [728, 769], // Gimnasia Mza vs Godoy Cruz
     [731, 769], // Ind. Rivadavia vs Godoy Cruz
@@ -141,7 +143,7 @@ const fallbackRoundRobin = (teams: Team[], competitionName: string): Match[] => 
 };
 
 // Helper to generate Argentine 2026 30-team format schedule (Apertura & Clausura)
-export const generateArgentineTournamentSchedule = (teams: Team[], season: number = 2024): Match[] => {
+export const generateArgentineTournamentSchedule = (teams: Team[], season: number = 2026): Match[] => {
     let zoneA = teams.filter(t => t.zone === 'A');
     let zoneB = teams.filter(t => t.zone === 'B');
 

@@ -81,10 +81,12 @@ export enum LeagueId {
   PRIMERA_NACIONAL = 'PRIMERA_NACIONAL',
   BRASILEIRAO = 'BRASILEIRAO',
   SERIE_B_BR = 'SERIE_B_BR',
-  COPA_DE_PRIMERA = 'COPA_DE_PRIMERA'
+  COPA_DE_PRIMERA = 'COPA_DE_PRIMERA',
+  LIGA_MX = 'LIGA_MX',
+  LIGA_EXPANSION_MX = 'LIGA_EXPANSION_MX'
 }
 
-export type CountryCode = 'ENG' | 'ESP' | 'GER' | 'ITA' | 'FRA' | 'ARG' | 'BRA' | 'PAR';
+export type CountryCode = 'ENG' | 'ESP' | 'GER' | 'ITA' | 'FRA' | 'ARG' | 'BRA' | 'PAR' | 'MEX';
 
 export const LEAGUE_COUNTRY: Record<LeagueId, CountryCode> = {
   [LeagueId.PREMIER_LEAGUE]: 'ENG',
@@ -101,12 +103,15 @@ export const LEAGUE_COUNTRY: Record<LeagueId, CountryCode> = {
   [LeagueId.PRIMERA_NACIONAL]: 'ARG',
   [LeagueId.BRASILEIRAO]: 'BRA',
   [LeagueId.SERIE_B_BR]: 'BRA',
-  [LeagueId.COPA_DE_PRIMERA]: 'PAR'
+  [LeagueId.COPA_DE_PRIMERA]: 'PAR',
+  [LeagueId.LIGA_MX]: 'MEX',
+  [LeagueId.LIGA_EXPANSION_MX]: 'MEX'
 };
 
 export interface Team {
   id: number;
   name: string;
+  shortName?: string;
   logo: string;
   leagueId: LeagueId; // Added for multi-league support
   zone?: 'A' | 'B'; // For Argentine 2026 30-team format
@@ -119,6 +124,9 @@ export interface Team {
   secondaryColor: string;
   coach?: Coach; // Added for Phase 2: Sports Delegation
   trophyCabinet?: Trophy[]; // Added for Phase 3: Trophies
+  stadiumName?: string;
+  stadiumCapacity?: number;
+  city?: string;
 }
 
 export interface Coach {
@@ -180,10 +188,15 @@ export interface PresidentialStint {
 
 export interface PlayerProfile {
   name: string;
-  experience: number; // Starts at 0
+  experience?: number; // Starts at 0
   photo?: string;     // Custom avatar image DataURL or URL
   nationality?: string;
+  country?: string;   // Alternative alias for nationality
+  age?: number;
   style?: string;     // 'Pragmático' | 'Canterano' | 'Galáctico' | 'Equilibrado'
+  preferredStyle?: string;
+  satisfaction?: number;
+  difficulty?: string;
   careerStints?: PresidentialStint[];
   careerWins?: number;
   careerDraws?: number;
@@ -205,6 +218,7 @@ export interface MatchScorer {
 }
 
 export interface Match {
+  id?: string | number;
   week: number;
   homeTeamId: number;
   awayTeamId: number;
@@ -213,6 +227,7 @@ export interface Match {
     awayScore: number; 
     events?: string[];
     scorers?: MatchScorer[];
+    penalties?: { home: number; away: number; };
   };
   competition?: string; // e.g. 'League', 'Torneo_Apertura', 'Torneo_Clausura', 'Playoffs_Apertura', etc.
   isCupMatch?: boolean;
@@ -293,7 +308,7 @@ export interface CupCompetition {
   rounds: CupRound[];
   currentRoundIndex: number;
   winnerId?: number;
-  statistics: CupStatistics;
+  statistics?: CupStatistics;
 }
 
 export interface EuropeanTableRow {
@@ -328,6 +343,7 @@ export type CupKey =
   | 'dfbPokal'
   | 'coppaItalia'
   | 'copaArgentina'
+  | 'copaMx'
   | 'aperturaPlayoffs'
   | 'clausuraPlayoffs'
   | 'nacionalPrimerAscenso'
@@ -341,10 +357,11 @@ export type CupKey =
 export const COMPETITION_TO_CUP_KEY: Record<string, CupKey> = {
   'FA_Cup': 'faCup',
   'Carabao_Cup': 'carabaoCup',
-  'Copa_Del_Rey': 'copaDelRey',
+  'Copa_del_Rey': 'copaDelRey',
   'DFB_Pokal': 'dfbPokal',
   'Coppa_Italia': 'coppaItalia',
   'Copa_Argentina': 'copaArgentina',
+  'Copa_MX': 'copaMx',
   'Playoffs_Apertura': 'aperturaPlayoffs',
   'Playoffs_Clausura': 'clausuraPlayoffs',
   'Nacional_Primer_Ascenso': 'nacionalPrimerAscenso',
@@ -390,6 +407,7 @@ export interface ElectoralPromise {
 export interface Stadium {
   name: string;
   capacity: number;
+  city?: string;
   ticketPrice: number;          // Precio promedio por entrada
   maintenanceCost: number;      // Coste semanal de mantenimiento
   expansionCost?: number;       // Coste de expansión (si disponible)

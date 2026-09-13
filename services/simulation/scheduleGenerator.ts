@@ -58,7 +58,7 @@ export const createInitialLeagueTable = (teams: Team[]): LeagueTableRow[] => {
 /**
  * Generates the unified season schedule across all supported leagues.
  */
-export const generateSeasonSchedule = (allTeams: Team[], season: number = 2024): Match[] => {
+export const generateSeasonSchedule = (allTeams: Team[], season: number = 2026): Match[] => {
     const leaguesToSchedule = [
         LeagueId.PREMIER_LEAGUE, LeagueId.CHAMPIONSHIP,
         LeagueId.LA_LIGA, LeagueId.SEGUNDA_DIVISION_ESP,

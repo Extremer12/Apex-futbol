@@ -225,6 +225,34 @@ export const LEAGUE_REGISTRY: Record<LeagueId, LeagueConfig> = {
         relegationSlots: 2,
         domesticCups: [],
         format: 'round-robin'
+    },
+    [LeagueId.LIGA_MX]: {
+        id: LeagueId.LIGA_MX,
+        name: 'Liga MX',
+        country: 'MEX',
+        region: 'southAmerica',
+        division: 1,
+        teamsCount: 18,
+        maxWeeks: 34,
+        promotionSlots: 0,
+        relegationSlots: 2,
+        relegatesTo: LeagueId.LIGA_EXPANSION_MX,
+        domesticCups: ['copaMx'],
+        format: 'round-robin'
+    },
+    [LeagueId.LIGA_EXPANSION_MX]: {
+        id: LeagueId.LIGA_EXPANSION_MX,
+        name: 'Liga de Expansión MX',
+        country: 'MEX',
+        region: 'southAmerica',
+        division: 2,
+        teamsCount: 14,
+        maxWeeks: 26,
+        promotionSlots: 2,
+        relegationSlots: 0,
+        promotesTo: LeagueId.LIGA_MX,
+        domesticCups: ['copaMx'],
+        format: 'round-robin'
     }
 };
 

@@ -78,6 +78,13 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
             leagues: [
                 { id: LeagueId.COPA_DE_PRIMERA, name: 'Copa de Primera', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Copa%20de%20Primera/paraguay_copa-de-primera.football-logos.cc.svg', teams: '14', div: '1ª División' }
             ]
+        },
+        MEX: {
+            title: 'Fútbol Mexicano',
+            leagues: [
+                { id: LeagueId.LIGA_MX, name: 'Liga MX', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Liga%20MX/mexico_liga-mx.football-logos.cc.svg', teams: '18', div: '1ª División' },
+                { id: LeagueId.LIGA_EXPANSION_MX, name: 'Liga de Expansión MX', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Liga%20de%20Expansi%C3%B3n%20MX/mexico_liga-de-expansion-mx.football-logos.cc.svg', teams: '14', div: '2ª División' }
+            ]
         }
     };
 
@@ -90,6 +97,7 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
         { id: 'ARG' as CountryCode, name: 'Argentina', flagUrl: 'https://flagcdn.com/ar.svg' },
         { id: 'BRA' as CountryCode, name: 'Brasil', flagUrl: 'https://flagcdn.com/br.svg' },
         { id: 'PAR' as CountryCode, name: 'Paraguay', flagUrl: 'https://flagcdn.com/py.svg' },
+        { id: 'MEX' as CountryCode, name: 'México', flagUrl: 'https://flagcdn.com/mx.svg' },
     ];
 
     const FAN_EXPECTATIONS: Record<Team['tier'], string> = {
