@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { GameState, Player, SquadRole, Offer } from '../../types';
 import { GameAction } from '../../state/reducer';
 import { 
@@ -22,7 +22,9 @@ import {
     Users,
     Inbox,
     ArrowRight,
-    CheckCircle2
+    CheckCircle2,
+    Sliders,
+    X
 } from 'lucide-react';
 import { useToast } from '../common/ToastProvider';
 
@@ -80,6 +82,32 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
     const [counterOfferModal, setCounterOfferModal] = useState<{ offer: Offer; player: Player; buyer: any } | null>(null);
     const [counterValue, setCounterValue] = useState<number>(0);
     const [isEvaluatingCounter, setIsEvaluatingCounter] = useState(false);
+
+    // Financial normalization
+    const normBudget = useMemo(() => {
+        if (finances.transferBudget && finances.transferBudget < 10_000) {
+            return finances.transferBudget * 1_000_000;
+        }
+        return finances.transferBudget || 0;
+    }, [finances.transferBudget]);
+
+    const normBalance = useMemo(() => {
+        if (finances.balance && finances.balance < 10_000) {
+            return finances.balance * 1_000_000;
+        }
+        return finances.balance || 0;
+    }, [finances.balance]);
+
+    // Presidential Budget Reallocation Modal
+    const [showBudgetModal, setShowBudgetModal] = useState(false);
+    const [newBudgetDraft, setNewBudgetDraft] = useState(normBudget);
+
+    // Keep draft synced when modal opens or budget changes
+    useEffect(() => {
+        if (!showBudgetModal) {
+            setNewBudgetDraft(normBudget);
+        }
+    }, [normBudget, showBudgetModal]);
 
     // All available players from other clubs
     const allPlayers = useMemo(() => allTeams.flatMap(t => t.squad), [allTeams]);
@@ -210,15 +238,9 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
     const handleFinalizeSigning = () => {
         if (!negotiatingPlayer || agreedFee === null) return;
         const totalInitialOutlay = agreedFee + offeredBonus;
-        const normBudget = finances.transferBudget && finances.transferBudget < 10_000 ? finances.transferBudget * 1_000_000 : finances.transferBudget;
-        const normBalance = finances.balance && finances.balance < 10_000 ? finances.balance * 1_000_000 : finances.balance;
 
-        if (totalInitialOutlay > normBudget) {
-            showToast("No dispones de suficiente presupuesto de traspasos.", 'error');
-            return;
-        }
         if (totalInitialOutlay > normBalance) {
-            showToast("El balance financiero del club no cubre el desembolso.", 'error');
+            showToast("El saldo total en tesorería del club no cubre el desembolso de la operación.", 'error');
             return;
         }
 
@@ -332,8 +354,26 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
 
                     <div className="apex-card px-4 py-2 flex items-center gap-4">
                         <div>
+                            <p className="text-[8px] text-white/50 font-bold uppercase tracking-widest">Saldo en Tesorería</p>
+                            <p className="text-base font-black text-emerald-400">{formatTransferFee(normBalance)}</p>
+                        </div>
+                        <div className="w-px h-6 bg-white/10" />
+                        <div>
                             <p className="text-[8px] text-white/50 font-bold uppercase tracking-widest">Presupuesto Fichajes</p>
-                            <p className="text-base font-black text-[var(--apex-gold)]">{formatTransferFee(finances.transferBudget)}</p>
+                            <div className="flex items-center gap-2">
+                                <p className="text-base font-black text-[var(--apex-gold)]">{formatTransferFee(normBudget)}</p>
+                                <button
+                                    onClick={() => {
+                                        setNewBudgetDraft(normBudget);
+                                        setShowBudgetModal(true);
+                                    }}
+                                    className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/15 border border-white/10 text-[9px] font-bold text-white/80 hover:text-[var(--apex-gold)] transition-all cursor-pointer flex items-center gap-1 active:scale-95"
+                                    title="Ajustar Presupuesto de Fichajes"
+                                >
+                                    <Sliders className="w-2.5 h-2.5" />
+                                    <span>Ajustar</span>
+                                </button>
+                            </div>
                         </div>
                         <div className="w-px h-6 bg-white/10" />
                         <div>
@@ -453,6 +493,110 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
                     onSendCounterToBuyer={handleSendCounterToBuyer}
                     onClose={() => setCounterOfferModal(null)}
                 />
+            )}
+
+            {/* PRESIDENTIAL BUDGET ALLOCATION MODAL */}
+            {showBudgetModal && (
+                <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+                    <div className="w-full max-w-lg bg-[#0D121F] border border-white/15 rounded-3xl p-6 shadow-2xl space-y-6">
+                        <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-9 h-9 rounded-xl bg-[var(--apex-gold)]/10 border border-[var(--apex-gold)]/30 flex items-center justify-center text-[var(--apex-gold)]">
+                                    <Sliders className="w-4 h-4" />
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-black text-white uppercase tracking-wider">Asignación Presidencial de Fondos</h3>
+                                    <p className="text-[11px] text-white/50">Ajusta el presupuesto destinado a traspasos con cargo a tesorería</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setShowBudgetModal(false)}
+                                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/60 hover:text-white cursor-pointer"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        {/* Financial balance status */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10">
+                                <span className="text-[10px] font-bold text-white/40 uppercase block">Saldo Total en Tesorería</span>
+                                <span className="text-base font-black text-emerald-400">{formatCurrency(normBalance)}</span>
+                            </div>
+                            <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10">
+                                <span className="text-[10px] font-bold text-white/40 uppercase block">Presupuesto Fichajes Actual</span>
+                                <span className="text-base font-black text-[var(--apex-gold)]">{formatCurrency(normBudget)}</span>
+                            </div>
+                        </div>
+
+                        {/* Slider & Presets */}
+                        <div className="space-y-4 p-4 rounded-2xl bg-black/40 border border-white/10">
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-white/70">Nuevo Presupuesto Asignado:</span>
+                                <span className="text-lg font-black text-[var(--apex-gold)]">{formatCurrency(newBudgetDraft)}</span>
+                            </div>
+
+                            <input
+                                type="range"
+                                min={0}
+                                max={Math.max(normBalance, 10_000_000)}
+                                step={1_000_000}
+                                value={newBudgetDraft}
+                                onChange={(e) => setNewBudgetDraft(Number(e.target.value))}
+                                className="w-full accent-[var(--apex-gold)] cursor-pointer h-2 bg-white/10 rounded-lg appearance-none"
+                            />
+
+                            <div className="grid grid-cols-4 gap-2">
+                                {[
+                                    { label: '25%', factor: 0.25 },
+                                    { label: '50%', factor: 0.50 },
+                                    { label: '75%', factor: 0.75 },
+                                    { label: '100% (Todo)', factor: 1.0 },
+                                ].map(p => (
+                                    <button
+                                        key={p.label}
+                                        type="button"
+                                        onClick={() => setNewBudgetDraft(Math.round(normBalance * p.factor))}
+                                        className="py-1.5 px-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-bold text-white/80 border border-white/5 cursor-pointer active:scale-95"
+                                    >
+                                        {p.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <p className="text-[11px] text-white/40 leading-relaxed">
+                            💡 Como Presidente del club, tienes potestad plena para destinar reservas de caja al mercado de fichajes para acometer contrataciones galácticas.
+                        </p>
+
+                        <div className="flex items-center gap-3 pt-2">
+                            <button
+                                type="button"
+                                onClick={() => setShowBudgetModal(false)}
+                                className="flex-1 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white font-bold text-xs uppercase cursor-pointer"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    dispatch({
+                                        type: 'UPDATE_FINANCES',
+                                        payload: {
+                                            ...finances,
+                                            transferBudget: newBudgetDraft
+                                        }
+                                    });
+                                    showToast(`Presupuesto de traspasos establecido en ${formatCurrency(newBudgetDraft)}`, 'success');
+                                    setShowBudgetModal(false);
+                                }}
+                                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[var(--apex-gold)] to-amber-500 hover:brightness-110 text-black font-black text-xs uppercase tracking-wider cursor-pointer shadow-lg shadow-[var(--apex-gold)]/20 active:scale-98"
+                            >
+                                Confirmar Presupuesto
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

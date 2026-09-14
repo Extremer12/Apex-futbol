@@ -52,8 +52,10 @@ export function handleTransferAction(state: GameState, action: TransferAction): 
             const finalFee = offer.counterOfferValue || offer.offerValue;
 
             // Update finances
-            const newBalance = state.finances.balance + finalFee;
-            const newTransferBudget = state.finances.transferBudget + finalFee;
+            const currentTransferBudget = state.finances.transferBudget < 10_000 ? state.finances.transferBudget * 1_000_000 : state.finances.transferBudget;
+            const currentBalance = state.finances.balance < 10_000 ? state.finances.balance * 1_000_000 : state.finances.balance;
+            const newBalance = currentBalance + finalFee;
+            const newTransferBudget = currentTransferBudget + finalFee;
             const newWages = Math.max(0, state.finances.weeklyWages - player.wage);
 
             // Update squad
@@ -118,7 +120,7 @@ export function handleTransferAction(state: GameState, action: TransferAction): 
             const currentTransferBudget = state.finances.transferBudget < 10_000 ? state.finances.transferBudget * 1_000_000 : state.finances.transferBudget;
             const currentBalance = state.finances.balance < 10_000 ? state.finances.balance * 1_000_000 : state.finances.balance;
             const newWages = state.finances.weeklyWages + negotiatedWage;
-            const newTransferBudget = currentTransferBudget - totalCashDeducted;
+            const newTransferBudget = Math.max(0, currentTransferBudget - totalCashDeducted);
             const newBalance = currentBalance - totalCashDeducted;
 
             const updatedAllTeams = state.allTeams.map(t => {

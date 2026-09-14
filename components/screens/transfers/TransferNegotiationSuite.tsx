@@ -163,15 +163,17 @@ export const TransferNegotiationSuite: React.FC<TransferNegotiationSuiteProps> =
         }
     }, [negotiatingPlayer.position]);
 
+    const maxAllowedFee = Math.max(normBalance, normBudget, normMarketValue * 2);
     const remainingBudgetAfterFee = normBudget - activeOfferFee;
-    const isFeeAffordable = activeOfferFee <= normBudget;
+    const remainingBalanceAfterFee = normBalance - activeOfferFee;
+    const isFeeAffordable = activeOfferFee <= normBalance;
     const currentStage = isContractAgreed ? 3 : negotiationPhase === 'CONTRACT' ? 2 : 1;
 
     // Helper functions for safe offer manipulation
     const adjustFee = (delta: number) => {
         setClubOfferFee(prev => {
             const current = prev < 10_000 ? prev * 1_000_000 : prev;
-            return Math.max(500_000, Math.min(normBudget * 1.5, current + delta));
+            return Math.max(500_000, Math.min(maxAllowedFee, current + delta));
         });
     };
 
@@ -251,10 +253,15 @@ export const TransferNegotiationSuite: React.FC<TransferNegotiationSuiteProps> =
                     </div>
                 </div>
 
-                {/* Right: Club Treasury Status */}
-                <div className="flex items-center gap-4">
+                {/* Right: Club Treasury Status (Dual display: Saldo + Presupuesto) */}
+                <div className="flex items-center gap-3 sm:gap-4">
                     <div className="text-right">
-                        <span className="text-[9px] sm:text-[10px] text-white/40 font-bold uppercase tracking-wider block">Presupuesto</span>
+                        <span className="text-[9px] sm:text-[10px] text-white/40 font-bold uppercase tracking-wider block">Saldo Total</span>
+                        <span className="text-xs sm:text-sm font-black text-emerald-400">{formatCurrency(normBalance)}</span>
+                    </div>
+                    <div className="w-px h-6 bg-white/10" />
+                    <div className="text-right">
+                        <span className="text-[9px] sm:text-[10px] text-white/40 font-bold uppercase tracking-wider block">Presupuesto Fichajes</span>
                         <span className="text-xs sm:text-sm font-black text-[var(--apex-gold)]">{formatCurrency(normBudget)}</span>
                     </div>
                 </div>
@@ -622,7 +629,7 @@ export const TransferNegotiationSuite: React.FC<TransferNegotiationSuiteProps> =
                                     <input
                                         type="range"
                                         min={Math.max(500_000, Math.round(normMarketValue * 0.2))}
-                                        max={Math.max(normMarketValue * 2, normBudget)}
+                                        max={maxAllowedFee}
                                         step={500_000}
                                         value={activeOfferFee}
                                         onChange={e => setClubOfferFee(Number(e.target.value))}
@@ -669,12 +676,45 @@ export const TransferNegotiationSuite: React.FC<TransferNegotiationSuiteProps> =
                                         </button>
                                     </div>
 
-                                    {/* Budget Impact Indicator */}
-                                    <div className="flex items-center justify-between text-[11px] px-1">
-                                        <span className="text-white/40">Presupuesto restante tras traspaso:</span>
-                                        <span className={`font-black ${remainingBudgetAfterFee >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                            {formatCurrency(remainingBudgetAfterFee)}
-                                        </span>
+                                    {/* Budget & Treasury Impact Indicator */}
+                                    <div className="space-y-1.5 px-1">
+                                        {activeOfferFee <= normBudget ? (
+                                            <div className="flex items-center justify-between text-[11px]">
+                                                <span className="text-white/40">Presupuesto restante tras traspaso:</span>
+                                                <span className="font-black text-emerald-400">
+                                                    {formatCurrency(remainingBudgetAfterFee)}
+                                                </span>
+                                            </div>
+                                        ) : activeOfferFee <= normBalance ? (
+                                            <div className="space-y-1.5 pt-0.5">
+                                                <div className="flex items-center justify-between text-[11px]">
+                                                    <span className="text-white/40">Presupuesto asignado ({formatCurrency(normBudget)}):</span>
+                                                    <span className="font-black text-white/70">Agotado (100%)</span>
+                                                </div>
+                                                <div className="flex items-center justify-between text-[11px]">
+                                                    <span className="text-amber-400 font-bold">Aporte adicional de Tesorería:</span>
+                                                    <span className="font-black text-amber-400">
+                                                        +{formatCurrency(activeOfferFee - normBudget)}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center justify-between text-[11px]">
+                                                    <span className="text-white/40">Saldo club restante:</span>
+                                                    <span className="font-black text-emerald-400">
+                                                        {formatCurrency(remainingBalanceAfterFee)}
+                                                    </span>
+                                                </div>
+                                                <div className="p-2 rounded-lg bg-[var(--apex-gold)]/10 border border-[var(--apex-gold)]/20 text-[10px] text-[var(--apex-gold)] font-bold flex items-center gap-1.5">
+                                                    <span>👑 Autorización Presidencial: Fondos cubiertos por la tesorería del club.</span>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center justify-between text-[11px]">
+                                                <span className="text-rose-400 font-bold">Supera el saldo total en tesorería ({formatCurrency(normBalance)}):</span>
+                                                <span className="font-black text-rose-400">
+                                                    {formatCurrency(remainingBalanceAfterFee)}
+                                                </span>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Action Button */}
