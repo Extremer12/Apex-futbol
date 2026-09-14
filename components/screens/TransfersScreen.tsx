@@ -89,9 +89,11 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
 
     // --- PHASE 1: START NEGOTIATION WITH CLUB ---
     const startNegotiation = (player: Player) => {
-        setNegotiatingPlayer(player);
+        const normValue = player.value && player.value < 10_000 ? player.value * 1_000_000 : (player.value || 1_000_000);
+        const playerToNegotiate = { ...player, value: normValue };
+        setNegotiatingPlayer(playerToNegotiate);
         setNegotiationPhase('CLUB');
-        setClubOfferFee(player.value);
+        setClubOfferFee(normValue);
         setClubChatHistory([
             { sender: 'system', text: `Iniciando conversaciones con el club propietario por el traspaso de ${player.name}.` }
         ]);
@@ -99,7 +101,7 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
         setAgreedFee(null);
 
         // Reset phase 2 defaults
-        const expWage = getExpectedWage(player, myTeam.tier, 'FirstTeam');
+        const expWage = getExpectedWage(playerToNegotiate, myTeam.tier, 'FirstTeam');
         setOfferedWage(expWage);
         setOfferedYears(3);
         setOfferedRole('FirstTeam');
@@ -208,12 +210,14 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
     const handleFinalizeSigning = () => {
         if (!negotiatingPlayer || agreedFee === null) return;
         const totalInitialOutlay = agreedFee + offeredBonus;
+        const normBudget = finances.transferBudget && finances.transferBudget < 10_000 ? finances.transferBudget * 1_000_000 : finances.transferBudget;
+        const normBalance = finances.balance && finances.balance < 10_000 ? finances.balance * 1_000_000 : finances.balance;
 
-        if (totalInitialOutlay > finances.transferBudget) {
+        if (totalInitialOutlay > normBudget) {
             showToast("No dispones de suficiente presupuesto de traspasos.", 'error');
             return;
         }
-        if (totalInitialOutlay > finances.balance) {
+        if (totalInitialOutlay > normBalance) {
             showToast("El balance financiero del club no cubre el desembolso.", 'error');
             return;
         }
@@ -410,8 +414,8 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
                     negotiatingPlayer={negotiatingPlayer}
                     sellingTeam={allTeams.find(t => t.squad.some(p => p.id === negotiatingPlayer.id))}
                     myTeam={myTeam}
-                    transferBudget={finances.transferBudget}
-                    clubBalance={finances.balance}
+                    transferBudget={finances.transferBudget && finances.transferBudget < 10_000 ? finances.transferBudget * 1_000_000 : finances.transferBudget}
+                    clubBalance={finances.balance && finances.balance < 10_000 ? finances.balance * 1_000_000 : finances.balance}
                     negotiationPhase={negotiationPhase}
                     clubOfferFee={clubOfferFee}
                     setClubOfferFee={setClubOfferFee}

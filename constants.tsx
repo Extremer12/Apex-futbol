@@ -14,7 +14,7 @@ import { SOUTH_AMERICAN_EXTRA_TEAMS } from './data/teams/southAmericanClubs';
 
 export * from './data/teams/helpers';
 
-export const TEAMS: Team[] = [
+const rawTeams: Team[] = [
   ...(premierLeagueTeams || []),
   ...(championshipTeams || []),
   ...(laLigaTeams || []),
@@ -34,6 +34,16 @@ export const TEAMS: Team[] = [
   ...(ligaExpansionMxTeams || []),
   ...(SOUTH_AMERICAN_EXTRA_TEAMS || []),
 ];
+
+export const TEAMS: Team[] = rawTeams.map(team => ({
+  ...team,
+  budget: team.budget && team.budget < 10_000 ? team.budget * 1_000_000 : (team.budget || 10_000_000),
+  transferBudget: team.transferBudget && team.transferBudget < 10_000 ? team.transferBudget * 1_000_000 : (team.transferBudget || 5_000_000),
+  squad: (team.squad || []).map(player => ({
+    ...player,
+    value: player.value && player.value < 10_000 ? player.value * 1_000_000 : (player.value || 1_000_000)
+  }))
+}));
 
 // Safety guard for sorting to prevent crashes if any team object is malformed
 TEAMS.sort((a, b) => (a?.name || '').localeCompare(b?.name || ''));

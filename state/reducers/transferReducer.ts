@@ -115,9 +115,11 @@ export function handleTransferAction(state: GameState, action: TransferAction): 
                 preferredRole: role || player.preferredRole || 'FirstTeam',
                 isTransferListed: false 
             };
+            const currentTransferBudget = state.finances.transferBudget < 10_000 ? state.finances.transferBudget * 1_000_000 : state.finances.transferBudget;
+            const currentBalance = state.finances.balance < 10_000 ? state.finances.balance * 1_000_000 : state.finances.balance;
             const newWages = state.finances.weeklyWages + negotiatedWage;
-            const newTransferBudget = state.finances.transferBudget - totalCashDeducted;
-            const newBalance = state.finances.balance - totalCashDeducted;
+            const newTransferBudget = currentTransferBudget - totalCashDeducted;
+            const newBalance = currentBalance - totalCashDeducted;
 
             const updatedAllTeams = state.allTeams.map(t => {
                 if (t.squad.some(p => p.id === player.id)) {
