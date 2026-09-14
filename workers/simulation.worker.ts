@@ -183,6 +183,21 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
             matchesThisWeek.forEach(match => {
                 if (match.result) return;
 
+                // Skip stale/orphaned cup matches if the cup is already in knockout phase and this match is not in active rounds
+                if (match.isCupMatch && match.competition) {
+                    const cupId = COMPETITION_TO_CUP_KEY[match.competition];
+                    const cup = cupId ? updatedCups[cupId] : null;
+                    if (cup && cup.phase === 'knockout') {
+                        const isKnockoutFixture = cup.rounds?.some((r: any) =>
+                            r.fixtures?.some((f: any) =>
+                                ((f.id && match.id && f.id === match.id) ||
+                                (f.homeTeamId === match.homeTeamId && f.awayTeamId === match.awayTeamId && f.week === match.week))
+                            )
+                        );
+                        if (!isKnockoutFixture) return;
+                    }
+                }
+
                 const homeTeam = teamMap.get(match.homeTeamId);
                 const awayTeam = teamMap.get(match.awayTeamId);
                 if (!homeTeam || !awayTeam) return;

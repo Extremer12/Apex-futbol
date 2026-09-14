@@ -99,8 +99,9 @@ export const progressInternationalCup = (
             fixtures.forEach(f => {
                 if (f.result === undefined) {
                     const played = recentMatches.find(m =>
-                        (m.id === f.id) ||
-                        (m.homeTeamId === f.homeTeamId && m.awayTeamId === f.awayTeamId && m.competition === f.competition && m.week === f.week && m.result !== undefined)
+                        ((f.id && m.id && f.id === m.id) ||
+                        (m.homeTeamId === f.homeTeamId && m.awayTeamId === f.awayTeamId && m.competition === f.competition && m.week === f.week)) &&
+                        m.result !== undefined
                     );
                     if (played) {
                         f.result = played.result;
@@ -109,7 +110,7 @@ export const progressInternationalCup = (
                 }
             });
         }
-        const allPlayed = fixtures.every(f => f.result !== undefined);
+        const allPlayed = fixtures.length > 0 && fixtures.every(f => f.result !== undefined);
         if (!allPlayed) return cup;
 
         // Transition Swiss -> Knockout (Round of 16)
@@ -141,14 +142,15 @@ export const progressInternationalCup = (
                 g.fixtures = g.fixtures.map(f => {
                     if (f.result !== undefined) return f;
                     const played = recentMatches.find(m =>
-                        (m.id === f.id) ||
-                        (m.homeTeamId === f.homeTeamId && m.awayTeamId === f.awayTeamId && m.competition === f.competition && m.week === f.week && m.result !== undefined)
+                        ((f.id && m.id && f.id === m.id) ||
+                        (m.homeTeamId === f.homeTeamId && m.awayTeamId === f.awayTeamId && m.competition === f.competition && m.week === f.week)) &&
+                        m.result !== undefined
                     );
                     return played ? { ...f, result: played.result, penalties: played.penalties } : f;
                 });
             });
         }
-        const allPlayed = groups.every(g => g.fixtures.every(f => f.result !== undefined));
+        const allPlayed = groups.length === 8 && groups.every(g => g.fixtures.length > 0 && g.fixtures.every(f => f.result !== undefined));
         if (!allPlayed) return cup;
 
         const firsts: Team[] = [];
@@ -354,7 +356,7 @@ export const advanceCupRound = (
 export const checkAndScheduleIntercontinental = (gameState: { cups: Record<string, CupCompetition>, allTeams: Team[] }, nextWeek: number): CupCompetition | null => {
     const { championsLeague, copaLibertadores, copaIntercontinental } = gameState.cups;
 
-    if (championsLeague.winnerId && copaLibertadores.winnerId && (!copaIntercontinental.rounds || copaIntercontinental.rounds.length === 0)) {
+    if (championsLeague?.winnerId && copaLibertadores?.winnerId && (!copaIntercontinental?.rounds || copaIntercontinental.rounds.length === 0)) {
         const clWinner = gameState.allTeams.find(t => t.id === championsLeague.winnerId)!;
         const libWinner = gameState.allTeams.find(t => t.id === copaLibertadores.winnerId)!;
 

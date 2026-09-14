@@ -1491,6 +1491,82 @@ test('Cinematics & Progression: User team does not receive popups for non-partic
     });
 });
 
+test('Bugfix: Libertadores does not advance prematurely, cinematics do not repeat, and orphan group matches are purged', async () => {
+    const { progressInternationalCup } = await import('../services/simulation/cupGenerator');
+    const { handleCupProgression } = await import('../services/simulation/cupProgressionHandler');
+    const { initializeLibertadoresSeason } = await import('../services/libertadoresEngine');
+
+    // 1. Verify progressInternationalCup does NOT advance when matches have no id and only week 1 was played
+    const libInit = initializeLibertadoresSeason({ allTeams: TEAMS });
+    const cup = libInit.cup;
+
+    // Simulate an unrelated played match without an ID (e.g. Argentine league week 1)
+    const recentMatches: Match[] = [
+        { week: 1, homeTeamId: 701, awayTeamId: 702, competition: 'Liga_Argentina', result: { homeScore: 2, awayScore: 1, events: [], scorers: [] } },
+        { week: 1, homeTeamId: 703, awayTeamId: 704, competition: 'Liga_Argentina', result: { homeScore: 0, awayScore: 0, events: [], scorers: [] } }
+    ];
+
+    const result = progressInternationalCup(cup, TEAMS, 22, recentMatches);
+    assert.equal(result.phase, 'groups', 'Libertadores must remain in groups phase when group matches are unplayed');
+    assert.equal(result.newFixtures, undefined, 'Must not generate knockout fixtures prematurely');
+
+    // 2. Verify cinematics do not repeat for subsequent knockout rounds (e.g. Cuartos de Final)
+    const boca = TEAMS.find(t => t.id === 701)!;
+    const knockoutCup = {
+        ...cup,
+        phase: 'knockout' as const,
+        rounds: [
+            {
+                name: 'Round of 16',
+                completed: true,
+                fixtures: [
+                    { week: 22, homeTeamId: boca.id, awayTeamId: 9118, competition: 'Copa_Libertadores' as const, result: { homeScore: 2, awayScore: 0, events: [], scorers: [] } }
+                ]
+            }
+        ],
+        currentRoundIndex: 0
+    };
+
+    const mockCups = {
+        copaLibertadores: knockoutCup,
+        copaSudamericana: { id: 'sud', name: 'Sudamericana', type: 'groups', phase: 'finished', winnerId: 703, rounds: [], currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: [] } }
+    } as any;
+
+    const playedOctavosMatch: Match = {
+        week: 22,
+        homeTeamId: boca.id,
+        awayTeamId: 9118,
+        competition: 'Copa_Libertadores',
+        result: { homeScore: 2, awayScore: 0, events: [], scorers: [] }
+    };
+
+    // Include an orphaned group match at week 16 in schedule (stray match from previous bug)
+    const scheduleWithOrphan: Match[] = [
+        playedOctavosMatch,
+        { week: 16, homeTeamId: 9118, awayTeamId: boca.id, competition: 'Copa_Libertadores', isCupMatch: true } // Stray unplayed group match!
+    ];
+
+    const cupRes = handleCupProgression(
+        mockCups,
+        scheduleWithOrphan,
+        TEAMS,
+        22,
+        23,
+        {} as any,
+        'midweek',
+        boca.id
+    );
+
+    // Verify repeated cinematic was NOT queued for Cuartos
+    const repeatedKinetic = cupRes.cinematicEvents.find(e => e.subtitle === '¡Comienzan las eliminatorias directas!');
+    assert.equal(repeatedKinetic, undefined, 'Must not re-trigger "¡Comienzan las eliminatorias directas!" on subsequent knockout rounds');
+
+    // 3. Verify orphaned group match at week 16 was purged from schedule since cup is in knockout
+    const orphanStillInSchedule = cupRes.updatedSchedule.find(m => m.week === 16 && m.competition === 'Copa_Libertadores' && !m.result);
+    assert.equal(orphanStillInSchedule, undefined, 'Orphaned group match in week 16 must be purged from schedule');
+});
+
+
 
 
 

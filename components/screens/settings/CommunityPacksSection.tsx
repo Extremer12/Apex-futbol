@@ -1,8 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { customPacksService } from '../../../services/customPacks/packService';
-import { Download, AlertCircle, CheckCircle2, RotateCcw, Shield, Sparkles, Trash2, Globe } from 'lucide-react';
+import { Download, AlertCircle, CheckCircle2, RotateCcw, Shield, Layers, Check } from 'lucide-react';
 
 const OFFICIAL_GLOBAL_PACK_ZIP = 'https://github.com/Extremer12/community-data-packs/releases/download/v1.0.0/football-logos-master.zip';
+
+interface PackItem {
+    id: string;
+    name: string;
+    region: string;
+    count: string;
+    description: string;
+    tagColor: string;
+    tagBorder: string;
+    tagBg: string;
+    isActive: boolean;
+    onToggle: (enable: boolean) => void;
+}
 
 export const CommunityPacksSection: React.FC = () => {
     const [stats, setStats] = useState({ teams: 0, competitions: 0, players: 0, total: 0 });
@@ -46,272 +59,151 @@ export const CommunityPacksSection: React.FC = () => {
         return () => unsubscribe();
     }, []);
 
-    // Toggle Argentine Pack (jsDelivr CDN)
+    const executeToggle = (action: () => void, successText: string, errorText: string) => {
+        setIsProcessing(true);
+        try {
+            action();
+            setFeedbackMessage({ type: 'success', text: successText });
+        } catch (err: any) {
+            setFeedbackMessage({ type: 'error', text: errorText + ': ' + (err.message || err) });
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
     const handleToggleArgPack = (enable: boolean) => {
-        setIsProcessing(true);
-        try {
-            customPacksService.setArgentinePackActive(enable);
-            setIsArgPackActive(enable);
-            setIsOtrosArgActive(enable);
-            setFeedbackMessage({
-                type: 'success',
-                text: enable 
-                    ? '¡Pack de Fútbol Argentino activado! Se cargaron los escudos oficiales vectoriales (Primera División + Primera Nacional).' 
-                    : 'Pack de Fútbol Argentino desinstalado. Se restauraron los escudos genéricos neutros.'
-            });
-        } catch (err: any) {
-            setFeedbackMessage({
-                type: 'error',
-                text: 'Error al cambiar el estado del pack: ' + (err.message || err)
-            });
-        } finally {
-            setIsProcessing(false);
-        }
+        executeToggle(
+            () => {
+                customPacksService.setArgentinePackActive(enable);
+                setIsArgPackActive(enable);
+                setIsOtrosArgActive(enable);
+            },
+            enable ? 'Pack de Fútbol Argentino activado.' : 'Pack de Fútbol Argentino desinstalado.',
+            'Error al modificar el pack argentino'
+        );
     };
 
-    // Toggle Otros Argentina Pack (jsDelivr CDN)
     const handleToggleOtrosArgPack = (enable: boolean) => {
-        setIsProcessing(true);
-        try {
-            customPacksService.setOtrosArgentinaPackActive(enable);
-            setIsOtrosArgActive(enable);
-            setFeedbackMessage({
-                type: 'success',
-                text: enable 
-                    ? '¡Pack Otros Clubes de Argentina activado! Se cargaron los escudos de Godoy Cruz, Platense, San Martín (SJ), Guillermo Brown, Villa Dálmine, Douglas Haig y más.' 
-                    : 'Pack Otros Clubes de Argentina desinstalado. Se restauraron los escudos genéricos neutros.'
-            });
-        } catch (err: any) {
-            setFeedbackMessage({
-                type: 'error',
-                text: 'Error al cambiar el estado del pack: ' + (err.message || err)
-            });
-        } finally {
-            setIsProcessing(false);
-        }
+        executeToggle(
+            () => {
+                customPacksService.setOtrosArgentinaPackActive(enable);
+                setIsOtrosArgActive(enable);
+            },
+            enable ? 'Pack Otros Clubes de Argentina activado.' : 'Pack Otros Clubes de Argentina desinstalado.',
+            'Error al modificar el pack de clubes de Argentina'
+        );
     };
 
-    // Toggle Paraguay Pack (jsDelivr CDN)
     const handleToggleParaguayPack = (enable: boolean) => {
-        setIsProcessing(true);
-        try {
-            customPacksService.setParaguayPackActive(enable);
-            setIsParaguayPackActive(enable);
-            setFeedbackMessage({
-                type: 'success',
-                text: enable 
-                    ? '¡Pack de Fútbol Paraguayo activado! Se cargaron los escudos de Olimpia, Cerro Porteño, Libertad, Guaraní y 14 clubes de la Copa de Primera.' 
-                    : 'Pack de Fútbol Paraguayo desinstalado. Se restauraron los escudos genéricos neutros.'
-            });
-        } catch (err: any) {
-            setFeedbackMessage({
-                type: 'error',
-                text: 'Error al cambiar el estado del pack: ' + (err.message || err)
-            });
-        } finally {
-            setIsProcessing(false);
-        }
+        executeToggle(
+            () => {
+                customPacksService.setParaguayPackActive(enable);
+                setIsParaguayPackActive(enable);
+            },
+            enable ? 'Pack de Fútbol Paraguayo activado.' : 'Pack de Fútbol Paraguayo desinstalado.',
+            'Error al modificar el pack de Paraguay'
+        );
     };
 
-    // Toggle International Competitions Pack (jsDelivr CDN)
     const handleToggleCompetitionsPack = (enable: boolean) => {
-        setIsProcessing(true);
-        try {
-            customPacksService.setCompetitionsPackActive(enable);
-            setIsCompetitionsPackActive(enable);
-            setFeedbackMessage({
-                type: 'success',
-                text: enable 
-                    ? '¡Pack de Competiciones Internacionales activado! Se cargaron los logos de Champions League, Libertadores, Sudamericana, Mundial de Clubes, Intercontinental y más.' 
-                    : 'Pack de Competiciones Internacionales desinstalado. Se restauraron los logos genéricos.'
-            });
-        } catch (err: any) {
-            setFeedbackMessage({
-                type: 'error',
-                text: 'Error al cambiar el estado del pack: ' + (err.message || err)
-            });
-        } finally {
-            setIsProcessing(false);
-        }
+        executeToggle(
+            () => {
+                customPacksService.setCompetitionsPackActive(enable);
+                setIsCompetitionsPackActive(enable);
+            },
+            enable ? 'Pack de Competiciones Internacionales activado.' : 'Pack de Competiciones desinstalado.',
+            'Error al modificar el pack de competiciones'
+        );
     };
 
-    // Toggle English Pack (jsDelivr CDN)
     const handleToggleEngPack = (enable: boolean) => {
-        setIsProcessing(true);
-        try {
-            customPacksService.setEnglishPackActive(enable);
-            setIsEngPackActive(enable);
-            setFeedbackMessage({
-                type: 'success',
-                text: enable 
-                    ? '¡Pack de Fútbol Inglés activado! Se cargaron los escudos de Premier League y Championship.' 
-                    : 'Pack de Fútbol Inglés desinstalado. Se restauraron los escudos genéricos neutros.'
-            });
-        } catch (err: any) {
-            setFeedbackMessage({
-                type: 'error',
-                text: 'Error al cambiar el estado del pack: ' + (err.message || err)
-            });
-        } finally {
-            setIsProcessing(false);
-        }
+        executeToggle(
+            () => {
+                customPacksService.setEnglishPackActive(enable);
+                setIsEngPackActive(enable);
+            },
+            enable ? 'Pack de Fútbol Inglés activado.' : 'Pack de Fútbol Inglés desinstalado.',
+            'Error al modificar el pack de Inglaterra'
+        );
     };
 
-    // Toggle Italian Pack (jsDelivr CDN)
     const handleToggleItaPack = (enable: boolean) => {
-        setIsProcessing(true);
-        try {
-            customPacksService.setItalianPackActive(enable);
-            setIsItaPackActive(enable);
-            setFeedbackMessage({
-                type: 'success',
-                text: enable 
-                    ? '¡Pack de Fútbol Italiano activado! Se cargaron los escudos de Serie A y Serie B.' 
-                    : 'Pack de Fútbol Italiano desinstalado. Se restauraron los escudos genéricos neutros.'
-            });
-        } catch (err: any) {
-            setFeedbackMessage({
-                type: 'error',
-                text: 'Error al cambiar el estado del pack: ' + (err.message || err)
-            });
-        } finally {
-            setIsProcessing(false);
-        }
+        executeToggle(
+            () => {
+                customPacksService.setItalianPackActive(enable);
+                setIsItaPackActive(enable);
+            },
+            enable ? 'Pack de Fútbol Italiano activado.' : 'Pack de Fútbol Italiano desinstalado.',
+            'Error al modificar el pack de Italia'
+        );
     };
 
-    // Toggle Spanish Pack (jsDelivr CDN)
     const handleToggleSpaPack = (enable: boolean) => {
-        setIsProcessing(true);
-        try {
-            customPacksService.setSpanishPackActive(enable);
-            setIsSpaPackActive(enable);
-            setFeedbackMessage({
-                type: 'success',
-                text: enable 
-                    ? '¡Pack de Fútbol Español activado! Se cargaron los escudos de La Liga y La Liga 2 (Segunda División).' 
-                    : 'Pack de Fútbol Español desinstalado. Se restauraron los escudos genéricos neutros.'
-            });
-        } catch (err: any) {
-            setFeedbackMessage({
-                type: 'error',
-                text: 'Error al cambiar el estado del pack: ' + (err.message || err)
-            });
-        } finally {
-            setIsProcessing(false);
-        }
+        executeToggle(
+            () => {
+                customPacksService.setSpanishPackActive(enable);
+                setIsSpaPackActive(enable);
+            },
+            enable ? 'Pack de Fútbol Español activado.' : 'Pack de Fútbol Español desinstalado.',
+            'Error al modificar el pack de España'
+        );
     };
 
-    // Toggle Brazilian Pack (jsDelivr CDN)
     const handleToggleBraPack = (enable: boolean) => {
-        setIsProcessing(true);
-        try {
-            customPacksService.setBrazilianPackActive(enable);
-            setIsBraPackActive(enable);
-            setFeedbackMessage({
-                type: 'success',
-                text: enable 
-                    ? '¡Pack de Fútbol Brasileño activado! Se cargaron los escudos de Brasileirão Serie A y Serie B.' 
-                    : 'Pack de Fútbol Brasileño desinstalado. Se restauraron los escudos genéricos neutros.'
-            });
-        } catch (err: any) {
-            setFeedbackMessage({
-                type: 'error',
-                text: 'Error al cambiar el estado del pack: ' + (err.message || err)
-            });
-        } finally {
-            setIsProcessing(false);
-        }
+        executeToggle(
+            () => {
+                customPacksService.setBrazilianPackActive(enable);
+                setIsBraPackActive(enable);
+            },
+            enable ? 'Pack de Fútbol Brasileño activado.' : 'Pack de Fútbol Brasileño desinstalado.',
+            'Error al modificar el pack de Brasil'
+        );
     };
 
-    // Toggle German Pack (jsDelivr CDN)
     const handleToggleGerPack = (enable: boolean) => {
-        setIsProcessing(true);
-        try {
-            customPacksService.setGermanPackActive(enable);
-            setIsGerPackActive(enable);
-            setFeedbackMessage({
-                type: 'success',
-                text: enable 
-                    ? '¡Pack de Fútbol Alemán activado! Se cargaron los escudos de Bundesliga y 2. Bundesliga.' 
-                    : 'Pack de Fútbol Alemán desinstalado. Se restauraron los escudos genéricos neutros.'
-            });
-        } catch (err: any) {
-            setFeedbackMessage({
-                type: 'error',
-                text: 'Error al cambiar el estado del pack: ' + (err.message || err)
-            });
-        } finally {
-            setIsProcessing(false);
-        }
+        executeToggle(
+            () => {
+                customPacksService.setGermanPackActive(enable);
+                setIsGerPackActive(enable);
+            },
+            enable ? 'Pack de Fútbol Alemán activado.' : 'Pack de Fútbol Alemán desinstalado.',
+            'Error al modificar el pack de Alemania'
+        );
     };
 
-    // Toggle French Pack (jsDelivr CDN)
     const handleToggleFrePack = (enable: boolean) => {
-        setIsProcessing(true);
-        try {
-            customPacksService.setFrenchPackActive(enable);
-            setIsFrePackActive(enable);
-            setFeedbackMessage({
-                type: 'success',
-                text: enable 
-                    ? '¡Pack de Fútbol Francés activado! Se cargaron los escudos de Ligue 1 y Ligue 2.' 
-                    : 'Pack de Fútbol Francés desinstalado. Se restauraron los escudos genéricos neutros.'
-            });
-        } catch (err: any) {
-            setFeedbackMessage({
-                type: 'error',
-                text: 'Error al cambiar el estado del pack: ' + (err.message || err)
-            });
-        } finally {
-            setIsProcessing(false);
-        }
+        executeToggle(
+            () => {
+                customPacksService.setFrenchPackActive(enable);
+                setIsFrePackActive(enable);
+            },
+            enable ? 'Pack de Fútbol Francés activado.' : 'Pack de Fútbol Francés desinstalado.',
+            'Error al modificar el pack de Francia'
+        );
     };
 
-    // Toggle Mexican Pack (jsDelivr CDN)
     const handleToggleMexPack = (enable: boolean) => {
-        setIsProcessing(true);
-        try {
-            customPacksService.setMexicanPackActive(enable);
-            setIsMexPackActive(enable);
-            setFeedbackMessage({
-                type: 'success',
-                text: enable 
-                    ? '¡Pack de Fútbol Mexicano activado! Se cargaron los escudos oficiales vectoriales de Liga MX y Liga de Expansión MX.' 
-                    : 'Pack de Fútbol Mexicano desinstalado. Se restauraron los escudos genéricos neutros.'
-            });
-        } catch (err: any) {
-            setFeedbackMessage({
-                type: 'error',
-                text: 'Error al cambiar el estado del pack: ' + (err.message || err)
-            });
-        } finally {
-            setIsProcessing(false);
-        }
+        executeToggle(
+            () => {
+                customPacksService.setMexicanPackActive(enable);
+                setIsMexPackActive(enable);
+            },
+            enable ? 'Pack de Fútbol Mexicano activado.' : 'Pack de Fútbol Mexicano desinstalado.',
+            'Error al modificar el pack de México'
+        );
     };
 
-    // Toggle Player Faces Pack (jsDelivr CDN)
     const handleToggleFacesPack = (enable: boolean) => {
-        setIsProcessing(true);
-        try {
-            customPacksService.setPlayerFacesPackActive(enable);
-            setIsFacesPackActive(enable);
-            setFeedbackMessage({
-                type: 'success',
-                text: enable 
-                    ? '¡Pack de Rostros de Jugadores activado! Se cargaron las fotos reales de los futbolistas.' 
-                    : 'Pack de Rostros de Jugadores desinstalado. Se restauraron las siluetas neutras.'
-            });
-        } catch (err: any) {
-            setFeedbackMessage({
-                type: 'error',
-                text: 'Error al cambiar el estado del pack: ' + (err.message || err)
-            });
-        } finally {
-            setIsProcessing(false);
-        }
+        executeToggle(
+            () => {
+                customPacksService.setPlayerFacesPackActive(enable);
+                setIsFacesPackActive(enable);
+            },
+            enable ? 'Pack de Rostros de Jugadores activado.' : 'Pack de Rostros desinstalado.',
+            'Error al modificar el pack de rostros'
+        );
     };
 
-    // Enable all community packs
     const handleEnableAllPacks = () => {
         setIsProcessing(true);
         try {
@@ -330,7 +222,7 @@ export const CommunityPacksSection: React.FC = () => {
             setIsFacesPackActive(true);
             setFeedbackMessage({
                 type: 'success',
-                text: '¡Todos los packs comunitarios han sido instalados y activados! (+500 escudos y fotos de jugadores oficiales).'
+                text: 'Todos los packs comunitarios han sido activados correctamente.'
             });
         } catch (err: any) {
             setFeedbackMessage({ type: 'error', text: err.message || 'Error al activar los packs.' });
@@ -339,7 +231,6 @@ export const CommunityPacksSection: React.FC = () => {
         }
     };
 
-    // Download full ZIP pack
     const handleInstallGlobalPack = async () => {
         setIsProcessing(true);
         setProgressPercent(0);
@@ -357,23 +248,21 @@ export const CommunityPacksSection: React.FC = () => {
 
             setFeedbackMessage({
                 type: 'success',
-                text: `¡Éxito! Se instalaron ${result.importedCount} escudos y logos de la comunidad.`
+                text: `Se instalaron ${result.importedCount} escudos y logos en tu almacenamiento local.`
             });
             await refreshState();
         } catch (err: any) {
             setFeedbackMessage({
                 type: 'error',
-                text: err.message || 'Error al conectar con la descarga.'
+                text: err.message || 'Error al descargar el paquete.'
             });
         } finally {
             setIsProcessing(false);
         }
     };
 
-
-
     const handleClearAll = async () => {
-        if (!window.confirm('¿Deseas restablecer todos los escudos y volver al modo genérico por defecto?')) {
+        if (!window.confirm('¿Deseas restablecer todos los escudos y rostros a genéricos?')) {
             return;
         }
 
@@ -391,7 +280,7 @@ export const CommunityPacksSection: React.FC = () => {
             setIsFrePackActive(false);
             setIsMexPackActive(false);
             setIsFacesPackActive(false);
-            setFeedbackMessage({ type: 'success', text: 'Se restablecieron todos los escudos, logos y fotos a genéricos neutros.' });
+            setFeedbackMessage({ type: 'success', text: 'Se restablecieron todos los elementos a modo genérico.' });
             await refreshState();
         } catch (err: any) {
             setFeedbackMessage({ type: 'error', text: 'Error al restablecer: ' + err.message });
@@ -415,757 +304,354 @@ export const CommunityPacksSection: React.FC = () => {
 
     const areAllPacksActive = activePacksCount === 12;
 
+    const packs: PackItem[] = [
+        {
+            id: 'arg',
+            name: 'Primera División & B',
+            region: 'Argentina',
+            count: '66 Escudos',
+            description: 'Liga Profesional y Primera Nacional de AFA.',
+            tagColor: 'text-sky-400',
+            tagBorder: 'border-sky-500/30',
+            tagBg: 'bg-sky-500/10',
+            isActive: isArgPackActive,
+            onToggle: handleToggleArgPack
+        },
+        {
+            id: 'otros_arg',
+            name: 'Clubes del Interior',
+            region: 'Argentina',
+            count: '12 Escudos',
+            description: 'Equipos históricos y Torneo Federal.',
+            tagColor: 'text-sky-300',
+            tagBorder: 'border-sky-400/30',
+            tagBg: 'bg-sky-500/10',
+            isActive: isOtrosArgActive,
+            onToggle: handleToggleOtrosArgPack
+        },
+        {
+            id: 'eng',
+            name: 'Premier & Championship',
+            region: 'Inglaterra',
+            count: '44 Escudos',
+            description: 'Primera y segunda división del fútbol inglés.',
+            tagColor: 'text-violet-400',
+            tagBorder: 'border-violet-500/30',
+            tagBg: 'bg-violet-500/10',
+            isActive: isEngPackActive,
+            onToggle: handleToggleEngPack
+        },
+        {
+            id: 'spa',
+            name: 'LaLiga & Hypermotion',
+            region: 'España',
+            count: '42 Escudos',
+            description: 'Primera y Segunda División de España.',
+            tagColor: 'text-rose-400',
+            tagBorder: 'border-rose-500/30',
+            tagBg: 'bg-rose-500/10',
+            isActive: isSpaPackActive,
+            onToggle: handleToggleSpaPack
+        },
+        {
+            id: 'ita',
+            name: 'Serie A & Serie B',
+            region: 'Italia',
+            count: '40 Escudos',
+            description: 'Calcio italiano y categorías de ascenso.',
+            tagColor: 'text-blue-400',
+            tagBorder: 'border-blue-500/30',
+            tagBg: 'bg-blue-500/10',
+            isActive: isItaPackActive,
+            onToggle: handleToggleItaPack
+        },
+        {
+            id: 'ger',
+            name: 'Bundesliga & 2. Bundesliga',
+            region: 'Alemania',
+            count: '36 Escudos',
+            description: 'Competiciones oficiales de Alemania.',
+            tagColor: 'text-amber-300',
+            tagBorder: 'border-amber-500/30',
+            tagBg: 'bg-amber-500/10',
+            isActive: isGerPackActive,
+            onToggle: handleToggleGerPack
+        },
+        {
+            id: 'fre',
+            name: 'Ligue 1 & Ligue 2',
+            region: 'Francia',
+            count: '36 Escudos',
+            description: 'Primera y segunda categoría de Francia.',
+            tagColor: 'text-teal-400',
+            tagBorder: 'border-teal-500/30',
+            tagBg: 'bg-teal-500/10',
+            isActive: isFrePackActive,
+            onToggle: handleToggleFrePack
+        },
+        {
+            id: 'bra',
+            name: 'Brasileirão Série A',
+            region: 'Brasil',
+            count: '20 Escudos',
+            description: 'Serie A y principales clubes de Brasil.',
+            tagColor: 'text-emerald-400',
+            tagBorder: 'border-emerald-500/30',
+            tagBg: 'bg-emerald-500/10',
+            isActive: isBraPackActive,
+            onToggle: handleToggleBraPack
+        },
+        {
+            id: 'mex',
+            name: 'Liga MX & Expansión',
+            region: 'México',
+            count: '36 Escudos',
+            description: 'Torneo Apertura/Clausura y Liga de Expansión.',
+            tagColor: 'text-emerald-300',
+            tagBorder: 'border-emerald-400/30',
+            tagBg: 'bg-emerald-500/10',
+            isActive: isMexPackActive,
+            onToggle: handleToggleMexPack
+        },
+        {
+            id: 'par',
+            name: 'Copa de Primera',
+            region: 'Paraguay',
+            count: '14 Escudos',
+            description: 'División de Honor y clubes de la APF.',
+            tagColor: 'text-red-400',
+            tagBorder: 'border-red-500/30',
+            tagBg: 'bg-red-500/10',
+            isActive: isParaguayPackActive,
+            onToggle: handleToggleParaguayPack
+        },
+        {
+            id: 'competitions',
+            name: 'Torneos Internacionales',
+            region: 'Copas',
+            count: '15+ Logos',
+            description: 'Champions League, Libertadores, Sudamericana y Mundial.',
+            tagColor: 'text-[var(--apex-gold)]',
+            tagBorder: 'border-[var(--apex-gold)]/30',
+            tagBg: 'bg-[var(--apex-gold)]/10',
+            isActive: isCompetitionsPackActive,
+            onToggle: handleToggleCompetitionsPack
+        },
+        {
+            id: 'faces',
+            name: 'Rostros de Jugadores',
+            region: 'Plantillas',
+            count: '150+ Fotos',
+            description: 'Fotografías reales para cartas y alineaciones.',
+            tagColor: 'text-purple-400',
+            tagBorder: 'border-purple-500/30',
+            tagBg: 'bg-purple-500/10',
+            isActive: isFacesPackActive,
+            onToggle: handleToggleFacesPack
+        }
+    ];
+
     return (
-        <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="space-y-6">
+            {/* Header / Bar Superior */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-white/5">
                 <div>
-                    <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                        <Shield className="w-4 h-4 text-[var(--apex-gold)]" /> Packs de la Comunidad
-                    </h3>
+                    <h2 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
+                        <Layers className="w-4 h-4 text-[var(--apex-gold)]" />
+                        <span>Packs de la Comunidad</span>
+                    </h2>
                     <p className="text-xs text-slate-400 mt-0.5">
-                        Modelo World Soccer Champs & Super Kickoff (Licencias & UGC).
+                        Personaliza los escudos oficiales vectoriales y fotos de futbolistas.
                     </p>
                 </div>
-                
-                <div className="flex items-center gap-2">
+
+                <div className="flex items-center gap-3">
                     {!areAllPacksActive && (
                         <button
                             onClick={handleEnableAllPacks}
                             disabled={isProcessing}
-                            className="text-[11px] font-bold text-[var(--apex-gold)] hover:underline flex items-center gap-1 transition-colors cursor-pointer"
+                            className="text-xs font-semibold text-[var(--apex-gold)] hover:text-amber-300 transition-colors cursor-pointer"
                         >
-                            <Sparkles className="w-3.5 h-3.5" />
-                            <span>Activar Todos</span>
+                            Activar Todos
                         </button>
                     )}
                     {(activePacksCount > 0 || stats.total > 0) && (
                         <button
                             onClick={handleClearAll}
                             disabled={isProcessing}
-                            className="text-[11px] font-bold text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors cursor-pointer ml-2"
+                            className="text-xs font-semibold text-slate-400 hover:text-red-400 flex items-center gap-1.5 transition-colors cursor-pointer"
                             title="Restablecer todo a genéricos"
                         >
                             <RotateCcw className="w-3.5 h-3.5" />
-                            <span>Restablecer Todo</span>
+                            <span>Restablecer</span>
                         </button>
                     )}
                 </div>
             </div>
 
-            {/* 🌟 HERO BANNER: Instalar Todos los Packs (1-Clic) */}
-            <div className="relative overflow-hidden rounded-2xl border border-amber-500/30 bg-gradient-to-r from-[#17231c] via-[#101c2e] to-[#251b12] p-4 sm:p-5 shadow-2xl">
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                    <div className="space-y-1.5 max-w-xl">
-                        <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-amber-300 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/30 flex items-center gap-1">
-                                <Sparkles className="w-3 h-3 text-amber-400" /> Instalación en 1-Clic
+            {/* Hero Banner: Instalación Global en 1 Clic */}
+            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-r from-slate-900/90 via-[#101726]/90 to-[#181a24]/90 p-5 sm:p-6 shadow-xl backdrop-blur-md">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+                    <div className="space-y-2 max-w-xl">
+                        <div className="flex items-center gap-2.5">
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--apex-gold)] bg-[var(--apex-gold)]/10 px-2.5 py-0.5 rounded-full border border-[var(--apex-gold)]/20">
+                                Colección Oficial
                             </span>
-                            <span className="text-xs font-bold text-slate-300">
+                            <span className="text-xs font-medium text-slate-400">
                                 {activePacksCount} de 12 Packs Activos
                             </span>
                         </div>
-                        <h4 className="text-base sm:text-lg font-black text-white tracking-tight">
-                            Instalar Todos los Packs (Escudos + Rostros)
-                        </h4>
+                        <h3 className="text-lg sm:text-xl font-black text-white tracking-tight">
+                            Instalación Completa en 1 Clic
+                        </h3>
                         <p className="text-xs text-slate-400 leading-relaxed">
-                            Activa de una sola vez los escudos oficiales vectoriales y fotos de jugadores de todas las ligas disponibles: México, Argentina, Paraguay, Inglaterra, España, Italia, Alemania, Francia, Brasil, Copas Internacionales y Player Faces.
+                            Activa simultáneamente todos los escudos vectoriales oficiales y fotografías de jugadores de todas las ligas.
                         </p>
-                    </div>
 
-                    <div className="flex items-center gap-2 w-full md:w-auto flex-shrink-0">
-                        <button
-                            onClick={handleEnableAllPacks}
-                            disabled={isProcessing || areAllPacksActive}
-                            className={`w-full md:w-auto px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-xl flex items-center justify-center gap-2 cursor-pointer active:scale-95 ${
-                                areAllPacksActive
-                                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 opacity-80 cursor-default'
-                                    : 'bg-gradient-to-r from-[var(--apex-gold)] via-amber-400 to-yellow-500 hover:brightness-110 text-slate-950 shadow-amber-500/20 ring-2 ring-amber-400/40'
-                            }`}
-                        >
-                            {areAllPacksActive ? (
-                                <>
-                                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                                    <span>✓ Todos los Packs Instalados</span>
-                                </>
-                            ) : (
-                                <>
-                                    <Sparkles className="w-4 h-4 text-slate-950 stroke-[2.5]" />
-                                    <span>⚡ Instalar Todos los Packs</span>
-                                </>
-                            )}
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* 🌟 Grid de Packs Oficiales Disponibles en jsDelivr */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                {/* Tarjeta 1: Fútbol Argentino */}
-                <div className={`rounded-2xl border p-4 transition-all shadow-xl relative overflow-hidden flex flex-col justify-between ${
-                    isArgPackActive 
-                        ? 'bg-gradient-to-b from-[#101A2B] to-[#0A101C] border-sky-500/40' 
-                        : 'bg-gradient-to-b from-[#161D2E] to-[#0E131F] border-white/10'
-                }`}>
-                    <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-md border border-sky-500/20">
-                                Argentina • 66 Escudos
-                            </span>
-                            {isArgPackActive ? (
-                                <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-500/30">
-                                    <CheckCircle2 className="w-3 h-3" /> Activo
-                                </span>
-                            ) : (
-                                <span className="text-[10px] font-bold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700">
-                                    Genérico
-                                </span>
-                            )}
+                        {/* Barra de progreso sutil */}
+                        <div className="pt-1 w-full max-w-xs">
+                            <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                                <div
+                                    className="h-full bg-gradient-to-r from-[var(--apex-gold)] to-emerald-400 transition-all duration-500 rounded-full"
+                                    style={{ width: `${(activePacksCount / 12) * 100}%` }}
+                                />
+                            </div>
                         </div>
-                        <h4 className="text-sm font-black text-white uppercase tracking-tight">
-                            Primera División & Nacional
-                        </h4>
-                        <p className="text-xs text-slate-400 leading-relaxed">
-                            Boca, River, Racing, Independiente, San Lorenzo y 66 clubes de AFA.
-                        </p>
                     </div>
 
-                    <div className="pt-3 mt-2 border-t border-white/5">
-                        {isArgPackActive ? (
-                            <button
-                                onClick={() => handleToggleArgPack(false)}
-                                disabled={isProcessing}
-                                className="w-full py-2 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 text-red-300 hover:text-red-100 text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
-                            >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                <span>Desinstalar</span>
-                            </button>
+                    <div className="w-full md:w-auto flex-shrink-0">
+                        {areAllPacksActive ? (
+                            <div className="w-full md:w-auto px-5 py-3 rounded-xl text-xs font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex items-center justify-center gap-2">
+                                <Check className="w-4 h-4 text-emerald-400" />
+                                <span>Todos los Packs Activos</span>
+                            </div>
                         ) : (
                             <button
-                                onClick={() => handleToggleArgPack(true)}
+                                onClick={handleEnableAllPacks}
                                 disabled={isProcessing}
-                                className="w-full py-2 bg-[var(--apex-gold)] hover:bg-[#FFE57F] text-[#0A0E17] text-[11px] font-black uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                                className="w-full md:w-auto px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider bg-gradient-to-r from-[var(--apex-gold)] to-[#E6C35C] hover:brightness-110 text-slate-950 shadow-lg shadow-amber-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
                             >
-                                <Sparkles className="w-3.5 h-3.5 text-black stroke-[2.5]" />
-                                <span>Instalar Argentina</span>
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                {/* Tarjeta 1b: Otros Clubes Argentina */}
-                <div className={`rounded-2xl border p-4 transition-all shadow-xl relative overflow-hidden flex flex-col justify-between ${
-                    isOtrosArgActive 
-                        ? 'bg-gradient-to-b from-[#101E2E] to-[#0A131F] border-cyan-500/40' 
-                        : 'bg-gradient-to-b from-[#161D2E] to-[#0E131F] border-white/10'
-                }`}>
-                    <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-md border border-cyan-500/20">
-                                Argentina • 12 Escudos
-                            </span>
-                            {isOtrosArgActive ? (
-                                <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-500/30">
-                                    <CheckCircle2 className="w-3 h-3" /> Activo
-                                </span>
-                            ) : (
-                                <span className="text-[10px] font-bold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700">
-                                    Genérico
-                                </span>
-                            )}
-                        </div>
-                        <h4 className="text-sm font-black text-white uppercase tracking-tight">
-                            Otros Clubes de Argentina
-                        </h4>
-                        <p className="text-xs text-slate-400 leading-relaxed">
-                            Godoy Cruz, Platense, San Martín (SJ), Guillermo Brown, Villa Dálmine, Douglas Haig y más.
-                        </p>
-                    </div>
-
-                    <div className="pt-3 mt-2 border-t border-white/5">
-                        {isOtrosArgActive ? (
-                            <button
-                                onClick={() => handleToggleOtrosArgPack(false)}
-                                disabled={isProcessing}
-                                className="w-full py-2 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 text-red-300 hover:text-red-100 text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
-                            >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                <span>Desinstalar</span>
-                            </button>
-                        ) : (
-                            <button
-                                onClick={() => handleToggleOtrosArgPack(true)}
-                                disabled={isProcessing}
-                                className="w-full py-2 bg-cyan-500 hover:bg-cyan-400 text-[#0A0E17] text-[11px] font-black uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
-                            >
-                                <Sparkles className="w-3.5 h-3.5 text-black stroke-[2.5]" />
-                                <span>Instalar Otros Arg</span>
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                {/* Tarjeta 2: Fútbol Inglés */}
-                <div className={`rounded-2xl border p-4 transition-all shadow-xl relative overflow-hidden flex flex-col justify-between ${
-                    isEngPackActive 
-                        ? 'bg-gradient-to-b from-[#1A182B] to-[#0E0D1F] border-purple-500/40' 
-                        : 'bg-gradient-to-b from-[#161D2E] to-[#0E131F] border-white/10'
-                }`}>
-                    <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-md border border-purple-500/20">
-                                Inglaterra • 44 Escudos
-                            </span>
-                            {isEngPackActive ? (
-                                <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-500/30">
-                                    <CheckCircle2 className="w-3 h-3" /> Activo
-                                </span>
-                            ) : (
-                                <span className="text-[10px] font-bold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700">
-                                    Genérico
-                                </span>
-                            )}
-                        </div>
-                        <h4 className="text-sm font-black text-white uppercase tracking-tight">
-                            Premier & Championship
-                        </h4>
-                        <p className="text-xs text-slate-400 leading-relaxed">
-                            Arsenal, City, Liverpool, United, Chelsea, Tottenham y Championship.
-                        </p>
-                    </div>
-
-                    <div className="pt-3 mt-2 border-t border-white/5">
-                        {isEngPackActive ? (
-                            <button
-                                onClick={() => handleToggleEngPack(false)}
-                                disabled={isProcessing}
-                                className="w-full py-2 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 text-red-300 hover:text-red-100 text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
-                            >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                <span>Desinstalar</span>
-                            </button>
-                        ) : (
-                            <button
-                                onClick={() => handleToggleEngPack(true)}
-                                disabled={isProcessing}
-                                className="w-full py-2 bg-purple-500 hover:bg-purple-400 text-white text-[11px] font-black uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
-                            >
-                                <Globe className="w-3.5 h-3.5 text-white stroke-[2.5]" />
-                                <span>Instalar Inglaterra</span>
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                {/* Tarjeta 3: Fútbol Español */}
-                <div className={`rounded-2xl border p-4 transition-all shadow-xl relative overflow-hidden flex flex-col justify-between ${
-                    isSpaPackActive 
-                        ? 'bg-gradient-to-b from-[#2B1010] to-[#1A0A0A] border-rose-500/40' 
-                        : 'bg-gradient-to-b from-[#161D2E] to-[#0E131F] border-white/10'
-                }`}>
-                    <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-md border border-rose-500/20">
-                                España • 42+ Escudos
-                            </span>
-                            {isSpaPackActive ? (
-                                <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-500/30">
-                                    <CheckCircle2 className="w-3 h-3" /> Activo
-                                </span>
-                            ) : (
-                                <span className="text-[10px] font-bold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700">
-                                    Genérico
-                                </span>
-                            )}
-                        </div>
-                        <h4 className="text-sm font-black text-white uppercase tracking-tight">
-                            La Liga & La Liga 2
-                        </h4>
-                        <p className="text-xs text-slate-400 leading-relaxed">
-                            Real Madrid, FC Barcelona, Atlético, Athletic Club, Betis, Sevilla y más.
-                        </p>
-                    </div>
-
-                    <div className="pt-3 mt-2 border-t border-white/5">
-                        {isSpaPackActive ? (
-                            <button
-                                onClick={() => handleToggleSpaPack(false)}
-                                disabled={isProcessing}
-                                className="w-full py-2 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 text-red-300 hover:text-red-100 text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
-                            >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                <span>Desinstalar</span>
-                            </button>
-                        ) : (
-                            <button
-                                onClick={() => handleToggleSpaPack(true)}
-                                disabled={isProcessing}
-                                className="w-full py-2 bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-black uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
-                            >
-                                <Globe className="w-3.5 h-3.5 text-white stroke-[2.5]" />
-                                <span>Instalar España</span>
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                {/* Tarjeta 4: Fútbol Italiano */}
-                <div className={`rounded-2xl border p-4 transition-all shadow-xl relative overflow-hidden flex flex-col justify-between ${
-                    isItaPackActive 
-                        ? 'bg-gradient-to-b from-[#10241A] to-[#0A160F] border-emerald-500/40' 
-                        : 'bg-gradient-to-b from-[#161D2E] to-[#0E131F] border-white/10'
-                }`}>
-                    <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
-                                Italia • 40+ Escudos
-                            </span>
-                            {isItaPackActive ? (
-                                <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-500/30">
-                                    <CheckCircle2 className="w-3 h-3" /> Activo
-                                </span>
-                            ) : (
-                                <span className="text-[10px] font-bold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700">
-                                    Genérico
-                                </span>
-                            )}
-                        </div>
-                        <h4 className="text-sm font-black text-white uppercase tracking-tight">
-                            Serie A & Serie B
-                        </h4>
-                        <p className="text-xs text-slate-400 leading-relaxed">
-                            Inter, Milan, Juventus, Roma, Napoli, Lazio, Fiorentina y Serie B.
-                        </p>
-                    </div>
-
-                    <div className="pt-3 mt-2 border-t border-white/5">
-                        {isItaPackActive ? (
-                            <button
-                                onClick={() => handleToggleItaPack(false)}
-                                disabled={isProcessing}
-                                className="w-full py-2 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 text-red-300 hover:text-red-100 text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
-                            >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                <span>Desinstalar</span>
-                            </button>
-                        ) : (
-                            <button
-                                onClick={() => handleToggleItaPack(true)}
-                                disabled={isProcessing}
-                                className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-black uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
-                            >
-                                <Globe className="w-3.5 h-3.5 text-white stroke-[2.5]" />
-                                <span>Instalar Italia</span>
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                {/* Tarjeta 5: Fútbol Brasileño */}
-                <div className={`rounded-2xl border p-4 transition-all shadow-xl relative overflow-hidden flex flex-col justify-between ${
-                    isBraPackActive 
-                        ? 'bg-gradient-to-b from-[#222410] to-[#14160A] border-yellow-500/40' 
-                        : 'bg-gradient-to-b from-[#161D2E] to-[#0E131F] border-white/10'
-                }`}>
-                    <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-yellow-400 bg-yellow-500/10 px-2 py-0.5 rounded-md border border-yellow-500/20">
-                                Brasil • 40+ Escudos
-                            </span>
-                            {isBraPackActive ? (
-                                <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-500/30">
-                                    <CheckCircle2 className="w-3 h-3" /> Activo
-                                </span>
-                            ) : (
-                                <span className="text-[10px] font-bold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700">
-                                    Genérico
-                                </span>
-                            )}
-                        </div>
-                        <h4 className="text-sm font-black text-white uppercase tracking-tight">
-                            Brasileirão Serie A & B
-                        </h4>
-                        <p className="text-xs text-slate-400 leading-relaxed">
-                            Flamengo, Palmeiras, São Paulo, Corinthians, Santos, Grêmio y más.
-                        </p>
-                    </div>
-
-                    <div className="pt-3 mt-2 border-t border-white/5">
-                        {isBraPackActive ? (
-                            <button
-                                onClick={() => handleToggleBraPack(false)}
-                                disabled={isProcessing}
-                                className="w-full py-2 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 text-red-300 hover:text-red-100 text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
-                            >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                <span>Desinstalar</span>
-                            </button>
-                        ) : (
-                            <button
-                                onClick={() => handleToggleBraPack(true)}
-                                disabled={isProcessing}
-                                className="w-full py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 text-[11px] font-black uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
-                            >
-                                <Globe className="w-3.5 h-3.5 text-slate-950 stroke-[2.5]" />
-                                <span>Instalar Brasil</span>
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                {/* Tarjeta 6: Fútbol Alemán */}
-                <div className={`rounded-2xl border p-4 transition-all shadow-xl relative overflow-hidden flex flex-col justify-between ${
-                    isGerPackActive 
-                        ? 'bg-gradient-to-b from-[#2A1810] to-[#170E08] border-amber-600/40' 
-                        : 'bg-gradient-to-b from-[#161D2E] to-[#0E131F] border-white/10'
-                }`}>
-                    <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
-                                Alemania • 36+ Escudos
-                            </span>
-                            {isGerPackActive ? (
-                                <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-500/30">
-                                    <CheckCircle2 className="w-3 h-3" /> Activo
-                                </span>
-                            ) : (
-                                <span className="text-[10px] font-bold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700">
-                                    Genérico
-                                </span>
-                            )}
-                        </div>
-                        <h4 className="text-sm font-black text-white uppercase tracking-tight">
-                            Bundesliga 1 & 2
-                        </h4>
-                        <p className="text-xs text-slate-400 leading-relaxed">
-                            Bayern, Dortmund, Leverkusen, Leipzig, Frankfurt, Stuttgart y 2. Bundesliga.
-                        </p>
-                    </div>
-
-                    <div className="pt-3 mt-2 border-t border-white/5">
-                        {isGerPackActive ? (
-                            <button
-                                onClick={() => handleToggleGerPack(false)}
-                                disabled={isProcessing}
-                                className="w-full py-2 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 text-red-300 hover:text-red-100 text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
-                            >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                <span>Desinstalar</span>
-                            </button>
-                        ) : (
-                            <button
-                                onClick={() => handleToggleGerPack(true)}
-                                disabled={isProcessing}
-                                className="w-full py-2 bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-black uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
-                            >
-                                <Globe className="w-3.5 h-3.5 text-white stroke-[2.5]" />
-                                <span>Instalar Alemania</span>
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                {/* Tarjeta 7: Fútbol Francés */}
-                <div className={`rounded-2xl border p-4 transition-all shadow-xl relative overflow-hidden flex flex-col justify-between ${
-                    isFrePackActive 
-                        ? 'bg-gradient-to-b from-[#101828] to-[#0A101C] border-blue-500/40' 
-                        : 'bg-gradient-to-b from-[#161D2E] to-[#0E131F] border-white/10'
-                }`}>
-                    <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-500/20">
-                                Francia • 38+ Escudos
-                            </span>
-                            {isFrePackActive ? (
-                                <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-500/30">
-                                    <CheckCircle2 className="w-3 h-3" /> Activo
-                                </span>
-                            ) : (
-                                <span className="text-[10px] font-bold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700">
-                                    Genérico
-                                </span>
-                            )}
-                        </div>
-                        <h4 className="text-sm font-black text-white uppercase tracking-tight">
-                            Ligue 1 & Ligue 2
-                        </h4>
-                        <p className="text-xs text-slate-400 leading-relaxed">
-                            PSG, Marseille, Monaco, Lyon, Lille, Nice, Lens, Rennes y Ligue 2.
-                        </p>
-                    </div>
-
-                    <div className="pt-3 mt-2 border-t border-white/5">
-                        {isFrePackActive ? (
-                            <button
-                                onClick={() => handleToggleFrePack(false)}
-                                disabled={isProcessing}
-                                className="w-full py-2 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 text-red-300 hover:text-red-100 text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
-                            >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                <span>Desinstalar</span>
-                            </button>
-                        ) : (
-                            <button
-                                onClick={() => handleToggleFrePack(true)}
-                                disabled={isProcessing}
-                                className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-black uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
-                            >
-                                <Globe className="w-3.5 h-3.5 text-white stroke-[2.5]" />
-                                <span>Instalar Francia</span>
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                {/* Tarjeta 8: Fútbol Paraguayo */}
-                <div className={`rounded-2xl border p-4 transition-all shadow-xl relative overflow-hidden flex flex-col justify-between ${
-                    isParaguayPackActive 
-                        ? 'bg-gradient-to-b from-[#2B1014] to-[#170A0D] border-rose-500/40' 
-                        : 'bg-gradient-to-b from-[#161D2E] to-[#0E131F] border-white/10'
-                }`}>
-                    <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-md border border-rose-500/20">
-                                Paraguay • 14 Escudos
-                            </span>
-                            {isParaguayPackActive ? (
-                                <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-500/30">
-                                    <CheckCircle2 className="w-3 h-3" /> Activo
-                                </span>
-                            ) : (
-                                <span className="text-[10px] font-bold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700">
-                                    Genérico
-                                </span>
-                            )}
-                        </div>
-                        <h4 className="text-sm font-black text-white uppercase tracking-tight">
-                            Copa de Primera
-                        </h4>
-                        <p className="text-xs text-slate-400 leading-relaxed">
-                            Olimpia, Cerro Porteño, Libertad, Guaraní, Nacional, Luqueño, Ameliano y más.
-                        </p>
-                    </div>
-
-                    <div className="pt-3 mt-2 border-t border-white/5">
-                        {isParaguayPackActive ? (
-                            <button
-                                onClick={() => handleToggleParaguayPack(false)}
-                                disabled={isProcessing}
-                                className="w-full py-2 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 text-red-300 hover:text-red-100 text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
-                            >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                <span>Desinstalar</span>
-                            </button>
-                        ) : (
-                            <button
-                                onClick={() => handleToggleParaguayPack(true)}
-                                disabled={isProcessing}
-                                className="w-full py-2 bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-black uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
-                            >
-                                <Sparkles className="w-3.5 h-3.5 text-white stroke-[2.5]" />
-                                <span>Instalar Paraguay</span>
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                {/* Tarjeta 9: Competiciones y Torneos Internacionales */}
-                <div className={`rounded-2xl border p-4 transition-all shadow-xl relative overflow-hidden flex flex-col justify-between ${
-                    isCompetitionsPackActive 
-                        ? 'bg-gradient-to-b from-[#1C182B] to-[#0D0B17] border-amber-500/40' 
-                        : 'bg-gradient-to-b from-[#161D2E] to-[#0E131F] border-white/10'
-                }`}>
-                    <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
-                                Internacional • 18+ Copas
-                            </span>
-                            {isCompetitionsPackActive ? (
-                                <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-500/30">
-                                    <CheckCircle2 className="w-3 h-3" /> Activo
-                                </span>
-                            ) : (
-                                <span className="text-[10px] font-bold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700">
-                                    Genérico
-                                </span>
-                            )}
-                        </div>
-                        <h4 className="text-sm font-black text-white uppercase tracking-tight">
-                            Torneos & Copas Oficiales
-                        </h4>
-                        <p className="text-xs text-slate-400 leading-relaxed">
-                            Champions League, Libertadores, Sudamericana, Mundial de Clubes, Intercontinental y Mundiales.
-                        </p>
-                    </div>
-
-                    <div className="pt-3 mt-2 border-t border-white/5">
-                        {isCompetitionsPackActive ? (
-                            <button
-                                onClick={() => handleToggleCompetitionsPack(false)}
-                                disabled={isProcessing}
-                                className="w-full py-2 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 text-red-300 hover:text-red-100 text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
-                            >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                <span>Desinstalar</span>
-                            </button>
-                        ) : (
-                            <button
-                                onClick={() => handleToggleCompetitionsPack(true)}
-                                disabled={isProcessing}
-                                className="w-full py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] font-black uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
-                            >
-                                <Sparkles className="w-3.5 h-3.5 text-black stroke-[2.5]" />
-                                <span>Instalar Torneos</span>
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                {/* Tarjeta México: Liga MX & Liga de Expansión MX */}
-                <div className={`rounded-2xl border p-4 transition-all shadow-xl relative overflow-hidden flex flex-col justify-between ${
-                    isMexPackActive 
-                        ? 'bg-gradient-to-b from-[#10291d] to-[#0a1711] border-emerald-500/40' 
-                        : 'bg-gradient-to-b from-[#161D2E] to-[#0E131F] border-white/10'
-                }`}>
-                    <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
-                                🇲🇽 México • 32 Escudos
-                            </span>
-                            {isMexPackActive ? (
-                                <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-500/30">
-                                    <CheckCircle2 className="w-3 h-3" /> Activo
-                                </span>
-                            ) : (
-                                <span className="text-[10px] font-bold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700">
-                                    Genérico
-                                </span>
-                            )}
-                        </div>
-                        <h4 className="text-sm font-black text-white uppercase tracking-tight">
-                            Liga MX & Expansión MX
-                        </h4>
-                        <p className="text-xs text-slate-400 leading-relaxed">
-                            América, Chivas, Cruz Azul, Tigres, Monterrey, Pumas, Toluca, Pachuca y 32 clubes mexicanos.
-                        </p>
-                    </div>
-
-                    <div className="pt-3 mt-2 border-t border-white/5">
-                        {isMexPackActive ? (
-                            <button
-                                onClick={() => handleToggleMexPack(false)}
-                                disabled={isProcessing}
-                                className="w-full py-2 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 text-red-300 hover:text-red-100 text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
-                            >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                <span>Desinstalar</span>
-                            </button>
-                        ) : (
-                            <button
-                                onClick={() => handleToggleMexPack(true)}
-                                disabled={isProcessing}
-                                className="w-full py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-[11px] font-black uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
-                            >
-                                <Sparkles className="w-3.5 h-3.5 text-black stroke-[2.5]" />
-                                <span>Instalar México</span>
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                {/* Tarjeta 10: Player Faces Pack (Rostros de Jugadores) */}
-                <div className={`rounded-2xl border p-4 transition-all shadow-xl relative overflow-hidden flex flex-col justify-between ${
-                    isFacesPackActive 
-                        ? 'bg-gradient-to-b from-[#181329] to-[#0d0a17] border-purple-500/40' 
-                        : 'bg-gradient-to-b from-[#161D2E] to-[#0E131F] border-white/10'
-                }`}>
-                    <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-md border border-purple-500/20">
-                                👤 Jugadores • Rostros Reales
-                            </span>
-                            {isFacesPackActive ? (
-                                <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-500/30">
-                                    <CheckCircle2 className="w-3 h-3" /> Activo
-                                </span>
-                            ) : (
-                                <span className="text-[10px] font-bold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700">
-                                    Siluetas
-                                </span>
-                            )}
-                        </div>
-                        <h4 className="text-sm font-black text-white uppercase tracking-tight">
-                            Player Faces Pack (Fotos Reales)
-                        </h4>
-                        <p className="text-xs text-slate-400 leading-relaxed">
-                            Fotos oficiales de futbolistas (Cavani, Merentiel, Zenón, Malagón, Chicharito, Messi, Haaland, Mbappé y más) en cartas y alineación.
-                        </p>
-                    </div>
-
-                    <div className="pt-3 mt-2 border-t border-white/5">
-                        {isFacesPackActive ? (
-                            <button
-                                onClick={() => handleToggleFacesPack(false)}
-                                disabled={isProcessing}
-                                className="w-full py-2 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 text-red-300 hover:text-red-100 text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
-                            >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                <span>Desinstalar</span>
-                            </button>
-                        ) : (
-                            <button
-                                onClick={() => handleToggleFacesPack(true)}
-                                disabled={isProcessing}
-                                className="w-full py-2 bg-gradient-to-r from-purple-500 to-indigo-600 hover:brightness-110 text-white text-[11px] font-black uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
-                            >
-                                <Sparkles className="w-3.5 h-3.5 text-white stroke-[2.5]" />
-                                <span>Instalar Rostros</span>
+                                <span>Instalar Todos los Packs</span>
                             </button>
                         )}
                     </div>
                 </div>
             </div>
 
-            {/* 📦 Tarjeta 3: Pack Global Oficial Verificado */}
-            <div className="rounded-2xl bg-slate-900/60 border border-white/10 p-4 space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
+            {/* Grid de Packs Comunitarios */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 sm:gap-4">
+                {packs.map((pack) => (
+                    <div
+                        key={pack.id}
+                        className={`rounded-2xl border p-4 transition-all duration-200 flex flex-col justify-between backdrop-blur-md ${
+                            pack.isActive
+                                ? 'bg-[#0D1526]/90 border-sky-500/30 shadow-lg shadow-sky-950/20'
+                                : 'bg-slate-900/60 border-white/[0.07] hover:border-white/20'
+                        }`}
+                    >
+                        <div className="space-y-3">
+                            {/* Card Header: Region & Status */}
+                            <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${pack.tagColor} ${pack.tagBorder} ${pack.tagBg}`}>
+                                        {pack.region}
+                                    </span>
+                                    <span className="text-[10px] text-slate-400 font-medium">
+                                        • {pack.count}
+                                    </span>
+                                </div>
+
+                                {pack.isActive ? (
+                                    <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full flex items-center gap-1.5 flex-shrink-0">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                        Activo
+                                    </span>
+                                ) : (
+                                    <span className="text-[10px] font-medium text-slate-500 bg-slate-800/50 border border-white/5 px-2 py-0.5 rounded-full flex items-center gap-1.5 flex-shrink-0">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-slate-600" />
+                                        Genérico
+                                    </span>
+                                )}
+                            </div>
+
+                            {/* Card Body: Title & Short Desc */}
+                            <div className="space-y-1">
+                                <h4 className="text-sm font-bold text-white tracking-tight leading-snug">
+                                    {pack.name}
+                                </h4>
+                                <p className="text-xs text-slate-400 line-clamp-1">
+                                    {pack.description}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Card Action Button */}
+                        <div className="pt-4 mt-2 border-t border-white/5">
+                            {pack.isActive ? (
+                                <button
+                                    onClick={() => pack.onToggle(false)}
+                                    disabled={isProcessing}
+                                    className="w-full py-2 px-3 rounded-xl text-xs font-semibold border border-white/10 bg-slate-800/80 hover:bg-red-500/10 hover:border-red-500/30 text-slate-300 hover:text-red-400 transition-all flex items-center justify-center gap-1.5 cursor-pointer group"
+                                >
+                                    <Check className="w-3.5 h-3.5 text-emerald-400 group-hover:hidden" />
+                                    <span className="group-hover:hidden">Instalado</span>
+                                    <span className="hidden group-hover:inline">Desinstalar</span>
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => pack.onToggle(true)}
+                                    disabled={isProcessing}
+                                    className="w-full py-2 px-3 rounded-xl text-xs font-bold border border-white/10 bg-white/5 hover:bg-[var(--apex-gold)] hover:text-slate-950 text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 shadow-sm"
+                                >
+                                    <span>Instalar Pack</span>
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Descarga Manual ZIP */}
+            <div className="rounded-2xl bg-slate-900/40 border border-white/[0.08] p-4 sm:p-5 backdrop-blur-md">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-1">
                         <div className="flex items-center gap-2">
                             <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--apex-gold)] bg-[var(--apex-gold)]/10 px-2 py-0.5 rounded-md border border-[var(--apex-gold)]/20">
-                                Repositorio Oficial GitHub
+                                Repositorio Oficial
                             </span>
                             {stats.total > 0 && (
-                                <span className="text-[10px] font-bold text-emerald-400">
-                                    • {stats.total} archivos cargados en almacenamiento local
+                                <span className="text-[10px] text-slate-400">
+                                    • {stats.total} archivos locales
                                 </span>
                             )}
                         </div>
-                        <h5 className="text-xs font-bold text-white uppercase mt-1">
-                            Pack Global Completo de Escudos y Logos
-                        </h5>
-                        <p className="text-[11px] text-slate-400 mt-0.5">
-                            Descarga directa del paquete maestro oficial verificado desde el repositorio de la comunidad.
+                        <h4 className="text-xs font-bold text-white uppercase tracking-tight">
+                            Archivo Maestro Completo (.ZIP)
+                        </h4>
+                        <p className="text-xs text-slate-400">
+                            Descarga directa del paquete maestro para almacenamiento local o respaldo sin conexión.
                         </p>
                     </div>
 
                     <button
                         onClick={handleInstallGlobalPack}
                         disabled={isProcessing}
-                        className="px-4 py-2.5 bg-gradient-to-r from-[var(--apex-gold)] to-[#E6C35C] hover:brightness-110 text-slate-950 text-[11px] font-black uppercase tracking-wider rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer flex-shrink-0 active:scale-95"
+                        className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-white/10 text-white text-xs font-semibold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer flex-shrink-0 active:scale-95"
                     >
-                        <Download className="w-4 h-4 text-slate-950 stroke-[2.5]" />
-                        <span>Descargar Pack Global Oficial (.ZIP)</span>
+                        <Download className="w-3.5 h-3.5 text-slate-300" />
+                        <span>Descargar ZIP</span>
                     </button>
                 </div>
             </div>
 
-            {/* Barra de progreso de descarga / proceso */}
+            {/* Barra de progreso de descarga */}
             {isProcessing && progressPercent > 0 && (
-                <div className="pt-2 border-t border-white/5 space-y-1.5 animate-fade-in">
-                    <div className="flex justify-between text-[11px] font-bold">
+                <div className="p-4 rounded-xl bg-slate-900/60 border border-white/10 space-y-2 animate-fade-in">
+                    <div className="flex justify-between text-xs font-semibold">
                         <span className="text-slate-300 truncate">{progressStatus}</span>
                         <span className="text-[var(--apex-gold)]">{progressPercent}%</span>
                     </div>
-                    <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                    <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
                         <div 
                             className="bg-[var(--apex-gold)] h-full transition-all duration-300 rounded-full" 
                             style={{ width: `${progressPercent}%` }}
@@ -1176,32 +662,30 @@ export const CommunityPacksSection: React.FC = () => {
 
             {/* Mensajes de Feedback */}
             {feedbackMessage && (
-                <div className={`p-3.5 rounded-xl text-xs font-bold border flex items-start gap-2.5 animate-fade-in ${
+                <div className={`p-3.5 rounded-xl text-xs font-medium border flex items-center gap-2.5 animate-fade-in ${
                     feedbackMessage.type === 'success' 
                         ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-300' 
                         : 'bg-red-950/40 border-red-500/30 text-red-300'
                 }`}>
                     {feedbackMessage.type === 'success' ? (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                     ) : (
-                        <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                        <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
                     )}
-                    <div className="flex-1 space-y-1">
-                        <span>{feedbackMessage.text}</span>
-                    </div>
+                    <span>{feedbackMessage.text}</span>
                 </div>
             )}
 
-            {/* Descargo de Responsabilidad y Licencias de la Comunidad */}
-            <div className="p-4 rounded-xl bg-slate-900/40 border border-white/5 space-y-2 text-center sm:text-left">
-                <div className="flex items-center gap-2 justify-center sm:justify-start">
-                    <Shield className="w-4 h-4 text-slate-400" />
-                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-300">
-                        Aviso Legal de Licencias y Contenido Comunitario
+            {/* Aviso Legal de Licencias Comunitarias */}
+            <div className="p-4 rounded-xl bg-slate-900/20 border border-white/5 space-y-1.5">
+                <div className="flex items-center gap-2">
+                    <Shield className="w-3.5 h-3.5 text-slate-500" />
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                        Aviso de Licencias y Contenido de la Comunidad
                     </span>
                 </div>
-                <p className="text-[10px] text-slate-400 leading-relaxed">
-                    Apex AI es un simulador de gestión deportiva independiente. Los escudos, marcas comerciales, nombres de competiciones y fotografías de futbolistas pertenecen a sus respectivos clubes, federaciones y titulares de derechos. Este software no distribuye contenido con derechos comerciales integrados; proporciona exclusivamente una arquitectura de personalización local mediante paquetes de datos (Option Files / Community Packs) gestionados por el propio usuario para uso personal, no lucrativo y de entretenimiento.
+                <p className="text-[10px] text-slate-500 leading-relaxed">
+                    Apex AI es un simulador de gestión deportiva independiente. Los escudos, marcas y fotos de futbolistas pertenecen a sus respectivos clubes y titulares. Los paquetes son archivos de personalización local gestionados por el usuario para uso personal.
                 </p>
             </div>
         </div>

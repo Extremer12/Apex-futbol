@@ -172,13 +172,15 @@ export function handleCupProgression(
         const shouldCheckProgression = libertadoresMatches.length > 0 || (updatedCups.copaLibertadores.phase === 'groups' && simulatedWeek >= 18);
         if (shouldCheckProgression) {
             const nextCupWeek = newWeek + 4;
+            const wasGroups = updatedCups.copaLibertadores.phase === 'groups';
             const result = progressInternationalCup(updatedCups.copaLibertadores, teams, nextCupWeek, updatedSchedule);
             updatedCups.copaLibertadores = result;
 
             if (result.newFixtures) {
                 updatedSchedule.push(...result.newFixtures);
                 const isPlayerInNewFixtures = playerTeamId ? result.newFixtures.some(f => f.homeTeamId === playerTeamId || f.awayTeamId === playerTeamId) : false;
-                if (isPlayerInNewFixtures) {
+                // Only show kickoff cinematic once, upon entering knockout phase
+                if (isPlayerInNewFixtures && wasGroups && result.phase === 'knockout') {
                     cinematicEvents.push({ 
                         id: `libertadores_ko_${Date.now()}`,
                         type: 'CUP_KICKOFF',
@@ -208,8 +210,9 @@ export function handleCupProgression(
                 g.fixtures = g.fixtures.map(f => {
                     if (f.result !== undefined) return f;
                     const played = updatedSchedule.find(m =>
-                        (m.id === f.id) ||
-                        (m.homeTeamId === f.homeTeamId && m.awayTeamId === f.awayTeamId && m.competition === f.competition && m.week === f.week && m.result !== undefined)
+                        ((f.id && m.id && f.id === m.id) ||
+                        (m.homeTeamId === f.homeTeamId && m.awayTeamId === f.awayTeamId && m.competition === f.competition && m.week === f.week)) &&
+                        m.result !== undefined
                     );
                     return played ? { ...f, result: played.result, penalties: played.penalties } : f;
                 });
@@ -221,8 +224,9 @@ export function handleCupProgression(
                 g.fixtures = g.fixtures.map(f => {
                     if (f.result !== undefined) return f;
                     const played = updatedSchedule.find(m =>
-                        (m.id === f.id) ||
-                        (m.homeTeamId === f.homeTeamId && m.awayTeamId === f.awayTeamId && m.competition === f.competition && m.week === f.week && m.result !== undefined)
+                        ((f.id && m.id && f.id === m.id) ||
+                        (m.homeTeamId === f.homeTeamId && m.awayTeamId === f.awayTeamId && m.competition === f.competition && m.week === f.week)) &&
+                        m.result !== undefined
                     );
                     return played ? { ...f, result: played.result, penalties: played.penalties } : f;
                 });
@@ -285,8 +289,9 @@ export function handleCupProgression(
                 currentRound.fixtures = currentRound.fixtures.map(f => {
                     if (f.result !== undefined) return f;
                     const played = updatedSchedule.find(m =>
-                        (m.id === f.id) ||
-                        (m.homeTeamId === f.homeTeamId && m.awayTeamId === f.awayTeamId && m.competition === f.competition && m.week === f.week && m.result !== undefined)
+                        ((f.id && m.id && f.id === m.id) ||
+                        (m.homeTeamId === f.homeTeamId && m.awayTeamId === f.awayTeamId && m.competition === f.competition && m.week === f.week)) &&
+                        m.result !== undefined
                     );
                     return played ? { ...f, result: played.result, penalties: played.penalties } : f;
                 });
@@ -359,13 +364,15 @@ export function handleCupProgression(
     const championsLeagueMatches = justPlayedMatches.filter(m => m.competition === 'Champions_League');
     if (championsLeagueMatches.length > 0 && championsLeagueMatches.every(m => m.result !== undefined)) {
         const nextCupWeek = newWeek + 5;
+        const wasSwiss = updatedCups.championsLeague.phase === 'swiss';
         const result = progressInternationalCup(updatedCups.championsLeague, teams, nextCupWeek, updatedSchedule);
         updatedCups.championsLeague = result;
 
         if (result.newFixtures) {
             updatedSchedule.push(...result.newFixtures);
             const isPlayerInCL = playerTeamId ? result.newFixtures.some(f => f.homeTeamId === playerTeamId || f.awayTeamId === playerTeamId) : false;
-            if (isPlayerInCL) {
+            // Only show kickoff cinematic once, upon entering knockout phase
+            if (isPlayerInCL && wasSwiss && result.phase === 'knockout') {
                 cinematicEvents.push({ 
                     id: `champions_ko_${Date.now()}`,
                     type: 'CUP_KICKOFF',
@@ -552,6 +559,35 @@ export function handleCupProgression(
             updatedSchedule.push(...nextRound.fixtures);
         }
     }
+
+    // 6. Cleanup of any orphaned group-stage fixtures for cups that are already in knockout phase
+    const cupsInKnockout = [
+        { cup: updatedCups.copaLibertadores, comp: 'Copa_Libertadores' },
+        { cup: updatedCups.copaSudamericana, comp: 'Copa_Sudamericana' },
+        { cup: updatedCups.championsLeague, comp: 'Champions_League' },
+        { cup: updatedCups.europaLeague, comp: 'Europa_League' }
+    ];
+
+    cupsInKnockout.forEach(({ cup, comp }) => {
+        if (cup && cup.phase === 'knockout') {
+            const validKnockoutKeys = new Set<string>();
+            cup.rounds?.forEach((r: any) => {
+                r.fixtures?.forEach((f: any) => {
+                    validKnockoutKeys.add(`${f.week}_${f.homeTeamId}_${f.awayTeamId}`);
+                });
+            });
+
+            for (let i = updatedSchedule.length - 1; i >= 0; i--) {
+                const m = updatedSchedule[i];
+                if (m.competition === comp && !m.result) {
+                    const key = `${m.week}_${m.homeTeamId}_${m.awayTeamId}`;
+                    if (!validKnockoutKeys.has(key)) {
+                        updatedSchedule.splice(i, 1);
+                    }
+                }
+            }
+        }
+    });
 
     return {
         updatedCups,

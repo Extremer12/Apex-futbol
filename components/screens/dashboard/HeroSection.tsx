@@ -1,11 +1,34 @@
 import React, { useEffect } from 'react';
-import { GameState, MatchPhase, CupCompetition } from '../../../types';
+import { GameState, MatchPhase, CupCompetition, COMPETITION_TO_CUP_KEY } from '../../../types';
 import { GameAction } from '../../../state/reducer';
 import { TrophyIcon, UsersIcon } from '../../icons';
 import { Trophy, Sparkles, ArrowRight, TrendingUp, TrendingDown, ArrowUpRight } from 'lucide-react';
 import { TeamLogo } from '../../../data/teams/helpers';
-import { isSeasonCompleted, getSeasonSummaryData } from '../../../services/seasonUtils';
+import { isSeasonCompleted, getSeasonSummaryData, getMatchKickoffTime } from '../../../services/seasonUtils';
 import { getTeamStadium } from '../../../data/stadiums';
+
+function isTeamEliminatedFromCup(cup: any, teamId: number): boolean {
+    if (!cup) return false;
+    if (cup.phase === 'knockout' && cup.rounds && cup.rounds.length > 0) {
+        for (const round of cup.rounds) {
+            const playedMatch = round.fixtures?.find((f: any) =>
+                (f.homeTeamId === teamId || f.awayTeamId === teamId) && f.result !== undefined
+            );
+            if (playedMatch) {
+                const isHome = playedMatch.homeTeamId === teamId;
+                const userScore = isHome ? playedMatch.result.homeScore : playedMatch.result.awayScore;
+                const oppScore = isHome ? playedMatch.result.awayScore : playedMatch.result.homeScore;
+                if (userScore < oppScore) return true;
+                if (userScore === oppScore && playedMatch.penalties) {
+                    const userPens = isHome ? playedMatch.penalties.home : playedMatch.penalties.away;
+                    const oppPens = isHome ? playedMatch.penalties.away : playedMatch.penalties.home;
+                    if (userPens < oppPens) return true;
+                }
+            }
+        }
+    }
+    return false;
+}
 
 export interface PendingSimulationResults {
     playerMatchResult: { homeScore: number; awayScore: number; events?: string[] } | null;
@@ -265,7 +288,34 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     const targetWeek = gameState.currentWeek;
     const nextWeek = targetWeek;
     const isMidweek = gameState.currentTurn === 'midweek';
-    const nextMatch = gameState.schedule.find(m => !m.result && m.week === targetWeek && !!m.isMidweek === isMidweek && (m.homeTeamId === gameState.team.id || m.awayTeamId === gameState.team.id));
+    const nextMatch = gameState.schedule.find(m => {
+        if (m.result) return false;
+        if (m.week !== targetWeek) return false;
+        if (!!m.isMidweek !== isMidweek) return false;
+        if (m.homeTeamId !== gameState.team.id && m.awayTeamId !== gameState.team.id) return false;
+
+        // Verify cup matches: do not display if user is already eliminated or match is an orphaned group match
+        if (m.isCupMatch && m.competition) {
+            const cupKey = COMPETITION_TO_CUP_KEY[m.competition];
+            const cup = cupKey ? (gameState.cups as any)[cupKey] : null;
+            if (cup) {
+                if (cup.phase === 'knockout') {
+                    const isKnockoutFixture = cup.rounds?.some((r: any) =>
+                        r.fixtures?.some((f: any) =>
+                            ((f.id && m.id && f.id === m.id) ||
+                            (f.homeTeamId === m.homeTeamId && f.awayTeamId === m.awayTeamId && f.week === m.week))
+                        )
+                    );
+                    if (!isKnockoutFixture) return false;
+                }
+                if (isTeamEliminatedFromCup(cup, gameState.team.id)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    });
 
     if (!nextMatch) {
         // Detect if there is a playoff or cup tournament currently active in this week
@@ -486,11 +536,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                                 ? 'bg-amber-500/20 text-amber-300 border-amber-400/50 animate-pulse' 
                                 : 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40'
                         }`}>
-                            {stageInfo.isFinal ? '🏆' : '⚔️'} {stageInfo.stage} • Partido Eliminatorio
+                            <Trophy className="w-3.5 h-3.5" />
+                            <span>{stageInfo.stage} • {getMatchKickoffTime(nextMatch)}</span>
                         </span>
                     ) : (
                         <span className="text-[10px] sm:text-xs font-black text-white uppercase tracking-wider">
-                            Jornada {nextMatch.week} • 16:30
+                            Jornada {nextMatch.week} • {getMatchKickoffTime(nextMatch)}
                         </span>
                     )}
                 </div>

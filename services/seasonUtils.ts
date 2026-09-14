@@ -1,4 +1,4 @@
-import { CupCompetition, GameState, LeagueId, Team } from '../types';
+import { CupCompetition, GameState, LeagueId, Team, Match } from '../types';
 import { computeArgentineRelegation, computeArgentineInternationalQualification } from './argentinaRegulations';
 
 export interface CompetitionChampionItem {
@@ -535,3 +535,97 @@ export const getSeasonSummaryData = (gameState: GameState): SeasonSummaryData =>
         isArgentina
     };
 };
+
+/**
+ * Calculates a realistic, authentic kickoff time for any match based on its competition,
+ * round/midweek status, and deterministic match seed.
+ */
+export function getMatchKickoffTime(match: Match): string {
+    const comp = match.competition || '';
+    const isMidweek = !!match.isMidweek;
+    const seed = Math.abs((match.week || 1) * 31 + (match.homeTeamId || 1) * 17 + (match.awayTeamId || 2) * 13);
+
+    // UEFA Competitions
+    if (comp === 'Champions_League' || comp === 'Europa_League') {
+        const uefaSlots = ['18:45', '21:00', '21:00', '21:00'];
+        return uefaSlots[seed % uefaSlots.length];
+    }
+
+    // CONMEBOL Competitions
+    if (comp === 'Copa_Libertadores' || comp === 'Copa_Sudamericana') {
+        const conmebolSlots = ['19:00', '21:00', '21:30', '19:15', '21:30'];
+        return conmebolSlots[seed % conmebolSlots.length];
+    }
+
+    // Domestic Cups & Midweeks
+    if (match.isCupMatch || isMidweek) {
+        if (comp === 'Copa_Argentina') {
+            const argCupSlots = ['18:10', '20:10', '21:10', '19:00'];
+            return argCupSlots[seed % argCupSlots.length];
+        }
+        if (comp === 'FA_Cup' || comp === 'Carabao_Cup') {
+            const engCupSlots = ['19:45', '20:00', '20:15'];
+            return engCupSlots[seed % engCupSlots.length];
+        }
+        if (comp === 'Copa_del_Rey') {
+            const spaCupSlots = ['19:00', '21:00', '21:30', '20:00'];
+            return spaCupSlots[seed % spaCupSlots.length];
+        }
+        if (comp === 'DFB_Pokal') {
+            const gerCupSlots = ['18:30', '20:45'];
+            return gerCupSlots[seed % gerCupSlots.length];
+        }
+        if (comp === 'Coppa_Italia') {
+            const itaCupSlots = ['18:00', '21:00'];
+            return itaCupSlots[seed % itaCupSlots.length];
+        }
+        const defaultMidweekSlots = ['19:00', '20:00', '20:45', '21:00'];
+        return defaultMidweekSlots[seed % defaultMidweekSlots.length];
+    }
+
+    // Domestic Leagues (Weekend)
+    if (comp === 'Premier_League' || comp === 'Championship') {
+        const engSlots = ['12:30', '15:00', '15:00', '15:00', '17:30', '14:00', '16:30'];
+        return engSlots[seed % engSlots.length];
+    }
+
+    if (comp === 'La_Liga' || comp === 'Segunda_Division_Esp') {
+        const spaSlots = ['14:00', '16:15', '18:30', '21:00', '18:30', '21:00'];
+        return spaSlots[seed % spaSlots.length];
+    }
+
+    if (comp === 'Bundesliga' || comp === 'Zweite_Bundesliga') {
+        const gerSlots = ['15:30', '15:30', '15:30', '18:30', '17:30'];
+        return gerSlots[seed % gerSlots.length];
+    }
+
+    if (comp === 'Serie_A' || comp === 'Serie_B_Ita') {
+        const itaSlots = ['12:30', '15:00', '18:00', '20:45'];
+        return itaSlots[seed % itaSlots.length];
+    }
+
+    if (comp === 'Ligue_1' || comp === 'Ligue_2') {
+        const fraSlots = ['13:00', '15:00', '17:00', '20:45'];
+        return fraSlots[seed % fraSlots.length];
+    }
+
+    if (comp === 'Brasileirao' || comp === 'Serie_B_Br') {
+        const braSlots = ['16:00', '18:30', '19:00', '21:00'];
+        return braSlots[seed % braSlots.length];
+    }
+
+    if (comp === 'Liga_MX') {
+        const mexSlots = ['17:00', '19:00', '21:00', '21:05'];
+        return mexSlots[seed % mexSlots.length];
+    }
+
+    if (comp === 'Copa_de_Primera') {
+        const parSlots = ['17:30', '18:00', '20:00', '20:30'];
+        return parSlots[seed % parSlots.length];
+    }
+
+    // Liga Argentina / Primera Nacional
+    const argSlots = ['14:30', '16:45', '19:00', '21:30', '17:00', '19:15', '20:00'];
+    return argSlots[seed % argSlots.length];
+}
+

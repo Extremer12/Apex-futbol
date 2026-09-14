@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Shield } from 'lucide-react';
 import { CommunityPacksSection } from '../screens/settings/CommunityPacksSection';
 
 interface CommunityPacksModalProps {
@@ -27,13 +28,13 @@ export const CommunityPacksModal: React.FC<CommunityPacksModalProps> = ({ isOpen
                     initial={{ scale: 0.95, opacity: 0, y: 20 }}
                     animate={{ scale: 1, opacity: 1, y: 0 }}
                     exit={{ scale: 0.95, opacity: 0, y: 20 }}
-                    className="relative w-full max-w-3xl bg-slate-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden z-10 my-auto max-h-[90vh] flex flex-col"
+                    className="relative w-full max-w-5xl bg-slate-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden z-10 my-auto max-h-[90vh] flex flex-col"
                 >
                     {/* Header bar */}
                     <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-slate-950/60 sticky top-0 z-20">
                         <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-xl bg-[var(--apex-gold)]/10 border border-[var(--apex-gold)]/30 flex items-center justify-center">
-                                <span className="text-base">🛡️</span>
+                                <Shield className="w-4 h-4 text-[var(--apex-gold)]" />
                             </div>
                             <div>
                                 <h2 className="text-sm sm:text-base font-black text-white uppercase tracking-wider">

@@ -3,6 +3,7 @@ import { GameState, Match, Team, LeagueId } from '../../types';
 import { CalendarIcon } from '../icons';
 import { TeamLogo } from '../../data/teams/helpers';
 import { ALL_COMPETITIONS } from './league/constants';
+import { getMatchKickoffTime } from '../../services/seasonUtils';
 
 interface CalendarScreenProps {
     gameState: GameState;
@@ -670,15 +671,15 @@ function renderCleanMatchRow(
                 </div>
             </div>
 
-            {/* Score / VS */}
+            {/* Score / Kickoff Time */}
             <div className="w-14 flex flex-col items-center justify-center flex-shrink-0">
                 {isPlayed ? (
                     <span className="px-2 py-0.5 rounded bg-black/70 border border-white/10 font-bold text-xs text-white">
                         {match.result!.homeScore} - {match.result!.awayScore}
                     </span>
                 ) : (
-                    <span className="text-[9px] font-bold text-slate-500 uppercase">
-                        VS
+                    <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/5 text-[10px] font-bold text-slate-400 font-mono">
+                        {getMatchKickoffTime(match)}
                     </span>
                 )}
             </div>
