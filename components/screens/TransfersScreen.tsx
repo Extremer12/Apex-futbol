@@ -29,8 +29,9 @@ import { useToast } from '../common/ToastProvider';
 // Modular Subcomponents
 import { TransfersMarketTab, CategoryFilter, SortOption } from './transfers/TransfersMarketTab';
 import { TransfersOffersTab } from './transfers/TransfersOffersTab';
-import { ClubNegotiationModal, ClubChatMessage } from './transfers/ClubNegotiationModal';
-import { ContractNegotiationModal, AgentChatMessage } from './transfers/ContractNegotiationModal';
+import { ClubChatMessage } from './transfers/ClubNegotiationModal';
+import { AgentChatMessage } from './transfers/ContractNegotiationModal';
+import { TransferNegotiationSuite } from './transfers/TransferNegotiationSuite';
 import { CounterOfferModal } from './transfers/CounterOfferModal';
 
 interface TransfersScreenProps {
@@ -180,14 +181,14 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
             setAgentChatHistory(prev => [
                 ...prev,
                 { sender: 'agent', text: response.message },
-                { sender: 'system', text: `🎉 ¡Acuerdo contractual formalizado! Listo para cerrar el fichaje.` }
+                { sender: 'system', text: 'Acuerdo contractual alcanzado. Listo para formalizar el fichaje.' }
             ]);
         } else if (response.decision === 'rejected') {
             setIsNegotiationDead(true);
             setAgentChatHistory(prev => [
                 ...prev,
                 { sender: 'agent', text: response.message },
-                { sender: 'system', text: `❌ El jugador ha rechazado la propuesta y su agente da por concluidas las negociaciones.` }
+                { sender: 'system', text: 'El jugador ha rechazado la propuesta y su agente da por concluidas las negociaciones.' }
             ]);
         } else {
             if (response.counterOffer) {
@@ -403,86 +404,39 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
                 />
             )}
 
-            {/* 2-PHASE NEGOTIATION MODAL */}
+            {/* FULL-SCREEN IMMERSIVE NEGOTIATION SUITE */}
             {negotiatingPlayer && (
-                <Modal 
-                    title={`Fichaje: ${negotiatingPlayer.name}`} 
+                <TransferNegotiationSuite 
+                    negotiatingPlayer={negotiatingPlayer}
+                    sellingTeam={allTeams.find(t => t.squad.some(p => p.id === negotiatingPlayer.id))}
+                    myTeam={myTeam}
+                    transferBudget={finances.transferBudget}
+                    clubBalance={finances.balance}
+                    negotiationPhase={negotiationPhase}
+                    clubOfferFee={clubOfferFee}
+                    setClubOfferFee={setClubOfferFee}
+                    clubChatHistory={clubChatHistory}
+                    clubAttempts={clubAttempts}
+                    isClubNegotiating={isClubNegotiating}
+                    agreedFee={agreedFee}
+                    onSendClubOffer={handleSendClubOffer}
+                    onProceedToContract={() => setNegotiationPhase('CONTRACT')}
+                    offeredWage={offeredWage}
+                    setOfferedWage={setOfferedWage}
+                    offeredYears={offeredYears}
+                    setOfferedYears={setOfferedYears}
+                    offeredRole={offeredRole}
+                    setOfferedRole={setOfferedRole}
+                    offeredBonus={offeredBonus}
+                    setOfferedBonus={setOfferedBonus}
+                    agentChatHistory={agentChatHistory}
+                    isAgentNegotiating={isAgentNegotiating}
+                    isContractAgreed={isContractAgreed}
+                    onSendAgentOffer={handleSendAgentOffer}
+                    onFinalizeSigning={handleFinalizeSigning}
+                    isNegotiationDead={isNegotiationDead}
                     onClose={() => setNegotiatingPlayer(null)}
-                >
-                    <div className="flex flex-col h-[70vh] max-h-[640px] bg-gradient-to-b from-[#0f1423] to-[#0a0e17] rounded-xl overflow-hidden border border-white/10">
-                        {/* Stepper Header */}
-                        <div className="bg-black/60 px-6 py-3 border-b border-white/10 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
-                                    negotiationPhase === 'CLUB' 
-                                        ? 'bg-[var(--apex-gold)] text-black shadow-md' 
-                                        : agreedFee !== null 
-                                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
-                                            : 'text-white/40'
-                                }`}>
-                                    <span>1. Traspaso Club</span>
-                                    {agreedFee !== null && <CheckCircle2 className="w-3.5 h-3.5" />}
-                                </div>
-                                <ArrowRight className="w-4 h-4 text-white/30" />
-                                <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
-                                    negotiationPhase === 'CONTRACT' 
-                                        ? 'bg-[var(--apex-gold)] text-black shadow-md' 
-                                        : isContractAgreed 
-                                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
-                                            : 'text-white/40'
-                                }`}>
-                                    <span>2. Contrato Jugador</span>
-                                    {isContractAgreed && <CheckCircle2 className="w-3.5 h-3.5" />}
-                                </div>
-                            </div>
-
-                            <div className="text-right">
-                                <span className="text-[9px] text-white/40 font-bold uppercase tracking-wider block">Presupuesto</span>
-                                <span className="text-xs font-black text-[var(--apex-gold)]">{formatCurrency(finances.transferBudget)}</span>
-                            </div>
-                        </div>
-
-                        {/* Phase 1: Club */}
-                        {negotiationPhase === 'CLUB' && (
-                            <ClubNegotiationModal 
-                                negotiatingPlayer={negotiatingPlayer}
-                                transferBudget={finances.transferBudget}
-                                clubOfferFee={clubOfferFee}
-                                setClubOfferFee={setClubOfferFee}
-                                clubChatHistory={clubChatHistory}
-                                isClubNegotiating={isClubNegotiating}
-                                isNegotiationDead={isNegotiationDead}
-                                agreedFee={agreedFee}
-                                onSendClubOffer={handleSendClubOffer}
-                                onProceedToContract={() => setNegotiationPhase('CONTRACT')}
-                                onClose={() => setNegotiatingPlayer(null)}
-                            />
-                        )}
-
-                        {/* Phase 2: Contract */}
-                        {negotiationPhase === 'CONTRACT' && (
-                            <ContractNegotiationModal 
-                                negotiatingPlayer={negotiatingPlayer}
-                                agreedFee={agreedFee}
-                                offeredWage={offeredWage}
-                                setOfferedWage={setOfferedWage}
-                                offeredYears={offeredYears}
-                                setOfferedYears={setOfferedYears}
-                                offeredRole={offeredRole}
-                                setOfferedRole={setOfferedRole}
-                                offeredBonus={offeredBonus}
-                                setOfferedBonus={setOfferedBonus}
-                                agentChatHistory={agentChatHistory}
-                                isAgentNegotiating={isAgentNegotiating}
-                                isContractAgreed={isContractAgreed}
-                                isNegotiationDead={isNegotiationDead}
-                                onSendAgentOffer={handleSendAgentOffer}
-                                onFinalizeSigning={handleFinalizeSigning}
-                                onClose={() => setNegotiatingPlayer(null)}
-                            />
-                        )}
-                    </div>
-                </Modal>
+                />
             )}
 
             {/* COUNTER-OFFER MODAL */}
