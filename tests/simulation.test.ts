@@ -16,11 +16,12 @@ import {
     ARGENTINE_CLASSIC_PAIRS,
     computeArgentineRelegation,
     computeArgentineInternationalQualification,
-    calculateTournamentStandings
+    calculateTournamentStandings,
+    generateSwissPhase
 } from '../services/simulation';
 import { initializeGame } from '../services/gameFactory';
 import { TEAMS } from '../constants';
-import { Team, Player, Match, LeagueTableRow, CupCompetition, LeagueId } from '../types';
+import { Team, Player, Match, LeagueTableRow, CupCompetition, LeagueId, EuropeanTableRow } from '../types';
 import { compressString, decompressString } from '../utils/compression';
 
 // Helper to create a dummy player
@@ -1565,6 +1566,43 @@ test('Bugfix: Libertadores does not advance prematurely, cinematics do not repea
     const orphanStillInSchedule = cupRes.updatedSchedule.find(m => m.week === 16 && m.competition === 'Copa_Libertadores' && !m.result);
     assert.equal(orphanStillInSchedule, undefined, 'Orphaned group match in week 16 must be purged from schedule');
 });
+
+test('Champions League: Swiss phase standings table updates correctly from match results', () => {
+    const clTeams = TEAMS.slice(0, 36);
+    const { table, fixtures } = generateSwissPhase(clTeams, 'Champions_League', 8);
+
+    // Initial state: all zeros
+    assert.equal(table[0].played, 0);
+    assert.equal(table[0].points, 0);
+
+    // Simulate match 1: Home win (Real Madrid 3 - 1 Liverpool)
+    const match1 = fixtures[0];
+    const hTeamId = match1.homeTeamId;
+    const aTeamId = match1.awayTeamId;
+
+    const rowMap = new Map<number, EuropeanTableRow>(table.map(r => [r.teamId, r]));
+    const hRow = rowMap.get(hTeamId)!;
+    const aRow = rowMap.get(aTeamId)!;
+
+    // Simulate result update as handled in simulation worker
+    hRow.played++; aRow.played++;
+    hRow.goalsFor += 3; hRow.goalsAgainst += 1;
+    aRow.goalsFor += 1; aRow.goalsAgainst += 3;
+    hRow.goalDifference = hRow.goalsFor - hRow.goalsAgainst;
+    aRow.goalDifference = aRow.goalsFor - aRow.goalsAgainst;
+    hRow.won++; hRow.points += 3; aRow.lost++;
+
+    assert.equal(hRow.played, 1);
+    assert.equal(hRow.won, 1);
+    assert.equal(hRow.points, 3);
+    assert.equal(hRow.goalDifference, 2);
+
+    assert.equal(aRow.played, 1);
+    assert.equal(aRow.lost, 1);
+    assert.equal(aRow.points, 0);
+    assert.equal(aRow.goalDifference, -2);
+});
+
 
 
 

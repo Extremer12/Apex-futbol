@@ -31,11 +31,56 @@ export const CupView: React.FC<CupViewProps> = React.memo(({
 
     const getTeamById = React.useCallback((id: number) => teamsMap.get(id), [teamsMap]);
 
-    // If it's Champions League in Swiss phase
+    // Synchronize and calculate Swiss table from played matches in schedule to guarantee real-time standings
+    const displaySwissTable = React.useMemo(() => {
+        if (!cup.swissTable) return [];
+        const compName = cup.id === 'champions_league' ? 'Champions_League' : 'Europa_League';
+        const playedInSchedule = gameState.schedule.filter(m => m.competition === compName && m.result !== undefined);
+        
+        if (playedInSchedule.length > 0) {
+            const rowMap = new Map<number, typeof cup.swissTable[0]>();
+            cup.swissTable.forEach(r => {
+                rowMap.set(r.teamId, {
+                    ...r,
+                    played: 0, won: 0, drawn: 0, lost: 0,
+                    goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0
+                });
+            });
+
+            playedInSchedule.forEach(m => {
+                const hRow = rowMap.get(m.homeTeamId);
+                const aRow = rowMap.get(m.awayTeamId);
+                if (hRow && aRow && m.result) {
+                    const hScore = m.result.homeScore;
+                    const aScore = m.result.awayScore;
+                    hRow.played++; aRow.played++;
+                    hRow.goalsFor += hScore; aRow.goalsFor += aScore;
+                    hRow.goalsAgainst += aScore; aRow.goalsAgainst += hScore;
+                    hRow.goalDifference = hRow.goalsFor - hRow.goalsAgainst;
+                    aRow.goalDifference = aRow.goalsFor - aRow.goalsAgainst;
+                    if (hScore > aScore) { hRow.won++; hRow.points += 3; aRow.lost++; }
+                    else if (aScore > hScore) { aRow.won++; aRow.points += 3; hRow.lost++; }
+                    else { hRow.drawn++; hRow.points += 1; aRow.drawn++; aRow.points += 1; }
+                }
+            });
+
+            const sorted = Array.from(rowMap.values()).sort((a, b) => {
+                if (b.points !== a.points) return b.points - a.points;
+                if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
+                return b.goalsFor - a.goalsFor;
+            });
+            sorted.forEach((r, idx) => { r.position = idx + 1; });
+            return sorted;
+        }
+
+        return cup.swissTable;
+    }, [cup.swissTable, cup.id, gameState.schedule]);
+
+    // If it's Champions League or Europa League in Swiss phase
     if (cup.type === 'swiss' && cup.phase === 'swiss' && cup.swissTable) {
         return (
             <EuropeanTable
-                table={cup.swissTable}
+                table={displaySwissTable}
                 title={cup.name}
                 logoUrl={logo}
                 theme={cup.id === 'champions_league' ? 'indigo' : 'slate'}

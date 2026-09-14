@@ -231,7 +231,7 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                     match.competition === 'Nacional_Primer_Ascenso' ||
                     match.competition === 'Nacional_Reducido' ||
                     match.competition === 'Copa_Intercontinental' ||
-                    ((match.competition === 'Champions_League' || match.competition === 'Europa_League') && updatedCups[match.competition === 'Champions_League' ? 'championsLeague' : 'europaLeague']?.currentPhase !== 'league') ||
+                    ((match.competition === 'Champions_League' || match.competition === 'Europa_League') && updatedCups[match.competition === 'Champions_League' ? 'championsLeague' : 'europaLeague']?.phase !== 'swiss') ||
                     (match.competition === 'Copa_Libertadores' && updatedCups['copaLibertadores']?.phase !== 'groups') ||
                     (match.competition === 'Copa_Sudamericana' && updatedCups['copaSudamericana']?.phase !== 'groups')
                 );
@@ -386,11 +386,11 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                         assignGoals(homeTeam, result.homeScore);
                         assignGoals(awayTeam, result.awayScore);
                         
-                        // European League Table Update
+                        // European League Table & Swiss Fixtures Update
                         if (match.competition === 'Champions_League' || match.competition === 'Europa_League') {
-                            if (currentCup.currentPhase === 'league') {
-                                const homeEuRow = currentCup.leagueTable?.find((r: any) => r.teamId === match.homeTeamId);
-                                const awayEuRow = currentCup.leagueTable?.find((r: any) => r.teamId === match.awayTeamId);
+                            if (currentCup.phase === 'swiss' && currentCup.swissTable) {
+                                const homeEuRow = currentCup.swissTable.find((r: any) => r.teamId === match.homeTeamId);
+                                const awayEuRow = currentCup.swissTable.find((r: any) => r.teamId === match.awayTeamId);
                                 if (homeEuRow && awayEuRow) {
                                     homeEuRow.played++; awayEuRow.played++;
                                     homeEuRow.goalsFor += result.homeScore; awayEuRow.goalsFor += result.awayScore;
@@ -400,6 +400,22 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                                     if (result.homeScore > result.awayScore) { homeEuRow.won++; homeEuRow.points += 3; awayEuRow.lost++; }
                                     else if (result.awayScore > result.homeScore) { awayEuRow.won++; awayEuRow.points += 3; homeEuRow.lost++; }
                                     else { homeEuRow.drawn++; homeEuRow.points += 1; awayEuRow.drawn++; awayEuRow.points += 1; }
+                                }
+                            }
+
+                            if (currentCup.swissFixtures) {
+                                const sf = currentCup.swissFixtures.find((fix: any) =>
+                                    (fix.id && fix.id === match.id) ||
+                                    (fix.homeTeamId === match.homeTeamId && fix.awayTeamId === match.awayTeamId && fix.week === match.week)
+                                );
+                                if (sf) {
+                                    sf.result = {
+                                        homeScore: result.homeScore,
+                                        awayScore: result.awayScore,
+                                        events: result.events,
+                                        scorers: result.scorers
+                                    };
+                                    sf.penalties = result.penalties;
                                 }
                             }
                         }
