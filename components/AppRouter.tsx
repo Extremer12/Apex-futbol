@@ -108,7 +108,15 @@ export const AppRouter: React.FC<AppRouterProps> = ({
                         </StartupScreenContainer>
                     );
                 }
-                return <ElectionPitch team={selectedTeam} player={playerProfile} onPitchSubmit={onPitchSubmit} />;
+                return (
+                    <ElectionPitch 
+                        team={selectedTeam} 
+                        player={playerProfile} 
+                        onSubmitPitch={onPitchSubmit} 
+                        onBack={onRetryElection} 
+                        isLoading={appState === 'ELECTION_RESULT'} 
+                    />
+                );
 
             case 'ELECTION_RESULT':
                 if (!electionResult) {
