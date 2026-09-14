@@ -17,7 +17,7 @@ const resolveCompetitionLogos = (comp?: string, title?: string, logoUrl?: string
     if (raw.includes('libertadores')) {
         return {
             primary: (logoUrl as string) || TOURNAMENT_LOGOS.COPA_LIBERTADORES,
-            fallback: 'https://upload.wikimedia.org/wikipedia/en/a/ac/Copa_Libertadores_logo.svg',
+            fallback: TOURNAMENT_LOGOS.COPA_LIBERTADORES,
             badge: 'CONMEBOL LIBERTADORES',
             accent: '#F59E0B'
         };
@@ -25,7 +25,7 @@ const resolveCompetitionLogos = (comp?: string, title?: string, logoUrl?: string
     if (raw.includes('sudamericana')) {
         return {
             primary: (logoUrl as string) || TOURNAMENT_LOGOS.COPA_SUDAMERICANA,
-            fallback: 'https://upload.wikimedia.org/wikipedia/en/3/36/Copa_Sudamericana_logo.svg',
+            fallback: TOURNAMENT_LOGOS.COPA_SUDAMERICANA,
             badge: 'CONMEBOL SUDAMERICANA',
             accent: '#D97706'
         };
@@ -33,23 +33,55 @@ const resolveCompetitionLogos = (comp?: string, title?: string, logoUrl?: string
     if (raw.includes('champions')) {
         return {
             primary: (logoUrl as string) || TOURNAMENT_LOGOS.CHAMPIONS_LEAGUE,
-            fallback: 'https://tmssl.akamaized.net/images/logo/header/CL.png',
+            fallback: TOURNAMENT_LOGOS.CHAMPIONS_LEAGUE,
             badge: 'UEFA CHAMPIONS LEAGUE',
             accent: '#3B82F6'
+        };
+    }
+    if (raw.includes('europa league')) {
+        return {
+            primary: (logoUrl as string) || TOURNAMENT_LOGOS.EUROPA_LEAGUE,
+            fallback: TOURNAMENT_LOGOS.EUROPA_LEAGUE,
+            badge: 'UEFA EUROPA LEAGUE',
+            accent: '#F97316'
         };
     }
     if (raw.includes('intercontinental')) {
         return {
             primary: (logoUrl as string) || TOURNAMENT_LOGOS.COPA_INTERCONTINENTAL,
-            fallback: 'https://upload.wikimedia.org/wikipedia/en/5/5b/FIFA_Intercontinental_Cup_%28logo%29.png',
+            fallback: TOURNAMENT_LOGOS.COPA_INTERCONTINENTAL,
             badge: 'FIFA INTERCONTINENTAL',
             accent: '#10B981'
+        };
+    }
+    if (raw.includes('apertura') || raw.includes('clausura') || raw.includes('liga profesional')) {
+        return {
+            primary: (logoUrl as string) || TOURNAMENT_LOGOS.LIGA_ARGENTINA,
+            fallback: TOURNAMENT_LOGOS.LIGA_ARGENTINA,
+            badge: 'LIGA PROFESIONAL DE FÚTBOL',
+            accent: '#0284C7'
+        };
+    }
+    if (raw.includes('nacional') || raw.includes('reducido') || raw.includes('ascenso')) {
+        return {
+            primary: (logoUrl as string) || TOURNAMENT_LOGOS.PRIMERA_NACIONAL,
+            fallback: TOURNAMENT_LOGOS.PRIMERA_NACIONAL,
+            badge: 'PRIMERA NACIONAL',
+            accent: '#06B6D4'
+        };
+    }
+    if (raw.includes('copa argentina')) {
+        return {
+            primary: (logoUrl as string) || TOURNAMENT_LOGOS.LIGA_ARGENTINA,
+            fallback: TOURNAMENT_LOGOS.LIGA_ARGENTINA,
+            badge: 'COPA ARGENTINA',
+            accent: '#0284C7'
         };
     }
     return {
         primary: (logoUrl as string) || '',
         fallback: '',
-        badge: title || 'COMPETICIÓN OFICIAL',
+        badge: title ? title.replace(/[🏆⭐🌍★]/g, '').trim() : 'COMPETICIÓN OFICIAL',
         accent: '#F59E0B'
     };
 };
@@ -64,63 +96,91 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({ event, onCon
         return () => clearTimeout(t);
     }, []);
 
+    const cleanTitle = (event.title || '').replace(/[🏆⭐🌍★]/g, '').trim();
+    const cleanSubtitle = (event.subtitle || '').replace(/[🏆⭐🌍★]/g, '').trim();
+
     const renderContent = () => {
         switch (event.type) {
             case 'CUP_KICKOFF': {
-                const accentColor = event.metadata?.accentColor || '#6366F1';
-                const logoUrl = event.metadata?.logoUrl || '';
-                const bgClass = event.metadata?.bgClass || 'from-indigo-900 via-slate-950 to-slate-950';
+                const compInfo = resolveCompetitionLogos(
+                    event.metadata?.competition as string,
+                    cleanTitle,
+                    event.metadata?.logoUrl as string
+                );
+                const accentColor = event.metadata?.accentColor || compInfo.accent || '#F59E0B';
+                const logoToRender = compLogoSrc || compInfo.primary;
+
                 return (
-                    <div className="flex flex-col items-center justify-center relative z-10 w-full max-w-2xl mx-auto">
-                        {/* Radial glow behind logo */}
+                    <div className="flex flex-col items-center justify-center relative z-10 w-full max-w-2xl mx-auto px-4 text-center">
+                        {/* Atmospheric glow behind logo */}
                         <div
-                            className="absolute w-96 h-96 rounded-full blur-3xl opacity-30 pointer-events-none"
+                            className="absolute -top-12 w-72 h-72 sm:w-96 sm:h-96 rounded-full blur-3xl opacity-30 pointer-events-none"
                             style={{ background: `radial-gradient(circle, ${accentColor} 0%, transparent 70%)` }}
                         />
-                        {/* Logo */}
+
+                        {/* Tournament Official Crest */}
                         <div
-                            className={`relative w-48 h-48 mb-10 flex items-center justify-center transition-all duration-700 ${visible ? 'scale-100 opacity-100' : 'scale-50 opacity-0'}`}
+                            className={`relative w-28 h-28 sm:w-36 sm:h-36 mb-6 flex items-center justify-center transition-all duration-700 ${
+                                visible ? 'scale-100 opacity-100 translate-y-0' : 'scale-75 opacity-0 translate-y-6'
+                            }`}
                         >
-                            {logoUrl ? (
+                            {logoToRender ? (
                                 <img
-                                    src={logoUrl}
-                                    alt={event.metadata?.competition}
-                                    className="w-full h-full object-contain drop-shadow-[0_0_60px_rgba(255,255,255,0.4)]"
+                                    src={logoToRender}
+                                    alt={compInfo.badge}
+                                    className="w-full h-full object-contain filter drop-shadow-[0_12px_28px_rgba(0,0,0,0.85)]"
                                     onLoad={() => setLogoLoaded(true)}
+                                    onError={() => {
+                                        if (compInfo.fallback && compLogoSrc !== compInfo.fallback) {
+                                            setCompLogoSrc(compInfo.fallback);
+                                        }
+                                    }}
                                 />
                             ) : (
-                                <TrophyIcon className="w-full h-full text-yellow-400" />
+                                <div
+                                    className="w-20 h-20 rounded-2xl flex items-center justify-center font-black text-2xl border"
+                                    style={{ borderColor: `${accentColor}40`, color: accentColor, background: `${accentColor}15` }}
+                                >
+                                    {compInfo.badge.slice(0, 3)}
+                                </div>
                             )}
                         </div>
 
-                        {/* Divider line */}
+                        {/* Competition Pill */}
                         <div
-                            className={`h-0.5 mb-8 transition-all duration-700 delay-300 rounded-full ${visible ? 'w-64 opacity-100' : 'w-0 opacity-0'}`}
-                            style={{ background: `linear-gradient(to right, transparent, ${accentColor}, transparent)` }}
-                        />
+                            className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] border transition-all duration-700 delay-150 mb-3 ${
+                                visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                            }`}
+                            style={{ borderColor: `${accentColor}50`, color: accentColor, background: `${accentColor}15` }}
+                        >
+                            {compInfo.badge}
+                        </div>
 
                         {/* Title */}
                         <h1
-                            className={`text-5xl md:text-6xl font-black text-white uppercase tracking-tight text-center drop-shadow-2xl transition-all duration-700 delay-200 ${visible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}
+                            className={`text-3xl sm:text-4xl md:text-5xl font-black text-white uppercase tracking-tight text-center drop-shadow-[0_4px_16px_rgba(0,0,0,0.9)] transition-all duration-700 delay-200 ${
+                                visible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
+                            }`}
                         >
-                            {event.title}
+                            {cleanTitle}
                         </h1>
+
+                        {/* Divider */}
+                        <div
+                            className={`h-0.5 my-3 transition-all duration-700 delay-300 rounded-full ${
+                                visible ? 'w-48 opacity-100' : 'w-0 opacity-0'
+                            }`}
+                            style={{ background: `linear-gradient(to right, transparent, ${accentColor}, transparent)` }}
+                        />
 
                         {/* Subtitle */}
                         <p
-                            className={`text-lg md:text-xl mt-6 font-semibold text-center max-w-lg transition-all duration-700 delay-400 ${visible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}
-                            style={{ color: accentColor }}
+                            className={`text-sm sm:text-base md:text-lg font-semibold text-center max-w-lg transition-all duration-700 delay-400 text-slate-300 ${
+                                visible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
+                            }`}
                         >
-                            {event.subtitle}
+                            {cleanSubtitle}
                         </p>
-
-                        {/* Tagline */}
-                        <div
-                            className={`mt-8 px-6 py-2 rounded-full border text-xs font-black uppercase tracking-[0.3em] transition-all duration-700 delay-500 ${visible ? 'opacity-100' : 'opacity-0'}`}
-                            style={{ borderColor: `${accentColor}50`, color: accentColor, background: `${accentColor}15` }}
-                        >
-                            Temporada {new Date().getFullYear()}
-                        </div>
                     </div>
                 );
             }
@@ -279,8 +339,8 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({ event, onCon
 
                                                             {/* User Badge or Pot */}
                                                             {isUser ? (
-                                                                <span className="ml-2 px-2 py-0.5 rounded-md bg-amber-400/25 border border-amber-400/60 text-amber-300 text-[9px] font-black uppercase tracking-wider shrink-0 shadow-sm flex items-center gap-1">
-                                                                    <span>★</span> TU CLUB
+                                                                <span className="ml-2 px-2.5 py-0.5 rounded-md bg-amber-400/20 border border-amber-400/50 text-amber-300 text-[9px] font-black uppercase tracking-wider shrink-0 shadow-sm">
+                                                                    TU CLUB
                                                                 </span>
                                                             ) : (
                                                                 <span className="ml-2 text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase shrink-0">
@@ -348,7 +408,7 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({ event, onCon
             case 'LEAGUE_WIN':
             case 'CUP_WIN': {
                 const team = event.metadata?.team;
-                const compName = event.metadata?.competition || event.title;
+                const compName = event.metadata?.competition || cleanTitle;
                 const stats = event.metadata?.stats;
                 const accentColor = event.metadata?.accentColor || '#F59E0B';
 
@@ -363,11 +423,11 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({ event, onCon
                         {/* Top Badge */}
                         <div className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-amber-400/40 bg-amber-500/15 backdrop-blur-md mb-6 animate-fade-in shadow-lg">
                             <span className="text-amber-300 font-black text-xs uppercase tracking-[0.3em]">
-                                ★ CAMPEÓN OFICIAL ★
+                                CAMPEÓN OFICIAL
                             </span>
                         </div>
 
-                        {/* Crest + Trophy Duo */}
+                        {/* Crest */}
                         <div className="flex items-center justify-center gap-5 sm:gap-8 mb-6">
                             {team && (
                                 <div className="relative group">
@@ -377,13 +437,10 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({ event, onCon
                                     >
                                         <TeamLogo team={team} className="w-full h-full object-contain drop-shadow-[0_4px_16px_rgba(0,0,0,0.6)]" />
                                     </div>
-                                    <div className="absolute -bottom-2 -right-2 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-amber-500 border-2 border-slate-950 flex items-center justify-center text-slate-950 font-black text-xs shadow-lg">
-                                        ★
-                                    </div>
                                 </div>
                             )}
 
-                            <div className="w-24 h-24 sm:w-32 sm:h-32 flex items-center justify-center drop-shadow-[0_0_50px_rgba(245,158,11,0.7)] animate-bounce">
+                            <div className="w-24 h-24 sm:w-32 sm:h-32 flex items-center justify-center drop-shadow-[0_0_50px_rgba(245,158,11,0.7)]">
                                 <TrophyIcon className="w-full h-full text-amber-400" />
                             </div>
                         </div>
@@ -396,7 +453,7 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({ event, onCon
                             {compName}
                         </p>
                         <p className="text-xs sm:text-sm text-slate-300 mt-1 font-medium text-center max-w-lg">
-                            {event.subtitle}
+                            {cleanSubtitle}
                         </p>
 
                         {/* Stats Dashboard */}
@@ -437,10 +494,10 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({ event, onCon
                             <TrendingUpIcon className="w-16 h-16 text-green-400" />
                         </div>
                         <h1 className="text-5xl font-black text-white uppercase tracking-tight text-center drop-shadow-2xl">
-                            {event.title}
+                            {cleanTitle}
                         </h1>
                         <p className="text-xl text-green-300 mt-4 font-bold text-center uppercase tracking-widest">
-                            {event.subtitle}
+                            {cleanSubtitle}
                         </p>
                         <Confetti count={100} />
                     </div>
@@ -452,10 +509,10 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({ event, onCon
                             <TrendingDownIcon className="w-16 h-16 text-red-400" />
                         </div>
                         <h1 className="text-5xl font-black text-white uppercase tracking-tight text-center drop-shadow-2xl">
-                            {event.title}
+                            {cleanTitle}
                         </h1>
                         <p className="text-xl text-red-300 mt-4 font-bold text-center uppercase tracking-widest">
-                            {event.subtitle}
+                            {cleanSubtitle}
                         </p>
                     </div>
                 );
@@ -463,10 +520,10 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({ event, onCon
                 return (
                     <div className="flex flex-col items-center justify-center animate-scale-in relative z-10 max-w-2xl w-full">
                         <h1 className="text-4xl font-black text-white uppercase tracking-tight text-center mb-2">
-                            {event.title}
+                            {cleanTitle}
                         </h1>
                         <p className="text-sky-400 mb-8 font-bold uppercase tracking-widest">
-                            {event.subtitle}
+                            {cleanSubtitle}
                         </p>
                         
                         <div className="bg-slate-900/80 backdrop-blur-md border border-slate-700 p-8 rounded-3xl w-full shadow-2xl space-y-6">
@@ -492,8 +549,8 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({ event, onCon
             default:
                 return (
                     <div className="text-center">
-                        <h1 className="text-5xl font-black text-white uppercase">{event.title}</h1>
-                        <p className="text-xl text-slate-300 mt-4">{event.subtitle}</p>
+                        <h1 className="text-5xl font-black text-white uppercase">{cleanTitle}</h1>
+                        <p className="text-xl text-slate-300 mt-4">{cleanSubtitle}</p>
                     </div>
                 );
         }

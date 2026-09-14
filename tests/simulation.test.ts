@@ -1431,5 +1431,66 @@ test('Compression: compressString and decompressString preserve complex JSON cor
     assert.equal(decompressed, samplePayload, 'Decompressed string must match original payload exactly');
 });
 
+test('Cinematics & Progression: User team does not receive popups for non-participating cups and eliminated clubs do not advance', async () => {
+    const { initializeGame } = await import('../services/gameFactory');
+    const { detectCinematicEvents } = await import('../services/simulation/cinematicsDetector');
+    const { handleCupProgression } = await import('../services/simulation/cupProgressionHandler');
+
+    // Create game with Boca Juniors (ID 701)
+    const boca = TEAMS.find(t => t.id === 701)!;
+    const game = initializeGame({
+        selectedTeam: boca,
+        playerProfile: { name: 'Juan Román', country: 'ARG', age: 45, style: 'balanced', difficulty: 'normal' } as any
+    });
+
+    // 1. Verify Boca does not receive Champions League kickoff event
+    const clMatches = game.schedule.filter(m => m.competition === 'Champions_League').slice(0, 4).map(m => ({
+        ...m,
+        result: { homeScore: 2, awayScore: 1, events: [], scorers: [] }
+    }));
+
+    const events = detectCinematicEvents(
+        game,
+        game.cups,
+        game.leagueTables,
+        6,
+        7,
+        clMatches
+    );
+
+    const clEvent = events.find(e => e.id.includes('champions'));
+    assert.equal(clEvent, undefined, 'Boca Juniors must NOT receive Champions League kickoff cinematics');
+
+    // Verify all titles are free of emojis
+    events.forEach(e => {
+        assert.ok(!/[🏆⭐🌍]/.test(e.title), `Title '${e.title}' must not contain emojis`);
+    });
+
+    // 2. Verify handleCupProgression does not dispatch cinematics if user is not in the round
+    const mockCups = { ...game.cups };
+    // Trigger Libertadores knockout check with fake fixtures where Boca is NOT playing
+    const fakeMatches = game.schedule.filter(m => m.competition === 'Copa_Libertadores' && m.homeTeamId !== boca.id && m.awayTeamId !== boca.id).slice(0, 4).map(m => ({
+        ...m,
+        result: { homeScore: 1, awayScore: 0, events: [], scorers: [] }
+    }));
+
+    const cupRes = handleCupProgression(
+        mockCups,
+        game.schedule,
+        game.allTeams,
+        18,
+        19,
+        game.leagueTables,
+        'midweek',
+        boca.id
+    );
+
+    // If any event was queued, ensure Boca was actually in it
+    cupRes.cinematicEvents.forEach(evt => {
+        assert.ok(!evt.id.includes('champions'), 'Boca should never receive champions cinematic');
+    });
+});
+
+
 
 

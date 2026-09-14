@@ -57,7 +57,8 @@ export function useSimulation(
                 simulatedWeek,
                 newWeek,
                 simulationResult.updatedLeagueTables,
-                gameState.currentTurn
+                gameState.currentTurn,
+                gameState.team.id
             );
 
             // Dispatch any immediate kickoff cinematics

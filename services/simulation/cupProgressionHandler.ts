@@ -16,11 +16,70 @@ import {
     generateSudamericanaPlayoff, 
     drawSudamericanaOctavos 
 } from '../sudamericanaEngine';
+import { TOURNAMENT_LOGOS } from '../customPacks/argentineLogos';
 
 export interface CupProgressionResult {
     updatedCups: GameState['cups'];
     updatedSchedule: Match[];
     cinematicEvents: CinematicEvent[];
+}
+
+/**
+ * Accurately derives group standings (played, won, drawn, lost, GF, GA, GD, points)
+ * directly from completed fixtures to prevent any stale state or incorrect rankings.
+ */
+function syncAndRecalculateGroupTable(group: any) {
+    if (!group || !group.table || !group.fixtures) return;
+
+    const tableMap = new Map<number, any>();
+    group.table.forEach((row: any) => {
+        tableMap.set(row.teamId, {
+            ...row,
+            played: 0,
+            won: 0,
+            drawn: 0,
+            lost: 0,
+            goalsFor: 0,
+            goalsAgainst: 0,
+            goalDifference: 0,
+            points: 0,
+            form: []
+        });
+    });
+
+    group.fixtures.forEach((f: Match) => {
+        if (f.result) {
+            const home = tableMap.get(f.homeTeamId);
+            const away = tableMap.get(f.awayTeamId);
+            if (home && away) {
+                home.played++;
+                away.played++;
+                home.goalsFor += f.result.homeScore;
+                away.goalsFor += f.result.awayScore;
+                home.goalsAgainst += f.result.awayScore;
+                away.goalsAgainst += f.result.homeScore;
+                home.goalDifference = home.goalsFor - home.goalsAgainst;
+                away.goalDifference = away.goalsFor - away.goalsAgainst;
+
+                if (f.result.homeScore > f.result.awayScore) {
+                    home.won++;
+                    home.points += 3;
+                    away.lost++;
+                } else if (f.result.awayScore > f.result.homeScore) {
+                    away.won++;
+                    away.points += 3;
+                    home.lost++;
+                } else {
+                    home.drawn++;
+                    home.points += 1;
+                    away.drawn++;
+                    away.points += 1;
+                }
+            }
+        }
+    });
+
+    group.table = Array.from(tableMap.values());
 }
 
 export function handleCupProgression(
@@ -30,7 +89,8 @@ export function handleCupProgression(
     simulatedWeek: number,
     newWeek: number,
     leagueTables: Record<LeagueId, LeagueTableRow[]>,
-    currentTurn: 'weekend' | 'midweek'
+    currentTurn: 'weekend' | 'midweek',
+    playerTeamId?: number
 ): CupProgressionResult {
     const updatedCups: GameState['cups'] = { ...cups };
     const updatedSchedule: Match[] = [...schedule];
@@ -117,13 +177,21 @@ export function handleCupProgression(
 
             if (result.newFixtures) {
                 updatedSchedule.push(...result.newFixtures);
-                cinematicEvents.push({ 
-                    id: `libertadores_ko_${Date.now()}`,
-                    type: 'CUP_KICKOFF',
-                    title: 'Copa Libertadores',
-                    subtitle: '¡Comienzan las eliminatorias!',
-                    metadata: { accentColor: '#FACC15', bgClass: 'from-yellow-900 via-slate-950 to-slate-950' }
-                });
+                const isPlayerInNewFixtures = playerTeamId ? result.newFixtures.some(f => f.homeTeamId === playerTeamId || f.awayTeamId === playerTeamId) : false;
+                if (isPlayerInNewFixtures) {
+                    cinematicEvents.push({ 
+                        id: `libertadores_ko_${Date.now()}`,
+                        type: 'CUP_KICKOFF',
+                        title: 'COPA LIBERTADORES',
+                        subtitle: '¡Comienzan las eliminatorias directas!',
+                        metadata: { 
+                            competition: 'Copa Libertadores',
+                            logoUrl: TOURNAMENT_LOGOS.COPA_LIBERTADORES,
+                            accentColor: '#F59E0B', 
+                            bgClass: 'from-amber-900 via-slate-950 to-slate-950' 
+                        }
+                    });
+                }
             }
         }
     }
@@ -147,8 +215,6 @@ export function handleCupProgression(
                 });
             });
 
-            const allGroupsPlayed = groups.length === 8 && groups.every(g => g.fixtures.every(f => f.result !== undefined));
-
             // Also ensure libertadores group stage has fixture results synced
             const libGroups = updatedCups.copaLibertadores?.groups || [];
             libGroups.forEach(g => {
@@ -161,6 +227,12 @@ export function handleCupProgression(
                     return played ? { ...f, result: played.result, penalties: played.penalties } : f;
                 });
             });
+
+            // Recalculate standings table from scratch based on actual fixture results
+            groups.forEach(g => syncAndRecalculateGroupTable(g));
+            libGroups.forEach(g => syncAndRecalculateGroupTable(g));
+
+            const allGroupsPlayed = groups.length === 8 && groups.every(g => g.fixtures.every(f => f.result !== undefined));
 
             if (allGroupsPlayed && (simulatedWeek >= 18 || sudamericanaMatches.length > 0)) {
                 // Extract 8 2nd-place from Sudamericana
@@ -188,13 +260,22 @@ export function handleCupProgression(
                         currentRoundIndex: 0
                     };
                     updatedSchedule.push(...playoffFixtures);
-                    cinematicEvents.push({ 
-                        id: `sudamericana_playoff_${Date.now()}`,
-                        type: 'CUP_KICKOFF',
-                        title: 'Copa Sudamericana',
-                        subtitle: '¡Playoff de Octavos contra los 3º de Libertadores!',
-                        metadata: { accentColor: '#D97706', bgClass: 'from-amber-900 via-slate-950 to-slate-950' }
-                    });
+
+                    const isPlayerInPlayoff = playerTeamId ? playoffFixtures.some(f => f.homeTeamId === playerTeamId || f.awayTeamId === playerTeamId) : false;
+                    if (isPlayerInPlayoff) {
+                        cinematicEvents.push({ 
+                            id: `sudamericana_playoff_${Date.now()}`,
+                            type: 'CUP_KICKOFF',
+                            title: 'COPA SUDAMERICANA',
+                            subtitle: '¡Playoff de Octavos de Final!',
+                            metadata: { 
+                                competition: 'Copa Sudamericana',
+                                logoUrl: TOURNAMENT_LOGOS.COPA_SUDAMERICANA,
+                                accentColor: '#D97706', 
+                                bgClass: 'from-amber-900 via-slate-950 to-slate-950' 
+                            }
+                        });
+                    }
                 }
             }
         } else if (updatedCups.copaSudamericana.phase === 'knockout') {
@@ -237,13 +318,22 @@ export function handleCupProgression(
                                 currentRoundIndex: 1
                             };
                             updatedSchedule.push(...octavosFixtures);
-                            cinematicEvents.push({ 
-                                id: `sudamericana_octavos_${Date.now()}`,
-                                type: 'CUP_KICKOFF',
-                                title: 'Copa Sudamericana',
-                                subtitle: '¡Octavos de Final!',
-                                metadata: { accentColor: '#D97706', bgClass: 'from-amber-900 via-slate-950 to-slate-950' }
-                            });
+
+                            const isPlayerInOctavos = playerTeamId ? octavosFixtures.some(f => f.homeTeamId === playerTeamId || f.awayTeamId === playerTeamId) : false;
+                            if (isPlayerInOctavos) {
+                                cinematicEvents.push({ 
+                                    id: `sudamericana_octavos_${Date.now()}`,
+                                    type: 'CUP_KICKOFF',
+                                    title: 'COPA SUDAMERICANA',
+                                    subtitle: '¡Octavos de Final!',
+                                    metadata: { 
+                                        competition: 'Copa Sudamericana',
+                                        logoUrl: TOURNAMENT_LOGOS.COPA_SUDAMERICANA,
+                                        accentColor: '#D97706', 
+                                        bgClass: 'from-amber-900 via-slate-950 to-slate-950' 
+                                    }
+                                });
+                            }
                         }
                     } else {
                         // Subsequent knockout rounds: Octavos (W24) -> Cuartos (W28) -> Semis (W31) -> Final (W34)
@@ -274,13 +364,21 @@ export function handleCupProgression(
 
         if (result.newFixtures) {
             updatedSchedule.push(...result.newFixtures);
-            cinematicEvents.push({ 
-                id: `champions_ko_${Date.now()}`,
-                type: 'CUP_KICKOFF',
-                title: 'Champions League',
-                subtitle: '¡La elite europea se enfrenta!',
-                metadata: { accentColor: '#3B82F6', bgClass: 'from-blue-900 via-slate-950 to-slate-950' }
-            });
+            const isPlayerInCL = playerTeamId ? result.newFixtures.some(f => f.homeTeamId === playerTeamId || f.awayTeamId === playerTeamId) : false;
+            if (isPlayerInCL) {
+                cinematicEvents.push({ 
+                    id: `champions_ko_${Date.now()}`,
+                    type: 'CUP_KICKOFF',
+                    title: 'UEFA CHAMPIONS LEAGUE',
+                    subtitle: '¡Comienzan las eliminatorias directas!',
+                    metadata: { 
+                        competition: 'Champions League',
+                        logoUrl: TOURNAMENT_LOGOS.CHAMPIONS_LEAGUE,
+                        accentColor: '#3B82F6', 
+                        bgClass: 'from-blue-900 via-slate-950 to-slate-950' 
+                    }
+                });
+            }
         }
     }
 

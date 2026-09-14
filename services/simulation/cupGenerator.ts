@@ -68,13 +68,20 @@ export const determineCupWinner = (match: Match): number | null => {
     if (awayScore > homeScore) return match.awayTeamId;
 
     if (match.penalties) {
-        return match.penalties.home > match.penalties.away ? match.homeTeamId : match.awayTeamId;
+        if (match.penalties.home !== match.penalties.away) {
+            return match.penalties.home > match.penalties.away ? match.homeTeamId : match.awayTeamId;
+        }
     }
     if (match.result.penalties) {
-        return match.result.penalties.home > match.result.penalties.away ? match.homeTeamId : match.awayTeamId;
+        if (match.result.penalties.home !== match.result.penalties.away) {
+            return match.result.penalties.home > match.result.penalties.away ? match.homeTeamId : match.awayTeamId;
+        }
     }
 
-    return match.homeTeamId;
+    // Deterministic tiebreak if penalties were not recorded on a drawn cup knockout match:
+    // Generate penalty outcome deterministically from match parameters rather than always giving the win to home
+    const seed = (match.homeTeamId * 31 + match.awayTeamId * 17 + (match.week || 1)) % 100;
+    return seed >= 50 ? match.homeTeamId : match.awayTeamId;
 };
 
 /**
@@ -148,6 +155,29 @@ export const progressInternationalCup = (
         const seconds: Team[] = [];
 
         groups.forEach(group => {
+            // Recalculate table from completed fixtures to ensure exact accuracy
+            const tableMap = new Map<number, any>();
+            group.table.forEach((r: any) => {
+                tableMap.set(r.teamId, { ...r, points: 0, goalDifference: 0, goalsFor: 0, goalsAgainst: 0, played: 0, won: 0, drawn: 0, lost: 0 });
+            });
+            group.fixtures.forEach((f: Match) => {
+                if (f.result) {
+                    const h = tableMap.get(f.homeTeamId);
+                    const a = tableMap.get(f.awayTeamId);
+                    if (h && a) {
+                        h.played++; a.played++;
+                        h.goalsFor += f.result.homeScore; a.goalsFor += f.result.awayScore;
+                        h.goalsAgainst += f.result.awayScore; a.goalsAgainst += f.result.homeScore;
+                        h.goalDifference = h.goalsFor - h.goalsAgainst;
+                        a.goalDifference = a.goalsFor - a.goalsAgainst;
+                        if (f.result.homeScore > f.result.awayScore) { h.won++; h.points += 3; a.lost++; }
+                        else if (f.result.awayScore > f.result.homeScore) { a.won++; a.points += 3; h.lost++; }
+                        else { h.drawn++; h.points += 1; a.drawn++; a.points += 1; }
+                    }
+                }
+            });
+            group.table = Array.from(tableMap.values());
+
             const sortedTable = [...group.table].sort((a, b) => {
                 if (b.points !== a.points) return b.points - a.points;
                 if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
@@ -214,9 +244,8 @@ export const advanceCupRound = (
         currentRound.fixtures = currentRound.fixtures.map(f => {
             if (f.result !== undefined) return f;
             const played = recentMatches.find(m => 
-                m.homeTeamId === f.homeTeamId && 
-                m.awayTeamId === f.awayTeamId && 
-                m.competition === f.competition &&
+                ((f.id && m.id === f.id) ||
+                (m.homeTeamId === f.homeTeamId && m.awayTeamId === f.awayTeamId && m.competition === f.competition && (m.week === f.week || (!m.week && !f.week)))) &&
                 m.result !== undefined
             );
             return played ? { ...f, result: played.result, penalties: played.penalties || played.result?.penalties } : f;

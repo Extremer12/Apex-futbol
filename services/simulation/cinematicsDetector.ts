@@ -1,4 +1,30 @@
 import { GameState, Team, CinematicEvent, LeagueId, Match, LeagueTableRow } from '../../types';
+import { TOURNAMENT_LOGOS } from '../customPacks/argentineLogos';
+
+function isTeamInCup(cup: any, teamId: number): boolean {
+    if (!cup) return false;
+    if (cup.groups && Array.isArray(cup.groups)) {
+        if (cup.groups.some((g: any) => g.teams?.includes(teamId) || g.teams?.some?.((t: any) => t === teamId || t?.id === teamId))) {
+            return true;
+        }
+    }
+    if (cup.rounds && Array.isArray(cup.rounds)) {
+        if (cup.rounds.some((r: any) => r.fixtures?.some?.((f: any) => f.homeTeamId === teamId || f.awayTeamId === teamId))) {
+            return true;
+        }
+    }
+    if (cup.swissTable && Array.isArray(cup.swissTable)) {
+        if (cup.swissTable.some((r: any) => r.teamId === teamId)) {
+            return true;
+        }
+    }
+    if (cup.swissFixtures && Array.isArray(cup.swissFixtures)) {
+        if (cup.swissFixtures.some((f: any) => f.homeTeamId === teamId || f.awayTeamId === teamId)) {
+            return true;
+        }
+    }
+    return false;
+}
 
 export function detectCinematicEvents(
     gameState: GameState,
@@ -11,7 +37,7 @@ export function detectCinematicEvents(
     const events: CinematicEvent[] = [];
     const playerTeam = gameState.team;
 
-    // 🏆 1. Check Torneo Apertura Champion
+    // 1. Check Torneo Apertura Champion
     if (updatedCups.aperturaPlayoffs?.winnerId && !gameState.cups.aperturaPlayoffs?.winnerId && updatedCups.aperturaPlayoffs.winnerId === playerTeam.id) {
         const argTable = updatedLeagueTables[LeagueId.LIGA_ARGENTINA] || [];
         const playerRow = argTable.find(r => r.teamId === playerTeam.id);
@@ -34,7 +60,7 @@ export function detectCinematicEvents(
         });
     }
 
-    // 🏆 2. Check Torneo Clausura Champion
+    // 2. Check Torneo Clausura Champion
     if (updatedCups.clausuraPlayoffs?.winnerId && !gameState.cups.clausuraPlayoffs?.winnerId && updatedCups.clausuraPlayoffs.winnerId === playerTeam.id) {
         const argTable = updatedLeagueTables[LeagueId.LIGA_ARGENTINA] || [];
         const playerRow = argTable.find(r => r.teamId === playerTeam.id);
@@ -57,7 +83,7 @@ export function detectCinematicEvents(
         });
     }
 
-    // 🏆 3. Primera Nacional (Primer Ascenso & Reducido)
+    // 3. Primera Nacional (Primer Ascenso & Reducido)
     if (updatedCups.nacionalPrimerAscenso?.winnerId && !gameState.cups.nacionalPrimerAscenso?.winnerId && updatedCups.nacionalPrimerAscenso.winnerId === playerTeam.id) {
         events.push({
             id: `champ_primer_ascenso_${Date.now()}`,
@@ -88,9 +114,10 @@ export function detectCinematicEvents(
         });
     }
 
-    // 🏆 4. Generic & National/International Cups
+    // 4. Generic & National/International Cups
     const genericCups = [
         { key: 'copaLibertadores' as const, name: 'Copa Libertadores 2026', accent: '#F59E0B' },
+        { key: 'copaSudamericana' as const, name: 'Copa Sudamericana 2026', accent: '#D97706' },
         { key: 'championsLeague' as const, name: 'UEFA Champions League 2026', accent: '#6366F1' },
         { key: 'copaIntercontinental' as const, name: 'Copa Intercontinental 2026', accent: '#10B981' },
         { key: 'faCup' as const, name: 'FA Cup 2026', accent: '#EF4444' },
@@ -125,7 +152,7 @@ export function detectCinematicEvents(
         }
     }
 
-    // 🏆 5. European / Standard League Titles
+    // 5. European / Standard League Titles
     const playerLeague = playerTeam.leagueId;
     const playerTable = updatedLeagueTables[playerLeague] || [];
     const playerRow = playerTable.find(r => r.teamId === playerTeam.id);
@@ -150,20 +177,21 @@ export function detectCinematicEvents(
         });
     }
 
-    // 🌍 6. First Round Kick-offs for International Cups
+    // 6. First Round Kick-offs for International Cups (Strictly filtered to user's team participation)
     const libertadoresMatches = justPlayedMatches.filter(m => m.competition === 'Copa_Libertadores');
+    const isPlayerInLib = isTeamInCup(gameState.cups.copaLibertadores, playerTeam.id);
     const isFirstLibRound = gameState.cups.copaLibertadores?.rounds?.length > 0 &&
         gameState.cups.copaLibertadores.rounds[0].fixtures.every(m => !m.result) &&
         libertadoresMatches.length > 0;
-    if (isFirstLibRound) {
+    if (isFirstLibRound && isPlayerInLib) {
         events.push({
             id: `cup_kickoff_libertadores_${newWeek}`,
             type: 'CUP_KICKOFF',
-            title: '🏆 COPA LIBERTADORES',
-            subtitle: 'El fútbol sudamericano llama. La lucha por la gloria comienza.',
+            title: 'COPA LIBERTADORES',
+            subtitle: 'La gloria eterna comienza. El máximo escenario del continente.',
             metadata: {
                 competition: 'Copa Libertadores',
-                logoUrl: 'https://upload.wikimedia.org/wikipedia/en/a/ac/Copa_Libertadores_logo.svg',
+                logoUrl: TOURNAMENT_LOGOS.COPA_LIBERTADORES,
                 accentColor: '#F59E0B',
                 bgClass: 'from-amber-900 via-slate-950 to-slate-950'
             }
@@ -171,18 +199,19 @@ export function detectCinematicEvents(
     }
 
     const championsLeagueMatches = justPlayedMatches.filter(m => m.competition === 'Champions_League');
+    const isPlayerInCL = isTeamInCup(gameState.cups.championsLeague, playerTeam.id);
     const isFirstCLRound = gameState.cups.championsLeague?.rounds?.length > 0 &&
         gameState.cups.championsLeague.rounds[0].fixtures.every(m => !m.result) &&
         championsLeagueMatches.length > 0;
-    if (isFirstCLRound) {
+    if (isFirstCLRound && isPlayerInCL) {
         events.push({
             id: `cup_kickoff_champions_${newWeek}`,
             type: 'CUP_KICKOFF',
-            title: '⭐ UEFA CHAMPIONS LEAGUE',
-            subtitle: 'La noche más importante del fútbol europeo. ¿Quién alzará la Orejona?',
+            title: 'UEFA CHAMPIONS LEAGUE',
+            subtitle: 'La élite del fútbol europeo se da cita en la búsqueda de la Orejona.',
             metadata: {
                 competition: 'Champions League',
-                logoUrl: 'https://tmssl.akamaized.net/images/logo/header/CL.png',
+                logoUrl: TOURNAMENT_LOGOS.CHAMPIONS_LEAGUE,
                 accentColor: '#6366F1',
                 bgClass: 'from-indigo-900 via-slate-950 to-slate-950'
             }
@@ -190,18 +219,19 @@ export function detectCinematicEvents(
     }
 
     const intercontinentalMatches = justPlayedMatches.filter(m => m.competition === 'Copa_Intercontinental');
+    const isPlayerInInter = isTeamInCup(gameState.cups.copaIntercontinental, playerTeam.id);
     const isFirstInterRound = gameState.cups.copaIntercontinental?.rounds?.length > 0 &&
         gameState.cups.copaIntercontinental.rounds[0].fixtures.every(m => !m.result) &&
         intercontinentalMatches.length > 0;
-    if (isFirstInterRound) {
+    if (isFirstInterRound && isPlayerInInter) {
         events.push({
             id: `cup_kickoff_intercontinental_${newWeek}`,
             type: 'CUP_KICKOFF',
-            title: '🌍 COPA INTERCONTINENTAL',
-            subtitle: 'El campeón de Europa vs el campeón de Sudamérica. El mejor del mundo.',
+            title: 'COPA INTERCONTINENTAL',
+            subtitle: 'El campeón de Europa frente al campeón de Sudamérica. La cumbre mundial.',
             metadata: {
                 competition: 'Copa Intercontinental',
-                logoUrl: 'https://upload.wikimedia.org/wikipedia/en/5/5b/FIFA_Intercontinental_Cup_%28logo%29.png',
+                logoUrl: TOURNAMENT_LOGOS.COPA_INTERCONTINENTAL,
                 accentColor: '#10B981',
                 bgClass: 'from-emerald-900 via-slate-950 to-slate-950'
             }
