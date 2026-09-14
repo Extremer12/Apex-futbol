@@ -1,4 +1,4 @@
-import { GameState, Team, Match, LeagueId, CinematicEvent, LeagueTableRow } from '../../types';
+import { GameState, Team, Match, LeagueId, CinematicEvent, LeagueTableRow, CupGroup, CupRound } from '../../types';
 import { 
     advanceCupRound, 
     progressInternationalCup, 
@@ -28,11 +28,11 @@ export interface CupProgressionResult {
  * Accurately derives group standings (played, won, drawn, lost, GF, GA, GD, points)
  * directly from completed fixtures to prevent any stale state or incorrect rankings.
  */
-function syncAndRecalculateGroupTable(group: any) {
+function syncAndRecalculateGroupTable(group: CupGroup) {
     if (!group || !group.table || !group.fixtures) return;
 
-    const tableMap = new Map<number, any>();
-    group.table.forEach((row: any) => {
+    const tableMap = new Map<number, LeagueTableRow>();
+    group.table.forEach((row: LeagueTableRow) => {
         tableMap.set(row.teamId, {
             ...row,
             played: 0,
@@ -571,8 +571,8 @@ export function handleCupProgression(
     cupsInKnockout.forEach(({ cup, comp }) => {
         if (cup && cup.phase === 'knockout') {
             const validKnockoutKeys = new Set<string>();
-            cup.rounds?.forEach((r: any) => {
-                r.fixtures?.forEach((f: any) => {
+            cup.rounds?.forEach((r: CupRound) => {
+                r.fixtures?.forEach((f: Match) => {
                     validKnockoutKeys.add(`${f.week}_${f.homeTeamId}_${f.awayTeamId}`);
                 });
             });

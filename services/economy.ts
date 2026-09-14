@@ -77,7 +77,7 @@ export const generateSponsor = (
         id: `sponsor_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         name,
         type,
-        logo: type === 'shirt' ? '👕' : type === 'stadium' ? '🏟️' : type === 'training' ? '🥤' : '👟',
+        logo: type,
         weeklyIncome: Math.floor(weeklyIncome),
         duration,
         bonus

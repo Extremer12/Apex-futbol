@@ -587,7 +587,7 @@ export function startNewSeason(currentState: GameState): GameState {
             }
         } else if (promise.type === 'trophy') {
             // Check if player's team won ANY cup competition in any country or Europe, or the league title
-            const wonAnyCup = Object.values(currentState.cups || {}).some((cup: any) => cup?.winnerId === updatedPlayerTeam.id);
+            const wonAnyCup = Object.values(currentState.cups || {}).some((cup: CupCompetition | undefined) => cup?.winnerId === updatedPlayerTeam.id);
             const wonLeague = playerPosition === 1;
             
             if (promise.target === 'QuarterFinal') {

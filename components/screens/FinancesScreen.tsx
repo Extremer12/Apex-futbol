@@ -3,7 +3,16 @@ import { GameState, Sponsor } from '../../types';
 import { GameAction } from '../../state/reducer';
 import { formatCurrency, formatCurrencyShort } from '../../utils';
 import { calculateFinancialBreakdown, getNetWeeklyIncome } from '../../services/economy';
-import { AlertTriangle, Building2, Users, FileText } from 'lucide-react';
+import { AlertTriangle, Building2, Users, FileText, Shirt, Zap, Tag } from 'lucide-react';
+
+const renderSponsorIcon = (type: string, className = "w-6 h-6") => {
+    switch (type) {
+        case 'shirt': return <Shirt className={className} />;
+        case 'stadium': return <Building2 className={className} />;
+        case 'training': return <Zap className={className} />;
+        case 'kit': default: return <Tag className={className} />;
+    }
+};
 
 interface FinancesScreenProps {
     gameState: GameState;
@@ -227,7 +236,9 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = ({ gameState, dispa
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         {sponsors.length > 0 ? sponsors.map(sponsor => (
                             <div key={sponsor.id} className="relative group overflow-hidden apex-card p-5">
-                                <div className="absolute -right-4 -top-4 text-6xl opacity-5 group-hover:scale-110 group-hover:opacity-10 transition-all duration-500 grayscale">{sponsor.logo}</div>
+                                <div className="absolute -right-3 -top-3 p-4 opacity-10 group-hover:scale-110 group-hover:opacity-20 transition-all duration-500 text-white">
+                                    {renderSponsorIcon(sponsor.type, "w-16 h-16")}
+                                </div>
                                 <div className="text-[9px] font-black text-[var(--apex-gold)] uppercase tracking-[0.2em] mb-1.5">{getSponsorTypeLabel(sponsor.type)}</div>
                                 <div className="font-black text-white text-base leading-tight mb-4">{sponsor.name}</div>
                                 <div className="flex justify-between items-end mt-auto">
@@ -260,7 +271,9 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = ({ gameState, dispa
                                         <div className="text-[9px] font-black text-[var(--apex-gold)] uppercase tracking-[0.2em] mb-1.5">{getSponsorTypeLabel(sponsor.type)}</div>
                                         <div className="font-black text-white text-xl group-hover:text-[var(--apex-gold)] transition-colors leading-tight">{sponsor.name}</div>
                                     </div>
-                                    <div className="text-3xl bg-white/5 p-3 rounded-xl border border-white/10 group-hover:bg-[var(--apex-gold)]/10 transition-colors grayscale group-hover:grayscale-0">{sponsor.logo}</div>
+                                    <div className="p-3 bg-white/5 rounded-xl border border-white/10 group-hover:bg-[var(--apex-gold)]/10 group-hover:border-[var(--apex-gold)]/30 group-hover:text-[var(--apex-gold)] text-white/70 transition-colors">
+                                        {renderSponsorIcon(sponsor.type, "w-6 h-6")}
+                                    </div>
                                 </div>
 
                                 <div className="space-y-3 mb-8">

@@ -1,4 +1,4 @@
-import { Team, Match, CupCompetition, EuropeanTableRow, CupGroup } from '../../types';
+import { Team, Match, CupCompetition, EuropeanTableRow, CupGroup, LeagueTableRow } from '../../types';
 
 /**
  * Helper function to determine the title of the next knockout round.
@@ -158,9 +158,9 @@ export const progressInternationalCup = (
 
         groups.forEach(group => {
             // Recalculate table from completed fixtures to ensure exact accuracy
-            const tableMap = new Map<number, any>();
-            group.table.forEach((r: any) => {
-                tableMap.set(r.teamId, { ...r, points: 0, goalDifference: 0, goalsFor: 0, goalsAgainst: 0, played: 0, won: 0, drawn: 0, lost: 0 });
+            const tableMap = new Map<number, LeagueTableRow>();
+            group.table.forEach((r: LeagueTableRow) => {
+                tableMap.set(r.teamId, { ...r, points: 0, goalDifference: 0, goalsFor: 0, goalsAgainst: 0, played: 0, won: 0, drawn: 0, lost: 0, form: [] });
             });
             group.fixtures.forEach((f: Match) => {
                 if (f.result) {

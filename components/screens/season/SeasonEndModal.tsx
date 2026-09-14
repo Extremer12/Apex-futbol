@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { GameState } from '../../../types';
 import { getSeasonSummaryData } from '../../../services/seasonUtils';
 import { TeamLogo } from '../../../data/teams/helpers';
-import { Trophy, TrendingUp, TrendingDown, Sparkles, X, ArrowRight } from 'lucide-react';
+import { Trophy, TrendingUp, TrendingDown, Sparkles, X, ArrowRight, Award, Globe, CheckCircle2 } from 'lucide-react';
+import { calculatePresidentialScore, submitPresidentialScore } from '../../../services/leaderboard';
 
 interface SeasonEndModalProps {
     gameState: GameState;
@@ -19,6 +20,43 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
 }) => {
     const summary = getSeasonSummaryData(gameState);
     const [selectedRegion, setSelectedRegion] = useState<string>('all');
+    const [isSubmittingScore, setIsSubmittingScore] = useState(false);
+    const [scoreSubmitted, setScoreSubmitted] = useState(false);
+
+    const trophiesCount = (gameState.team.trophies || []).length;
+    const clubVal = gameState.finances.clubValue || 15000000;
+    const fanApp = gameState.fanApproval?.overall || 50;
+    const boardConf = gameState.boardConfidence ?? 75;
+    const seasonsCount = gameState.season || 1;
+
+    const presidentialScore = calculatePresidentialScore(
+        trophiesCount,
+        clubVal,
+        fanApp,
+        boardConf,
+        seasonsCount
+    );
+
+    const handleSubmitLeaderboard = async () => {
+        if (isSubmittingScore || scoreSubmitted) return;
+        setIsSubmittingScore(true);
+        try {
+            await submitPresidentialScore({
+                managerName: gameState.playerProfile?.name || 'Presidente',
+                teamName: gameState.team.name,
+                season: seasonsCount,
+                trophiesCount,
+                clubValue: clubVal,
+                fanApproval: fanApp,
+                boardConfidence: boardConf,
+            });
+            setScoreSubmitted(true);
+        } catch (err) {
+            console.error("Error submitting score:", err);
+        } finally {
+            setIsSubmittingScore(false);
+        }
+    };
 
     const regions = [
         { id: 'all', label: 'Todos los Torneos' },
@@ -137,6 +175,39 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
                                     </span>
                                 </div>
                             )}
+                            <div className="px-4 py-2.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-center">
+                                <span className="text-[10px] font-bold text-amber-400/80 uppercase block flex items-center justify-center gap-1">
+                                    <Award className="w-3 h-3 text-amber-400" /> Score Apex
+                                </span>
+                                <span className="text-lg sm:text-xl font-black text-amber-300">{presidentialScore.toLocaleString()}</span>
+                            </div>
+
+                            <button
+                                onClick={handleSubmitLeaderboard}
+                                disabled={isSubmittingScore || scoreSubmitted}
+                                className={`px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
+                                    scoreSubmitted
+                                        ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
+                                        : 'bg-white/10 hover:bg-white/15 border-white/20 text-white cursor-pointer hover:border-amber-400/50'
+                                }`}
+                            >
+                                {scoreSubmitted ? (
+                                    <>
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                                        <span>Puntaje Registrado</span>
+                                    </>
+                                ) : isSubmittingScore ? (
+                                    <>
+                                        <div className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                                        <span>Registrando...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Globe className="w-4 h-4 text-amber-400" />
+                                        <span>Publicar en Ranking</span>
+                                    </>
+                                )}
+                            </button>
                         </div>
                     </div>
                 </div>

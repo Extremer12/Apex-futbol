@@ -1,25 +1,25 @@
-import { GameState, Team, CinematicEvent, LeagueId, Match, LeagueTableRow } from '../../types';
+import { GameState, Team, CinematicEvent, LeagueId, Match, LeagueTableRow, CupCompetition, CupGroup, CupRound } from '../../types';
 import { TOURNAMENT_LOGOS } from '../customPacks/argentineLogos';
 
-function isTeamInCup(cup: any, teamId: number): boolean {
+function isTeamInCup(cup: CupCompetition | undefined | null, teamId: number): boolean {
     if (!cup) return false;
     if (cup.groups && Array.isArray(cup.groups)) {
-        if (cup.groups.some((g: any) => g.teams?.includes(teamId) || g.teams?.some?.((t: any) => t === teamId || t?.id === teamId))) {
+        if (cup.groups.some((g: CupGroup) => g.teams?.includes(teamId))) {
             return true;
         }
     }
     if (cup.rounds && Array.isArray(cup.rounds)) {
-        if (cup.rounds.some((r: any) => r.fixtures?.some?.((f: any) => f.homeTeamId === teamId || f.awayTeamId === teamId))) {
+        if (cup.rounds.some((r: CupRound) => r.fixtures?.some((f: Match) => f.homeTeamId === teamId || f.awayTeamId === teamId))) {
             return true;
         }
     }
     if (cup.swissTable && Array.isArray(cup.swissTable)) {
-        if (cup.swissTable.some((r: any) => r.teamId === teamId)) {
+        if (cup.swissTable.some(r => r.teamId === teamId)) {
             return true;
         }
     }
     if (cup.swissFixtures && Array.isArray(cup.swissFixtures)) {
-        if (cup.swissFixtures.some((f: any) => f.homeTeamId === teamId || f.awayTeamId === teamId)) {
+        if (cup.swissFixtures.some(f => f.homeTeamId === teamId || f.awayTeamId === teamId)) {
             return true;
         }
     }

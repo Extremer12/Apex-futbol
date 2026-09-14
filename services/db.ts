@@ -299,19 +299,43 @@ export const exportSaveToFile = async (id: string): Promise<{ blob: Blob; filena
 };
 
 export const importSaveFromFile = async (file: File): Promise<SavedGameData> => {
-    const text = await file.text();
-    const rawData = JSON.parse(text);
-    if (!rawData.gameState || !rawData.gameState.team) {
-        throw new Error('El archivo seleccionado no es un guardado válido de Apex Fútbol.');
+    let text: string;
+    try {
+        text = await file.text();
+    } catch {
+        throw new Error('No se pudo leer el archivo seleccionado.');
     }
+
+    let rawData: unknown;
+    try {
+        rawData = JSON.parse(text);
+    } catch {
+        throw new Error('El archivo no contiene un formato JSON válido.');
+    }
+
+    const data = rawData as Record<string, any>;
+    if (
+        !data ||
+        typeof data !== 'object' ||
+        !data.gameState ||
+        typeof data.gameState !== 'object' ||
+        !data.gameState.team ||
+        typeof data.gameState.team.name !== 'string' ||
+        !data.playerProfile ||
+        typeof data.playerProfile !== 'object'
+    ) {
+        throw new Error('El archivo seleccionado no es un guardado íntegro o compatible de Apex Fútbol.');
+    }
+
     const id = `save_manual_${Date.now()}`;
     const importedSave: SavedGameData = {
-        ...rawData,
+        ...data,
         id,
-        saveName: rawData.saveName ? `${rawData.saveName} (Importada)` : `Importada - ${rawData.teamName || 'Equipo'}`,
+        saveName: data.saveName ? `${data.saveName} (Importada)` : `Importada - ${data.teamName || data.gameState.team.name}`,
         slotType: 'manual',
         lastSaved: new Date()
-    };
+    } as SavedGameData;
+
     await saveGame(importedSave);
     return importedSave;
 };

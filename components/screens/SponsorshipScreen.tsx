@@ -13,7 +13,11 @@ import {
     ShieldCheck, 
     ArrowRight, 
     X,
-    Filter
+    Filter,
+    Shirt,
+    Building2,
+    Zap,
+    Tag
 } from 'lucide-react';
 import { formatCurrencyShort } from '../../utils';
 import { useToast } from '../common/ToastProvider';
@@ -25,29 +29,38 @@ interface SponsorshipScreenProps {
 
 type SponsorCategory = 'all' | 'shirt' | 'stadium' | 'training' | 'kit';
 
-const SPONSOR_SLOTS: { type: Sponsor['type']; label: string; icon: string; description: string }[] = [
+const renderSponsorCategoryIcon = (type: string, className = "w-5 h-5") => {
+    switch (type) {
+        case 'shirt': return <Shirt className={className} />;
+        case 'stadium': return <Building2 className={className} />;
+        case 'training': return <Zap className={className} />;
+        case 'kit': default: return <Tag className={className} />;
+    }
+};
+
+const SPONSOR_SLOTS = [
     { 
-        type: 'shirt', 
+        type: 'shirt' as const, 
         label: 'Frontal de Camiseta', 
-        icon: '👕', 
+        Icon: Shirt, 
         description: 'Patrocinador principal del club. Mayor visibilidad de marca y volumen de ingresos.' 
     },
     { 
-        type: 'stadium', 
+        type: 'stadium' as const, 
         label: 'Naming Rights Estadio', 
-        icon: '🏟️', 
+        Icon: Building2, 
         description: 'Derechos comerciales por el nombre del estadio. Contratos estables a largo plazo.' 
     },
     { 
-        type: 'training', 
+        type: 'training' as const, 
         label: 'Complejo Deportivo', 
-        icon: '🥤', 
+        Icon: Zap, 
         description: 'Patrocinio de indumentaria de práctica e instalaciones de la ciudad deportiva.' 
     },
     { 
-        type: 'kit', 
+        type: 'kit' as const, 
         label: 'Proveedor Técnico', 
-        icon: '👟', 
+        Icon: Tag, 
         description: 'Marca deportiva oficial que confecciona y suministra las equipaciones del equipo.' 
     }
 ];
@@ -196,8 +209,9 @@ export const SponsorshipScreen: React.FC<SponsorshipScreenProps> = ({ gameState,
                         <Briefcase className="w-3.5 h-3.5 text-[var(--apex-gold)]" />
                         Espacios Comerciales del Club (4 Categorías)
                     </h2>
-                    <span className="text-[10px] text-white/40 font-bold">
-                        {sponsors.length === 4 ? '🟢 Máximo aprovechamiento comercial' : '🟡 Hay espacios vacantes sin monetizar'}
+                    <span className="text-[10px] font-bold flex items-center gap-1.5">
+                        <span className={`w-2 h-2 rounded-full ${sponsors.length === 4 ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+                        <span className="text-white/60">{sponsors.length === 4 ? 'Máximo aprovechamiento comercial' : 'Hay espacios vacantes sin monetizar'}</span>
                     </span>
                 </div>
 
@@ -220,8 +234,8 @@ export const SponsorshipScreen: React.FC<SponsorshipScreenProps> = ({ gameState,
                                     {/* Top Slot Header */}
                                     <div className="flex items-center justify-between mb-3">
                                         <div className="flex items-center gap-2.5">
-                                            <span className="text-xl p-1.5 rounded-xl bg-white/5 border border-white/10 shrink-0">
-                                                {slot.icon}
+                                            <span className="p-2 rounded-xl bg-white/5 border border-white/10 shrink-0 text-[var(--apex-gold)]">
+                                                <slot.Icon className="w-5 h-5" />
                                             </span>
                                             <div>
                                                 <h3 className="text-sm font-black text-white uppercase tracking-tight leading-tight">
@@ -247,7 +261,9 @@ export const SponsorshipScreen: React.FC<SponsorshipScreenProps> = ({ gameState,
                                         <div className="space-y-3 bg-black/25 p-3 rounded-xl border border-white/5">
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-base">{activeSponsor.logo}</span>
+                                                    <span className="p-1.5 rounded-lg bg-white/5 border border-white/10 text-[var(--apex-gold)]">
+                                                        {renderSponsorCategoryIcon(activeSponsor.type, "w-4 h-4")}
+                                                    </span>
                                                     <span className="font-extrabold text-sm text-white uppercase">{activeSponsor.name}</span>
                                                 </div>
                                                 <div className="text-right">
@@ -339,7 +355,7 @@ export const SponsorshipScreen: React.FC<SponsorshipScreenProps> = ({ gameState,
                                             : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10'
                                     }`}
                                 >
-                                    <span>{slot.icon}</span>
+                                    <slot.Icon className="w-3 h-3" />
                                     <span>{slot.label.split(' ')[0]}</span>
                                     <span className="opacity-60 text-[9px]">({count})</span>
                                 </button>
@@ -378,15 +394,15 @@ export const SponsorshipScreen: React.FC<SponsorshipScreenProps> = ({ gameState,
                                         {/* Brand & Category */}
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-12 h-12 bg-black/40 rounded-xl flex items-center justify-center text-2xl border border-white/10 shadow-inner shrink-0 group-hover:scale-105 transition-transform">
-                                                    {offer.logo}
+                                                <div className="w-12 h-12 bg-black/40 rounded-xl flex items-center justify-center border border-white/10 shadow-inner shrink-0 group-hover:scale-105 transition-transform text-[var(--apex-gold)]">
+                                                    {renderSponsorCategoryIcon(offer.type, "w-6 h-6")}
                                                 </div>
                                                 <div>
                                                     <h4 className="text-white font-black uppercase text-sm tracking-tight group-hover:text-[var(--apex-gold)] transition-colors leading-tight">
                                                         {offer.name}
                                                     </h4>
-                                                    <div className="inline-flex items-center gap-1 mt-0.5 text-[9px] font-black uppercase tracking-wider text-white/40">
-                                                        <span>{slotMeta?.icon}</span>
+                                                    <div className="inline-flex items-center gap-1.5 mt-0.5 text-[9px] font-black uppercase tracking-wider text-white/40">
+                                                        {slotMeta && <slotMeta.Icon className="w-3 h-3 text-[var(--apex-gold)]" />}
                                                         <span>{slotMeta?.label}</span>
                                                     </div>
                                                 </div>
@@ -473,8 +489,8 @@ export const SponsorshipScreen: React.FC<SponsorshipScreenProps> = ({ gameState,
                         {/* Top modal bar */}
                         <div className="flex justify-between items-start mb-5 relative z-10">
                             <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 bg-black/50 rounded-2xl flex items-center justify-center text-2xl border border-white/10 shadow-inner">
-                                    {negotiatingSponsor.logo}
+                                <div className="w-12 h-12 bg-black/50 rounded-2xl flex items-center justify-center border border-white/10 shadow-inner text-[var(--apex-gold)]">
+                                    {renderSponsorCategoryIcon(negotiatingSponsor.type, "w-6 h-6")}
                                 </div>
                                 <div>
                                     <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--apex-gold)]">Mesa de Negociación</span>

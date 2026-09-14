@@ -13,13 +13,13 @@ import { GameProvider, useActiveLeaguePlayers } from './contexts/GameContext';
 import { AppRouter } from './components/AppRouter';
 import { MainLayout } from './components/MainLayout';
 
-// UI Modals & Overlays
-import { PlayerDetailModal } from './components/ui/PlayerDetailModal';
-import { SaveGameModal } from './components/ui/SaveGameModal';
+// UI Modals & Overlays - Lazy loaded on-demand
 import { Notification } from './components/ui/Notification';
-import { EventModal } from './components/ui/EventModal';
-import { CinematicOverlay } from './components/cinematics/CinematicOverlay';
-import { SeasonEndModal } from './components/screens/season/SeasonEndModal';
+const PlayerDetailModal = React.lazy(() => import('./components/ui/PlayerDetailModal').then(m => ({ default: m.PlayerDetailModal })));
+const SaveGameModal = React.lazy(() => import('./components/ui/SaveGameModal').then(m => ({ default: m.SaveGameModal })));
+const EventModal = React.lazy(() => import('./components/ui/EventModal').then(m => ({ default: m.EventModal })));
+const CinematicOverlay = React.lazy(() => import('./components/cinematics/CinematicOverlay').then(m => ({ default: m.CinematicOverlay })));
+const SeasonEndModal = React.lazy(() => import('./components/screens/season/SeasonEndModal').then(m => ({ default: m.SeasonEndModal })));
 
 // Services
 import { generateNews } from './services/gameLogic';
@@ -232,42 +232,45 @@ function AppLogic() {
                     onClose={hideNotification}
                 />
             )}
-            {viewingPlayer && <PlayerDetailModal player={viewingPlayer} dispatch={dispatch} />}
-            {isSaveModalOpen && (
-                <SaveGameModal
-                    onSave={handleConfirmSave}
-                    onClose={closeSaveModal}
-                    defaultName={saveMode === 'overwrite' ? (currentSaveName || `${gameState?.team?.name} Carrera`) : `${gameState?.team?.name} Carrera (Nueva)`}
-                    mode={saveMode}
-                />
-            )}
-            {currentEvent && (
-                <EventModal
-                    event={currentEvent.event}
-                    onChoice={handleEventChoice}
-                    onClose={() => setCurrentEvent(null)}
-                />
-            )}
+            <React.Suspense fallback={null}>
+                {viewingPlayer && <PlayerDetailModal player={viewingPlayer} dispatch={dispatch} />}
+                {isSaveModalOpen && (
+                    <SaveGameModal
+                        onSave={handleConfirmSave}
+                        onClose={closeSaveModal}
+                        defaultName={saveMode === 'overwrite' ? (currentSaveName || `${gameState?.team?.name} Carrera`) : `${gameState?.team?.name} Carrera (Nueva)`}
+                        mode={saveMode}
+                    />
+                )}
+                {currentEvent && (
+                    <EventModal
+                        event={currentEvent.event}
+                        onChoice={handleEventChoice}
+                        onClose={() => setCurrentEvent(null)}
+                    />
+                )}
 
-            {isSeasonEndModalOpen && gameState && (
-                <SeasonEndModal
-                    gameState={gameState}
-                    onClose={() => setIsSeasonEndModalOpen(false)}
-                    onStartNewSeason={handleStartNewSeason}
-                    isStarting={isStartingSeason}
-                />
-            )}
-            
-            {/* Cinematic Overlay System */}
-            {gameState && gameState.cinematicQueue?.length > 0 && (
-                <CinematicOverlay 
-                    event={gameState.cinematicQueue[0]} 
-                    onContinue={() => dispatch({ type: 'POP_CINEMATIC' })} 
-                />
-            )}
+                {isSeasonEndModalOpen && gameState && (
+                    <SeasonEndModal
+                        gameState={gameState}
+                        onClose={() => setIsSeasonEndModalOpen(false)}
+                        onStartNewSeason={handleStartNewSeason}
+                        isStarting={isStartingSeason}
+                    />
+                )}
+                
+                {/* Cinematic Overlay System */}
+                {gameState && gameState.cinematicQueue?.length > 0 && (
+                    <CinematicOverlay 
+                        event={gameState.cinematicQueue[0]} 
+                        onContinue={() => dispatch({ type: 'POP_CINEMATIC' })} 
+                    />
+                )}
+            </React.Suspense>
 
             <AppRouter
                 appState={appState}
+                gameState={gameState}
                 playerProfile={playerProfile}
                 selectedTeam={selectedTeam}
                 electionResult={electionResult}

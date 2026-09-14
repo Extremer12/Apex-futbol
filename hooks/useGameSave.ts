@@ -50,9 +50,13 @@ export function useGameSave(
                     // Cloud backup in background without blocking UI
                     supabase.auth.getUser().then(({ data: { user } }) => {
                         if (user) {
-                            uploadSaveToCloud(autoId, autoName, gameState, playerProfile).catch(() => {});
+                            uploadSaveToCloud(autoId, autoName, gameState, playerProfile).catch((err) => {
+                                console.warn("[Apex Cloud] Initial cloud backup failed:", err);
+                            });
                         }
-                    }).catch(() => {});
+                    }).catch((err) => {
+                        console.warn("[Apex Cloud] Auth check failed during initial save:", err);
+                    });
                 })
                 .catch(err => console.error("Initial save failed:", err));
         }
@@ -75,9 +79,13 @@ export function useGameSave(
             // Opportunistic background cloud backup
             supabase.auth.getUser().then(({ data: { user } }) => {
                 if (user) {
-                    uploadSaveToCloud(AUTOSAVE_SLOT_ID, `${gameState.team.name} (Autoguardado)`, gameState, playerProfile).catch(() => {});
+                    uploadSaveToCloud(AUTOSAVE_SLOT_ID, `${gameState.team.name} (Autoguardado)`, gameState, playerProfile).catch((err) => {
+                        console.warn("[Apex Cloud] Autosave cloud backup failed:", err);
+                    });
                 }
-            }).catch(() => {});
+            }).catch((err) => {
+                console.warn("[Apex Cloud] Auth check failed during autosave:", err);
+            });
         } catch (err) {
             console.error("Autosave error:", err);
         } finally {
@@ -154,10 +162,10 @@ export function useGameSave(
                     lastSaved: now,
                 });
 
-                showNotification(`Partida "${cloudData.saveName}" descargada desde la nube ☁️`, 'success');
+                showNotification(`Partida "${cloudData.saveName}" descargada desde la nube`, 'success');
                 return cloudData.playerProfile;
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Error loading cloud save:', err);
             showNotification('Error al cargar partida de la nube', 'error');
         }
@@ -195,15 +203,17 @@ export function useGameSave(
                 if (user) {
                     uploadSaveToCloud(saveId, saveName, gameState, playerProfile)
                         .then(() => {
-                            showNotification("Partida guardada y sincronizada en la nube ☁️", 'success');
+                            showNotification("Partida guardada y sincronizada en la nube", 'success');
                         })
-                        .catch(() => {
+                        .catch((cloudErr) => {
+                            console.warn("[Apex Cloud] Sync failed, saved locally:", cloudErr);
                             showNotification(saveMode === 'new' ? "Nueva partida guardada (local)" : "Partida guardada (local)", 'success');
                         });
                 } else {
                     showNotification(saveMode === 'new' ? "Nueva partida guardada" : "Partida guardada correctamente", 'success');
                 }
-            }).catch(() => {
+            }).catch((authErr) => {
+                console.warn("[Apex Cloud] Auth check failed:", authErr);
                 showNotification("Partida guardada correctamente", 'success');
             });
 

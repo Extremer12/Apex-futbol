@@ -7,15 +7,22 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
-### Added
-- Custom hooks: `useNotification` y `useAutoSave` para mejor organización del código
-- Error Boundary component para manejo graceful de errores
-- Estructura modular de constants (teamLogos, squadHelpers, championship)
-- Archivo `.env.example` para documentar variables de entorno
-- Documentación CONTRIBUTING.md con guías de contribución
+### Security & Database (Supabase)
+- **Cloud Saves Limit**: Aplicada migración de producción `check_cloud_saves_limit()` para restringir a 3 slots de guardado por cuenta en la nube.
+- **Seguridad en RPCs**: Revocado permiso `EXECUTE` al rol `anon` para `increment_pack_downloads(UUID)` y `check_cloud_saves_limit()`.
+- **Optimización RLS**: Reescribidas 13 políticas de seguridad a nivel de fila usando `(select auth.uid())` en lugar de evaluación por fila, eliminando 13 warnings de rendimiento del advisor de Supabase.
+- **Tipado Supabase**: Actualizada definición TypeScript de RPCs en `types/supabase.ts`.
 
-### Changed
-- README.md actualizado con características de Phase 3 (copas y multi-liga)
+### Performance & Bundle Splitting
+- **Code-Splitting con React.lazy**: Separadas pantallas y modales pesados (`CinematicOverlay`, `SeasonEndModal`, `PlayerDetailModal`, `SaveGameModal`, `EventModal`, `TeamSelection`, `ProfileCreation`, etc.), reduciendo el bundle principal `index.js` de 551 kB a 457 kB.
+- **Service Worker Versioning**: Actualizado `sw.js` a versión `apex-ai-v3-2026` para invalidación limpia de caché en nuevas versiones.
+
+### Features & Gameloop
+- **Leaderboard Global Activo**: Conectado el servicio de Leaderboard a `SeasonEndModal` y `GameOverScreen` para calcular y registrar el Score Presidencial en el ranking de Supabase.
+- **Rediseño GameOverScreen**: Nueva pantalla de fin de carrera estilo broadcast con desglose completo de mandatos, títulos, valor de club, apoyo popular, score presidencial y publicación en leaderboard.
+- **Validación Robusta de Guardados**: Validación estructural estricta en `services/db.ts` para importación de partidas `.apexsave`.
+- **Limpieza Estética**: Eliminados emojis genéricos en sponsors (`economy.ts`, `FinancesScreen.tsx`, `SponsorshipScreen.tsx`) y `ErrorBoundary.tsx` reemplazados por iconos vectoriales Lucide.
+- **Eliminación de Tipos `any`**: Tipado estricto en motores de simulación (`cupProgressionHandler.ts`, `cinematicsDetector.ts`, `cupGenerator.ts`, `seasonManager.ts`).
 
 ## [0.3.0] - 2024-12-02 - Phase 3: Multi-League & Cups
 
