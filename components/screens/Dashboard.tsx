@@ -234,14 +234,11 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({
                                         {/* News Thumbnail / Player Photo */}
                                         <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden flex-shrink-0 border border-white/10 bg-black/40 relative flex items-center justify-center">
                                             {assocPlayer || item.playerPhoto ? (
-                                                <div className="w-full h-full relative bg-gradient-to-br from-slate-800 to-slate-950 flex items-center justify-center p-1">
+                                                <div className="w-full h-full relative bg-gradient-to-br from-slate-800 to-slate-950 flex items-center justify-center">
                                                     <PlayerAvatar 
                                                         player={assocPlayer || { name: item.playerName || '', photo: item.playerPhoto }}
                                                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                                     />
-                                                    <span className="absolute bottom-0 inset-x-0 bg-black/80 backdrop-blur-xs text-[7px] font-black uppercase text-center text-[var(--apex-gold)] py-0.5 tracking-wider">
-                                                        Fichaje
-                                                    </span>
                                                 </div>
                                             ) : (
                                                 <img 
@@ -258,10 +255,20 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({
                                         {/* News Text */}
                                         <div className="flex-1 min-w-0 flex flex-col justify-between">
                                             <div>
-                                                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                                <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                                                     <span className="text-[8px] font-extrabold uppercase tracking-wider text-[var(--apex-gold)] bg-[var(--apex-gold)]/10 px-1.5 py-0.5 rounded">
                                                         {item.date || 'Actualidad'}
                                                     </span>
+                                                    {item.type === 'transfer' && (
+                                                        <span className="text-[8px] font-extrabold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                                                            Fichaje
+                                                        </span>
+                                                    )}
+                                                    {item.type === 'match' && (
+                                                        <span className="text-[8px] font-extrabold uppercase tracking-wider text-sky-400 bg-sky-500/10 px-1.5 py-0.5 rounded border border-sky-500/20">
+                                                            Partido
+                                                        </span>
+                                                    )}
                                                     {assocPlayer && (
                                                         <span className="text-[8px] font-bold text-white/40 uppercase">
                                                             {assocPlayer.name}
@@ -351,7 +358,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({
                         <div className="p-5 border-b border-white/10 flex items-center justify-between bg-black/30">
                             <div className="flex items-center gap-2">
                                 <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--apex-gold)] bg-[var(--apex-gold)]/10 px-2.5 py-1 rounded border border-[var(--apex-gold)]/30">
-                                    COMUNICADO OFICIAL
+                                    {selectedNews.type === 'transfer' ? 'MERCADO DE PASES' : selectedNews.type === 'match' ? 'CRÓNICA DEL PARTIDO' : 'COMUNICADO OFICIAL'}
                                 </span>
                                 <span className="text-[10px] font-bold text-white/40 uppercase">
                                     {selectedNews.date || 'Hoy'}
