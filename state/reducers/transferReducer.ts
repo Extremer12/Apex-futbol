@@ -77,7 +77,10 @@ export function handleTransferAction(state: GameState, action: TransferAction): 
                 headline: `¡OFICIAL! ${player.name} traspasado al ${offeringTeam?.name || 'otro club'}`,
                 body: `${player.name} ha completado su traspaso al ${offeringTeam?.name || 'otro club'} por una cifra acordada de ${formatCurrency(finalFee)}. El presidente expresó que era "una operación redonda para la entidad".`,
                 date: formatDate(state.currentDate),
-                type: 'transfer'
+                type: 'transfer',
+                playerId: player.id,
+                playerName: player.name,
+                playerPhoto: player.photo
             };
 
             return {
@@ -140,7 +143,10 @@ export function handleTransferAction(state: GameState, action: TransferAction): 
                 headline: `¡FICHAJE BOMBA! ${player.name} ya es del ${state.team.name}`,
                 body: `${player.name} ha firmado su contrato por ${negotiatedYears} temporadas con el ${state.team.name}. Traspaso valorado en ${formatCurrency(fee)} con un salario semanal de ${formatCurrency(negotiatedWage)}.`,
                 date: formatDate(state.currentDate),
-                type: 'transfer'
+                type: 'transfer',
+                playerId: player.id,
+                playerName: player.name,
+                playerPhoto: player.photo
             };
 
             return {

@@ -304,26 +304,26 @@ export const ARG_CLUB_LOGOS_BY_ID: Record<number | string, string> = {
     // ==========================================
     // La Liga Española (IDs 201-220)
     // ==========================================
-    201: `${COMMUNITY_PACK_CDN}/La%20Liga/spain_real-madrid.football-logos.cc.svg`,
-    202: `${COMMUNITY_PACK_CDN}/La%20Liga/spain_barcelona.football-logos.cc.svg`,
-    203: `${COMMUNITY_PACK_CDN}/La%20Liga/spain_atletico-madrid.football-logos.cc.svg`,
-    204: `${COMMUNITY_PACK_CDN}/La%20Liga/spain_athletic-club.football-logos.cc.svg`,
-    205: `${COMMUNITY_PACK_CDN}/La%20Liga/spain_real-sociedad.football-logos.cc.svg`,
-    206: `${COMMUNITY_PACK_CDN}/La%20Liga/spain_real-betis.football-logos.cc.svg`,
-    207: `${COMMUNITY_PACK_CDN}/La%20Liga/spain_girona.football-logos.cc.svg`,
-    208: `${COMMUNITY_PACK_CDN}/La%20Liga/spain_villarreal.football-logos.cc.svg`,
-    209: `${COMMUNITY_PACK_CDN}/La%20Liga/spain_valencia.football-logos.cc.svg`,
-    210: `${COMMUNITY_PACK_CDN}/La%20Liga/spain_sevilla.football-logos.cc.svg`,
-    211: `${COMMUNITY_PACK_CDN}/La%20Liga/spain_celta.football-logos.cc.svg`,
-    212: `${COMMUNITY_PACK_CDN}/La%20Liga/spain_osasuna.football-logos.cc.svg`,
-    213: `${COMMUNITY_PACK_CDN}/La%20Liga/spain_getafe.football-logos.cc.svg`,
-    214: `${COMMUNITY_PACK_CDN}/La%20Liga/spain_mallorca.football-logos.cc.svg`,
-    215: `${COMMUNITY_PACK_CDN}/La%20Liga/spain_rayo-vallecano.football-logos.cc.svg`,
-    216: `${COMMUNITY_PACK_CDN}/La%20Liga/spain_las-palmas.football-logos.cc.svg`,
-    217: `${COMMUNITY_PACK_CDN}/La%20Liga/spain_alaves.football-logos.cc.svg`,
-    218: `${COMMUNITY_PACK_CDN}/La%20Liga/spain_leganes.football-logos.cc.svg`,
-    219: `${COMMUNITY_PACK_CDN}/La%20Liga/spain_valladolid.football-logos.cc.svg`,
-    220: `${COMMUNITY_PACK_CDN}/La%20Liga/spain_espanyol.football-logos.cc.svg`,
+    201: 'https://tmssl.akamaized.net/images/wappen/head/418.png', // Real Madrid
+    202: 'https://tmssl.akamaized.net/images/wappen/head/131.png', // FC Barcelona
+    203: 'https://tmssl.akamaized.net/images/wappen/head/13.png', // Atlético Madrid
+    204: 'https://tmssl.akamaized.net/images/wappen/head/621.png', // Athletic Club
+    205: 'https://tmssl.akamaized.net/images/wappen/head/681.png', // Real Sociedad
+    206: 'https://tmssl.akamaized.net/images/wappen/head/150.png', // Real Betis
+    207: 'https://tmssl.akamaized.net/images/wappen/head/12321.png', // Girona FC
+    208: 'https://tmssl.akamaized.net/images/wappen/head/1050.png', // Villarreal CF
+    209: 'https://tmssl.akamaized.net/images/wappen/head/1049.png', // Valencia CF
+    210: 'https://tmssl.akamaized.net/images/wappen/head/368.png', // Sevilla FC
+    211: 'https://tmssl.akamaized.net/images/wappen/head/940.png', // Celta Vigo
+    212: 'https://tmssl.akamaized.net/images/wappen/head/331.png', // Osasuna
+    213: 'https://tmssl.akamaized.net/images/wappen/head/3709.png', // Getafe CF
+    214: 'https://tmssl.akamaized.net/images/wappen/head/237.png', // Mallorca
+    215: 'https://tmssl.akamaized.net/images/wappen/head/367.png', // Rayo Vallecano
+    216: 'https://tmssl.akamaized.net/images/wappen/head/472.png', // Las Palmas
+    217: 'https://tmssl.akamaized.net/images/wappen/head/1108.png', // Alavés
+    218: 'https://tmssl.akamaized.net/images/wappen/head/1244.png', // Leganés
+    219: 'https://tmssl.akamaized.net/images/wappen/head/366.png', // Valladolid
+    220: 'https://tmssl.akamaized.net/images/wappen/head/714.png', // Espanyol
 
     // ==========================================
     // Segunda División Española (IDs 901-922)

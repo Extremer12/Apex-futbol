@@ -38,6 +38,8 @@ export interface Player {
   contractYears: number; // years remaining
   isTransferListed?: boolean;
   age?: number; // Added for Regens system
+  photo?: string; // Optional player face photo URL
+
   
   // FASE 6: Stats & Realismo
   stats?: PlayerStats;
@@ -209,6 +211,10 @@ export interface NewsItem {
   body: string;
   date: string;
   type?: 'standard' | 'transfer' | 'achievement' | 'warning';
+  playerId?: number;
+  playerName?: string;
+  playerPhoto?: string;
+  image?: string;
 }
 
 export interface MatchScorer {

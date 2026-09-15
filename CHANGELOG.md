@@ -7,6 +7,12 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+### UI/UX & Aesthetics
+- **Noticias en Modal & Rostros de Fichajes**: Las noticias del Dashboard ahora son interactivas; al hacer clic abren un modal detallado de lectura completa con formato limpio (sin `\n` crudos), badges oficiales y ficha del jugador involucrado. Además, las noticias de fichajes muestran directamente la foto/rostro del futbolista en miniatura en lugar de la imagen genérica.
+- **Radar de Fichajes**: Renovada la columna lateral ("Actualizaciones de Mercado") reemplazando avatares cartoon por el nuevo "Radar de Fichajes" con `PlayerAvatar` auténtico, media OVR, club, valor de mercado y etiquetas contextuales (*Transferible*, *Fin Contrato*, *Estrella Top*), con acceso directo al perfil del jugador.
+- **Base de Datos de Rostros Ampliada**: Añadidos IDs y nombres para toda la plantilla del FC Barcelona (Gavi, Pedri, Olmo, Balde, Cubarsí, Christensen, Ferran Torres, Fermín López, Iñigo Martínez, Casadó, etc.), Real Madrid, y figuras de La Liga mediante el CDN oficial de FotMob.
+- **Corrección de Logos 404 en La Liga**: Reemplazadas las URLs caídas de jsdelivr por endpoints verificados 200 OK de Transfermarkt para Las Palmas, Leganés, Mallorca, Girona, Valladolid y Alavés en `argentineLogos.ts` y `TEAM_LOGOS`.
+
 ### Security & Database (Supabase)
 - **Cloud Saves Limit**: Aplicada migración de producción `check_cloud_saves_limit()` para restringir a 3 slots de guardado por cuenta en la nube.
 - **Seguridad en RPCs**: Revocado permiso `EXECUTE` al rol `anon` para `increment_pack_downloads(UUID)` y `check_cloud_saves_limit()`.
