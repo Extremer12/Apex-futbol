@@ -52,26 +52,26 @@ export const PLAYER_PHOTOS_BY_ID: Record<number, string> = {
     20217: 'https://images.fotmob.com/image_resources/playerimages/282676.png', // Iñigo Martínez
 
     // =========================================================================
-    // 🇪🇸 Real Madrid (IDs 20101 - 20115)
+    // 🇪🇸 Real Madrid (IDs 20101 - 20118 from laLiga.ts)
     // =========================================================================
-    20101: 'https://images.fotmob.com/image_resources/playerimages/701154.png', // K. Mbappé
-    20102: 'https://images.fotmob.com/image_resources/playerimages/846033.png', // Vinicius Jr.
-    20103: 'https://images.fotmob.com/image_resources/playerimages/1077894.png', // J. Bellingham
-    20104: 'https://images.fotmob.com/image_resources/playerimages/895362.png', // Rodrygo
-    20105: 'https://images.fotmob.com/image_resources/playerimages/743533.png', // F. Valverde
-    20106: 'https://images.fotmob.com/image_resources/playerimages/170323.png', // T. Courtois
-    20107: 'https://images.fotmob.com/image_resources/playerimages/1015185.png', // E. Camavinga
-    20108: 'https://images.fotmob.com/image_resources/playerimages/914458.png', // A. Tchouaméni
-    20109: 'https://images.fotmob.com/image_resources/playerimages/282674.png', // D. Carvajal
-    20110: 'https://images.fotmob.com/image_resources/playerimages/844415.png', // É. Militão
-    20111: 'https://images.fotmob.com/image_resources/playerimages/276738.png', // A. Rüdiger
-    20112: 'https://images.fotmob.com/image_resources/playerimages/1406729.png', // Endrick
-    20113: 'https://images.fotmob.com/image_resources/playerimages/1253890.png', // A. Güler
-    20114: 'https://images.fotmob.com/image_resources/playerimages/750027.png', // Brahim Díaz
-    20115: 'https://images.fotmob.com/image_resources/playerimages/31097.png', // L. Modric
+    20101: 'https://images.fotmob.com/image_resources/playerimages/846033.png', // V. Junior (Vinicius Jr.)
+    20102: 'https://images.fotmob.com/image_resources/playerimages/1077894.png', // J. Bellingham
+    20103: 'https://images.fotmob.com/image_resources/playerimages/701154.png', // K. Mbappé
+    20104: 'https://images.fotmob.com/image_resources/playerimages/743533.png', // F. Valverde
+    20105: 'https://images.fotmob.com/image_resources/playerimages/895362.png', // Rodrygo
+    20106: 'https://images.fotmob.com/image_resources/playerimages/1015185.png', // E. Camavinga
+    20107: 'https://images.fotmob.com/image_resources/playerimages/914458.png', // A. Tchouaméni
+    20108: 'https://images.fotmob.com/image_resources/playerimages/844415.png', // E. Militao
+    20109: 'https://images.fotmob.com/image_resources/playerimages/276738.png', // A. Rüdiger
+    20110: 'https://images.fotmob.com/image_resources/playerimages/282674.png', // D. Carvajal
+    20112: 'https://images.fotmob.com/image_resources/playerimages/170323.png', // T. Courtois
+    20113: 'https://images.fotmob.com/image_resources/playerimages/31097.png', // L. Modric
+    20114: 'https://images.fotmob.com/image_resources/playerimages/750027.png', // Brahim
+    20116: 'https://images.fotmob.com/image_resources/playerimages/1406729.png', // Endrick
+    20117: 'https://images.fotmob.com/image_resources/playerimages/1253890.png', // A. Güler
 
     // =========================================================================
-    // 🇪🇸 Atlético Madrid & La Liga Stars (IDs 20301+, 20401+, 20501+)
+    // 🇪🇸 Atlético Madrid & La Liga Stars (IDs from laLiga.ts)
     // =========================================================================
     20301: 'https://images.fotmob.com/image_resources/playerimages/184138.png', // A. Griezmann
     20302: 'https://images.fotmob.com/image_resources/playerimages/177126.png', // J. Oblak
@@ -80,11 +80,12 @@ export const PLAYER_PHOTOS_BY_ID: Record<number, string> = {
     20305: 'https://images.fotmob.com/image_resources/playerimages/184533.png', // Koke
     20306: 'https://images.fotmob.com/image_resources/playerimages/966027.png', // C. Gallagher
     20401: 'https://images.fotmob.com/image_resources/playerimages/660625.png', // Unai Simón
+    20409: 'https://images.fotmob.com/image_resources/playerimages/1004135.png', // O. Sancet
     20410: 'https://images.fotmob.com/image_resources/playerimages/1202110.png', // Nico Williams
     20411: 'https://images.fotmob.com/image_resources/playerimages/604105.png', // Iñaki Williams
-    20508: 'https://images.fotmob.com/image_resources/playerimages/848289.png', // T. Kubo
-    20509: 'https://images.fotmob.com/image_resources/playerimages/678234.png', // M. Oyarzabal
-    20510: 'https://images.fotmob.com/image_resources/playerimages/1031325.png', // M. Zubimendi
+    20506: 'https://images.fotmob.com/image_resources/playerimages/1031325.png', // M. Zubimendi
+    20509: 'https://images.fotmob.com/image_resources/playerimages/848289.png', // T. Kubo
+    20510: 'https://images.fotmob.com/image_resources/playerimages/678234.png', // M. Oyarzabal
 
     // =========================================================================
     // 🇦🇷 Boca Juniors (IDs 70101 - 70119)
@@ -355,12 +356,20 @@ export const PLAYER_PHOTOS_BY_NAME: Record<string, string> = {
     'sávio': 'https://images.fotmob.com/image_resources/playerimages/1174337.png',
     'kylian mbappe': 'https://images.fotmob.com/image_resources/playerimages/701154.png',
     'kylian mbappé': 'https://images.fotmob.com/image_resources/playerimages/701154.png',
+    'k. mbappé': 'https://images.fotmob.com/image_resources/playerimages/701154.png',
+    'k. mbappe': 'https://images.fotmob.com/image_resources/playerimages/701154.png',
+    'k mbappé': 'https://images.fotmob.com/image_resources/playerimages/701154.png',
+    'k mbappe': 'https://images.fotmob.com/image_resources/playerimages/701154.png',
     'mbappe': 'https://images.fotmob.com/image_resources/playerimages/701154.png',
     'mbappé': 'https://images.fotmob.com/image_resources/playerimages/701154.png',
     'vinicius junior': 'https://images.fotmob.com/image_resources/playerimages/846033.png',
     'vinicius jr': 'https://images.fotmob.com/image_resources/playerimages/846033.png',
     'vinicius': 'https://images.fotmob.com/image_resources/playerimages/846033.png',
+    'v. junior': 'https://images.fotmob.com/image_resources/playerimages/846033.png',
+    'v junior': 'https://images.fotmob.com/image_resources/playerimages/846033.png',
     'jude bellingham': 'https://images.fotmob.com/image_resources/playerimages/1077894.png',
+    'j. bellingham': 'https://images.fotmob.com/image_resources/playerimages/1077894.png',
+    'j bellingham': 'https://images.fotmob.com/image_resources/playerimages/1077894.png',
     'bellingham': 'https://images.fotmob.com/image_resources/playerimages/1077894.png',
     'mohamed salah': 'https://images.fotmob.com/image_resources/playerimages/292462.png',
     'salah': 'https://images.fotmob.com/image_resources/playerimages/292462.png',
