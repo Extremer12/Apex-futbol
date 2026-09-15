@@ -52,7 +52,9 @@ export {
     checkAndScheduleIntercontinental,
     createInitialEuropeanTable,
     generateSwissPhase,
-    generateGroupPhase
+    generateGroupPhase,
+    finalizeSeasonCompetitions,
+    finalizeSingleCupCompetition
 } from './simulation/cupGenerator';
 
 // Promotion & Relegation

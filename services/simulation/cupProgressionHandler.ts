@@ -171,7 +171,14 @@ export function handleCupProgression(
         const libertadoresMatches = justPlayedMatches.filter(m => m.competition === 'Copa_Libertadores');
         const shouldCheckProgression = libertadoresMatches.length > 0 || (updatedCups.copaLibertadores.phase === 'groups' && simulatedWeek >= 18);
         if (shouldCheckProgression) {
-            const nextCupWeek = newWeek + 4;
+            const libRoundsCount = updatedCups.copaLibertadores.rounds?.length || 0;
+            const libKnockoutWeekMap: Record<number, number> = {
+                0: 22,
+                1: 26,
+                2: 30,
+                3: 34
+            };
+            const nextCupWeek = libKnockoutWeekMap[libRoundsCount] || Math.min(36, Math.max(newWeek + 2, 22));
             const wasGroups = updatedCups.copaLibertadores.phase === 'groups';
             const result = progressInternationalCup(updatedCups.copaLibertadores, teams, nextCupWeek, updatedSchedule);
             updatedCups.copaLibertadores = result;
@@ -363,7 +370,15 @@ export function handleCupProgression(
     // 4. Champions League
     const championsLeagueMatches = justPlayedMatches.filter(m => m.competition === 'Champions_League');
     if (championsLeagueMatches.length > 0 && championsLeagueMatches.every(m => m.result !== undefined)) {
-        const nextCupWeek = newWeek + 5;
+        const clRoundsCount = updatedCups.championsLeague.rounds?.length || 0;
+        const clKnockoutWeekMap: Record<number, number> = {
+            0: 22,
+            1: 26,
+            2: 30,
+            3: 34,
+            4: 37
+        };
+        const nextCupWeek = clKnockoutWeekMap[clRoundsCount] || Math.min(38, Math.max(newWeek + 2, 22));
         const wasSwiss = updatedCups.championsLeague.phase === 'swiss';
         const result = progressInternationalCup(updatedCups.championsLeague, teams, nextCupWeek, updatedSchedule);
         updatedCups.championsLeague = result;
@@ -385,6 +400,28 @@ export function handleCupProgression(
                         bgClass: 'from-blue-900 via-slate-950 to-slate-950' 
                     }
                 });
+            }
+        }
+    }
+
+    // 4b. Europa League
+    if (updatedCups.europaLeague) {
+        const europaLeagueMatches = justPlayedMatches.filter(m => m.competition === 'Europa_League');
+        if (europaLeagueMatches.length > 0 && europaLeagueMatches.every(m => m.result !== undefined)) {
+            const elRoundsCount = updatedCups.europaLeague.rounds?.length || 0;
+            const elKnockoutWeekMap: Record<number, number> = {
+                0: 21,
+                1: 25,
+                2: 29,
+                3: 33,
+                4: 36
+            };
+            const nextCupWeek = elKnockoutWeekMap[elRoundsCount] || Math.min(37, Math.max(newWeek + 2, 21));
+            const result = progressInternationalCup(updatedCups.europaLeague, teams, nextCupWeek, updatedSchedule);
+            updatedCups.europaLeague = result;
+
+            if (result.newFixtures) {
+                updatedSchedule.push(...result.newFixtures);
             }
         }
     }

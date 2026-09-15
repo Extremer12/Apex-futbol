@@ -37,6 +37,9 @@ interface ProjectedRound {
 
 const ROUND_NAME_MAP: Record<string, string> = {
     'Round of 32': 'Dieciseisavos',
+    'Playoffs 16vos': 'Playoffs 16vos',
+    'Playoff 16vos': 'Playoffs 16vos',
+    'Dieciseisavos de Final': 'Dieciseisavos',
     'Round 1': '16vos de Final',
     'Round of 16': 'Octavos de Final',
     'Octavos de Final': 'Octavos de Final',
@@ -84,30 +87,46 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = React.memo(({
 
         const round0 = existingRounds[0];
         const numInitialFixtures = round0.fixtures.length;
+        const hasPlayoffRound = round0.name.toLowerCase().includes('playoff') || round0.name.toLowerCase().includes('16vo');
 
-        // Determine total rounds (e.g. 16 fixtures = 5 rounds: 16 -> 8 -> 4 -> 2 -> 1)
         let totalRounds = 1;
-        let fixturesInRound = numInitialFixtures;
-        while (fixturesInRound > 1) {
-            fixturesInRound = Math.ceil(fixturesInRound / 2);
-            totalRounds++;
+        let roundTitles: string[] = [];
+
+        if (hasPlayoffRound) {
+            totalRounds = 5;
+            roundTitles = ['Playoffs 16vos', 'Round of 16', 'Quarter-Final', 'Semi-Final', 'Final'];
+        } else {
+            let fixturesInRound = numInitialFixtures;
+            while (fixturesInRound > 1) {
+                fixturesInRound = Math.ceil(fixturesInRound / 2);
+                totalRounds++;
+            }
+
+            const standardRoundNames = (count: number): string[] => {
+                if (count === 1) return ['Final'];
+                if (count === 2) return ['Semi-Final', 'Final'];
+                if (count === 3) return ['Quarter-Final', 'Semi-Final', 'Final'];
+                if (count === 4) return ['Round of 16', 'Quarter-Final', 'Semi-Final', 'Final'];
+                if (count === 5) return ['Round of 32', 'Round of 16', 'Quarter-Final', 'Semi-Final', 'Final'];
+                return Array.from({ length: count }, (_, i) => `Ronda ${i + 1}`);
+            };
+
+            roundTitles = standardRoundNames(totalRounds);
         }
 
-        const standardRoundNames = (count: number): string[] => {
-            if (count === 1) return ['Final'];
-            if (count === 2) return ['Semi-Final', 'Final'];
-            if (count === 3) return ['Quarter-Final', 'Semi-Final', 'Final'];
-            if (count === 4) return ['Round of 16', 'Quarter-Final', 'Semi-Final', 'Final'];
-            if (count === 5) return ['Round of 32', 'Round of 16', 'Quarter-Final', 'Semi-Final', 'Final'];
-            return Array.from({ length: count }, (_, i) => `Ronda ${i + 1}`);
-        };
-
-        const roundTitles = standardRoundNames(totalRounds);
         const projectedRounds: ProjectedRound[] = [];
 
         for (let rIdx = 0; rIdx < totalRounds; rIdx++) {
-            const expectedMatchCount = Math.max(1, Math.floor(numInitialFixtures / Math.pow(2, rIdx)));
             const actualRound = existingRounds[rIdx];
+            let expectedMatchCount = actualRound?.fixtures?.length || 0;
+            if (!expectedMatchCount) {
+                if (hasPlayoffRound) {
+                    const counts = [8, 8, 4, 2, 1];
+                    expectedMatchCount = counts[rIdx] || 1;
+                } else {
+                    expectedMatchCount = Math.max(1, Math.floor(numInitialFixtures / Math.pow(2, rIdx)));
+                }
+            }
             const roundName = actualRound?.name || roundTitles[rIdx] || `Ronda ${rIdx + 1}`;
             const roundMatches: ProjectedMatch[] = [];
 
@@ -521,7 +540,7 @@ const formatCompactRoundName = (name: string): string => {
     if (lower.includes('semi')) return 'Semis';
     if (lower.includes('cuart') || lower.includes('quarter')) return 'Cuartos';
     if (lower.includes('16') || lower.includes('octav')) return 'Octavos';
-    if (lower.includes('32') || lower.includes('dieciseis') || lower.includes('16vos')) return '16vos';
+    if (lower.includes('32') || lower.includes('dieciseis') || lower.includes('16vos') || lower.includes('playoff')) return '16vos';
     return name;
 };
 

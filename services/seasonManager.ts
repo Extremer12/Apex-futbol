@@ -4,7 +4,7 @@
  */
 
 import { GameState, Team, Player, NewsItem, EuropeanCompetition, EuropeanTableRow, Match, CupCompetition, CupChampion, LeagueId, SeasonHistoryRecord, LeagueTableRow } from '../types';
-import { generateYouthPlayer, generateSeasonSchedule, generateCupDraw, createInitialLeagueTable, handlePromotionRelegation, generateSwissPhase, generateGroupPhase, createInitialEuropeanTable, sortArgentineZones, simulateMacroMatch, PROMOTION_RELEGATION_PAIRS } from './simulation';
+import { generateYouthPlayer, generateSeasonSchedule, generateCupDraw, createInitialLeagueTable, handlePromotionRelegation, generateSwissPhase, generateGroupPhase, createInitialEuropeanTable, sortArgentineZones, simulateMacroMatch, PROMOTION_RELEGATION_PAIRS, finalizeSeasonCompetitions } from './simulation';
 import { computeArgentineRelegation, computeArgentineInternationalQualification } from './argentinaRegulations';
 import { calculatePrizeMoney, generateSponsorMarket } from './economy';
 import { formatDate, formatCurrency } from '../utils';
@@ -89,6 +89,9 @@ export function startNewSeason(currentState: GameState): GameState {
         [LeagueId.SERIE_B_BR]: 'Brasileirão Série B',
         [LeagueId.COPA_DE_PRIMERA]: 'Copa de Primera (Paraguay)'
     };
+
+    // Ensure all competitions of the season are crowned and finalized before awarding trophies
+    finalizeSeasonCompetitions(currentState.cups, currentState.allTeams, currentState.schedule);
 
     // Leagues
     Object.entries(currentState.leagueTables).forEach(([leagueId, table]) => {
@@ -491,8 +494,8 @@ export function startNewSeason(currentState: GameState): GameState {
     const libGroups = libInit.cup.groups || []; 
     const sudGroups = sudInit.cup.groups || [];
 
-    const clFixtures = clSwiss.fixtures.map(m => ({ ...m, week: m.week + 5, isMidweek: true }));
-    const elFixtures = elSwiss.fixtures.map(m => ({ ...m, week: m.week + 5, isMidweek: true }));
+    const clFixtures = clSwiss.fixtures.map(m => ({ ...m, week: m.week + 2, isMidweek: true }));
+    const elFixtures = elSwiss.fixtures.map(m => ({ ...m, week: m.week + 2, isMidweek: true }));
     const libGroupFixtures = libInit.fixtures;
     const sudGroupFixtures = sudInit.fixtures;
 

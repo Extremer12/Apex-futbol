@@ -1,5 +1,6 @@
 import { CupCompetition, GameState, LeagueId, Team, Match } from '../types';
 import { computeArgentineRelegation, computeArgentineInternationalQualification } from './argentinaRegulations';
+import { finalizeSeasonCompetitions } from './simulation';
 
 export interface CompetitionChampionItem {
     name: string;
@@ -52,14 +53,21 @@ export const isSeasonCompleted = (gameState: GameState | null): boolean => {
     else if (userLeagueId === LeagueId.PRIMERA_NACIONAL) maxLeagueWeek = 38;
     else if (userLeagueId === LeagueId.CHAMPIONSHIP) maxLeagueWeek = 46;
     else if (userLeagueId === LeagueId.SEGUNDA_DIVISION_ESP) maxLeagueWeek = 42;
-    else if (userLeagueId === LeagueId.BUNDESLIGA || userLeagueId === LeagueId.ZWEITE_BUNDESLIGA || userLeagueId === LeagueId.LIGUE_1) maxLeagueWeek = 34;
+    else if (userLeagueId === LeagueId.BUNDESLIGA || userLeagueId === LeagueId.ZWEITE_BUNDESLIGA || userLeagueId === LeagueId.LIGUE_1) maxLeagueWeek = 38;
 
-    // 3. Absolute hard cap: strictly after maxLeagueWeek has concluded
-    if (currentWeek > maxLeagueWeek) {
-        return true;
+    // 3. Absolute hard cap: when maxLeagueWeek is reached and user has no pending match this week
+    if (currentWeek >= maxLeagueWeek) {
+        const userHasMatchThisWeek = gameState.schedule.some(
+            m => (m.homeTeamId === gameState.team.id || m.awayTeamId === gameState.team.id) &&
+                 m.week === currentWeek &&
+                 m.result === undefined
+        );
+        if (!userHasMatchThisWeek) {
+            return true;
+        }
     }
 
-    // 4. Check if the user's team still has any upcoming pending matches in the active season
+    // 4. Check if the user's team still has any upcoming pending matches in the active season schedule
     const userHasPendingMatches = gameState.schedule.some(
         m => (m.homeTeamId === gameState.team.id || m.awayTeamId === gameState.team.id) &&
              m.week >= currentWeek &&
@@ -70,7 +78,50 @@ export const isSeasonCompleted = (gameState: GameState | null): boolean => {
         return false;
     }
 
-    // 5. League-specific completion rules when user has no more pending matches
+    // 5. Check if the user is still alive in an active cup where subsequent rounds must be played
+    const userCupActive = Object.values(gameState.cups || {}).some(cup => {
+        if (!cup || cup.winnerId || cup.phase === 'finished') return false;
+        const isUserInCup = 
+            (cup.seededTeamIds && cup.seededTeamIds.includes(gameState.team.id)) ||
+            (cup.swissTable && cup.swissTable.some(r => r.teamId === gameState.team.id)) ||
+            (cup.groups && cup.groups.some(g => g.teams && g.teams.includes(gameState.team.id))) ||
+            (cup.rounds && cup.rounds.some(r => r.fixtures && r.fixtures.some(f => f.homeTeamId === gameState.team.id || f.awayTeamId === gameState.team.id)));
+        if (!isUserInCup) return false;
+
+        // In Swiss or groups: only active during group stage weeks (weeks <= 20)
+        if (cup.phase === 'swiss' || cup.phase === 'groups') {
+            return currentWeek <= 20;
+        }
+
+        // In knockout, check if user is in current round or won current round
+        if (cup.rounds && cup.rounds.length > 0) {
+            const isLastRound = cup.currentRoundIndex >= cup.rounds.length - 1;
+            const currentRound = cup.rounds[cup.currentRoundIndex];
+            if (currentRound && currentRound.fixtures) {
+                const userFixture = currentRound.fixtures.find(f => f.homeTeamId === gameState.team.id || f.awayTeamId === gameState.team.id);
+                if (userFixture) {
+                    if (userFixture.result === undefined) return true;
+                    // If the final round has already been played by the user, cup has concluded for user
+                    if (isLastRound) return false;
+                    // Check if user won this match
+                    const winnerId = userFixture.result.homeScore > userFixture.result.awayScore
+                        ? userFixture.homeTeamId
+                        : userFixture.result.awayScore > userFixture.result.homeScore
+                        ? userFixture.awayTeamId
+                        : (userFixture.penalties?.home ?? 0) > (userFixture.penalties?.away ?? 0)
+                        ? userFixture.homeTeamId
+                        : userFixture.awayTeamId;
+                    if (winnerId === gameState.team.id) return true;
+                }
+            }
+        }
+        return false;
+    });
+    if (userCupActive) {
+        return false;
+    }
+
+    // 6. League-specific completion rules when user has no more pending matches
     if (userLeagueId === LeagueId.LIGA_ARGENTINA) {
         // Regular season ends at week 36 (Apertura 1-16, Clausura 21-36).
         if (currentWeek < 36) {
@@ -78,15 +129,13 @@ export const isSeasonCompleted = (gameState: GameState | null): boolean => {
         }
 
         const clausura = gameState.cups?.clausuraPlayoffs;
-        // If Clausura playoffs exist, verify that the tournament has concluded (has a winner or final match played)
         if (clausura && clausura.rounds && clausura.rounds.length > 0) {
             const lastRound = clausura.rounds[clausura.rounds.length - 1];
             const finalFinished = !!clausura.winnerId || (lastRound.fixtures.length > 0 && lastRound.fixtures.every(f => f.result !== undefined));
             if (finalFinished) {
                 return true;
             }
-            // If final is still pending and we haven't exceeded week 40, keep simulating
-            if (currentWeek <= 40) {
+            if (currentWeek < 40) {
                 return false;
             }
             return true;
@@ -113,27 +162,35 @@ export const isSeasonCompleted = (gameState: GameState | null): boolean => {
         return currentWeek >= 34;
     }
 
-    // Standard European leagues without playoffs
+    let minWeeks = 38;
     if (userLeagueId === LeagueId.BUNDESLIGA || userLeagueId === LeagueId.ZWEITE_BUNDESLIGA || userLeagueId === LeagueId.LIGUE_1) {
-        return currentWeek >= 34;
+        minWeeks = 34;
+    } else if (userLeagueId === LeagueId.CHAMPIONSHIP) {
+        minWeeks = 46;
+    } else if (userLeagueId === LeagueId.SEGUNDA_DIVISION_ESP) {
+        minWeeks = 42;
     }
 
-    if (userLeagueId === LeagueId.CHAMPIONSHIP) {
-        return currentWeek >= 46;
+    if (currentWeek < minWeeks) {
+        return false;
     }
 
-    if (userLeagueId === LeagueId.SEGUNDA_DIVISION_ESP) {
-        return currentWeek >= 42;
+    // If European Champions League is still active and we haven't reached week 38, allow it to conclude
+    const cl = gameState.cups?.championsLeague;
+    if (cl && !cl.winnerId && currentWeek < 38) {
+        return false;
     }
 
-    // Standard 38-matchday leagues (Premier League, La Liga, Serie A, Serie B, Ligue 2, Brasileirão, Série B, Paraguay)
-    return currentWeek >= 38;
+    return currentWeek >= minWeeks;
 };
 
 /**
  * Extracts complete season recap data for the summary screen and hero card.
  */
 export const getSeasonSummaryData = (gameState: GameState): SeasonSummaryData => {
+    // Ensure all season competitions are cleanly finalized so no tournament remains "En Disputa"
+    finalizeSeasonCompetitions(gameState.cups, gameState.allTeams, gameState.schedule);
+
     const isArgentina = gameState.team.leagueId === LeagueId.LIGA_ARGENTINA;
     const userLeagueId = gameState.team.leagueId;
     const table = gameState.leagueTables[userLeagueId] || [];

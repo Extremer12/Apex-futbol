@@ -17,7 +17,9 @@ import {
     computeArgentineRelegation,
     computeArgentineInternationalQualification,
     calculateTournamentStandings,
-    generateSwissPhase
+    generateSwissPhase,
+    progressInternationalCup,
+    finalizeSeasonCompetitions
 } from '../services/simulation';
 import { initializeGame } from '../services/gameFactory';
 import { TEAMS } from '../constants';
@@ -1602,6 +1604,202 @@ test('Champions League: Swiss phase standings table updates correctly from match
     assert.equal(aRow.points, 0);
     assert.equal(aRow.goalDifference, -2);
 });
+
+test('Champions League 2026 format: 36-team Swiss phase advances top 8 directly and 9-24 to Playoffs 16vos', () => {
+    // 36 teams
+    const clTeams = TEAMS.slice(0, 36);
+    const { table, fixtures } = generateSwissPhase(clTeams, 'Champions_League', 8);
+
+    // Populate table with distinct points for all 36 teams:
+    // Team 0 has 36 pts (Rank 1) ... Team 35 has 1 pt (Rank 36)
+    table.forEach((row, idx) => {
+        row.played = 8;
+        row.points = 36 - idx;
+        row.goalDifference = 36 - idx;
+        row.goalsFor = (36 - idx) * 2;
+        row.won = Math.floor((36 - idx) / 3);
+    });
+
+    // Mark all fixtures as played so phase progresses
+    fixtures.forEach(f => {
+        f.result = { homeScore: 1, awayScore: 0, events: [], scorers: [] };
+    });
+
+    const clCup: CupCompetition = {
+        id: 'champions_league',
+        name: 'UEFA Champions League',
+        type: 'swiss',
+        rounds: [{ name: 'Fase de Liga', fixtures, completed: true }],
+        swissTable: table,
+        swissFixtures: fixtures,
+        phase: 'swiss',
+        currentRoundIndex: 0
+    };
+
+    // 1. Progress from Swiss Phase
+    const cup = progressInternationalCup(clCup, clTeams, 25);
+
+    assert.equal(cup.phase, 'knockout');
+    assert.equal(cup.rounds[cup.currentRoundIndex].name, 'Playoffs 16vos');
+    assert.ok(cup.seededTeamIds, 'Must store top 8 teams in seededTeamIds');
+    assert.equal(cup.seededTeamIds!.length, 8, 'Exactly 8 teams directly qualify to Round of 16');
+
+    // Expected top 8 team IDs (based on actual recalculated Swiss table)
+    const expectedTop8 = cup.swissTable!.slice(0, 8).map(r => r.teamId);
+    assert.deepEqual(cup.seededTeamIds, expectedTop8, 'Seeded teams must be positions 1 to 8');
+
+    // Expected 8 playoff fixtures (16 teams: positions 9 to 24)
+    const playoffFixtures = cup.rounds[cup.currentRoundIndex].fixtures;
+    assert.equal(playoffFixtures.length, 8, 'Must have exactly 8 playoff fixtures');
+
+    const playoffTeamIds = new Set<number>();
+    const expectedSeededPlayoffs = new Set(cup.swissTable!.slice(8, 16).map(r => r.teamId)); // 9-16
+    const expectedUnseededPlayoffs = new Set(cup.swissTable!.slice(16, 24).map(r => r.teamId)); // 17-24
+    const expectedEliminated = new Set(cup.swissTable!.slice(24, 36).map(r => r.teamId)); // 25-36
+
+    for (const match of playoffFixtures) {
+        playoffTeamIds.add(match.homeTeamId);
+        playoffTeamIds.add(match.awayTeamId);
+
+        // One team must be seeded (9-16) and one unseeded (17-24)
+        const hasSeeded = expectedSeededPlayoffs.has(match.homeTeamId) || expectedSeededPlayoffs.has(match.awayTeamId);
+        const hasUnseeded = expectedUnseededPlayoffs.has(match.homeTeamId) || expectedUnseededPlayoffs.has(match.awayTeamId);
+        assert.ok(hasSeeded, `Match ${match.homeTeamId} vs ${match.awayTeamId} must include a 9-16 seeded team`);
+        assert.ok(hasUnseeded, `Match ${match.homeTeamId} vs ${match.awayTeamId} must include a 17-24 unseeded team`);
+    }
+
+    assert.equal(playoffTeamIds.size, 16, 'Exactly 16 distinct teams play the 16-avos playoff');
+
+    // Verify 25-36 are completely eliminated
+    for (const eliminatedId of expectedEliminated) {
+        assert.ok(!cup.seededTeamIds.includes(eliminatedId), `Eliminated team ${eliminatedId} must not be in seeded teams`);
+        assert.ok(!playoffTeamIds.has(eliminatedId), `Eliminated team ${eliminatedId} must not be in playoffs`);
+    }
+
+    // 2. Play the 8 playoff matches and advance to Round of 16 (Octavos)
+    playoffFixtures.forEach((match, i) => {
+        // Winner is homeTeamId
+        match.result = { homeScore: 2, awayScore: 1, events: [], scorers: [] };
+    });
+
+    const r16Cup = advanceCupRound(cup, clTeams, 28);
+    const r16Fixtures = r16Cup.rounds[r16Cup.currentRoundIndex].fixtures;
+
+    assert.equal(r16Cup.rounds[r16Cup.currentRoundIndex].name, 'Round of 16');
+    assert.equal(r16Fixtures.length, 8, 'Round of 16 must have 8 fixtures');
+    assert.equal(r16Cup.seededTeamIds, undefined, 'seededTeamIds must be cleared after pairing in Round of 16');
+
+    // In Round of 16, each fixture should pair 1 direct qualifier with 1 playoff winner
+    const r16Teams = new Set<number>();
+    for (const match of r16Fixtures) {
+        r16Teams.add(match.homeTeamId);
+        r16Teams.add(match.awayTeamId);
+    }
+    assert.equal(r16Teams.size, 16, 'Round of 16 must have exactly 16 teams');
+    for (const top8Id of expectedTop8) {
+        assert.ok(r16Teams.has(top8Id), `Top 8 direct qualifier ${top8Id} must be in Round of 16`);
+    }
+});
+
+test('Season Wrap-Up: finalizeSeasonCompetitions guarantees 0 unfinished cups ("En Disputa") at season end', async () => {
+    const { getSeasonSummaryData } = await import('../services/seasonUtils');
+    const clTeams = TEAMS.slice(0, 36);
+    const { table, fixtures } = generateSwissPhase(clTeams, 'Champions_League', 8);
+
+    // Create an unfinished Champions League in Semifinals
+    const semiMatch1: Match = { week: 34, homeTeamId: clTeams[0].id, awayTeamId: clTeams[1].id, competition: 'Champions_League', isCupMatch: true };
+    const semiMatch2: Match = { week: 34, homeTeamId: clTeams[2].id, awayTeamId: clTeams[3].id, competition: 'Champions_League', isCupMatch: true };
+    const unfinishedCL: CupCompetition = {
+        id: 'champions_league',
+        name: 'UEFA Champions League',
+        type: 'swiss',
+        phase: 'knockout',
+        rounds: [
+            { name: 'Playoffs 16vos', fixtures: [], completed: true },
+            { name: 'Round of 16', fixtures: [], completed: true },
+            { name: 'Quarter-finals', fixtures: [], completed: true },
+            { name: 'Semi-finals', fixtures: [semiMatch1, semiMatch2], completed: false }
+        ],
+        currentRoundIndex: 3,
+        statistics: { topScorers: [], championsHistory: [] }
+    };
+
+    // Create an unfinished Europa League in Quarter-finals
+    const qfMatch1: Match = { week: 29, homeTeamId: clTeams[4].id, awayTeamId: clTeams[5].id, competition: 'Europa_League', isCupMatch: true };
+    const qfMatch2: Match = { week: 29, homeTeamId: clTeams[6].id, awayTeamId: clTeams[7].id, competition: 'Europa_League', isCupMatch: true };
+    const unfinishedEL: CupCompetition = {
+        id: 'europa_league',
+        name: 'UEFA Europa League',
+        type: 'swiss',
+        phase: 'knockout',
+        rounds: [
+            { name: 'Quarter-finals', fixtures: [qfMatch1, qfMatch2], completed: false }
+        ],
+        currentRoundIndex: 0,
+        statistics: { topScorers: [], championsHistory: [] }
+    };
+
+    // Create an unfinished Libertadores in Semifinals
+    const libSemi: Match = { week: 30, homeTeamId: 701, awayTeamId: 702, competition: 'Copa_Libertadores', isCupMatch: true };
+    const unfinishedLib: CupCompetition = {
+        id: 'copa_libertadores',
+        name: 'Copa Libertadores',
+        type: 'groups',
+        phase: 'knockout',
+        rounds: [
+            { name: 'Semi-finals', fixtures: [libSemi], completed: false }
+        ],
+        currentRoundIndex: 0,
+        statistics: { topScorers: [], championsHistory: [] }
+    };
+
+    const cups: any = {
+        championsLeague: unfinishedCL,
+        europaLeague: unfinishedEL,
+        copaLibertadores: unfinishedLib
+    };
+
+    // Verify cups are initially unfinished
+    assert.equal(cups.championsLeague.winnerId, undefined);
+    assert.equal(cups.europaLeague.winnerId, undefined);
+    assert.equal(cups.copaLibertadores.winnerId, undefined);
+
+    // Run finalizeSeasonCompetitions
+    finalizeSeasonCompetitions(cups, TEAMS);
+
+    // 1. Verify every cup has a crowned champion
+    assert.ok(cups.championsLeague.winnerId, 'Champions League must have a winner');
+    assert.equal(cups.championsLeague.phase, 'finished');
+    assert.ok(cups.europaLeague.winnerId, 'Europa League must have a winner');
+    assert.equal(cups.europaLeague.phase, 'finished');
+    assert.ok(cups.copaLibertadores.winnerId, 'Copa Libertadores must have a winner');
+    assert.equal(cups.copaLibertadores.phase, 'finished');
+
+    // 2. Verify Copa Intercontinental was scheduled and crowned as well
+    assert.ok(cups.copaIntercontinental, 'Copa Intercontinental must be created');
+    assert.ok(cups.copaIntercontinental.winnerId, 'Copa Intercontinental must have a winner');
+
+    // 3. Verify getSeasonSummaryData has NO "En Disputa" champions
+    const mockState: any = {
+        season: 2027,
+        currentWeek: 38,
+        team: TEAMS[0],
+        allTeams: TEAMS,
+        leagueTables: { [TEAMS[0].leagueId]: [{ teamId: TEAMS[0].id, points: 90, goalDifference: 50, position: 1 }] },
+        cups,
+        schedule: []
+    };
+
+    const summary = getSeasonSummaryData(mockState);
+    for (const champ of summary.allChampions) {
+        if (champ.name === 'UEFA Champions League' || champ.name === 'UEFA Europa League' || champ.name === 'Copa Libertadores' || champ.name === 'Copa Intercontinental') {
+            assert.ok(champ.team !== null, `${champ.name} must have a valid champion team and not be null`);
+            assert.notEqual(champ.team?.name, 'En Disputa', `${champ.name} must not be "En Disputa"`);
+        }
+    }
+});
+
+
 
 
 

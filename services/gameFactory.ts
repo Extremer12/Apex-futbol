@@ -207,8 +207,8 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
 
     const clSwiss = generateSwissPhase(clTeams, 'Champions_League', 8);
     const elSwiss = generateSwissPhase(elTeams, 'Europa_League', 8);
-    const clFixtures = clSwiss.fixtures.map(m => ({ ...m, week: m.week + 5, isMidweek: true }));
-    const elFixtures = elSwiss.fixtures.map(m => ({ ...m, week: m.week + 5, isMidweek: true }));
+    const clFixtures = clSwiss.fixtures.map(m => ({ ...m, week: m.week + 2, isMidweek: true }));
+    const elFixtures = elSwiss.fixtures.map(m => ({ ...m, week: m.week + 2, isMidweek: true }));
 
     // CONMEBOL Copa Libertadores (Official 47-team structure, 2026 realistic qualifiers)
     // River Plate (702), Racing Club (703), Vélez Sarsfield (707), Estudiantes LP (706), Talleres (711), Central Córdoba (719)
@@ -392,7 +392,7 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
                 type: 'swiss',
                 phase: 'swiss',
                 swissTable: clSwiss.table,
-                swissFixtures: clSwiss.fixtures,
+                swissFixtures: clFixtures,
                 rounds: [],
                 currentRoundIndex: 0,
                 statistics: { topScorers: [], championsHistory: [] }
@@ -404,7 +404,7 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
                 type: 'swiss',
                 phase: 'swiss',
                 swissTable: elSwiss.table,
-                swissFixtures: elSwiss.fixtures,
+                swissFixtures: elFixtures,
                 rounds: [],
                 currentRoundIndex: 0,
                 statistics: { topScorers: [], championsHistory: [] }

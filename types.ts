@@ -315,6 +315,7 @@ export interface CupCompetition {
   currentRoundIndex: number;
   winnerId?: number;
   statistics?: CupStatistics;
+  seededTeamIds?: number[];
 }
 
 export interface EuropeanTableRow {

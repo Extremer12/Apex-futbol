@@ -1,4 +1,6 @@
 import { Team, Match, CupCompetition, EuropeanTableRow, CupGroup, LeagueTableRow } from '../../types';
+import { generateArgentinePlayoffs } from './argentineFormat';
+import { calculateTournamentStandings } from '../argentinaRegulations';
 
 /**
  * Helper function to determine the title of the next knockout round.
@@ -113,25 +115,83 @@ export const progressInternationalCup = (
         const allPlayed = fixtures.length > 0 && fixtures.every(f => f.result !== undefined);
         if (!allPlayed) return cup;
 
-        // Transition Swiss -> Knockout (Round of 16)
-        const sortedTable = [...(cup.swissTable || [])].sort((a, b) => {
-            if (b.points !== a.points) return b.points - a.points;
-            if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
-            return b.goalsFor - a.goalsFor;
+        // Recalculate Swiss table from fixtures to guarantee absolute precision
+        const tableMap = new Map<number, EuropeanTableRow>();
+        (cup.swissTable || []).forEach(r => {
+            tableMap.set(r.teamId, {
+                ...r,
+                played: 0, won: 0, drawn: 0, lost: 0,
+                goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0
+            });
         });
 
-        const qualifiedIds = sortedTable.slice(0, 16).map(r => r.teamId);
-        const qualifiedTeams = qualifiedIds.map(id => allTeams.find(t => t.id === id)!).filter(Boolean);
-        
-        const knockoutFixtures = generateCupDraw(qualifiedTeams, 'Round of 16', cup.id === 'champions_league' ? 'Champions_League' : 'Europa_League');
-        const fixturesWithWeek = knockoutFixtures.map(f => ({ ...f, week: nextWeek }));
+        fixtures.forEach(f => {
+            if (f.result) {
+                const h = tableMap.get(f.homeTeamId);
+                const a = tableMap.get(f.awayTeamId);
+                if (h && a) {
+                    h.played++; a.played++;
+                    h.goalsFor += f.result.homeScore; a.goalsFor += f.result.awayScore;
+                    h.goalsAgainst += f.result.awayScore; a.goalsAgainst += f.result.homeScore;
+                    h.goalDifference = h.goalsFor - h.goalsAgainst;
+                    a.goalDifference = a.goalsFor - a.goalsAgainst;
+                    if (f.result.homeScore > f.result.awayScore) { h.won++; h.points += 3; a.lost++; }
+                    else if (f.result.awayScore > f.result.homeScore) { a.won++; a.points += 3; h.lost++; }
+                    else { h.drawn++; h.points += 1; a.drawn++; a.points += 1; }
+                }
+            }
+        });
+
+        // Official UEFA Swiss League Tiebreakers:
+        // 1. Points
+        // 2. Goal Difference
+        // 3. Goals For
+        // 4. Won Matches
+        // 5. Stable ID fallback
+        const sortedTable = Array.from(tableMap.values()).sort((a, b) => {
+            if (b.points !== a.points) return b.points - a.points;
+            if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
+            if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor;
+            if (b.won !== a.won) return b.won - a.won;
+            return a.teamId - b.teamId;
+        });
+        sortedTable.forEach((r, idx) => { r.position = idx + 1; });
+
+        // Official UEFA Knockout Allocation:
+        // Positions 1-8: Direct to Round of 16 (Cabezas de Serie directas)
+        const top8Ids = sortedTable.slice(0, 8).map(r => r.teamId);
+
+        // Positions 9-24 (16 teams): Playoff Round (Playoffs 16vos)
+        // 9-16: Seeded playoff teams
+        // 17-24: Unseeded playoff teams
+        const seededPlayoffIds = sortedTable.slice(8, 16).map(r => r.teamId);
+        const unseededPlayoffIds = sortedTable.slice(16, 24).map(r => r.teamId);
+
+        const compType: Match['competition'] = cup.id === 'champions_league' ? 'Champions_League' : 'Europa_League';
+        const playoffFixtures: Match[] = [];
+
+        // Pair 9-16 with 17-24 (Unseeded at home in 1st leg/match)
+        for (let i = 0; i < 8; i++) {
+            const homeTeamId = unseededPlayoffIds[7 - i] ?? unseededPlayoffIds[i];
+            const awayTeamId = seededPlayoffIds[i];
+            playoffFixtures.push({
+                week: nextWeek,
+                homeTeamId,
+                awayTeamId,
+                competition: compType,
+                isCupMatch: true,
+                isMidweek: true
+            });
+        }
 
         return {
             ...cup,
             phase: 'knockout',
-            rounds: [{ name: 'Round of 16', fixtures: fixturesWithWeek, completed: false }],
+            swissTable: sortedTable,
+            seededTeamIds: top8Ids,
+            rounds: [{ name: 'Playoffs 16vos', fixtures: playoffFixtures, completed: false }],
             currentRoundIndex: 0,
-            newFixtures: fixturesWithWeek
+            newFixtures: playoffFixtures
         };
     }
 
@@ -292,9 +352,6 @@ export const advanceCupRound = (
         };
     }
 
-    const winnerTeams = winners.map(id => allTeams.find(t => t.id === id)!).filter(Boolean);
-    const nextRoundName = getNextRoundName(winners.length);
-    
     let competitionType: Match['competition'] = 'FA_Cup';
     if (cup.id === 'carabao_cup') competitionType = 'Carabao_Cup';
     if (cup.id === 'copa_del_rey') competitionType = 'Copa_Del_Rey';
@@ -315,6 +372,47 @@ export const advanceCupRound = (
         competitionType !== 'Playoffs_Clausura' &&
         competitionType !== 'Nacional_Primer_Ascenso' &&
         competitionType !== 'Nacional_Reducido';
+
+    // Official UEFA Format: When Playoffs (16vos) finish, the 8 winners meet the 8 direct seeded teams in Octavos de Final
+    if (cup.seededTeamIds && cup.seededTeamIds.length === 8 && winners.length === 8) {
+        const seededTeams = cup.seededTeamIds.map(id => allTeams.find(t => t.id === id)!).filter(Boolean);
+        const playoffWinnerTeams = winners.map(id => allTeams.find(t => t.id === id)!).filter(Boolean);
+
+        const octavosFixtures: Match[] = [];
+        for (let i = 0; i < 8; i++) {
+            const homeTeamId = playoffWinnerTeams[i]?.id ?? playoffWinnerTeams[0].id;
+            const awayTeamId = seededTeams[7 - i]?.id ?? seededTeams[i].id;
+            octavosFixtures.push({
+                week: nextWeek,
+                homeTeamId,
+                awayTeamId,
+                competition: competitionType,
+                isCupMatch: true,
+                isMidweek: isMidweekCompetition
+            });
+        }
+
+        const updatedRounds = [
+            ...cup.rounds.map((r, idx) =>
+                idx === cup.currentRoundIndex ? { ...r, completed: true } : r
+            ),
+            {
+                name: 'Round of 16',
+                fixtures: octavosFixtures,
+                completed: false
+            }
+        ];
+
+        return {
+            ...cup,
+            seededTeamIds: undefined,
+            rounds: updatedRounds,
+            currentRoundIndex: cup.currentRoundIndex + 1
+        };
+    }
+
+    const winnerTeams = winners.map(id => allTeams.find(t => t.id === id)!).filter(Boolean);
+    const nextRoundName = getNextRoundName(winners.length);
 
     const nextRoundFixtures: Match[] = [];
     for (let i = 0; i < winnerTeams.length; i += 2) {
@@ -357,8 +455,10 @@ export const checkAndScheduleIntercontinental = (gameState: { cups: Record<strin
     const { championsLeague, copaLibertadores, copaIntercontinental } = gameState.cups;
 
     if (championsLeague?.winnerId && copaLibertadores?.winnerId && (!copaIntercontinental?.rounds || copaIntercontinental.rounds.length === 0)) {
-        const clWinner = gameState.allTeams.find(t => t.id === championsLeague.winnerId)!;
-        const libWinner = gameState.allTeams.find(t => t.id === copaLibertadores.winnerId)!;
+        const clWinner = gameState.allTeams?.find(t => t.id === championsLeague.winnerId);
+        const libWinner = gameState.allTeams?.find(t => t.id === copaLibertadores.winnerId);
+
+        if (!clWinner || !libWinner) return null;
 
         const finalFixture: Match = {
             week: nextWeek + 2,
@@ -381,6 +481,187 @@ export const checkAndScheduleIntercontinental = (gameState: { cups: Record<strin
     }
 
     return null;
+};
+
+/**
+ * Resolves an unplayed cup match deterministically based on team ratings and form,
+ * ensuring cup matches never remain drawn and always determine a winner via penalties if tied.
+ */
+export const resolveUnplayedCupMatch = (match: Match, allTeams: Team[]): void => {
+    if (match.result) return;
+
+    const homeTeam = allTeams.find(t => t.id === match.homeTeamId);
+    const awayTeam = allTeams.find(t => t.id === match.awayTeamId);
+    const getRating = (team?: Team): number => {
+        if (!team) return 75;
+        if ((team as any).rating) return (team as any).rating;
+        if (team.squad && team.squad.length > 0) {
+            return Math.round(team.squad.reduce((acc, p) => acc + p.rating, 0) / team.squad.length);
+        }
+        return 75;
+    };
+    const homeRating = getRating(homeTeam);
+    const awayRating = getRating(awayTeam);
+    const ratingDiff = (homeRating - awayRating) / 10;
+
+    const homeExpected = Math.max(0.6, 1.6 + ratingDiff * 0.4);
+    const awayExpected = Math.max(0.4, 1.2 - ratingDiff * 0.4);
+
+    let homeScore = Math.floor(Math.random() * (homeExpected + 1.4));
+    let awayScore = Math.floor(Math.random() * (awayExpected + 1.4));
+
+    let penalties: { home: number; away: number } | undefined;
+    if (homeScore === awayScore) {
+        const homeWinsPenalties = Math.random() + (ratingDiff * 0.1) >= 0.5;
+        if (homeWinsPenalties) {
+            penalties = { home: 5, away: 4 };
+        } else {
+            penalties = { home: 3, away: 5 };
+        }
+    }
+
+    match.result = {
+        homeScore,
+        awayScore,
+        events: [],
+        scorers: []
+    };
+    if (penalties) {
+        match.penalties = penalties;
+    }
+};
+
+/**
+ * Progresses an unfinished cup competition all the way to its grand final,
+ * guaranteeing that every remaining round is played and a champion is crowned.
+ */
+export const finalizeSingleCupCompetition = (
+    cup: CupCompetition,
+    allTeams: Team[]
+): CupCompetition => {
+    if (!cup) return cup;
+    if (cup.winnerId) return cup;
+
+    // 1. If in Swiss Phase, resolve unplayed fixtures and advance to knockout
+    if (cup.phase === 'swiss') {
+        cup.swissFixtures?.forEach(f => {
+            if (!f.result) {
+                resolveUnplayedCupMatch(f, allTeams);
+            }
+        });
+        cup = progressInternationalCup(cup, allTeams, 22, cup.swissFixtures);
+    }
+
+    // 2. If in Group Stage, resolve unplayed fixtures and advance to knockout
+    if (cup.phase === 'groups') {
+        const allGroupFixtures: Match[] = [];
+        cup.groups?.forEach(g => {
+            g.fixtures?.forEach(f => {
+                if (!f.result) {
+                    resolveUnplayedCupMatch(f, allTeams);
+                }
+                allGroupFixtures.push(f);
+            });
+        });
+        cup = progressInternationalCup(cup, allTeams, 20, allGroupFixtures);
+    }
+
+    // 3. Knockout Phase: play each round sequentially until the champion is crowned
+    let maxSafetyRounds = 12;
+    while (!cup.winnerId && maxSafetyRounds > 0) {
+        maxSafetyRounds--;
+        if (!cup.rounds || cup.rounds.length === 0) break;
+        const currentRound = cup.rounds[cup.currentRoundIndex];
+        if (!currentRound || !currentRound.fixtures || currentRound.fixtures.length === 0) break;
+
+        currentRound.fixtures.forEach(f => {
+            if (!f.result) {
+                resolveUnplayedCupMatch(f, allTeams);
+            }
+        });
+
+        const prevIndex = cup.currentRoundIndex;
+        cup = advanceCupRound(cup, allTeams, 0, currentRound.fixtures);
+        if (cup.winnerId) break;
+        if (cup.currentRoundIndex === prevIndex && !cup.winnerId) {
+            // Check if final was played in currentRound
+            if (currentRound.fixtures.length === 1 && currentRound.fixtures[0].result) {
+                const wId = determineCupWinner(currentRound.fixtures[0]);
+                if (wId) {
+                    cup.winnerId = wId;
+                    cup.phase = 'finished';
+                    break;
+                }
+            }
+            break;
+        }
+    }
+
+    // Ensure winner is finalized and recorded in championsHistory
+    if (cup.winnerId) {
+        cup.phase = 'finished';
+        const winningTeam = allTeams.find(t => t.id === cup.winnerId);
+        if (winningTeam) {
+            const currentYear = new Date().getFullYear();
+            if (!cup.statistics) cup.statistics = { topScorers: [], championsHistory: [] };
+            if (!cup.statistics.championsHistory) cup.statistics.championsHistory = [];
+            const alreadyRecorded = cup.statistics.championsHistory.some(h => h.winnerId === cup.winnerId && h.season === currentYear);
+            if (!alreadyRecorded) {
+                cup.statistics.championsHistory.unshift({
+                    season: currentYear,
+                    winnerId: cup.winnerId,
+                    winnerName: winningTeam.name
+                });
+            }
+        }
+    }
+
+    return cup;
+};
+
+/**
+ * Ensures all competitions of the season are completely resolved, crowned, and archived,
+ * guaranteeing that NO tournament is left in "En Disputa" at season end.
+ */
+export const finalizeSeasonCompetitions = (
+    cups: Record<string, CupCompetition | undefined>,
+    allTeams: Team[],
+    schedule?: Match[]
+): void => {
+    if (!cups) return;
+
+    // Check if Clausura Playoffs need initialization from schedule
+    if (schedule && (!cups.clausuraPlayoffs || !cups.clausuraPlayoffs.rounds || cups.clausuraPlayoffs.rounds.length === 0)) {
+        const { zoneA, zoneB } = calculateTournamentStandings(schedule, 'Torneo_Clausura', allTeams);
+        if (zoneA.length >= 8 && zoneB.length >= 8) {
+            const octavosFixtures = generateArgentinePlayoffs(zoneA.slice(0, 8), zoneB.slice(0, 8), 'Playoffs_Clausura', 37);
+            cups.clausuraPlayoffs = {
+                id: 'clausura_playoffs',
+                name: 'Playoffs Clausura',
+                type: 'knockout',
+                phase: 'knockout',
+                rounds: [{ name: 'Round of 16', fixtures: octavosFixtures, completed: false }],
+                currentRoundIndex: 0,
+                statistics: { topScorers: [], championsHistory: cups.clausuraPlayoffs?.statistics?.championsHistory || [] }
+            };
+        }
+    }
+
+    const cupKeys = Object.keys(cups);
+    for (const key of cupKeys) {
+        const cup = cups[key];
+        if (cup && !cup.winnerId) {
+            cups[key] = finalizeSingleCupCompetition(cup, allTeams);
+        }
+    }
+
+    // After Champions League and Libertadores are crowned, check & finalize Intercontinental
+    if (!cups.copaIntercontinental?.winnerId && cups.championsLeague?.winnerId && cups.copaLibertadores?.winnerId) {
+        const interCup = checkAndScheduleIntercontinental({ cups: cups as Record<string, CupCompetition>, allTeams }, 38);
+        if (interCup) {
+            cups.copaIntercontinental = finalizeSingleCupCompetition(interCup, allTeams);
+        }
+    }
 };
 
 export const createInitialEuropeanTable = (teamIds: number[]): EuropeanTableRow[] => {

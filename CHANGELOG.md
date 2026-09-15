@@ -12,6 +12,13 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 - **Radar de Fichajes**: Renovada la columna lateral ("Actualizaciones de Mercado") reemplazando avatares cartoon por el nuevo "Radar de Fichajes" con `PlayerAvatar` auténtico, media OVR, club, valor de mercado y etiquetas contextuales (*Transferible*, *Fin Contrato*, *Estrella Top*), con acceso directo al perfil del jugador.
 - **Base de Datos de Rostros Ampliada**: Añadidos IDs y nombres para toda la plantilla del FC Barcelona (Gavi, Pedri, Olmo, Balde, Cubarsí, Christensen, Ferran Torres, Fermín López, Iñigo Martínez, Casadó, etc.), Real Madrid, y figuras de La Liga mediante el CDN oficial de FotMob.
 - **Corrección de Logos 404 en La Liga**: Reemplazadas las URLs caídas de jsdelivr por endpoints verificados 200 OK de Transfermarkt para Las Palmas, Leganés, Mallorca, Girona, Valladolid y Alavés en `argentineLogos.ts` y `TEAM_LOGOS`.
+- **UEFA Champions League 2026 (Formato Oficial)**: Implementada la estructura oficial de 36 equipos con tabla unificada de Fase de Liga (sistema suizo).
+  - Puestos 1 al 8 clasifican directo a Octavos de Final como cabezas de serie (`seededTeamIds`).
+  - Puestos 9 al 24 disputan los **Playoffs de 16-avos** (8 cruces ida/vuelta).
+  - Puestos 25 al 36 quedan eliminados definitivamente de competencias europeas.
+  - Los 8 ganadores de Playoffs avanzan a Octavos para medirse contra el top 8 preclasificado.
+- **Solución al Desincronizador de Partidos de Champions**: Corregida la inicialización de `swissFixtures` en `gameFactory.ts` (desfase de semanas midweek coincidentes con el schedule general) evitando que el motor de simulación descarte partidos de Champions pendientes y obligue a jugar la fecha de Liga en su lugar.
+- **Historial Completo de Copas y Resultados**: Renovada la vista `CupView.tsx` con navegación por 3 pestañas persistentes (*Cuadro Eliminatorio*, *Tabla de Posiciones* y *Partidos y Resultados*), permitiendo consultar en cualquier momento la tabla suiza de 36 clubes o fase de grupos (Libertadores/Sudamericana) y todos los partidos históricos por jornada y fase con marcadores, goles y penales.
 
 ### Security & Database (Supabase)
 - **Cloud Saves Limit**: Aplicada migración de producción `check_cloud_saves_limit()` para restringir a 3 slots de guardado por cuenta en la nube.
