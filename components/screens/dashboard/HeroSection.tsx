@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { GameState, MatchPhase, CupCompetition, COMPETITION_TO_CUP_KEY } from '../../../types';
 import { GameAction } from '../../../state/reducer';
 import { TrophyIcon, UsersIcon } from '../../icons';
-import { Trophy, Sparkles, ArrowRight, TrendingUp, TrendingDown, ArrowUpRight } from 'lucide-react';
+import { Trophy, TrendingUp, TrendingDown, ArrowUpRight } from 'lucide-react';
 import { TeamLogo } from '../../../data/teams/helpers';
 import { isSeasonCompleted, getSeasonSummaryData, getMatchKickoffTime } from '../../../services/seasonUtils';
 import { getTeamStadium } from '../../../data/stadiums';
@@ -192,24 +192,24 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                             <span>Movimientos de Categoría</span>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div className="grid grid-cols-2 gap-2.5 min-w-0">
                             {/* Ascendidos */}
-                            <div className="bg-emerald-950/20 border border-emerald-500/20 rounded-2xl p-3 space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-[9px] font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1">
-                                        <TrendingUp className="w-3.5 h-3.5" />
-                                        Ascensos a 1ª
+                            <div className="bg-emerald-950/20 border border-emerald-500/20 rounded-xl p-2.5 space-y-2 min-w-0 overflow-hidden">
+                                <div className="flex items-center justify-between gap-1">
+                                    <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1 truncate">
+                                        <TrendingUp className="w-3 h-3 shrink-0" />
+                                        <span className="truncate">Ascensos</span>
                                     </span>
-                                    <span className="text-[9px] font-bold text-emerald-400/70 bg-emerald-500/10 px-1.5 py-0.5 rounded">
-                                        {summary.promotedTeams.length} Clubes
+                                    <span className="text-[9px] font-bold text-emerald-300 bg-emerald-500/15 px-1.5 py-0.5 rounded shrink-0">
+                                        {summary.promotedTeams.length}
                                     </span>
                                 </div>
                                 <div className="flex flex-col gap-1.5">
                                     {summary.promotedTeams.length === 0 ? (
-                                        <span className="text-[11px] text-slate-500 italic py-1">No determinados</span>
+                                        <span className="text-[10px] text-slate-500 italic py-0.5">No determinados</span>
                                     ) : (
                                         summary.promotedTeams.map(t => (
-                                            <div key={t.id} className="flex items-center gap-2 bg-black/40 px-2 py-1.5 rounded-lg border border-emerald-500/15">
+                                            <div key={t.id} className="flex items-center gap-2 bg-black/40 px-2 py-1.5 rounded-lg border border-emerald-500/10 min-w-0" title={t.name}>
                                                 <div className="w-4 h-4 shrink-0 flex items-center justify-center">
                                                     <TeamLogo team={t} className="w-full h-full object-contain" />
                                                 </div>
@@ -221,22 +221,22 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                             </div>
 
                             {/* Descendidos */}
-                            <div className="bg-rose-950/20 border border-rose-500/20 rounded-2xl p-3 space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-[9px] font-black uppercase tracking-wider text-rose-400 flex items-center gap-1">
-                                        <TrendingDown className="w-3.5 h-3.5" />
-                                        Descendidos
+                            <div className="bg-rose-950/20 border border-rose-500/20 rounded-xl p-2.5 space-y-2 min-w-0 overflow-hidden">
+                                <div className="flex items-center justify-between gap-1">
+                                    <span className="text-[10px] font-black uppercase tracking-wider text-rose-400 flex items-center gap-1 truncate">
+                                        <TrendingDown className="w-3 h-3 shrink-0" />
+                                        <span className="truncate">Descensos</span>
                                     </span>
-                                    <span className="text-[9px] font-bold text-rose-400/70 bg-rose-500/10 px-1.5 py-0.5 rounded">
-                                        {summary.relegatedTeams.length} Clubes
+                                    <span className="text-[9px] font-bold text-rose-300 bg-rose-500/15 px-1.5 py-0.5 rounded shrink-0">
+                                        {summary.relegatedTeams.length}
                                     </span>
                                 </div>
                                 <div className="flex flex-col gap-1.5">
                                     {summary.relegatedTeams.length === 0 ? (
-                                        <span className="text-[11px] text-slate-500 italic py-1">No determinados</span>
+                                        <span className="text-[10px] text-slate-500 italic py-0.5">No determinados</span>
                                     ) : (
                                         summary.relegatedTeams.map(t => (
-                                            <div key={t.id} className="flex items-center gap-2 bg-black/40 px-2 py-1.5 rounded-lg border border-rose-500/15">
+                                            <div key={t.id} className="flex items-center gap-2 bg-black/40 px-2 py-1.5 rounded-lg border border-rose-500/10 min-w-0" title={t.name}>
                                                 <div className="w-4 h-4 shrink-0 flex items-center justify-center">
                                                     <TeamLogo team={t} className="w-full h-full object-contain" />
                                                 </div>
@@ -251,33 +251,28 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 </div>
 
                 {/* Actions Footer */}
-                <div className="relative z-10 flex flex-col sm:flex-row items-center gap-3 pt-2">
+                <div className="relative z-10 flex flex-col sm:flex-row items-center gap-2.5 pt-3 border-t border-white/5">
                     <button
                         onClick={onStartNewSeason}
                         disabled={isSimulating}
-                        className="apex-btn-gold w-full sm:w-auto px-6 py-3.5 flex-1 flex items-center justify-center gap-2 font-black text-xs uppercase tracking-widest shadow-lg shadow-amber-500/20 hover:scale-[1.01] active:scale-[0.99] transition-all"
+                        className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-xs uppercase tracking-wider transition-all shadow-md shadow-amber-500/20 hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                     >
                         {isSimulating ? (
                             <>
-                                <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                                <div className="w-3.5 h-3.5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
                                 <span>Iniciando Temporada {summary.season + 1}...</span>
                             </>
                         ) : (
-                            <>
-                                <Sparkles className="w-4 h-4 text-black" />
-                                <span>Comenzar Temporada {summary.season + 1}</span>
-                                <ArrowRight className="w-4 h-4 text-black" />
-                            </>
+                            <span>Comenzar Temporada {summary.season + 1}</span>
                         )}
                     </button>
 
                     {onOpenSeasonEndModal && (
                         <button
                             onClick={onOpenSeasonEndModal}
-                            className="w-full sm:w-auto px-5 py-3.5 rounded-xl border border-white/10 hover:border-white/25 bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2"
+                            className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-white/15 hover:border-white/25 bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                         >
-                            <Trophy className="w-4 h-4 text-amber-400" />
-                            <span>Ver Resumen Detallado</span>
+                            <span>Ver Resumen Completo</span>
                         </button>
                     )}
                 </div>

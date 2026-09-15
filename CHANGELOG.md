@@ -24,6 +24,11 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
   - **Sondeo e Intención de Voto**: Barra de proyección con indicador de mayoría absoluta del 50% y cálculo justo según títulos ganados, solvencia financiera y promesas cumplidas.
   - **Libertad de Navegación**: Botón de cierre `Revisar Club` en la cabecera para posponer la votación y examinar plantilla o finanzas, acompañado de un banner sticky sutil en el menú principal para abrir los comicios cuando el usuario lo decida.
   - **Escrutinio Animado y Transición Limpia**: Micro-animación de recuento de votos en urna, proclamación de reelección para el nuevo mandato de 4 años (reseteo a año 1 de 4, aumento de aprobación popular y avance de temporada sin recargas de página), o cese solemne con envío de puntaje al Leaderboard global y reinicio limpio de carrera.
+- **Optimización Visual de Cierre de Temporada**:
+  - **Cards de Movimientos de Categoría (`HeroSection.tsx`)**: Reestructuradas las tarjetas de ascensos y descensos con contención estricta `min-w-0` y badges compactos, eliminando solapamientos de texto y desbordamientos en resoluciones de PC.
+  - **Botón Proporcional de Nueva Temporada**: Reemplazado el botón gigante y desproporcionado por un control estético, compacto y estilizado (`Comenzar Temporada X`) alineado armoniosamente con `Ver Resumen Completo`.
+  - **Header Simétrico y Limpio en Resumen Detallado (`SeasonEndModal.tsx`)**: Rediseñado el encabezado con alineación simétrica de los botones `Volver` y `Comenzar Temporada` sin emojis ni iconos genéricos, totalmente adaptado a pantallas móviles y de escritorio.
+  - **Eliminación de Botones Duplicados**: Suprimida la sección de botones redundantes al final del scroll para mantener una experiencia limpia y libre de duplicidades.
 
 ### Security & Database (Supabase)
 - **Cloud Saves Limit**: Aplicada migración de producción `check_cloud_saves_limit()` para restringir a 3 slots de guardado por cuenta en la nube.

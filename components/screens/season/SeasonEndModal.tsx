@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { GameState } from '../../../types';
 import { getSeasonSummaryData } from '../../../services/seasonUtils';
 import { TeamLogo } from '../../../data/teams/helpers';
-import { Trophy, TrendingUp, TrendingDown, Sparkles, X, ArrowRight, Award, Globe, CheckCircle2 } from 'lucide-react';
+import { Trophy, TrendingUp, TrendingDown, Award, Globe, CheckCircle2 } from 'lucide-react';
 import { calculatePresidentialScore, submitPresidentialScore } from '../../../services/leaderboard';
 
 interface SeasonEndModalProps {
@@ -85,51 +85,46 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
     return (
         <div className="fixed inset-0 z-[99999] bg-slate-950 text-white min-h-screen h-screen w-screen overflow-y-auto flex flex-col animate-fade-in select-none">
             {/* Top Navigation Bar */}
-            <header className="sticky top-0 z-50 bg-slate-950/90 backdrop-blur-xl border-b border-white/10 px-4 sm:px-8 py-4 flex items-center justify-between shadow-2xl">
-                <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center">
-                        <Trophy className="w-6 h-6 sm:w-7 sm:h-7 text-amber-400" />
+            <header className="sticky top-0 z-50 bg-slate-950/95 backdrop-blur-xl border-b border-white/10 px-4 sm:px-6 py-3 flex items-center justify-between gap-3 shadow-2xl">
+                <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 shrink-0 flex items-center justify-center bg-amber-500/10 rounded-xl border border-amber-500/20">
+                        <Trophy className="w-5 h-5 text-amber-400" />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-amber-400 truncate">
                                 Cuadro Oficial de Temporada
                             </span>
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
                                 {summary.season}
                             </span>
                         </div>
-                        <h1 className="text-base sm:text-xl font-black text-white uppercase tracking-tight">
+                        <h1 className="text-xs sm:text-base font-black text-white uppercase tracking-tight truncate">
                             Resumen de Campeones y Clasificaciones
                         </h1>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 shrink-0">
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-1.5"
+                        className="px-3.5 sm:px-4 py-2 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider transition-all cursor-pointer"
                     >
-                        <X className="w-4 h-4" />
-                        <span className="hidden sm:inline">Cerrar</span>
+                        Volver
                     </button>
 
                     <button
                         onClick={onStartNewSeason}
                         disabled={isStarting}
-                        className="apex-btn-gold px-5 py-2.5 sm:px-6 sm:py-2.5 flex items-center gap-2 font-black text-xs uppercase tracking-widest shadow-lg shadow-amber-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                        className="px-4 sm:px-5 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-xs uppercase tracking-wider transition-all shadow-md shadow-amber-500/20 hover:scale-[1.01] active:scale-[0.99] cursor-pointer disabled:opacity-50"
                     >
                         {isStarting ? (
-                            <>
-                                <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                            <div className="flex items-center gap-2">
+                                <div className="w-3.5 h-3.5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
                                 <span>Iniciando...</span>
-                            </>
+                            </div>
                         ) : (
-                            <>
-                                <Sparkles className="w-4 h-4 text-black" />
-                                <span>Comenzar Temporada {summary.season + 1}</span>
-                                <ArrowRight className="w-4 h-4 text-black" />
-                            </>
+                            <span>Comenzar Temporada {summary.season + 1}</span>
                         )}
                     </button>
                 </div>
@@ -411,47 +406,9 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
                     </div>
                 </div>
 
-                {/* Bottom Action Section */}
-                <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0e1626] via-[#0a0f1c] to-[#070b14] border border-amber-500/25 p-6 sm:p-7 flex flex-col lg:flex-row items-center justify-between gap-6 shadow-xl">
-                    <div className="space-y-1 text-center lg:text-left">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-amber-400 block">
-                            Cierre Oficial de Ciclo
-                        </span>
-                        <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">
-                            Comenzar Temporada {summary.season + 1}
-                        </h3>
-                        <p className="text-xs text-slate-400 max-w-lg">
-                            Se actualizarán presupuestos, contratos, ascensos, descensos y el calendario de todas las competencias.
-                        </p>
-                    </div>
-
-                    <div className="flex flex-wrap items-center justify-center gap-3 shrink-0">
-                        <button
-                            onClick={onClose}
-                            className="px-5 py-3 rounded-xl border border-white/10 hover:border-white/20 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-wider transition-all"
-                        >
-                            Volver
-                        </button>
-                        <button
-                            onClick={onStartNewSeason}
-                            disabled={isStarting}
-                            className="apex-btn-gold px-6 py-3 flex items-center gap-2 font-black text-xs uppercase tracking-widest shadow-lg shadow-amber-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
-                        >
-                            {isStarting ? (
-                                <>
-                                    <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
-                                    <span>Iniciando Temporada {summary.season + 1}...</span>
-                                </>
-                            ) : (
-                                <>
-                                    <Sparkles className="w-4 h-4 text-black" />
-                                    <span>Iniciar Temporada {summary.season + 1}</span>
-                                    <ArrowRight className="w-4 h-4 text-black" />
-                                </>
-                            )}
-                        </button>
-                    </div>
-                </div>
+                <footer className="py-6 text-center border-t border-white/5 text-[11px] text-slate-500">
+                    <span>Apex Football • Cuadro Oficial de Temporada {summary.season}</span>
+                </footer>
             </main>
         </div>
     );
