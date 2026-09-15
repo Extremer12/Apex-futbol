@@ -1799,6 +1799,62 @@ test('Season Wrap-Up: finalizeSeasonCompetitions guarantees 0 unfinished cups ("
     }
 });
 
+test('Presidential Mandate: 4-year cycle triggers election year and re-election resets cleanly to Mandate #2', async () => {
+    const { initializeGame } = await import('../services/gameFactory');
+    const { startNewSeason } = await import('../services/seasonManager');
+    const { gameReducer } = await import('../state/reducer');
+    const barca = TEAMS.find(t => t.name.includes('Barcelona')) || TEAMS[0];
+
+    let state = initializeGame({
+        selectedTeam: barca,
+        playerProfile: { name: 'Joan Laporta', country: 'ESP', age: 60, style: 'galactico', difficulty: 'normal' }
+    });
+
+    assert.equal(state.mandate.totalMandates, 1);
+    assert.equal(state.mandate.currentYear, 1);
+    assert.equal(state.mandate.isElectionYear, false);
+
+    // Progress year 1 -> year 2
+    state.currentWeek = 38;
+    state = startNewSeason(state);
+    assert.equal(state.mandate.currentYear, 2);
+    assert.equal(state.mandate.isElectionYear, false);
+
+    // Progress year 2 -> year 3
+    state.currentWeek = 38;
+    state = startNewSeason(state);
+    assert.equal(state.mandate.currentYear, 3);
+    assert.equal(state.mandate.isElectionYear, false);
+
+    // Progress year 3 -> year 4
+    state.currentWeek = 38;
+    state = startNewSeason(state);
+    assert.equal(state.mandate.currentYear, 4);
+    assert.equal(state.mandate.isElectionYear, false);
+
+    // Progress year 4 -> Mandate Completed -> Triggers Election Year
+    state.currentWeek = 38;
+    state = startNewSeason(state);
+    assert.equal(state.mandate.isElectionYear, true, 'At end of 4-year mandate, isElectionYear must be true');
+
+    // Simulate Re-election victory
+    const postElectionState = gameReducer(state, {
+        type: 'ELECTION_RESULT',
+        payload: {
+            won: true,
+            newApproval: 85
+        }
+    });
+
+    assert.equal(postElectionState.mandate.totalMandates, 2, 'Total mandates must increment to 2');
+    assert.equal(postElectionState.mandate.currentYear, 1, 'Current year of mandate must reset to 1');
+    assert.equal(postElectionState.mandate.isElectionYear, false, 'isElectionYear must reset to false');
+    assert.equal(postElectionState.mandate.nextElectionSeason, postElectionState.season + 4, 'Next election must be 4 years in future');
+    assert.equal(postElectionState.fanApproval.rating, 85, 'Fan approval rating must be updated');
+    assert.ok(postElectionState.newsFeed.length > 0, 'News feed must contain election announcement');
+});
+
+
 
 
 

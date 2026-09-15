@@ -19,6 +19,11 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
   - Los 8 ganadores de Playoffs avanzan a Octavos para medirse contra el top 8 preclasificado.
 - **Solución al Desincronizador de Partidos de Champions**: Corregida la inicialización de `swissFixtures` en `gameFactory.ts` (desfase de semanas midweek coincidentes con el schedule general) evitando que el motor de simulación descarte partidos de Champions pendientes y obligue a jugar la fecha de Liga en su lugar.
 - **Historial Completo de Copas y Resultados**: Renovada la vista `CupView.tsx` con navegación por 3 pestañas persistentes (*Cuadro Eliminatorio*, *Tabla de Posiciones* y *Partidos y Resultados*), permitiendo consultar en cualquier momento la tabla suiza de 36 clubes o fase de grupos (Libertadores/Sudamericana) y todos los partidos históricos por jornada y fase con marcadores, goles y penales.
+- **Rediseño Pantalla Completa de Fin de Mandato Presidencial (Elecciones)**: Sustituido el modal antiguo y bloqueante por una experiencia en pantalla completa broadcast de alta gama (`ElectionScreen.tsx`) al culminar el ciclo de 4 años:
+  - **Balance de Gestión Ordenado**: Tarjetas concisas de títulos obtenidos en el cuatrienio, porcentaje de apoyo popular, balance económico y ratio de cumplimiento de promesas electorales, sin saturación de texto.
+  - **Sondeo e Intención de Voto**: Barra de proyección con indicador de mayoría absoluta del 50% y cálculo justo según títulos ganados, solvencia financiera y promesas cumplidas.
+  - **Libertad de Navegación**: Botón de cierre `Revisar Club` en la cabecera para posponer la votación y examinar plantilla o finanzas, acompañado de un banner sticky sutil en el menú principal para abrir los comicios cuando el usuario lo decida.
+  - **Escrutinio Animado y Transición Limpia**: Micro-animación de recuento de votos en urna, proclamación de reelección para el nuevo mandato de 4 años (reseteo a año 1 de 4, aumento de aprobación popular y avance de temporada sin recargas de página), o cese solemne con envío de puntaje al Leaderboard global y reinicio limpio de carrera.
 
 ### Security & Database (Supabase)
 - **Cloud Saves Limit**: Aplicada migración de producción `check_cloud_saves_limit()` para restringir a 3 slots de guardado por cuenta en la nube.

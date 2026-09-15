@@ -298,6 +298,7 @@ function AppLogic() {
                         dispatch={dispatch}
                         onSaveGame={openSaveModal}
                         onQuitToMenu={handleQuitToMenu}
+                        onNewGame={handleNewGame}
                         currentSaveName={currentSaveName}
                         lastSaved={lastSaved}
                         onElectionComplete={() => showNotification('¡Reelección exitosa! Nuevo mandato comenzado')}
