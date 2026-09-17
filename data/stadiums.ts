@@ -267,6 +267,43 @@ export const STADIUMS_BY_TEAM_ID: Record<number, TeamStadiumInfo> = {
     1134: { name: 'Estadio Tlahuicole', capacity: 12000, city: 'Tlaxcala' },
 
     // =========================================================================
+    // 🇨🇱 CHILE - PRIMERA DIVISIÓN & PRIMERA B (IDs 1201-1236)
+    // =========================================================================
+    1201: { name: 'Estadio Monumental David Arellano', capacity: 47347, city: 'Santiago' },
+    1202: { name: 'Estadio Nacional Julio Martínez Prádanos', capacity: 48665, city: 'Santiago' },
+    1203: { name: 'Estadio San Carlos de Apoquindo / Claro Arena', capacity: 20000, city: 'Santiago' },
+    1204: { name: 'Estadio Francisco Sánchez Rumoroso', capacity: 18750, city: 'Coquimbo' },
+    1205: { name: 'Estadio Municipal de La Cisterna', capacity: 12000, city: 'Santiago' },
+    1206: { name: 'Estadio CAP Acero', capacity: 10500, city: 'Talcahuano' },
+    1207: { name: 'Estadio Sausalito', capacity: 23423, city: 'Viña del Mar' },
+    1208: { name: 'Estadio El Teniente', capacity: 14000, city: 'Rancagua' },
+    1209: { name: 'Estadio Nelson Oyarzún Arenas', capacity: 12000, city: 'Chillán' },
+    1210: { name: 'Estadio Bicentenario de La Florida', capacity: 12000, city: 'Santiago' },
+    1211: { name: 'Estadio El Cobre', capacity: 12000, city: 'El Salvador' },
+    1212: { name: 'Estadio Nicolás Chahuán Nazar', capacity: 9200, city: 'La Calera' },
+    1213: { name: 'Estadio La Portada', capacity: 18243, city: 'La Serena' },
+    1214: { name: 'Estadio Municipal Alcaldesa Ester Roa Rebolledo', capacity: 30448, city: 'Concepción' },
+    1215: { name: 'Estadio Gustavo Ocaranza', capacity: 3000, city: 'Limache' },
+    1216: { name: 'Estadio Municipal Alcaldesa Ester Roa Rebolledo', capacity: 30448, city: 'Concepción' },
+    // Primera B
+    1221: { name: 'Estadio Santa Laura-Universidad SEK', capacity: 19887, city: 'Santiago' },
+    1222: { name: 'Estadio Zorros del Desierto', capacity: 12102, city: 'Calama' },
+    1223: { name: 'Estadio Elías Figueroa Brander', capacity: 21114, city: 'Valparaíso' },
+    1224: { name: 'Estadio Tierra de Campeones', capacity: 13171, city: 'Iquique' },
+    1225: { name: 'Estadio Regional Calvo y Bascuñán', capacity: 21100, city: 'Antofagasta' },
+    1226: { name: 'Estadio Bicentenario Germán Becker', capacity: 18000, city: 'Temuco' },
+    1227: { name: 'Estadio Municipal de San Bernardo', capacity: 3500, city: 'San Bernardo' },
+    1228: { name: 'Estadio Fiscal de Talca', capacity: 16000, city: 'Talca' },
+    1229: { name: 'Estadio La Granja', capacity: 8278, city: 'Curicó' },
+    1230: { name: 'Estadio Luis Valenzuela Hermosilla', capacity: 8600, city: 'Copiapó' },
+    1231: { name: 'Estadio Lucio Fariña Fernández', capacity: 7700, city: 'Quillota' },
+    1232: { name: 'Estadio Carlos Dittborn', capacity: 9746, city: 'Arica' },
+    1233: { name: 'Estadio Chinquihue', capacity: 10000, city: 'Puerto Montt' },
+    1234: { name: 'Estadio Joaquín Muñoz García', capacity: 4500, city: 'Santa Cruz' },
+    1235: { name: 'Estadio Municipal Leonel Sánchez Lineros', capacity: 1000, city: 'Recoleta' },
+    1236: { name: 'Estadio Municipal de San Felipe', capacity: 10000, city: 'San Felipe' },
+
+    // =========================================================================
     // 🌎 SUDAMÉRICA - GIGANTES CONTINENTALES (IDs 9101-9122)
     // =========================================================================
     9101: { name: 'Estadio Monumental David Arellano', capacity: 47347, city: 'Santiago' },

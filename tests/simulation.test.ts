@@ -327,7 +327,9 @@ test('handlePromotionRelegation promotes top teams and relegates bottom teams', 
         [LeagueId.SERIE_B_BR]: [],
         [LeagueId.COPA_DE_PRIMERA]: [],
         [LeagueId.LIGA_MX]: [],
-        [LeagueId.LIGA_EXPANSION_MX]: []
+        [LeagueId.LIGA_EXPANSION_MX]: [],
+        [LeagueId.PRIMERA_DIVISION_CHILE]: [],
+        [LeagueId.PRIMERA_B_CHILE]: []
     };
 
     const updatedTeams = handlePromotionRelegation(allTeams, leagueTables);
@@ -1183,9 +1185,9 @@ test('Phase 2 Modularization: LEAGUE_REGISTRY and monotonic generatePlayerId', a
         generatePlayerId 
     } = await import('../services/simulation');
 
-    // 1. Verify LEAGUE_REGISTRY covers all 17 leagues
+    // 1. Verify LEAGUE_REGISTRY covers all 19 leagues
     const leagueKeys = Object.keys(LEAGUE_REGISTRY);
-    assert.equal(leagueKeys.length, 17, 'LEAGUE_REGISTRY must contain all 17 leagues');
+    assert.equal(leagueKeys.length, 19, 'LEAGUE_REGISTRY must contain all 19 leagues');
 
     const premierConfig = getLeagueConfig(LeagueId.PREMIER_LEAGUE);
     assert.equal(premierConfig.country, 'ENG');
@@ -1199,6 +1201,12 @@ test('Phase 2 Modularization: LEAGUE_REGISTRY and monotonic generatePlayerId', a
     assert.equal(mxConfig.relegationSlots, 2);
     assert.equal(mxConfig.relegatesTo, LeagueId.LIGA_EXPANSION_MX);
 
+    const chiConfig = getLeagueConfig(LeagueId.PRIMERA_DIVISION_CHILE);
+    assert.equal(chiConfig.country, 'CHI');
+    assert.equal(chiConfig.teamsCount, 16);
+    assert.equal(chiConfig.relegationSlots, 2);
+    assert.equal(chiConfig.relegatesTo, LeagueId.PRIMERA_B_CHILE);
+
     const argConfig = getLeagueConfig(LeagueId.LIGA_ARGENTINA);
     assert.equal(argConfig.country, 'ARG');
     assert.equal(argConfig.region, 'southAmerica');
@@ -1207,7 +1215,7 @@ test('Phase 2 Modularization: LEAGUE_REGISTRY and monotonic generatePlayerId', a
     assert.equal(isSouthAmericanLeague(LeagueId.LA_LIGA), false);
 
     const pairs = getPromotionRelegationPairs();
-    assert.equal(pairs.length, 8, 'Must have 8 promotion/relegation pairs');
+    assert.equal(pairs.length, 9, 'Must have 9 promotion/relegation pairs');
 
     // 2. Verify monotonic generatePlayerId produces strictly unique IDs in rapid succession
     const idSet = new Set<number>();

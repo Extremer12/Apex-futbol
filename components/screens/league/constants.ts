@@ -16,6 +16,8 @@ export const LEAGUE_THEMES: Record<string, string> = {
     COPA_DE_PRIMERA: 'rose',
     LIGA_MX: 'emerald',
     LIGA_EXPANSION_MX: 'amber',
+    PRIMERA_DIVISION_CHILE: 'red',
+    PRIMERA_B_CHILE: 'rose',
 };
 
 export const LEAGUE_LOGOS: Record<string, string> = {
@@ -36,6 +38,8 @@ export const LEAGUE_LOGOS: Record<string, string> = {
     COPA_DE_PRIMERA: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Copa%20de%20Primera/paraguay_copa-de-primera.football-logos.cc.svg',
     LIGA_MX: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Liga%20MX/mexico_liga-mx.football-logos.cc.svg',
     LIGA_EXPANSION_MX: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Liga%20de%20Expansi%C3%B3n%20MX/mexico_liga-de-expansion-mx.football-logos.cc.svg',
+    PRIMERA_DIVISION_CHILE: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Liga%20de%20Primera/chile_liga-de-primera.football-logos.cc.svg',
+    PRIMERA_B_CHILE: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Categoria%20Primera%20B/chile_liga-de-ascenso.football-logos.cc.svg',
 };
 
 export const CUP_LOGOS: Record<string, string> = {
@@ -128,4 +132,8 @@ export const ALL_COMPETITIONS: CompetitionItem[] = [
     { id: 'LIGA_MX', name: 'Liga MX', type: 'LEAGUE', logo: LEAGUE_LOGOS.LIGA_MX, country: 'México', flagUrl: 'https://flagcdn.com/mx.svg', category: 'DOMESTIC', isFirstDiv: true },
     { id: 'LIGA_EXPANSION_MX', name: 'Liga de Expansión MX', type: 'LEAGUE', logo: LEAGUE_LOGOS.LIGA_EXPANSION_MX, country: 'México', flagUrl: 'https://flagcdn.com/mx.svg', category: 'DOMESTIC', isFirstDiv: false },
     { id: 'COPA_MX', name: 'Copa MX', type: 'CUP', logo: CUP_LOGOS.copa_mx, country: 'México', flagUrl: 'https://flagcdn.com/mx.svg', category: 'DOMESTIC', cupKey: 'copaMx' },
+
+    // Chile
+    { id: 'PRIMERA_DIVISION_CHILE', name: 'Primera División', type: 'LEAGUE', logo: LEAGUE_LOGOS.PRIMERA_DIVISION_CHILE, country: 'Chile', flagUrl: 'https://flagcdn.com/cl.svg', category: 'DOMESTIC', isFirstDiv: true },
+    { id: 'PRIMERA_B_CHILE', name: 'Primera B / Ascenso', type: 'LEAGUE', logo: LEAGUE_LOGOS.PRIMERA_B_CHILE, country: 'Chile', flagUrl: 'https://flagcdn.com/cl.svg', category: 'DOMESTIC', isFirstDiv: false },
 ];

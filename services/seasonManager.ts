@@ -87,7 +87,11 @@ export function startNewSeason(currentState: GameState): GameState {
         [LeagueId.PRIMERA_NACIONAL]: 'Primera Nacional',
         [LeagueId.BRASILEIRAO]: 'Brasileirão Série A',
         [LeagueId.SERIE_B_BR]: 'Brasileirão Série B',
-        [LeagueId.COPA_DE_PRIMERA]: 'Copa de Primera (Paraguay)'
+        [LeagueId.COPA_DE_PRIMERA]: 'Copa de Primera (Paraguay)',
+        [LeagueId.LIGA_MX]: 'Liga MX',
+        [LeagueId.LIGA_EXPANSION_MX]: 'Liga de Expansión MX',
+        [LeagueId.PRIMERA_DIVISION_CHILE]: 'Primera División de Chile',
+        [LeagueId.PRIMERA_B_CHILE]: 'Primera B de Chile'
     };
 
     // Ensure all competitions of the season are crowned and finalized before awarding trophies

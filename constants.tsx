@@ -9,6 +9,7 @@ import { ligaArgentinaTeams, primeraNacionalTeams } from './data/teams/ligaArgen
 import { brasileiraoTeams, serieBBrTeams } from './data/teams/brasileirao';
 import { copaDePrimeraTeams } from './data/teams/copaDePrimera';
 import { ligaMxTeams, ligaExpansionMxTeams } from './data/teams/ligaMx';
+import { chileanTeams, chileanExpansionTeams } from './data/teams/ligaChile';
 import { segundaDivisionTeams, zweiteBundesligaTeams, serieBItaTeams } from './data/teams/secondDivisions';
 import { SOUTH_AMERICAN_EXTRA_TEAMS } from './data/teams/southAmericanClubs';
 
@@ -32,6 +33,8 @@ const rawTeams: Team[] = [
   ...(copaDePrimeraTeams || []),
   ...(ligaMxTeams || []),
   ...(ligaExpansionMxTeams || []),
+  ...(chileanTeams || []),
+  ...(chileanExpansionTeams || []),
   ...(SOUTH_AMERICAN_EXTRA_TEAMS || []),
 ];
 

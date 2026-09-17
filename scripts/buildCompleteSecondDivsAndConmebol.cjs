@@ -1,4 +1,10 @@
-import { Team, LeagueId } from '../../types';
+const fs = require('fs');
+const path = require('path');
+
+// ==========================================
+// 1. GENERACIÓN DE SEGUNDAS DIVISIONES (ESPAÑA, ALEMANIA, ITALIA)
+// ==========================================
+const secondDivisionsContent = `import { Team, LeagueId } from '../../types';
 
 // --- SEGUNDA DIVISIÓN ESPAÑOLA (LALIGA HYPERMOTION) ---
 export const segundaDivisionTeams: Team[] = [
@@ -315,3 +321,7 @@ export const serieBItaTeams: Team[] = [
         ]
     }
 ];
+`;
+
+fs.writeFileSync(path.join(__dirname, '..', 'data', 'teams', 'secondDivisions.ts'), secondDivisionsContent, 'utf-8');
+console.log('✅ data/teams/secondDivisions.ts actualizado con plantillas reales.');

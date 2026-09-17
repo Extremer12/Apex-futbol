@@ -85,10 +85,12 @@ export enum LeagueId {
   SERIE_B_BR = 'SERIE_B_BR',
   COPA_DE_PRIMERA = 'COPA_DE_PRIMERA',
   LIGA_MX = 'LIGA_MX',
-  LIGA_EXPANSION_MX = 'LIGA_EXPANSION_MX'
+  LIGA_EXPANSION_MX = 'LIGA_EXPANSION_MX',
+  PRIMERA_DIVISION_CHILE = 'PRIMERA_DIVISION_CHILE',
+  PRIMERA_B_CHILE = 'PRIMERA_B_CHILE'
 }
 
-export type CountryCode = 'ENG' | 'ESP' | 'GER' | 'ITA' | 'FRA' | 'ARG' | 'BRA' | 'PAR' | 'MEX';
+export type CountryCode = 'ENG' | 'ESP' | 'GER' | 'ITA' | 'FRA' | 'ARG' | 'BRA' | 'PAR' | 'MEX' | 'CHI';
 
 export const LEAGUE_COUNTRY: Record<LeagueId, CountryCode> = {
   [LeagueId.PREMIER_LEAGUE]: 'ENG',
@@ -107,7 +109,9 @@ export const LEAGUE_COUNTRY: Record<LeagueId, CountryCode> = {
   [LeagueId.SERIE_B_BR]: 'BRA',
   [LeagueId.COPA_DE_PRIMERA]: 'PAR',
   [LeagueId.LIGA_MX]: 'MEX',
-  [LeagueId.LIGA_EXPANSION_MX]: 'MEX'
+  [LeagueId.LIGA_EXPANSION_MX]: 'MEX',
+  [LeagueId.PRIMERA_DIVISION_CHILE]: 'CHI',
+  [LeagueId.PRIMERA_B_CHILE]: 'CHI'
 };
 
 export interface Team {

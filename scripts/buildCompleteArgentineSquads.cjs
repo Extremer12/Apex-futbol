@@ -1,4 +1,8 @@
-import { Team, LeagueId } from '../../types';
+const fs = require('fs');
+const path = require('path');
+
+// Definición completa de los 30 clubes de Liga Profesional con planteles reales y estadísticas estilo EA FC 25/26
+const ligaArgentinaData = `import { Team, LeagueId } from '../../types';
 import { createGenericSquad } from './helpers';
 
 export const ligaArgentinaTeams: Team[] = [
@@ -949,3 +953,8 @@ export const primeraNacionalTeams: Team[] = [
     { id: 765, name: 'Temperley', logo: '', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 1300000, transferBudget: 220000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#6BB3E3', secondaryColor: '#FFFFFF', squad: createGenericSquad(76500, 'Temperley', 66) },
     { id: 789, name: 'Tristán Suárez', logo: '', leagueId: LeagueId.PRIMERA_NACIONAL, zone: 'B', budget: 1100000, transferBudget: 200000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#FFFFFF', squad: createGenericSquad(78900, 'Tristan Suarez', 65) }
 ];
+`;
+
+const targetPath = path.join(__dirname, '..', 'data', 'teams', 'ligaArgentina.ts');
+fs.writeFileSync(targetPath, ligaArgentinaData, 'utf-8');
+console.log('✅ data/teams/ligaArgentina.ts generado con éxito.');

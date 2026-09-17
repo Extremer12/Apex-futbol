@@ -66,6 +66,12 @@ export function buildSudamericanaParticipants(context: SudamericanaQualification
                 teams.push(t);
                 seen.add(t.id);
             });
+        } else if (countryCode === 'CHI') {
+            const chiTeams = allTeams.filter(t => t.leagueId === LeagueId.PRIMERA_DIVISION_CHILE && !seen.has(t.id));
+            chiTeams.forEach(t => {
+                teams.push(t);
+                seen.add(t.id);
+            });
         } else {
             const extras = SOUTH_AMERICAN_EXTRA_TEAMS.filter(t => t.country === countryCode && !seen.has(t.id));
             extras.forEach(t => {

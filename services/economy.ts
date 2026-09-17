@@ -226,6 +226,12 @@ export const getBaseWeeklyIncome = (leagueId: string): number => {
         case LeagueId.LIGA_EXPANSION_MX:
         case 'LIGA_EXPANSION_MX':
             return 180_000;
+        case LeagueId.PRIMERA_DIVISION_CHILE:
+        case 'PRIMERA_DIVISION_CHILE':
+            return 450_000;
+        case LeagueId.PRIMERA_B_CHILE:
+        case 'PRIMERA_B_CHILE':
+            return 120_000;
         default:
             return 500_000;
     }
@@ -288,6 +294,12 @@ export const calculatePrizeMoney = (leagueId: string, position: number): number 
         case LeagueId.LIGA_EXPANSION_MX:
         case 'LIGA_EXPANSION_MX':
             baseAmount = 10_000_000; break;
+        case LeagueId.PRIMERA_DIVISION_CHILE:
+        case 'PRIMERA_DIVISION_CHILE':
+            baseAmount = 22_000_000; break;
+        case LeagueId.PRIMERA_B_CHILE:
+        case 'PRIMERA_B_CHILE':
+            baseAmount = 6_000_000; break;
         default:
             baseAmount = 25_000_000;
     }

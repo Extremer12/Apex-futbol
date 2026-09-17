@@ -85,6 +85,13 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                 { id: LeagueId.LIGA_MX, name: 'Liga MX', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Liga%20MX/mexico_liga-mx.football-logos.cc.svg', teams: '18', div: '1ª División' },
                 { id: LeagueId.LIGA_EXPANSION_MX, name: 'Liga de Expansión MX', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Liga%20de%20Expansi%C3%B3n%20MX/mexico_liga-de-expansion-mx.football-logos.cc.svg', teams: '14', div: '2ª División' }
             ]
+        },
+        CHI: {
+            title: 'Fútbol Chileno',
+            leagues: [
+                { id: LeagueId.PRIMERA_DIVISION_CHILE, name: 'Primera División', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Liga%20de%20Primera/chile_liga-de-primera.football-logos.cc.svg', teams: '16', div: '1ª División' },
+                { id: LeagueId.PRIMERA_B_CHILE, name: 'Primera B / Ascenso', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Categoria%20Primera%20B/chile_liga-de-ascenso.football-logos.cc.svg', teams: '16', div: '2ª División' }
+            ]
         }
     };
 
@@ -96,6 +103,7 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
         { id: 'FRA' as CountryCode, name: 'Francia', flagUrl: 'https://flagcdn.com/fr.svg' },
         { id: 'ARG' as CountryCode, name: 'Argentina', flagUrl: 'https://flagcdn.com/ar.svg' },
         { id: 'BRA' as CountryCode, name: 'Brasil', flagUrl: 'https://flagcdn.com/br.svg' },
+        { id: 'CHI' as CountryCode, name: 'Chile', flagUrl: 'https://flagcdn.com/cl.svg' },
         { id: 'PAR' as CountryCode, name: 'Paraguay', flagUrl: 'https://flagcdn.com/py.svg' },
         { id: 'MEX' as CountryCode, name: 'México', flagUrl: 'https://flagcdn.com/mx.svg' },
     ];

@@ -601,6 +601,36 @@ export const COMPETITION_HISTORICAL_CHAMPIONS: Record<string, CompetitionHistori
             { season: 'Apertura 2022', winnerName: 'Pachuca', runnerUp: 'Toluca' },
             { season: 'Clausura 2022', winnerName: 'Atlas', runnerUp: 'Pachuca' }
         ]
+    },
+
+    // =========================================================================
+    // 🇨🇱 CHILE
+    // =========================================================================
+    'PRIMERA_DIVISION_CHILE': {
+        id: 'PRIMERA_DIVISION_CHILE',
+        name: 'Primera División de Chile',
+        allTimeRanking: [
+            { teamName: 'Colo-Colo', titles: 33, lastWonYear: 2022 },
+            { teamName: 'Universidad de Chile', titles: 18, lastWonYear: 2017 },
+            { teamName: 'Universidad Católica', titles: 16, lastWonYear: 2021 },
+            { teamName: 'Cobreloa', titles: 8, lastWonYear: 2004 },
+            { teamName: 'Unión Española', titles: 7, lastWonYear: 2013 },
+            { teamName: 'Audax Italiano', titles: 4, lastWonYear: 1957 },
+            { teamName: 'Magallanes', titles: 4, lastWonYear: 1938 },
+            { teamName: 'Everton de Viña del Mar', titles: 4, lastWonYear: 2008 },
+            { teamName: 'Santiago Wanderers', titles: 3, lastWonYear: 2001 },
+            { teamName: 'Huachipato', titles: 3, lastWonYear: 2023 },
+            { teamName: 'Palestino', titles: 2, lastWonYear: 1978 },
+            { teamName: 'Cobresal', titles: 1, lastWonYear: 2015 },
+            { teamName: "O'Higgins", titles: 1, lastWonYear: 2013 }
+        ],
+        recentEditions: [
+            { season: '2023', winnerName: 'Huachipato', runnerUp: 'Cobresal' },
+            { season: '2022', winnerName: 'Colo-Colo', runnerUp: 'Ñublense' },
+            { season: '2021', winnerName: 'Universidad Católica', runnerUp: 'Colo-Colo' },
+            { season: '2020', winnerName: 'Universidad Católica', runnerUp: 'Unión La Calera' },
+            { season: '2019', winnerName: 'Universidad Católica', runnerUp: 'Colo-Colo' }
+        ]
     }
 };
 

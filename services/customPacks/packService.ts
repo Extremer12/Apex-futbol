@@ -284,6 +284,29 @@ class CustomPacksService {
         this.notifyListeners();
     }
 
+    public isChileanPackActive(): boolean {
+        if (typeof window === 'undefined') return false;
+        try {
+            return localStorage.getItem('apex_pack_chilean_active') === 'true';
+        } catch {
+            return false;
+        }
+    }
+
+    public setChileanPackActive(active: boolean): void {
+        if (typeof window === 'undefined') return;
+        try {
+            if (active) {
+                localStorage.setItem('apex_pack_chilean_active', 'true');
+            } else {
+                localStorage.removeItem('apex_pack_chilean_active');
+            }
+        } catch (e) {
+            console.error('Failed to save chilean pack state:', e);
+        }
+        this.notifyListeners();
+    }
+
     public isPlayerFacesPackActive(): boolean {
         if (typeof window === 'undefined') return false;
         try {
@@ -322,6 +345,7 @@ class CustomPacksService {
                 'apex_pack_paraguay_active',
                 'apex_pack_competitions_active',
                 'apex_pack_mexican_active',
+                'apex_pack_chilean_active',
                 'apex_pack_player_faces_active',
             ];
             for (const key of keys) {

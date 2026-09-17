@@ -253,6 +253,34 @@ export const LEAGUE_REGISTRY: Record<LeagueId, LeagueConfig> = {
         promotesTo: LeagueId.LIGA_MX,
         domesticCups: ['copaMx'],
         format: 'round-robin'
+    },
+    [LeagueId.PRIMERA_DIVISION_CHILE]: {
+        id: LeagueId.PRIMERA_DIVISION_CHILE,
+        name: 'Primera División de Chile',
+        country: 'CHI',
+        region: 'southAmerica',
+        division: 1,
+        teamsCount: 16,
+        maxWeeks: 30,
+        promotionSlots: 0,
+        relegationSlots: 2,
+        relegatesTo: LeagueId.PRIMERA_B_CHILE,
+        domesticCups: [],
+        format: 'round-robin'
+    },
+    [LeagueId.PRIMERA_B_CHILE]: {
+        id: LeagueId.PRIMERA_B_CHILE,
+        name: 'Primera B de Chile',
+        country: 'CHI',
+        region: 'southAmerica',
+        division: 2,
+        teamsCount: 16,
+        maxWeeks: 30,
+        promotionSlots: 2,
+        relegationSlots: 0,
+        promotesTo: LeagueId.PRIMERA_DIVISION_CHILE,
+        domesticCups: [],
+        format: 'round-robin'
     }
 };
 

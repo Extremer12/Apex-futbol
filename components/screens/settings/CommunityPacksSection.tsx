@@ -30,6 +30,7 @@ export const CommunityPacksSection: React.FC = () => {
     const [isGerPackActive, setIsGerPackActive] = useState<boolean>(false);
     const [isFrePackActive, setIsFrePackActive] = useState<boolean>(false);
     const [isMexPackActive, setIsMexPackActive] = useState<boolean>(false);
+    const [isChileanPackActive, setIsChileanPackActive] = useState<boolean>(false);
     const [isFacesPackActive, setIsFacesPackActive] = useState<boolean>(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [progressPercent, setProgressPercent] = useState(0);
@@ -50,6 +51,7 @@ export const CommunityPacksSection: React.FC = () => {
         setIsGerPackActive(customPacksService.isGermanPackActive());
         setIsFrePackActive(customPacksService.isFrenchPackActive());
         setIsMexPackActive(customPacksService.isMexicanPackActive());
+        setIsChileanPackActive(customPacksService.isChileanPackActive());
         setIsFacesPackActive(customPacksService.isPlayerFacesPackActive());
     };
 
@@ -193,6 +195,17 @@ export const CommunityPacksSection: React.FC = () => {
         );
     };
 
+    const handleToggleChileanPack = (enable: boolean) => {
+        executeToggle(
+            () => {
+                customPacksService.setChileanPackActive(enable);
+                setIsChileanPackActive(enable);
+            },
+            enable ? 'Pack de Fútbol Chileno activado.' : 'Pack de Fútbol Chileno desinstalado.',
+            'Error al modificar el pack de Chile'
+        );
+    };
+
     const handleToggleFacesPack = (enable: boolean) => {
         executeToggle(
             () => {
@@ -219,6 +232,7 @@ export const CommunityPacksSection: React.FC = () => {
             setIsGerPackActive(true);
             setIsFrePackActive(true);
             setIsMexPackActive(true);
+            setIsChileanPackActive(true);
             setIsFacesPackActive(true);
             setFeedbackMessage({
                 type: 'success',
@@ -279,6 +293,7 @@ export const CommunityPacksSection: React.FC = () => {
             setIsGerPackActive(false);
             setIsFrePackActive(false);
             setIsMexPackActive(false);
+            setIsChileanPackActive(false);
             setIsFacesPackActive(false);
             setFeedbackMessage({ type: 'success', text: 'Se restablecieron todos los elementos a modo genérico.' });
             await refreshState();
@@ -292,6 +307,7 @@ export const CommunityPacksSection: React.FC = () => {
         isOtrosArgActive,
         isParaguayPackActive,
         isMexPackActive,
+        isChileanPackActive,
         isEngPackActive,
         isSpaPackActive,
         isItaPackActive,
@@ -302,7 +318,7 @@ export const CommunityPacksSection: React.FC = () => {
         isFacesPackActive
     ].filter(Boolean).length;
 
-    const areAllPacksActive = activePacksCount === 12;
+    const areAllPacksActive = activePacksCount === 13;
 
     const packs: PackItem[] = [
         {
@@ -412,6 +428,18 @@ export const CommunityPacksSection: React.FC = () => {
             tagBg: 'bg-emerald-500/10',
             isActive: isMexPackActive,
             onToggle: handleToggleMexPack
+        },
+        {
+            id: 'chi',
+            name: 'Liga de Primera & Primera B',
+            region: 'Chile',
+            count: '33 Escudos',
+            description: 'Primera División y Primera B / Ascenso de Chile.',
+            tagColor: 'text-red-400',
+            tagBorder: 'border-red-500/30',
+            tagBg: 'bg-red-500/10',
+            isActive: isChileanPackActive,
+            onToggle: handleToggleChileanPack
         },
         {
             id: 'par',

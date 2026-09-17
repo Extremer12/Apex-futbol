@@ -127,6 +127,8 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
     const paraguayTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.COPA_DE_PRIMERA);
     const ligaMxTeamsList = allTeamsCopy.filter(t => t.leagueId === LeagueId.LIGA_MX);
     const expansionMxTeamsList = allTeamsCopy.filter(t => t.leagueId === LeagueId.LIGA_EXPANSION_MX);
+    const chileanTeamsList = allTeamsCopy.filter(t => t.leagueId === LeagueId.PRIMERA_DIVISION_CHILE);
+    const expansionChileTeamsList = allTeamsCopy.filter(t => t.leagueId === LeagueId.PRIMERA_B_CHILE);
 
     // International competitions (Champions League, Copa Libertadores) are NOT generated
     // in season 1. They will be created by seasonManager.ts from season 2 onwards
@@ -295,6 +297,8 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
             [LeagueId.COPA_DE_PRIMERA]: createInitialLeagueTable(paraguayTeams),
             [LeagueId.LIGA_MX]: createInitialLeagueTable(ligaMxTeamsList),
             [LeagueId.LIGA_EXPANSION_MX]: createInitialLeagueTable(expansionMxTeamsList),
+            [LeagueId.PRIMERA_DIVISION_CHILE]: createInitialLeagueTable(chileanTeamsList),
+            [LeagueId.PRIMERA_B_CHILE]: createInitialLeagueTable(expansionChileTeamsList),
         },
         finances: {
             balance: selectedTeam.budget,
