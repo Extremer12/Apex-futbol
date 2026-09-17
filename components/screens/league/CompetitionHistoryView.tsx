@@ -2,8 +2,8 @@ import React from 'react';
 import { GameState } from '../../../types';
 import { CompetitionItem } from './constants';
 import { customPacksService } from '../../../services/customPacks/packService';
-import { Trophy, History, Shield, Award, Calendar, ChevronRight, Star } from 'lucide-react';
-import { TeamLogo } from '../../../data/teams/helpers';
+import { Trophy, History, Shield, Award, Calendar, ChevronRight, Star, Sparkles } from 'lucide-react';
+import { TeamLogo, GenericTeamShield, TEAM_LOGOS } from '../../../data/teams/helpers';
 import { getCompetitionHistoricalRecord } from '../../../data/historicalHonours';
 
 interface CompetitionHistoryViewProps {
@@ -90,87 +90,187 @@ export const CompetitionHistoryView: React.FC<CompetitionHistoryViewProps> = ({
             .sort((a, b) => b.count - a.count);
     }, [isCup, combinedCupHistory, leagueSeasonRecords, historicalData]);
 
+    // Helper to render authentic club badge for any club name
+    const renderClubBadge = (teamName: string, className = "w-6 h-6") => {
+        if (!teamName) return <GenericTeamShield name="Club" className={className} />;
+
+        // Normalize team name (remove curly apostrophes, diacritics variants, whitespace)
+        const cleanName = teamName.replace(/[’‘`]/g, "'").trim();
+        const cleanLower = cleanName.toLowerCase();
+
+        // 1. Direct custom packs lookup (handles built-in SVGs, aliases, community packs)
+        const packLogo = customPacksService.resolveTeamLogo({ name: cleanName }) ||
+            customPacksService.resolveTeamLogo({ name: cleanLower });
+
+        if (packLogo) {
+            return (
+                <div className={`${className} relative flex items-center justify-center shrink-0`}>
+                    <img src={packLogo} alt={teamName} className="w-full h-full object-contain drop-shadow-sm" />
+                </div>
+            );
+        }
+
+        // 2. Exact or clean match in gameState.allTeams (prevent false positives like Arsenal vs Arsenal de Sarandí)
+        const matchedTeam = (gameState.allTeams || []).find(t => {
+            const tn = (t.name || '').toLowerCase().trim();
+            const sn = (t.shortName || '').toLowerCase().trim();
+            if (tn === cleanLower || sn === cleanLower) return true;
+
+            const strippedTn = tn.replace(/^(fc|ac|ca|csd|ssv|rcd|afc|cf|sc)\s+/i, '').trim();
+            const strippedClean = cleanLower.replace(/^(fc|ac|ca|csd|ssv|rcd|afc|cf|sc)\s+/i, '').trim();
+            if (strippedTn && strippedTn === strippedClean) return true;
+
+            // Safe alias links
+            if ((cleanLower === 'manchester united' || cleanLower === 'man united') && (tn === 'manchester utd' || sn === 'mun')) return true;
+            if ((cleanLower === 'estudiantes lp' || cleanLower === 'estudiantes') && tn.includes('estudiantes de la plata')) return true;
+            if ((cleanLower === 'gimnasia lp' || cleanLower === 'gimnasia la plata') && tn.includes('gimnasia y esgrima la plata')) return true;
+
+            return false;
+        });
+
+        if (matchedTeam) {
+            return <TeamLogo team={matchedTeam} className={className} />;
+        }
+
+        // 3. Check static logos dictionary
+        const staticLogo = (TEAM_LOGOS as Record<string, string>)[teamName] ||
+            Object.entries(TEAM_LOGOS).find(([k]) => k.toLowerCase() === cleanLower)?.[1];
+
+        if (staticLogo) {
+            return (
+                <div className={`${className} relative flex items-center justify-center shrink-0`}>
+                    <img src={staticLogo} alt={teamName} className="w-full h-full object-contain drop-shadow-sm" />
+                </div>
+            );
+        }
+
+        // 4. Fallback to aesthetic vector shield
+        return <GenericTeamShield name={teamName} className={className} />;
+    };
+
+    const totalEditionsCount = (historicalData?.recentEditions?.length || 0) + 
+        (isCup ? combinedCupHistory.length : leagueSeasonRecords.length);
+
     return (
-        <div className="space-y-6 animate-fade-in">
-            {/* Header Banner */}
-            <div className="rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-white/10 p-5 sm:p-7 relative overflow-hidden shadow-2xl">
+        <div className="space-y-4 animate-fade-in">
+            {/* Header Banner - Compact, Broadcast Style */}
+            <div className="rounded-xl bg-gradient-to-r from-slate-900 via-[#0E1524] to-slate-900 border border-white/10 p-4 relative overflow-hidden shadow-lg">
                 <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-[var(--apex-gold)]/10 to-transparent pointer-events-none" />
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
-                    <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center p-2 rounded-2xl bg-black/40 border border-white/10 shrink-0">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative z-10">
+                    <div className="flex items-center gap-3.5">
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center p-2 rounded-xl bg-black/50 border border-white/10 shrink-0 shadow-inner">
                             <img src={logo} alt={competition.name} className="w-full h-full object-contain drop-shadow-md" />
                         </div>
                         <div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-[var(--apex-gold)]/15 text-[var(--apex-gold)] border border-[var(--apex-gold)]/30">
-                                    Archivo Histórico
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-[var(--apex-gold)]/15 text-[var(--apex-gold)] border border-[var(--apex-gold)]/30">
+                                    {competition.country || 'Internacional'} • {isCup ? 'Copa Oficial' : 'Liga de Primera'}
                                 </span>
-                                <span className="text-slate-400 text-xs font-semibold">Temporada Actual: {gameState.season}</span>
+                                <span className="text-slate-400 text-[11px] font-mono">Temporada {gameState.season}</span>
                             </div>
-                            <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight mt-1">
+                            <h2 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight mt-0.5">
                                 Palmarés: {competition.name}
                             </h2>
-                            <p className="text-xs text-slate-400 mt-0.5">
-                                Registro histórico independiente de ediciones finalizadas, campeones y estadísticas.
-                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                        <div className="px-3 py-1.5 rounded-lg bg-black/40 border border-white/10 text-center">
+                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Campeones</div>
+                            <div className="text-xs sm:text-sm font-black text-amber-400 font-mono">{titleTally.length} Clubes</div>
+                        </div>
+                        <div className="px-3 py-1.5 rounded-lg bg-black/40 border border-white/10 text-center">
+                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Registros</div>
+                            <div className="text-xs sm:text-sm font-black text-white font-mono">{totalEditionsCount} Ediciones</div>
                         </div>
                     </div>
                 </div>
             </div>
 
             {/* Grid of Historical Records */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Columna Izquierda: Palmarés / Títulos por Club */}
-                <div className="lg:col-span-1 rounded-2xl bg-[#0E131F] border border-white/10 p-4 sm:p-5 shadow-xl space-y-4">
-                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                {/* Columna Izquierda: Palmarés / Títulos por Club (5 columnas en desktop) */}
+                <div className="lg:col-span-5 rounded-xl bg-[#0B0F19] border border-white/10 p-4 shadow-xl space-y-3 flex flex-col">
+                    <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
                         <div className="flex items-center gap-2">
-                            <Award className="w-5 h-5 text-[var(--apex-gold)]" />
-                            <h3 className="text-sm font-black text-white uppercase tracking-wider">Títulos Registrados</h3>
+                            <Trophy className="w-4 h-4 text-[var(--apex-gold)]" />
+                            <h3 className="text-xs font-black text-white uppercase tracking-wider">Títulos Registrados</h3>
                         </div>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase bg-white/5 px-2 py-0.5 rounded">
+                        <span className="text-[10px] font-mono font-bold text-slate-400 bg-white/5 px-2 py-0.5 rounded">
                             {titleTally.length} {titleTally.length === 1 ? 'Club' : 'Clubes'}
                         </span>
                     </div>
 
                     {titleTally.length === 0 ? (
-                        <div className="text-center py-10 text-slate-500 space-y-2">
-                            <Shield className="w-10 h-10 mx-auto opacity-30 text-slate-400" />
-                            <p className="text-xs font-bold uppercase tracking-wider">Sin títulos archivados todavía</p>
-                            <p className="text-[11px] text-slate-500">Los trofeos se registrarán al completar la primera temporada.</p>
+                        <div className="text-center py-10 text-slate-500 space-y-2 flex-1 flex flex-col justify-center">
+                            <Shield className="w-8 h-8 mx-auto opacity-30 text-slate-400" />
+                            <p className="text-xs font-bold uppercase tracking-wider">Sin títulos archivados</p>
+                            <p className="text-[11px] text-slate-500">Se registrarán al culminar la temporada en curso.</p>
                         </div>
                     ) : (
-                        <div className="space-y-2">
-                            {titleTally.map((t, idx) => (
-                                <div 
-                                    key={idx}
-                                    className="flex items-center justify-between p-3 rounded-xl bg-slate-900/60 border border-white/5 hover:border-white/10 transition-colors"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center font-black text-xs ${
-                                            idx === 0 ? 'bg-[var(--apex-gold)] text-slate-950 font-black' : 'bg-slate-800 text-slate-300'
-                                        }`}>
-                                            {idx + 1}
+                        <div className="space-y-1.5 max-h-[520px] overflow-y-auto pr-1 custom-scrollbar">
+                            {titleTally.map((t, idx) => {
+                                const isUserTeam = gameState.team.name.toLowerCase() === t.name.toLowerCase() || 
+                                    t.name.toLowerCase().includes(gameState.team.name.toLowerCase());
+
+                                return (
+                                    <div 
+                                        key={idx}
+                                        className={`flex items-center justify-between p-2.5 rounded-lg border transition-all ${
+                                            isUserTeam
+                                                ? 'bg-amber-500/10 border-amber-500/40 shadow-sm'
+                                                : 'bg-white/[0.02] border-white/5 hover:border-white/15'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-2.5 min-w-0">
+                                            {/* Rank Badge */}
+                                            <div className={`w-5 h-5 rounded-md flex items-center justify-center font-black text-[10px] shrink-0 ${
+                                                idx === 0 
+                                                    ? 'bg-gradient-to-br from-amber-400 to-yellow-500 text-slate-950 shadow-sm' 
+                                                    : idx === 1 
+                                                    ? 'bg-slate-300 text-slate-900 font-bold' 
+                                                    : idx === 2 
+                                                    ? 'bg-amber-700 text-amber-100 font-bold' 
+                                                    : 'bg-slate-800 text-slate-400'
+                                            }`}>
+                                                {idx + 1}
+                                            </div>
+
+                                            {/* Team Official Shield */}
+                                            <div className="w-6 h-6 shrink-0 flex items-center justify-center">
+                                                {renderClubBadge(t.name, "w-6 h-6")}
+                                            </div>
+
+                                            {/* Team Name */}
+                                            <span className={`text-xs truncate ${
+                                                isUserTeam 
+                                                    ? 'font-black text-amber-300' 
+                                                    : 'font-semibold text-white'
+                                            }`}>
+                                                {t.name}
+                                            </span>
                                         </div>
-                                        <span className="text-xs font-bold text-white truncate">{t.name}</span>
+
+                                        {/* Trophy Count Badge */}
+                                        <div className="flex items-center gap-1 text-xs font-black text-amber-400 font-mono bg-black/40 px-2 py-0.5 rounded border border-amber-500/20 shrink-0 ml-2">
+                                            <Trophy className="w-3 h-3 text-amber-400" />
+                                            <span>{t.count}</span>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-1.5 font-black text-xs text-[var(--apex-gold)]">
-                                        <Trophy className="w-3.5 h-3.5" />
-                                        <span>{t.count}</span>
-                                    </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </div>
 
-                {/* Columna Derecha: Historial Temporada por Temporada */}
-                <div className="lg:col-span-2 rounded-2xl bg-[#0E131F] border border-white/10 p-4 sm:p-5 shadow-xl space-y-4">
-                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                {/* Columna Derecha: Historial Temporada por Temporada (7 columnas en desktop) */}
+                <div className="lg:col-span-7 rounded-xl bg-[#0B0F19] border border-white/10 p-4 shadow-xl space-y-3 flex flex-col">
+                    <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
                         <div className="flex items-center gap-2">
-                            <History className="w-5 h-5 text-cyan-400" />
-                            <h3 className="text-sm font-black text-white uppercase tracking-wider">Historial de Ediciones</h3>
+                            <History className="w-4 h-4 text-cyan-400" />
+                            <h3 className="text-xs font-black text-white uppercase tracking-wider">Historial de Ediciones</h3>
                         </div>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase bg-white/5 px-2 py-0.5 rounded">
+                        <span className="text-[10px] font-mono font-bold text-slate-400 bg-white/5 px-2 py-0.5 rounded">
                             {isCup 
                                 ? (combinedCupHistory.length + (historicalData?.recentEditions?.length || 0))
                                 : (leagueSeasonRecords.length + (historicalData?.recentEditions?.length || 0))
@@ -178,117 +278,129 @@ export const CompetitionHistoryView: React.FC<CompetitionHistoryViewProps> = ({
                         </span>
                     </div>
 
-                    {/* Partidas Jugadas en Curso (In-Game) */}
-                    {isCup ? (
-                        combinedCupHistory.length > 0 && (
-                            <div className="space-y-2 mb-4">
-                                <div className="text-[10px] font-black uppercase text-[var(--apex-gold)] tracking-wider">
-                                    Ediciones en tu Partida
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                                    {combinedCupHistory.map((c, i) => (
-                                        <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-slate-900/90 border border-amber-500/30">
-                                            <div className="flex items-center gap-3">
-                                                <div className="px-2 py-0.5 rounded-md bg-[var(--apex-gold)]/15 text-[var(--apex-gold)] text-xs font-bold font-mono">
-                                                    T{c.season}
+                    <div className="space-y-3 max-h-[520px] overflow-y-auto pr-1 custom-scrollbar flex-1">
+                        {/* Partidas Jugadas en Curso (In-Game Seasons) */}
+                        {isCup ? (
+                            combinedCupHistory.length > 0 && (
+                                <div className="space-y-2">
+                                    <div className="text-[10px] font-black uppercase text-[var(--apex-gold)] tracking-wider flex items-center gap-1.5">
+                                        <Sparkles className="w-3 h-3" />
+                                        <span>Ediciones en tu Partida</span>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        {combinedCupHistory.map((c, i) => (
+                                            <div key={i} className="flex items-center justify-between p-2.5 rounded-lg bg-gradient-to-r from-amber-950/30 to-slate-900/60 border border-amber-500/30">
+                                                <div className="flex items-center gap-2.5 min-w-0">
+                                                    <span className="px-2 py-0.5 rounded bg-[var(--apex-gold)]/15 text-[var(--apex-gold)] text-[10px] font-bold font-mono shrink-0">
+                                                        T{c.season}
+                                                    </span>
+                                                    <div className="w-5 h-5 shrink-0 flex items-center justify-center">
+                                                        {renderClubBadge(c.winnerName, "w-5 h-5")}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <div className="text-xs font-black text-white truncate">{c.winnerName}</div>
+                                                        <div className="text-[9px] text-amber-400/90 font-bold uppercase">Campeón de Copa</div>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <div className="text-xs font-black text-white">{c.winnerName}</div>
-                                                    <div className="text-[10px] text-amber-400 font-bold uppercase">Campeón de Copa</div>
+                                                <Trophy className="w-3.5 h-3.5 text-amber-400 shrink-0 ml-1.5" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )
+                        ) : (
+                            leagueSeasonRecords.length > 0 && (
+                                <div className="space-y-2">
+                                    <div className="text-[10px] font-black uppercase text-[var(--apex-gold)] tracking-wider flex items-center gap-1.5">
+                                        <Sparkles className="w-3 h-3" />
+                                        <span>Temporadas Archivadas en tu Partida</span>
+                                    </div>
+                                    {leagueSeasonRecords.map((rec, idx) => (
+                                        <div key={idx} className="p-3 rounded-lg bg-slate-900/80 border border-amber-500/30 space-y-2">
+                                            <div className="flex items-center justify-between border-b border-white/5 pb-1.5">
+                                                <span className="text-[11px] font-black text-amber-400 uppercase font-mono">
+                                                    Temporada {rec.season}
+                                                </span>
+                                                <span className="text-[10px] text-slate-400">
+                                                    Tu club ({rec.userTeamName}): <strong className="text-white">{rec.userPosition}º Puesto ({rec.userPoints} pts)</strong>
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="w-5 h-5 shrink-0 flex items-center justify-center">
+                                                    {renderClubBadge(rec.leagueChampion || '', "w-5 h-5")}
+                                                </div>
+                                                <div className="text-xs font-black text-white">
+                                                    Campeón: <span className="text-amber-300">{rec.leagueChampion || 'N/A'}</span>
                                                 </div>
                                             </div>
-                                            <Trophy className="w-4 h-4 text-amber-400" />
+                                        </div>
+                                    ))}
+                                </div>
+                            )
+                        )}
+
+                        {/* Historial Oficial Reciente con Logos Reales */}
+                        {historicalData?.recentEditions && historicalData.recentEditions.length > 0 ? (
+                            <div className="space-y-2">
+                                <div className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                                    Ediciones Oficiales Recientes
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    {historicalData.recentEditions.map((ed, idx) => (
+                                        <div 
+                                            key={idx}
+                                            className="p-2.5 rounded-lg bg-slate-900/50 border border-white/5 hover:border-white/15 transition-all flex flex-col justify-between"
+                                        >
+                                            <div className="flex items-center justify-between gap-2">
+                                                <span className="px-1.5 py-0.5 rounded bg-black/60 text-slate-300 font-mono text-[10px] font-bold border border-white/10 shrink-0">
+                                                    {ed.season}
+                                                </span>
+                                                <div className="w-5 h-5 rounded bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
+                                                    <Trophy className="w-3 h-3 text-amber-400" />
+                                                </div>
+                                            </div>
+
+                                            {/* Campeón con Escudo */}
+                                            <div className="flex items-center gap-2 mt-1.5 min-w-0">
+                                                <div className="w-5 h-5 shrink-0 flex items-center justify-center">
+                                                    {renderClubBadge(ed.winnerName, "w-5 h-5")}
+                                                </div>
+                                                <span className="text-xs font-black text-white truncate">
+                                                    {ed.winnerName}
+                                                </span>
+                                            </div>
+
+                                            {/* Subcampeón si existe con Escudo */}
+                                            {ed.runnerUp && (
+                                                <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-1 pl-0.5 min-w-0">
+                                                    <span className="text-slate-500 text-[9px] uppercase font-bold shrink-0">Sub:</span>
+                                                    <div className="w-3.5 h-3.5 shrink-0 flex items-center justify-center">
+                                                        {renderClubBadge(ed.runnerUp, "w-3.5 h-3.5")}
+                                                    </div>
+                                                    <span className="truncate">{ed.runnerUp}</span>
+                                                    {ed.score && (
+                                                        <span className="font-mono text-slate-400 shrink-0 font-bold">
+                                                            {ed.score}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
                             </div>
-                        )
-                    ) : (
-                        leagueSeasonRecords.length > 0 && (
-                            <div className="space-y-3 mb-4">
-                                <div className="text-[10px] font-black uppercase text-[var(--apex-gold)] tracking-wider">
-                                    Temporadas Archivadas en tu Partida
+                        ) : (
+                            combinedCupHistory.length === 0 && leagueSeasonRecords.length === 0 && (
+                                <div className="text-center py-12 text-slate-500 space-y-2">
+                                    <Trophy className="w-10 h-10 mx-auto opacity-20 text-slate-400" />
+                                    <p className="text-xs font-bold text-slate-300 uppercase tracking-wider">Edición en Disputa</p>
+                                    <p className="text-[11px] text-slate-500 max-w-xs mx-auto">
+                                        Al consagrarse el nuevo campeón, los registros se archivarán automáticamente.
+                                    </p>
                                 </div>
-                                {leagueSeasonRecords.map((rec, idx) => (
-                                    <div key={idx} className="p-3.5 rounded-xl bg-slate-900/90 border border-amber-500/30 space-y-2.5">
-                                        <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                                            <span className="text-xs font-black text-amber-400 uppercase tracking-wider font-mono">
-                                                Temporada {rec.season}
-                                            </span>
-                                            <span className="text-[11px] text-slate-400">
-                                                Tu equipo ({rec.userTeamName}): <strong className="text-white">{rec.userPosition}º Puesto ({rec.userPoints} pts)</strong>
-                                            </span>
-                                        </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-                                            <div className="bg-white/5 p-2 rounded-lg">
-                                                <span className="text-[10px] text-slate-400 uppercase block">Campeón</span>
-                                                <span className="font-black text-amber-300">{rec.leagueChampion || 'N/A'}</span>
-                                            </div>
-                                            {rec.promotedTeams && rec.promotedTeams.length > 0 && (
-                                                <div className="bg-white/5 p-2 rounded-lg">
-                                                    <span className="text-[10px] text-emerald-400 uppercase block">Ascensos</span>
-                                                    <span className="font-bold text-slate-200 truncate block">{rec.promotedTeams.join(', ')}</span>
-                                                </div>
-                                            )}
-                                            {rec.relegatedTeams && rec.relegatedTeams.length > 0 && (
-                                                <div className="bg-white/5 p-2 rounded-lg">
-                                                    <span className="text-[10px] text-rose-400 uppercase block">Descensos</span>
-                                                    <span className="font-bold text-slate-200 truncate block">{rec.relegatedTeams.join(', ')}</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )
-                    )}
-
-                    {/* Historial Oficial Reciente */}
-                    {historicalData?.recentEditions && historicalData.recentEditions.length > 0 ? (
-                        <div className="space-y-2.5">
-                            <div className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between">
-                                <span>Ediciones Oficiales Recientes</span>
-                                <span className="text-slate-500 font-normal">Archivo Histórico Oficial</span>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                                {historicalData.recentEditions.map((ed, idx) => (
-                                    <div 
-                                        key={idx}
-                                        className="flex items-center justify-between p-3 rounded-xl bg-slate-900/60 border border-white/5 hover:border-white/15 transition-all"
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <span className="px-2 py-0.5 rounded bg-black/60 text-slate-300 font-mono text-[11px] font-bold border border-white/10 shrink-0">
-                                                {ed.season}
-                                            </span>
-                                            <div className="min-w-0">
-                                                <span className="text-xs font-bold text-white block truncate">
-                                                    {ed.winnerName}
-                                                </span>
-                                                {ed.runnerUp && (
-                                                    <span className="text-[10px] text-slate-400 truncate block">
-                                                        Subcampeón: {ed.runnerUp} {ed.score ? `(${ed.score})` : ''}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
-                                            <Trophy className="w-3.5 h-3.5 text-amber-400" />
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    ) : (
-                        combinedCupHistory.length === 0 && leagueSeasonRecords.length === 0 && (
-                            <div className="text-center py-12 text-slate-500 space-y-2">
-                                <Trophy className="w-12 h-12 mx-auto opacity-25 text-slate-400" />
-                                <p className="text-sm font-bold text-slate-300 uppercase tracking-wider">Primera Temporada en Curso</p>
-                                <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                                    Al consagrarse el campeón de esta edición, el registro se archivará automáticamente aquí.
-                                </p>
-                            </div>
-                        )
-                    )}
+                            )
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

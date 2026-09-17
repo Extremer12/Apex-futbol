@@ -12,6 +12,7 @@ import { initializeSudamericanaSeason } from './sudamericanaEngine';
 import { getBaseWeeklyIncome, generateStadium, generateSponsor, generateSponsorMarket } from './economy';
 import { formatDate } from '../utils';
 import { getInitialAchievements } from './achievementService';
+import { calculateFanApproval } from './political';
 
 interface InitializeGameParams {
     selectedTeam: Team;
@@ -267,7 +268,7 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
     ];
 
     // Build and return the initial game state
-    return {
+    const initialState: GameState = {
         currentTurn: 'weekend',
         team: playerTeamCopy,
         allTeams: allTeamsCopy,
@@ -438,5 +439,11 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
         preferredLanguage: 'es',
         achievements: getInitialAchievements(),
         seasonHistory: [],
+        playerProfile: playerProfile || undefined,
     };
+
+    // Calculate dynamic initial fan approval
+    initialState.fanApproval = calculateFanApproval(initialState);
+
+    return initialState;
 }

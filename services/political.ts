@@ -35,42 +35,75 @@ const calculateTransferFactor = (gameState: GameState): number => {
  */
 export const calculateFanApproval = (gameState: GameState): FanApproval => {
     const playerTable = gameState.leagueTables[gameState.team.leagueId] || [];
-    const playerPosition = playerTable.find(
-        row => row.teamId === gameState.team.id
-    )?.position || 10;
+    const playerRow = playerTable.find(row => row.teamId === gameState.team.id);
+    const playerPosition = playerRow?.position || 10;
+    const matchesPlayed = playerRow?.played || 0;
 
     // Factor Resultados (-20 a +20)
     let results = 0;
-    if (playerPosition <= 4) results = 20;
-    else if (playerPosition <= 6) results = 10;
-    else if (playerPosition <= 10) results = 0;
-    else if (playerPosition <= 15) results = -10;
-    else results = -20;
+    if (matchesPlayed > 0) {
+        const winRate = playerRow.won / matchesPlayed;
+        let winRateBonus = 0;
+        if (winRate >= 0.65) winRateBonus = 12;
+        else if (winRate >= 0.45) winRateBonus = 6;
+        else if (winRate >= 0.30) winRateBonus = 0;
+        else winRateBonus = -8;
+
+        let positionBonus = 0;
+        if (playerPosition <= 3) positionBonus = 8;
+        else if (playerPosition <= 6) positionBonus = 4;
+        else if (playerPosition <= 12) positionBonus = 0;
+        else if (playerPosition <= 16) positionBonus = -6;
+        else positionBonus = -12;
+
+        results = Math.max(-20, Math.min(20, winRateBonus + positionBonus));
+    } else {
+        // Inicio de temporada / pretemporada: expectativa según categoría institucional
+        if (gameState.team.tier === 'Top') results = 5;
+        else if (gameState.team.tier === 'Mid') results = 3;
+        else results = 1;
+    }
 
     // Factor Finanzas (-10 a +10)
-    const finances = gameState.finances.balance > 0 ? 10 : -10;
+    const balance = gameState.finances?.balance ?? 0;
+    let finances = 0;
+    if (balance >= 30) finances = 10;
+    else if (balance >= 15) finances = 7;
+    else if (balance >= 5) finances = 4;
+    else if (balance >= 0) finances = 2;
+    else finances = -10;
 
     // Factor Promesas (-20 a +20)
-    const fulfilledPromises = gameState.electoralPromises?.filter(p => p.fulfilled).length || 0;
-    const failedPromises = gameState.electoralPromises?.filter(
+    const electoralPromises = gameState.electoralPromises || [];
+    const fulfilledPromises = electoralPromises.filter(p => p.fulfilled).length;
+    const failedPromises = electoralPromises.filter(
         p => !p.fulfilled && gameState.season > p.deadline
-    ).length || 0;
-    const promises = (fulfilledPromises * 10) - (failedPromises * 10);
+    ).length;
+    const activePromises = electoralPromises.filter(
+        p => !p.fulfilled && gameState.season <= p.deadline
+    ).length;
+
+    let promises = (fulfilledPromises * 10) - (failedPromises * 12);
+    if (activePromises > 0 && fulfilledPromises === 0 && failedPromises === 0) {
+        // En mandato activo, las promesas asumidas generan confianza inicial positiva
+        promises = Math.min(6, activePromises * 2);
+    }
+    promises = Math.max(-20, Math.min(20, promises));
 
     // Factor Transferencias (-10 a +10)
     const transfers = calculateTransferFactor(gameState);
 
     // Total
     const baseRating = 60; // Start at 60%
-    const totalRating = Math.max(0, Math.min(100,
+    const totalRating = Math.max(10, Math.min(100,
         baseRating + results + finances + promises + transfers
     ));
 
     // Determine trend
     const currentRating = gameState.fanApproval?.rating || 60;
     let trend: 'rising' | 'stable' | 'falling';
-    if (totalRating > currentRating + 5) trend = 'rising';
-    else if (totalRating < currentRating - 5) trend = 'falling';
+    if (totalRating > currentRating + 3) trend = 'rising';
+    else if (totalRating < currentRating - 3) trend = 'falling';
     else trend = 'stable';
 
     return {

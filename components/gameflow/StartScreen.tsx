@@ -110,16 +110,8 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onNewGame, onLoadGameS
 
             {/* Content */}
             <div className="relative z-10 flex flex-col min-h-screen max-w-xl mx-auto w-full">
-                {/* Top bar (Clean, no boxes inside boxes, no Apex FC) */}
-                <div className="flex justify-end items-center px-6 pt-5 pb-2 gap-3">
-                    <button
-                        onClick={() => setCurrentView('PACKS')}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#121824] hover:bg-[#1A2335] text-white border border-[var(--apex-gold)]/40 hover:border-[var(--apex-gold)] transition-all shadow-md active:scale-95 cursor-pointer"
-                        title="Gestionar escudos y logos reales a pantalla completa"
-                    >
-                        <ShieldCheck className="w-4 h-4 text-[var(--apex-gold)]" />
-                        <span className="text-[10px] font-black uppercase tracking-wider text-[var(--apex-gold)]">Logos & Packs</span>
-                    </button>
+                {/* Top bar (Clean, no redundant pack button) */}
+                <div className="flex justify-end items-center px-6 pt-5 pb-2">
                     <UserBadge />
                 </div>
 

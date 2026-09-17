@@ -7,7 +7,26 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
-### UI/UX & Aesthetics
+### Bug Fixes & Engine Stability
+- **Solución al Bucle Infinito en Bundesliga / Ligas de 34 Semanas**: 
+  - Corregida la duración oficial del calendario en `seasonUtils.ts` (`maxLeagueWeek = 34` para Bundesliga, 2. Bundesliga y Ligue 1).
+  - Eliminada la restricción que bloqueaba la finalización de temporada esperando a la semana 38 por copas europeas de la IA cuando el usuario ya no tenía partidos pendientes, permitiendo que `isSeasonCompleted` active el cierre de temporada oportunamente y ejecute la resolución automática (`finalizeSeasonCompetitions`).
+  - Blindada la detección de campeones en `cinematicsDetector.ts`: la cinemática `LEAGUE_WIN` ahora se dispara exclusivamente en la última fecha de liga con un ID determinista y comprobación de trofeos previos / cola de cinemáticas, evitando que se reproduzca en bucle al simular.
+- **Corrección de Logo 404 (SSV Ulm)**: Actualizada la URL del escudo del SSV Ulm 1846 en `data/teams/secondDivisions.ts` (reemplazado endpoint inexistente `1456.png` por el oficial verificado `1458.png` con respuesta HTTP 200 OK).
+
+- **Rediseño Integral de Historial y Palmarés (`CompetitionHistoryView.tsx` & `TrophyRoomScreen.tsx`)**:
+  - **Filtros por País y Región Intuitivos**: Se sustituyó la lista horizontal caótica de más de 25 torneos por una barra de navegación con chips organizados por región (*Todos, Internacionales, Argentina, España, Inglaterra, Alemania, Italia, Francia, Brasil, México, Paraguay*) y buscador en tiempo real con botón de limpieza instantánea.
+  - **Escudos Oficiales de Clubes**: En la tabla del Palmarés y en el historial de ediciones finalizadas, cada club (campeón y subcampeón) se renderiza con su escudo oficial o vectorial auténtico en lugar de texto plano o números genéricos.
+  - **Tarjetas Broadcast Limpias**: Eliminado el exceso de texto explicativo redundante; la cabecera ahora muestra una insignia de competición compacta, estilo transmisión deportiva, con total de ediciones disputadas, clubes galardonados y el campeón más laureado.
+- **Renovación Visual de Logros Presidenciales**:
+  - **Paleta de Color y Elegancia**: Se eliminó el aspecto oscuro, apagado y plano. Cada categoría cuenta ahora con un tema visual elegante y distintivo (*Ámbar/Dorado* para Títulos, *Cian/Zafiro* para Gestión, *Esmeralda/Menta* para Fichajes y *Púrpura/Amatista* para Hitos Especiales) con sutiles degradados y bordes iluminados.
+  - **Cero Iconos/Emojis Genéricos**: Se reemplazaron todos los emojis genéricos (🏆, 👑, ⭐) por iconos vectoriales SVG profesionales de Lucide (`Trophy`, `Crown`, `Coins`, `Building2`, `Sparkles`, `ArrowRightLeft`, etc.).
+  - **Barra de Progreso y Badges de Estado**: Barra de progreso general estilo broadcast en degradado áurico, insignias elegantes de estado (*Conseguido / Bloqueado*) y barras de progreso individuales para cada meta.
+- **Pantalla de Inicio Más Limpia**: Eliminado el botón redundante "Logos & Packs" de la barra superior; el acceso a los packs de la comunidad se gestiona exclusivamente desde la tarjeta principal destacada del menú, dejando una cabecera despejada y simétrica.
+- **Formulario de Perfil de Presidente Realista (`ProfileCreation.tsx`)**:
+  - Eliminado el selector de "Nivel de Experiencia" (Novato/Experimentado/Leyenda) al no tener impacto mecánico en el juego.
+  - Añadidos campos directos para **Nombre**, **Apellido**, **Edad** (selector numérico 21-85 años) y **Nacionalidad** (con selector completo de banderas de las principales naciones del fútbol).
+  - Actualizada la pantalla de perfil del presidente (`ProfileScreen.tsx`) para exhibir con elegancia la edad junto a la nacionalidad del dirigente.
 - **Noticias en Modal & Rostros de Fichajes**: Las noticias del Dashboard ahora son interactivas; al hacer clic abren un modal detallado de lectura completa con formato limpio (sin `\n` crudos), badges oficiales y ficha del jugador involucrado. Además, las noticias de fichajes muestran directamente la foto/rostro del futbolista en miniatura en lugar de la imagen genérica.
 - **Radar de Fichajes**: Renovada la columna lateral ("Actualizaciones de Mercado") reemplazando avatares cartoon por el nuevo "Radar de Fichajes" con `PlayerAvatar` auténtico, media OVR, club, valor de mercado y etiquetas contextuales (*Transferible*, *Fin Contrato*, *Estrella Top*), con acceso directo al perfil del jugador.
 - **Base de Datos de Rostros Ampliada**: Añadidos IDs y nombres para toda la plantilla del FC Barcelona (Gavi, Pedri, Olmo, Balde, Cubarsí, Christensen, Ferran Torres, Fermín López, Iñigo Martínez, Casadó, etc.), Real Madrid, y figuras de La Liga mediante el CDN oficial de FotMob.

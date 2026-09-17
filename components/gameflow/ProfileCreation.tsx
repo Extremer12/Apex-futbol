@@ -1,19 +1,43 @@
 import React, { useState, useRef } from 'react';
 import { PlayerProfile } from '../../types';
+import { User, Calendar, Globe, ChevronDown, Camera } from 'lucide-react';
 
 interface ProfileCreationProps {
     onProfileCreate: (profile: PlayerProfile) => void;
 }
 
-const EXPERIENCE_OPTIONS = [
-    { value: 0, label: 'Novato', desc: 'Primera vez al mando' },
-    { value: 1, label: 'Experimentado', desc: 'Conoces el oficio' },
-    { value: 2, label: 'Leyenda', desc: 'Nacido para liderar' },
+const NATIONALITIES = [
+    { name: 'Argentina', flag: '🇦🇷' },
+    { name: 'España', flag: '🇪🇸' },
+    { name: 'Brasil', flag: '🇧🇷' },
+    { name: 'Alemania', flag: '🇩🇪' },
+    { name: 'Italia', flag: '🇮🇹' },
+    { name: 'Inglaterra', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+    { name: 'Francia', flag: '🇫🇷' },
+    { name: 'Uruguay', flag: '🇺🇾' },
+    { name: 'Colombia', flag: '🇨🇴' },
+    { name: 'Chile', flag: '🇨🇱' },
+    { name: 'México', flag: '🇲🇽' },
+    { name: 'Portugal', flag: '🇵🇹' },
+    { name: 'Países Bajos', flag: '🇳🇱' },
+    { name: 'Paraguay', flag: '🇵🇾' },
+    { name: 'Perú', flag: '🇵🇪' },
+    { name: 'Ecuador', flag: '🇪🇨' },
+    { name: 'Bélgica', flag: '🇧🇪' },
+    { name: 'Croacia', flag: '🇭🇷' },
+    { name: 'Estados Unidos', flag: '🇺🇸' },
+    { name: 'Japón', flag: '🇯🇵' },
+    { name: 'Suiza', flag: '🇨🇭' },
+    { name: 'Austria', flag: '🇦🇹' },
+    { name: 'Bolivia', flag: '🇧🇴' },
+    { name: 'Venezuela', flag: '🇻🇪' },
 ];
 
 export const ProfileCreation: React.FC<ProfileCreationProps> = ({ onProfileCreate }) => {
-    const [name, setName] = useState('');
-    const [experience, setExperience] = useState(0);
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
+    const [age, setAge] = useState(48);
+    const [nationality, setNationality] = useState('Argentina');
     const [photo, setPhoto] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -32,14 +56,28 @@ export const ProfileCreation: React.FC<ProfileCreationProps> = ({ onProfileCreat
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (name.trim()) {
-            onProfileCreate({ 
-                name: name.trim(), 
-                experience,
+        const fullName = [firstName.trim(), lastName.trim()].filter(Boolean).join(' ');
+        if (fullName) {
+            const profileData = { 
+                name: fullName,
+                firstName: firstName.trim(),
+                lastName: lastName.trim(),
+                age: Number(age) || 48,
+                nationality,
+                country: nationality,
+                experience: 0,
                 photo: photo || undefined 
-            });
+            };
+            try {
+                localStorage.setItem('apex_last_player_profile', JSON.stringify(profileData));
+            } catch (e) {
+                // Quota fallback if base64 photo is large
+            }
+            onProfileCreate(profileData);
         }
     };
+
+    const isFormValid = (firstName.trim().length > 0 || lastName.trim().length > 0) && age >= 18;
 
     return (
         <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: 'var(--apex-dark)' }}>
@@ -73,7 +111,7 @@ export const ProfileCreation: React.FC<ProfileCreationProps> = ({ onProfileCreat
                 </div>
 
                 {/* Main Card */}
-                <div className="flex-1 flex flex-col px-5 pb-6">
+                <div className="flex-1 flex flex-col px-5 pb-6 max-w-lg mx-auto w-full">
                     <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
                         <div className="apex-card p-6 flex-1 flex flex-col animate-scale-in">
                             {/* Card Header */}
@@ -99,7 +137,7 @@ export const ProfileCreation: React.FC<ProfileCreationProps> = ({ onProfileCreat
                                 <button
                                     type="button"
                                     onClick={() => fileInputRef.current?.click()}
-                                    className="w-24 h-24 rounded-full flex items-center justify-center mb-2 relative group cursor-pointer transition-transform active:scale-95 overflow-hidden"
+                                    className="w-24 h-24 rounded-full flex items-center justify-center mb-2 relative group cursor-pointer transition-transform active:scale-95 overflow-hidden shadow-xl"
                                     style={{ 
                                         border: '2px solid var(--apex-gold)', 
                                         background: photo ? '#000' : 'linear-gradient(135deg, rgba(200,168,78,0.1), rgba(15,20,35,0.8))' 
@@ -109,18 +147,13 @@ export const ProfileCreation: React.FC<ProfileCreationProps> = ({ onProfileCreat
                                     {photo ? (
                                         <img src={photo} alt="Avatar" className="w-full h-full object-cover" />
                                     ) : (
-                                        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--apex-gold-dim)' }}>
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                        </svg>
+                                        <User className="w-12 h-12" style={{ color: 'var(--apex-gold-dim)' }} />
                                     )}
 
                                     {/* Camera / Edit badge */}
                                     <div className="absolute bottom-1 right-1 w-6 h-6 rounded-full flex items-center justify-center shadow-lg"
                                          style={{ background: 'var(--apex-gold)', color: '#0A0E17' }}>
-                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        </svg>
+                                        <Camera className="w-3.5 h-3.5" />
                                     </div>
                                 </button>
                                 <button
@@ -133,61 +166,92 @@ export const ProfileCreation: React.FC<ProfileCreationProps> = ({ onProfileCreat
                                 </button>
                             </div>
 
-                            {/* Fields */}
-                            <div className="space-y-5 flex-1">
-                                {/* President Name */}
-                                <div>
-                                    <label className="block text-[10px] font-bold tracking-[0.15em] uppercase mb-2 text-white">Nombre del Presidente</label>
-                                    <div className="relative">
-                                        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--apex-text-muted)' }}>
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                        </svg>
-                                        <input
-                                            type="text"
-                                            value={name}
-                                            onChange={(e) => setName(e.target.value)}
-                                            placeholder="Introduce tu nombre"
-                                            className="apex-input"
-                                            required
-                                        />
+                            {/* Form Fields */}
+                            <div className="space-y-4 flex-1">
+                                {/* Nombre y Apellido (Side-by-Side) */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-[10px] font-bold tracking-[0.15em] uppercase mb-1.5 text-white">
+                                            Nombre
+                                        </label>
+                                        <div className="relative">
+                                            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--apex-text-muted)' }} />
+                                            <input
+                                                type="text"
+                                                value={firstName}
+                                                onChange={(e) => setFirstName(e.target.value)}
+                                                placeholder="Ej. Julián"
+                                                className="apex-input pl-9 text-sm"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-[10px] font-bold tracking-[0.15em] uppercase mb-1.5 text-white">
+                                            Apellido
+                                        </label>
+                                        <div className="relative">
+                                            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--apex-text-muted)' }} />
+                                            <input
+                                                type="text"
+                                                value={lastName}
+                                                onChange={(e) => setLastName(e.target.value)}
+                                                placeholder="Ej. Álvarez"
+                                                className="apex-input pl-9 text-sm"
+                                                required
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* Experience Level */}
-                                <div>
-                                    <label className="block text-[10px] font-bold tracking-[0.15em] uppercase mb-2 text-white">Nivel de Experiencia</label>
-                                    <div className="space-y-2">
-                                        {EXPERIENCE_OPTIONS.map((opt) => (
-                                            <button
-                                                key={opt.value}
-                                                type="button"
-                                                onClick={() => setExperience(opt.value)}
-                                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200"
-                                                style={{
-                                                    background: experience === opt.value ? 'rgba(200,168,78,0.08)' : 'rgba(10,14,23,0.6)',
-                                                    border: `1px solid ${experience === opt.value ? 'var(--apex-gold)' : 'var(--apex-border)'}`,
-                                                }}
+                                {/* Edad y Nacionalidad (Side-by-Side) */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-[10px] font-bold tracking-[0.15em] uppercase mb-1.5 text-white">
+                                            Edad
+                                        </label>
+                                        <div className="relative">
+                                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--apex-text-muted)' }} />
+                                            <input
+                                                type="number"
+                                                min={21}
+                                                max={85}
+                                                value={age}
+                                                onChange={(e) => setAge(Math.max(18, Math.min(99, parseInt(e.target.value) || 18)))}
+                                                className="apex-input pl-9 text-sm font-semibold"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-[10px] font-bold tracking-[0.15em] uppercase mb-1.5 text-white">
+                                            Nacionalidad
+                                        </label>
+                                        <div className="relative">
+                                            <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: 'var(--apex-text-muted)' }} />
+                                            <select
+                                                value={nationality}
+                                                onChange={(e) => setNationality(e.target.value)}
+                                                className="apex-input pl-9 pr-8 text-sm font-medium appearance-none cursor-pointer bg-[#0D1220] text-white"
                                             >
-                                                <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0"
-                                                     style={{ borderColor: experience === opt.value ? 'var(--apex-gold)' : 'var(--apex-text-muted)' }}>
-                                                    {experience === opt.value && (
-                                                        <div className="w-2.5 h-2.5 rounded-full" style={{ background: 'var(--apex-gold)' }} />
-                                                    )}
-                                                </div>
-                                                <div className="text-left">
-                                                    <div className="text-sm font-bold text-white">{opt.label}</div>
-                                                    <div className="text-[10px]" style={{ color: 'var(--apex-text-secondary)' }}>{opt.desc}</div>
-                                                </div>
-                                            </button>
-                                        ))}
+                                                {NATIONALITIES.map((nat) => (
+                                                    <option key={nat.name} value={nat.name} className="bg-[#0D1220] text-white">
+                                                        {nat.flag} {nat.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-slate-400" />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Submit */}
+                            {/* Submit Button */}
                             <button
                                 type="submit"
-                                disabled={!name.trim()}
+                                disabled={!isFormValid}
                                 className="apex-btn-gold mt-6 disabled:opacity-30 disabled:cursor-not-allowed"
                             >
                                 CONTINUAR
@@ -205,8 +269,8 @@ export const ProfileCreation: React.FC<ProfileCreationProps> = ({ onProfileCreat
                                 </svg>
                             </div>
                             <div>
-                                <p className="text-[10px] text-white font-medium">Tu perfil define cómo te ve el mundo.</p>
-                                <p className="text-[9px]" style={{ color: 'var(--apex-text-muted)' }}>Elige sabiamente — cada decisión define tu legado.</p>
+                                <p className="text-[10px] text-white font-medium">Tu perfil define la identidad de tu gestión.</p>
+                                <p className="text-[9px]" style={{ color: 'var(--apex-text-muted)' }}>Representa a tu club con orgullo y liderazgo institucional.</p>
                             </div>
                         </div>
                     </form>

@@ -14,7 +14,7 @@ export function normalizeKey(str: string): string {
         // Strip common file extensions
         .replace(/\.(png|jpg|jpeg|svg|webp|gif)$/i, '')
         // Replace punctuation and separators with empty or single spaces
-        .replace(/[_\-\.\,\'\"]/g, ' ')
+        .replace(/[_\-\.\,\'\"’‘`“”]/g, ' ')
         // Remove common football prefixes and suffixes to maximize match rate
         .replace(/\b(club|atletico|deportivo|sporting|futbol|fc|cf|sc|afc|cd|ca|de|la|el|los|las|the)\b/gi, ' ')
         // Strip all non-alphanumeric characters

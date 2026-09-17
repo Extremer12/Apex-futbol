@@ -190,6 +190,8 @@ export interface PresidentialStint {
 
 export interface PlayerProfile {
   name: string;
+  firstName?: string;
+  lastName?: string;
   experience?: number; // Starts at 0
   photo?: string;     // Custom avatar image DataURL or URL
   nationality?: string;

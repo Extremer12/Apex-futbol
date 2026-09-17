@@ -19,10 +19,14 @@ import {
     Flame,
     Users,
     Sparkles,
-    Landmark
+    Landmark,
+    Wallet,
+    ArrowRightLeft,
+    UserCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatCurrency } from '../../utils';
+import { calculateFanApproval } from '../../services/political';
 
 interface ProfileScreenProps {
     gameState: GameState;
@@ -78,8 +82,37 @@ const PRESIDENTIAL_STYLES = [
 ];
 
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({ gameState, dispatch }) => {
-    const { playerProfile, mandate, fanApproval, boardConfidence, electoralPromises, team, season, seasonHistory, allTeams } = gameState;
+    const { playerProfile: rawProfile, mandate, boardConfidence, electoralPromises, team, season, seasonHistory, allTeams } = gameState;
     const [activeTab, setActiveTab] = useState<'MANDATE' | 'PALMARES' | 'STINTS' | 'ELECTIONS'>('MANDATE');
+
+    // Resolved profile with localStorage fallback
+    const playerProfile = useMemo(() => {
+        let p = rawProfile;
+        if ((!p || !p.name) && typeof window !== 'undefined') {
+            try {
+                const cached = localStorage.getItem('apex_last_player_profile');
+                if (cached) {
+                    p = { ...JSON.parse(cached), ...p };
+                }
+            } catch (e) {
+                // ignore
+            }
+        }
+        return p;
+    }, [rawProfile]);
+
+    const firstName = playerProfile?.firstName || playerProfile?.name?.split(' ')[0] || '';
+    const lastName = playerProfile?.lastName || playerProfile?.name?.split(' ').slice(1).join(' ') || '';
+    const fullName = [firstName, lastName].filter(Boolean).join(' ') || playerProfile?.name || 'Presidente del Club';
+    const profilePhoto = playerProfile?.photo;
+    const nationality = playerProfile?.nationality || playerProfile?.country || 'Argentina';
+    const age = playerProfile?.age;
+
+    // Live Fan Approval: dynamic, real-time and never stuck at 0
+    const fanApproval = useMemo(() => {
+        return calculateFanApproval(gameState);
+    }, [gameState]);
+
     const [selectedStyle, setSelectedStyle] = useState<string>(playerProfile?.style || 'Equilibrado');
     const [showStyleModal, setShowStyleModal] = useState(false);
 
@@ -179,62 +212,106 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ gameState, dispatc
                     <Landmark className="w-full h-full" />
                 </div>
 
-                <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-6">
-                    {/* President Avatar / Emblem */}
-                    <div className="relative shrink-0">
-                        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-b from-amber-400/20 to-amber-600/10 border-2 border-amber-400/60 p-1 flex items-center justify-center shadow-[0_0_25px_rgba(212,175,55,0.25)]">
-                            {playerProfile?.photo ? (
-                                <img src={playerProfile.photo} alt="" className="w-full h-full object-cover rounded-xl" />
-                            ) : (
-                                <div className="w-full h-full rounded-xl bg-slate-900/90 flex flex-col items-center justify-center text-amber-400">
-                                    <Briefcase className="w-8 h-8 sm:w-10 sm:h-10 mb-1" />
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-white/70">PRES</span>
-                                </div>
-                            )}
+                <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+                    {/* Left: President Identity (Avatar + Name & Info) */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-6 flex-1 min-w-0">
+                        {/* President Avatar / Emblem */}
+                        <div className="relative shrink-0">
+                            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-b from-amber-400/20 to-amber-600/10 border-2 border-amber-400/60 p-1 flex items-center justify-center shadow-[0_0_25px_rgba(212,175,55,0.25)] overflow-hidden">
+                                {profilePhoto ? (
+                                    <img 
+                                        src={profilePhoto} 
+                                        alt={fullName} 
+                                        className="w-full h-full object-cover rounded-xl" 
+                                    />
+                                ) : (
+                                    <div className="w-full h-full rounded-xl bg-slate-900/90 flex flex-col items-center justify-center text-amber-400">
+                                        <Briefcase className="w-8 h-8 sm:w-10 sm:h-10 mb-1" />
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-white/70">PRES</span>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="absolute -bottom-2 -right-2 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-full border border-amber-300 shadow-md">
+                                Nv. {currentLevelInfo.level}
+                            </div>
                         </div>
-                        <div className="absolute -bottom-2 -right-2 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-full border border-amber-300 shadow-md">
-                            Nv. {currentLevelInfo.level}
+
+                        {/* Information */}
+                        <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-amber-400 bg-amber-400/10 px-2.5 py-0.5 rounded-full border border-amber-400/30">
+                                    {currentLevelInfo.title}
+                                </span>
+                                <button
+                                    onClick={() => setShowStyleModal(true)}
+                                    className="text-[10px] font-bold uppercase tracking-wider text-slate-300 bg-white/5 hover:bg-white/10 px-2.5 py-0.5 rounded-full border border-white/10 flex items-center gap-1 transition-all cursor-pointer"
+                                >
+                                    <span>Estilo: {selectedStyle}</span>
+                                    <ChevronRight className="w-3 h-3 text-amber-400" />
+                                </button>
+                            </div>
+
+                            {/* Name and Surname */}
+                            <div className="space-y-0.5">
+                                <div className="flex items-center gap-2.5 flex-wrap">
+                                    <h1 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">
+                                        {fullName}
+                                    </h1>
+                                    {firstName && lastName && (
+                                        <span className="text-[10px] font-black text-amber-300/90 bg-amber-500/10 border border-amber-500/25 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                                            {firstName} {lastName}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+
+                            <p className="text-xs text-slate-400 flex items-center gap-2 mt-1 flex-wrap">
+                                <span>Nacionalidad: {nationality}</span>
+                                {age && (
+                                    <>
+                                        <span>•</span>
+                                        <span>{age} años</span>
+                                    </>
+                                )}
+                                <span>•</span>
+                                <span className="text-amber-300/80 font-semibold">{currentLevelInfo.desc}</span>
+                            </p>
+
+                            {/* XP Progress Bar */}
+                            <div className="mt-3 space-y-1">
+                                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider">
+                                    <span className="text-slate-400">Experiencia Dirigencial</span>
+                                    <span className="text-amber-400">{currentLevelInfo.currentXp} / {currentLevelInfo.nextLevelXp} XP</span>
+                                </div>
+                                <div className="w-full h-2 bg-black/50 rounded-full border border-white/10 overflow-hidden">
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${currentLevelInfo.progress}%` }}
+                                        transition={{ duration: 0.8, ease: 'easeOut' }}
+                                        className="h-full bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-200 rounded-full"
+                                    />
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Information */}
-                    <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-amber-400 bg-amber-400/10 px-2.5 py-0.5 rounded-full border border-amber-400/30">
-                                {currentLevelInfo.title}
-                            </span>
-                            <button
-                                onClick={() => setShowStyleModal(true)}
-                                className="text-[10px] font-bold uppercase tracking-wider text-slate-300 bg-white/5 hover:bg-white/10 px-2.5 py-0.5 rounded-full border border-white/10 flex items-center gap-1 transition-all"
-                            >
-                                <span>Estilo: {selectedStyle}</span>
-                                <ChevronRight className="w-3 h-3 text-amber-400" />
-                            </button>
+                    {/* Right: Current Club Official Credential Badge */}
+                    <div className="shrink-0 w-full lg:w-auto flex items-center gap-3.5 bg-gradient-to-r from-white/[0.08] via-white/[0.04] to-black/40 border border-amber-500/30 rounded-2xl p-3.5 px-4 shadow-xl backdrop-blur-md">
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 shrink-0 flex items-center justify-center p-1 bg-black/40 rounded-xl border border-white/10 shadow-inner">
+                            <TeamLogo team={team} className="w-full h-full object-contain" />
                         </div>
-
-                        <h1 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight truncate">
-                            {playerProfile?.name || 'Presidente del Club'}
-                        </h1>
-
-                        <p className="text-xs text-slate-400 flex items-center gap-2 mt-0.5">
-                            <span>Nacionalidad: {playerProfile?.nationality || 'Argentina'}</span>
-                            <span>•</span>
-                            <span className="text-amber-300/80 font-semibold">{currentLevelInfo.desc}</span>
-                        </p>
-
-                        {/* XP Progress Bar */}
-                        <div className="mt-3.5 space-y-1">
-                            <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider">
-                                <span className="text-slate-400">Experiencia Dirigencial</span>
-                                <span className="text-amber-400">{currentLevelInfo.currentXp} / {currentLevelInfo.nextLevelXp} XP</span>
+                        <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                <span className="text-[10px] text-amber-400 font-black uppercase tracking-wider">Club Actual</span>
                             </div>
-                            <div className="w-full h-2 bg-black/50 rounded-full border border-white/10 overflow-hidden">
-                                <motion.div
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${currentLevelInfo.progress}%` }}
-                                    transition={{ duration: 0.8, ease: 'easeOut' }}
-                                    className="h-full bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-200 rounded-full"
-                                />
+                            <div className="text-sm sm:text-base font-black text-white uppercase tracking-tight truncate max-w-[200px]">
+                                {team.name}
+                            </div>
+                            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1.5 mt-0.5">
+                                <span className="text-slate-300">Mandato #{mandate?.totalMandates || 1}</span>
+                                <span>•</span>
+                                <span>Año {mandate?.currentYear || 1} de 4</span>
                             </div>
                         </div>
                     </div>
@@ -367,47 +444,137 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ gameState, dispatc
                     {/* Political Climate: Socios vs Directiva */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Fan Approval (Socios) */}
-                        <div className="bg-[#0B0F19] rounded-2xl border border-white/10 p-5 space-y-3 shadow-lg">
+                        <div className="bg-[#0B0F19] rounded-2xl border border-white/10 p-5 space-y-4 shadow-lg">
                             <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <Users className="w-5 h-5 text-amber-400" />
-                                    <h4 className="text-sm font-black text-white uppercase tracking-wide">Aprobación de Socios</h4>
+                                <div className="flex items-center gap-2.5">
+                                    <div className="w-8 h-8 rounded-lg bg-amber-400/10 border border-amber-400/30 flex items-center justify-center text-amber-400">
+                                        <Users className="w-4 h-4" />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-sm font-black text-white uppercase tracking-wide">Aprobación de Socios</h4>
+                                        <p className="text-[10px] text-slate-400 font-medium">Índice electoral clave para reelección</p>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-1.5 bg-black/40 px-2.5 py-1 rounded-lg border border-white/10">
-                                    {fanApproval.trend === 'rising' && <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />}
-                                    {fanApproval.trend === 'falling' && <TrendingDown className="w-3.5 h-3.5 text-rose-400" />}
-                                    {fanApproval.trend === 'stable' && <Minus className="w-3.5 h-3.5 text-slate-400" />}
-                                    <span className="text-xs font-black text-white">{fanApproval.rating}%</span>
+                                <div className="flex items-center gap-2 bg-black/50 px-3 py-1.5 rounded-xl border border-white/10">
+                                    {fanApproval.trend === 'rising' && <TrendingUp className="w-4 h-4 text-emerald-400" />}
+                                    {fanApproval.trend === 'falling' && <TrendingDown className="w-4 h-4 text-rose-400" />}
+                                    {fanApproval.trend === 'stable' && <Minus className="w-4 h-4 text-amber-400" />}
+                                    <span className="text-sm font-black font-mono text-white">{fanApproval.rating}%</span>
                                 </div>
                             </div>
 
-                            <p className="text-xs text-slate-400">
-                                Los socios deciden en las urnas tu continuidad cada 4 años. Mantener su apoyo garantiza la reelección.
-                            </p>
+                            {/* Overall Gauge Meter */}
+                            <div className="space-y-1.5 bg-black/40 p-3 rounded-xl border border-white/5">
+                                <div className="flex justify-between items-center text-[11px]">
+                                    <span className="text-slate-400 font-medium">Clima electoral:</span>
+                                    <span className={`font-black uppercase tracking-wider ${
+                                        fanApproval.rating >= 60 ? 'text-emerald-400' : fanApproval.rating >= 45 ? 'text-amber-400' : 'text-rose-400'
+                                    }`}>
+                                        {fanApproval.rating >= 60 ? '✓ Amplio Respaldo' : fanApproval.rating >= 45 ? '⚠ Comicios Reñidos' : '⛔ Descontento Social'}
+                                    </span>
+                                </div>
+                                <div className="w-full h-2 bg-slate-900 rounded-full overflow-hidden border border-white/5">
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${fanApproval.rating}%` }}
+                                        transition={{ duration: 0.6 }}
+                                        className={`h-full rounded-full ${
+                                            fanApproval.rating >= 60
+                                                ? 'bg-gradient-to-r from-emerald-500 to-teal-400'
+                                                : fanApproval.rating >= 45
+                                                ? 'bg-gradient-to-r from-amber-500 to-yellow-400'
+                                                : 'bg-gradient-to-r from-rose-600 to-red-500'
+                                        }`}
+                                    />
+                                </div>
+                            </div>
 
-                            {/* Breakdown */}
-                            <div className="space-y-1.5 pt-2 border-t border-white/5 text-[11px]">
-                                <div className="flex justify-between text-slate-300">
-                                    <span>Resultados Deportivos:</span>
-                                    <span className={fanApproval.factors.results >= 0 ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
+                            {/* Factor Cards Grid */}
+                            <div className="space-y-2 pt-1">
+                                {/* Resultados Deportivos */}
+                                <div className="bg-black/30 border border-white/5 rounded-xl p-2.5 flex items-center justify-between">
+                                    <div className="flex items-center gap-2.5 min-w-0">
+                                        <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                                            <Trophy className="w-3.5 h-3.5" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <div className="text-[11px] font-bold text-slate-200 truncate">Resultados Deportivos</div>
+                                            <div className="text-[9px] text-slate-400 truncate">
+                                                {careerStats.totalMatches > 0 ? `${careerStats.winRate}% de efectividad` : 'Inicio de temporada'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <span className={`px-2 py-0.5 rounded-md text-xs font-mono font-black shrink-0 border ${
+                                        fanApproval.factors.results >= 0
+                                            ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                                            : 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+                                    }`}>
                                         {fanApproval.factors.results > 0 ? `+${fanApproval.factors.results}` : fanApproval.factors.results} pts
                                     </span>
                                 </div>
-                                <div className="flex justify-between text-slate-300">
-                                    <span>Política de Fichajes:</span>
-                                    <span className={fanApproval.factors.transfers >= 0 ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
+
+                                {/* Política de Fichajes */}
+                                <div className="bg-black/30 border border-white/5 rounded-xl p-2.5 flex items-center justify-between">
+                                    <div className="flex items-center gap-2.5 min-w-0">
+                                        <div className="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
+                                            <ArrowRightLeft className="w-3.5 h-3.5" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <div className="text-[11px] font-bold text-slate-200 truncate">Política de Fichajes</div>
+                                            <div className="text-[9px] text-slate-400 truncate">
+                                                {team.squad.length} jugadores en plantilla
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <span className={`px-2 py-0.5 rounded-md text-xs font-mono font-black shrink-0 border ${
+                                        fanApproval.factors.transfers >= 0
+                                            ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                                            : 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+                                    }`}>
                                         {fanApproval.factors.transfers > 0 ? `+${fanApproval.factors.transfers}` : fanApproval.factors.transfers} pts
                                     </span>
                                 </div>
-                                <div className="flex justify-between text-slate-300">
-                                    <span>Salud Financiera:</span>
-                                    <span className={fanApproval.factors.finances >= 0 ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
+
+                                {/* Salud Financiera */}
+                                <div className="bg-black/30 border border-white/5 rounded-xl p-2.5 flex items-center justify-between">
+                                    <div className="flex items-center gap-2.5 min-w-0">
+                                        <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+                                            <Wallet className="w-3.5 h-3.5" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <div className="text-[11px] font-bold text-slate-200 truncate">Salud Financiera</div>
+                                            <div className="text-[9px] text-slate-400 truncate">
+                                                {formatCurrency(gameState.finances?.balance || 0)} en arcas
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <span className={`px-2 py-0.5 rounded-md text-xs font-mono font-black shrink-0 border ${
+                                        fanApproval.factors.finances >= 0
+                                            ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                                            : 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+                                    }`}>
                                         {fanApproval.factors.finances > 0 ? `+${fanApproval.factors.finances}` : fanApproval.factors.finances} pts
                                     </span>
                                 </div>
-                                <div className="flex justify-between text-slate-300">
-                                    <span>Cumplimiento de Promesas:</span>
-                                    <span className={fanApproval.factors.promises >= 0 ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
+
+                                {/* Cumplimiento de Promesas */}
+                                <div className="bg-black/30 border border-white/5 rounded-xl p-2.5 flex items-center justify-between">
+                                    <div className="flex items-center gap-2.5 min-w-0">
+                                        <div className="w-7 h-7 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 shrink-0">
+                                            <CheckCircle2 className="w-3.5 h-3.5" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <div className="text-[11px] font-bold text-slate-200 truncate">Promesas Electorales</div>
+                                            <div className="text-[9px] text-slate-400 truncate">
+                                                {electoralPromises.filter(p => p.fulfilled).length}/{electoralPromises.length} compromisos
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <span className={`px-2 py-0.5 rounded-md text-xs font-mono font-black shrink-0 border ${
+                                        fanApproval.factors.promises >= 0
+                                            ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                                            : 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+                                    }`}>
                                         {fanApproval.factors.promises > 0 ? `+${fanApproval.factors.promises}` : fanApproval.factors.promises} pts
                                     </span>
                                 </div>

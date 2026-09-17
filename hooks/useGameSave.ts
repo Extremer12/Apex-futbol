@@ -116,6 +116,7 @@ export function useGameSave(
         if (savedData) {
             const rehydratedGameState: GameState = {
                 ...savedData.gameState,
+                playerProfile: savedData.playerProfile || savedData.gameState.playerProfile,
                 currentDate: new Date(savedData.gameState.currentDate),
                 boardConfidence: savedData.gameState.boardConfidence != null ? savedData.gameState.boardConfidence : 75,
                 incomingOffers: savedData.gameState.incomingOffers || [],
@@ -140,6 +141,7 @@ export function useGameSave(
             if (cloudData) {
                 const rehydratedGameState: GameState = {
                     ...cloudData.gameState,
+                    playerProfile: cloudData.playerProfile || cloudData.gameState.playerProfile,
                     currentDate: new Date(cloudData.gameState.currentDate),
                     boardConfidence: cloudData.gameState.boardConfidence != null ? cloudData.gameState.boardConfidence : 75,
                     incomingOffers: cloudData.gameState.incomingOffers || [],

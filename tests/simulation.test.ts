@@ -1854,6 +1854,98 @@ test('Presidential Mandate: 4-year cycle triggers election year and re-election 
     assert.ok(postElectionState.newsFeed.length > 0, 'News feed must contain election announcement');
 });
 
+test('Bundesliga: 34-week league completion cleanly terminates season and does not duplicate LEAGUE_WIN', async () => {
+    const { isSeasonCompleted } = await import('../services/seasonUtils');
+    const { detectCinematicEvents } = await import('../services/simulation/cinematicsDetector');
+
+    const bayern = TEAMS.find(t => t.name.includes('Bayern') || t.leagueId === LeagueId.BUNDESLIGA)!;
+    const bundesligaTeams = TEAMS.filter(t => t.leagueId === LeagueId.BUNDESLIGA);
+
+    // Create a mock finished Bundesliga schedule (34 weeks)
+    const mockSchedule: Match[] = [];
+    for (let w = 1; w <= 34; w++) {
+        mockSchedule.push({
+            id: `bl_m_${w}`,
+            homeTeamId: bayern.id,
+            awayTeamId: bundesligaTeams.find(t => t.id !== bayern.id)!.id,
+            week: w,
+            competition: 'Bundesliga',
+            isMidweek: false,
+            result: { homeScore: 2, awayScore: 0, events: [] }
+        });
+    }
+
+    const mockGameState: any = {
+        team: bayern,
+        allTeams: TEAMS,
+        currentWeek: 34,
+        season: 2026,
+        schedule: mockSchedule,
+        leagueTables: {
+            [LeagueId.BUNDESLIGA]: [
+                {
+                    teamId: bayern.id,
+                    teamName: bayern.name,
+                    played: 34,
+                    won: 28,
+                    drawn: 4,
+                    lost: 2,
+                    goalsFor: 85,
+                    goalsAgainst: 22,
+                    goalDifference: 63,
+                    points: 88,
+                    position: 1,
+                    form: []
+                }
+            ]
+        },
+        cups: {
+            championsLeague: {
+                id: 'cl',
+                name: 'Champions League',
+                phase: 'knockout',
+                winnerId: undefined, // AI vs AI cup still in dispute
+                currentRoundIndex: 3,
+                rounds: []
+            }
+        },
+        cinematicQueue: []
+    };
+
+    // 1. Season must complete at week 34 even if AI Champions League is still unfinished
+    const completed = isSeasonCompleted(mockGameState);
+    assert.equal(completed, true, 'Bundesliga season must be completed at week 34 when player has no active cup matches');
+
+    // 2. Cinematics detector fires LEAGUE_WIN at week 34
+    const eventsWeek34 = detectCinematicEvents(
+        mockGameState,
+        mockGameState.cups,
+        mockGameState.leagueTables,
+        34,
+        35,
+        []
+    );
+
+    const leagueWinEvents = eventsWeek34.filter(e => e.type === 'LEAGUE_WIN');
+    assert.equal(leagueWinEvents.length, 1, 'LEAGUE_WIN event must be generated at week 34');
+    assert.equal(leagueWinEvents[0].id, `champ_league_${bayern.leagueId}_2026`);
+
+    // 3. Cinematics detector must NOT duplicate LEAGUE_WIN once it is in cinematicQueue or on subsequent weeks
+    mockGameState.cinematicQueue.push(leagueWinEvents[0]);
+    const eventsDuplicate = detectCinematicEvents(
+        mockGameState,
+        mockGameState.cups,
+        mockGameState.leagueTables,
+        35,
+        36,
+        []
+    );
+
+    const duplicateLeagueWin = eventsDuplicate.filter(e => e.type === 'LEAGUE_WIN');
+    assert.equal(duplicateLeagueWin.length, 0, 'LEAGUE_WIN must never be duplicated or looped');
+});
+
+
 
 
 

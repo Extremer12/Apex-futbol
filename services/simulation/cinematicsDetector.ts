@@ -38,7 +38,7 @@ export function detectCinematicEvents(
     const playerTeam = gameState.team;
 
     // 1. Check Torneo Apertura Champion
-    if (updatedCups.aperturaPlayoffs?.winnerId && !gameState.cups.aperturaPlayoffs?.winnerId && updatedCups.aperturaPlayoffs.winnerId === playerTeam.id) {
+    if (updatedCups?.aperturaPlayoffs?.winnerId && !gameState.cups?.aperturaPlayoffs?.winnerId && updatedCups.aperturaPlayoffs.winnerId === playerTeam.id) {
         const argTable = updatedLeagueTables[LeagueId.LIGA_ARGENTINA] || [];
         const playerRow = argTable.find(r => r.teamId === playerTeam.id);
         events.push({
@@ -61,7 +61,7 @@ export function detectCinematicEvents(
     }
 
     // 2. Check Torneo Clausura Champion
-    if (updatedCups.clausuraPlayoffs?.winnerId && !gameState.cups.clausuraPlayoffs?.winnerId && updatedCups.clausuraPlayoffs.winnerId === playerTeam.id) {
+    if (updatedCups?.clausuraPlayoffs?.winnerId && !gameState.cups?.clausuraPlayoffs?.winnerId && updatedCups.clausuraPlayoffs.winnerId === playerTeam.id) {
         const argTable = updatedLeagueTables[LeagueId.LIGA_ARGENTINA] || [];
         const playerRow = argTable.find(r => r.teamId === playerTeam.id);
         events.push({
@@ -84,7 +84,7 @@ export function detectCinematicEvents(
     }
 
     // 3. Primera Nacional (Primer Ascenso & Reducido)
-    if (updatedCups.nacionalPrimerAscenso?.winnerId && !gameState.cups.nacionalPrimerAscenso?.winnerId && updatedCups.nacionalPrimerAscenso.winnerId === playerTeam.id) {
+    if (updatedCups?.nacionalPrimerAscenso?.winnerId && !gameState.cups?.nacionalPrimerAscenso?.winnerId && updatedCups.nacionalPrimerAscenso.winnerId === playerTeam.id) {
         events.push({
             id: `champ_primer_ascenso_${Date.now()}`,
             type: 'PROMOTION',
@@ -99,7 +99,7 @@ export function detectCinematicEvents(
         });
     }
 
-    if (updatedCups.nacionalReducido?.winnerId && !gameState.cups.nacionalReducido?.winnerId && updatedCups.nacionalReducido.winnerId === playerTeam.id) {
+    if (updatedCups?.nacionalReducido?.winnerId && !gameState.cups?.nacionalReducido?.winnerId && updatedCups.nacionalReducido.winnerId === playerTeam.id) {
         events.push({
             id: `champ_reducido_${Date.now()}`,
             type: 'PROMOTION',
@@ -129,8 +129,8 @@ export function detectCinematicEvents(
     ];
 
     for (const gc of genericCups) {
-        const upCup = updatedCups[gc.key];
-        const oldCup = gameState.cups[gc.key];
+        const upCup = updatedCups ? updatedCups[gc.key] : undefined;
+        const oldCup = gameState.cups ? gameState.cups[gc.key] : undefined;
         if (upCup?.winnerId && !oldCup?.winnerId && upCup.winnerId === playerTeam.id) {
             events.push({
                 id: `champ_${gc.key}_${Date.now()}`,
@@ -156,10 +156,21 @@ export function detectCinematicEvents(
     const playerLeague = playerTeam.leagueId;
     const playerTable = updatedLeagueTables[playerLeague] || [];
     const playerRow = playerTable.find(r => r.teamId === playerTeam.id);
-    const maxLeagueWeeks = playerLeague === LeagueId.BUNDESLIGA ? 34 : 38;
-    if (simulatedWeek >= maxLeagueWeeks && playerRow && playerRow.position === 1 && !playerLeague.includes('ARGENTINA') && !playerLeague.includes('NACIONAL')) {
+    let maxLeagueWeeks = 38;
+    if (playerLeague === LeagueId.BUNDESLIGA || playerLeague === LeagueId.ZWEITE_BUNDESLIGA || playerLeague === LeagueId.LIGUE_1) {
+        maxLeagueWeeks = 34;
+    } else if (playerLeague === LeagueId.CHAMPIONSHIP) {
+        maxLeagueWeeks = 46;
+    } else if (playerLeague === LeagueId.SEGUNDA_DIVISION_ESP) {
+        maxLeagueWeeks = 42;
+    }
+
+    const alreadyCelebratedLeague = (gameState.cinematicQueue || []).some(c => c.type === 'LEAGUE_WIN') ||
+        (playerTeam.trophyCabinet || []).some(t => t.season === gameState.season);
+
+    if (simulatedWeek === maxLeagueWeeks && playerRow && playerRow.position === 1 && !alreadyCelebratedLeague && !playerLeague.includes('ARGENTINA') && !playerLeague.includes('NACIONAL')) {
         events.push({
-            id: `champ_league_${Date.now()}`,
+            id: `champ_league_${playerLeague}_${gameState.season}`,
             type: 'LEAGUE_WIN',
             title: '¡CAMPEÓN DE LIGA!',
             subtitle: `${playerTeam.name} finaliza en la cima de la tabla y conquista el campeonato`,

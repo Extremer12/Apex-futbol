@@ -6,6 +6,7 @@ import { generateStadium, generateSponsorMarket, calculateFinancialBreakdown, ge
 import { initializeGame } from '../../services/gameFactory';
 import { startNewSeason } from '../../services/seasonManager';
 import { evaluateAchievements } from '../../services/achievementService';
+import { calculateFanApproval } from '../../services/political';
 import type { GameAction } from '../reducer';
 
 // Actions handled by this reducer
@@ -113,7 +114,7 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
 
             const cinematicQueue = loadedState.cinematicQueue || [];
 
-            return {
+            const rehydratedState: GameState = {
                 ...loadedState,
                 currentTurn,
                 team: playerTeamWithCoach,
@@ -132,7 +133,21 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
                 cinematicQueue,
                 preferredCurrency: loadedState.preferredCurrency || 'EUR',
                 preferredLanguage,
+                playerProfile: loadedState.playerProfile || undefined,
             };
+
+            // If fanApproval factors were all 0, compute realistic factors immediately
+            if (
+                !rehydratedState.fanApproval ||
+                (rehydratedState.fanApproval.factors.results === 0 &&
+                 rehydratedState.fanApproval.factors.transfers === 0 &&
+                 rehydratedState.fanApproval.factors.finances === 0 &&
+                 rehydratedState.fanApproval.factors.promises === 0)
+            ) {
+                rehydratedState.fanApproval = calculateFanApproval(rehydratedState);
+            }
+
+            return rehydratedState;
         }
 
         case 'RESET_GAME':
@@ -209,10 +224,17 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
                     : state.cinematicQueue,
             };
 
-            const { updatedAchievements } = evaluateAchievements(interimState);
+            // Dynamically recalculate fan approval with new league table, finances & squad
+            const liveFanApproval = calculateFanApproval(interimState);
+            const stateWithFanApproval: GameState = {
+                ...interimState,
+                fanApproval: liveFanApproval
+            };
+
+            const { updatedAchievements } = evaluateAchievements(stateWithFanApproval);
 
             return {
-                ...interimState,
+                ...stateWithFanApproval,
                 achievements: updatedAchievements
             };
         }

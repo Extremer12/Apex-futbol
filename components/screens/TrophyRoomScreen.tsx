@@ -1,10 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { GameState, AchievementCategory } from '../../types';
 import { TrophyIcon, SparklesIcon, ChartBarIcon } from '../icons';
-import { ALL_COMPETITIONS } from './league/constants';
+import { ALL_COMPETITIONS, CompetitionItem } from './league/constants';
 import { CompetitionHistoryView } from './league/CompetitionHistoryView';
 import { customPacksService } from '../../services/customPacks/packService';
-import { Search, History, Shield, Award, CheckCircle2, Lock, Star } from 'lucide-react';
+import { 
+    Search, History, Shield, Award, CheckCircle2, Lock, Star,
+    Trophy, Crown, Globe, ShieldCheck, Zap, Coins, Building2,
+    Vote, Sparkles, ArrowRightLeft, Target, Flame, Medal, X, ChevronRight, Filter
+} from 'lucide-react';
 import { TeamLogo } from '../../data/teams/helpers';
 import { formatCurrency } from '../../utils';
 import { getClubHistoricalHonours } from '../../data/historicalHonours';
@@ -15,11 +19,98 @@ interface TrophyRoomScreenProps {
 
 type TabType = 'TROPHIES' | 'HISTORY' | 'COMPETITIONS' | 'ACHIEVEMENTS';
 
+const REGION_OPTIONS = [
+    { id: 'ALL', label: 'Todos' },
+    { id: 'INT', label: 'Internacionales', isInternational: true },
+    { id: 'ARG', label: 'Argentina', country: 'Argentina' },
+    { id: 'ESP', label: 'España', country: 'España' },
+    { id: 'ENG', label: 'Inglaterra', country: 'Inglaterra' },
+    { id: 'GER', label: 'Alemania', country: 'Alemania' },
+    { id: 'ITA', label: 'Italia', country: 'Italia' },
+    { id: 'FRA', label: 'Francia', country: 'Francia' },
+    { id: 'BRA', label: 'Brasil', country: 'Brasil' },
+    { id: 'MEX', label: 'México', country: 'México' },
+    { id: 'PAR', label: 'Paraguay', country: 'Paraguay' },
+];
+
+const CATEGORY_THEMES = {
+    trophies: {
+        label: 'Títulos',
+        icon: Trophy,
+        color: 'text-amber-400',
+        bg: 'from-amber-950/40 via-[#0F1420]/90 to-[#0A0E17]',
+        border: 'border-amber-500/30 hover:border-amber-400/70',
+        iconBg: 'bg-amber-500/15 border-amber-500/30 text-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.2)]',
+        bar: 'bg-gradient-to-r from-amber-500 to-yellow-300',
+        tag: 'bg-amber-500/10 text-amber-300 border border-amber-500/30',
+        glow: 'shadow-[0_0_20px_rgba(245,158,11,0.08)]'
+    },
+    management: {
+        label: 'Gestión',
+        icon: Building2,
+        color: 'text-cyan-400',
+        bg: 'from-cyan-950/40 via-[#0F1420]/90 to-[#0A0E17]',
+        border: 'border-cyan-500/30 hover:border-cyan-400/70',
+        iconBg: 'bg-cyan-500/15 border-cyan-500/30 text-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.2)]',
+        bar: 'bg-gradient-to-r from-cyan-500 to-blue-400',
+        tag: 'bg-cyan-500/10 text-cyan-300 border border-cyan-500/30',
+        glow: 'shadow-[0_0_20px_rgba(6,182,212,0.08)]'
+    },
+    transfers: {
+        label: 'Fichajes',
+        icon: ArrowRightLeft,
+        color: 'text-emerald-400',
+        bg: 'from-emerald-950/40 via-[#0F1420]/90 to-[#0A0E17]',
+        border: 'border-emerald-500/30 hover:border-emerald-400/70',
+        iconBg: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.2)]',
+        bar: 'bg-gradient-to-r from-emerald-500 to-teal-300',
+        tag: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30',
+        glow: 'shadow-[0_0_20px_rgba(16,185,129,0.08)]'
+    },
+    special: {
+        label: 'Especiales',
+        icon: Award,
+        color: 'text-purple-400',
+        bg: 'from-purple-950/40 via-[#0F1420]/90 to-[#0A0E17]',
+        border: 'border-purple-500/30 hover:border-purple-400/70',
+        iconBg: 'bg-purple-500/15 border-purple-500/30 text-purple-400 shadow-[0_0_12px_rgba(168,85,247,0.2)]',
+        bar: 'bg-gradient-to-r from-purple-500 to-pink-400',
+        tag: 'bg-purple-500/10 text-purple-300 border border-purple-500/30',
+        glow: 'shadow-[0_0_20px_rgba(168,85,247,0.08)]'
+    }
+};
+
+const getAchievementIcon = (id: string, category: AchievementCategory) => {
+    switch (id) {
+        case 'first_trophy': return <Trophy className="w-5 h-5" />;
+        case 'cup_king': return <Crown className="w-5 h-5" />;
+        case 'continental_glory': return <Globe className="w-5 h-5" />;
+        case 'world_champion': return <ShieldCheck className="w-5 h-5" />;
+        case 'the_treble': return <Zap className="w-5 h-5" />;
+        case 'tycoon': return <Coins className="w-5 h-5" />;
+        case 'stadium_expansion': return <Building2 className="w-5 h-5" />;
+        case 're_election': return <Vote className="w-5 h-5" />;
+        case 'wonderkid_academy': return <Sparkles className="w-5 h-5" />;
+        case 'galactic_signing': return <Star className="w-5 h-5" />;
+        case 'big_sale': return <ArrowRightLeft className="w-5 h-5" />;
+        case 'master_scout': return <Target className="w-5 h-5" />;
+        case 'clean_sheet': return <Shield className="w-5 h-5" />;
+        case 'historic_rout': return <Flame className="w-5 h-5" />;
+        case 'individual_glory': return <Medal className="w-5 h-5" />;
+        default:
+            if (category === 'trophies') return <Trophy className="w-5 h-5" />;
+            if (category === 'management') return <Building2 className="w-5 h-5" />;
+            if (category === 'transfers') return <ArrowRightLeft className="w-5 h-5" />;
+            return <Award className="w-5 h-5" />;
+    }
+};
+
 export const TrophyRoomScreen: React.FC<TrophyRoomScreenProps> = ({ gameState }) => {
     const { team, achievements = [], seasonHistory = [] } = gameState;
     const [activeTab, setActiveTab] = useState<TabType>('TROPHIES');
     const [selectedCategory, setSelectedCategory] = useState<AchievementCategory | 'ALL'>('ALL');
     const [selectedCompId, setSelectedCompId] = useState<string>(team.leagueId || 'PREMIER_LEAGUE');
+    const [selectedRegion, setSelectedRegion] = useState<string>('ALL');
     const [compSearch, setCompSearch] = useState<string>('');
 
     const trophies = team.trophyCabinet || [];
@@ -33,13 +124,27 @@ export const TrophyRoomScreen: React.FC<TrophyRoomScreenProps> = ({ gameState })
     }, [selectedCompId]);
 
     const filteredCompetitions = useMemo(() => {
-        if (!compSearch.trim()) return ALL_COMPETITIONS;
-        const q = compSearch.toLowerCase();
-        return ALL_COMPETITIONS.filter(c => 
-            c.name.toLowerCase().includes(q) || 
-            (c.country && c.country.toLowerCase().includes(q))
-        );
-    }, [compSearch]);
+        let list = ALL_COMPETITIONS;
+
+        if (selectedRegion !== 'ALL') {
+            const reg = REGION_OPTIONS.find(r => r.id === selectedRegion);
+            if (reg?.isInternational) {
+                list = list.filter(c => c.category === 'INTERNATIONAL');
+            } else if (reg?.country) {
+                list = list.filter(c => c.country === reg.country);
+            }
+        }
+
+        if (compSearch.trim()) {
+            const q = compSearch.toLowerCase().trim();
+            list = list.filter(c => 
+                c.name.toLowerCase().includes(q) || 
+                (c.country && c.country.toLowerCase().includes(q))
+            );
+        }
+
+        return list;
+    }, [selectedRegion, compSearch]);
 
     // Achievements calculation
     const unlockedAchievementsCount = achievements.filter(a => a.isUnlocked).length;
@@ -52,14 +157,6 @@ export const TrophyRoomScreen: React.FC<TrophyRoomScreenProps> = ({ gameState })
         if (selectedCategory === 'ALL') return true;
         return a.category === selectedCategory;
     });
-
-    const categoryLabels: Record<AchievementCategory | 'ALL', { label: string }> = {
-        ALL: { label: 'Todos' },
-        trophies: { label: 'Títulos' },
-        management: { label: 'Gestión' },
-        transfers: { label: 'Fichajes' },
-        special: { label: 'Especiales' }
-    };
 
     return (
         <div className="p-4 md:p-6 space-y-5 h-full flex flex-col pb-24 animate-fade-in max-w-7xl mx-auto">
@@ -406,33 +503,69 @@ export const TrophyRoomScreen: React.FC<TrophyRoomScreenProps> = ({ gameState })
             {/* ========================================================================= */}
             {activeTab === 'COMPETITIONS' && (
                 <div className="space-y-4 flex-1 overflow-y-auto custom-scrollbar pr-1">
-                    {/* Competition Selector & Search */}
-                    <div className="apex-card p-3.5 space-y-3">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <div>
-                                <h3 className="text-xs font-black text-white uppercase tracking-wider">
-                                    Historial por Competición
-                                </h3>
-                                <p className="text-[10px] text-slate-400">
-                                    Selecciona una liga o copa para consultar su palmarés histórico y ediciones.
-                                </p>
+                    {/* Top Filtering Bar: Region Chips + Search */}
+                    <div className="apex-card p-4 space-y-3 bg-gradient-to-br from-slate-900/90 via-slate-900/50 to-slate-950/80 border border-white/10 shadow-lg backdrop-blur-sm">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-lg bg-[var(--apex-gold)]/10 border border-[var(--apex-gold)]/30 flex items-center justify-center text-[var(--apex-gold)] shadow-sm">
+                                    <Globe className="w-4 h-4" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
+                                        Explorador de Competiciones
+                                        <span className="text-[10px] font-mono text-[var(--apex-gold)] bg-[var(--apex-gold)]/10 px-2 py-0.5 rounded-full border border-[var(--apex-gold)]/20">
+                                            {filteredCompetitions.length}
+                                        </span>
+                                    </h3>
+                                    <p className="text-[10px] text-slate-400">
+                                        Filtra por país o región para consultar el palmarés histórico y ediciones.
+                                    </p>
+                                </div>
                             </div>
                             
-                            {/* Search Box */}
-                            <div className="relative w-full sm:w-64">
+                            {/* Search Box with clear button */}
+                            <div className="relative w-full md:w-64">
                                 <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                                 <input
                                     type="text"
-                                    placeholder="Buscar torneo..."
+                                    placeholder="Buscar torneo o copa..."
                                     value={compSearch}
                                     onChange={(e) => setCompSearch(e.target.value)}
-                                    className="w-full bg-black/60 border border-white/10 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[var(--apex-gold)] transition-colors"
+                                    className="w-full bg-black/60 border border-white/10 rounded-lg pl-8 pr-7 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[var(--apex-gold)] transition-colors font-medium"
                                 />
+                                {compSearch && (
+                                    <button 
+                                        onClick={() => setCompSearch('')}
+                                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                                    >
+                                        <X className="w-3 h-3" />
+                                    </button>
+                                )}
                             </div>
                         </div>
 
-                        {/* Competition Pills Horizontal List */}
-                        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-1 no-scrollbar">
+                        {/* Region Filter Chips */}
+                        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-1 no-scrollbar border-t border-white/5">
+                            {REGION_OPTIONS.map(opt => {
+                                const isSelected = selectedRegion === opt.id;
+                                return (
+                                    <button
+                                        key={opt.id}
+                                        onClick={() => setSelectedRegion(opt.id)}
+                                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold tracking-wider uppercase transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+                                            isSelected
+                                                ? 'bg-gradient-to-r from-[var(--apex-gold)] to-amber-500 text-black font-black shadow-md shadow-amber-500/20 scale-[1.02]'
+                                                : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 border border-white/5'
+                                        }`}
+                                    >
+                                        <span>{opt.label}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {/* Quick Tournament Select Cards Carousel */}
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 pt-1 max-h-48 overflow-y-auto custom-scrollbar">
                             {filteredCompetitions.map(c => {
                                 const isSelected = selectedCompId === c.id;
                                 const cLogo = customPacksService.resolveCompetitionLogo(c.id, c.name, c.logo);
@@ -440,16 +573,23 @@ export const TrophyRoomScreen: React.FC<TrophyRoomScreenProps> = ({ gameState })
                                     <button
                                         key={c.id}
                                         onClick={() => setSelectedCompId(c.id)}
-                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 shrink-0 transition-all cursor-pointer ${
+                                        className={`p-2 rounded-xl text-left flex items-center gap-2.5 transition-all cursor-pointer border ${
                                             isSelected
-                                                ? 'bg-[var(--apex-gold)] text-black font-black shadow-md'
-                                                : 'bg-white/5 text-slate-300 hover:bg-white/10 border border-white/5'
+                                                ? 'bg-gradient-to-r from-amber-500/20 to-[var(--apex-gold)]/10 border-[var(--apex-gold)] ring-1 ring-[var(--apex-gold)]/40 shadow-sm'
+                                                : 'bg-slate-900/60 hover:bg-slate-800/80 border-white/5 hover:border-white/15'
                                         }`}
                                     >
-                                        <div className="w-4 h-4 shrink-0 flex items-center justify-center">
-                                            <img src={cLogo} alt="" className="w-full h-full object-contain" />
+                                        <div className="w-8 h-8 rounded-lg bg-black/40 border border-white/10 shrink-0 p-1 flex items-center justify-center">
+                                            <img src={cLogo} alt={c.name} className="w-full h-full object-contain" />
                                         </div>
-                                        <span className="truncate max-w-[130px]">{c.name}</span>
+                                        <div className="min-w-0 flex-1">
+                                            <div className={`text-xs font-bold truncate leading-tight ${isSelected ? 'text-[var(--apex-gold)]' : 'text-slate-200'}`}>
+                                                {c.name}
+                                            </div>
+                                            <div className="text-[9px] uppercase tracking-wider text-slate-400 font-semibold truncate mt-0.5">
+                                                {c.country || (c.type === 'INTERNATIONAL' ? 'Internacional' : 'Oficial')}
+                                            </div>
+                                        </div>
                                     </button>
                                 );
                             })}
@@ -457,11 +597,15 @@ export const TrophyRoomScreen: React.FC<TrophyRoomScreenProps> = ({ gameState })
                     </div>
 
                     {/* Detailed Competition History */}
-                    {selectedCompetitionDef && (
+                    {selectedCompetitionDef ? (
                         <CompetitionHistoryView
                             competition={selectedCompetitionDef}
                             gameState={gameState}
                         />
+                    ) : (
+                        <div className="p-8 text-center text-slate-500 text-xs font-medium">
+                            Selecciona una competición para ver su palmarés histórico.
+                        </div>
                     )}
                 </div>
             )}
@@ -471,28 +615,56 @@ export const TrophyRoomScreen: React.FC<TrophyRoomScreenProps> = ({ gameState })
             {/* ========================================================================= */}
             {activeTab === 'ACHIEVEMENTS' && (
                 <div className="space-y-4 flex-1 overflow-y-auto custom-scrollbar pr-1">
-                    {/* Completion Bar */}
-                    <div className="apex-card p-4 space-y-2">
-                        <div className="flex items-center justify-between text-xs">
-                            <span className="font-bold text-white uppercase tracking-wider">
-                                Desafíos Presidenciales ({completionPercentage}%)
-                            </span>
-                            <span className="text-slate-400 font-semibold">
-                                {unlockedAchievementsCount} de {totalAchievementsCount} completados
-                            </span>
+                    {/* Completion Summary Card: Elevated Gradient */}
+                    <div className="p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 border border-amber-500/20 shadow-xl relative overflow-hidden">
+                        <div className="absolute right-0 top-0 w-64 h-full bg-gradient-to-l from-amber-500/10 to-transparent pointer-events-none" />
+                        
+                        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div className="flex items-center gap-3.5">
+                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400/20 to-amber-600/10 border border-amber-400/30 flex items-center justify-center text-amber-400 shadow-md">
+                                    <Trophy className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="text-sm font-black text-white uppercase tracking-wider">
+                                            Logros Presidenciales
+                                        </h3>
+                                        <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-black bg-amber-400/20 text-amber-300 border border-amber-400/30">
+                                            {completionPercentage}%
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-slate-400 mt-0.5">
+                                        Desafíos y metas institucionales desbloqueadas durante tu carrera.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-6 self-end md:self-auto">
+                                <div className="text-right">
+                                    <div className="text-lg font-black font-mono text-white">
+                                        <span className="text-amber-400">{unlockedAchievementsCount}</span>
+                                        <span className="text-slate-500 text-sm font-normal"> / {totalAchievementsCount}</span>
+                                    </div>
+                                    <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">
+                                        Completados
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+
+                        {/* Progress Bar */}
+                        <div className="mt-4 w-full bg-black/40 h-2.5 rounded-full overflow-hidden border border-white/10">
                             <div 
-                                className="h-full bg-[var(--apex-gold)] rounded-full transition-all duration-500"
+                                className="h-full bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-300 rounded-full transition-all duration-700 shadow-sm shadow-amber-400/50"
                                 style={{ width: `${completionPercentage}%` }}
                             />
                         </div>
                     </div>
 
-                    {/* Category Filter Pills */}
-                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-                        {(Object.keys(categoryLabels) as Array<AchievementCategory | 'ALL'>).map(catKey => {
-                            const info = categoryLabels[catKey];
+                    {/* Category Filter Tabs */}
+                    <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+                        {(Object.keys(CATEGORY_THEMES) as Array<AchievementCategory | 'ALL'>).map(catKey => {
+                            const theme = CATEGORY_THEMES[catKey];
                             const isSelected = selectedCategory === catKey;
                             const count = catKey === 'ALL' 
                                 ? achievements.length 
@@ -502,46 +674,71 @@ export const TrophyRoomScreen: React.FC<TrophyRoomScreenProps> = ({ gameState })
                                 <button
                                     key={catKey}
                                     onClick={() => setSelectedCategory(catKey)}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer ${
+                                    className={`px-3.5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer border ${
                                         isSelected
-                                            ? 'bg-white text-black font-black shadow-md'
-                                            : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 border border-white/5'
+                                            ? `${theme.badge} border-current font-black shadow-md scale-[1.02]`
+                                            : 'bg-slate-900/60 text-slate-400 hover:text-white hover:bg-white/5 border-white/5'
                                     }`}
                                 >
-                                    <span>{info.label}</span>
-                                    <span className="text-[10px] opacity-60 font-mono">({count})</span>
+                                    <span>{theme.label}</span>
+                                    <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${isSelected ? 'bg-black/30' : 'bg-white/5'}`}>
+                                        {count}
+                                    </span>
                                 </button>
                             );
                         })}
                     </div>
 
-                    {/* Achievements Grid: Symmetrical 3-Column */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {/* Achievements Grid: Premium Themed Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
                         {filteredAchievements.map(achievement => {
                             const isUnlocked = achievement.isUnlocked;
+                            const theme = CATEGORY_THEMES[achievement.category] || CATEGORY_THEMES.trophies;
+                            
                             return (
                                 <div
                                     key={achievement.id}
-                                    className={`p-4 rounded-xl border flex flex-col justify-between transition-all ${
+                                    className={`p-4 rounded-2xl border flex flex-col justify-between transition-all relative overflow-hidden backdrop-blur-sm ${
                                         isUnlocked 
-                                            ? 'bg-slate-900/80 border-[var(--apex-gold)]/40 shadow-sm' 
-                                            : 'bg-slate-950/40 border-white/5 opacity-70'
+                                            ? `bg-gradient-to-br ${theme.bgGradient} ${theme.border} shadow-lg shadow-black/40` 
+                                            : 'bg-slate-950/40 border-white/5 opacity-70 hover:opacity-85'
                                     }`}
                                 >
+                                    {/* Top decorative glow */}
+                                    {isUnlocked && (
+                                        <div className="absolute -right-8 -top-8 w-24 h-24 bg-white/5 rounded-full blur-xl pointer-events-none" />
+                                    )}
+
                                     <div>
-                                        <div className="flex items-center justify-between gap-2 mb-2">
-                                            <span className="text-xs font-black text-white uppercase tracking-tight truncate">
-                                                {achievement.title}
-                                            </span>
-                                            <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider flex items-center gap-1 ${
+                                        <div className="flex items-start justify-between gap-3 mb-2.5">
+                                            <div className="flex items-center gap-2.5">
+                                                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border ${
+                                                    isUnlocked 
+                                                        ? `${theme.badge} ${theme.iconColor} shadow-sm` 
+                                                        : 'bg-white/5 border-white/10 text-slate-500'
+                                                }`}>
+                                                    {getAchievementIcon(achievement.id, achievement.category)}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <h4 className="text-xs font-black text-white uppercase tracking-tight leading-snug truncate">
+                                                        {achievement.title}
+                                                    </h4>
+                                                    <span className="text-[9px] uppercase tracking-wider font-semibold text-slate-400">
+                                                        {theme.label}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Status Badge */}
+                                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider flex items-center gap-1 shrink-0 ${
                                                 isUnlocked
-                                                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-xs'
                                                     : 'bg-white/5 text-slate-500 border border-white/10'
                                             }`}>
                                                 {isUnlocked ? (
                                                     <>
                                                         <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                                                        <span>Desbloqueado</span>
+                                                        <span>Conseguido</span>
                                                     </>
                                                 ) : (
                                                     <>
@@ -552,24 +749,24 @@ export const TrophyRoomScreen: React.FC<TrophyRoomScreenProps> = ({ gameState })
                                             </span>
                                         </div>
 
-                                        <p className="text-[11px] text-slate-400 leading-relaxed mb-3">
+                                        <p className="text-[11px] text-slate-300 leading-relaxed mb-3">
                                             {achievement.description}
                                         </p>
                                     </div>
 
-                                    {/* Progress / Unlocked Date */}
-                                    <div className="pt-2 border-t border-white/5 text-[10px]">
+                                    {/* Progress / Unlocked Timestamp */}
+                                    <div className="pt-2.5 border-t border-white/10 text-[10px]">
                                         {achievement.maxProgress !== undefined ? (
-                                            <div className="space-y-1">
-                                                <div className="flex justify-between font-mono font-bold text-slate-400">
-                                                    <span>Progreso</span>
-                                                    <span className="text-[var(--apex-gold)]">
+                                            <div className="space-y-1.5">
+                                                <div className="flex justify-between font-mono font-bold text-slate-400 text-[10px]">
+                                                    <span className="uppercase text-[9px] tracking-wider text-slate-400">Progreso</span>
+                                                    <span className={isUnlocked ? 'text-emerald-400' : 'text-slate-200'}>
                                                         {achievement.progress || 0} / {achievement.maxProgress}
                                                     </span>
                                                 </div>
-                                                <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                                                <div className="w-full bg-black/40 h-1.5 rounded-full overflow-hidden border border-white/10">
                                                     <div 
-                                                        className="h-full bg-[var(--apex-gold)] rounded-full transition-all duration-300"
+                                                        className={`h-full ${theme.progress} rounded-full transition-all duration-300`}
                                                         style={{
                                                             width: `${Math.min(100, (((achievement.progress || 0) / achievement.maxProgress) * 100))}%`
                                                         }}
@@ -577,13 +774,13 @@ export const TrophyRoomScreen: React.FC<TrophyRoomScreenProps> = ({ gameState })
                                                 </div>
                                             </div>
                                         ) : isUnlocked && achievement.unlockedAt ? (
-                                            <div className="text-slate-400 font-mono flex items-center justify-between">
-                                                <span>Conseguido:</span>
-                                                <span className="text-[var(--apex-gold)] font-bold">{achievement.unlockedAt}</span>
+                                            <div className="text-slate-400 font-mono flex items-center justify-between text-[10px]">
+                                                <span className="uppercase text-[9px] tracking-wider text-slate-400">Completado:</span>
+                                                <span className="text-amber-400 font-bold">{achievement.unlockedAt}</span>
                                             </div>
                                         ) : (
-                                            <span className="text-slate-500 uppercase tracking-wider font-bold text-[9px]">
-                                                Desafío Presidencial
+                                            <span className="text-slate-500 uppercase tracking-wider font-bold text-[9px] flex items-center gap-1">
+                                                <span>Desafío de Carrera</span>
                                             </span>
                                         )}
                                     </div>

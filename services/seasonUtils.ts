@@ -53,32 +53,9 @@ export const isSeasonCompleted = (gameState: GameState | null): boolean => {
     else if (userLeagueId === LeagueId.PRIMERA_NACIONAL) maxLeagueWeek = 38;
     else if (userLeagueId === LeagueId.CHAMPIONSHIP) maxLeagueWeek = 46;
     else if (userLeagueId === LeagueId.SEGUNDA_DIVISION_ESP) maxLeagueWeek = 42;
-    else if (userLeagueId === LeagueId.BUNDESLIGA || userLeagueId === LeagueId.ZWEITE_BUNDESLIGA || userLeagueId === LeagueId.LIGUE_1) maxLeagueWeek = 38;
+    else if (userLeagueId === LeagueId.BUNDESLIGA || userLeagueId === LeagueId.ZWEITE_BUNDESLIGA || userLeagueId === LeagueId.LIGUE_1) maxLeagueWeek = 34;
 
-    // 3. Absolute hard cap: when maxLeagueWeek is reached and user has no pending match this week
-    if (currentWeek >= maxLeagueWeek) {
-        const userHasMatchThisWeek = gameState.schedule.some(
-            m => (m.homeTeamId === gameState.team.id || m.awayTeamId === gameState.team.id) &&
-                 m.week === currentWeek &&
-                 m.result === undefined
-        );
-        if (!userHasMatchThisWeek) {
-            return true;
-        }
-    }
-
-    // 4. Check if the user's team still has any upcoming pending matches in the active season schedule
-    const userHasPendingMatches = gameState.schedule.some(
-        m => (m.homeTeamId === gameState.team.id || m.awayTeamId === gameState.team.id) &&
-             m.week >= currentWeek &&
-             m.week <= maxLeagueWeek &&
-             m.result === undefined
-    );
-    if (userHasPendingMatches) {
-        return false;
-    }
-
-    // 5. Check if the user is still alive in an active cup where subsequent rounds must be played
+    // 3. Check if the user is still alive in an active cup where subsequent rounds must be played
     const userCupActive = Object.values(gameState.cups || {}).some(cup => {
         if (!cup || cup.winnerId || cup.phase === 'finished') return false;
         const isUserInCup = 
@@ -118,6 +95,29 @@ export const isSeasonCompleted = (gameState: GameState | null): boolean => {
         return false;
     });
     if (userCupActive) {
+        return false;
+    }
+
+    // 4. Absolute hard cap: when maxLeagueWeek is reached and user has no pending match this week
+    if (currentWeek >= maxLeagueWeek) {
+        const userHasMatchThisWeek = gameState.schedule.some(
+            m => (m.homeTeamId === gameState.team.id || m.awayTeamId === gameState.team.id) &&
+                 m.week === currentWeek &&
+                 m.result === undefined
+        );
+        if (!userHasMatchThisWeek) {
+            return true;
+        }
+    }
+
+    // 5. Check if the user's team still has any upcoming pending matches in the active season schedule
+    const userHasPendingMatches = gameState.schedule.some(
+        m => (m.homeTeamId === gameState.team.id || m.awayTeamId === gameState.team.id) &&
+             m.week >= currentWeek &&
+             m.week <= maxLeagueWeek &&
+             m.result === undefined
+    );
+    if (userHasPendingMatches) {
         return false;
     }
 
@@ -169,16 +169,6 @@ export const isSeasonCompleted = (gameState: GameState | null): boolean => {
         minWeeks = 46;
     } else if (userLeagueId === LeagueId.SEGUNDA_DIVISION_ESP) {
         minWeeks = 42;
-    }
-
-    if (currentWeek < minWeeks) {
-        return false;
-    }
-
-    // If European Champions League is still active and we haven't reached week 38, allow it to conclude
-    const cl = gameState.cups?.championsLeague;
-    if (cl && !cl.winnerId && currentWeek < 38) {
-        return false;
     }
 
     return currentWeek >= minWeeks;
