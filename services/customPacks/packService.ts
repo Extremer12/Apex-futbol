@@ -308,11 +308,12 @@ class CustomPacksService {
     }
 
     public isPlayerFacesPackActive(): boolean {
-        if (typeof window === 'undefined') return false;
+        if (typeof window === 'undefined') return true;
         try {
-            return localStorage.getItem('apex_pack_player_faces_active') === 'true';
+            const val = localStorage.getItem('apex_pack_player_faces_active');
+            return val === null ? true : val === 'true';
         } catch {
-            return false;
+            return true;
         }
     }
 
