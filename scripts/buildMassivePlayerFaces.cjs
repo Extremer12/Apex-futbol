@@ -1,11 +1,16 @@
-/**
+const fs = require('fs');
+const path = require('path');
+
+const playerPhotosPath = path.join(__dirname, '..', 'services', 'customPacks', 'playerPhotos.ts');
+
+const content = `/**
  * Player Faces & Photos Database (Player Faces Pack)
  * Provides authentic player portrait and face photos served via verified high-speed CDNs (FotMob / Transfermarkt).
  */
 
 import { COMMUNITY_PACK_CDN } from './argentineLogos';
 
-export const PLAYER_FACES_CDN = `${COMMUNITY_PACK_CDN}/Players`;
+export const PLAYER_FACES_CDN = \`\${COMMUNITY_PACK_CDN}/Players\`;
 
 // Mapeo por ID específico de jugador dentro del juego
 export const PLAYER_PHOTOS_BY_ID: Record<number, string> = {
@@ -1185,3 +1190,7 @@ export const PLAYER_PHOTOS_BY_NAME: Record<string, string> = {
     'andre-pierre gignac': 'https://images.fotmob.com/image_resources/playerimages/292461.png',
     'gignac': 'https://images.fotmob.com/image_resources/playerimages/292461.png',
 };
+`;
+
+fs.writeFileSync(playerPhotosPath, content, 'utf8');
+console.log('✅ services/customPacks/playerPhotos.ts actualizado masivamente con más de 700 fotos reales de alta definición.');
