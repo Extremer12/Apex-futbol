@@ -4,6 +4,7 @@ import { DashboardIcon, SquadIcon, TransfersIcon, FinancesIcon, LeagueIcon, Char
 import { motion, AnimatePresence } from 'framer-motion';
 import { History, Shield, Award } from 'lucide-react';
 import { TeamLogo } from '../../data/teams/helpers';
+import { prefetchScreen } from '../../utils/prefetch';
 
 interface BottomNavProps {
     activeScreen: Screen;
@@ -75,6 +76,9 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeScreen, onNavigate, 
                                                 whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
                                                 key={item.screen}
                                                 onClick={() => handleNavigate(item.screen)}
+                                                onMouseEnter={() => prefetchScreen(item.screen)}
+                                                onTouchStart={() => prefetchScreen(item.screen)}
+                                                onFocus={() => prefetchScreen(item.screen)}
                                                 className="flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-xl transition-colors duration-200 cursor-pointer"
                                                 style={{
                                                     background: isActive ? 'rgba(200,168,78,0.1)' : 'rgba(255,255,255,0.03)',
@@ -117,6 +121,9 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeScreen, onNavigate, 
                                 whileTap={{ scale: 0.9 }}
                                 key={item.screen}
                                 onClick={() => handleNavigate(item.screen)}
+                                onMouseEnter={() => prefetchScreen(item.screen)}
+                                onTouchStart={() => prefetchScreen(item.screen)}
+                                onFocus={() => prefetchScreen(item.screen)}
                                 className="relative flex flex-col items-center justify-center flex-1 py-3 cursor-pointer"
                             >
                                 {isActive && (

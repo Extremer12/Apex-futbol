@@ -87,6 +87,45 @@ export const determineCupWinner = (match: Match): number | null => {
 };
 
 /**
+ * Checks if a cup competition is international (Champions League, Europa League, Libertadores, Sudamericana)
+ */
+export const isInternationalCompetition = (cupId?: string): boolean => {
+    if (!cupId) return false;
+    return ['champions_league', 'europa_league', 'copa_libertadores', 'copa_sudamericana'].includes(cupId);
+};
+
+/**
+ * Determines the winner of a two-legged tie using aggregate score and penalties in Leg 2.
+ */
+export const determineTwoLeggedTieWinner = (leg1: Match, leg2: Match): number | null => {
+    if (!leg1.result || !leg2.result) return null;
+
+    const teamAId = leg1.homeTeamId; // Home in Leg 1, Away in Leg 2
+    const teamBId = leg1.awayTeamId; // Away in Leg 1, Home in Leg 2
+
+    const teamAGoals = leg1.result.homeScore + leg2.result.awayScore;
+    const teamBGoals = leg1.result.awayScore + leg2.result.homeScore;
+
+    leg2.aggregateScore = {
+        home: teamBGoals,
+        away: teamAGoals
+    };
+
+    if (teamAGoals > teamBGoals) return teamAId;
+    if (teamBGoals > teamAGoals) return teamBId;
+
+    // Aggregate is tied! Check penalty shootout from leg 2
+    const pens = leg2.penalties || leg2.result.penalties;
+    if (pens && pens.home !== pens.away) {
+        return pens.home > pens.away ? teamBId : teamAId;
+    }
+
+    // Deterministic tiebreak fallback
+    const seed = (teamAId * 31 + teamBId * 17 + (leg2.week || 1)) % 100;
+    return seed >= 50 ? teamAId : teamBId;
+};
+
+/**
  * Advances international cups (Champions League, Europa League, Libertadores) across Swiss/Group/Knockout phases.
  */
 export const progressInternationalCup = (
@@ -169,8 +208,9 @@ export const progressInternationalCup = (
 
         const compType: Match['competition'] = cup.id === 'champions_league' ? 'Champions_League' : 'Europa_League';
         const playoffFixtures: Match[] = [];
+        const secondLegFixtures: Match[] = [];
 
-        // Pair 9-16 with 17-24 (Unseeded at home in 1st leg/match)
+        // Pair 9-16 with 17-24 (Unseeded at home in 1st leg, Seeded at home in 2nd leg)
         for (let i = 0; i < 8; i++) {
             const homeTeamId = unseededPlayoffIds[7 - i] ?? unseededPlayoffIds[i];
             const awayTeamId = seededPlayoffIds[i];
@@ -180,7 +220,17 @@ export const progressInternationalCup = (
                 awayTeamId,
                 competition: compType,
                 isCupMatch: true,
-                isMidweek: true
+                isMidweek: true,
+                leg: 1
+            });
+            secondLegFixtures.push({
+                week: nextWeek + 2,
+                homeTeamId: awayTeamId,
+                awayTeamId: homeTeamId,
+                competition: compType,
+                isCupMatch: true,
+                isMidweek: true,
+                leg: 2
             });
         }
 
@@ -189,9 +239,14 @@ export const progressInternationalCup = (
             phase: 'knockout',
             swissTable: sortedTable,
             seededTeamIds: top8Ids,
-            rounds: [{ name: 'Playoffs 16vos', fixtures: playoffFixtures, completed: false }],
+            rounds: [{ 
+                name: 'Playoffs 16vos', 
+                fixtures: playoffFixtures, 
+                secondLegFixtures, 
+                completed: false 
+            }],
             currentRoundIndex: 0,
-            newFixtures: playoffFixtures
+            newFixtures: [...playoffFixtures, ...secondLegFixtures]
         };
     }
 
@@ -255,33 +310,52 @@ export const progressInternationalCup = (
         const shuffledFirsts = [...firsts].sort(() => 0.5 - Math.random());
         const shuffledSeconds = [...seconds].sort(() => 0.5 - Math.random());
         const fixturesWithWeek: Match[] = [];
+        const secondLegFixtures: Match[] = [];
         const matchCount = Math.min(shuffledFirsts.length, shuffledSeconds.length);
         for (let i = 0; i < matchCount; i++) {
             fixturesWithWeek.push({
                 week: nextWeek,
-                homeTeamId: shuffledFirsts[i].id,
+                homeTeamId: shuffledSeconds[i].id, // 2nd place plays home first
+                awayTeamId: shuffledFirsts[i].id,  // 1st place plays away first
+                competition: 'Copa_Libertadores',
+                isCupMatch: true,
+                isMidweek: true,
+                leg: 1
+            });
+            secondLegFixtures.push({
+                week: nextWeek + 2,
+                homeTeamId: shuffledFirsts[i].id,  // 1st place plays return leg at home
                 awayTeamId: shuffledSeconds[i].id,
                 competition: 'Copa_Libertadores',
                 isCupMatch: true,
-                isMidweek: true
+                isMidweek: true,
+                leg: 2
             });
         }
 
         return {
             ...cup,
             phase: 'knockout',
-            rounds: [{ name: 'Round of 16', fixtures: fixturesWithWeek, completed: false }],
+            rounds: [{ 
+                name: 'Round of 16', 
+                fixtures: fixturesWithWeek, 
+                secondLegFixtures, 
+                completed: false 
+            }],
             currentRoundIndex: 0,
-            newFixtures: fixturesWithWeek
+            newFixtures: [...fixturesWithWeek, ...secondLegFixtures]
         };
     }
 
     if (cup.phase === 'knockout') {
         const updated = advanceCupRound(cup, allTeams, nextWeek, recentMatches);
         const currentRound = updated.rounds[updated.currentRoundIndex];
+        const newFixtures = (updated.currentRoundIndex > cup.currentRoundIndex) 
+            ? [...currentRound.fixtures, ...(currentRound.secondLegFixtures || [])] 
+            : undefined;
         return {
             ...updated,
-            newFixtures: (updated.currentRoundIndex > cup.currentRoundIndex) ? currentRound.fixtures : undefined
+            newFixtures
         };
     }
 
@@ -312,20 +386,48 @@ export const advanceCupRound = (
             );
             return played ? { ...f, result: played.result, penalties: played.penalties || played.result?.penalties } : f;
         });
+
+        if (currentRound.secondLegFixtures) {
+            currentRound.secondLegFixtures = currentRound.secondLegFixtures.map(f => {
+                if (f.result !== undefined) return f;
+                const played = recentMatches.find(m => 
+                    ((f.id && m.id === f.id) ||
+                    (m.homeTeamId === f.homeTeamId && m.awayTeamId === f.awayTeamId && m.competition === f.competition && (m.week === f.week || (!m.week && !f.week)))) &&
+                    m.result !== undefined
+                );
+                return played ? { ...f, result: played.result, penalties: played.penalties || played.result?.penalties } : f;
+            });
+        }
     }
 
-    const allMatchesPlayed = currentRound.fixtures.every(m => m.result !== undefined);
-    if (!allMatchesPlayed) {
+    const allFirstLegsPlayed = currentRound.fixtures.every(m => m.result !== undefined);
+    const allSecondLegsPlayed = !currentRound.secondLegFixtures || currentRound.secondLegFixtures.every(m => m.result !== undefined);
+
+    // If either leg is still incomplete, the round is still in progress
+    if (!allFirstLegsPlayed || !allSecondLegsPlayed) {
         return cup;
     }
     
     const winners: number[] = [];
-    currentRound.fixtures.forEach(match => {
-        const winnerId = determineCupWinner(match);
-        if (winnerId !== null) {
-            winners.push(winnerId);
-        }
-    });
+    if (currentRound.secondLegFixtures && currentRound.secondLegFixtures.length > 0) {
+        currentRound.fixtures.forEach((leg1, idx) => {
+            const leg2 = currentRound.secondLegFixtures![idx];
+            if (leg2) {
+                const winnerId = determineTwoLeggedTieWinner(leg1, leg2);
+                if (winnerId !== null) winners.push(winnerId);
+            } else {
+                const winnerId = determineCupWinner(leg1);
+                if (winnerId !== null) winners.push(winnerId);
+            }
+        });
+    } else {
+        currentRound.fixtures.forEach(match => {
+            const winnerId = determineCupWinner(match);
+            if (winnerId !== null) {
+                winners.push(winnerId);
+            }
+        });
+    }
 
     if (winners.length === 1 && (currentRound.fixtures.length === 1 || currentRound.name.toLowerCase().includes('final'))) {
         const winnerTeam = allTeams.find(t => t.id === winners[0]);
@@ -373,12 +475,16 @@ export const advanceCupRound = (
         competitionType !== 'Nacional_Primer_Ascenso' &&
         competitionType !== 'Nacional_Reducido';
 
+    const isInternational = isInternationalCompetition(cup.id);
+
     // Official UEFA Format: When Playoffs (16vos) finish, the 8 winners meet the 8 direct seeded teams in Octavos de Final
     if (cup.seededTeamIds && cup.seededTeamIds.length === 8 && winners.length === 8) {
         const seededTeams = cup.seededTeamIds.map(id => allTeams.find(t => t.id === id)!).filter(Boolean);
         const playoffWinnerTeams = winners.map(id => allTeams.find(t => t.id === id)!).filter(Boolean);
 
         const octavosFixtures: Match[] = [];
+        const octavosSecondLeg: Match[] = [];
+
         for (let i = 0; i < 8; i++) {
             const homeTeamId = playoffWinnerTeams[i]?.id ?? playoffWinnerTeams[0].id;
             const awayTeamId = seededTeams[7 - i]?.id ?? seededTeams[i].id;
@@ -388,7 +494,17 @@ export const advanceCupRound = (
                 awayTeamId,
                 competition: competitionType,
                 isCupMatch: true,
-                isMidweek: isMidweekCompetition
+                isMidweek: isMidweekCompetition,
+                leg: 1
+            });
+            octavosSecondLeg.push({
+                week: nextWeek + 2,
+                homeTeamId: awayTeamId,
+                awayTeamId: homeTeamId,
+                competition: competitionType,
+                isCupMatch: true,
+                isMidweek: isMidweekCompetition,
+                leg: 2
             });
         }
 
@@ -399,6 +515,7 @@ export const advanceCupRound = (
             {
                 name: 'Round of 16',
                 fixtures: octavosFixtures,
+                secondLegFixtures: octavosSecondLeg,
                 completed: false
             }
         ];
@@ -413,22 +530,46 @@ export const advanceCupRound = (
 
     const winnerTeams = winners.map(id => allTeams.find(t => t.id === id)!).filter(Boolean);
     const nextRoundName = getNextRoundName(winners.length);
+    const isFinalRound = winners.length === 2;
 
     const nextRoundFixtures: Match[] = [];
+    const nextRoundSecondLeg: Match[] = [];
+
     for (let i = 0; i < winnerTeams.length; i += 2) {
         if (i + 1 < winnerTeams.length) {
-            nextRoundFixtures.push({
-                week: nextWeek,
-                homeTeamId: winnerTeams[i].id,
-                awayTeamId: winnerTeams[i + 1].id,
-                competition: competitionType,
-                isCupMatch: true,
-                isMidweek: isMidweekCompetition
-            });
+            if (isInternational && !isFinalRound) {
+                // Two-legged ties for international competitions before the final
+                nextRoundFixtures.push({
+                    week: nextWeek,
+                    homeTeamId: winnerTeams[i].id,
+                    awayTeamId: winnerTeams[i + 1].id,
+                    competition: competitionType,
+                    isCupMatch: true,
+                    isMidweek: isMidweekCompetition,
+                    leg: 1
+                });
+                nextRoundSecondLeg.push({
+                    week: nextWeek + 2,
+                    homeTeamId: winnerTeams[i + 1].id,
+                    awayTeamId: winnerTeams[i].id,
+                    competition: competitionType,
+                    isCupMatch: true,
+                    isMidweek: isMidweekCompetition,
+                    leg: 2
+                });
+            } else {
+                // Single match for Final or domestic cups (e.g. Copa Argentina)
+                nextRoundFixtures.push({
+                    week: nextWeek,
+                    homeTeamId: winnerTeams[i].id,
+                    awayTeamId: winnerTeams[i + 1].id,
+                    competition: competitionType,
+                    isCupMatch: true,
+                    isMidweek: isMidweekCompetition
+                });
+            }
         }
     }
-
-    const fixturesWithWeek = nextRoundFixtures.map(f => ({ ...f, week: nextWeek }));
 
     const updatedRounds = [
         ...cup.rounds.map((r, idx) =>
@@ -436,7 +577,8 @@ export const advanceCupRound = (
         ),
         {
             name: nextRoundName,
-            fixtures: fixturesWithWeek,
+            fixtures: nextRoundFixtures,
+            secondLegFixtures: nextRoundSecondLeg.length > 0 ? nextRoundSecondLeg : undefined,
             completed: false
         }
     ];

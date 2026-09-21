@@ -148,9 +148,14 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
         return finalResult.events.map(parseEvent);
     }, [finalResult?.events, homeTeam.name, awayTeam.name]);
 
+    const goalTimeoutRef = useRef<any>(null);
+
     // Fast-forward / Skip to end
     const handleSkipToEnd = () => {
         if (intervalRef.current) clearInterval(intervalRef.current);
+        if (goalTimeoutRef.current) clearTimeout(goalTimeoutRef.current);
+        setIsShaking(false);
+        setGoalPopup(null);
         if (!finalResult) return;
 
         setMinute(totalMatchMinutes);
@@ -170,7 +175,7 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
         ]);
     };
 
-    // Main Simulation Loop
+    // Main Simulation Loop with True Pause on Goals
     useEffect(() => {
         if (!finalResult) {
             onMatchComplete();
@@ -182,96 +187,129 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
         const totalSteps = duration / interval;
         const minuteIncrement = totalMatchMinutes / totalSteps;
         let step = 0;
+        let isPausedForGoal = false;
 
-        intervalRef.current = setInterval(() => {
-            step++;
-            const currentMinute = Math.min(totalMatchMinutes, Math.floor(step * minuteIncrement));
-            setMinute(currentMinute);
+        const startSimulationLoop = () => {
+            if (intervalRef.current) clearInterval(intervalRef.current);
 
-            // Process all events up to current minute
-            const newEventsToProcess = allParsedEvents.filter(
-                ev => ev.minute <= currentMinute && !processedEventsRef.current.has(ev.text)
-            );
+            intervalRef.current = setInterval(() => {
+                if (isPausedForGoal) return;
 
-            if (newEventsToProcess.length > 0) {
-                newEventsToProcess.forEach(ev => {
-                    processedEventsRef.current.add(ev.text);
-                    setCommentary(prev => [...prev, ev]);
+                step++;
+                const currentMinute = Math.min(totalMatchMinutes, Math.floor(step * minuteIncrement));
+                setMinute(currentMinute);
 
-                    if (ev.type === 'goal') {
-                        setIsShaking(true);
-                        setGoalPopup({
-                            team: ev.teamName || (ev.isHome ? homeTeam.name : awayTeam.name),
-                            text: ev.text.replace(/^\d+'\s*/, '')
-                        });
-
-                        setTimeout(() => {
-                            setIsShaking(false);
-                            setGoalPopup(null);
-                        }, 1800);
-                    }
-
-                    if (ev.type === 'goal' || ev.type === 'save') {
-                        setStats(prev => ({
-                            ...prev,
-                            homeShots: ev.isHome ? prev.homeShots + 1 : prev.homeShots,
-                            awayShots: !ev.isHome ? prev.awayShots + 1 : prev.awayShots
-                        }));
-                    }
-                });
-
-                // Deterministic score update: count exactly the genuine goals up to currentMinute
-                const goalsSoFar = allParsedEvents.filter(
-                    ev => ev.type === 'goal' && ev.minute <= currentMinute
+                // Process pending events up to current minute
+                const pendingEvents = allParsedEvents.filter(
+                    ev => ev.minute <= currentMinute && !processedEventsRef.current.has(ev.text)
                 );
-                setDisplayScore({
-                    home: goalsSoFar.filter(g => g.isHome).length,
-                    away: goalsSoFar.filter(g => !g.isHome).length
-                });
-            }
 
-            // Dynamic possession & momentum fluctuations
-            if (step % 4 === 0) {
-                setStats(prev => {
-                    const shift = (Math.random() * 4 - 2);
-                    const newHomePoss = Math.min(75, Math.max(25, prev.homePossession + shift));
-                    return {
-                        ...prev,
-                        homePossession: newHomePoss,
-                        awayPossession: 100 - newHomePoss,
-                        homeFouls: prev.homeFouls + (Math.random() < 0.08 ? 1 : 0),
-                        awayFouls: prev.awayFouls + (Math.random() < 0.08 ? 1 : 0)
-                    };
-                });
+                if (pendingEvents.length > 0) {
+                    for (let i = 0; i < pendingEvents.length; i++) {
+                        const ev = pendingEvents[i];
+                        processedEventsRef.current.add(ev.text);
+                        setCommentary(prev => [...prev, ev]);
 
-                setMomentum(prev => {
-                    const last = prev[prev.length - 1] || 0;
-                    const change = (Math.random() * 20 - 10);
-                    return [...prev.slice(-25), Math.max(-50, Math.min(50, last + change))];
-                });
-            }
+                        if (ev.type === 'goal' || ev.type === 'save') {
+                            setStats(prev => ({
+                                ...prev,
+                                homeShots: ev.isHome ? prev.homeShots + 1 : prev.homeShots,
+                                awayShots: !ev.isHome ? prev.awayShots + 1 : prev.awayShots
+                            }));
+                        }
 
-            // Match finished
-            if (step >= totalSteps) {
-                clearInterval(intervalRef.current);
-                setMinute(totalMatchMinutes);
-                setDisplayScore({ home: finalResult.homeScore, away: finalResult.awayScore });
-                setIsFinished(true);
+                        // If a goal happens, immediately PAUSE simulation and celebrate!
+                        if (ev.type === 'goal') {
+                            isPausedForGoal = true;
+                            clearInterval(intervalRef.current);
 
-                setCommentary(prev => [
-                    ...prev,
-                    {
-                        minute: totalMatchMinutes,
-                        type: 'whistle',
-                        text: `¡FINAL DEL PARTIDO! ${homeTeam.name} ${finalResult.homeScore} - ${finalResult.awayScore} ${awayTeam.name}`,
-                        isHome: false
+                            // Pin the minute to the goal minute
+                            setMinute(ev.minute);
+
+                            // Update score immediately with genuine goals up to this event's minute
+                            const goalsUpToNow = allParsedEvents.filter(
+                                g => g.type === 'goal' && processedEventsRef.current.has(g.text)
+                            );
+                            setDisplayScore({
+                                home: goalsUpToNow.filter(g => g.isHome).length,
+                                away: goalsUpToNow.filter(g => !g.isHome).length
+                            });
+
+                            // Trigger celebration popup and shake
+                            setIsShaking(true);
+                            setGoalPopup({
+                                team: ev.teamName || (ev.isHome ? homeTeam.name : awayTeam.name),
+                                text: ev.text.replace(/^\d+'\s*/, '')
+                            });
+
+                            const celebrationDuration = Math.max(1200, 2000 / (speedMultiplier === 4 ? 2 : 1));
+                            goalTimeoutRef.current = setTimeout(() => {
+                                setIsShaking(false);
+                                setGoalPopup(null);
+                                isPausedForGoal = false;
+                                startSimulationLoop();
+                            }, celebrationDuration);
+
+                            return; // Stop processing further events in this tick
+                        }
                     }
-                ]);
-            }
-        }, interval);
+
+                    // Update score for non-goal events tick
+                    const goalsSoFar = allParsedEvents.filter(
+                        ev => ev.type === 'goal' && processedEventsRef.current.has(ev.text)
+                    );
+                    setDisplayScore({
+                        home: goalsSoFar.filter(g => g.isHome).length,
+                        away: goalsSoFar.filter(g => !g.isHome).length
+                    });
+                }
+
+                // Dynamic possession & momentum fluctuations
+                if (step % 4 === 0) {
+                    setStats(prev => {
+                        const shift = (Math.random() * 4 - 2);
+                        const newHomePoss = Math.min(75, Math.max(25, prev.homePossession + shift));
+                        return {
+                            ...prev,
+                            homePossession: newHomePoss,
+                            awayPossession: 100 - newHomePoss,
+                            homeFouls: prev.homeFouls + (Math.random() < 0.08 ? 1 : 0),
+                            awayFouls: prev.awayFouls + (Math.random() < 0.08 ? 1 : 0)
+                        };
+                    });
+
+                    setMomentum(prev => {
+                        const last = prev[prev.length - 1] || 0;
+                        const change = (Math.random() * 20 - 10);
+                        return [...prev.slice(-25), Math.max(-50, Math.min(50, last + change))];
+                    });
+                }
+
+                // Match finished
+                if (step >= totalSteps) {
+                    clearInterval(intervalRef.current);
+                    setMinute(totalMatchMinutes);
+                    setDisplayScore({ home: finalResult.homeScore, away: finalResult.awayScore });
+                    setIsFinished(true);
+
+                    setCommentary(prev => [
+                        ...prev,
+                        {
+                            minute: totalMatchMinutes,
+                            type: 'whistle',
+                            text: `¡FINAL DEL PARTIDO! ${homeTeam.name} ${finalResult.homeScore} - ${finalResult.awayScore} ${awayTeam.name}`,
+                            isHome: false
+                        }
+                    ]);
+                }
+            }, interval);
+        };
+
+        startSimulationLoop();
 
         return () => {
             if (intervalRef.current) clearInterval(intervalRef.current);
+            if (goalTimeoutRef.current) clearTimeout(goalTimeoutRef.current);
         };
     }, [finalResult, speedMultiplier, allParsedEvents, totalMatchMinutes]);
 

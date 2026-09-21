@@ -42,6 +42,9 @@ export interface GameStoreState {
     lastSaved: Date | null;
     isSaving: boolean;
 
+    // Custom packs reactive state
+    packsVersion: number;
+
     // Actions
     dispatch: (action: GameAction) => void;
     setAppState: (state: AppStateType) => void;
@@ -55,6 +58,7 @@ export interface GameStoreState {
     setCurrentEvent: (event: TriggeredEvent | null) => void;
     setIsSeasonEndModalOpen: (isOpen: boolean) => void;
     setIsStartingSeason: (isStarting: boolean) => void;
+    incrementPacksVersion: () => void;
     setSaveState: (info: {
         currentSaveId?: string | null;
         currentSaveName?: string | null;
@@ -86,6 +90,8 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
     lastSaved: null,
     isSaving: false,
 
+    packsVersion: 0,
+
     dispatch: (action: GameAction) => {
         set(state => ({
             gameState: gameReducer(state.gameState, action)
@@ -103,6 +109,7 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
     setCurrentEvent: (currentEvent) => set({ currentEvent }),
     setIsSeasonEndModalOpen: (isSeasonEndModalOpen) => set({ isSeasonEndModalOpen }),
     setIsStartingSeason: (isStartingSeason) => set({ isStartingSeason }),
+    incrementPacksVersion: () => set(state => ({ packsVersion: state.packsVersion + 1 })),
 
     setSaveState: (info) => set(state => ({
         currentSaveId: info.currentSaveId !== undefined ? info.currentSaveId : state.currentSaveId,

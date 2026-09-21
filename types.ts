@@ -245,6 +245,8 @@ export interface Match {
   isCupMatch?: boolean;
   isMidweek?: boolean; // True for matches played on a midweek turn
   penalties?: { home: number; away: number; };
+  leg?: 1 | 2; // 1 for first leg (ida), 2 for second leg (vuelta)
+  aggregateScore?: { home: number; away: number }; // Cumulative aggregate for two-legged ties
 }
 
 export interface LeagueTableRow {
@@ -278,6 +280,7 @@ export interface Offer {
 export interface CupRound {
   name: string;
   fixtures: Match[];
+  secondLegFixtures?: Match[];
   completed: boolean;
 }
 

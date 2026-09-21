@@ -1684,10 +1684,16 @@ test('Champions League 2026 format: 36-team Swiss phase advances top 8 directly 
         assert.ok(!playoffTeamIds.has(eliminatedId), `Eliminated team ${eliminatedId} must not be in playoffs`);
     }
 
-    // 2. Play the 8 playoff matches and advance to Round of 16 (Octavos)
+    // 2. Verify secondLegFixtures exist for two-legged ties and simulate both legs
+    const secondLegFixtures = cup.rounds[cup.currentRoundIndex].secondLegFixtures;
+    assert.ok(secondLegFixtures, 'Champions League knockout round must have secondLegFixtures for 2 legs');
+    assert.equal(secondLegFixtures.length, 8, 'Must have 8 return leg fixtures');
+
     playoffFixtures.forEach((match, i) => {
-        // Winner is homeTeamId
         match.result = { homeScore: 2, awayScore: 1, events: [], scorers: [] };
+    });
+    secondLegFixtures.forEach((match, i) => {
+        match.result = { homeScore: 1, awayScore: 1, events: [], scorers: [] };
     });
 
     const r16Cup = advanceCupRound(cup, clTeams, 28);

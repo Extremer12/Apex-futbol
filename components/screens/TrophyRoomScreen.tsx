@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { GameState, AchievementCategory } from '../../types';
+import { GameState, AchievementCategory, Screen } from '../../types';
 import { TrophyIcon, SparklesIcon, ChartBarIcon } from '../icons';
 import { ALL_COMPETITIONS, CompetitionItem } from './league/constants';
 import { CompetitionHistoryView } from './league/CompetitionHistoryView';
@@ -7,14 +7,17 @@ import { customPacksService } from '../../services/customPacks/packService';
 import { 
     Search, History, Shield, Award, CheckCircle2, Lock, Star,
     Trophy, Crown, Globe, ShieldCheck, Zap, Coins, Building2,
-    Vote, Sparkles, ArrowRightLeft, Target, Flame, Medal, X, ChevronRight, Filter
+    Vote, Sparkles, ArrowRightLeft, Target, Flame, Medal, X, ChevronRight, Filter,
+    ArrowLeft
 } from 'lucide-react';
 import { TeamLogo } from '../../data/teams/helpers';
 import { formatCurrency } from '../../utils';
 import { getClubHistoricalHonours } from '../../data/historicalHonours';
+import { useGameStore } from '../../state/gameStore';
 
 interface TrophyRoomScreenProps {
     gameState: GameState;
+    onNavigate?: (screen: Screen) => void;
 }
 
 type TabType = 'TROPHIES' | 'HISTORY' | 'COMPETITIONS' | 'ACHIEVEMENTS';
@@ -105,8 +108,11 @@ const getAchievementIcon = (id: string, category: AchievementCategory) => {
     }
 };
 
-export const TrophyRoomScreen: React.FC<TrophyRoomScreenProps> = ({ gameState }) => {
+export const TrophyRoomScreen: React.FC<TrophyRoomScreenProps> = ({ gameState, onNavigate }) => {
     const { team, achievements = [], seasonHistory = [] } = gameState;
+    const setActiveScreen = useGameStore(s => s.setActiveScreen);
+    const nav = onNavigate || setActiveScreen;
+
     const [activeTab, setActiveTab] = useState<TabType>('TROPHIES');
     const [selectedCategory, setSelectedCategory] = useState<AchievementCategory | 'ALL'>('ALL');
     const [selectedCompId, setSelectedCompId] = useState<string>(team.leagueId || 'PREMIER_LEAGUE');
@@ -163,6 +169,14 @@ export const TrophyRoomScreen: React.FC<TrophyRoomScreenProps> = ({ gameState })
             {/* Header: Symmetrical, Clean & Modern */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-4">
                 <div className="flex items-center gap-3.5">
+                    <button
+                        onClick={() => nav(Screen.Club)}
+                        className="p-2.5 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white rounded-xl border border-white/10 transition-all flex items-center gap-2 group cursor-pointer shrink-0"
+                        title="Volver al Club"
+                    >
+                        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+                        <span className="text-xs font-black uppercase tracking-wider hidden sm:inline">Club</span>
+                    </button>
                     <div className="w-12 h-12 rounded-xl bg-black/60 p-2 border border-white/10 flex items-center justify-center flex-shrink-0">
                         <TeamLogo team={team} />
                     </div>

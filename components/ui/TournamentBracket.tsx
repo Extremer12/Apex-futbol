@@ -27,6 +27,10 @@ interface ProjectedMatch {
     isCurrent: boolean;
     isPlayerMatch: boolean;
     penalties?: { home: number; away: number };
+    leg1Score?: { home: number; away: number };
+    leg2Score?: { home: number; away: number };
+    aggregateScore?: { home: number; away: number };
+    isTwoLegged?: boolean;
 }
 
 interface ProjectedRound {
@@ -132,34 +136,89 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = React.memo(({
 
             for (let mIdx = 0; mIdx < expectedMatchCount; mIdx++) {
                 const actualFixture = actualRound?.fixtures?.[mIdx];
+                const actualSecondLeg = actualRound?.secondLegFixtures?.[mIdx];
 
                 if (actualFixture) {
                     const homeTeam = getTeamById(actualFixture.homeTeamId);
                     const awayTeam = getTeamById(actualFixture.awayTeamId);
-                    const winnerId = getMatchWinnerId(actualFixture);
-                    const isCompleted = actualFixture.result !== undefined;
                     const isPlayerMatch = homeTeam?.id === playerTeamId || awayTeam?.id === playerTeamId;
+
+                    let winnerId: number | null = null;
+                    let isCompleted = false;
+                    let homeScore: number | undefined = actualFixture.result?.homeScore;
+                    let awayScore: number | undefined = actualFixture.result?.awayScore;
+                    let penalties: { home: number; away: number } | undefined = actualFixture.penalties || actualFixture.result?.penalties;
+                    let leg1Score: { home: number; away: number } | undefined;
+                    let leg2Score: { home: number; away: number } | undefined;
+                    let aggregateScore: { home: number; away: number } | undefined;
+
+                    if (actualSecondLeg) {
+                        // Two-legged tie: homeTeam is Team A (home leg 1), awayTeam is Team B (away leg 1)
+                        if (actualFixture.result) {
+                            leg1Score = { home: actualFixture.result.homeScore, away: actualFixture.result.awayScore };
+                        }
+                        if (actualSecondLeg.result) {
+                            // actualSecondLeg has homeTeamId = Team B, awayTeamId = Team A
+                            leg2Score = { home: actualSecondLeg.result.awayScore, away: actualSecondLeg.result.homeScore };
+                        }
+
+                        const leg1Done = actualFixture.result !== undefined;
+                        const leg2Done = actualSecondLeg.result !== undefined;
+                        isCompleted = leg1Done && leg2Done;
+
+                        if (isCompleted && actualFixture.result && actualSecondLeg.result) {
+                            const teamAGoals = actualFixture.result.homeScore + actualSecondLeg.result.awayScore;
+                            const teamBGoals = actualFixture.result.awayScore + actualSecondLeg.result.homeScore;
+                            aggregateScore = { home: teamAGoals, away: teamBGoals };
+                            homeScore = teamAGoals;
+                            awayScore = teamBGoals;
+
+                            if (teamAGoals > teamBGoals) {
+                                winnerId = actualFixture.homeTeamId;
+                            } else if (teamBGoals > teamAGoals) {
+                                winnerId = actualFixture.awayTeamId;
+                            } else {
+                                const pens = actualSecondLeg.penalties || actualSecondLeg.result.penalties;
+                                if (pens) {
+                                    // Leg 2 penalties: pens.home is Team B, pens.away is Team A
+                                    penalties = { home: pens.away, away: pens.home };
+                                    winnerId = pens.away > pens.home ? actualFixture.homeTeamId : actualFixture.awayTeamId;
+                                }
+                            }
+                        } else if (leg1Done) {
+                            homeScore = actualFixture.result?.homeScore;
+                            awayScore = actualFixture.result?.awayScore;
+                        }
+                    } else {
+                        // Single-match tie
+                        winnerId = getMatchWinnerId(actualFixture);
+                        isCompleted = actualFixture.result !== undefined;
+                    }
 
                     roundMatches.push({
                         id: `r${rIdx}_m${mIdx}`,
                         home: {
                             team: homeTeam,
                             placeholder: homeTeam?.name || 'Local',
-                            score: actualFixture.result?.homeScore,
-                            penalties: actualFixture.penalties?.home || actualFixture.result?.penalties?.home,
+                            score: homeScore,
+                            penalties: penalties?.home,
                             isWinner: winnerId === homeTeam?.id,
                         },
                         away: {
                             team: awayTeam,
                             placeholder: awayTeam?.name || 'Visitante',
-                            score: actualFixture.result?.awayScore,
-                            penalties: actualFixture.penalties?.away || actualFixture.result?.penalties?.away,
+                            score: awayScore,
+                            penalties: penalties?.away,
                             isWinner: winnerId === awayTeam?.id,
                         },
                         isCompleted,
                         isCurrent: rIdx === cup.currentRoundIndex,
                         isPlayerMatch,
-                        penalties: actualFixture.penalties || actualFixture.result?.penalties,
+                        penalties,
+                        leg1Score,
+                        leg2Score,
+                        aggregateScore,
+                        isTwoLegged: !!actualSecondLeg,
                     });
                 } else {
                     const prevRound = projectedRounds[rIdx - 1];
@@ -657,6 +716,19 @@ const MatchCard: React.FC<{
                 </span>
             </div>
 
+            {/* Two-legged indicator */}
+            {match.isTwoLegged && (
+                <div className="bg-white/5 text-[7px] text-slate-400 font-medium text-center py-0.5 border-t border-white/5 flex items-center justify-center gap-1">
+                    {match.isCompleted ? (
+                        <span>Glo: {match.aggregateScore?.home}-{match.aggregateScore?.away}</span>
+                    ) : match.leg1Score ? (
+                        <span className="text-amber-400 font-bold">Ida: {match.leg1Score.home}-{match.leg1Score.away}</span>
+                    ) : (
+                        <span>Ida / Vta</span>
+                    )}
+                </div>
+            )}
+
             {/* Penalties indicator */}
             {match.penalties && (
                 <div className="bg-amber-500/20 text-amber-300 text-[7.5px] font-black text-center py-0.5 border-t border-amber-400/20">
@@ -709,20 +781,45 @@ const DetailedMatchRow: React.FC<{
             </div>
 
             {/* Score / Status */}
-            <div className="px-3 py-1 bg-black/40 rounded-lg border border-white/10 mx-2 text-center min-w-[55px]">
+            <div className="px-3 py-1 bg-black/40 rounded-lg border border-white/10 mx-2 text-center min-w-[70px]">
                 {match.isCompleted ? (
                     <div>
-                        <div className="text-xs font-black text-white">
-                            {match.home.score} - {match.away.score}
-                        </div>
+                        {match.isTwoLegged ? (
+                            <>
+                                <div className="text-[8px] uppercase tracking-wider text-slate-400 font-bold">
+                                    Global
+                                </div>
+                                <div className="text-xs font-black text-amber-400">
+                                    {match.aggregateScore?.home} - {match.aggregateScore?.away}
+                                </div>
+                                <div className="text-[7.5px] text-slate-500 font-medium">
+                                    (Ida: {match.leg1Score?.home}-{match.leg1Score?.away} | Vta: {match.leg2Score?.home}-{match.leg2Score?.away})
+                                </div>
+                            </>
+                        ) : (
+                            <div className="text-xs font-black text-white">
+                                {match.home.score} - {match.away.score}
+                            </div>
+                        )}
                         {match.penalties && (
                             <div className="text-[8px] font-bold text-amber-400">
                                 ({match.penalties.home}-{match.penalties.away} pen)
                             </div>
                         )}
                     </div>
+                ) : match.leg1Score ? (
+                    <div>
+                        <div className="text-[8.5px] text-amber-400 font-bold">
+                            Ida: {match.leg1Score.home} - {match.leg1Score.away}
+                        </div>
+                        <div className="text-[7.5px] text-slate-500">
+                            Vta pendiente
+                        </div>
+                    </div>
                 ) : (
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">VS</span>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                        {match.isTwoLegged ? 'Ida / Vta' : 'VS'}
+                    </span>
                 )}
             </div>
 

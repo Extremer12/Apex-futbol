@@ -1,5 +1,5 @@
 // Apex AI Football Simulator Service Worker
-const CACHE_NAME = 'apex-football-v2';
+const CACHE_NAME = 'apex-football-v3';
 
 const STATIC_PRECACHE = [
   '/',
@@ -55,6 +55,11 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
 
+  // Only handle same-origin requests to avoid CORS / cross-origin caching problems
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
   // Skip API / Supabase external calls from cache
   if (url.origin.includes('supabase.co') || url.pathname.startsWith('/rest/') || url.pathname.startsWith('/auth/')) {
     return;
@@ -63,8 +68,8 @@ self.addEventListener('fetch', (event) => {
   // 1. SPA Navigation fallback (HTML requests)
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request).catch(() => {
-        return caches.match('/index.html') || caches.match('/');
+      fetch(request).catch(async () => {
+        return (await caches.match('/index.html')) || (await caches.match('/')) || new Response('Offline', { status: 503 });
       })
     );
     return;
@@ -82,19 +87,24 @@ self.addEventListener('fetch', (event) => {
 
   if (isStaticAsset) {
     event.respondWith(
-      caches.open(CACHE_NAME).then((cache) => {
-        return cache.match(request).then((cachedResponse) => {
-          const fetchPromise = fetch(request)
-            .then((networkResponse) => {
-              if (networkResponse && networkResponse.status === 200) {
-                cache.put(request, networkResponse.clone());
-              }
-              return networkResponse;
-            })
-            .catch(() => cachedResponse);
-
-          return cachedResponse || fetchPromise;
-        });
+      caches.open(CACHE_NAME).then(async (cache) => {
+        const cachedResponse = await cache.match(request);
+        try {
+          const networkResponse = await fetch(request);
+          if (networkResponse && networkResponse.status === 200) {
+            cache.put(request, networkResponse.clone());
+          }
+          return networkResponse;
+        } catch (fetchErr) {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          if (url.pathname.endsWith('.png') || url.pathname.endsWith('.jpg') || request.destination === 'image') {
+            const fallback = await caches.match('/sinrostro.png');
+            if (fallback) return fallback;
+          }
+          return new Response('Asset not found', { status: 404, statusText: 'Not Found' });
+        }
       })
     );
     return;
@@ -102,8 +112,13 @@ self.addEventListener('fetch', (event) => {
 
   // 3. General Fallback
   event.respondWith(
-    caches.match(request).then((cached) => {
-      return cached || fetch(request).catch(() => null);
+    caches.match(request).then(async (cached) => {
+      if (cached) return cached;
+      try {
+        return await fetch(request);
+      } catch {
+        return new Response('Network error', { status: 408, statusText: 'Request Timeout' });
+      }
     })
   );
 });

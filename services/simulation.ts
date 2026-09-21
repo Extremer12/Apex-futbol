@@ -47,6 +47,7 @@ export type { ArgentineQualification, ArgentineRelegationResult } from './argent
 export {
     generateCupDraw,
     determineCupWinner,
+    determineTwoLeggedTieWinner,
     progressInternationalCup,
     advanceCupRound,
     checkAndScheduleIntercontinental,

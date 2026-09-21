@@ -6,12 +6,14 @@ import { Header } from './ui/Header';
 import { BottomNav } from './ui/BottomNav';
 import { Vote } from 'lucide-react';
 
-// Core screens imported statically for zero-latency instant tab switching
+// Core home screen kept static for zero-latency initial load
 import { Dashboard } from './screens/Dashboard';
-import { SquadScreen } from './screens/SquadScreen';
-import { TransfersScreen } from './screens/TransfersScreen';
-import { LeagueScreen } from './screens/LeagueScreen';
-import { StaffScreen } from './screens/StaffScreen';
+
+// Secondary screens lazy loaded on-demand
+const SquadScreen = React.lazy(() => import('./screens/SquadScreen').then(m => ({ default: m.SquadScreen })));
+const TransfersScreen = React.lazy(() => import('./screens/TransfersScreen').then(m => ({ default: m.TransfersScreen })));
+const LeagueScreen = React.lazy(() => import('./screens/LeagueScreen').then(m => ({ default: m.LeagueScreen })));
+const StaffScreen = React.lazy(() => import('./screens/StaffScreen').then(m => ({ default: m.StaffScreen })));
 
 // Secondary screens lazy loaded on-demand
 const FinancesScreen = React.lazy(() => import('./screens/FinancesScreen').then(m => ({ default: m.FinancesScreen })));
@@ -36,7 +38,6 @@ interface MainLayoutProps {
     pendingResults: PendingSimulationResults | null;
     onPlayMatch: () => void;
     onWeekComplete: () => void;
-    allPlayers: Player[];
     dispatch: React.Dispatch<GameAction>;
     onSaveGame: (mode: 'overwrite' | 'new') => void;
     onQuitToMenu: () => void;
@@ -57,7 +58,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
     pendingResults,
     onPlayMatch,
     onWeekComplete,
-    allPlayers,
     dispatch,
     onSaveGame,
     onQuitToMenu,
@@ -78,7 +78,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                     matchPhase={matchPhase}
                     pendingResults={pendingResults}
                     onWeekComplete={onWeekComplete}
-                    allPlayers={allPlayers}
                     dispatch={dispatch}
                     isSimulating={isSimulating}
                     onStartNewSeason={onStartNewSeason}
@@ -91,9 +90,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
             case Screen.Calendar: return <CalendarScreen gameState={gameState} />;
             case Screen.Statistics: return <StatisticsScreen gameState={gameState} />;
             case Screen.Stadium:
-                return <StadiumScreen gameState={gameState} dispatch={dispatch} />;
+                return <StadiumScreen gameState={gameState} dispatch={dispatch} onNavigate={setActiveScreen} />;
             case Screen.Sponsorships:
-                return <SponsorshipScreen gameState={gameState} dispatch={dispatch} />;
+                return <SponsorshipScreen gameState={gameState} dispatch={dispatch} onNavigate={setActiveScreen} />;
             case Screen.Staff:
                 return <StaffScreen gameState={gameState} dispatch={dispatch} />;
             case Screen.Settings: return (
@@ -106,10 +105,10 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                     dispatch={dispatch}
                 />
             );
-            case Screen.Club: return <ClubHubScreen gameState={gameState} dispatch={dispatch} />;
-            case Screen.Trophies: return <TrophyRoomScreen gameState={gameState} />;
+            case Screen.Club: return <ClubHubScreen gameState={gameState} dispatch={dispatch} onNavigate={setActiveScreen} />;
+            case Screen.Trophies: return <TrophyRoomScreen gameState={gameState} onNavigate={setActiveScreen} />;
             case Screen.Profile: return <ProfileScreen gameState={gameState} dispatch={dispatch} />;
-            default: return <Dashboard gameState={gameState} onPlayMatch={onPlayMatch} matchPhase={matchPhase} pendingResults={pendingResults} onWeekComplete={onWeekComplete} allPlayers={allPlayers} dispatch={dispatch} isSimulating={isSimulating} onStartNewSeason={onStartNewSeason} onOpenSeasonEndModal={onOpenSeasonEndModal} />;
+            default: return <Dashboard gameState={gameState} onPlayMatch={onPlayMatch} matchPhase={matchPhase} pendingResults={pendingResults} onWeekComplete={onWeekComplete} dispatch={dispatch} isSimulating={isSimulating} onStartNewSeason={onStartNewSeason} onOpenSeasonEndModal={onOpenSeasonEndModal} />;
         }
     };
 

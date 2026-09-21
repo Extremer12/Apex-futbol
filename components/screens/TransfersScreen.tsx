@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { GameState, Player, SquadRole, Offer } from '../../types';
 import { GameAction } from '../../state/reducer';
+import { useGameStore } from '../../state/gameStore';
 import { 
     generateTransferNegotiationResponse, 
     generatePlayerContractNegotiationResponse,
@@ -37,13 +38,23 @@ import { TransferNegotiationSuite } from './transfers/TransferNegotiationSuite';
 import { CounterOfferModal } from './transfers/CounterOfferModal';
 
 interface TransfersScreenProps {
-    gameState: GameState;
-    dispatch: React.Dispatch<GameAction>;
+    gameState?: GameState;
+    dispatch?: React.Dispatch<GameAction>;
 }
 
 type MarketTab = 'MARKET' | 'OFFERS';
 
-export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dispatch }) => {
+export const TransfersScreen: React.FC<TransfersScreenProps> = ({ 
+    gameState: propGameState, 
+    dispatch: propDispatch 
+}) => {
+    const storeGameState = useGameStore(s => s.gameState);
+    const storeDispatch = useGameStore(s => s.dispatch);
+    const gameState = propGameState || storeGameState;
+    const dispatch = propDispatch || storeDispatch;
+
+    if (!gameState) return null;
+
     const { allTeams, team: myTeam, finances, incomingOffers } = gameState;
     const { showToast } = useToast();
 
@@ -109,11 +120,20 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({ gameState, dis
         }
     }, [normBudget, showBudgetModal]);
 
-    // All available players from other clubs
-    const allPlayers = useMemo(() => allTeams.flatMap(t => t.squad), [allTeams]);
+    // All available players from other clubs - optimized single-pass with O(1) ID set
     const availablePlayers = useMemo(() => {
-        return allPlayers.filter(p => !myTeam.squad.some(mp => mp.id === p.id));
-    }, [allPlayers, myTeam.squad]);
+        const mySquadIds = new Set(myTeam.squad.map(mp => mp.id));
+        const result: Player[] = [];
+        for (const t of allTeams) {
+            if (t.id === myTeam.id) continue;
+            for (const p of t.squad) {
+                if (!mySquadIds.has(p.id)) {
+                    result.push(p);
+                }
+            }
+        }
+        return result;
+    }, [allTeams, myTeam.id, myTeam.squad]);
 
     // --- PHASE 1: START NEGOTIATION WITH CLUB ---
     const startNegotiation = (player: Player) => {

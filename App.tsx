@@ -7,7 +7,6 @@ import { NotificationProvider, useNotification } from './contexts/NotificationCo
 import { ModalProvider, useModal } from './contexts/ModalContext';
 import { ToastProvider } from './components/common/ToastProvider';
 import { AuthProvider } from './contexts/AuthContext';
-import { GameProvider, useActiveLeaguePlayers } from './contexts/GameContext';
 
 // Router and Layout
 import { AppRouter } from './components/AppRouter';
@@ -25,6 +24,7 @@ const SeasonEndModal = React.lazy(() => import('./components/screens/season/Seas
 import { generateNews } from './services/gameLogic';
 import { formatDate, setGlobalCurrency } from './utils';
 import { eventEngine } from './services/eventEngine';
+import { customPacksService } from './services/customPacks/packService';
 
 // Custom Hooks
 import { useGameSave } from './hooks/useGameSave';
@@ -50,8 +50,16 @@ function AppLogic() {
         setIsSeasonEndModalOpen,
         isStartingSeason,
         setIsStartingSeason,
+        incrementPacksVersion,
         resetGameData
     } = useGameStore();
+
+    // Single global subscription to custom packs updates (replaces hundreds of per-avatar listeners)
+    useEffect(() => {
+        return customPacksService.subscribe(() => {
+            incrementPacksVersion();
+        });
+    }, [incrementPacksVersion]);
 
     // Sync global currency formatters
     useEffect(() => {
@@ -63,7 +71,6 @@ function AppLogic() {
     // Contexts
     const { notification, showNotification, hideNotification } = useNotification();
     const { viewingPlayer, isSaveModalOpen, saveMode, openSaveModal, closeSaveModal } = useModal();
-    const activeLeaguePlayers = useActiveLeaguePlayers();
 
     // Simulation & Save hooks
     const { 
@@ -294,7 +301,6 @@ function AppLogic() {
                         pendingResults={pendingResults}
                         onPlayMatch={handlePlayMatch}
                         onWeekComplete={onWeekComplete}
-                        allPlayers={activeLeaguePlayers}
                         dispatch={dispatch}
                         onSaveGame={openSaveModal}
                         onQuitToMenu={handleQuitToMenu}
@@ -319,9 +325,7 @@ function App() {
             <NotificationProvider>
                 <ModalProvider>
                     <ToastProvider>
-                        <GameProvider>
-                            <AppLogic />
-                        </GameProvider>
+                        <AppLogic />
                     </ToastProvider>
                 </ModalProvider>
             </NotificationProvider>

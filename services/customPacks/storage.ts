@@ -17,6 +17,9 @@ export interface StoredAsset {
 let dbPromise: Promise<IDBDatabase> | null = null;
 
 function getDB(): Promise<IDBDatabase> {
+    if (typeof indexedDB === 'undefined') {
+        return Promise.reject(new Error('IndexedDB is not supported in this environment'));
+    }
     if (dbPromise) return dbPromise;
 
     dbPromise = new Promise((resolve, reject) => {
@@ -76,6 +79,9 @@ export async function getStoredAsset(id: string): Promise<StoredAsset | undefine
 }
 
 export async function getAllStoredAssets(): Promise<StoredAsset[]> {
+    if (typeof indexedDB === 'undefined') {
+        return [];
+    }
     const db = await getDB();
     return new Promise((resolve, reject) => {
         const tx = db.transaction(STORE_NAME, 'readonly');

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { customPacksService } from '../../services/customPacks/packService';
+import { useGameStore } from '../../state/gameStore';
 
 export interface PlayerAvatarProps {
     player?: {
@@ -46,16 +47,13 @@ export const PlayerAvatar: React.FC<PlayerAvatarProps> = React.memo(({
 }) => {
     const [hasError, setHasError] = useState(false);
     const [isLoaded, setIsLoaded] = useState(false);
-    const [, setTick] = useState(0);
+    // Centralized Zustand subscription: zero per-avatar listener overhead
+    const packsVersion = useGameStore(s => s.packsVersion);
 
-    // Subscribe to custom packs updates (e.g. toggle pack or load new pack)
     useEffect(() => {
-        return customPacksService.subscribe(() => {
-            setHasError(false);
-            setIsLoaded(false);
-            setTick(t => t + 1);
-        });
-    }, []);
+        setHasError(false);
+        setIsLoaded(false);
+    }, [packsVersion, player?.id, player?.name]);
 
     // Extract clean initials from player name (e.g. "E. Cavani" -> "EC", "Lionel Messi" -> "LM")
     const initials = useMemo(() => {
@@ -73,45 +71,23 @@ export const PlayerAvatar: React.FC<PlayerAvatarProps> = React.memo(({
         return 'linear-gradient(135deg, #1e293b 0%, #090d16 100%)';
     }, [primaryColor]);
 
-    if (!player) {
-        return (
-            <div className={`${className} relative flex items-center justify-center shrink-0 rounded-full overflow-hidden bg-slate-800/80 border border-white/10`}>
-                <ProceduralSilhouette initials="--" bgColor={fallbackBg} />
-            </div>
-        );
-    }
-
-    const resolvedUrl = customPacksService.resolvePlayerPhoto(player);
-    const isCustomOrRealPhoto = resolvedUrl && resolvedUrl !== '/sinrostro.png';
-
-    // If an error occurred or no real photo is resolved, render zero-cost procedural silhouette
-    if (hasError || !isCustomOrRealPhoto) {
-        return (
-            <div className={`${className} relative flex items-center justify-center shrink-0 rounded-full overflow-hidden border border-white/10 shadow-sm transition-all`}>
-                <ProceduralSilhouette initials={initials} bgColor={fallbackBg} />
-            </div>
-        );
-    }
+    const resolvedUrl = player ? customPacksService.resolvePlayerPhoto(player) : '/sinrostro.png';
+    const finalPhoto = (hasError || !resolvedUrl) ? '/sinrostro.png' : resolvedUrl;
 
     return (
         <div className={`${className} relative flex items-center justify-center shrink-0 rounded-full overflow-hidden border border-white/10 shadow-sm bg-slate-900/60 transition-all`}>
-            {/* Background placeholder while image decodes */}
-            {!isLoaded && (
-                <div className="absolute inset-0 z-0">
-                    <ProceduralSilhouette initials={initials} bgColor={fallbackBg} />
-                </div>
-            )}
-            
             <img
-                src={resolvedUrl}
-                alt={player.name}
+                src={finalPhoto}
+                alt={player?.name || 'Jugador'}
                 loading="lazy"
                 decoding="async"
                 referrerPolicy="no-referrer"
                 onLoad={() => setIsLoaded(true)}
-                onError={() => setHasError(true)}
+                onError={() => {
+                    if (!hasError) setHasError(true);
+                }}
                 className={`w-full h-full object-cover object-top relative z-10 transition-opacity duration-200 ${
-                    isLoaded ? 'opacity-100' : 'opacity-0'
+                    isLoaded ? 'opacity-100' : 'opacity-80'
                 }`}
             />
         </div>

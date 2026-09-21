@@ -9,6 +9,7 @@ interface StatisticsScreenProps {
 
 interface PlayerStats {
     player: Player;
+    team: typeof gameState.allTeams[0];
     teamId: number;
     teamName: string;
     teamLogo: string;
@@ -28,6 +29,7 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
                 if (player.stats && (player.stats.goals > 0 || player.stats.assists > 0 || player.stats.appearances > 0)) {
                     stats.push({
                         player,
+                        team,
                         teamId: team.id,
                         teamName: team.name,
                         teamLogo: team.logo,
@@ -177,7 +179,7 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
                                                 </td>
                                                 <td className="w-12 sm:w-16 px-1 py-2 sm:py-3">
                                                     <div className="w-6 h-6 sm:w-7 sm:h-7 mx-auto flex items-center justify-center shrink-0">
-                                                        <TeamLogo team={{ logo: stat.teamLogo, name: stat.teamName }} className="w-full h-full object-contain drop-shadow" />
+                                                        <TeamLogo team={stat.team} className="w-full h-full object-contain drop-shadow" />
                                                     </div>
                                                 </td>
                                                 <td className="w-14 sm:w-20 px-3 sm:px-6 py-2 sm:py-3 text-right font-black text-lg sm:text-2xl text-[var(--apex-gold)] italic drop-shadow-sm">{stat.goals}</td>
@@ -224,7 +226,7 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
                                                 </td>
                                                 <td className="w-12 sm:w-16 px-1 py-2 sm:py-3">
                                                     <div className="w-6 h-6 sm:w-7 sm:h-7 mx-auto flex items-center justify-center shrink-0">
-                                                        <TeamLogo team={{ logo: stat.teamLogo, name: stat.teamName }} className="w-full h-full object-contain drop-shadow" />
+                                                        <TeamLogo team={stat.team} className="w-full h-full object-contain drop-shadow" />
                                                     </div>
                                                 </td>
                                                 <td className="w-14 sm:w-20 px-3 sm:px-6 py-2 sm:py-3 text-right font-black text-lg sm:text-2xl text-[var(--apex-gold)] italic drop-shadow-sm">{stat.assists}</td>

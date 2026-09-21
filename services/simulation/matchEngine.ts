@@ -138,7 +138,8 @@ export const simulateMatch = (
     homeTableRow: LeagueTableRow,
     awayTableRow: LeagueTableRow,
     isCupMatch: boolean = false,
-    isUserMatch: boolean = false
+    isUserMatch: boolean = false,
+    aggregateContext?: { firstLegHomeScore: number; firstLegAwayScore: number }
 ): { homeScore: number; awayScore: number, events: string[], scorers: { playerId: number, playerName: string, minute: number }[], penalties?: { home: number, away: number } } => {
     
     // Select squads
@@ -365,8 +366,19 @@ export const simulateMatch = (
     awayScore = trimGoals(awayScore, awayTeam.name, awayTeam.squad);
 
     let penaltiesResult;
-    if (isCupMatch && homeScore === awayScore) {
-        if (isUserMatch) events.push(`90' ⏱️ Final del tiempo reglamentario. ¡Nos vamos a la prórroga!`);
+    // For two-legged matches: check if aggregate score is tied after 90' of 2nd leg
+    // For single matches: check if 90' match score is tied
+    const isTied = aggregateContext
+        ? (aggregateContext.firstLegAwayScore + homeScore === aggregateContext.firstLegHomeScore + awayScore)
+        : (homeScore === awayScore);
+
+    if (isCupMatch && isTied) {
+        if (isUserMatch) {
+            const extraTimeNotice = aggregateContext
+                ? `90' ⏱️ ¡Empate en el marcador global (${aggregateContext.firstLegAwayScore + homeScore}-${aggregateContext.firstLegHomeScore + awayScore})! Nos vamos a la prórroga.`
+                : `90' ⏱️ Final del tiempo reglamentario. ¡Nos vamos a la prórroga!`;
+            events.push(extraTimeNotice);
+        }
         const etHomeChances = Math.max(1, homeChances / 4);
         const etAwayChances = Math.max(1, awayChances / 4);
 
@@ -391,8 +403,12 @@ export const simulateMatch = (
             }
         }
 
-        if (homeScore === awayScore) {
-            if (isUserMatch) events.push(`120' ⏱️ Final de la prórroga. ¡El partido se decidirá en los penales!`);
+        const isStillTied = aggregateContext
+            ? (aggregateContext.firstLegAwayScore + homeScore === aggregateContext.firstLegHomeScore + awayScore)
+            : (homeScore === awayScore);
+
+        if (isStillTied) {
+            if (isUserMatch) events.push(`120' ⏱️ Final de la prórroga. ¡La serie se decidirá en los penales!`);
             let homePens = 0;
             let awayPens = 0;
             for (let k = 0; k < 5; k++) {
@@ -429,7 +445,8 @@ export const simulateMacroMatch = (
     awayTeam: Team,
     homeTableRow?: LeagueTableRow,
     awayTableRow?: LeagueTableRow,
-    isCupMatch: boolean = false
+    isCupMatch: boolean = false,
+    aggregateContext?: { firstLegHomeScore: number; firstLegAwayScore: number }
 ): {
     homeScore: number;
     awayScore: number;
@@ -510,7 +527,11 @@ export const simulateMacroMatch = (
     assignGoals(awayTeam, awayScore);
 
     let penaltiesResult: { home: number; away: number } | undefined;
-    if (isCupMatch && homeScore === awayScore) {
+    const isTied = aggregateContext
+        ? (aggregateContext.firstLegAwayScore + homeScore === aggregateContext.firstLegHomeScore + awayScore)
+        : (homeScore === awayScore);
+
+    if (isCupMatch && isTied) {
         if (Math.random() < 0.25) {
             homeScore++;
             assignGoals(homeTeam, 1);
@@ -520,7 +541,11 @@ export const simulateMacroMatch = (
             assignGoals(awayTeam, 1);
         }
 
-        if (homeScore === awayScore) {
+        const isStillTied = aggregateContext
+            ? (aggregateContext.firstLegAwayScore + homeScore === aggregateContext.firstLegHomeScore + awayScore)
+            : (homeScore === awayScore);
+
+        if (isStillTied) {
             let homePens = 0;
             let awayPens = 0;
             for (let k = 0; k < 5; k++) {

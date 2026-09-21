@@ -363,6 +363,7 @@ class CustomPacksService {
     }
 
     public async init(): Promise<void> {
+        if (typeof window === 'undefined' || typeof indexedDB === 'undefined') return;
         if (this.isInitialized) return;
         await this.reloadCache();
         this.isInitialized = true;
@@ -406,27 +407,39 @@ class CustomPacksService {
         }
 
         let result: string | undefined;
-        const keys = getTeamMatchKeys(team);
-        const custom = this.getCustomLogo('teams', keys);
-        if (custom) {
-            result = custom;
-        } else if (team.id !== undefined && team.id !== null && ARG_CLUB_LOGOS_BY_ID[team.id]) {
-            // 1. Direct lookup by ID in built-in data packs
-            result = ARG_CLUB_LOGOS_BY_ID[team.id];
-        } else if (team.name) {
-            // 2. Direct lookup by team name in built-in data packs
-            const norm = normalizeKey(team.name);
-            if (norm && ARG_CLUB_LOGOS_BY_NAME[norm]) {
-                result = ARG_CLUB_LOGOS_BY_NAME[norm];
-            } else {
-                const lower = team.name.toLowerCase().trim();
-                if (ARG_CLUB_LOGOS_BY_NAME[lower]) {
-                    result = ARG_CLUB_LOGOS_BY_NAME[lower];
-                }
+
+        // 1. Direct lookup by ID in custom packs or built-in packs (unambiguous)
+        if (team.id !== undefined && team.id !== null) {
+            const idKeys = [String(team.id), `team_${team.id}`];
+            const customById = this.getCustomLogo('teams', idKeys);
+            if (customById) {
+                result = customById;
+            } else if (ARG_CLUB_LOGOS_BY_ID[team.id]) {
+                result = ARG_CLUB_LOGOS_BY_ID[team.id];
             }
         }
 
-        // 3. Fallback to team's explicit logo field
+        // 2. Direct exact name lookup in built-in ARG_CLUB_LOGOS_BY_NAME (before broad fuzzy custom search)
+        if (!result && team.name) {
+            const lower = team.name.toLowerCase().trim();
+            const norm = normalizeKey(team.name);
+            if (ARG_CLUB_LOGOS_BY_NAME[lower]) {
+                result = ARG_CLUB_LOGOS_BY_NAME[lower];
+            } else if (norm && ARG_CLUB_LOGOS_BY_NAME[norm]) {
+                result = ARG_CLUB_LOGOS_BY_NAME[norm];
+            }
+        }
+
+        // 3. Name-based custom pack lookup (exact slug first, then normalized)
+        if (!result) {
+            const keys = getTeamMatchKeys(team);
+            const custom = this.getCustomLogo('teams', keys);
+            if (custom) {
+                result = custom;
+            }
+        }
+
+        // 4. Fallback to team's explicit logo field
         if (!result && team.logo && team.logo.trim().length > 0) {
             result = team.logo;
         }
@@ -781,5 +794,7 @@ class CustomPacksService {
 }
 
 export const customPacksService = new CustomPacksService();
-// Initialize immediately in background
-customPacksService.init().catch(console.error);
+// Initialize immediately in browser background
+if (typeof window !== 'undefined' && typeof indexedDB !== 'undefined') {
+    customPacksService.init().catch(console.error);
+}

@@ -98,19 +98,7 @@ export const CompetitionHistoryView: React.FC<CompetitionHistoryViewProps> = ({
         const cleanName = teamName.replace(/[’‘`]/g, "'").trim();
         const cleanLower = cleanName.toLowerCase();
 
-        // 1. Direct custom packs lookup (handles built-in SVGs, aliases, community packs)
-        const packLogo = customPacksService.resolveTeamLogo({ name: cleanName }) ||
-            customPacksService.resolveTeamLogo({ name: cleanLower });
-
-        if (packLogo) {
-            return (
-                <div className={`${className} relative flex items-center justify-center shrink-0`}>
-                    <img src={packLogo} alt={teamName} className="w-full h-full object-contain drop-shadow-sm" />
-                </div>
-            );
-        }
-
-        // 2. Exact or clean match in gameState.allTeams (prevent false positives like Arsenal vs Arsenal de Sarandí)
+        // 1. Exact or clean match in gameState.allTeams (has full id, colors, and squad info)
         const matchedTeam = (gameState.allTeams || []).find(t => {
             const tn = (t.name || '').toLowerCase().trim();
             const sn = (t.shortName || '').toLowerCase().trim();
@@ -132,20 +120,8 @@ export const CompetitionHistoryView: React.FC<CompetitionHistoryViewProps> = ({
             return <TeamLogo team={matchedTeam} className={className} />;
         }
 
-        // 3. Check static logos dictionary
-        const staticLogo = (TEAM_LOGOS as Record<string, string>)[teamName] ||
-            Object.entries(TEAM_LOGOS).find(([k]) => k.toLowerCase() === cleanLower)?.[1];
-
-        if (staticLogo) {
-            return (
-                <div className={`${className} relative flex items-center justify-center shrink-0`}>
-                    <img src={staticLogo} alt={teamName} className="w-full h-full object-contain drop-shadow-sm" />
-                </div>
-            );
-        }
-
-        // 4. Fallback to aesthetic vector shield
-        return <GenericTeamShield name={teamName} className={className} />;
+        // 2. Direct custom pack / built-in pack lookup
+        return <TeamLogo team={{ name: cleanName }} className={className} />;
     };
 
     const totalEditionsCount = (historicalData?.recentEditions?.length || 0) + 

@@ -192,6 +192,10 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                             r.fixtures?.some((f: any) =>
                                 ((f.id && match.id && f.id === match.id) ||
                                 (f.homeTeamId === match.homeTeamId && f.awayTeamId === match.awayTeamId && f.week === match.week))
+                            ) ||
+                            r.secondLegFixtures?.some((f: any) =>
+                                ((f.id && match.id && f.id === match.id) ||
+                                (f.homeTeamId === match.homeTeamId && f.awayTeamId === match.awayTeamId && f.week === match.week))
                             )
                         );
                         if (!isKnockoutFixture) return;
@@ -217,9 +221,32 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
 
                 const isUserMatch = match.homeTeamId === playerTeamId || match.awayTeamId === playerTeamId;
 
+                // Two-legged ties handling:
+                // Leg 1: ends at 90' without extra time/penalties
+                // Leg 2: computes aggregate score against Leg 1; only triggers extra time/penalties if aggregate is tied
+                const isFirstLeg = match.leg === 1;
+                const isSecondLeg = match.leg === 2;
+
+                let aggregateContext: { firstLegHomeScore: number; firstLegAwayScore: number } | undefined;
+                if (isSecondLeg) {
+                    const leg1 = newSchedule.find(m =>
+                        m.isCupMatch &&
+                        m.competition === match.competition &&
+                        m.homeTeamId === match.awayTeamId &&
+                        m.awayTeamId === match.homeTeamId &&
+                        m.result !== undefined
+                    );
+                    if (leg1 && leg1.result) {
+                        aggregateContext = {
+                            firstLegHomeScore: leg1.result.homeScore,
+                            firstLegAwayScore: leg1.result.awayScore
+                        };
+                    }
+                }
+
                 // Determine if this match is a genuine elimination / knockout match (prórroga y penales)
-                // Matches for points (regular league, Champions/Europa league stage, Libertadores groups) always end at 90'
-                const isKnockoutMatch = !!match.isCupMatch && (
+                // Matches for points or 1st legs always end at 90'
+                const isKnockoutMatch = !isFirstLeg && !!match.isCupMatch && (
                     match.competition === 'FA_Cup' ||
                     match.competition === 'Carabao_Cup' ||
                     match.competition === 'Copa_Del_Rey' ||
@@ -243,8 +270,15 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                 const useMacroSimulation = !isUserMatch && !isUserLeagueMatch;
 
                 const result = useMacroSimulation
-                    ? simulateMacroMatch(homeTeam, awayTeam, homeRow || dummyRow, awayRow || dummyRow, isKnockoutMatch)
-                    : simulateMatch(homeTeam, awayTeam, homeRow || dummyRow, awayRow || dummyRow, isKnockoutMatch, isUserMatch);
+                    ? simulateMacroMatch(homeTeam, awayTeam, homeRow || dummyRow, awayRow || dummyRow, isKnockoutMatch, aggregateContext)
+                    : simulateMatch(homeTeam, awayTeam, homeRow || dummyRow, awayRow || dummyRow, isKnockoutMatch, isUserMatch, aggregateContext);
+
+                if (aggregateContext) {
+                    match.aggregateScore = {
+                        home: aggregateContext.firstLegAwayScore + result.homeScore,
+                        away: aggregateContext.firstLegHomeScore + result.awayScore
+                    };
+                }
 
                 const matchResultData = { 
                     homeScore: result.homeScore, 

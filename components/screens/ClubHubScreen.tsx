@@ -1,17 +1,25 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { GameState, Screen, ElectoralPromise } from '../../types';
 import { GameAction } from '../../state/reducer';
 import { formatCurrency, formatCurrencyShort } from '../../utils';
 import { TrophyIcon, UsersIcon, TrendingUpIcon } from '../icons';
 import { TeamLogo } from '../../data/teams/helpers';
+import { useGameStore } from '../../state/gameStore';
+import { getClubHistoricalHonours } from '../../data/historicalHonours';
 
 interface ClubHubScreenProps {
     gameState: GameState;
     dispatch: React.Dispatch<GameAction>;
+    onNavigate?: (screen: Screen) => void;
 }
 
-export const ClubHubScreen: React.FC<ClubHubScreenProps> = ({ gameState, dispatch }) => {
+export const ClubHubScreen: React.FC<ClubHubScreenProps> = ({ gameState, dispatch, onNavigate }) => {
     const { team, mandate, fanApproval, electoralPromises, boardConfidence, stadium, finances } = gameState;
+    const setActiveScreen = useGameStore(s => s.setActiveScreen);
+    const nav = onNavigate || setActiveScreen;
+
+    const clubHonours = useMemo(() => getClubHistoricalHonours(team.name), [team.name]);
+    const totalTitles = (clubHonours?.totalOfficialTitles || 0) + (team.trophyCabinet?.length || 0);
 
     const getPromiseTypeIcon = (type: ElectoralPromise['type']) => {
         switch (type) {
@@ -25,15 +33,15 @@ export const ClubHubScreen: React.FC<ClubHubScreenProps> = ({ gameState, dispatc
     };
 
     const handleGoToStadium = () => {
-        dispatch({ type: 'SET_SCREEN', payload: Screen.Stadium });
+        nav(Screen.Stadium);
     };
 
     const handleGoToSponsorships = () => {
-        dispatch({ type: 'SET_SCREEN', payload: Screen.Sponsorships });
+        nav(Screen.Sponsorships);
     };
 
     const handleGoToTrophies = () => {
-        dispatch({ type: 'SET_SCREEN', payload: Screen.Trophies });
+        nav(Screen.Trophies);
     };
 
     return (
@@ -207,7 +215,12 @@ export const ClubHubScreen: React.FC<ClubHubScreenProps> = ({ gameState, dispatc
                             </div>
                             <h3 className="text-sm font-black text-white uppercase mb-1">Estadio</h3>
                             <p className="text-[10px] text-white/50 font-bold mb-4 uppercase tracking-widest leading-relaxed">Mejorar instalaciones y ampliar.</p>
-                            <button className="w-full py-2 bg-black/40 border border-white/5 text-white/70 text-[9px] font-black rounded-lg group-hover:bg-[var(--apex-gold)] group-hover:text-black group-hover:border-[var(--apex-gold)] transition-all uppercase tracking-widest">Gestionar</button>
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); handleGoToStadium(); }}
+                                className="w-full py-2 bg-black/40 border border-white/5 text-white/70 text-[9px] font-black rounded-lg group-hover:bg-[var(--apex-gold)] group-hover:text-black group-hover:border-[var(--apex-gold)] transition-all uppercase tracking-widest"
+                            >
+                                Gestionar
+                            </button>
                         </div>
 
                         {/* Sponsorships Card */}
@@ -223,7 +236,12 @@ export const ClubHubScreen: React.FC<ClubHubScreenProps> = ({ gameState, dispatc
                             </div>
                             <h3 className="text-sm font-black text-white uppercase mb-1">Patrocinios</h3>
                             <p className="text-[10px] text-white/50 font-bold mb-4 uppercase tracking-widest leading-relaxed">Negocia acuerdos y bonificaciones.</p>
-                            <button className="w-full py-2 bg-black/40 border border-white/5 text-white/70 text-[9px] font-black rounded-lg group-hover:bg-[var(--apex-green)] group-hover:text-black group-hover:border-[var(--apex-green)] transition-all uppercase tracking-widest">Ver Contratos</button>
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); handleGoToSponsorships(); }}
+                                className="w-full py-2 bg-black/40 border border-white/5 text-white/70 text-[9px] font-black rounded-lg group-hover:bg-[var(--apex-green)] group-hover:text-black group-hover:border-[var(--apex-green)] transition-all uppercase tracking-widest"
+                            >
+                                Ver Contratos
+                            </button>
                         </div>
 
                         {/* Trophies Card */}
@@ -234,12 +252,17 @@ export const ClubHubScreen: React.FC<ClubHubScreenProps> = ({ gameState, dispatc
                                 </div>
                                 <div className="text-right">
                                     <span className="text-[8px] text-white/40 uppercase font-black tracking-widest block mb-0.5">Títulos</span>
-                                    <span className="text-sm font-black text-[var(--apex-gold)]">{team.trophyCabinet?.length || 0}</span>
+                                    <span className="text-sm font-black text-[var(--apex-gold)]">{totalTitles}</span>
                                 </div>
                             </div>
                             <h3 className="text-sm font-black text-white uppercase mb-1">Vitrina</h3>
                             <p className="text-[10px] text-white/50 font-bold mb-4 uppercase tracking-widest leading-relaxed">Ver los títulos históricos del club.</p>
-                            <button className="w-full py-2 bg-black/40 border border-white/5 text-white/70 text-[9px] font-black rounded-lg group-hover:bg-[var(--apex-gold)] group-hover:text-black group-hover:border-[var(--apex-gold)] transition-all uppercase tracking-widest">Abrir Vitrina</button>
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); handleGoToTrophies(); }}
+                                className="w-full py-2 bg-black/40 border border-white/5 text-white/70 text-[9px] font-black rounded-lg group-hover:bg-[var(--apex-gold)] group-hover:text-black group-hover:border-[var(--apex-gold)] transition-all uppercase tracking-widest"
+                            >
+                                Abrir Vitrina
+                            </button>
                         </div>
                     </div>
                 </div>

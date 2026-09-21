@@ -21,7 +21,7 @@ interface DashboardProps {
     matchPhase: MatchPhase;
     pendingResults: PendingSimulationResults | null;
     onWeekComplete: () => void;
-    allPlayers: Player[];
+    allPlayers?: Player[];
     dispatch: React.Dispatch<GameAction>;
     isSimulating?: boolean;
     onStartNewSeason?: () => void;
@@ -34,12 +34,21 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({
     matchPhase,
     pendingResults,
     onWeekComplete,
-    allPlayers,
+    allPlayers: propAllPlayers,
     dispatch,
     isSimulating = false,
     onStartNewSeason,
     onOpenSeasonEndModal
 }) => {
+    // Encapsulated league players memo to avoid prop drilling from root App
+    const allPlayers = useMemo(() => {
+        if (propAllPlayers && propAllPlayers.length > 0) return propAllPlayers;
+        if (!gameState?.team) return [];
+        const userLeagueId = gameState.team.leagueId;
+        return gameState.allTeams
+            .filter(t => t.leagueId === userLeagueId || t.id === gameState.team.id)
+            .flatMap(t => t.squad);
+    }, [propAllPlayers, gameState?.allTeams, gameState?.team?.leagueId, gameState?.team?.id]);
     const handlePlayerClick = (playerName: string) => {
         let player = allPlayers.find(p => p.name === playerName);
         if (!player && gameState) {

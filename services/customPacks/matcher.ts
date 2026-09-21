@@ -34,14 +34,14 @@ export function getTeamMatchKeys(team: { id?: number | string; name?: string; sh
         keys.push(`team_${team.id}`);
     }
 
-    // 2. Normalized full name
+    // 2. Full name: exact raw slug first, then normalized
     if (team.name) {
-        const normalized = normalizeKey(team.name);
-        if (normalized) keys.push(normalized);
-        
-        // Exact raw slug without stripping prefixes
+        // Exact raw slug without stripping prefixes (e.g. 'racingclub', 'racingsantander')
         const rawSlug = team.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
         if (rawSlug && !keys.includes(rawSlug)) keys.push(rawSlug);
+
+        const normalized = normalizeKey(team.name);
+        if (normalized && !keys.includes(normalized)) keys.push(normalized);
     }
 
     // 3. Short name / Acronym
@@ -84,14 +84,6 @@ export function getPlayerMatchKeys(player: { id?: number | string; name?: string
 
         const rawSlug = player.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
         if (rawSlug && !keys.includes(rawSlug)) keys.push(rawSlug);
-
-        // Also if name has "E. Cavani" or "Kevin De Bruyne" -> extract last name
-        const parts = player.name.trim().split(/\s+/);
-        if (parts.length > 1) {
-            const lastName = parts[parts.length - 1];
-            const lastNameNorm = normalizeKey(lastName);
-            if (lastNameNorm && !keys.includes(lastNameNorm)) keys.push(lastNameNorm);
-        }
     }
     return keys;
 }

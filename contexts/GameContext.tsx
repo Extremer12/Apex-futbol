@@ -1,38 +1,34 @@
-import React, { createContext, useContext, useMemo } from 'react';
+/**
+ * @deprecated GameContext is deprecated in favor of direct Zustand consumption via `useGameStore`.
+ * Zustand provides atomic selectors (`useGameStore(s => s.field)`) which prevent unnecessary 
+ * re-renders and eliminate redundant Context Provider wrappers.
+ */
+
+import React from 'react';
 import { useGameStore, GameStoreState } from '../state/gameStore';
-import { GameState, Screen, Team } from '../types';
 
-export const GameContext = createContext<GameStoreState | null>(null);
+/**
+ * @deprecated Use `useGameStore` directly.
+ */
+export const GameContext = React.createContext<GameStoreState | null>(null);
 
+/**
+ * @deprecated No longer needed. Direct `useGameStore` does not require a Provider wrapper.
+ */
 export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const store = useGameStore();
-    return <GameContext.Provider value={store}>{children}</GameContext.Provider>;
+    return <>{children}</>;
 };
 
 /**
- * Hook to consume the complete game state and actions anywhere in the component tree.
+ * @deprecated Use `useGameStore()` directly.
  */
 export function useGame() {
     return useGameStore();
 }
 
 /**
- * Hook to select specific slices from the game store with shallow re-render optimization.
+ * @deprecated Use `useGameStore(selector)` directly.
  */
 export function useGameSelector<T>(selector: (state: GameStoreState) => T): T {
     return useGameStore(selector);
-}
-
-/**
- * Helper hook to get active league players for the current user's team.
- */
-export function useActiveLeaguePlayers(): Team['squad'] {
-    const gameState = useGameStore(s => s.gameState);
-    return useMemo(() => {
-        if (!gameState?.team) return [];
-        const userLeagueId = gameState.team.leagueId;
-        return gameState.allTeams
-            .filter(t => t.leagueId === userLeagueId || t.id === gameState.team.id)
-            .flatMap(t => t.squad);
-    }, [gameState?.allTeams, gameState?.team?.leagueId, gameState?.team?.id]);
 }

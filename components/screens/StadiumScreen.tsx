@@ -1,20 +1,39 @@
 import React, { useState } from 'react';
-import { GameState, Stadium } from '../../types';
+import { GameState, Stadium, Screen } from '../../types';
 import { GameAction } from '../../state/reducer';
-import { Building2Icon, TicketIcon, HammerIcon, TrendingUpIcon, SparklesIcon } from 'lucide-react';
+import { Building2Icon, TicketIcon, HammerIcon, TrendingUpIcon, SparklesIcon, ArrowLeft, Plus, Minus } from 'lucide-react';
 import { formatCurrencyShort } from '../../utils';
 import { useToast } from '../common/ToastProvider';
 import { Modal } from '../ui/Modal';
+import { useGameStore } from '../../state/gameStore';
 
 interface StadiumScreenProps {
     gameState: GameState;
     dispatch: React.Dispatch<GameAction>;
+    onNavigate?: (screen: Screen) => void;
 }
 
-export const StadiumScreen: React.FC<StadiumScreenProps> = ({ gameState, dispatch }) => {
+export const StadiumScreen: React.FC<StadiumScreenProps> = ({ gameState, dispatch, onNavigate }) => {
     const { stadium, finances } = gameState;
     const { showToast } = useToast();
     const [isExpanding, setIsExpanding] = useState(false);
+    const setActiveScreen = useGameStore(s => s.setActiveScreen);
+    const nav = onNavigate || setActiveScreen;
+
+    const handleAdjustTicketPrice = (delta: number) => {
+        const currentPrice = stadium.ticketPrice || 40;
+        const newPrice = Math.max(10, Math.min(250, currentPrice + delta));
+        if (newPrice === currentPrice) return;
+
+        dispatch({
+            type: 'UPDATE_STADIUM',
+            payload: {
+                ...stadium,
+                ticketPrice: newPrice
+            }
+        });
+        showToast(`Precio de entrada actualizado a ${formatCurrencyShort(newPrice)}`, 'info');
+    };
 
     const handleUpgradeFacilities = () => {
         const cost = stadium.facilityLevel * 5000000; // £5M per level
@@ -56,10 +75,20 @@ export const StadiumScreen: React.FC<StadiumScreenProps> = ({ gameState, dispatc
 
     return (
         <div className="p-4 md:p-6 space-y-6 pb-24 animate-fade-in">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-4">
-                <div>
-                    <h2 className="text-[10px] font-black text-gold-gradient tracking-[0.3em] uppercase mb-1">Infraestructura</h2>
-                    <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter">Estadio</h1>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-4">
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => nav(Screen.Club)}
+                        className="p-2 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white rounded-xl border border-white/10 transition-all flex items-center gap-2 group cursor-pointer"
+                        title="Volver al Club"
+                    >
+                        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+                        <span className="text-xs font-black uppercase tracking-wider hidden sm:inline">Club</span>
+                    </button>
+                    <div>
+                        <h2 className="text-[10px] font-black text-gold-gradient tracking-[0.3em] uppercase mb-0.5">Infraestructura</h2>
+                        <h1 className="text-2xl sm:text-3xl font-black text-white uppercase italic tracking-tighter">Estadio & Taquilla</h1>
+                    </div>
                 </div>
             </div>
 
@@ -84,8 +113,30 @@ export const StadiumScreen: React.FC<StadiumScreenProps> = ({ gameState, dispatc
                                 <div className="text-3xl font-black text-white">{stadium.capacity.toLocaleString()}</div>
                             </div>
                             <div className="bg-black/40 p-4 rounded-xl border border-white/5">
-                                <div className="text-white/40 text-[9px] font-black uppercase tracking-widest mb-1">Precio Entrada</div>
-                                <div className="text-3xl font-black text-[var(--apex-green)]">{formatCurrencyShort(stadium.ticketPrice)}</div>
+                                <div className="flex items-center justify-between mb-1">
+                                    <div className="text-white/40 text-[9px] font-black uppercase tracking-widest">Precio Entrada</div>
+                                    <div className="flex items-center gap-1">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleAdjustTicketPrice(-5)}
+                                            disabled={(stadium.ticketPrice || 40) <= 10}
+                                            className="w-6 h-6 rounded bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center text-xs font-black text-white transition-all cursor-pointer"
+                                            title="Reducir precio (-5€)"
+                                        >
+                                            <Minus className="w-3 h-3" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleAdjustTicketPrice(5)}
+                                            disabled={(stadium.ticketPrice || 40) >= 250}
+                                            className="w-6 h-6 rounded bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center text-xs font-black text-white transition-all cursor-pointer"
+                                            title="Aumentar precio (+5€)"
+                                        >
+                                            <Plus className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="text-3xl font-black text-[var(--apex-green)]">{formatCurrencyShort(stadium.ticketPrice || 40)}</div>
                             </div>
                         </div>
 

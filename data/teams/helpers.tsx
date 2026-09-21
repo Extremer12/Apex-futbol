@@ -1,6 +1,5 @@
 import React from 'react';
 import { Player } from '../../types';
-import { PlayerAvatar } from '../../components/ui/PlayerAvatar';
 
 import { customPacksService } from '../../services/customPacks/packService';
 
@@ -158,9 +157,32 @@ export const TeamLogo: React.FC<{
 });
 
 // Player Photo Component (Used for rendering with Community Pack support)
-export { PlayerAvatar };
-export const PlayerPhoto: React.FC<{ player?: { id?: number | string; name: string; photo?: string; position?: string }; className?: string; primaryColor?: string }> = React.memo(({ player, className = "w-10 h-10", primaryColor }) => {
-  return <PlayerAvatar player={player} className={className} primaryColor={primaryColor} />;
+export const PlayerPhoto: React.FC<{ player?: { id?: number | string; name: string; photo?: string; position?: string }; className?: string; primaryColor?: string }> = React.memo(({ player, className = "w-10 h-10" }) => {
+  const initialPhoto = player ? (customPacksService.resolvePlayerPhoto(player) || '/sinrostro.png') : '/sinrostro.png';
+  const [imgSrc, setImgSrc] = React.useState<string>(initialPhoto);
+
+  React.useEffect(() => {
+    const resolved = player ? (customPacksService.resolvePlayerPhoto(player) || '/sinrostro.png') : '/sinrostro.png';
+    setImgSrc(resolved);
+  }, [player?.id, player?.name, player?.photo]);
+
+  return (
+    <div className={`${className} relative flex items-center justify-center shrink-0 rounded-full overflow-hidden border border-white/10 shadow-sm bg-slate-900/60`}>
+      <img
+        src={imgSrc}
+        alt={player?.name || 'Jugador'}
+        className="w-full h-full object-cover object-top"
+        loading="lazy"
+        decoding="async"
+        referrerPolicy="no-referrer"
+        onError={() => {
+          if (imgSrc !== '/sinrostro.png') {
+            setImgSrc('/sinrostro.png');
+          }
+        }}
+      />
+    </div>
+  );
 });
 
 export const createTeamLogo = (logoPath: string, teamName: string) => {

@@ -8,6 +8,7 @@ import {
     generateNacionalReducidoPhase1, 
     generateNacionalReducidoCuartos, 
     determineCupWinner,
+    determineTwoLeggedTieWinner,
     calculateTournamentStandings
 } from '../simulation';
 import { sortLibertadoresGroupTable } from '../libertadoresEngine';
@@ -107,7 +108,7 @@ export function handleCupProgression(
         updatedCups.faCup = advanceCupRound(updatedCups.faCup, teams, nextCupWeek, updatedSchedule);
         if (updatedCups.faCup.rounds.length > prevRoundsCount) {
             const newRound = updatedCups.faCup.rounds[updatedCups.faCup.rounds.length - 1];
-            updatedSchedule.push(...newRound.fixtures);
+            updatedSchedule.push(...newRound.fixtures, ...(newRound.secondLegFixtures || []));
         }
     }
 
@@ -118,7 +119,7 @@ export function handleCupProgression(
         updatedCups.carabaoCup = advanceCupRound(updatedCups.carabaoCup, teams, nextCupWeek, updatedSchedule);
         if (updatedCups.carabaoCup.rounds.length > prevRoundsCount) {
             const newRound = updatedCups.carabaoCup.rounds[updatedCups.carabaoCup.rounds.length - 1];
-            updatedSchedule.push(...newRound.fixtures);
+            updatedSchedule.push(...newRound.fixtures, ...(newRound.secondLegFixtures || []));
         }
     }
 
@@ -129,7 +130,7 @@ export function handleCupProgression(
         updatedCups.copaDelRey = advanceCupRound(updatedCups.copaDelRey, teams, nextCupWeek, updatedSchedule);
         if (updatedCups.copaDelRey.rounds.length > prevRoundsCount) {
             const newRound = updatedCups.copaDelRey.rounds[updatedCups.copaDelRey.rounds.length - 1];
-            updatedSchedule.push(...newRound.fixtures);
+            updatedSchedule.push(...newRound.fixtures, ...(newRound.secondLegFixtures || []));
         }
     }
 
@@ -140,7 +141,7 @@ export function handleCupProgression(
         updatedCups.dfbPokal = advanceCupRound(updatedCups.dfbPokal, teams, nextCupWeek, updatedSchedule);
         if (updatedCups.dfbPokal.rounds.length > prevRoundsCount) {
             const newRound = updatedCups.dfbPokal.rounds[updatedCups.dfbPokal.rounds.length - 1];
-            updatedSchedule.push(...newRound.fixtures);
+            updatedSchedule.push(...newRound.fixtures, ...(newRound.secondLegFixtures || []));
         }
     }
 
@@ -151,7 +152,7 @@ export function handleCupProgression(
         updatedCups.coppaItalia = advanceCupRound(updatedCups.coppaItalia, teams, nextCupWeek, updatedSchedule);
         if (updatedCups.coppaItalia.rounds.length > prevRoundsCount) {
             const newRound = updatedCups.coppaItalia.rounds[updatedCups.coppaItalia.rounds.length - 1];
-            updatedSchedule.push(...newRound.fixtures);
+            updatedSchedule.push(...newRound.fixtures, ...(newRound.secondLegFixtures || []));
         }
     }
 
@@ -162,7 +163,7 @@ export function handleCupProgression(
         updatedCups.copaArgentina = advanceCupRound(updatedCups.copaArgentina, teams, nextCupWeek, updatedSchedule);
         if (updatedCups.copaArgentina.rounds.length > prevRoundsCount) {
             const newRound = updatedCups.copaArgentina.rounds[updatedCups.copaArgentina.rounds.length - 1];
-            updatedSchedule.push(...newRound.fixtures);
+            updatedSchedule.push(...newRound.fixtures, ...(newRound.secondLegFixtures || []));
         }
     }
 
@@ -264,15 +265,26 @@ export function handleCupProgression(
 
                 if (sudRunnersUp.length === 8 && libThirds.length === 8) {
                     const playoffFixtures = generateSudamericanaPlayoff(sudRunnersUp, libThirds, 20);
+                    playoffFixtures.forEach(f => f.leg = 1);
+                    const secondLegFixtures: Match[] = playoffFixtures.map(f => ({
+                        week: 22,
+                        homeTeamId: f.awayTeamId,
+                        awayTeamId: f.homeTeamId,
+                        competition: 'Copa_Sudamericana',
+                        isCupMatch: true,
+                        isMidweek: true,
+                        leg: 2
+                    }));
+
                     updatedCups.copaSudamericana = {
                         ...updatedCups.copaSudamericana,
                         phase: 'knockout',
-                        rounds: [{ name: 'Playoff Octavos', fixtures: playoffFixtures, completed: false }],
+                        rounds: [{ name: 'Playoff Octavos', fixtures: playoffFixtures, secondLegFixtures, completed: false }],
                         currentRoundIndex: 0
                     };
-                    updatedSchedule.push(...playoffFixtures);
+                    updatedSchedule.push(...playoffFixtures, ...secondLegFixtures);
 
-                    const isPlayerInPlayoff = playerTeamId ? playoffFixtures.some(f => f.homeTeamId === playerTeamId || f.awayTeamId === playerTeamId) : false;
+                    const isPlayerInPlayoff = playerTeamId ? [...playoffFixtures, ...secondLegFixtures].some(f => f.homeTeamId === playerTeamId || f.awayTeamId === playerTeamId) : false;
                     if (isPlayerInPlayoff) {
                         cinematicEvents.push({ 
                             id: `sudamericana_playoff_${Date.now()}`,
@@ -303,11 +315,31 @@ export function handleCupProgression(
                     return played ? { ...f, result: played.result, penalties: played.penalties } : f;
                 });
 
-                const allRoundPlayed = currentRound.fixtures.every(f => f.result !== undefined);
+                if (currentRound.secondLegFixtures) {
+                    currentRound.secondLegFixtures = currentRound.secondLegFixtures.map(f => {
+                        if (f.result !== undefined) return f;
+                        const played = updatedSchedule.find(m =>
+                            ((f.id && m.id && f.id === m.id) ||
+                            (m.homeTeamId === f.homeTeamId && m.awayTeamId === f.awayTeamId && m.competition === f.competition && m.week === f.week)) &&
+                            m.result !== undefined
+                        );
+                        return played ? { ...f, result: played.result, penalties: played.penalties, aggregateScore: played.aggregateScore } : f;
+                    });
+                }
+
+                const allLeg1Played = currentRound.fixtures.every(f => f.result !== undefined);
+                const allLeg2Played = !currentRound.secondLegFixtures || currentRound.secondLegFixtures.every(f => f.result !== undefined);
+                const allRoundPlayed = allLeg1Played && allLeg2Played;
+
                 if (allRoundPlayed) {
                     if (currentRound.name === 'Playoff Octavos') {
-                        // Playoff finished -> generate Octavos (Week 24)
-                        const playoffWinners = currentRound.fixtures.map(f => {
+                        // Playoff finished -> generate Octavos (Week 24 & 26)
+                        const playoffWinners = currentRound.fixtures.map((f, idx) => {
+                            const leg2 = currentRound.secondLegFixtures?.[idx];
+                            if (leg2) {
+                                const wId = determineTwoLeggedTieWinner(f, leg2);
+                                return teams.find(t => t.id === wId)!;
+                            }
                             const wId = determineCupWinner(f);
                             return teams.find(t => t.id === wId)!;
                         }).filter(Boolean);
@@ -321,17 +353,28 @@ export function handleCupProgression(
 
                         if (playoffWinners.length === 8 && groupWinners.length === 8) {
                             const octavosFixtures = drawSudamericanaOctavos(groupWinners, playoffWinners, 24);
+                            octavosFixtures.forEach(f => f.leg = 1);
+                            const secondLegFixtures: Match[] = octavosFixtures.map(f => ({
+                                week: 26,
+                                homeTeamId: f.awayTeamId,
+                                awayTeamId: f.homeTeamId,
+                                competition: 'Copa_Sudamericana',
+                                isCupMatch: true,
+                                isMidweek: true,
+                                leg: 2
+                            }));
+
                             updatedCups.copaSudamericana = {
                                 ...updatedCups.copaSudamericana,
                                 rounds: [
                                     { ...currentRound, completed: true },
-                                    { name: 'Round of 16', fixtures: octavosFixtures, completed: false }
+                                    { name: 'Round of 16', fixtures: octavosFixtures, secondLegFixtures, completed: false }
                                 ],
                                 currentRoundIndex: 1
                             };
-                            updatedSchedule.push(...octavosFixtures);
+                            updatedSchedule.push(...octavosFixtures, ...secondLegFixtures);
 
-                            const isPlayerInOctavos = playerTeamId ? octavosFixtures.some(f => f.homeTeamId === playerTeamId || f.awayTeamId === playerTeamId) : false;
+                            const isPlayerInOctavos = playerTeamId ? [...octavosFixtures, ...secondLegFixtures].some(f => f.homeTeamId === playerTeamId || f.awayTeamId === playerTeamId) : false;
                             if (isPlayerInOctavos) {
                                 cinematicEvents.push({ 
                                     id: `sudamericana_octavos_${Date.now()}`,
@@ -359,7 +402,7 @@ export function handleCupProgression(
                         updatedCups.copaSudamericana = advanceCupRound(updatedCups.copaSudamericana, teams, nextRoundWeek, updatedSchedule);
                         if (updatedCups.copaSudamericana.rounds.length > prevRoundsCount) {
                             const newRound = updatedCups.copaSudamericana.rounds[updatedCups.copaSudamericana.rounds.length - 1];
-                            updatedSchedule.push(...newRound.fixtures);
+                            updatedSchedule.push(...newRound.fixtures, ...(newRound.secondLegFixtures || []));
                         }
                     }
                 }
