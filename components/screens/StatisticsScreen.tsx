@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { GameState, Player, LeagueId } from '../../types';
+import { GameState, Player, LeagueId, Team } from '../../types';
 import { TeamLogo } from '../../data/teams/helpers';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -9,7 +9,7 @@ interface StatisticsScreenProps {
 
 interface PlayerStats {
     player: Player;
-    team: typeof gameState.allTeams[0];
+    team: Team;
     teamId: number;
     teamName: string;
     teamLogo: string;

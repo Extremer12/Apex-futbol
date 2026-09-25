@@ -1,5 +1,5 @@
 import { GameState, Player, Offer, NewsItem } from '../../types';
-import { formatDate, formatCurrency } from '../../utils';
+import { formatDate, formatCurrency, normalizeMonetaryValue } from '../../utils';
 import type { GameAction } from '../reducer';
 
 // Actions handled by this reducer
@@ -11,6 +11,7 @@ type TransferAction = Extract<GameAction,
     | { type: 'UPDATE_OFFER' }
     | { type: 'SIGN_PLAYER' }
     | { type: 'TOGGLE_TRANSFER_LIST' }
+    | { type: 'OFFER_PLAYER_TO_CLUBS' }
 >;
 
 export function handleTransferAction(state: GameState, action: TransferAction): GameState {
@@ -49,11 +50,11 @@ export function handleTransferAction(state: GameState, action: TransferAction): 
             if (!player) return state;
 
             const offeringTeam = state.allTeams.find(t => t.id === offer.offeringTeamId);
-            const finalFee = offer.counterOfferValue || offer.offerValue;
+            const finalFee = normalizeMonetaryValue(offer.counterOfferValue || offer.offerValue);
 
             // Update finances
-            const currentTransferBudget = state.finances.transferBudget < 10_000 ? state.finances.transferBudget * 1_000_000 : state.finances.transferBudget;
-            const currentBalance = state.finances.balance < 10_000 ? state.finances.balance * 1_000_000 : state.finances.balance;
+            const currentTransferBudget = normalizeMonetaryValue(state.finances.transferBudget);
+            const currentBalance = normalizeMonetaryValue(state.finances.balance);
             const newBalance = currentBalance + finalFee;
             const newTransferBudget = currentTransferBudget + finalFee;
             const newWages = Math.max(0, state.finances.weeklyWages - player.wage);
@@ -120,8 +121,8 @@ export function handleTransferAction(state: GameState, action: TransferAction): 
                 preferredRole: role || player.preferredRole || 'FirstTeam',
                 isTransferListed: false 
             };
-            const currentTransferBudget = state.finances.transferBudget < 10_000 ? state.finances.transferBudget * 1_000_000 : state.finances.transferBudget;
-            const currentBalance = state.finances.balance < 10_000 ? state.finances.balance * 1_000_000 : state.finances.balance;
+            const currentTransferBudget = normalizeMonetaryValue(state.finances.transferBudget);
+            const currentBalance = normalizeMonetaryValue(state.finances.balance);
             const newWages = state.finances.weeklyWages + negotiatedWage;
             const newTransferBudget = Math.max(0, currentTransferBudget - totalCashDeducted);
             const newBalance = currentBalance - totalCashDeducted;
@@ -198,12 +199,12 @@ export function handleTransferAction(state: GameState, action: TransferAction): 
             const newTeam = { ...state.team, squad: newSquad };
 
             // Buscar 1 o 2 clubes compradores potenciales
-            const pVal = player.value < 10_000 ? player.value * 1_000_000 : player.value;
+            const pVal = normalizeMonetaryValue(player.value);
             const otherTeams = state.allTeams.filter(t => t.id !== state.team.id);
             
             // Preferir clubes con presupuesto o de nivel deportivo acorde
             let candidates = otherTeams.filter(t => {
-                const b = t.transferBudget < 10_000 ? t.transferBudget * 1_000_000 : t.transferBudget;
+                const b = normalizeMonetaryValue(t.transferBudget);
                 return b >= pVal * 0.65;
             });
             if (candidates.length === 0) {

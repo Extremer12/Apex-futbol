@@ -344,7 +344,7 @@ export function processFullSeasonSquadProgression(
 
                 // Star or veteran regens: rebirth talent into the squad!
                 if (player.rating >= 73 || Math.random() < 0.6) {
-                    const regen = generateRegenPlayer(player, team.tier, team.leagueId);
+                    const regen = generateRegenPlayer(player, team.tier);
                     regensForTeam.push(regen);
                     regensCount++;
                 }

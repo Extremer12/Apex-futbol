@@ -30,8 +30,20 @@ export const formatCurrency = (amount: number | undefined | null): string => {
     return `${symbol}0`;
 };
 
+/**
+ * Normaliza valores monetarios que históricamente pudieron guardarse
+ * en unidades de millones (ej. 15 = $15M) convirtiéndolos a unidades enteras absolutas.
+ */
+export const normalizeMonetaryValue = (amount: number | undefined | null, fallback: number = 0): number => {
+    if (amount === undefined || amount === null || isNaN(amount)) return fallback;
+    if (amount > 0 && amount < 10_000) {
+        return Math.round(amount * 1_000_000);
+    }
+    return Math.round(amount);
+};
+
 export const formatTransferFee = (amount: number | undefined | null): string => {
-    return formatCurrency(amount);
+    return formatCurrency(normalizeMonetaryValue(amount));
 };
 
 export const formatCurrencyShort = (amount: number | undefined | null): string => {

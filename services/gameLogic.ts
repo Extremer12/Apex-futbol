@@ -1,5 +1,5 @@
 import { GameState, Player, PlayerProfile, Team, CoachReport, CoachRequest, SquadRole, ContractNegotiationResult, LeagueId } from '../types';
-import { formatCurrency, formatWeeklyWage } from '../utils';
+import { formatCurrency, formatWeeklyWage, normalizeMonetaryValue } from '../utils';
 import { getExpectedWage } from '../utils/playerUtils';
 
 // --- INTERFACES ---
@@ -353,9 +353,9 @@ export const generateCounterOfferDecision = async (
     originalOffer: number,
     buyerTeam: Team
 ): Promise<{ decision: 'accepted' | 'counter' | 'rejected'; message: string; newOfferValue?: number }> => {
-    const pVal = player.value < 10_000 ? player.value * 1_000_000 : player.value;
-    const normCounter = counterValue < 10_000 ? counterValue * 1_000_000 : counterValue;
-    const buyerBudget = buyerTeam.transferBudget < 10_000 ? buyerTeam.transferBudget * 1_000_000 : buyerTeam.transferBudget;
+    const pVal = normalizeMonetaryValue(player.value);
+    const normCounter = normalizeMonetaryValue(counterValue);
+    const buyerBudget = normalizeMonetaryValue(buyerTeam.transferBudget);
     const ratioToVal = normCounter / Math.max(100_000, pVal);
     
     if (normCounter <= buyerBudget * 1.15 && ratioToVal <= 1.35) {
@@ -380,10 +380,10 @@ export const generateCounterOfferDecision = async (
 
 export const generateTransferOffer = async (player: Player, sellingTeam: Team, potentialBuyers: Team[]): Promise<OfferResponse | null> => {
     // Normalizar valor del jugador a moneda real
-    const pValue = player.value < 10_000 ? player.value * 1_000_000 : player.value;
+    const pValue = normalizeMonetaryValue(player.value);
 
     let viableBuyers = potentialBuyers.filter(t => {
-        const budget = t.transferBudget < 10_000 ? t.transferBudget * 1_000_000 : t.transferBudget;
+        const budget = normalizeMonetaryValue(t.transferBudget);
         return budget >= pValue * 0.70;
     });
 

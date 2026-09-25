@@ -255,6 +255,7 @@ export interface Match {
   penalties?: { home: number; away: number; };
   leg?: 1 | 2; // 1 for first leg (ida), 2 for second leg (vuelta)
   aggregateScore?: { home: number; away: number }; // Cumulative aggregate for two-legged ties
+  stageName?: string; // e.g. 'Cuartos de Final', 'Semifinal', 'Jornada 1'
 }
 
 export interface LeagueTableRow {

@@ -40,12 +40,18 @@ export async function uploadSaveToCloud(
         throw new Error(`Has alcanzado el límite máximo de ${MAX_CLOUD_SAVES} ranuras en la nube. Sobrescribe una existente o elimina una para continuar.`);
     }
 
-    // Clean non-serializable objects (like functions or cyclical references)
+    // Clean non-serializable objects and prune transient/oversized data before serialization
+    const stateToSerialize = {
+        ...gameState,
+        viewingPlayer: null,
+        newsFeed: gameState.newsFeed ? gameState.newsFeed.slice(0, 60) : [],
+        cinematicQueue: [],
+    };
     const replacer = (key: string, value: unknown) => (key === 'logo' ? undefined : value);
     
     // Yield to browser execution so heavy stringification and LZW compression don't freeze frames
     const rawJson = await new Promise<string>(resolve => {
-        setTimeout(() => resolve(JSON.stringify(gameState, replacer)), 0);
+        setTimeout(() => resolve(JSON.stringify(stateToSerialize, replacer)), 0);
     });
     const compressedData = await new Promise<string>(resolve => {
         setTimeout(() => resolve(compressString(rawJson)), 0);

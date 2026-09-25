@@ -164,6 +164,8 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
             penalties?: { home: number; away: number }; 
             events?: string[]; 
             scorers?: any[]; 
+            leg?: 1 | 2;
+            aggregateScore?: { home: number; away: number };
         } | null = null;
 
         // Pre-index teams for O(1) instant lookups
