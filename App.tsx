@@ -266,8 +266,8 @@ function AppLogic() {
                     />
                 )}
                 
-                {/* Cinematic Overlay System */}
-                {gameState && gameState.cinematicQueue?.length > 0 && (
+                {/* Cinematic Overlay System - Only show when NOT in fullscreen live match simulation */}
+                {gameState && gameState.cinematicQueue?.length > 0 && matchPhase !== 'LIVE' && (
                     <CinematicOverlay 
                         event={gameState.cinematicQueue[0]} 
                         onContinue={() => dispatch({ type: 'POP_CINEMATIC' })} 

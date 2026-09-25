@@ -61,11 +61,6 @@ export function useSimulation(
                 gameState.team.id
             );
 
-            // Dispatch any immediate kickoff cinematics
-            cupResult.cinematicEvents.forEach(evt => {
-                dispatch({ type: 'PUSH_CINEMATIC', payload: evt });
-            });
-
             // 4. Detect Champion & Achievement Cinematics
             const justPlayedMatches = cupResult.updatedSchedule.filter(
                 m => m.result !== undefined && m.week === simulatedWeek && !!m.isMidweek === (gameState.currentTurn === 'midweek')
@@ -78,6 +73,9 @@ export function useSimulation(
                 newWeek,
                 justPlayedMatches
             );
+
+            // Combine progression cinematics with celebration cinematics to show only after user finishes the match
+            const allWeeklyCinematics = [...cupResult.cinematicEvents, ...celebrationCinematics];
 
             // 5. Generate News & AI Transfer Offers
             const { newsToAdd, generatedOffers } = await generateWeeklyNewsAndOffers(
@@ -111,7 +109,7 @@ export function useSimulation(
                 updatedCups: cupResult.updatedCups,
                 updatedScoutedPlayerIds: simulationResult.updatedScoutedPlayerIds,
                 coachReport,
-                cinematicEvents: celebrationCinematics
+                cinematicEvents: allWeeklyCinematics
             });
 
             setMatchPhase('LIVE');

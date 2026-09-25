@@ -18,6 +18,8 @@ interface FullScreenMatchSimulationProps {
             penalties?: { home: number; away: number };
             events?: string[];
             scorers?: { playerId: number; playerName: string; minute: number }[];
+            leg?: number;
+            aggregateScore?: { home: number; away: number };
         } | null;
     };
     onMatchComplete: () => void;
@@ -356,6 +358,11 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
                     </div>
                     <div className="hidden sm:flex items-center gap-2 text-xs font-semibold text-slate-300">
                         <span className="text-[var(--apex-gold)] font-bold">{competitionName}</span>
+                        {finalResult?.leg && (
+                            <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                                Partido de {finalResult.leg === 1 ? 'Ida' : 'Vuelta'}
+                            </span>
+                        )}
                         <span className="text-slate-600">•</span>
                         <span className="text-slate-400">{stadiumName}</span>
                     </div>
@@ -429,6 +436,12 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
                                 </div>
                             )}
                         </div>
+
+                        {finalResult?.aggregateScore && (
+                            <div className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-cyan-300 bg-cyan-950/60 px-3 py-1 rounded-full border border-cyan-500/30 mt-1.5 animate-fade-in">
+                                Marcador Global: {finalResult.aggregateScore.home} - {finalResult.aggregateScore.away}
+                            </div>
+                        )}
 
                         {isFinished && finalResult?.penalties && (
                             <div className="text-[10px] sm:text-xs font-bold text-yellow-400 mt-1 animate-fade-in">

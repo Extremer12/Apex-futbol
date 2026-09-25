@@ -8,6 +8,18 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 ## [Unreleased]
 
 ### Bug Fixes & Engine Stability
+- **Corrección de Marcador Global y Penales en Eliminatorias de Ida y Vuelta (Sudamericana, Libertadores, Champions, Europa League)**:
+  - **Detección Rigurosa del Partido de Ida**: Corregida la búsqueda de partidos anteriores en el Worker de simulación (`simulation.worker.ts`). Anteriormente, `schedule.find` podía capturar un partido previo de la fase de grupos entre ambos clubes (por ejemplo, un 0-0 de la fecha 8) en lugar del partido de ida de la eliminatoria actual, provocando que un 0-0 en la vuelta fuese interpretado como un 0-0 global y forzara penales indebidamente cuando se había ganado 1-0 en la ida.
+  - **Cálculo Exacto de Puntos Globales y Prórroga**: Se garantiza que el partido de ida termine siempre en los 90 minutos reglamentarios sin tiempo extra ni penales, y que el partido de vuelta solo recurra a prórroga/penales si el resultado global entre ambos partidos está estrictamente empatado.
+  - **Sincronización en UI de Simulación y Copas**: Los marcadores globales (`aggregateScore`), etiquetas de "Ida" y "Vuelta", y el ganador final del cruce se reflejan con precisión en el visor de partido (`FullScreenMatchSimulation.tsx`), en el resumen de resultados y en el árbol de la competición.
+- **Corrección Integral del Visor de Copas ("Partidos y Resultados")**:
+  - **Mapeo Real de Partidos Jugados (`CupView.tsx`)**: Se sincronizaron todas las rondas y fechas con el calendario real (`gameState.schedule`), asegurando que se visualicen los marcadores reales, goleadores y tandas de penales disputadas en lugar de enfrentamientos no jugados o vacíos.
+  - **Desglose de Ida y Vuelta en Rondas K.O.**: Ahora cada fase eliminatoria muestra de forma clara e independiente los partidos de Ida y Vuelta con etiquetas distintivas y el cómputo global en tiempo real.
+  - **Separación de Fechas en Fase de Grupos**: Las llaves de eliminación directa ya no se filtran de forma errónea como "Fecha 7" u "8" en la fase de grupos.
+- **Prevención de Cinemáticas Prematuras en Pantalla de Simulación**:
+  - **Retención de Eventos Cinemáticos (`useSimulation.ts`)**: Se posterga el despacho de cinemáticas de clasificación o eliminatorias (como el pase a la siguiente fase en la última fecha de grupos) hasta que el usuario hace clic en el botón "Continuar" tras finalizar el partido, evitando que la cinemática salte sobre el visor mientras el partido aún se está jugando o simulando.
+  - **Blindaje en `App.tsx`**: El componente `CinematicOverlay` ahora verifica que la fase de partido no esté en estado `LIVE` antes de montarse.
+
 - **Corrección Integral de Cruces Ida y Vuelta en Copas Internacionales (Champions, Libertadores, Sudamericana)**:
   - **Blindaje de Partidos de Vuelta en el Calendario (`cupProgressionHandler.ts`)**: Corregido el filtro de limpieza al final de `handleCupProgression` que solo registraba `fixtures` (partidos de ida) y purgaba erróneamente todos los partidos de vuelta (`secondLegFixtures`) del `schedule`, impidiendo que las eliminatorias avanzaran a Cuartos, Semifinales y Final.
   - **Sincronización en Web Worker (`simulation.worker.ts`)**: Añadido soporte para registrar los resultados de los partidos de vuelta en `round.secondLegFixtures` dentro de las rondas de la copa.

@@ -19,6 +19,7 @@ import {
     calculateTournamentStandings,
     generateSwissPhase,
     progressInternationalCup,
+    determineTwoLeggedTieWinner,
     finalizeSeasonCompetitions
 } from '../services/simulation';
 import { initializeGame } from '../services/gameFactory';
@@ -2022,6 +2023,54 @@ test('Two-legged International Knockouts: schedule preserves leg 2 and finalizeS
     assert.ok(res.updatedCups.championsLeague.winnerId, 'Champions League with two-legged ties must crown a champion');
     assert.equal(res.updatedCups.championsLeague.phase, 'finished');
 });
+
+test('Two-legged Ties: 1-0 in leg 1 and 0-0 in leg 2 advances team with 1-0 aggregate without penalties', () => {
+    const teamA = 101;
+    const teamB = 102;
+
+    // Leg 1: Team A (home) 1 - 0 Team B (away)
+    const leg1: Match = {
+        week: 20,
+        homeTeamId: teamA,
+        awayTeamId: teamB,
+        competition: 'Copa_Sudamericana',
+        isCupMatch: true,
+        leg: 1,
+        result: { homeScore: 1, awayScore: 0, events: [], scorers: [] }
+    };
+
+    // Leg 2: Team B (home) 0 - 0 Team A (away)
+    const leg2: Match = {
+        week: 21,
+        homeTeamId: teamB,
+        awayTeamId: teamA,
+        competition: 'Copa_Sudamericana',
+        isCupMatch: true,
+        leg: 2,
+        result: { homeScore: 0, awayScore: 0, events: [], scorers: [] }
+    };
+
+    const winnerId = determineTwoLeggedTieWinner(leg1, leg2);
+    assert.equal(winnerId, teamA, 'Team A must win the tie with 1-0 aggregate');
+    assert.deepEqual(leg2.aggregateScore, { home: 0, away: 1 }, 'Aggregate score on leg 2 must reflect Team B: 0, Team A: 1');
+
+    // Case 2: Aggregate tied 1-1, goes to penalties
+    const leg2Tied: Match = {
+        week: 21,
+        homeTeamId: teamB,
+        awayTeamId: teamA,
+        competition: 'Copa_Sudamericana',
+        isCupMatch: true,
+        leg: 2,
+        result: { homeScore: 1, awayScore: 0, events: [], scorers: [] },
+        penalties: { home: 4, away: 5 }
+    };
+
+    const tieWinnerId = determineTwoLeggedTieWinner(leg1, leg2Tied);
+    assert.equal(tieWinnerId, teamA, 'Team A must win on penalties 5-4');
+    assert.deepEqual(leg2Tied.aggregateScore, { home: 1, away: 1 }, 'Aggregate score must be tied 1-1');
+});
+
 
 
 

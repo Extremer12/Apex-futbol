@@ -222,46 +222,109 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                 const isUserMatch = match.homeTeamId === playerTeamId || match.awayTeamId === playerTeamId;
 
                 // Two-legged ties handling:
-                // Leg 1: ends at 90' without extra time/penalties
-                // Leg 2: computes aggregate score against Leg 1; only triggers extra time/penalties if aggregate is tied
-                const isFirstLeg = match.leg === 1;
-                const isSecondLeg = match.leg === 2;
+                // Check if this match is known to be Leg 1 or Leg 2 from cup rounds or match.leg
+                let isKnownFirstLeg = match.leg === 1;
+                let isKnownSecondLeg = match.leg === 2;
+                let matchedLeg1Fixture: Match | undefined;
+
+                if (match.isCupMatch) {
+                    for (const cupKey of Object.keys(updatedCups)) {
+                        const c = updatedCups[cupKey];
+                        if (c?.rounds) {
+                            for (const r of c.rounds) {
+                                if (r.fixtures && r.secondLegFixtures && r.secondLegFixtures.length > 0) {
+                                    // Check if match is in r.fixtures (Leg 1)
+                                    const leg1Idx = r.fixtures.findIndex(f =>
+                                        (f.id && match.id && f.id === match.id) ||
+                                        (f.homeTeamId === match.homeTeamId && f.awayTeamId === match.awayTeamId && f.week === match.week)
+                                    );
+                                    if (leg1Idx !== -1) {
+                                        isKnownFirstLeg = true;
+                                        match.leg = 1;
+                                        break;
+                                    }
+
+                                    // Check if match is in r.secondLegFixtures (Leg 2)
+                                    const leg2Idx = r.secondLegFixtures.findIndex(f =>
+                                        (f.id && match.id && f.id === match.id) ||
+                                        (f.homeTeamId === match.homeTeamId && f.awayTeamId === match.awayTeamId && f.week === match.week)
+                                    );
+                                    if (leg2Idx !== -1) {
+                                        isKnownSecondLeg = true;
+                                        match.leg = 2;
+                                        matchedLeg1Fixture = r.fixtures[leg2Idx];
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if (isKnownFirstLeg || isKnownSecondLeg) break;
+                    }
+                }
 
                 let aggregateContext: { firstLegHomeScore: number; firstLegAwayScore: number } | undefined;
-                if (isSecondLeg) {
-                    const leg1 = newSchedule.find(m =>
-                        m.isCupMatch &&
-                        m.competition === match.competition &&
-                        m.homeTeamId === match.awayTeamId &&
-                        m.awayTeamId === match.homeTeamId &&
-                        m.result !== undefined
-                    );
+                if (isKnownSecondLeg) {
+                    // Try to resolve Leg 1:
+                    // 1. From matchedLeg1Fixture in cup rounds (and look up its latest result in newSchedule)
+                    let leg1 = matchedLeg1Fixture;
+                    if (leg1) {
+                        const inSched = newSchedule.find(m =>
+                            (leg1!.id && m.id && leg1!.id === m.id) ||
+                            (m.homeTeamId === leg1!.homeTeamId && m.awayTeamId === leg1!.awayTeamId && m.week === leg1!.week)
+                        );
+                        if (inSched?.result) leg1 = inSched;
+                    }
+
+                    // 2. Fallback: search backwards in newSchedule for a prior knockout match between these two teams
+                    if (!leg1 || !leg1.result) {
+                        const candidates = newSchedule.filter(m =>
+                            m.isCupMatch &&
+                            m.competition?.toLowerCase() === match.competition?.toLowerCase() &&
+                            m.week < match.week &&
+                            m.result !== undefined &&
+                            ((m.homeTeamId === match.awayTeamId && m.awayTeamId === match.homeTeamId) ||
+                             (m.homeTeamId === match.homeTeamId && m.awayTeamId === match.awayTeamId))
+                        );
+                        // Prioritize candidate with leg === 1, or latest played match
+                        leg1 = candidates.find(m => m.leg === 1) || candidates[candidates.length - 1];
+                    }
+
                     if (leg1 && leg1.result) {
+                        // In Leg 2: match.homeTeamId is host, match.awayTeamId is visitor
+                        // Determine how many goals match.homeTeamId and match.awayTeamId scored in Leg 1:
+                        const homeTeamGoalsInLeg1 = leg1.homeTeamId === match.homeTeamId ? leg1.result.homeScore : leg1.result.awayScore;
+                        const awayTeamGoalsInLeg1 = leg1.homeTeamId === match.awayTeamId ? leg1.result.homeScore : leg1.result.awayScore;
+
                         aggregateContext = {
-                            firstLegHomeScore: leg1.result.homeScore,
-                            firstLegAwayScore: leg1.result.awayScore
+                            firstLegHomeScore: awayTeamGoalsInLeg1,
+                            firstLegAwayScore: homeTeamGoalsInLeg1
                         };
                     }
                 }
 
                 // Determine if this match is a genuine elimination / knockout match (prórroga y penales)
-                // Matches for points or 1st legs always end at 90'
-                const isKnockoutMatch = !isFirstLeg && !!match.isCupMatch && (
-                    match.competition === 'FA_Cup' ||
-                    match.competition === 'Carabao_Cup' ||
-                    match.competition === 'Copa_Del_Rey' ||
-                    match.competition === 'DFB_Pokal' ||
-                    match.competition === 'Coppa_Italia' ||
-                    match.competition === 'Copa_Argentina' ||
-                    match.competition === 'Playoffs_Apertura' ||
-                    match.competition === 'Playoffs_Clausura' ||
-                    match.competition === 'Nacional_Primer_Ascenso' ||
-                    match.competition === 'Nacional_Reducido' ||
-                    match.competition === 'Copa_Intercontinental' ||
-                    ((match.competition === 'Champions_League' || match.competition === 'Europa_League') && updatedCups[match.competition === 'Champions_League' ? 'championsLeague' : 'europaLeague']?.phase !== 'swiss') ||
-                    (match.competition === 'Copa_Libertadores' && updatedCups['copaLibertadores']?.phase !== 'groups') ||
-                    (match.competition === 'Copa_Sudamericana' && updatedCups['copaSudamericana']?.phase !== 'groups')
+                // First legs always end at 90'
+                // Second legs only allow extra time/penalties if aggregateContext exists and aggregate is tied
+                const compKey = match.competition?.toLowerCase();
+                const isCupComp = !!match.isCupMatch && (
+                    compKey === 'fa_cup' ||
+                    compKey === 'carabao_cup' ||
+                    compKey === 'copa_del_rey' ||
+                    compKey === 'dfb_pokal' ||
+                    compKey === 'coppa_italia' ||
+                    compKey === 'copa_argentina' ||
+                    compKey === 'copa_mx' ||
+                    compKey === 'playoffs_apertura' ||
+                    compKey === 'playoffs_clausura' ||
+                    compKey === 'nacional_primer_ascenso' ||
+                    compKey === 'nacional_reducido' ||
+                    compKey === 'copa_intercontinental' ||
+                    ((compKey === 'champions_league' || compKey === 'europa_league') && updatedCups[compKey === 'champions_league' ? 'championsLeague' : 'europaLeague']?.phase !== 'swiss') ||
+                    (compKey === 'copa_libertadores' && updatedCups['copaLibertadores']?.phase !== 'groups') ||
+                    (compKey === 'copa_sudamericana' && updatedCups['copaSudamericana']?.phase !== 'groups')
                 );
+
+                const isKnockoutMatch = !isKnownFirstLeg && isCupComp && (!isKnownSecondLeg || !!aggregateContext);
 
                 const isUserLeagueMatch = !!(playerLeagueId && (homeTeam.leagueId === playerLeagueId || awayTeam.leagueId === playerLeagueId));
 
@@ -310,7 +373,9 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                         awayScore: result.awayScore,
                         penalties: result.penalties,
                         events: result.events,
-                        scorers: result.scorers
+                        scorers: result.scorers,
+                        leg: match.leg,
+                        aggregateScore: match.aggregateScore
                     };
                 }
 
@@ -362,7 +427,24 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                     let homeResult: 'W' | 'D' | 'L';
                     let awayResult: 'W' | 'D' | 'L';
 
-                    if (result.homeScore > result.awayScore) {
+                    if (isKnownSecondLeg && aggregateContext) {
+                        const homeAgg = aggregateContext.firstLegAwayScore + result.homeScore;
+                        const awayAgg = aggregateContext.firstLegHomeScore + result.awayScore;
+                        if (homeAgg > awayAgg) {
+                            homeResult = 'W';
+                            awayResult = 'L';
+                        } else if (awayAgg > homeAgg) {
+                            homeResult = 'L';
+                            awayResult = 'W';
+                        } else if (result.penalties) {
+                            const homeWonPens = result.penalties.home > result.penalties.away;
+                            homeResult = homeWonPens ? 'W' : 'L';
+                            awayResult = homeWonPens ? 'L' : 'W';
+                        } else {
+                            homeResult = 'D';
+                            awayResult = 'D';
+                        }
+                    } else if (result.homeScore > result.awayScore) {
                         homeResult = 'W';
                         awayResult = 'L';
                     } else if (result.awayScore > result.homeScore) {
@@ -475,6 +557,8 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                                         scorers: result.scorers
                                     };
                                     f.penalties = result.penalties;
+                                    f.aggregateScore = match.aggregateScore;
+                                    if (match.leg) f.leg = match.leg;
                                     break;
                                 }
                             }

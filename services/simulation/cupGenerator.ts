@@ -100,15 +100,18 @@ export const isInternationalCompetition = (cupId?: string): boolean => {
 export const determineTwoLeggedTieWinner = (leg1: Match, leg2: Match): number | null => {
     if (!leg1.result || !leg2.result) return null;
 
-    const teamAId = leg1.homeTeamId; // Home in Leg 1, Away in Leg 2
-    const teamBId = leg1.awayTeamId; // Away in Leg 1, Home in Leg 2
+    const teamAId = leg1.homeTeamId;
+    const teamBId = leg1.awayTeamId;
 
-    const teamAGoals = leg1.result.homeScore + leg2.result.awayScore;
-    const teamBGoals = leg1.result.awayScore + leg2.result.homeScore;
+    const teamAGoalsInLeg2 = leg2.homeTeamId === teamAId ? leg2.result.homeScore : leg2.result.awayScore;
+    const teamBGoalsInLeg2 = leg2.homeTeamId === teamBId ? leg2.result.homeScore : leg2.result.awayScore;
+
+    const teamAGoals = leg1.result.homeScore + teamAGoalsInLeg2;
+    const teamBGoals = leg1.result.awayScore + teamBGoalsInLeg2;
 
     leg2.aggregateScore = {
-        home: teamBGoals,
-        away: teamAGoals
+        home: leg2.homeTeamId === teamBId ? teamBGoals : teamAGoals,
+        away: leg2.homeTeamId === teamBId ? teamAGoals : teamBGoals
     };
 
     if (teamAGoals > teamBGoals) return teamAId;
@@ -117,7 +120,7 @@ export const determineTwoLeggedTieWinner = (leg1: Match, leg2: Match): number | 
     // Aggregate is tied! Check penalty shootout from leg 2
     const pens = leg2.penalties || leg2.result.penalties;
     if (pens && pens.home !== pens.away) {
-        return pens.home > pens.away ? teamBId : teamAId;
+        return pens.home > pens.away ? leg2.homeTeamId : leg2.awayTeamId;
     }
 
     // Deterministic tiebreak fallback

@@ -93,118 +93,145 @@ export const CupView: React.FC<CupViewProps> = React.memo(({
         return cup.swissTable;
     }, [cup.swissTable, cup.id, gameState.schedule]);
 
-    // Compile and organize all matches belonging to this competition
-    const allCompetitionMatches = useMemo(() => {
-        const compNames = new Set<string>();
-        if (cup.id === 'champions_league') compNames.add('Champions_League');
-        if (cup.id === 'europa_league') compNames.add('Europa_League');
-        if (cup.id === 'copa_libertadores') compNames.add('Copa_Libertadores');
-        if (cup.id === 'copa_sudamericana') compNames.add('Copa_Sudamericana');
-        if (cup.id === 'fa_cup') compNames.add('FA_Cup');
-        if (cup.id === 'carabao_cup') compNames.add('Carabao_Cup');
-        if (cup.id === 'copa_del_rey') compNames.add('Copa_Del_Rey');
-        if (cup.id === 'copa_argentina') compNames.add('Copa_Argentina');
-        if (cup.id === 'copa_intercontinental') compNames.add('Copa_Intercontinental');
-        compNames.add(cup.name);
-        compNames.add(cup.id);
+    const isCompetitionMatch = useCallback((compName?: string) => {
+        if (!compName || !cup?.id) return false;
+        const m = compName.toLowerCase().replace(/[\s_-]+/g, '');
+        const cId = cup.id.toLowerCase().replace(/[\s_-]+/g, '');
+        const cName = (cup.name || '').toLowerCase().replace(/[\s_-]+/g, '');
 
-        const matchMap = new Map<string, Match>();
+        if (m === cId || m === cName) return true;
 
-        // 1. From Schedule
-        gameState.schedule.forEach(m => {
-            if (m.competition && compNames.has(m.competition)) {
-                matchMap.set(`${m.homeTeamId}_${m.awayTeamId}_${m.week}_${m.competition}`, m);
-            }
-        });
+        const aliasesMap: Record<string, string[]> = {
+            championsleague: ['championsleague'],
+            europaleague: ['europaleague'],
+            copalibertadores: ['copalibertadores'],
+            copasudamericana: ['copasudamericana'],
+            facup: ['facup'],
+            carabaocup: ['carabaocup'],
+            copadelrey: ['copadelrey'],
+            dfbpokal: ['dfbpokal'],
+            coppaitalia: ['coppaitalia'],
+            copaargentina: ['copaargentina'],
+            copamx: ['copamx'],
+            copaintercontinental: ['copaintercontinental'],
+            aperturaplayoffs: ['playoffsapertura', 'aperturaplayoffs'],
+            clausuraplayoffs: ['playoffsclausura', 'clausuraplayoffs'],
+            nacionalreducido: ['nacionalreducido'],
+            nacionalprimerascenso: ['nacionalprimerascenso']
+        };
 
-        // 2. From Swiss fixtures
-        if (cup.swissFixtures) {
-            cup.swissFixtures.forEach(m => {
-                const key = `${m.homeTeamId}_${m.awayTeamId}_${m.week}_${m.competition}`;
-                if (!matchMap.has(key) || m.result) {
-                    matchMap.set(key, m);
-                }
-            });
+        const list = aliasesMap[cId] || [];
+        return list.some(a => m === a || m.includes(a));
+    }, [cup.id, cup.name]);
+
+    const syncFixtureWithSchedule = useCallback((fix: Match, defaultStage?: string): Match => {
+        const played = gameState.schedule.find(s =>
+            ((fix.id && s.id && fix.id === s.id) ||
+            (s.homeTeamId === fix.homeTeamId && s.awayTeamId === fix.awayTeamId && isCompetitionMatch(s.competition) &&
+             (s.week === fix.week || (s.leg !== undefined && fix.leg !== undefined && s.leg === fix.leg))))
+        );
+
+        if (played) {
+            return {
+                ...fix,
+                ...played,
+                leg: fix.leg || played.leg,
+                aggregateScore: played.aggregateScore || fix.aggregateScore,
+                penalties: played.penalties || played.result?.penalties || fix.penalties,
+                stageName: fix.stageName || (played as any).stageName || defaultStage
+            };
         }
 
-        // 3. From Group fixtures
-        if (cup.groups) {
-            cup.groups.forEach(g => {
-                g.fixtures.forEach(m => {
-                    const key = `${m.homeTeamId}_${m.awayTeamId}_${m.week}_${m.competition}`;
-                    if (!matchMap.has(key) || m.result) {
-                        matchMap.set(key, m);
-                    }
-                });
-            });
-        }
+        return {
+            ...fix,
+            stageName: fix.stageName || defaultStage
+        };
+    }, [gameState.schedule, isCompetitionMatch]);
 
-        // 4. From Rounds
-        if (cup.rounds) {
-            cup.rounds.forEach(r => {
-                r.fixtures.forEach(m => {
-                    const key = `${m.homeTeamId}_${m.awayTeamId}_${m.week}_${m.competition}`;
-                    matchMap.set(key, { ...m, stageName: r.name });
-                });
-            });
-        }
-
-        return Array.from(matchMap.values());
-    }, [cup, gameState.schedule]);
-
-    // Extract available stage groupings for the Fixtures tab
+    // Extract available stage groupings for the Fixtures tab with real scheduled results
     const stages = useMemo(() => {
         const stageList: { id: string; name: string; matches: Match[] }[] = [];
 
-        if (cup.type === 'swiss') {
+        if (cup.type === 'swiss' && cup.swissFixtures) {
             // Group Swiss fixtures into Jornada 1 to 8
-            const swissMatches = allCompetitionMatches.filter(m => !(m as any).stageName);
-            const distinctWeeks = Array.from(new Set<number>(swissMatches.map(m => m.week || 0))).sort((a: number, b: number) => a - b);
+            const distinctWeeks = Array.from(new Set<number>(cup.swissFixtures.map(m => m.week || 0))).sort((a: number, b: number) => a - b);
             distinctWeeks.forEach((w, idx) => {
-                const matchesInWeek = swissMatches.filter(m => (m.week || 0) === w);
-                if (matchesInWeek.length > 0) {
+                const rawMatches = cup.swissFixtures!.filter(m => (m.week || 0) === w);
+                const syncedMatches = rawMatches.map(m => syncFixtureWithSchedule(m, `Jornada ${idx + 1}`));
+                if (syncedMatches.length > 0) {
                     stageList.push({
                         id: `swiss_j${idx + 1}`,
                         name: `Jornada ${idx + 1}`,
-                        matches: matchesInWeek
+                        matches: syncedMatches
                     });
                 }
             });
-        } else if (cup.type === 'groups') {
-            // Group into Fechas 1 to 6
-            const groupMatches = allCompetitionMatches.filter(m => !(m as any).stageName);
-            const distinctWeeks = Array.from(new Set<number>(groupMatches.map(m => m.week || 0))).sort((a: number, b: number) => a - b);
+        } else if (cup.type === 'groups' && cup.groups && cup.groups.length > 0) {
+            // Group strictly into Fechas 1 to 6 from group fixtures
+            const allGroupFixtures = cup.groups.flatMap(g => g.fixtures);
+            const distinctWeeks = Array.from(new Set<number>(allGroupFixtures.map(m => m.week || 0))).sort((a: number, b: number) => a - b);
             distinctWeeks.forEach((w, idx) => {
-                const matchesInWeek = groupMatches.filter(m => (m.week || 0) === w);
-                if (matchesInWeek.length > 0) {
+                const rawMatches = allGroupFixtures.filter(m => (m.week || 0) === w);
+                const syncedMatches = rawMatches.map(m => syncFixtureWithSchedule(m, `Fecha ${idx + 1}`));
+                if (syncedMatches.length > 0) {
                     stageList.push({
                         id: `group_f${idx + 1}`,
                         name: `Fecha ${idx + 1}`,
-                        matches: matchesInWeek
+                        matches: syncedMatches
                     });
                 }
             });
         }
 
-        // Add Knockout rounds
+        // Add Knockout rounds (including BOTH Ida and Vuelta fixtures)
         if (cup.rounds && cup.rounds.length > 0) {
             cup.rounds.forEach((r, idx) => {
-                const roundMatches = allCompetitionMatches.filter(m => (m as any).stageName === r.name || r.fixtures.some(rf => rf.homeTeamId === m.homeTeamId && rf.awayTeamId === m.awayTeamId && rf.week === m.week));
-                stageList.push({
-                    id: `round_${idx}`,
-                    name: r.name,
-                    matches: roundMatches.length > 0 ? roundMatches : r.fixtures
-                });
+                const leg1Matches = (r.fixtures || []).map(f => syncFixtureWithSchedule({ ...f, leg: f.leg || 1 }, r.name));
+                const leg2Matches = (r.secondLegFixtures || []).map(f => syncFixtureWithSchedule({ ...f, leg: 2 }, r.name));
+                const combinedMatches = [...leg1Matches, ...leg2Matches];
+
+                if (combinedMatches.length > 0) {
+                    stageList.push({
+                        id: `round_${idx}`,
+                        name: r.name,
+                        matches: combinedMatches
+                    });
+                }
             });
         }
 
         return stageList;
-    }, [cup, allCompetitionMatches]);
+    }, [cup, syncFixtureWithSchedule]);
 
     const [selectedStageId, setSelectedStageId] = useState<string>('');
     const currentStage = useMemo(() => {
-        return stages.find(s => s.id === selectedStageId) || stages[stages.length - 1] || stages[0];
-    }, [stages, selectedStageId]);
+        if (selectedStageId) {
+            const found = stages.find(s => s.id === selectedStageId);
+            if (found) return found;
+        }
+
+        // Context-aware default based on tournament progression:
+        // 1. If in knockout phase, default to the currently active knockout round
+        if (cup.phase === 'knockout' && cup.rounds && cup.rounds.length > 0) {
+            const activeRoundStage = stages.find(s => s.id === `round_${cup.currentRoundIndex}`);
+            if (activeRoundStage) return activeRoundStage;
+        }
+
+        // 2. If in group phase, default to the current active matchday
+        if (cup.phase === 'groups') {
+            const currentFecha = stages.find(s => s.id.startsWith('group_') && s.matches.some(m => !m.result));
+            if (currentFecha) return currentFecha;
+        }
+
+        // 3. If in swiss phase, default to the current active jornada
+        if (cup.phase === 'swiss') {
+            const currentJornada = stages.find(s => s.id.startsWith('swiss_') && s.matches.some(m => !m.result));
+            if (currentJornada) return currentJornada;
+        }
+
+        // 4. Default to first stage with matches, or fallback to first
+        return stages.find(s => s.matches.length > 0) || stages[0];
+    }, [stages, selectedStageId, cup.phase, cup.currentRoundIndex, cup.rounds]);
 
     const [onlyUserClub, setOnlyUserClub] = useState(false);
 
@@ -505,7 +532,14 @@ export const CupView: React.FC<CupViewProps> = React.memo(({
                                             >
                                                 {/* Match Header */}
                                                 <div className="flex items-center justify-between text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-2.5">
-                                                    <span>Semana {match.week} • {match.isMidweek ? 'Miércoles' : 'Fin de Semana'}</span>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span>Semana {match.week} • {match.isMidweek ? 'Miércoles' : 'Fin de Semana'}</span>
+                                                        {match.leg && (
+                                                            <span className="px-1.5 py-0.2 rounded text-[8.5px] font-black bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                                                                {match.leg === 1 ? 'Ida' : 'Vuelta'}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                     <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold ${
                                                         isPlayed ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-white/5 text-slate-400'
                                                     }`}>
@@ -558,9 +592,16 @@ export const CupView: React.FC<CupViewProps> = React.memo(({
                                                     </div>
                                                 </div>
 
+                                                {/* Aggregate Score Notice for 2nd Leg */}
+                                                {match.aggregateScore && (
+                                                    <div className="mt-2 text-center text-[10px] font-black uppercase tracking-wider text-cyan-300 bg-cyan-500/10 py-0.5 rounded border border-cyan-500/20">
+                                                        Global: {home?.name || 'Local'} {match.aggregateScore.home} - {match.aggregateScore.away} {away?.name || 'Visitante'}
+                                                    </div>
+                                                )}
+
                                                 {/* Penalties Notice if happened */}
                                                 {pens && (
-                                                    <div className="mt-2 text-center text-[10px] font-bold text-amber-400 bg-amber-500/10 py-0.5 rounded border border-amber-500/20">
+                                                    <div className="mt-1.5 text-center text-[10px] font-bold text-amber-400 bg-amber-500/10 py-0.5 rounded border border-amber-500/20">
                                                         Definición por penales: {pens.home} - {pens.away}
                                                     </div>
                                                 )}

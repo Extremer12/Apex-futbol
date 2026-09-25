@@ -444,7 +444,8 @@ export function generateSudamericanaPlayoff(
             awayTeamId: libTeam.id,
             competition: 'Copa_Sudamericana',
             isCupMatch: true,
-            isMidweek: true
+            isMidweek: true,
+            leg: 1
         });
     }
 
@@ -473,7 +474,8 @@ export function drawSudamericanaOctavos(
             awayTeamId: shuffledPlayoff[i].id,
             competition: 'Copa_Sudamericana',
             isCupMatch: true,
-            isMidweek: true
+            isMidweek: true,
+            leg: 1
         });
     }
 

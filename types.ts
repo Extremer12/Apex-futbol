@@ -620,6 +620,8 @@ export interface PlayerMatchResult {
     penalties?: { home: number; away: number }; 
     events?: string[];
     scorers?: { playerId: number; playerName: string; minute: number }[];
+    leg?: number;
+    aggregateScore?: { home: number; away: number };
 }
 
 export interface PendingSimulationResults {
