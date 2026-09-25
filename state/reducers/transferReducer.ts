@@ -186,6 +186,73 @@ export function handleTransferAction(state: GameState, action: TransferAction): 
             };
         }
 
+        case 'OFFER_PLAYER_TO_CLUBS': {
+            const { playerId } = action.payload;
+            const player = state.team.squad.find(p => p.id === playerId);
+            if (!player) return state;
+
+            // Marcar jugador como transferible
+            const newSquad = state.team.squad.map(p =>
+                p.id === playerId ? { ...p, isTransferListed: true } : p
+            );
+            const newTeam = { ...state.team, squad: newSquad };
+
+            // Buscar 1 o 2 clubes compradores potenciales
+            const pVal = player.value < 10_000 ? player.value * 1_000_000 : player.value;
+            const otherTeams = state.allTeams.filter(t => t.id !== state.team.id);
+            
+            // Preferir clubes con presupuesto o de nivel deportivo acorde
+            let candidates = otherTeams.filter(t => {
+                const b = t.transferBudget < 10_000 ? t.transferBudget * 1_000_000 : t.transferBudget;
+                return b >= pVal * 0.65;
+            });
+            if (candidates.length === 0) {
+                candidates = otherTeams.filter(t => t.tier === 'Top' || t.tier === 'Mid');
+            }
+            if (candidates.length === 0) candidates = otherTeams;
+
+            // Tomar 1 o 2 compradores al azar
+            const shuffled = [...candidates].sort(() => 0.5 - Math.random());
+            const buyers = shuffled.slice(0, Math.min(2, shuffled.length));
+
+            const newOffers: Offer[] = buyers.map((buyer, idx) => {
+                const variance = 0.85 + Math.random() * 0.35;
+                const offerVal = Math.round(pVal * variance);
+                return {
+                    id: `offer_direct_${Date.now()}_${idx}_${player.id}`,
+                    playerId: player.id,
+                    offeringTeamId: buyer.id,
+                    offerValue: Math.max(50_000, offerVal),
+                    message: `El ${buyer.name} busca incorporar a ${player.name} de inmediato tras conocer su disponibilidad en el mercado.`
+                };
+            });
+
+            const newAllTeams = state.allTeams.map(t =>
+                t.id === newTeam.id ? newTeam : t
+            );
+
+            const newsItem: NewsItem = {
+                id: `news_offer_${Date.now()}`,
+                headline: `💼 ${player.name} ofrecido en el mercado`,
+                body: `La directiva de ${state.team.name} ha ofrecido formalmente a ${player.name}. ${buyers.map(b => b.name).join(' y ')} han enviado ofertas preliminares a la bandeja del club.`,
+                date: formatDate(state.currentDate),
+                type: 'transfer',
+                playerId: player.id,
+                playerName: player.name
+            };
+
+            return {
+                ...state,
+                team: newTeam,
+                allTeams: newAllTeams,
+                incomingOffers: [...newOffers, ...state.incomingOffers],
+                newsFeed: [newsItem, ...state.newsFeed].slice(0, 20),
+                viewingPlayer: state.viewingPlayer && state.viewingPlayer.id === playerId
+                    ? { ...state.viewingPlayer, isTransferListed: true }
+                    : state.viewingPlayer
+            };
+        }
+
         default:
             return state;
     }

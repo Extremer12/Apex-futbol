@@ -181,8 +181,10 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
 
             // Update balance based on breakdown
             const netIncome = getNetWeeklyIncome(breakdown);
-            // Solo cobrar salarios el fin de semana (una vez por semana)
-            const incomeToApply = state.currentTurn === 'weekend' ? netIncome : breakdown.matchdayRevenue + breakdown.sponsorshipRevenue + breakdown.tvRevenue + breakdown.prizeMoneyRevenue + breakdown.transferRevenue; // Only apply positive revenue midweek, no wage deduction
+            // Salarios, mantenimiento, derechos de TV y patrocinios se liquidan en el fin de semana (semanalmente).
+            // En el turno midweek solo se computa la recaudación de taquilla si hubo partido de local entre semana.
+            const midweekMatchdayRevenue = wasHomeMatch ? breakdown.matchdayRevenue : 0;
+            const incomeToApply = state.currentTurn === 'weekend' ? netIncome : midweekMatchdayRevenue;
             const newBalance = state.finances.balance + incomeToApply;
 
             const nextTurn = state.currentTurn === 'weekend' ? 'midweek' : 'weekend';

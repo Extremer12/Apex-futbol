@@ -8,6 +8,26 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 ## [Unreleased]
 
 ### Bug Fixes & Engine Stability
+- **Realismo en el Mercado de Fichajes y Preservación de Edades**:
+  - **Corrección de Edades de Jugadores Reales (`gameFactory.ts`)**: Se eliminó la sobreescritura aleatoria que asignaba edades entre 18 y 33 años a todos los futbolistas al iniciar una partida. Ahora las edades reales de las plantillas (como Lewandowski con 36 años, Cavani con 37, Modrić con 39) se preservan rigurosamente.
+  - **Prestigio Continental y Rechazo Realista (`gameLogic.ts`)**: Se implementó una cláusula de prestigio continental en las negociaciones de clubes y contratos personales. Jugadores estrella que militan en ligas europeas de élite (rating >= 83) rechazan transferencias a clubes de ligas sudamericanas por razones de competitividad y Champions League, evitando traspasos inverosímiles como Robert Lewandowski firmando por Boca Juniors.
+  - **Alineación de Moneda y Presupuestos de Compradores**: Normalizados los valores de futbolistas y presupuestos de la IA para que los clubes de todas las ligas puedan emitir contraofertas y compras válidas.
+
+- **Economía Realista y Presupuestos Coherentes en Sudamérica**:
+  - **Eliminación del Doble Cómputo Financiero Semanal (`gameLifecycleReducer.ts`)**: Se corrigió un error por el cual las fechas entre semana (*midweek*) volvían a acreditar los derechos de televisión y contratos de patrocinio semanales sin descontar los salarios de la plantilla, inflando los balances de manera desproporcionada. Los turnos de mitad de semana ahora solo computan la recaudación de taquilla si el equipo juega de local.
+  - **Calibración Económica por Región (`economy.ts`)**:
+    - **Derechos de TV**: La Liga Profesional Argentina se ajustó de $550k/semana a $85k/semana (~$4.4M anuales); Primera Nacional a $22k/semana; Brasileirão a $160k/semana; Chile y Paraguay a $30k-$35k/semana.
+    - **Patrocinadores y Mercado Comercial**: Los contratos de camisetas e indumentaria en Sudamérica ahora reflejan valores reales del continente (~15% a 20% de las cifras de gigantes europeos).
+    - **Taquilla y Precios de Entradas**: Las entradas en estadios sudamericanos se adaptaron a valores locales ($18 USD para clubes grandes, $12 medianos) en lugar de la tarifa europea unificada de $50 USD.
+    - **Premios por Título**: Escala de premios de campeón de liga ajustada al contexto sudamericano ($12M base para campeón argentino).
+  - **Asignación Presupuestaria de la Directiva al Iniciar Temporada (`seasonManager.ts`)**: Al comenzar el segundo año, la directiva ya no entrega el 100% de la tesorería acumulada para transferencias. El presupuesto de fichajes cuenta con un tope realista por directiva (máximo $14M para Boca/River, $5M para clubes medianos), evitando presupuestos de $130M+ en el fútbol argentino.
+  - **Filtro de Fichajes Asequibles (`TransfersMarketTab.tsx`)**: Ajustado para tomar el menor valor entre el presupuesto asignado de transferencias y la tesorería real (`Math.min`), impidiendo ofertar por encima del presupuesto autorizado.
+
+- **Venta de Jugadores y Sistema Dinámico de Ofertas Entrantes**:
+  - **Nueva Pestaña "Vender / Mi Plantilla" (`TransfersSquadTab.tsx`)**: Integrada en la navegación del Mercado de Fichajes (`TransfersScreen.tsx`), permite revisar toda la plantilla del club, con valor de mercado, salario, contrato, estado de transferible y un botón directo **"⚡ Ofrecer a Clubes"**.
+  - **Acción Inmediata de Difusión al Mercado (`OFFER_PLAYER_TO_CLUBS`)**: Al ofrecer un futbolista mediante el botón, el motor lo declara transferible y sondea a clubes con necesidad táctica y presupuesto disponible, generando de 1 a 2 ofertas formales inmediatas en la bandeja de entrada y en las noticias.
+  - **Probabilidad Aumentada de Ofertas en Simulación Semanal (`simulationNewsHandler.ts`)**: La probabilidad de que clubes externos envíen propuestas por futbolistas transferibles se elevó del 30% al 75% semanal. Además, se añadió interés espontáneo por figuras y promesas no transferibles (30% de probabilidad semanal).
+
 - **Corrección de Marcador Global y Penales en Eliminatorias de Ida y Vuelta (Sudamericana, Libertadores, Champions, Europa League)**:
   - **Detección Rigurosa del Partido de Ida**: Corregida la búsqueda de partidos anteriores en el Worker de simulación (`simulation.worker.ts`). Anteriormente, `schedule.find` podía capturar un partido previo de la fase de grupos entre ambos clubes (por ejemplo, un 0-0 de la fecha 8) en lugar del partido de ida de la eliminatoria actual, provocando que un 0-0 en la vuelta fuese interpretado como un 0-0 global y forzara penales indebidamente cuando se había ganado 1-0 en la ida.
   - **Cálculo Exacto de Puntos Globales y Prórroga**: Se garantiza que el partido de ida termine siempre en los 90 minutos reglamentarios sin tiempo extra ni penales, y que el partido de vuelta solo recurra a prórroga/penales si el resultado global entre ambos partidos está estrictamente empatado.

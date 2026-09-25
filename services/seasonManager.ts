@@ -1052,11 +1052,38 @@ export function startNewSeason(currentState: GameState): GameState {
                 currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: buildArchiveChampions(currentState.cups.copaIntercontinental) }
             }
         },
-        finances: {
-            ...currentState.finances,
-            balance: newBalance
-        },
-        availableSponsors: generateSponsorMarket(updatedPlayerTeam.tier),
+        finances: (() => {
+            const isSouthAm = [
+                LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
+                LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
+                LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE,
+                'LIGA_ARGENTINA', 'PRIMERA_NACIONAL', 'BRASILEIRAO', 'SERIE_B_BR', 'COPA_DE_PRIMERA'
+            ].includes(userLeagueId as any);
+
+            const isMex = [LeagueId.LIGA_MX, LeagueId.LIGA_EXPANSION_MX, 'LIGA_MX'].includes(userLeagueId as any);
+
+            let maxBudgetCap = 120_000_000;
+            if (isSouthAm) {
+                maxBudgetCap = updatedPlayerTeam.tier === 'Top' ? 14_000_000 : updatedPlayerTeam.tier === 'Mid' ? 5_000_000 : 2_000_000;
+            } else if (isMex) {
+                maxBudgetCap = updatedPlayerTeam.tier === 'Top' ? 25_000_000 : updatedPlayerTeam.tier === 'Mid' ? 10_000_000 : 4_000_000;
+            } else if (updatedPlayerTeam.tier !== 'Top') {
+                maxBudgetCap = updatedPlayerTeam.tier === 'Mid' ? 35_000_000 : 12_000_000;
+            }
+
+            // Presupuesto asignado por la junta: fracción prudente del balance disponible
+            const boardTransferBudget = Math.min(
+                maxBudgetCap,
+                Math.max(500_000, Math.round(newBalance * (isSouthAm ? 0.25 : 0.40)))
+            );
+
+            return {
+                ...currentState.finances,
+                balance: newBalance,
+                transferBudget: boardTransferBudget
+            };
+        })(),
+        availableSponsors: generateSponsorMarket(updatedPlayerTeam.tier, userLeagueId),
         cinematicQueue: newCinematicQueue,
         achievements: updatedAchievements,
         seasonHistory: updatedSeasonHistory

@@ -47,7 +47,7 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
             city: s.city,
             squad: t.squad.map(player => ({
                 ...player,
-                age: Math.floor(18 + Math.random() * 16), // Random age 18-33
+                age: player.age !== undefined && player.age > 0 ? player.age : Math.floor(19 + Math.random() * 12),
                 stats: { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 },
                 condition: 100,
                 isInjured: false,

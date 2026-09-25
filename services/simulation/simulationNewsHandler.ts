@@ -93,17 +93,38 @@ export async function generateWeeklyNewsAndOffers(
         }
     }
 
-    // 3. AI Transfer Offers for Listed Players
+    // 3. AI Transfer Offers for Listed Players & Spontaneous Inquiries
     const generatedOffers: Offer[] = [];
     if (isTransferWindowOpen(gameState.currentWeek)) {
+        const potentialBuyers = gameState.allTeams.filter(t => t.id !== gameState.team.id);
+
+        // A) Jugadores formalmente declarados transferibles (alta probabilidad de oferta)
         const transferListedPlayers = gameState.team.squad.filter(p => p.isTransferListed);
         for (const player of transferListedPlayers) {
-            if (Math.random() < 0.3) {
-                const potentialBuyers = gameState.allTeams.filter(t => t.id !== gameState.team.id);
+            if (Math.random() < 0.75) {
                 const offer = await generateTransferOffer(player, gameState.team, potentialBuyers);
                 if (offer) {
                     generatedOffers.push({
-                        id: `offer_${new Date().toISOString()}_${player.id}`,
+                        id: `offer_${Date.now()}_${Math.random().toString(36).substring(2, 6)}_${player.id}`,
+                        playerId: player.id,
+                        ...offer
+                    });
+                }
+            }
+        }
+
+        // B) Ofertas espontáneas por promesas o figuras destacadas del club aunque no estén transferibles
+        const spontaneousTargets = gameState.team.squad.filter(p => 
+            !p.isTransferListed && 
+            (p.rating >= 77 || (p.age !== undefined && p.age <= 22 && p.rating >= 72))
+        );
+        for (const player of spontaneousTargets) {
+            // ~30% de probabilidad de interés internacional/externo por partido de mercado
+            if (Math.random() < 0.30 && generatedOffers.length < 5) {
+                const offer = await generateTransferOffer(player, gameState.team, potentialBuyers);
+                if (offer) {
+                    generatedOffers.push({
+                        id: `offer_${Date.now()}_${Math.random().toString(36).substring(2, 6)}_${player.id}`,
                         playerId: player.id,
                         ...offer
                     });

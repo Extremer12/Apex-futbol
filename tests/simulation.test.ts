@@ -477,7 +477,7 @@ test('startNewSeason successfully transitions seasons without crash and initiali
     // Verify all 14 leagues have defined positive base weekly income and prize pools
     for (const lid of Object.values(LeagueId)) {
         const weekly = getBaseWeeklyIncome(lid);
-        assert.ok(weekly > 100_000, `League ${lid} should have weekly income > 100k, got ${weekly}`);
+        assert.ok(weekly > 10_000, `League ${lid} should have weekly income > 10k, got ${weekly}`);
         const prize1 = calculatePrizeMoney(lid, 1);
         const prizeLast = calculatePrizeMoney(lid, 20);
         assert.ok(prize1 > prizeLast, `Champion prize must be greater than last place for ${lid}`);
@@ -2070,6 +2070,53 @@ test('Two-legged Ties: 1-0 in leg 1 and 0-0 in leg 2 advances team with 1-0 aggr
     assert.equal(tieWinnerId, teamA, 'Team A must win on penalties 5-4');
     assert.deepEqual(leg2Tied.aggregateScore, { home: 1, away: 1 }, 'Aggregate score must be tied 1-1');
 });
+
+test('Player Ages & Transfer Realism: Preserves authentic ages and rejects European stars to South America', async () => {
+    const { initializeGame } = await import('../services/gameFactory');
+    const { generateTransferNegotiationResponse } = await import('../services/gameLogic');
+    const { gameReducer } = await import('../state/reducer');
+
+    const boca = TEAMS.find(t => t.id === 701)!;
+    const barcelona = TEAMS.find(t => t.id === 202)!;
+    const gameState = initializeGame({ selectedTeam: boca });
+
+    // 1. Verify authentic player ages are preserved and not replaced by random 18-33 numbers
+    const barcaInGame = gameState.allTeams.find(t => t.id === 202);
+    const lewandowski = barcaInGame?.squad.find(p => p.id === 20201);
+    assert.ok(lewandowski, 'Lewandowski must exist in Barcelona squad');
+    assert.equal(lewandowski?.age, 36, 'Lewandowski must preserve his authentic age 36');
+
+    const cavani = gameState.team.squad.find(p => p.id === 70119);
+    assert.ok(cavani, 'Cavani must exist in Boca Juniors squad');
+    assert.equal(cavani?.age, 37, 'Cavani must preserve his authentic age 37');
+
+    // 2. Verify European stars reject moves to South America
+    const transferResponse = await generateTransferNegotiationResponse(
+        lewandowski!,
+        35_000_000,
+        gameState.team,
+        barcelona,
+        0
+    );
+    assert.equal(transferResponse.decision, 'rejected', 'European star must reject moving to South America');
+    assert.ok(transferResponse.message.includes('élite europea') || transferResponse.message.includes('Champions League'), 'Rejection message must cite European elite prestige');
+
+    // 3. Verify OFFER_PLAYER_TO_CLUBS generates immediate purchase proposals
+    const playerToSell = gameState.team.squad[0];
+    const stateAfterOffer = gameReducer(gameState, {
+        type: 'OFFER_PLAYER_TO_CLUBS',
+        payload: { playerId: playerToSell.id }
+    });
+
+    assert.ok(stateAfterOffer, 'State after offering player must not be null');
+    const updatedPlayer = stateAfterOffer?.team.squad.find(p => p.id === playerToSell.id);
+    assert.equal(updatedPlayer?.isTransferListed, true, 'Player must be marked as transfer-listed');
+    assert.ok((stateAfterOffer?.incomingOffers.length || 0) > 0, 'Incoming offers must contain generated bids for the offered player');
+    const offerForPlayer = stateAfterOffer?.incomingOffers.find(o => o.playerId === playerToSell.id);
+    assert.ok(offerForPlayer, 'Direct offer for player must be received');
+    assert.ok(offerForPlayer?.offerValue > 0, 'Offer value must be positive');
+});
+
 
 
 

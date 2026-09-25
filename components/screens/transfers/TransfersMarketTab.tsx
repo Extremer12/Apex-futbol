@@ -90,7 +90,7 @@ export const TransfersMarketTab: React.FC<TransfersMarketTabProps> = ({
                 const normPlayerValue = player.value < 10_000 ? player.value * 1_000_000 : player.value;
                 const normBudget = gameState.finances.transferBudget < 10_000 ? gameState.finances.transferBudget * 1_000_000 : gameState.finances.transferBudget;
                 const normBalance = gameState.finances.balance < 10_000 ? gameState.finances.balance * 1_000_000 : gameState.finances.balance;
-                const maxSpendable = Math.max(normBudget, normBalance);
+                const maxSpendable = Math.min(normBudget, normBalance);
                 if (normPlayerValue > maxSpendable) return false;
             }
             return true;

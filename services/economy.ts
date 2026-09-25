@@ -13,20 +13,28 @@ export const generateStadium = (team: Team): Stadium => {
     const info = getTeamStadium(team);
     const capacity = info.capacity;
 
+    const isSouthAm = [
+        LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
+        LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
+        LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE
+    ].includes(team.leagueId as LeagueId);
+
+    const isMex = [LeagueId.LIGA_MX, LeagueId.LIGA_EXPANSION_MX].includes(team.leagueId as LeagueId);
+
     let ticketPrice = 25;
-    switch (team.tier) {
-        case 'Top':
-            ticketPrice = 50;
-            break;
-        case 'Mid':
-            ticketPrice = 35;
-            break;
-        case 'Lower':
-            ticketPrice = 20;
-            break;
+    if (isSouthAm) {
+        ticketPrice = team.tier === 'Top' ? 18 : team.tier === 'Mid' ? 12 : 8;
+    } else if (isMex) {
+        ticketPrice = team.tier === 'Top' ? 25 : team.tier === 'Mid' ? 18 : 12;
+    } else {
+        switch (team.tier) {
+            case 'Top': ticketPrice = 50; break;
+            case 'Mid': ticketPrice = 35; break;
+            case 'Lower': ticketPrice = 20; break;
+        }
     }
 
-    const maintenanceCost = Math.max(25000, Math.floor(capacity * 2.5));
+    const maintenanceCost = Math.max(10000, Math.floor(capacity * (isSouthAm ? 1.2 : 2.5)));
 
     return {
         name: info.name,
@@ -34,7 +42,7 @@ export const generateStadium = (team: Team): Stadium => {
         city: info.city,
         ticketPrice,
         maintenanceCost,
-        expansionCost: capacity * 1000, // £1000 per seat
+        expansionCost: capacity * (isSouthAm ? 400 : 1000),
         expansionCapacity: Math.floor(capacity * 1.2),
         facilityLevel: 1
     };
@@ -42,7 +50,8 @@ export const generateStadium = (team: Team): Stadium => {
 
 export const generateSponsor = (
     type: Sponsor['type'],
-    tier: 'Top' | 'Mid' | 'Lower'
+    tier: 'Top' | 'Mid' | 'Lower',
+    leagueId?: string
 ): Sponsor => {
     const names = SPONSOR_NAMES[type];
     const name = names[Math.floor(Math.random() * names.length)];
@@ -50,7 +59,7 @@ export const generateSponsor = (
     let weeklyIncome = 0;
     let duration = 0;
 
-    // Base income by tier and type
+    // Base income by tier and type (European baseline)
     const incomeMultipliers = {
         shirt: { Top: 500000, Mid: 200000, Lower: 50000 },
         stadium: { Top: 300000, Mid: 120000, Lower: 30000 },
@@ -58,7 +67,19 @@ export const generateSponsor = (
         kit: { Top: 100000, Mid: 40000, Lower: 10000 }
     };
 
-    weeklyIncome = incomeMultipliers[type][tier] * (0.8 + Math.random() * 0.4);
+    // Regional economic scaling: South American sponsorship markets are ~15-20% of European megaclubs
+    const isSouthAm = leagueId && [
+        LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
+        LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
+        LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE,
+        'LIGA_ARGENTINA', 'PRIMERA_NACIONAL', 'BRASILEIRAO', 'SERIE_B_BR', 'COPA_DE_PRIMERA'
+    ].includes(leagueId as any);
+
+    const isMex = leagueId && [LeagueId.LIGA_MX, LeagueId.LIGA_EXPANSION_MX, 'LIGA_MX'].includes(leagueId as any);
+
+    const regionScale = isSouthAm ? 0.15 : isMex ? 0.35 : 1.0;
+
+    weeklyIncome = incomeMultipliers[type][tier] * regionScale * (0.85 + Math.random() * 0.3);
     duration = 52 * (2 + Math.floor(Math.random() * 3)); // 2-4 years
 
     // Add performance bonus for some sponsors
@@ -84,7 +105,7 @@ export const generateSponsor = (
     };
 };
 
-export const generateSponsorMarket = (tier: 'Top' | 'Mid' | 'Lower'): Sponsor[] => {
+export const generateSponsorMarket = (tier: 'Top' | 'Mid' | 'Lower', leagueId?: string): Sponsor[] => {
     const sponsors: Sponsor[] = [];
 
     // Generate 2-3 offers per type
@@ -92,7 +113,7 @@ export const generateSponsorMarket = (tier: 'Top' | 'Mid' | 'Lower'): Sponsor[] 
     types.forEach(type => {
         const count = 2 + Math.floor(Math.random() * 2);
         for (let i = 0; i < count; i++) {
-            sponsors.push(generateSponsor(type, tier));
+            sponsors.push(generateSponsor(type, tier, leagueId));
         }
     });
 
@@ -207,33 +228,33 @@ export const getBaseWeeklyIncome = (leagueId: string): number => {
             return 350_000;
         case LeagueId.BRASILEIRAO:
         case 'BRASILEIRAO':
-            return 750_000;
+            return 160_000;
         case LeagueId.SERIE_B_BR:
         case 'SERIE_B_BR':
-            return 220_000;
+            return 40_000;
         case LeagueId.LIGA_ARGENTINA:
         case 'LIGA_ARGENTINA':
-            return 550_000;
+            return 85_000;
         case LeagueId.PRIMERA_NACIONAL:
         case 'PRIMERA_NACIONAL':
-            return 160_000;
+            return 22_000;
         case LeagueId.COPA_DE_PRIMERA:
         case 'COPA_DE_PRIMERA':
-            return 400_000;
+            return 30_000;
         case LeagueId.LIGA_MX:
         case 'LIGA_MX':
-            return 750_000;
+            return 220_000;
         case LeagueId.LIGA_EXPANSION_MX:
         case 'LIGA_EXPANSION_MX':
-            return 180_000;
+            return 35_000;
         case LeagueId.PRIMERA_DIVISION_CHILE:
         case 'PRIMERA_DIVISION_CHILE':
-            return 450_000;
+            return 35_000;
         case LeagueId.PRIMERA_B_CHILE:
         case 'PRIMERA_B_CHILE':
-            return 120_000;
+            return 15_000;
         default:
-            return 500_000;
+            return 250_000;
     }
 };
 
@@ -275,33 +296,33 @@ export const calculatePrizeMoney = (leagueId: string, position: number): number 
             baseAmount = 18_000_000; break;
         case LeagueId.BRASILEIRAO:
         case 'BRASILEIRAO':
-            baseAmount = 50_000_000; break;
+            baseAmount = 20_000_000; break;
         case LeagueId.SERIE_B_BR:
         case 'SERIE_B_BR':
-            baseAmount = 12_000_000; break;
+            baseAmount = 4_000_000; break;
         case LeagueId.LIGA_ARGENTINA:
         case 'LIGA_ARGENTINA':
-            baseAmount = 35_000_000; break;
+            baseAmount = 12_000_000; break;
         case LeagueId.PRIMERA_NACIONAL:
         case 'PRIMERA_NACIONAL':
-            baseAmount = 8_000_000; break;
+            baseAmount = 2_000_000; break;
         case LeagueId.COPA_DE_PRIMERA:
         case 'COPA_DE_PRIMERA':
-            baseAmount = 20_000_000; break;
+            baseAmount = 4_000_000; break;
         case LeagueId.LIGA_MX:
         case 'LIGA_MX':
-            baseAmount = 40_000_000; break;
+            baseAmount = 15_000_000; break;
         case LeagueId.LIGA_EXPANSION_MX:
         case 'LIGA_EXPANSION_MX':
-            baseAmount = 10_000_000; break;
+            baseAmount = 3_000_000; break;
         case LeagueId.PRIMERA_DIVISION_CHILE:
         case 'PRIMERA_DIVISION_CHILE':
-            baseAmount = 22_000_000; break;
+            baseAmount = 5_000_000; break;
         case LeagueId.PRIMERA_B_CHILE:
         case 'PRIMERA_B_CHILE':
-            baseAmount = 6_000_000; break;
+            baseAmount = 1_500_000; break;
         default:
-            baseAmount = 25_000_000;
+            baseAmount = 10_000_000;
     }
 
     // Distribute based on position (roughly)

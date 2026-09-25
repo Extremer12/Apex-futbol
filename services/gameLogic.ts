@@ -1,4 +1,4 @@
-import { GameState, Player, PlayerProfile, Team, CoachReport, CoachRequest, SquadRole, ContractNegotiationResult } from '../types';
+import { GameState, Player, PlayerProfile, Team, CoachReport, CoachRequest, SquadRole, ContractNegotiationResult, LeagueId } from '../types';
 import { formatCurrency, formatWeeklyWage } from '../utils';
 import { getExpectedWage } from '../utils/playerUtils';
 
@@ -200,6 +200,26 @@ export const evaluateElectionPitch = async (pitch: string, team: Team, player: P
 
 // NUEVA LÓGICA: Negociaciones deterministas
 export const generateTransferNegotiationResponse = async (player: Player, offer: number, buyingTeam: Team, sellingTeam: Team, attempts: number = 0): Promise<NegotiationResponse> => {
+    // 0. Prestigio Continental: Estrellas de élite europea (rating >= 83) rechazan fichar por ligas sudamericanas
+    const isEuropeanEliteLeague = [
+        LeagueId.PREMIER_LEAGUE, LeagueId.LA_LIGA, LeagueId.BUNDESLIGA, LeagueId.SERIE_A, LeagueId.LIGUE_1,
+        'PREMIER_LEAGUE', 'LA_LIGA', 'BUNDESLIGA', 'SERIE_A', 'LIGUE_1'
+    ].includes(sellingTeam.leagueId as any);
+
+    const isSouthAmericanBuyer = [
+        LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
+        LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
+        LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE,
+        'LIGA_ARGENTINA', 'PRIMERA_NACIONAL', 'BRASILEIRAO', 'SERIE_B_BR', 'COPA_DE_PRIMERA'
+    ].includes(buyingTeam.leagueId as any);
+
+    if (isEuropeanEliteLeague && isSouthAmericanBuyer && player.rating >= 83) {
+        return {
+            decision: 'rejected',
+            message: `El representante de ${player.name} nos ha comunicado que el jugador compite en la élite europea (UEFA Champions League) y no contempla marcharse a Sudamérica en esta etapa de su carrera.`
+        };
+    }
+
     // 1. Validar Interés del Jugador (Estrellas rechazan divisiones inferiores)
     if (player.rating >= 80 && buyingTeam.tier === 'Lower') {
         return {
@@ -266,6 +286,21 @@ export const generatePlayerContractNegotiationResponse = async (
     signingBonus: number,
     buyingTeam: Team
 ): Promise<ContractNegotiationResult> => {
+    // 0. Prestigio Continental: Estrellas de élite europea (rating >= 83) rechazan contratos en ligas sudamericanas
+    const isSouthAmericanBuyer = [
+        LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
+        LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
+        LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE,
+        'LIGA_ARGENTINA', 'PRIMERA_NACIONAL', 'BRASILEIRAO', 'SERIE_B_BR', 'COPA_DE_PRIMERA'
+    ].includes(buyingTeam.leagueId as any);
+
+    if (isSouthAmericanBuyer && player.rating >= 83) {
+        return {
+            decision: 'rejected',
+            message: `Mi cliente (${player.name}) desea continuar disputando las mejores competiciones de Europa (Champions League). No aceptará un contrato fuera del continente europeo.`
+        };
+    }
+
     const expectedWage = getExpectedWage(player, buyingTeam.tier, role);
     const wageRatio = wageOffer / Math.max(1, expectedWage);
     
@@ -318,42 +353,56 @@ export const generateCounterOfferDecision = async (
     originalOffer: number,
     buyerTeam: Team
 ): Promise<{ decision: 'accepted' | 'counter' | 'rejected'; message: string; newOfferValue?: number }> => {
-    const playerVal = player.value;
-    const ratioToVal = counterValue / Math.max(0.1, playerVal);
+    const pVal = player.value < 10_000 ? player.value * 1_000_000 : player.value;
+    const normCounter = counterValue < 10_000 ? counterValue * 1_000_000 : counterValue;
+    const buyerBudget = buyerTeam.transferBudget < 10_000 ? buyerTeam.transferBudget * 1_000_000 : buyerTeam.transferBudget;
+    const ratioToVal = normCounter / Math.max(100_000, pVal);
     
-    if (counterValue <= buyerTeam.transferBudget && ratioToVal <= 1.35) {
+    if (normCounter <= buyerBudget * 1.15 && ratioToVal <= 1.35) {
         return {
             decision: 'accepted',
-            message: `El ${buyerTeam.name} acepta vuestras exigencias y pagará ${formatCurrency(counterValue)} por el traspaso de ${player.name}.`
+            message: `El ${buyerTeam.name} acepta vuestras exigencias y pagará ${formatCurrency(normCounter)} por el traspaso de ${player.name}.`
         };
-    } else if (ratioToVal > 1.9 || counterValue > buyerTeam.transferBudget * 1.4) {
+    } else if (ratioToVal > 1.85 || normCounter > buyerBudget * 1.5) {
         return {
             decision: 'rejected',
-            message: `El ${buyerTeam.name} considera inaceptable pedir ${formatCurrency(counterValue)} y cancela su interés por ${player.name}.`
+            message: `El ${buyerTeam.name} considera inaceptable pedir ${formatCurrency(normCounter)} y cancela su interés por ${player.name}.`
         };
     } else {
-        const newOffer = Math.min(buyerTeam.transferBudget, Math.round(((originalOffer + counterValue) / 2) * 10) / 10);
+        const newOffer = Math.min(buyerBudget, Math.round(((originalOffer + normCounter) / 2)));
         return {
             decision: 'counter',
-            message: `El ${buyerTeam.name} no alcanza los ${formatCurrency(counterValue)}, pero ofrece una contrapropuesta final de ${formatCurrency(newOffer)}.`,
+            message: `El ${buyerTeam.name} no alcanza los ${formatCurrency(normCounter)}, pero ofrece una contrapropuesta final de ${formatCurrency(newOffer)}.`,
             newOfferValue: newOffer
         };
     }
 };
 
 export const generateTransferOffer = async (player: Player, sellingTeam: Team, potentialBuyers: Team[]): Promise<OfferResponse | null> => {
-    // Lógica Local
-    const viableBuyers = potentialBuyers.filter(t => t.transferBudget >= player.value * 0.8);
+    // Normalizar valor del jugador a moneda real
+    const pValue = player.value < 10_000 ? player.value * 1_000_000 : player.value;
+
+    let viableBuyers = potentialBuyers.filter(t => {
+        const budget = t.transferBudget < 10_000 ? t.transferBudget * 1_000_000 : t.transferBudget;
+        return budget >= pValue * 0.70;
+    });
+
+    // Si ningún club directo cumple presupuesto, recurrir a clubes de élite o divisiones superiores
+    if (viableBuyers.length === 0) {
+        viableBuyers = potentialBuyers.filter(t => t.tier === 'Top' || t.tier === 'Mid');
+    }
+
     if (viableBuyers.length === 0) return null;
 
     const buyer = viableBuyers[Math.floor(Math.random() * viableBuyers.length)];
+    // Oferta realista: entre el 85% y el 125% del valor de mercado
     const variance = 0.85 + (Math.random() * 0.35);
-    const offerValue = Math.round(player.value * variance * 10) / 10;
+    const offerValue = Math.round(pValue * variance);
     const msgTemplate = OFFER_MESSAGES[Math.floor(Math.random() * OFFER_MESSAGES.length)];
 
     return {
         offeringTeamId: buyer.id,
-        offerValue: offerValue,
+        offerValue: Math.max(50_000, offerValue),
         message: msgTemplate(player.name, buyer.name)
     };
 };

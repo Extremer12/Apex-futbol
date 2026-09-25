@@ -31,6 +31,7 @@ export type GameAction =
     | { type: 'SIGN_PLAYER'; payload: { player: Player; fee: number; wage?: number; contractYears?: number; role?: import('../types').SquadRole; signingBonus?: number } }
     | { type: 'PROMOTE_PLAYER'; payload: Player }
     | { type: 'TOGGLE_TRANSFER_LIST'; payload: Player }
+    | { type: 'OFFER_PLAYER_TO_CLUBS'; payload: { playerId: number } }
     | { type: 'SET_VIEWING_PLAYER'; payload: Player | null }
     | { type: 'HIRE_COACH'; payload: { coachId: string } }
     | { type: 'FIRE_COACH' }
@@ -89,6 +90,7 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 case 'UPDATE_OFFER':
                 case 'SIGN_PLAYER':
                 case 'TOGGLE_TRANSFER_LIST':
+                case 'OFFER_PLAYER_TO_CLUBS':
                     return handleTransferAction(state, action);
 
                 // Staff actions

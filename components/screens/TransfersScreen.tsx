@@ -22,6 +22,7 @@ import {
     Briefcase, 
     Users,
     Inbox,
+    Tag,
     ArrowRight,
     CheckCircle2,
     Sliders,
@@ -29,9 +30,9 @@ import {
 } from 'lucide-react';
 import { useToast } from '../common/ToastProvider';
 
-// Modular Subcomponents
 import { TransfersMarketTab, CategoryFilter, SortOption } from './transfers/TransfersMarketTab';
 import { TransfersOffersTab } from './transfers/TransfersOffersTab';
+import { TransfersSquadTab } from './transfers/TransfersSquadTab';
 import { ClubChatMessage } from './transfers/ClubNegotiationModal';
 import { AgentChatMessage } from './transfers/ContractNegotiationModal';
 import { TransferNegotiationSuite } from './transfers/TransferNegotiationSuite';
@@ -42,7 +43,7 @@ interface TransfersScreenProps {
     dispatch?: React.Dispatch<GameAction>;
 }
 
-type MarketTab = 'MARKET' | 'OFFERS';
+type MarketTab = 'MARKET' | 'MY_SQUAD' | 'OFFERS';
 
 export const TransfersScreen: React.FC<TransfersScreenProps> = ({ 
     gameState: propGameState, 
@@ -356,6 +357,21 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
                             <Users className="w-3.5 h-3.5" /> Explorar Mercado
                         </button>
                         <button
+                            onClick={() => setActiveTab('MY_SQUAD')}
+                            className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
+                                activeTab === 'MY_SQUAD' 
+                                    ? 'bg-[var(--apex-gold)] text-black shadow-lg shadow-[var(--apex-gold)]/20' 
+                                    : 'text-white/60 hover:text-white'
+                            }`}
+                        >
+                            <Tag className="w-3.5 h-3.5" /> Vender / Mi Plantilla
+                            {myTeam.squad.filter(p => p.isTransferListed).length > 0 && (
+                                <span className="w-5 h-5 rounded-full bg-amber-500 text-black text-[10px] font-black flex items-center justify-center">
+                                    {myTeam.squad.filter(p => p.isTransferListed).length}
+                                </span>
+                            )}
+                        </button>
+                        <button
                             onClick={() => setActiveTab('OFFERS')}
                             className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 relative ${
                                 activeTab === 'OFFERS' 
@@ -456,7 +472,17 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
                 />
             )}
 
-            {/* TAB 2: OFFERS */}
+            {/* TAB 2: MY SQUAD / SELL */}
+            {activeTab === 'MY_SQUAD' && (
+                <TransfersSquadTab 
+                    gameState={gameState}
+                    dispatch={dispatch}
+                    myTeam={myTeam}
+                    onSwitchToOffers={() => setActiveTab('OFFERS')}
+                />
+            )}
+
+            {/* TAB 3: OFFERS */}
             {activeTab === 'OFFERS' && (
                 <TransfersOffersTab 
                     incomingOffers={incomingOffers}
