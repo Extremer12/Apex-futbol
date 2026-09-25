@@ -26,6 +26,13 @@ import { initializeGame } from '../services/gameFactory';
 import { TEAMS } from '../constants';
 import { Team, Player, Match, LeagueTableRow, CupCompetition, LeagueId, EuropeanTableRow } from '../types';
 import { compressString, decompressString } from '../utils/compression';
+import { 
+    calculateSquadPower, 
+    processPlayerAgingAndProgression, 
+    generateRegenPlayer, 
+    simulateAITransferWindow, 
+    processFullSeasonSquadProgression 
+} from '../services/squadProgressionService';
 
 // Helper to create a dummy player
 const createMockPlayer = (id: number, pos: Player['position'], rating = 75): Player => ({
@@ -2198,6 +2205,83 @@ test('Rankings & Squad Sorting: Resolves CONMEBOL and UEFA club rankings and sor
     assert.ok(invDefIndex < invCenIndex, 'Defensas must precede Centrocampistas in inverted sort');
     assert.ok(invCenIndex < invDelIndex, 'Centrocampistas must precede Delanteros in inverted sort');
 });
+
+test('50. Dynamic Squad Power, Aging, Deterioration, Regens & AI Transfer Window', () => {
+    // 1. Test calculateSquadPower
+    const testTeam = createMockTeam(1, 'Power FC', LeagueId.PREMIER_LEAGUE, 80);
+    // Give attackers higher rating
+    testTeam.squad.filter(p => p.position === 'DEL').forEach(p => { p.rating = 88; });
+    // Give defenders lower rating
+    testTeam.squad.filter(p => p.position === 'DEF').forEach(p => { p.rating = 72; });
+
+    const power = calculateSquadPower(testTeam);
+    assert.ok(power.overall >= 70 && power.overall <= 90, `Squad overall should be realistic, got ${power.overall}`);
+    assert.ok(power.attack > power.defense, `Attack power (${power.attack}) should be higher than defense (${power.defense})`);
+
+    // 2. Test Player Aging & Deterioration
+    const wonderkid: Player = {
+        ...createMockPlayer(101, 'DEL', 72),
+        age: 18,
+        potential: 88
+    };
+    const agedWonderkid = processPlayerAgingAndProgression(wonderkid);
+    assert.equal(agedWonderkid.updatedPlayer.age, 19, 'Age should increment by 1');
+    assert.ok(agedWonderkid.updatedPlayer.rating >= 72, 'Youngster rating should not drop');
+
+    const veteran: Player = {
+        ...createMockPlayer(102, 'DEF', 82),
+        age: 36,
+        potential: 82
+    };
+    const agedVeteran = processPlayerAgingAndProgression(veteran);
+    assert.equal(agedVeteran.updatedPlayer.age, 37, 'Veteran age should increment to 37');
+    assert.ok(agedVeteran.updatedPlayer.rating <= 82, 'Veteran rating should deteriorate or remain capped');
+
+    // 3. Test Regen Creation
+    const retiredLegend: Player = {
+        ...createMockPlayer(103, 'DEL', 89),
+        name: 'Lionel Master',
+        age: 38,
+        potential: 94
+    };
+    const regen = generateRegenPlayer(retiredLegend, 'Top');
+    assert.equal(regen.position, 'DEL', 'Regen should retain position of retired legend');
+    assert.ok(regen.age >= 17 && regen.age <= 19, `Regen should be young (17-19), got ${regen.age}`);
+    assert.ok(regen.rating < retiredLegend.rating, `Regen starting rating (${regen.rating}) must be lower than legend (${retiredLegend.rating})`);
+    assert.ok(regen.potential && regen.potential >= 82, `Regen potential (${regen.potential}) should be high reflecting legend heritage`);
+
+    // 4. Test AI-to-AI Transfer Market
+    const aiTeamA = createMockTeam(2, 'Alpha FC', LeagueId.LA_LIGA, 82);
+    const aiTeamB = createMockTeam(3, 'Beta FC', LeagueId.LA_LIGA, 74);
+    aiTeamA.budget = 60_000_000;
+    aiTeamB.budget = 10_000_000;
+    const userTeam = createMockTeam(99, 'User FC', LeagueId.LA_LIGA, 78);
+    const userOriginalSquadCount = userTeam.squad.length;
+    const userPlayerIds = new Set(userTeam.squad.map(p => p.id));
+
+    const transfers = simulateAITransferWindow([aiTeamA, aiTeamB, userTeam], userTeam.id);
+    // User squad should remain completely untouched
+    assert.equal(userTeam.squad.length, userOriginalSquadCount, 'User squad size must not change during AI transfer window');
+    userTeam.squad.forEach(p => {
+        assert.ok(userPlayerIds.has(p.id), 'User player was transferred by AI window without permission!');
+    });
+
+    // 5. Test Full Season Progression Master Function
+    const initialAllTeams = [
+        createMockTeam(1, 'Team One', LeagueId.PREMIER_LEAGUE, 80),
+        createMockTeam(2, 'Team Two', LeagueId.PREMIER_LEAGUE, 76),
+        userTeam
+    ];
+    // Set an ancient veteran to test retirement
+    initialAllTeams[0].squad[0].age = 39;
+    initialAllTeams[0].squad[0].rating = 80;
+
+    const progression = processFullSeasonSquadProgression(initialAllTeams, userTeam.id);
+    assert.ok(progression.updatedTeams.length === initialAllTeams.length, 'All teams must be returned');
+    assert.ok(progression.updatedTeams[0].squadPower !== undefined, 'Squad power must be calculated for teams');
+    assert.ok(progression.updatedTeams[0].squadPower!.overall > 0, 'Squad power overall must be positive');
+});
+
 
 
 

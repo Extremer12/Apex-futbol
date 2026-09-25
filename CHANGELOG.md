@@ -7,6 +7,24 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+### Dynamic Squad Power, Long-Term Realism & Generational Progression
+- **Poder de Plantel Dinámico y Peso en Partidos (`SquadPower`)**:
+  - **Cálculo Posicional por Líneas**: Creado `services/squadProgressionService.ts` que evalúa la plantilla activa agrupando porteros (`POR`), defensas (`DEF`), centrocampistas (`CEN`) y delanteros (`DEL`). Pondera el XI titular (80%) y la profundidad del banquillo (20%) para computar `overall`, `attack`, `midfield` y `defense`.
+  - **Influencia Directa en el Motor de Simulación (`matchEngine.ts`)**: Los partidos ahora se deciden según la calidad real y profundidad del plantel en el terreno de juego, pesando el poder de ataque versus la defensa rival para generar ocasiones y xG creíbles.
+  - **Widget Visual de Poder en la Plantilla (`SquadScreen.tsx`)**: Se incorporó un distintivo premium en la pantalla de plantilla que muestra en tiempo real el Poder Total, Ataque (ATA), Mediocampo (MED) y Defensa (DEF).
+- **Envejecimiento Progresivo y Curva de Carrera Realista**:
+  - **Desarrollo Joven (16 a 21 años)**: Crecimiento dinámico de +1 a +4 puntos de media por año hacia su potencial máximo, con aumento exponencial de cotización.
+  - **Madurez y Pico (22 a 29 años)**: Consolidación con variaciones leves de rendimiento (-1, 0, +1) y estabilidad de valor de mercado.
+  - **Veteranos (30 a 34 años)**: Pérdida gradual de atributos físicos y de valor de mercado (-1 a -2 de media), manteniendo su jerarquía.
+  - **Retiro y Jubilación (35 a 40+ años)**: Caída acelerada de media física y probabilidad exponencial de retiro (45% a los 36, 65% a los 37, 85% a los 38, y 98% a partir de los 39).
+- **Sistema de Regens (Renacimiento de Talentos Juveniles)**:
+  - Cuando figuras o leyendas se jubilan, nacen "Regens" en las canteras: futbolistas de 17 a 19 años con medias iniciales coherentes (58 a 72) pero con techos de potencial estelares (80 a 92) que aseguran el relevo generacional natural del fútbol mundial.
+- **Mercado de Fichajes Activo entre Clubes de la IA**:
+  - Los clubes rivales de la CPU ahora negocian activamente entre sí en cada cierre de temporada (15 a 25 transferencias globales por año), pagando traspasos, equilibrando sus líneas y reforzando posiciones debilitadas, sin afectar nunca a los jugadores del usuario sin su consentimiento.
+  - Titulares de prensa en el feed de noticias detallando los mayores fichajes del mercado mundial y el retiro de leyendas.
+- **Longevidad Fluida (+20 Temporadas)**:
+  - Estabilidad garantizada a largo plazo: se evitan monopolios estáticos infinitos de clubes, las plantillas se mantienen entre 20 y 26 futbolistas con identificadores únicos y el ecosistema evoluciona continuamente.
+
 ### Bug Fixes & Engine Stability
 - **Diseño Responsivo y Experiencia Móvil de Plantilla (`SquadScreen.tsx`)**:
   - **Cero Scroll Horizontal en Móviles**: Eliminada la tabla desbordada con scroll horizontal incómodo en pantallas pequeñas. Ahora en dispositivos móviles cada jugador se visualiza en una tarjeta adaptativa donde el 100% de la información (foto, nombre, posición, valoración OVR, joya/categoría, edad, valor de mercado, goles/asistencias, moral, barra de condición física y sueldo/contrato) encaja perfectamente en el ancho de pantalla.

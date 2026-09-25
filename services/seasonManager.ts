@@ -13,6 +13,7 @@ import { initializeLibertadoresSeason } from './libertadoresEngine';
 import { initializeSudamericanaSeason } from './sudamericanaEngine';
 import { SOUTH_AMERICAN_EXTRA_TEAMS } from '../data/teams/southAmericanClubs';
 import { TOURNAMENT_LOGOS } from './customPacks/argentineLogos';
+import { processFullSeasonSquadProgression } from './squadProgressionService';
 
 /**
  * Processes the transition to a new season
@@ -32,28 +33,13 @@ export function startNewSeason(currentState: GameState): GameState {
         ? new Date(`${newSeasonYear}-01-15T12:00:00`) 
         : new Date(`${newSeasonYear}-08-10T12:00:00`);
 
-    // 1. Process Aging & Retirements & Regens
-    const processedTeams = currentState.allTeams.map(team => {
-        let updatedSquad: Player[] = team.squad
-            .map(p => ({
-                ...p,
-                age: (p.age || 25) + 1,
-                contractYears: Math.max(0, p.contractYears - 1)
-            }))
-            .filter(p => {
-                // Retirement logic
-                if (p.age && p.age > 38) return false; // Force retire
-                if (p.age && p.age > 34 && Math.random() < 0.3) return false; // Chance to retire
-                return true;
-            });
-
-        // Regen Logic: If team is too small, add youths
-        while (updatedSquad.length < 18) {
-            updatedSquad.push(generateYouthPlayer(team.tier));
-        }
-
-        return { ...team, squad: updatedSquad };
-    });
+    // 1. Process Aging, Progressive Decline, Retirements, Regens, and AI Transfers
+    const { 
+        updatedTeams: processedTeams, 
+        retiredLegends, 
+        notableTransfers, 
+        regensCount 
+    } = processFullSeasonSquadProgression(currentState.allTeams, currentState.team.id);
 
     const updatedPlayerTeam = processedTeams.find(t => t.id === currentState.team.id)!;
 
@@ -224,19 +210,13 @@ export function startNewSeason(currentState: GameState): GameState {
             ballonDorWinner = p;
         }
 
-        // Dynamic Value Update
-        const performanceBonus = (p.stats.goals * 0.5) + (p.stats.assists * 0.2);
-        const ageMultiplier = p.age && p.age < 23 ? 1.5 : p.age && p.age > 30 ? 0.8 : 1.0;
-        p.value = Math.max(0.1, p.value + (performanceBonus * ageMultiplier) - (p.age && p.age > 32 ? 2 : 0));
-        
-        // Dynamic Rating Update (bounded by potential if present)
-        if (p.age && p.age < 25 && p.stats.appearances > 10) {
-            const maxRating = p.potential ? Math.min(99, p.potential) : 99;
-            p.rating = Math.min(maxRating, p.rating + Math.floor(Math.random() * 3));
+        // Dynamic Value Update (performance bonus based on season output)
+        const performanceBonus = (p.stats.goals * 0.4) + (p.stats.assists * 0.2);
+        if (performanceBonus > 0) {
+            p.value = Number((p.value + performanceBonus * 0.3).toFixed(1));
         }
-        if (p.age && p.age > 32) p.rating = Math.max(40, p.rating - Math.floor(Math.random() * 3));
 
-        // Reset stats
+        // Reset seasonal stats
         p.stats = { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 };
     });
 
@@ -646,6 +626,27 @@ export function startNewSeason(currentState: GameState): GameState {
     
     // Add Promise News if any
     let finalNewsFeed = [proRelNews, seasonNews, ...awardNewsItems, ...currentState.newsFeed];
+
+    if (retiredLegends.length > 0) {
+        finalNewsFeed.unshift({
+            id: `retirements_${newSeasonYear}`,
+            headline: `👋 Retiro de Figuras y Leyendas (${newSeasonYear})`,
+            body: `Cuelgan las botas destacados futbolistas que marcaron una época:\n${retiredLegends.slice(0, 5).map(r => `• ${r.name} (${r.teamName}, ${r.age} años - Med: ${r.rating})`).join('\n')}\n¡Nuevas promesas surgen de las inferiores con hambre de gloria!`,
+            date: formatDate(newDate),
+            type: 'standard'
+        });
+    }
+
+    if (notableTransfers.length > 0) {
+        finalNewsFeed.unshift({
+            id: `ai_transfers_${newSeasonYear}`,
+            headline: `🔥 Mercado Global: Bombazos y Fichajes`,
+            body: `Los clubes rivales movieron el mercado intensamente en busca del título:\n${notableTransfers.slice(0, 5).map(t => `• ${t.playerName} (${t.position || 'JUG'}, Med: ${t.rating}): ${t.fromTeam} ➔ ${t.toTeam} (${formatCurrency(t.fee)})`).join('\n')}`,
+            date: formatDate(newDate),
+            type: 'transfer'
+        });
+    }
+
     if (promiseNewsBody) {
         finalNewsFeed.unshift({
             id: `promises_${newSeasonYear}`,

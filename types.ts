@@ -114,6 +114,13 @@ export const LEAGUE_COUNTRY: Record<LeagueId, CountryCode> = {
   [LeagueId.PRIMERA_B_CHILE]: 'CHI'
 };
 
+export interface SquadPower {
+  overall: number;   // Dynamic overall squad rating (e.g. 81)
+  attack: number;    // Attack rating (e.g. 83)
+  midfield: number;  // Midfield rating (e.g. 80)
+  defense: number;   // Defense rating (e.g. 79)
+}
+
 export interface Team {
   id: number;
   name: string;
@@ -133,6 +140,7 @@ export interface Team {
   stadiumName?: string;
   stadiumCapacity?: number;
   city?: string;
+  squadPower?: SquadPower; // Dynamic squad power calculated from active players
 }
 
 export interface Coach {

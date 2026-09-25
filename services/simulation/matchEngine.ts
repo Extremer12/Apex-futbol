@@ -454,12 +454,18 @@ export const simulateMacroMatch = (
     scorers: { playerId: number; playerName: string; minute: number }[];
     penalties?: { home: number; away: number };
 } => {
-    // 1. Fast calculation of attacking & defensive power
+    // 1. Fast calculation of attacking & defensive power driven by real squad ratings
     const getQuickRatings = (team: Team) => {
+        if (team.squadPower) {
+            return {
+                att: (team.squadPower.attack * 0.65) + (team.squadPower.overall * 0.35),
+                def: (team.squadPower.defense * 0.65) + (team.squadPower.overall * 0.35)
+            };
+        }
         if (!team.squad || team.squad.length === 0) return { att: 70, def: 70 };
         let attSum = 0, attCount = 0;
         let defSum = 0, defCount = 0;
-        const len = Math.min(team.squad.length, 18);
+        const len = Math.min(team.squad.length, 20);
         for (let i = 0; i < len; i++) {
             const p = team.squad[i];
             if (p.position === 'DEL' || p.position === 'CEN') {

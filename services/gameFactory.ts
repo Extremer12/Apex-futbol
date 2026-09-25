@@ -13,6 +13,7 @@ import { getBaseWeeklyIncome, generateStadium, generateSponsor, generateSponsorM
 import { formatDate } from '../utils';
 import { getInitialAchievements } from './achievementService';
 import { calculateFanApproval } from './political';
+import { calculateSquadPower } from './squadProgressionService';
 
 interface InitializeGameParams {
     selectedTeam: Team;
@@ -39,9 +40,8 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
     // Clone teams, assign authentic stadiums, ages and coaches
     const allTeamsCopy = TEAMS.map(t => {
         const s = generateStadium(t);
-        return {
+        const teamObj: Team = {
             ...t,
-            logo: t.logo,
             stadiumName: s.name,
             stadiumCapacity: s.capacity,
             city: s.city,
@@ -55,6 +55,8 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
             })),
             coach: generateRandomCoach(t.tier)
         };
+        teamObj.squadPower = calculateSquadPower(teamObj);
+        return teamObj;
     });
 
     const playerTeamCopy = allTeamsCopy.find(t => t.id === selectedTeam.id)!;

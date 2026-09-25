@@ -13,6 +13,7 @@ import {
     getPlayerPotentialTier, 
     getTierBadge 
 } from '../../utils/playerUtils';
+import { calculateSquadPower } from '../../services/squadProgressionService';
 
 interface SquadScreenProps {
     gameState: GameState;
@@ -36,6 +37,8 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
     const [filterPosition, setFilterPosition] = useState<FilterPosition>('ALL');
     const [playerToPromote, setPlayerToPromote] = useState<Player | null>(null);
     const { showToast } = useToast();
+
+    const squadPower = gameState.team.squadPower || calculateSquadPower(gameState.team);
 
     const onViewPlayer = (player: Player) => {
         dispatch({ type: 'SET_VIEWING_PLAYER', payload: player });
@@ -183,7 +186,7 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-[var(--apex-dark)] via-transparent to-black/20" />
                         
-                        <div className="absolute bottom-0 left-0 right-0 p-6 flex flex-col md:flex-row justify-between items-end md:items-center gap-4">
+                        <div className="absolute bottom-0 left-0 right-0 p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                             <div className="flex items-center gap-4">
                                 <div className="w-16 h-16 bg-black/40 backdrop-blur-md border border-[var(--apex-gold)]/30 rounded-xl flex items-center justify-center shadow-lg">
                                     <UsersIcon className="w-8 h-8 text-[var(--apex-gold)]" />
@@ -196,17 +199,40 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
                                     </div>
                                 </div>
                             </div>
-                            
-                            <div className="flex flex-col items-end gap-2 w-full md:w-auto">
-                                <div className="text-[10px] font-black text-white uppercase tracking-widest opacity-60">Confianza en el Táctico</div>
-                                <div className="flex items-center gap-3 w-full md:w-48">
-                                    <div className="flex-1 h-2 bg-black/40 backdrop-blur-md rounded-full overflow-hidden border border-white/10">
-                                        <div 
-                                            className={`h-full transition-all duration-1000 ${ (gameState.team.coach?.satisfactionLevel || 0) >= 70 ? 'bg-[var(--apex-green)]' : (gameState.team.coach?.satisfactionLevel || 0) >= 40 ? 'bg-[var(--apex-gold)]' : 'bg-[var(--apex-red)]'}`} 
-                                            style={{ width: `${gameState.team.coach?.satisfactionLevel || 0}%` }}
-                                        />
+
+                            <div className="flex flex-wrap items-center gap-4 w-full md:w-auto justify-between md:justify-end">
+                                {/* Poder de Plantel Dinámico */}
+                                <div className="flex items-center gap-2 bg-black/50 backdrop-blur-md px-3 py-2 rounded-xl border border-white/10 shadow-lg">
+                                    <div className="text-center px-1">
+                                        <div className="text-[9px] uppercase tracking-wider text-slate-400 font-black">Poder</div>
+                                        <div className="text-lg font-black text-[var(--apex-gold)] leading-none">{squadPower.overall}</div>
                                     </div>
-                                    <span className="text-lg font-black text-white leading-none">{gameState.team.coach?.satisfactionLevel || 0}%</span>
+                                    <div className="h-6 w-px bg-white/10" />
+                                    <div className="text-center px-1">
+                                        <div className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">ATA</div>
+                                        <div className="text-sm font-black text-rose-400 leading-none">{squadPower.attack}</div>
+                                    </div>
+                                    <div className="text-center px-1">
+                                        <div className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">MED</div>
+                                        <div className="text-sm font-black text-amber-400 leading-none">{squadPower.midfield}</div>
+                                    </div>
+                                    <div className="text-center px-1">
+                                        <div className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">DEF</div>
+                                        <div className="text-sm font-black text-sky-400 leading-none">{squadPower.defense}</div>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col items-end gap-1">
+                                    <div className="text-[10px] font-black text-white uppercase tracking-widest opacity-60">Confianza Táctica</div>
+                                    <div className="flex items-center gap-3 w-36">
+                                        <div className="flex-1 h-2 bg-black/40 backdrop-blur-md rounded-full overflow-hidden border border-white/10">
+                                            <div 
+                                                className={`h-full transition-all duration-1000 ${ (gameState.team.coach?.satisfactionLevel || 0) >= 70 ? 'bg-[var(--apex-green)]' : (gameState.team.coach?.satisfactionLevel || 0) >= 40 ? 'bg-[var(--apex-gold)]' : 'bg-[var(--apex-red)]'}`} 
+                                                style={{ width: `${gameState.team.coach?.satisfactionLevel || 0}%` }}
+                                            />
+                                        </div>
+                                        <span className="text-base font-black text-white leading-none">{gameState.team.coach?.satisfactionLevel || 0}%</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
