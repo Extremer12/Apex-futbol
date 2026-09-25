@@ -457,10 +457,16 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                         // Sync fixture in cup rounds if existing
                         if (currentCup.rounds) {
                             for (const round of currentCup.rounds) {
-                                const f = round.fixtures?.find((fix: any) =>
+                                let f = round.fixtures?.find((fix: any) =>
                                     (fix.id && fix.id === match.id) ||
                                     (fix.homeTeamId === match.homeTeamId && fix.awayTeamId === match.awayTeamId && fix.week === match.week)
                                 );
+                                if (!f && round.secondLegFixtures) {
+                                    f = round.secondLegFixtures.find((fix: any) =>
+                                        (fix.id && fix.id === match.id) ||
+                                        (fix.homeTeamId === match.homeTeamId && fix.awayTeamId === match.awayTeamId && fix.week === match.week)
+                                    );
+                                }
                                 if (f) {
                                     f.result = {
                                         homeScore: result.homeScore,

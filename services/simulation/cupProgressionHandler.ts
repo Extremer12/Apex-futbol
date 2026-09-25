@@ -655,6 +655,9 @@ export function handleCupProgression(
                 r.fixtures?.forEach((f: Match) => {
                     validKnockoutKeys.add(`${f.week}_${f.homeTeamId}_${f.awayTeamId}`);
                 });
+                r.secondLegFixtures?.forEach((f: Match) => {
+                    validKnockoutKeys.add(`${f.week}_${f.homeTeamId}_${f.awayTeamId}`);
+                });
             });
 
             for (let i = updatedSchedule.length - 1; i >= 0; i--) {

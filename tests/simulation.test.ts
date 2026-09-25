@@ -1959,6 +1959,71 @@ test('Bundesliga: 34-week league completion cleanly terminates season and does n
     assert.equal(duplicateLeagueWin.length, 0, 'LEAGUE_WIN must never be duplicated or looped');
 });
 
+test('Two-legged International Knockouts: schedule preserves leg 2 and finalizeSeasonCompetitions crowns champions for two-legged ties', async () => {
+    const { handleCupProgression } = await import('../services/simulation/cupProgressionHandler');
+    const { finalizeSeasonCompetitions } = await import('../services/simulation/cupGenerator');
+    const { initializeGame } = await import('../services/gameFactory');
+    const chelsea = TEAMS.find(t => t.id === 1)!;
+    const game = initializeGame({ selectedTeam: chelsea });
+
+    // 1. Create a Champions League with two-legged Round of 16
+    const clTeams = TEAMS.slice(0, 16);
+    const leg1Fixtures: Match[] = [];
+    const leg2Fixtures: Match[] = [];
+    for (let i = 0; i < 8; i++) {
+        leg1Fixtures.push({
+            week: 26,
+            homeTeamId: clTeams[i].id,
+            awayTeamId: clTeams[15 - i].id,
+            competition: 'Champions_League',
+            isCupMatch: true,
+            isMidweek: true,
+            leg: 1
+        });
+        leg2Fixtures.push({
+            week: 28,
+            homeTeamId: clTeams[15 - i].id,
+            awayTeamId: clTeams[i].id,
+            competition: 'Champions_League',
+            isCupMatch: true,
+            isMidweek: true,
+            leg: 2
+        });
+    }
+
+    const testCL: CupCompetition = {
+        id: 'champions_league',
+        name: 'UEFA Champions League',
+        type: 'swiss',
+        phase: 'knockout',
+        rounds: [{
+            name: 'Round of 16',
+            fixtures: leg1Fixtures,
+            secondLegFixtures: leg2Fixtures,
+            completed: false
+        }],
+        currentRoundIndex: 0,
+        statistics: { topScorers: [], championsHistory: [] }
+    };
+
+    const schedule: Match[] = [...leg1Fixtures, ...leg2Fixtures];
+    const cups: any = {
+        ...game.cups,
+        championsLeague: testCL
+    };
+
+    // 2. Run handleCupProgression and verify leg 2 fixtures are NOT purged by cleanup
+    const res = handleCupProgression(cups, schedule, game.allTeams, 26, 27, game.leagueTables, 'weekend', chelsea.id);
+    const leg2InSchedule = res.updatedSchedule.filter(m => m.competition === 'Champions_League' && m.week === 28 && m.leg === 2);
+    assert.equal(leg2InSchedule.length, 8, 'Schedule cleanup must never purge second leg knockout fixtures');
+
+    // 3. Run finalizeSeasonCompetitions on cups with two-legged ties
+    finalizeSeasonCompetitions(res.updatedCups, game.allTeams, res.updatedSchedule);
+    assert.ok(res.updatedCups.championsLeague.winnerId, 'Champions League with two-legged ties must crown a champion');
+    assert.equal(res.updatedCups.championsLeague.phase, 'finished');
+});
+
+
 
 
 

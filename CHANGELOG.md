@@ -8,6 +8,11 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 ## [Unreleased]
 
 ### Bug Fixes & Engine Stability
+- **Corrección Integral de Cruces Ida y Vuelta en Copas Internacionales (Champions, Libertadores, Sudamericana)**:
+  - **Blindaje de Partidos de Vuelta en el Calendario (`cupProgressionHandler.ts`)**: Corregido el filtro de limpieza al final de `handleCupProgression` que solo registraba `fixtures` (partidos de ida) y purgaba erróneamente todos los partidos de vuelta (`secondLegFixtures`) del `schedule`, impidiendo que las eliminatorias avanzaran a Cuartos, Semifinales y Final.
+  - **Sincronización en Web Worker (`simulation.worker.ts`)**: Añadido soporte para registrar los resultados de los partidos de vuelta en `round.secondLegFixtures` dentro de las rondas de la copa.
+  - **Resolución Completa en Cierre de Temporada (`finalizeSingleCupCompetition` en `cupGenerator.ts`)**: Actualizado el motor de resolución automática para simular tanto el partido de ida como el de vuelta, determinar el ganador global por resultado agregado y penales, y coronar a todos los campeones restantes sin dejar ninguna copa "En Disputa".
+  - **Detección de Usuario en Cruces de 2 Piernas (`seasonUtils.ts`)**: Mejorada la función `isSeasonCompleted` para evaluar el estado real del usuario en eliminatorias a doble partido (no concluir la temporada si resta disputar la vuelta, y calcular el clasificado mediante el marcador global).
 - **Solución al Bucle Infinito en Bundesliga / Ligas de 34 Semanas**: 
   - Corregida la duración oficial del calendario en `seasonUtils.ts` (`maxLeagueWeek = 34` para Bundesliga, 2. Bundesliga y Ligue 1).
   - Eliminada la restricción que bloqueaba la finalización de temporada esperando a la semana 38 por copas europeas de la IA cuando el usuario ya no tenía partidos pendientes, permitiendo que `isSeasonCompleted` active el cierre de temporada oportunamente y ejecute la resolución automática (`finalizeSeasonCompetitions`).

@@ -312,12 +312,13 @@ export const progressInternationalCup = (
         const fixturesWithWeek: Match[] = [];
         const secondLegFixtures: Match[] = [];
         const matchCount = Math.min(shuffledFirsts.length, shuffledSeconds.length);
+        const compType: Match['competition'] = cup.id === 'copa_sudamericana' ? 'Copa_Sudamericana' : 'Copa_Libertadores';
         for (let i = 0; i < matchCount; i++) {
             fixturesWithWeek.push({
                 week: nextWeek,
                 homeTeamId: shuffledSeconds[i].id, // 2nd place plays home first
                 awayTeamId: shuffledFirsts[i].id,  // 1st place plays away first
-                competition: 'Copa_Libertadores',
+                competition: compType,
                 isCupMatch: true,
                 isMidweek: true,
                 leg: 1
@@ -326,7 +327,7 @@ export const progressInternationalCup = (
                 week: nextWeek + 2,
                 homeTeamId: shuffledFirsts[i].id,  // 1st place plays return leg at home
                 awayTeamId: shuffledSeconds[i].id,
-                competition: 'Copa_Libertadores',
+                competition: compType,
                 isCupMatch: true,
                 isMidweek: true,
                 leg: 2
@@ -721,14 +722,26 @@ export const finalizeSingleCupCompetition = (
                 resolveUnplayedCupMatch(f, allTeams);
             }
         });
+        if (currentRound.secondLegFixtures) {
+            currentRound.secondLegFixtures.forEach(f => {
+                if (!f.result) {
+                    resolveUnplayedCupMatch(f, allTeams);
+                }
+            });
+        }
 
         const prevIndex = cup.currentRoundIndex;
-        cup = advanceCupRound(cup, allTeams, 0, currentRound.fixtures);
+        cup = advanceCupRound(cup, allTeams, 0, [...currentRound.fixtures, ...(currentRound.secondLegFixtures || [])]);
         if (cup.winnerId) break;
         if (cup.currentRoundIndex === prevIndex && !cup.winnerId) {
             // Check if final was played in currentRound
             if (currentRound.fixtures.length === 1 && currentRound.fixtures[0].result) {
-                const wId = determineCupWinner(currentRound.fixtures[0]);
+                let wId: number | null = null;
+                if (currentRound.secondLegFixtures && currentRound.secondLegFixtures.length === 1 && currentRound.secondLegFixtures[0].result) {
+                    wId = determineTwoLeggedTieWinner(currentRound.fixtures[0], currentRound.secondLegFixtures[0]);
+                } else {
+                    wId = determineCupWinner(currentRound.fixtures[0]);
+                }
                 if (wId) {
                     cup.winnerId = wId;
                     cup.phase = 'finished';

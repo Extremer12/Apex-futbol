@@ -1,6 +1,6 @@
 import { CupCompetition, GameState, LeagueId, Team, Match } from '../types';
 import { computeArgentineRelegation, computeArgentineInternationalQualification } from './argentinaRegulations';
-import { finalizeSeasonCompetitions } from './simulation';
+import { finalizeSeasonCompetitions, determineTwoLeggedTieWinner, determineCupWinner } from './simulation';
 
 export interface CompetitionChampionItem {
     name: string;
@@ -62,7 +62,10 @@ export const isSeasonCompleted = (gameState: GameState | null): boolean => {
             (cup.seededTeamIds && cup.seededTeamIds.includes(gameState.team.id)) ||
             (cup.swissTable && cup.swissTable.some(r => r.teamId === gameState.team.id)) ||
             (cup.groups && cup.groups.some(g => g.teams && g.teams.includes(gameState.team.id))) ||
-            (cup.rounds && cup.rounds.some(r => r.fixtures && r.fixtures.some(f => f.homeTeamId === gameState.team.id || f.awayTeamId === gameState.team.id)));
+            (cup.rounds && cup.rounds.some(r => 
+                (r.fixtures && r.fixtures.some(f => f.homeTeamId === gameState.team.id || f.awayTeamId === gameState.team.id)) ||
+                (r.secondLegFixtures && r.secondLegFixtures.some(f => f.homeTeamId === gameState.team.id || f.awayTeamId === gameState.team.id))
+            ));
         if (!isUserInCup) return false;
 
         // In Swiss or groups: only active during group stage weeks (weeks <= 20)
@@ -74,21 +77,26 @@ export const isSeasonCompleted = (gameState: GameState | null): boolean => {
         if (cup.rounds && cup.rounds.length > 0) {
             const isLastRound = cup.currentRoundIndex >= cup.rounds.length - 1;
             const currentRound = cup.rounds[cup.currentRoundIndex];
-            if (currentRound && currentRound.fixtures) {
-                const userFixture = currentRound.fixtures.find(f => f.homeTeamId === gameState.team.id || f.awayTeamId === gameState.team.id);
-                if (userFixture) {
-                    if (userFixture.result === undefined) return true;
-                    // If the final round has already been played by the user, cup has concluded for user
+            if (currentRound) {
+                const leg1 = currentRound.fixtures?.find(f => f.homeTeamId === gameState.team.id || f.awayTeamId === gameState.team.id);
+                const leg2 = currentRound.secondLegFixtures?.find(f => f.homeTeamId === gameState.team.id || f.awayTeamId === gameState.team.id);
+
+                if (leg1 || leg2) {
+                    // If either leg has not been played yet, user is actively alive in this round
+                    if (leg1 && leg1.result === undefined) return true;
+                    if (leg2 && leg2.result === undefined) return true;
+
+                    // If the final round has already concluded for the user, cup has ended for user
                     if (isLastRound) return false;
-                    // Check if user won this match
-                    const winnerId = userFixture.result.homeScore > userFixture.result.awayScore
-                        ? userFixture.homeTeamId
-                        : userFixture.result.awayScore > userFixture.result.homeScore
-                        ? userFixture.awayTeamId
-                        : (userFixture.penalties?.home ?? 0) > (userFixture.penalties?.away ?? 0)
-                        ? userFixture.homeTeamId
-                        : userFixture.awayTeamId;
-                    if (winnerId === gameState.team.id) return true;
+
+                    // Both legs (or the single tie) have been played: determine tie winner
+                    if (leg1 && leg2) {
+                        const winnerId = determineTwoLeggedTieWinner(leg1, leg2);
+                        if (winnerId === gameState.team.id) return true;
+                    } else if (leg1) {
+                        const winnerId = determineCupWinner(leg1);
+                        if (winnerId === gameState.team.id) return true;
+                    }
                 }
             }
         }
