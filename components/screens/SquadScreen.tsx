@@ -3,7 +3,7 @@ import { GameState, Player } from '../../types';
 import { GameAction } from '../../state/reducer';
 import { formatCurrency, formatCurrencyShort, formatWeeklyWage } from '../../utils';
 import { BriefcaseIcon, SparklesIcon, UsersIcon } from '../icons';
-import { TrendingUpIcon, FilterIcon, StarIcon, Sparkles } from 'lucide-react';
+import { TrendingUpIcon, FilterIcon, StarIcon, Sparkles, ArrowUpDown } from 'lucide-react';
 import { ConfirmationModal } from '../common/ConfirmationModal';
 import { useToast } from '../common/ToastProvider';
 import { PlayerPhoto } from '../../data/teams/helpers';
@@ -19,12 +19,20 @@ interface SquadScreenProps {
     dispatch: React.Dispatch<GameAction>;
 }
 
-type SortOption = 'rating' | 'value' | 'age' | 'name' | 'position';
+type SortOption = 'position' | 'rating' | 'value' | 'age' | 'name';
+type SortDirection = 'desc' | 'asc';
 type FilterPosition = 'ALL' | 'POR' | 'DEF' | 'CEN' | 'DEL';
 
 export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps) => {
     const [activeTab, setActiveTab] = useState<'FIRST_TEAM' | 'ACADEMY'>('FIRST_TEAM');
-    const [sortOption, setSortOption] = useState<SortOption>('rating');
+    
+    // User preference persisted in localStorage. Defaults to 'position' and 'desc' (DEL -> CEN -> DEF -> POR)
+    const [sortOption, setSortOption] = useState<SortOption>(() => {
+        return (localStorage.getItem('apex_squad_sort_option') as SortOption) || 'position';
+    });
+    const [sortDirection, setSortDirection] = useState<SortDirection>(() => {
+        return (localStorage.getItem('apex_squad_sort_direction') as SortDirection) || 'desc';
+    });
     const [filterPosition, setFilterPosition] = useState<FilterPosition>('ALL');
     const [playerToPromote, setPlayerToPromote] = useState<Player | null>(null);
     const { showToast } = useToast();
@@ -70,19 +78,70 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
         }
     };
 
+    const handleSortChange = (newSort: SortOption) => {
+        setSortOption(newSort);
+        localStorage.setItem('apex_squad_sort_option', newSort);
+    };
+
+    const handleToggleDirection = () => {
+        const newDir: SortDirection = sortDirection === 'desc' ? 'asc' : 'desc';
+        setSortDirection(newDir);
+        localStorage.setItem('apex_squad_sort_direction', newDir);
+    };
+
+    const getPositionRank = (pos: string, dir: SortDirection) => {
+        if (dir === 'desc') {
+            // Delanteros -> Mediocampistas -> Defensas -> Porteros
+            switch (pos) {
+                case 'DEL': return 1;
+                case 'CEN': return 2;
+                case 'DEF': return 3;
+                case 'POR': return 4;
+                default: return 5;
+            }
+        } else {
+            // Porteros -> Defensas -> Mediocampistas -> Delanteros
+            switch (pos) {
+                case 'POR': return 1;
+                case 'DEF': return 2;
+                case 'CEN': return 3;
+                case 'DEL': return 4;
+                default: return 5;
+            }
+        }
+    };
+
     const filteredSquad = gameState.team.squad.filter(player => {
         if (filterPosition === 'ALL') return true;
         return player.position === filterPosition;
     });
 
     const sortedSquad = [...filteredSquad].sort((a, b) => {
+        if (sortOption === 'position') {
+            const rankA = getPositionRank(a.position, sortDirection);
+            const rankB = getPositionRank(b.position, sortDirection);
+            if (rankA !== rankB) {
+                return rankA - rankB;
+            }
+            // Tie-breaker within same position: highest rating first, then value
+            if (b.rating !== a.rating) return b.rating - a.rating;
+            return b.value - a.value;
+        }
+
         switch (sortOption) {
-            case 'rating': return b.rating - a.rating;
-            case 'value': return b.value - a.value;
-            case 'age': return (a.age || 0) - (b.age || 0);
-            case 'name': return a.name.localeCompare(b.name);
-            case 'position': return a.position.localeCompare(b.position);
-            default: return 0;
+            case 'rating':
+                return sortDirection === 'desc' ? b.rating - a.rating : a.rating - b.rating;
+            case 'value':
+                return sortDirection === 'desc' ? b.value - a.value : a.value - b.value;
+            case 'age': {
+                const ageA = a.age || 0;
+                const ageB = b.age || 0;
+                return sortDirection === 'desc' ? ageB - ageA : ageA - ageB;
+            }
+            case 'name':
+                return sortDirection === 'desc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
+            default:
+                return 0;
         }
     });
 
@@ -162,40 +221,166 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
                         </div>
 
                         <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                            {/* Selector de Posición */}
                             <div className="flex items-center gap-2 bg-black/20 px-3 py-2 rounded-lg border border-white/10 flex-1 md:flex-none">
                                 <FilterIcon className="w-3 h-3 text-[var(--apex-gold)]" />
                                 <select
                                     value={filterPosition}
                                     onChange={(e) => setFilterPosition(e.target.value as FilterPosition)}
-                                    className="bg-transparent text-white text-[10px] uppercase tracking-wider font-bold focus:outline-none w-full"
+                                    className="bg-transparent text-white text-[10px] uppercase tracking-wider font-bold focus:outline-none w-full cursor-pointer"
                                 >
                                     <option value="ALL">Todas las Posiciones</option>
-                                    <option value="POR">Porteros</option>
-                                    <option value="DEF">Defensas</option>
-                                    <option value="CEN">Centrocampistas</option>
                                     <option value="DEL">Delanteros</option>
+                                    <option value="CEN">Centrocampistas</option>
+                                    <option value="DEF">Defensas</option>
+                                    <option value="POR">Porteros</option>
                                 </select>
                             </div>
 
+                            {/* Selector de Criterio de Orden */}
                             <div className="flex items-center gap-2 bg-black/20 px-3 py-2 rounded-lg border border-white/10 flex-1 md:flex-none">
                                 <TrendingUpIcon className="w-3 h-3 text-[var(--apex-gold)]" />
                                 <select
                                     value={sortOption}
-                                    onChange={(e) => setSortOption(e.target.value as SortOption)}
-                                    className="bg-transparent text-white text-[10px] uppercase tracking-wider font-bold focus:outline-none w-full"
+                                    onChange={(e) => handleSortChange(e.target.value as SortOption)}
+                                    className="bg-transparent text-white text-[10px] uppercase tracking-wider font-bold focus:outline-none w-full cursor-pointer"
                                 >
-                                    <option value="rating">Por Valoración</option>
-                                    <option value="value">Por Valor</option>
+                                    <option value="position">Por Posición (Líneas)</option>
+                                    <option value="rating">Por Valoración (OVR)</option>
+                                    <option value="value">Por Valor de Mercado</option>
                                     <option value="age">Por Edad</option>
                                     <option value="name">Por Nombre</option>
-                                    <option value="position">Por Posición</option>
                                 </select>
                             </div>
+
+                            {/* Botón Invertir Dirección de Orden */}
+                            <button
+                                onClick={handleToggleDirection}
+                                className="flex items-center gap-1.5 bg-black/30 hover:bg-black/50 px-3 py-2 rounded-lg border border-white/10 hover:border-[var(--apex-gold)]/40 text-white text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer active:scale-95 shrink-0"
+                                title={
+                                    sortOption === 'position'
+                                        ? sortDirection === 'desc'
+                                            ? 'Invertir orden: Porteros primero'
+                                            : 'Invertir orden: Delanteros primero'
+                                        : sortDirection === 'desc'
+                                            ? 'Invertir orden: Menor a Mayor'
+                                            : 'Invertir orden: Mayor a Menor'
+                                }
+                            >
+                                <ArrowUpDown className="w-3.5 h-3.5 text-[var(--apex-gold)]" />
+                                <span>
+                                    {sortOption === 'position' 
+                                        ? (sortDirection === 'desc' ? 'DEL ➔ POR' : 'POR ➔ DEL')
+                                        : (sortDirection === 'desc' ? 'Mayor a Menor' : 'Menor a Mayor')
+                                    }
+                                </span>
+                            </button>
                         </div>
                     </div>
 
-                    {/* Squad Table Mobile / Desktop */}
-                    <div className="apex-card overflow-hidden">
+                    {/* Squad Mobile View (Zero Horizontal Scroll!) */}
+                    <div className="md:hidden space-y-2.5">
+                        {sortedSquad.map((player) => {
+                            const age = getPlayerAge(player);
+                            const potTier = getPlayerPotentialTier(player);
+                            const tierBadge = getTierBadge(potTier);
+
+                            return (
+                                <div 
+                                    key={player.id} 
+                                    onClick={() => onViewPlayer(player)}
+                                    className="apex-card p-3 hover:bg-white/[0.06] active:scale-[0.99] cursor-pointer transition-all border border-white/10"
+                                >
+                                    {/* Fila Superior: Foto + Nombre + Posición + Media */}
+                                    <div className="flex items-center justify-between gap-2.5 mb-2.5">
+                                        <div className="flex items-center gap-2.5 min-w-0">
+                                            <PlayerPhoto player={player} className="w-10 h-10 rounded-xl border border-white/10 shadow-sm shrink-0" />
+                                            <div className="min-w-0">
+                                                <div className="font-bold text-sm text-white flex items-center gap-1.5 flex-wrap leading-tight">
+                                                    <span className="truncate">{player.name}</span>
+                                                    {player.isTransferListed && <BriefcaseIcon className="w-3 h-3 text-[var(--apex-gold)] shrink-0" />}
+                                                </div>
+                                                <div className="flex items-center gap-1.5 mt-1">
+                                                    <span className={`px-1.5 py-0.2 rounded text-[8px] font-black border uppercase ${getPositionColor(player.position)}`}>
+                                                        {player.position}
+                                                    </span>
+                                                    <span className={`text-[8px] font-black px-1.5 py-0.2 rounded border uppercase ${tierBadge.color}`}>
+                                                        {tierBadge.label}
+                                                    </span>
+                                                    <span className="text-[10px] text-white/50 font-bold">{age} años</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Media y Rating */}
+                                        <div className="flex items-center gap-1 shrink-0 bg-black/40 px-2 py-1 rounded-xl border border-white/10">
+                                            <span className={`text-base font-black ${
+                                                player.rating >= 80 ? 'text-[var(--apex-gold)]' :
+                                                player.rating >= 70 ? 'text-white' :
+                                                'text-white/50'
+                                            }`}>
+                                                {player.rating}
+                                            </span>
+                                            {player.rating >= 85 && <StarIcon className="w-3 h-3 fill-[var(--apex-gold)] text-[var(--apex-gold)]" />}
+                                        </div>
+                                    </div>
+
+                                    {/* Fila Media: Grid de Métricas Clave (Sin scroll horizontal) */}
+                                    <div className="grid grid-cols-4 gap-1.5 p-2 rounded-xl bg-black/30 border border-white/5 mb-2.5 text-center">
+                                        <div>
+                                            <div className="text-[8px] font-black text-white/40 uppercase tracking-widest">Valor</div>
+                                            <div className="text-xs font-bold text-white/90 truncate">{formatCurrencyShort(player.value)}</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-[8px] font-black text-white/40 uppercase tracking-widest">G / A</div>
+                                            <div className="text-xs font-bold text-white/70">{player.stats?.goals || 0}/{player.stats?.assists || 0}</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-[8px] font-black text-white/40 uppercase tracking-widest">Moral</div>
+                                            <div className="mt-0.5">
+                                                <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded border ${getMoraleColor(player.morale)}`}>
+                                                    {player.morale}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div className="text-[8px] font-black text-white/40 uppercase tracking-widest">Estado</div>
+                                            <div className="flex items-center justify-center mt-1">
+                                                {player.isInjured ? (
+                                                    <span className="text-[8px] font-black bg-[var(--apex-red)]/10 text-[var(--apex-red)] border border-[var(--apex-red)]/20 px-1 rounded uppercase">
+                                                        🚑 {player.injuryWeeksRemaining}s
+                                                    </span>
+                                                ) : player.isSuspended ? (
+                                                    <span className="text-[8px] font-black bg-[var(--apex-red)]/10 text-[var(--apex-red)] border border-[var(--apex-red)]/20 px-1 rounded uppercase">
+                                                        🟥 {player.suspensionWeeksRemaining}p
+                                                    </span>
+                                                ) : (
+                                                    <div className="flex items-center gap-1">
+                                                        <div className="w-8 h-1 bg-black/50 rounded-full overflow-hidden border border-white/5">
+                                                            <div 
+                                                                className={`h-full ${ (player.condition || 100) > 70 ? 'bg-[var(--apex-green)]' : (player.condition || 100) > 40 ? 'bg-[var(--apex-gold)]' : 'bg-[var(--apex-red)]'}`}
+                                                                style={{ width: `${player.condition || 100}%` }}
+                                                            />
+                                                        </div>
+                                                        <span className="text-[8px] text-white/60 font-bold">{player.condition || 100}%</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Fila Inferior: Contrato & Sueldo */}
+                                    <div className="flex items-center justify-between text-[10px] text-white/40 font-bold uppercase tracking-wider px-1">
+                                        <span>Sueldo: <strong className="text-white/80">{formatWeeklyWage(player.wage)}/sem</strong></span>
+                                        <span>Contrato: <strong className="text-white/80">{player.contractYears} {player.contractYears === 1 ? 'año' : 'años'}</strong></span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {/* Squad Table Desktop */}
+                    <div className="hidden md:block apex-card overflow-hidden">
                         <div className="overflow-x-auto custom-scrollbar">
                             <table className="w-full text-left border-collapse min-w-[700px]">
                                 <thead>

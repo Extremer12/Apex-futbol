@@ -5,7 +5,8 @@ import { ALL_COMPETITIONS } from './league/constants';
 import { LeagueTable } from './league/LeagueTable';
 import { CupView } from './league/CupView';
 import { customPacksService } from '../../services/customPacks/packService';
-import { Search, Trophy, Globe, ChevronRight, X, Layers } from 'lucide-react';
+import { Search, Trophy, Globe, ChevronRight, X, Layers, Award } from 'lucide-react';
+import { ClubRankingsView } from './league/ClubRankingsView';
 
 interface LeagueScreenProps {
     gameState: GameState;
@@ -14,6 +15,7 @@ interface LeagueScreenProps {
 const COUNTRIES = [
     { id: 'MY_LEAGUE', label: 'Mi Liga', isSpecial: true },
     { id: 'INTERNATIONAL', label: 'Copas Internacionales', isIntl: true },
+    { id: 'CLUB_RANKINGS', label: 'Rankings CONMEBOL / UEFA', isRanking: true },
     { id: 'Argentina', label: 'Argentina', flag: 'https://flagcdn.com/ar.svg' },
     { id: 'Inglaterra', label: 'Inglaterra', flag: 'https://flagcdn.com/gb-eng.svg' },
     { id: 'España', label: 'España', flag: 'https://flagcdn.com/es.svg' },
@@ -74,7 +76,10 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
             return ALL_COMPETITIONS.filter(c => c.id === playerTeamLeague || (myCountry && c.country === myCountry));
         }
         if (activeCountry === 'INTERNATIONAL') {
-            return ALL_COMPETITIONS.filter(c => c.category === 'INTERNATIONAL');
+            return ALL_COMPETITIONS.filter(c => c.category === 'INTERNATIONAL' && c.id !== 'CLUB_RANKINGS');
+        }
+        if (activeCountry === 'CLUB_RANKINGS') {
+            return ALL_COMPETITIONS.filter(c => c.id === 'CLUB_RANKINGS');
         }
         return ALL_COMPETITIONS.filter(c => c.country === activeCountry);
     }, [activeCountry, playerTeamLeague]);
@@ -99,10 +104,11 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
     };
 
     const resolvedLogo = useMemo(() => {
+        if (selectedCompetitionId === 'CLUB_RANKINGS') return '';
         return selectedCompDef 
             ? (customPacksService.resolveCompetitionLogo(selectedCompDef.id, selectedCompDef.name, selectedCompDef.logo) || '/sinlogo.png')
             : '/sinlogo.png';
-    }, [selectedCompDef]);
+    }, [selectedCompDef, selectedCompetitionId]);
 
     return (
         <div className="px-0 sm:px-4 md:px-6 py-2 sm:py-3 max-w-[1400px] w-full overflow-x-hidden mx-auto min-h-screen animate-fade-in space-y-2.5 sm:space-y-3">
@@ -112,43 +118,68 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                     {/* Competición Actual */}
                     <div className="flex items-center gap-3 min-w-0">
                         <div className="w-10 h-10 sm:w-12 sm:h-12 shrink-0 flex items-center justify-center p-1 rounded-xl bg-white/[0.03] border border-white/5 drop-shadow-sm">
-                            <img src={resolvedLogo} alt="" className="w-full h-full object-contain" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.src = '/sinlogo.png'; }} />
+                            {selectedCompetitionId === 'CLUB_RANKINGS' ? (
+                                <Award className="w-6 h-6 sm:w-7 sm:h-7 text-[var(--apex-gold)]" />
+                            ) : (
+                                <img src={resolvedLogo} alt="" className="w-full h-full object-contain" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.src = '/sinlogo.png'; }} />
+                            )}
                         </div>
                         <div className="min-w-0">
                             <div className="flex items-center gap-2">
                                 <h1 className="text-sm sm:text-base font-black text-white uppercase tracking-tight truncate">
-                                    {selectedCompDef?.name || 'Tabla de Posiciones'}
+                                    {selectedCompetitionId === 'CLUB_RANKINGS' ? 'Rankings Oficiales de Clubes' : (selectedCompDef?.name || 'Tabla de Posiciones')}
                                 </h1>
-                                {selectedCompDef?.isFirstDiv && (
+                                {selectedCompetitionId === 'CLUB_RANKINGS' ? (
+                                    <span className="text-[8px] sm:text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-[var(--apex-gold)]/15 text-[var(--apex-gold)] border border-[var(--apex-gold)]/30 shrink-0">
+                                        CONMEBOL / UEFA
+                                    </span>
+                                ) : selectedCompDef?.isFirstDiv ? (
                                     <span className="text-[8px] sm:text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-[var(--apex-gold)]/15 text-[var(--apex-gold)] border border-[var(--apex-gold)]/30 shrink-0">
                                         1ª Div
                                     </span>
-                                )}
-                                {selectedCompDef?.type === 'CUP' && (
+                                ) : selectedCompDef?.type === 'CUP' ? (
                                     <span className="text-[8px] sm:text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
                                         Copa
                                     </span>
-                                )}
+                                ) : null}
                             </div>
                             <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.5">
-                                <span>{selectedCompDef?.country || 'Internacional'}</span>
+                                <span>{selectedCompetitionId === 'CLUB_RANKINGS' ? 'Clasificación de Coeficientes' : (selectedCompDef?.country || 'Internacional')}</span>
                                 <span>•</span>
-                                <span>{selectedCompDef?.type === 'LEAGUE' ? 'Tabla General' : 'Eliminatorias'}</span>
+                                <span>{selectedCompetitionId === 'CLUB_RANKINGS' ? 'Bombos de Copas Continentales' : (selectedCompDef?.type === 'LEAGUE' ? 'Tabla General' : 'Eliminatorias')}</span>
                             </div>
                         </div>
                     </div>
 
-                    {/* Botón Principal: Explorar Torneos */}
-                    <button
-                        onClick={() => setIsExplorerOpen(true)}
-                        className="px-3 py-2 rounded-xl bg-gradient-to-r from-[var(--apex-gold)]/20 to-amber-500/10 hover:from-[var(--apex-gold)]/30 hover:to-amber-500/20 border border-[var(--apex-gold)]/40 hover:border-[var(--apex-gold)] text-white text-xs font-black uppercase tracking-wider flex items-center gap-2 shrink-0 shadow-md transition-all active:scale-95 cursor-pointer"
-                        title="Explorar ligas y copas de otros países"
-                    >
-                        <Globe className="w-4 h-4 text-[var(--apex-gold)]" />
-                        <span className="hidden sm:inline">Explorar Torneos</span>
-                        <span className="sm:hidden">Torneos</span>
-                        <ChevronRight className="w-3.5 h-3.5 text-[var(--apex-gold)]" />
-                    </button>
+                    {/* Botones de Acción */}
+                    <div className="flex items-center gap-2 shrink-0">
+                        {/* Botón Rankings Oficiales */}
+                        <button
+                            onClick={() => setSelectedCompetitionId('CLUB_RANKINGS')}
+                            className={`px-3 py-2 rounded-xl border text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition-all cursor-pointer ${
+                                selectedCompetitionId === 'CLUB_RANKINGS'
+                                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 border-amber-400 shadow-md font-black'
+                                    : 'bg-white/5 hover:bg-white/10 text-slate-300 border-white/10'
+                            }`}
+                            title="Ver Rankings Oficiales CONMEBOL y UEFA"
+                        >
+                            <Award className="w-4 h-4 text-[var(--apex-gold)]" />
+                            <span className="hidden sm:inline">Rankings Oficiales</span>
+                            <span className="sm:hidden">Rankings</span>
+                        </button>
+
+                        {/* Botón Principal: Explorar Torneos */}
+                        <button
+                            onClick={() => setIsExplorerOpen(true)}
+                            className="px-3 py-2 rounded-xl bg-gradient-to-r from-[var(--apex-gold)]/20 to-amber-500/10 hover:from-[var(--apex-gold)]/30 hover:to-amber-500/20 border border-[var(--apex-gold)]/40 hover:border-[var(--apex-gold)] text-white text-xs font-black uppercase tracking-wider flex items-center gap-2 shrink-0 shadow-md transition-all active:scale-95 cursor-pointer"
+                            title="Explorar ligas y copas de otros países"
+                        >
+                            <Globe className="w-4 h-4 text-[var(--apex-gold)]" />
+                            <span className="hidden sm:inline">Explorar Torneos</span>
+                            <span className="sm:hidden">Torneos</span>
+                            <ChevronRight className="w-3.5 h-3.5 text-[var(--apex-gold)]" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Sub-Pills Limpias y Compactas (Solo torneos locales del país actual) */}
@@ -288,6 +319,8 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                                             >
                                                 {cty.isSpecial ? (
                                                     <span>🌟</span>
+                                                ) : (cty as any).isRanking ? (
+                                                    <Award className="w-3.5 h-3.5 text-[var(--apex-gold)]" />
                                                 ) : cty.isIntl ? (
                                                     <Trophy className="w-3.5 h-3.5" />
                                                 ) : cty.flag ? (
@@ -318,7 +351,11 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                                                     }`}
                                                 >
                                                     <div className="w-10 h-10 shrink-0 flex items-center justify-center p-1 rounded-xl bg-white/[0.03]">
-                                                        <img src={compLogo} alt="" className="w-full h-full object-contain" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.src = '/sinlogo.png'; }} />
+                                                        {comp.id === 'CLUB_RANKINGS' ? (
+                                                            <Award className="w-6 h-6 text-[var(--apex-gold)]" />
+                                                        ) : (
+                                                            <img src={compLogo} alt="" className="w-full h-full object-contain" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.src = '/sinlogo.png'; }} />
+                                                        )}
                                                     </div>
                                                     <div className="flex-1 min-w-0">
                                                         <div className="text-xs font-black text-white uppercase tracking-tight truncate">
@@ -326,7 +363,7 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                                                         </div>
                                                         <div className="flex items-center gap-2 mt-1 text-[10px] text-slate-400">
                                                             <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/5">
-                                                                {comp.type === 'LEAGUE' ? (comp.isFirstDiv ? '1ª División' : '2ª División') : 'Torneo de Copa'}
+                                                                {comp.id === 'CLUB_RANKINGS' ? 'CONMEBOL / UEFA' : comp.type === 'LEAGUE' ? (comp.isFirstDiv ? '1ª División' : '2ª División') : 'Torneo de Copa'}
                                                             </span>
                                                             {comp.country && <span>{comp.country}</span>}
                                                         </div>
@@ -343,9 +380,11 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                 </div>
             )}
 
-            {/* Contenido Principal: Tabla de Posiciones / Vista de Copa (Directo, Limpio y a Ancho Completo) */}
+            {/* Contenido Principal: Tabla de Posiciones / Vista de Copa / Rankings (Directo, Limpio y a Ancho Completo) */}
             <div className="w-full min-w-0 animate-fade-in">
-                {!selectedCompDef ? (
+                {selectedCompetitionId === 'CLUB_RANKINGS' ? (
+                    <ClubRankingsView gameState={gameState} />
+                ) : !selectedCompDef ? (
                     <div className="flex flex-col items-center justify-center min-h-[350px] bg-[#0E131F] border border-white/10 rounded-2xl p-6 text-center">
                         <TrophyIcon className="w-12 h-12 text-slate-600 mb-3" />
                         <h3 className="text-base font-black text-white uppercase tracking-wider">Selecciona una competición</h3>

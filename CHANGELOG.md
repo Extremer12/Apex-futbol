@@ -8,6 +8,17 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 ## [Unreleased]
 
 ### Bug Fixes & Engine Stability
+- **Diseño Responsivo y Experiencia Móvil de Plantilla (`SquadScreen.tsx`)**:
+  - **Cero Scroll Horizontal en Móviles**: Eliminada la tabla desbordada con scroll horizontal incómodo en pantallas pequeñas. Ahora en dispositivos móviles cada jugador se visualiza en una tarjeta adaptativa donde el 100% de la información (foto, nombre, posición, valoración OVR, joya/categoría, edad, valor de mercado, goles/asistencias, moral, barra de condición física y sueldo/contrato) encaja perfectamente en el ancho de pantalla.
+  - **Ordenación por Posición por Defecto**: La plantilla se ordena automáticamente por líneas del campo: Delanteros (`DEL`) ➔ Centrocampistas (`CEN`) ➔ Defensas (`DEF`) ➔ Porteros (`POR`), con desempate interno por mayor valoración media (OVR).
+  - **Inversión de Dirección de Orden (`DEL ➔ POR` / `POR ➔ DEL`)**: Botón interactivo que permite invertir el orden (ej. de Porteros a Delanteros, o de Menor a Mayor en valoración/edad/valor).
+  - **Memorización de Preferencia del Usuario**: La opción y dirección de orden elegida por el usuario se guarda en `localStorage` (`apex_squad_sort_option`, `apex_squad_sort_direction`), manteniéndose fija en cada visita.
+
+- **Tablas Oficiales de Coeficientes y Rankings de Clubes (`ClubRankingsView.tsx`)**:
+  - **Ranking CONMEBOL de Clubes**: Incorporada la tabla oficial de coeficientes sudamericanos (River Plate, Palmeiras, Flamengo, Boca Juniors, Nacional, Peñarol, Olimpia, etc.) con sus puntos, títulos continentales y asignación de bombos para el sorteo de la Copa Libertadores y Copa Sudamericana (Bombos 1 a 4).
+  - **Ranking UEFA de Coeficientes**: Incorporada la clasificación oficial de 5 años de la UEFA (Manchester City, Real Madrid, Bayern München, PSG, Liverpool, etc.) que determina los cabezas de serie para la Champions League y los cupos para el Mundial de Clubes FIFA.
+  - **Integración en Navegación (`LeagueScreen.tsx`)**: Acceso directo desde la barra superior ("Rankings Oficiales") y en el explorador de torneos, con buscador en tiempo real, filtros por país y destaque visual en dorado con la etiqueta "Tu Club" para el equipo del usuario.
+
 - **Realismo en el Mercado de Fichajes y Preservación de Edades**:
   - **Corrección de Edades de Jugadores Reales (`gameFactory.ts`)**: Se eliminó la sobreescritura aleatoria que asignaba edades entre 18 y 33 años a todos los futbolistas al iniciar una partida. Ahora las edades reales de las plantillas (como Lewandowski con 36 años, Cavani con 37, Modrić con 39) se preservan rigurosamente.
   - **Prestigio Continental y Rechazo Realista (`gameLogic.ts`)**: Se implementó una cláusula de prestigio continental en las negociaciones de clubes y contratos personales. Jugadores estrella que militan en ligas europeas de élite (rating >= 83) rechazan transferencias a clubes de ligas sudamericanas por razones de competitividad y Champions League, evitando traspasos inverosímiles como Robert Lewandowski firmando por Boca Juniors.

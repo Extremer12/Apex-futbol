@@ -88,6 +88,7 @@ export type CompetitionItem = {
 
 export const ALL_COMPETITIONS: CompetitionItem[] = [
     // Internacionales
+    { id: 'CLUB_RANKINGS', name: 'Rankings CONMEBOL / UEFA', type: 'CUP', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Football%20Tournament%20%26%20Competition%20Logos/tournaments_conmebol-libertadores.football-logos.cc.svg', category: 'INTERNATIONAL' },
     { id: 'CHAMPIONS_LEAGUE', name: 'Champions League', type: 'CUP', logo: CUP_LOGOS.champions_league, category: 'INTERNATIONAL', cupKey: 'championsLeague' },
     { id: 'COPA_LIBERTADORES', name: 'Copa Libertadores', type: 'CUP', logo: CUP_LOGOS.copa_libertadores, category: 'INTERNATIONAL', cupKey: 'copaLibertadores' },
     { id: 'COPA_SUDAMERICANA', name: 'Copa Sudamericana', type: 'CUP', logo: CUP_LOGOS.copa_sudamericana, category: 'INTERNATIONAL', cupKey: 'copaSudamericana' },

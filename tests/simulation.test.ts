@@ -2117,6 +2117,89 @@ test('Player Ages & Transfer Realism: Preserves authentic ages and rejects Europ
     assert.ok(offerForPlayer?.offerValue > 0, 'Offer value must be positive');
 });
 
+test('Rankings & Squad Sorting: Resolves CONMEBOL and UEFA club rankings and sorts squad by position', async () => {
+    const { getResolvedConmebolRankings, getResolvedUefaRankings } = await import('../data/clubRankings');
+
+    const boca = TEAMS.find(t => t.id === 701)!;
+    const gameState = initializeGame({ selectedTeam: boca });
+
+    // 1. Verify CONMEBOL Rankings
+    const conmebolRankings = getResolvedConmebolRankings(gameState);
+    assert.ok(conmebolRankings.length >= 30, 'CONMEBOL ranking must contain at least 30 clubs');
+    assert.equal(conmebolRankings[0].teamName, 'River Plate', 'River Plate must be #1 in CONMEBOL ranking');
+    assert.equal(conmebolRankings[0].rank, 1, 'Rank 1 must be assigned to first club');
+    assert.ok(conmebolRankings[0].points >= 10000, 'Top club must have authentic points');
+
+    const bocaInRanking = conmebolRankings.find(r => r.teamName === 'Boca Juniors');
+    assert.ok(bocaInRanking, 'Boca Juniors must be present in CONMEBOL ranking');
+    assert.ok(bocaInRanking?.rank! <= 8, 'Boca Juniors must be a seeded club (Top 8 / Bombo 1)');
+    assert.equal(bocaInRanking?.potStatus, 'Bombo 1 (Cabeza de Serie)', 'Top 8 club must have Bombo 1 status');
+
+    // 2. Verify UEFA Rankings
+    const uefaRankings = getResolvedUefaRankings(gameState);
+    assert.ok(uefaRankings.length >= 30, 'UEFA ranking must contain at least 30 clubs');
+    assert.equal(uefaRankings[0].teamName, 'Manchester City', 'Manchester City must be #1 in UEFA ranking');
+    assert.equal(uefaRankings[1].teamName, 'Real Madrid', 'Real Madrid must be #2 in UEFA ranking');
+    assert.ok(uefaRankings[0].coefficient > uefaRankings[10].coefficient, 'Coefficients must be strictly descending');
+
+    // 3. Verify Squad Sorting by Position (DEL -> CEN -> DEF -> POR and reverse)
+    const squad = gameState.team.squad;
+    const getPosRank = (pos: string, dir: 'desc' | 'asc') => {
+        if (dir === 'desc') {
+            switch (pos) {
+                case 'DEL': return 1;
+                case 'CEN': return 2;
+                case 'DEF': return 3;
+                case 'POR': return 4;
+                default: return 5;
+            }
+        } else {
+            switch (pos) {
+                case 'POR': return 1;
+                case 'DEF': return 2;
+                case 'CEN': return 3;
+                case 'DEL': return 4;
+                default: return 5;
+            }
+        }
+    };
+
+    // Forward order (DEL -> CEN -> DEF -> POR)
+    const sortedForward = [...squad].sort((a, b) => {
+        const rankA = getPosRank(a.position, 'desc');
+        const rankB = getPosRank(b.position, 'desc');
+        if (rankA !== rankB) return rankA - rankB;
+        return b.rating - a.rating;
+    });
+
+    const firstDelIndex = sortedForward.findIndex(p => p.position === 'DEL');
+    const firstCenIndex = sortedForward.findIndex(p => p.position === 'CEN');
+    const firstDefIndex = sortedForward.findIndex(p => p.position === 'DEF');
+    const firstPorIndex = sortedForward.findIndex(p => p.position === 'POR');
+
+    assert.ok(firstDelIndex < firstCenIndex, 'Delanteros must precede Centrocampistas in forward sort');
+    assert.ok(firstCenIndex < firstDefIndex, 'Centrocampistas must precede Defensas in forward sort');
+    assert.ok(firstDefIndex < firstPorIndex, 'Defensas must precede Porteros in forward sort');
+
+    // Inverted order (POR -> DEF -> CEN -> DEL)
+    const sortedInverted = [...squad].sort((a, b) => {
+        const rankA = getPosRank(a.position, 'asc');
+        const rankB = getPosRank(b.position, 'asc');
+        if (rankA !== rankB) return rankA - rankB;
+        return b.rating - a.rating;
+    });
+
+    const invPorIndex = sortedInverted.findIndex(p => p.position === 'POR');
+    const invDefIndex = sortedInverted.findIndex(p => p.position === 'DEF');
+    const invCenIndex = sortedInverted.findIndex(p => p.position === 'CEN');
+    const invDelIndex = sortedInverted.findIndex(p => p.position === 'DEL');
+
+    assert.ok(invPorIndex < invDefIndex, 'Porteros must precede Defensas in inverted sort');
+    assert.ok(invDefIndex < invCenIndex, 'Defensas must precede Centrocampistas in inverted sort');
+    assert.ok(invCenIndex < invDelIndex, 'Centrocampistas must precede Delanteros in inverted sort');
+});
+
+
 
 
 
