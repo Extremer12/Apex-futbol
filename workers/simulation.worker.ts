@@ -107,7 +107,11 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
 
                 // Heal injuries / suspensions if week advances
                 if (newP.isInjured && newP.injuryWeeksRemaining) {
-                    newP.injuryWeeksRemaining -= 1;
+                    const docPower = t.clubStaff?.doctor?.power ?? (t.tier === 'Top' ? 78 : t.tier === 'Mid' ? 68 : 55);
+                    const healBonusChance = Math.max(0, Math.min(0.50, (docPower - 50) / 100));
+                    const weeksToHeal = Math.random() < healBonusChance ? 2 : 1;
+
+                    newP.injuryWeeksRemaining = Math.max(0, newP.injuryWeeksRemaining - weeksToHeal);
                     if (newP.injuryWeeksRemaining <= 0) {
                         newP.isInjured = false;
                         newP.injuryWeeksRemaining = 0;
@@ -121,9 +125,11 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                     }
                 }
 
-                // Recover condition slightly for players at the start of the week
+                // Recover condition for players boosted by fitness coach
                 if (!newP.condition || newP.condition < 100) {
-                    newP.condition = Math.min(100, (newP.condition || 100) + 15);
+                    const fitnessPower = t.clubStaff?.fitnessCoach?.power ?? (t.tier === 'Top' ? 78 : t.tier === 'Mid' ? 68 : 55);
+                    const recoveryBonus = Math.floor(fitnessPower / 6);
+                    newP.condition = Math.min(100, (newP.condition || 100) + 12 + recoveryBonus);
                 }
 
                 // Ensure stats exists

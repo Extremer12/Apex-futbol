@@ -14,6 +14,7 @@ import { formatDate } from '../utils';
 import { getInitialAchievements } from './achievementService';
 import { calculateFanApproval } from './political';
 import { calculateSquadPower } from './squadProgressionService';
+import { generateInitialClubStaff, generateStaffMarket } from './staffService';
 
 interface InitializeGameParams {
     selectedTeam: Team;
@@ -271,6 +272,13 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
         ...elFixtures
     ];
 
+    // Build initial staff and coach
+    const initialStaff = generateInitialClubStaff(playerTeamCopy.tier, playerTeamCopy.leagueId);
+    if (!playerTeamCopy.coach) {
+        playerTeamCopy.coach = generateRandomCoach(playerTeamCopy.tier);
+    }
+    playerTeamCopy.clubStaff = initialStaff;
+
     // Build and return the initial game state
     const initialState: GameState = {
         currentTurn: 'weekend',
@@ -432,6 +440,8 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
             },
         },
         availableCoaches: generateCoachMarket(5),
+        clubStaff: initialStaff,
+        availableStaff: generateStaffMarket(playerTeamCopy.tier, playerTeamCopy.leagueId),
         stadium: generateStadium(playerTeamCopy),
         sponsors: [
             generateSponsor('shirt', playerTeamCopy.tier),

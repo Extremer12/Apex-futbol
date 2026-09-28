@@ -136,6 +136,7 @@ export interface Team {
   primaryColor: string;
   secondaryColor: string;
   coach?: Coach; // Added for Phase 2: Sports Delegation
+  clubStaff?: ClubStaff; // Medical, fitness, sporting director, youth coach
   trophyCabinet?: Trophy[]; // Added for Phase 3: Trophies
   stadiumName?: string;
   stadiumCapacity?: number;
@@ -180,6 +181,27 @@ export interface Scout {
   specialty?: 'POR' | 'DEF' | 'CEN' | 'DEL' | 'Youth';
   salary: number;
   hiringFee: number;
+}
+
+export type StaffRole = 'doctor' | 'fitness_coach' | 'sporting_director' | 'youth_coach';
+
+export interface StaffMember {
+  id: string;
+  name: string;
+  role: StaffRole;
+  power: number; // 1-100 (Rating / Nivel de habilidad)
+  salary: number; // Sueldo semanal
+  hiringFee: number; // Coste de fichaje
+  specialty?: string;
+  age?: number;
+  nationality?: string;
+}
+
+export interface ClubStaff {
+  doctor?: StaffMember;
+  fitnessCoach?: StaffMember;
+  sportingDirector?: StaffMember;
+  youthCoach?: StaffMember;
 }
 
 export interface PresidentialStint {
@@ -441,6 +463,10 @@ export interface Stadium {
   facilityLevel: number;        // 1-5 (afecta a ingresos VIP y servicios)
 }
 
+export type SponsorSector = 'apparel' | 'airline' | 'tech' | 'betting' | 'automotive' | 'beverage' | 'banking';
+export type SponsorPrestige = 'Global' | 'Continental' | 'Regional';
+export type TicketPolicy = 'cheap' | 'standard' | 'premium';
+
 export interface Sponsor {
   id: string;
   name: string;
@@ -452,6 +478,29 @@ export interface Sponsor {
     condition: 'top4' | 'top6' | 'win_cup' | 'promotion';
     amount: number;
   };
+  sector?: SponsorSector;
+  prestige?: SponsorPrestige;
+  signingBonus?: number;
+  fanApprovalImpact?: number;   // e.g. -6 for betting, +5 for local brewery, 0 standard
+  clauses?: string[];           // e.g. ["Bono Champions League", "Penalización por Descenso"]
+  brandColor?: string;
+  description?: string;
+}
+
+export interface BankLoan {
+  id: string;
+  name: string;
+  principal: number;
+  remainingAmount: number;
+  weeklyPayment: number;
+  remainingWeeks: number;
+  interestRate: number;         // e.g. 0.05
+}
+
+export interface ClubDirectives {
+  youthInvestment: 'low' | 'medium' | 'high';
+  globalMarketing: boolean;
+  winBonuses: 'none' | 'normal' | 'high';
 }
 
 export interface FinancialBreakdown {
@@ -461,6 +510,7 @@ export interface FinancialBreakdown {
   tvRevenue: number;            // Derechos de TV
   prizeMoneyRevenue: number;    // Premios de liga/copa
   transferRevenue: number;      // Ventas de jugadores
+  merchandisingRevenue?: number;// Venta de indumentaria y marketing global
 
   // Gastos
   wageExpenses: number;         // Salarios jugadores
@@ -468,6 +518,9 @@ export interface FinancialBreakdown {
   stadiumExpenses: number;      // Mantenimiento estadio
   operationalExpenses: number;  // Gastos operativos generales
   transferExpenses: number;     // Compras de jugadores
+  loanExpenses?: number;        // Amortización e intereses de préstamos
+  youthAcademyExpenses?: number;// Inversión en fuerzas básicas y scouting
+  merchandisingExpenses?: number;// Costo de campañas comerciales
 }
 
 
@@ -511,6 +564,9 @@ export interface GameState {
     weeklyWages: number;
     balanceHistory: number[];
     breakdown?: FinancialBreakdown; // Detailed breakdown
+    ticketPolicy?: TicketPolicy;
+    activeLoans?: BankLoan[];
+    clubDirectives?: ClubDirectives;
   };
   stadium: Stadium;
   sponsors: Sponsor[];
@@ -542,6 +598,8 @@ export interface GameState {
     copaIntercontinental: CupCompetition;
   };
   availableCoaches: Coach[]; // Market of available coaches
+  clubStaff?: ClubStaff; // Active club staff (doctor, fitness coach, sporting director, youth coach)
+  availableStaff?: StaffMember[]; // Market of available staff specialists
   // New Fields for Academy & Regens
   playerProfile?: PlayerProfile;
   youthAcademy: Player[];

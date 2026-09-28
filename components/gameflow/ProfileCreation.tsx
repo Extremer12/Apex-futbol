@@ -36,7 +36,7 @@ const NATIONALITIES = [
 export const ProfileCreation: React.FC<ProfileCreationProps> = ({ onProfileCreate }) => {
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
-    const [age, setAge] = useState(48);
+    const [age, setAge] = useState<number | string>(38);
     const [nationality, setNationality] = useState('Argentina');
     const [photo, setPhoto] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -54,15 +54,33 @@ export const ProfileCreation: React.FC<ProfileCreationProps> = ({ onProfileCreat
         }
     };
 
+    const handleAgeBlur = () => {
+        const num = parseInt(String(age), 10);
+        if (isNaN(num) || num < 18) {
+            setAge(18);
+        } else if (num > 85) {
+            setAge(85);
+        } else {
+            setAge(num);
+        }
+    };
+
+    const adjustAge = (delta: number) => {
+        const current = parseInt(String(age), 10) || 38;
+        const next = Math.max(18, Math.min(85, current + delta));
+        setAge(next);
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const fullName = [firstName.trim(), lastName.trim()].filter(Boolean).join(' ');
         if (fullName) {
+            const parsedAge = parseInt(String(age), 10) || 38;
             const profileData = { 
                 name: fullName,
                 firstName: firstName.trim(),
                 lastName: lastName.trim(),
-                age: Number(age) || 48,
+                age: Math.max(18, Math.min(85, parsedAge)),
                 nationality,
                 country: nationality,
                 experience: 0,
@@ -77,7 +95,8 @@ export const ProfileCreation: React.FC<ProfileCreationProps> = ({ onProfileCreat
         }
     };
 
-    const isFormValid = (firstName.trim().length > 0 || lastName.trim().length > 0) && age >= 18;
+    const parsedAge = parseInt(String(age), 10);
+    const isFormValid = (firstName.trim().length > 0 || lastName.trim().length > 0) && !isNaN(parsedAge) && parsedAge >= 18 && parsedAge <= 85;
 
     return (
         <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: 'var(--apex-dark)' }}>
@@ -211,17 +230,37 @@ export const ProfileCreation: React.FC<ProfileCreationProps> = ({ onProfileCreat
                                         <label className="block text-[10px] font-bold tracking-[0.15em] uppercase mb-1.5 text-white">
                                             Edad
                                         </label>
-                                        <div className="relative">
-                                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--apex-text-muted)' }} />
+                                        <div className="relative flex items-center">
+                                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: 'var(--apex-text-muted)' }} />
                                             <input
                                                 type="number"
-                                                min={21}
+                                                min={18}
                                                 max={85}
                                                 value={age}
-                                                onChange={(e) => setAge(Math.max(18, Math.min(99, parseInt(e.target.value) || 18)))}
-                                                className="apex-input pl-9 text-sm font-semibold"
+                                                onChange={(e) => setAge(e.target.value)}
+                                                onBlur={handleAgeBlur}
+                                                placeholder="38"
+                                                className="apex-input pl-9 pr-16 text-sm font-semibold"
                                                 required
                                             />
+                                            <div className="absolute right-1.5 flex items-center gap-1">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => adjustAge(-1)}
+                                                    className="w-6 h-6 rounded flex items-center justify-center bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-colors cursor-pointer"
+                                                    title="Disminuir edad"
+                                                >
+                                                    -
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => adjustAge(1)}
+                                                    className="w-6 h-6 rounded flex items-center justify-center bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-colors cursor-pointer"
+                                                    title="Aumentar edad"
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
 

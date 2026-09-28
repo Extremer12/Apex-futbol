@@ -336,116 +336,121 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
 
     return (
         <div className="p-4 md:p-6 space-y-6 pb-24 animate-fade-in">
-            {/* Top Bar / Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-4">
-                <div>
-                    <h2 className="text-[10px] font-black text-gold-gradient tracking-[0.3em] uppercase mb-1">Dirección Deportiva y Fichajes</h2>
-                    <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter">Mercado de Traspasos</h1>
+            {/* Top Bar / Header Compacto & Limpio */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-[#0E131F] border border-white/10 p-3.5 sm:p-4 rounded-2xl shadow-xl">
+                {/* Título & Badge de Mercado */}
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/5 border border-amber-500/30 flex items-center justify-center shrink-0 shadow-inner">
+                        <Users className="w-5 h-5 text-[var(--apex-gold)]" />
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight">Mercado de Fichajes</h1>
+                            {marketOpen ? (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                    Abierto
+                                </span>
+                            ) : (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-red-500/15 text-red-400 border border-red-500/30">
+                                    <Clock className="w-3 h-3 text-red-400" />
+                                    Cerrado
+                                </span>
+                            )}
+                        </div>
+                        <p className="text-[11px] text-white/50 font-medium">Contrata futbolistas, gestiona ventas y negocia contratos</p>
+                    </div>
                 </div>
 
-                {/* Tabs & Finance Stats */}
-                <div className="flex flex-wrap items-center gap-3">
-                    <div className="flex bg-black/40 p-1 rounded-xl border border-white/10">
-                        <button
-                            onClick={() => setActiveTab('MARKET')}
-                            className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
-                                activeTab === 'MARKET' 
-                                    ? 'bg-[var(--apex-gold)] text-black shadow-lg shadow-[var(--apex-gold)]/20' 
-                                    : 'text-white/60 hover:text-white'
-                            }`}
-                        >
-                            <Users className="w-3.5 h-3.5" /> Explorar Mercado
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('MY_SQUAD')}
-                            className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
-                                activeTab === 'MY_SQUAD' 
-                                    ? 'bg-[var(--apex-gold)] text-black shadow-lg shadow-[var(--apex-gold)]/20' 
-                                    : 'text-white/60 hover:text-white'
-                            }`}
-                        >
-                            <Tag className="w-3.5 h-3.5" /> Vender / Mi Plantilla
-                            {myTeam.squad.filter(p => p.isTransferListed).length > 0 && (
-                                <span className="w-5 h-5 rounded-full bg-amber-500 text-black text-[10px] font-black flex items-center justify-center">
-                                    {myTeam.squad.filter(p => p.isTransferListed).length}
-                                </span>
-                            )}
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('OFFERS')}
-                            className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 relative ${
-                                activeTab === 'OFFERS' 
-                                    ? 'bg-[var(--apex-gold)] text-black shadow-lg shadow-[var(--apex-gold)]/20' 
-                                    : 'text-white/60 hover:text-white'
-                            }`}
-                        >
-                            <Inbox className="w-3.5 h-3.5" /> Ofertas Recibidas
-                            {incomingOffers.length > 0 && (
-                                <span className="w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center animate-pulse">
-                                    {incomingOffers.length}
-                                </span>
-                            )}
-                        </button>
+                {/* Panel Financiero Compacto */}
+                <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-6 bg-black/40 border border-white/10 px-3.5 py-2 rounded-xl text-xs">
+                    <div>
+                        <p className="text-[9px] text-white/50 font-bold uppercase tracking-wider">Tesorería</p>
+                        <p className="text-sm font-black text-emerald-400">{formatTransferFee(normBalance)}</p>
                     </div>
-
-                    <div className="apex-card px-4 py-2 flex items-center gap-4">
-                        <div>
-                            <p className="text-[8px] text-white/50 font-bold uppercase tracking-widest">Saldo en Tesorería</p>
-                            <p className="text-base font-black text-emerald-400">{formatTransferFee(normBalance)}</p>
+                    <div className="w-px h-6 bg-white/10" />
+                    <div>
+                        <p className="text-[9px] text-white/50 font-bold uppercase tracking-wider">Presupuesto Fichajes</p>
+                        <div className="flex items-center gap-1.5">
+                            <p className="text-sm font-black text-[var(--apex-gold)]">{formatTransferFee(normBudget)}</p>
+                            <button
+                                onClick={() => {
+                                    setNewBudgetDraft(normBudget);
+                                    setShowBudgetModal(true);
+                                }}
+                                className="px-1.5 py-0.5 rounded bg-white/5 hover:bg-white/15 border border-white/10 text-[9px] font-bold text-white/80 hover:text-[var(--apex-gold)] transition-all cursor-pointer flex items-center gap-1"
+                                title="Ajustar Presupuesto de Fichajes"
+                            >
+                                <Sliders className="w-2.5 h-2.5" />
+                                <span>Ajustar</span>
+                            </button>
                         </div>
-                        <div className="w-px h-6 bg-white/10" />
-                        <div>
-                            <p className="text-[8px] text-white/50 font-bold uppercase tracking-widest">Presupuesto Fichajes</p>
-                            <div className="flex items-center gap-2">
-                                <p className="text-base font-black text-[var(--apex-gold)]">{formatTransferFee(normBudget)}</p>
-                                <button
-                                    onClick={() => {
-                                        setNewBudgetDraft(normBudget);
-                                        setShowBudgetModal(true);
-                                    }}
-                                    className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/15 border border-white/10 text-[9px] font-bold text-white/80 hover:text-[var(--apex-gold)] transition-all cursor-pointer flex items-center gap-1 active:scale-95"
-                                    title="Ajustar Presupuesto de Fichajes"
-                                >
-                                    <Sliders className="w-2.5 h-2.5" />
-                                    <span>Ajustar</span>
-                                </button>
-                            </div>
-                        </div>
-                        <div className="w-px h-6 bg-white/10" />
-                        <div>
-                            <p className="text-[8px] text-white/50 font-bold uppercase tracking-widest">Masa Salarial</p>
-                            <p className="text-base font-black text-white">{formatWeeklyWage(finances.weeklyWages)}</p>
-                        </div>
+                    </div>
+                    <div className="w-px h-6 bg-white/10" />
+                    <div>
+                        <p className="text-[9px] text-white/50 font-bold uppercase tracking-wider">Masa Salarial</p>
+                        <p className="text-sm font-black text-white">{formatWeeklyWage(finances.weeklyWages)}</p>
                     </div>
                 </div>
             </div>
 
-            {/* Transfer Window Status Banner */}
-            {!marketOpen ? (
-                <div className="bg-slate-900/60 border border-red-500/30 rounded-2xl p-5 text-center animate-fade-in relative overflow-hidden backdrop-blur-md">
-                    <div className="absolute inset-0 bg-red-500/5 animate-pulse" />
-                    <div className="relative z-10 flex flex-col items-center justify-center">
-                        <div className="w-10 h-10 rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center mb-2">
-                            <Clock className="w-5 h-5 text-red-400" />
-                        </div>
-                        <h3 className="text-red-400 font-black uppercase tracking-[0.2em] text-sm mb-0.5">Mercado de Traspasos Cerrado</h3>
-                        <p className="text-slate-400 text-xs font-bold">Próxima apertura oficial: <span className="text-white">{nextWindow}</span></p>
+            {/* Pestañas Principales (Segmented Control Moderno) */}
+            <div className="flex items-center gap-1 bg-black/40 p-1 rounded-xl border border-white/10 overflow-x-auto custom-scrollbar">
+                <button
+                    onClick={() => setActiveTab('MARKET')}
+                    className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                        activeTab === 'MARKET' 
+                            ? 'bg-[var(--apex-gold)] text-slate-950 shadow-md font-black' 
+                            : 'text-white/60 hover:text-white'
+                    }`}
+                >
+                    <Users className="w-3.5 h-3.5" />
+                    <span>Explorar Mercado</span>
+                </button>
+                <button
+                    onClick={() => setActiveTab('MY_SQUAD')}
+                    className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                        activeTab === 'MY_SQUAD' 
+                            ? 'bg-[var(--apex-gold)] text-slate-950 shadow-md font-black' 
+                            : 'text-white/60 hover:text-white'
+                    }`}
+                >
+                    <Tag className="w-3.5 h-3.5" />
+                    <span>Vender / Mi Plantilla</span>
+                    {myTeam.squad.filter(p => p.isTransferListed).length > 0 && (
+                        <span className="w-4 h-4 rounded-full bg-amber-500 text-black text-[9px] font-black flex items-center justify-center">
+                            {myTeam.squad.filter(p => p.isTransferListed).length}
+                        </span>
+                    )}
+                </button>
+                <button
+                    onClick={() => setActiveTab('OFFERS')}
+                    className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 relative cursor-pointer ${
+                        activeTab === 'OFFERS' 
+                            ? 'bg-[var(--apex-gold)] text-slate-950 shadow-md font-black' 
+                            : 'text-white/60 hover:text-white'
+                    }`}
+                >
+                    <Inbox className="w-3.5 h-3.5" />
+                    <span>Ofertas Recibidas</span>
+                    {incomingOffers.length > 0 && (
+                        <span className="w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center animate-pulse">
+                            {incomingOffers.length}
+                        </span>
+                    )}
+                </button>
+            </div>
+
+            {/* Aviso solo cuando el mercado está CERRADO */}
+            {!marketOpen && (
+                <div className="bg-slate-900/60 border border-red-500/30 rounded-2xl p-4 flex items-center gap-3 animate-fade-in backdrop-blur-md">
+                    <div className="w-9 h-9 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center justify-center shrink-0">
+                        <Clock className="w-4 h-4 text-red-400" />
                     </div>
-                </div>
-            ) : (
-                <div className="bg-slate-900/60 border border-emerald-500/30 rounded-2xl p-4 flex items-center justify-between animate-fade-in relative overflow-hidden backdrop-blur-md">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
-                            <Briefcase className="w-5 h-5 text-emerald-400" />
-                        </div>
-                        <div>
-                            <h3 className="text-emerald-400 font-black uppercase tracking-wider text-xs">Periodo de Fichajes Abierto</h3>
-                            <p className="text-white/60 text-[11px]">Negocia traspasos con clubes rivales y acuerda contratos de jugadores.</p>
-                        </div>
+                    <div>
+                        <h3 className="text-red-400 font-black uppercase tracking-wider text-xs">Mercado de Traspasos Cerrado</h3>
+                        <p className="text-slate-400 text-xs">Próxima apertura oficial: <span className="text-white font-bold">{nextWindow}</span>. No es posible fichar en este periodo.</p>
                     </div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/30">
-                        En curso
-                    </span>
                 </div>
             )}
 

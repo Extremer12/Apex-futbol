@@ -7,6 +7,21 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+### Estructura de Personal del Club & Dirección Técnica con Impacto Real (`StaffScreen.tsx`)
+- **Organigrama Profesional Completo**:
+  - Incorporación de todos los roles clave de un club de fútbol profesional: **Director Técnico (DT)**, **Jefe de Servicios Médicos (Doctor)**, **Preparador Físico**, **Director Deportivo**, **Director de Cantera y Metodología**, y **Red de Ojeadores (Scouts)**.
+  - Cada miembro del staff está valorado con una puntuación de **Poder / Rating (1-100)** y especialidades tácticas y formativas concretas.
+- **Impacto Matemático Directo en el Rendimiento del Plantel**:
+  - **Servicios Médicos (Jefe Médico)**: Modula directamente la tasa de lesiones de los futbolistas en cada simulación de partido mediante `doctorFactor = Math.max(0.40, Math.min(1.45, (140 - doctorPower) / 75))`. Un médico de poder 93 reduce las lesiones un ~38% y mitiga la gravedad de las bajas, mientras que un médico de poder 56 incrementa en un 12% la probabilidad de lesiones musculares. Otorga además probabilidad semanal de curación acelerada (hasta 2 semanas recuperadas en un solo turno).
+  - **Preparación Física**: Mitiga hasta un 25% el agotamiento físico en los 90 minutos de partido y acelera la recuperación semanal de condición física (`+12 base + power / 6`).
+  - **Dirección Técnica (DT)**: Su prestigio y satisfacción otorgan un bono táctico a la valoración de líneas (Ataque, Mediocampo y Defensa) en el motor de partidos.
+  - **Dirección Deportiva**: Negocia descuentos de hasta un 15% en comisiones y costes de traspasos internacionales.
+  - **Director de Cantera**: Añade hasta +12 puntos de potencial y calidad inicial a los juveniles promovidos de la academia.
+- **Mercado de Especialistas y Rescisión con Indemnizaciones**:
+  - Mercado dinámico con candidatos generados según la jerarquía del club y región (Europa / Sudamérica).
+  - Rescisión contractual con pago inmediato de indemnizaciones reglamentarias (4 semanas para el DT, 2 semanas para especialistas) y aviso de vacancia en el puesto.
+  - Enfermería activa integrada que lista los futbolistas lesionados del plantel, semanas restantes y pronóstico de alta médica según el poder del doctor.
+
 ### Dynamic Squad Power, Long-Term Realism & Generational Progression
 - **Poder de Plantel Dinámico y Peso en Partidos (`SquadPower`)**:
   - **Cálculo Posicional por Líneas**: Creado `services/squadProgressionService.ts` que evalúa la plantilla activa agrupando porteros (`POR`), defensas (`DEF`), centrocampistas (`CEN`) y delanteros (`DEL`). Pondera el XI titular (80%) y la profundidad del banquillo (20%) para computar `overall`, `attack`, `midfield` y `defense`.

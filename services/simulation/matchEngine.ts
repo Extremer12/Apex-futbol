@@ -116,13 +116,15 @@ export const selectMatchSquad = (team: Team): { starters: Player[]; subs: Player
 };
 
 export const getTeamStatsFromSquad = (starters: Player[], coach: Team['coach']) => {
+    const coachPower = coach?.prestige || 65;
+    const powerBonus = (coachPower - 65) * 0.05;
     const satisfactionBonus = (coach?.satisfactionLevel || 80) / 100;
 
     const getLineRating = (pos: Player['position']) => {
         const line = starters.filter(p => p.position === pos);
         if (line.length === 0) return 40;
         const avg = line.reduce((sum, p) => sum + (p.rating * ((p.condition ?? 100) / 100)), 0) / line.length;
-        return avg * satisfactionBonus;
+        return (avg + powerBonus) * satisfactionBonus;
     };
 
     return {
@@ -149,24 +151,30 @@ export const simulateMatch = (
     const homeStats = getTeamStatsFromSquad(homeSquad.starters, homeTeam.coach);
     const awayStats = getTeamStatsFromSquad(awaySquad.starters, awayTeam.coach);
 
-    // Apply match effects to players (minutes, appearances, fatigue)
-    const processMatchParticipation = (squad: { starters: Player[], subs: Player[] }) => {
+    // Apply match effects to players (minutes, appearances, fatigue mitigation from fitness coach)
+    const processMatchParticipation = (squad: { starters: Player[], subs: Player[] }, team: Team) => {
+        const fitnessCoach = team.clubStaff?.fitnessCoach;
+        const fitnessPower = fitnessCoach?.power ?? (team.tier === 'Top' ? 78 : team.tier === 'Mid' ? 68 : 55);
+        const fatigueMitigation = Math.max(0, Math.min(0.25, ((fitnessPower - 45) / 55) * 0.25));
+
         squad.starters.forEach(p => {
             p.stats = p.stats ? { ...p.stats } : { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 };
             p.stats.appearances += 1;
             p.stats.minutes += 90;
-            p.condition = Math.max(10, (p.condition ?? 100) - (15 + Math.random() * 15));
+            const drain = (15 + Math.random() * 15) * (1 - fatigueMitigation);
+            p.condition = Math.max(10, (p.condition ?? 100) - drain);
         });
         squad.subs.forEach(p => {
             p.stats = p.stats ? { ...p.stats } : { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 };
             p.stats.appearances += 1;
             p.stats.minutes += 30;
-            p.condition = Math.max(10, (p.condition ?? 100) - (5 + Math.random() * 10));
+            const drain = (5 + Math.random() * 10) * (1 - fatigueMitigation);
+            p.condition = Math.max(10, (p.condition ?? 100) - drain);
         });
     };
 
-    processMatchParticipation(homeSquad);
-    processMatchParticipation(awaySquad);
+    processMatchParticipation(homeSquad, homeTeam);
+    processMatchParticipation(awaySquad, awayTeam);
 
     // Tactical Influence
     const homeStyle = homeTeam.coach?.style || 'Balanced';
@@ -233,12 +241,21 @@ export const simulateMatch = (
         return potential[Math.floor(Math.random() * potential.length)];
     };
 
-    const processRandomEvents = (squad: { starters: Player[], subs: Player[] }, teamName: string) => {
+    const processRandomEvents = (squad: { starters: Player[], subs: Player[] }, teamName: string, team: Team) => {
+        const doctor = team.clubStaff?.doctor;
+        const doctorPower = doctor?.power ?? (team.tier === 'Top' ? 78 : team.tier === 'Mid' ? 68 : 55);
+        // Doctor power directly scales injury chance (Power 95: 0.60x, Power 56: 1.12x, Power 40: 1.33x)
+        const doctorFactor = Math.max(0.40, Math.min(1.45, (140 - doctorPower) / 75));
+
         squad.starters.forEach(p => {
-            const injuryChance = p.condition && p.condition < 60 ? 0.03 : 0.01;
+            const baseInjuryChance = p.condition && p.condition < 60 ? 0.03 : 0.01;
+            const injuryChance = baseInjuryChance * doctorFactor;
+
             if (Math.random() < injuryChance && !p.isInjured) {
                 p.isInjured = true;
-                p.injuryWeeksRemaining = 1 + Math.floor(Math.random() * 4);
+                const baseWeeks = 1 + Math.floor(Math.random() * 4);
+                // Top doctors reduce severity of injury
+                p.injuryWeeksRemaining = doctorPower >= 85 ? Math.max(1, baseWeeks - 1) : baseWeeks;
                 if (isUserMatch) {
                     events.push(`🚑 ¡Malas noticias para ${teamName}! ${p.name} ha sufrido una lesión muscular y estará fuera ${p.injuryWeeksRemaining} semanas.`);
                 }
@@ -260,8 +277,8 @@ export const simulateMatch = (
         });
     };
 
-    processRandomEvents(homeSquad, homeTeam.name);
-    processRandomEvents(awaySquad, awayTeam.name);
+    processRandomEvents(homeSquad, homeTeam.name, homeTeam);
+    processRandomEvents(awaySquad, awayTeam.name, awayTeam);
 
     // Simulate Home Chances
     for (let i = 0; i < Math.round(homeChances); i++) {

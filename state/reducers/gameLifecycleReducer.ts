@@ -2,8 +2,9 @@
 import React from 'react';
 import { GameState, Team, PlayerProfile, NewsItem, Player, Match, LeagueTableRow, Offer, LeagueId, CupCompetition } from '../../types';
 import { generateRandomCoach, generateCoachMarket } from '../../services/coaching';
-import { generateStadium, generateSponsorMarket, calculateFinancialBreakdown, getNetWeeklyIncome } from '../../services/economy';
+import { generateStadium, generateSponsorMarket, calculateFinancialBreakdown, getNetWeeklyIncome, generateSponsor } from '../../services/economy';
 import { initializeGame } from '../../services/gameFactory';
+import { generateInitialClubStaff, generateStaffMarket } from '../../services/staffService';
 import { startNewSeason } from '../../services/seasonManager';
 import { evaluateAchievements } from '../../services/achievementService';
 import { calculateFanApproval } from '../../services/political';
@@ -67,6 +68,11 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
             }));
             const playerTeamWithCoach = allTeamsWithCoaches.find(t => t.id === loadedState.team.id)!;
 
+            // 2b. Club Staff Migration
+            const clubStaff = loadedState.clubStaff || playerTeamWithCoach.clubStaff || generateInitialClubStaff(playerTeamWithCoach.tier, playerTeamWithCoach.leagueId);
+            const availableStaff = loadedState.availableStaff || generateStaffMarket(playerTeamWithCoach.tier, playerTeamWithCoach.leagueId);
+            playerTeamWithCoach.clubStaff = clubStaff;
+
             // 3. Economy System Migration
             const stadium = loadedState.stadium || generateStadium(playerTeamWithCoach);
             const sponsors = loadedState.sponsors || [];
@@ -124,6 +130,8 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
                 electoralPromises,
                 boardConfidence,
                 availableCoaches,
+                clubStaff,
+                availableStaff,
                 stadium,
                 sponsors,
                 availableSponsors,
@@ -176,7 +184,10 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
                 playerPosition,
                 { bought: 0, sold: 0 },
                 wasHomeMatch,
-                playerLeagueId
+                playerLeagueId,
+                state.finances.ticketPolicy,
+                state.finances.activeLoans,
+                state.finances.clubDirectives
             );
 
             // Update balance based on breakdown
@@ -187,17 +198,76 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
             const incomeToApply = state.currentTurn === 'weekend' ? netIncome : midweekMatchdayRevenue;
             const newBalance = state.finances.balance + incomeToApply;
 
+            // Process Loans & Sponsors on weekend turn
+            let updatedLoans = state.finances.activeLoans || [];
+            let updatedSponsors = state.sponsors;
+            let updatedAvailableSponsors = state.availableSponsors;
+            const financialNews: NewsItem[] = [];
+
+            if (state.currentTurn === 'weekend') {
+                // 1. Process active loans
+                if (updatedLoans.length > 0) {
+                    const remainingLoans: typeof updatedLoans = [];
+                    for (const loan of updatedLoans) {
+                        const newWeeks = loan.remainingWeeks - 1;
+                        const newRemAmt = loan.remainingAmount - loan.weeklyPayment;
+                        if (newWeeks <= 0 || newRemAmt <= 0) {
+                            financialNews.push({
+                                id: `loan_finished_${Date.now()}_${loan.id}`,
+                                headline: '✅ Préstamo Amortizado',
+                                body: `El club ha finalizado la devolución completa del préstamo bancario "${loan.name}". Se suprime la cuota semanal de tesorería.`,
+                                date: new Date(state.currentDate).toLocaleDateString()
+                            });
+                        } else {
+                            remainingLoans.push({
+                                ...loan,
+                                remainingWeeks: newWeeks,
+                                remainingAmount: Math.max(0, newRemAmt)
+                            });
+                        }
+                    }
+                    updatedLoans = remainingLoans;
+                }
+
+                // 2. Decrement active sponsors duration
+                const activeSponsorsRemaining: typeof state.sponsors = [];
+                for (const sp of state.sponsors) {
+                    const newDur = (sp.duration || 52) - 1;
+                    if (newDur <= 0) {
+                        financialNews.push({
+                            id: `sponsor_expired_${Date.now()}_${sp.id}`,
+                            headline: '📋 Contrato Comercial Expirado',
+                            body: `Ha finalizado el vínculo contractual con el patrocinador ${sp.name}. El espacio comercial queda libre para evaluar nuevas propuestas.`,
+                            date: new Date(state.currentDate).toLocaleDateString()
+                        });
+                        // Generate replacement offer for that slot
+                        const newOffer = generateSponsor(sp.type, updatedPlayerTeam.tier, playerLeagueId);
+                        updatedAvailableSponsors = [...updatedAvailableSponsors, newOffer];
+                    } else {
+                        activeSponsorsRemaining.push({
+                            ...sp,
+                            duration: newDur
+                        });
+                    }
+                }
+                updatedSponsors = activeSponsorsRemaining;
+            }
+
             const nextTurn = state.currentTurn === 'weekend' ? 'midweek' : 'weekend';
             const nextWeek = state.currentTurn === 'midweek' ? state.currentWeek + 1 : state.currentWeek;
             const daysToAdd = state.currentTurn === 'weekend' ? 3 : 4; // Sat -> Wed (3), Wed -> Sat (4)
 
+            const totalWeeklyInc = breakdown.matchdayRevenue + breakdown.sponsorshipRevenue + breakdown.tvRevenue + breakdown.prizeMoneyRevenue + breakdown.transferRevenue + (breakdown.merchandisingRevenue || 0);
+            const totalWeeklyExp = breakdown.wageExpenses + breakdown.coachExpenses + breakdown.stadiumExpenses + breakdown.operationalExpenses + breakdown.transferExpenses + (breakdown.loanExpenses || 0) + (breakdown.youthAcademyExpenses || 0) + (breakdown.merchandisingExpenses || 0);
+
             const updatedFinances = {
                 ...state.finances,
                 balance: newBalance,
-                weeklyIncome: breakdown.matchdayRevenue + breakdown.sponsorshipRevenue + breakdown.tvRevenue + breakdown.prizeMoneyRevenue + breakdown.transferRevenue,
-                weeklyWages: breakdown.wageExpenses + breakdown.coachExpenses + breakdown.stadiumExpenses + breakdown.operationalExpenses + breakdown.transferExpenses,
+                weeklyIncome: totalWeeklyInc,
+                weeklyWages: totalWeeklyExp,
                 balanceHistory: [...state.finances.balanceHistory, newBalance].slice(-52),
-                breakdown
+                breakdown,
+                activeLoans: updatedLoans
             };
 
             const interimState: GameState = {
@@ -205,7 +275,7 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
                 currentDate: new Date(state.currentDate.getTime() + daysToAdd * 24 * 60 * 60 * 1000),
                 currentWeek: nextWeek,
                 currentTurn: nextTurn,
-                newsFeed: [...newsItems, ...state.newsFeed].slice(0, 30),
+                newsFeed: [...financialNews, ...newsItems, ...state.newsFeed].slice(0, 30),
                 schedule: newSchedule,
                 leagueTables: newLeagueTables,
                 allTeams: newAllTeams,
@@ -220,6 +290,8 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
                 incomingOffers: [...state.incomingOffers, ...newOffers],
                 cups: newCups || state.cups,
                 finances: updatedFinances,
+                sponsors: updatedSponsors,
+                availableSponsors: updatedAvailableSponsors,
                 scoutedPlayerIds: newScoutedPlayerIds || state.scoutedPlayerIds,
                 cinematicQueue: action.payload.cinematicEvents && action.payload.cinematicEvents.length > 0
                     ? [...state.cinematicQueue, ...action.payload.cinematicEvents]

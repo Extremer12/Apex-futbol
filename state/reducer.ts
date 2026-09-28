@@ -35,7 +35,17 @@ export type GameAction =
     | { type: 'SET_VIEWING_PLAYER'; payload: Player | null }
     | { type: 'HIRE_COACH'; payload: { coachId: string } }
     | { type: 'FIRE_COACH' }
-    | { type: 'ACCEPT_SPONSOR'; payload: { sponsorId: string; negotiatedIncome?: number } }
+    | { type: 'HIRE_STAFF'; payload: { staffId: string } }
+    | { type: 'FIRE_STAFF'; payload: { role: import('../types').StaffRole } }
+    | { type: 'FIRE_SCOUT'; payload: { scoutId: string } }
+    | { type: 'ACCEPT_SPONSOR'; payload: { sponsorId: string; negotiatedIncome?: number; customSigningBonus?: number; fanImpact?: number } }
+    | { type: 'TERMINATE_SPONSOR'; payload: { sponsorId: string; indemnityCost: number } }
+    | { type: 'TAKE_LOAN'; payload: { loan: import('../types').BankLoan } }
+    | { type: 'REPAY_LOAN'; payload: { loanId: string } }
+    | { type: 'SET_TICKET_POLICY'; payload: { policy: import('../types').TicketPolicy } }
+    | { type: 'REALLOCATE_BUDGET'; payload: { amount: number; direction: 'to_transfers' | 'to_balance' } }
+    | { type: 'UPDATE_CLUB_DIRECTIVES'; payload: Partial<import('../types').ClubDirectives> }
+    | { type: 'UPGRADE_FACILITY'; payload: { cost: number } }
     | { type: 'REMOVE_SPONSOR_OFFER'; payload: { sponsorId: string } }
     | { type: 'EXPAND_STADIUM' }
     | { type: 'SET_FAN_APPROVAL'; payload: FanApproval }
@@ -96,12 +106,22 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 // Staff actions
                 case 'HIRE_COACH':
                 case 'FIRE_COACH':
+                case 'HIRE_STAFF':
+                case 'FIRE_STAFF':
                 case 'HIRE_SCOUT':
+                case 'FIRE_SCOUT':
                 case 'SCOUT_PLAYER':
                     return handleStaffAction(state, action);
 
                 // Economy actions
                 case 'ACCEPT_SPONSOR':
+                case 'TERMINATE_SPONSOR':
+                case 'TAKE_LOAN':
+                case 'REPAY_LOAN':
+                case 'SET_TICKET_POLICY':
+                case 'REALLOCATE_BUDGET':
+                case 'UPDATE_CLUB_DIRECTIVES':
+                case 'UPGRADE_FACILITY':
                 case 'REMOVE_SPONSOR_OFFER':
                 case 'EXPAND_STADIUM':
                 case 'UPDATE_FINANCES':

@@ -1,5 +1,6 @@
 import { GameState, NewsItem } from '../../types';
 import { generateRandomCoach } from '../../services/coaching';
+import { generateStaffMember } from '../../services/staffService';
 import { formatDate, formatCurrency } from '../../utils';
 import type { GameAction } from '../reducer';
 
@@ -7,7 +8,10 @@ import type { GameAction } from '../reducer';
 type StaffAction = Extract<GameAction,
     | { type: 'HIRE_COACH' }
     | { type: 'FIRE_COACH' }
+    | { type: 'HIRE_STAFF' }
+    | { type: 'FIRE_STAFF' }
     | { type: 'HIRE_SCOUT' }
+    | { type: 'FIRE_SCOUT' }
     | { type: 'SCOUT_PLAYER' }
 >;
 
@@ -15,7 +19,7 @@ export function handleStaffAction(state: GameState, action: StaffAction): GameSt
     switch (action.type) {
         case 'HIRE_COACH': {
             const { coachId } = action.payload;
-            const coachToHire = state.availableCoaches.find(c => c.id === coachId);
+            const coachToHire = (state.availableCoaches || []).find(c => c.id === coachId);
 
             if (!coachToHire) return state;
 
@@ -30,8 +34,9 @@ export function handleStaffAction(state: GameState, action: StaffAction): GameSt
             const newTeam = { ...state.team, coach: coachToHire };
             const newAllTeams = state.allTeams.map(t => t.id === newTeam.id ? newTeam : t);
 
-            // Remove from market
-            const newMarket = state.availableCoaches.filter(c => c.id !== coachId);
+            // Remove from market & add new coach
+            const remainingCoaches = (state.availableCoaches || []).filter(c => c.id !== coachId);
+            const newMarket = [...remainingCoaches, generateRandomCoach(state.team.tier)];
 
             return {
                 ...state,
@@ -46,16 +51,17 @@ export function handleStaffAction(state: GameState, action: StaffAction): GameSt
                 newsFeed: [{
                     id: `hire_coach_${Date.now()}`,
                     headline: '👔 Nuevo Director Técnico',
-                    body: `El club ha contratado a ${coachToHire.name}. Su estilo ${coachToHire.style} promete cambiar la dinámica del equipo.`,
+                    body: `El club ha contratado a ${coachToHire.name} (Poder: ${coachToHire.prestige}). Su estilo táctico ${coachToHire.style} promete potenciar el rendimiento del equipo.`,
                     date: formatDate(state.currentDate)
-                }, ...state.newsFeed].slice(0, 20)
+                }, ...state.newsFeed].slice(0, 25)
             };
         }
 
         case 'FIRE_COACH': {
             if (!state.team.coach) return state;
 
-            const severancePay = state.team.coach.salary * 4; // 1 month severance
+            const coach = state.team.coach;
+            const severancePay = coach.salary * 4; // 1 month severance
             const newBalance = state.finances.balance - severancePay;
 
             const newTeam = { ...state.team, coach: undefined };
@@ -72,16 +78,107 @@ export function handleStaffAction(state: GameState, action: StaffAction): GameSt
                 },
                 newsFeed: [{
                     id: `fire_coach_${Date.now()}`,
-                    headline: '👋 Entrenador Despedido',
-                    body: `El club ha decidido prescindir de los servicios de su Director Técnico. El puesto está vacante.`,
+                    headline: '👋 Salida del Director Técnico',
+                    body: `El club ha rescindido el contrato de ${coach.name}. La junta directiva asume interinamente la conducción a la espera de un nuevo estratega.`,
                     date: formatDate(state.currentDate)
-                }, ...state.newsFeed].slice(0, 20)
+                }, ...state.newsFeed].slice(0, 25)
+            };
+        }
+
+        case 'HIRE_STAFF': {
+            const { staffId } = action.payload;
+            const candidate = (state.availableStaff || []).find(s => s.id === staffId);
+            if (!candidate) return state;
+
+            if (state.finances.balance < candidate.hiringFee) return state;
+
+            const newBalance = state.finances.balance - candidate.hiringFee;
+            const currentStaff = state.clubStaff || {};
+
+            let updatedStaff = { ...currentStaff };
+            let roleLabel = 'Especialista';
+
+            if (candidate.role === 'doctor') {
+                updatedStaff.doctor = candidate;
+                roleLabel = 'Jefe Médico';
+            } else if (candidate.role === 'fitness_coach') {
+                updatedStaff.fitnessCoach = candidate;
+                roleLabel = 'Preparador Físico';
+            } else if (candidate.role === 'sporting_director') {
+                updatedStaff.sportingDirector = candidate;
+                roleLabel = 'Director Deportivo';
+            } else if (candidate.role === 'youth_coach') {
+                updatedStaff.youthCoach = candidate;
+                roleLabel = 'Director de Cantera';
+            }
+
+            const updatedTeam = { ...state.team, clubStaff: updatedStaff };
+            const updatedAllTeams = state.allTeams.map(t => t.id === updatedTeam.id ? updatedTeam : t);
+
+            // Replace hired candidate in market with fresh one
+            const remainingStaff = (state.availableStaff || []).filter(s => s.id !== staffId);
+            const freshCandidate = generateStaffMember(candidate.role, state.team.tier, state.team.leagueId);
+
+            return {
+                ...state,
+                team: updatedTeam,
+                allTeams: updatedAllTeams,
+                clubStaff: updatedStaff,
+                availableStaff: [...remainingStaff, freshCandidate],
+                finances: {
+                    ...state.finances,
+                    balance: newBalance,
+                    balanceHistory: [...state.finances.balanceHistory, newBalance]
+                },
+                newsFeed: [{
+                    id: `hire_staff_${Date.now()}`,
+                    headline: `📋 Nuevo ${roleLabel} Contratado`,
+                    body: `${candidate.name} (Poder: ${candidate.power}) se incorpora como ${roleLabel}. Especialidad: ${candidate.specialty || 'Generalista'}.`,
+                    date: formatDate(state.currentDate)
+                }, ...state.newsFeed].slice(0, 25)
+            };
+        }
+
+        case 'FIRE_STAFF': {
+            const { role } = action.payload;
+            const currentStaff = state.clubStaff || {};
+            let staffToFire = currentStaff[role === 'fitness_coach' ? 'fitnessCoach' : role === 'sporting_director' ? 'sportingDirector' : role === 'youth_coach' ? 'youthCoach' : 'doctor'];
+            if (!staffToFire) return state;
+
+            const severancePay = staffToFire.salary * 2; // 2 weeks severance
+            const newBalance = state.finances.balance - severancePay;
+
+            let updatedStaff = { ...currentStaff };
+            if (role === 'doctor') updatedStaff.doctor = undefined;
+            else if (role === 'fitness_coach') updatedStaff.fitnessCoach = undefined;
+            else if (role === 'sporting_director') updatedStaff.sportingDirector = undefined;
+            else if (role === 'youth_coach') updatedStaff.youthCoach = undefined;
+
+            const updatedTeam = { ...state.team, clubStaff: updatedStaff };
+            const updatedAllTeams = state.allTeams.map(t => t.id === updatedTeam.id ? updatedTeam : t);
+
+            return {
+                ...state,
+                team: updatedTeam,
+                allTeams: updatedAllTeams,
+                clubStaff: updatedStaff,
+                finances: {
+                    ...state.finances,
+                    balance: newBalance,
+                    balanceHistory: [...state.finances.balanceHistory, newBalance]
+                },
+                newsFeed: [{
+                    id: `fire_staff_${Date.now()}`,
+                    headline: '👋 Rescisión de Personal',
+                    body: `El club ha rescindido los servicios de ${staffToFire.name}. El puesto queda vacante en el organigrama del club.`,
+                    date: formatDate(state.currentDate)
+                }, ...state.newsFeed].slice(0, 25)
             };
         }
 
         case 'HIRE_SCOUT': {
             const scout = action.payload;
-
+            if (state.scouts.length >= 3) return state;
             if (state.finances.balance < scout.hiringFee) return state;
 
             return {
@@ -97,7 +194,24 @@ export function handleStaffAction(state: GameState, action: StaffAction): GameSt
                     headline: '🔍 Nuevo Scout Contratado',
                     body: `${scout.name} se une al equipo para expandir nuestra red de ojeo.`,
                     date: formatDate(state.currentDate)
-                }, ...state.newsFeed].slice(0, 20)
+                }, ...state.newsFeed].slice(0, 25)
+            };
+        }
+
+        case 'FIRE_SCOUT': {
+            const { scoutId } = action.payload;
+            const scout = state.scouts.find(s => s.id === scoutId);
+            if (!scout) return state;
+
+            return {
+                ...state,
+                scouts: state.scouts.filter(s => s.id !== scoutId),
+                newsFeed: [{
+                    id: `fire_scout_${Date.now()}`,
+                    headline: '👋 Ojeador Desvinculado',
+                    body: `${scout.name} ha finalizado sus funciones de ojeo en el club.`,
+                    date: formatDate(state.currentDate)
+                }, ...state.newsFeed].slice(0, 25)
             };
         }
 
@@ -105,7 +219,6 @@ export function handleStaffAction(state: GameState, action: StaffAction): GameSt
             const { playerId } = action.payload;
             const currentLevel = state.scoutedPlayerIds[playerId] || 0;
 
-            // Cost of manual scouting: 0.1M (100k)
             const scoutingCost = 0.1;
             if (state.finances.balance < scoutingCost) return state;
 
@@ -118,7 +231,7 @@ export function handleStaffAction(state: GameState, action: StaffAction): GameSt
                 },
                 scoutedPlayerIds: {
                     ...state.scoutedPlayerIds,
-                    [playerId]: Math.min(100, currentLevel + 25) // Increase 25% each time
+                    [playerId]: Math.min(100, currentLevel + 25)
                 }
             };
         }
