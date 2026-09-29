@@ -7,138 +7,6 @@ export interface ConmebolTeamMeta {
 }
 
 export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
-    // --- CHILE (4) ---
-    {
-        id: 9101,
-        name: 'Colo-Colo',
-        shortName: 'Colo-Colo',
-        logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Football%20Club%20Logos/Chile/colo-colo.football-logos.cc.svg',
-        leagueId: LeagueId.COPA_DE_PRIMERA, // fallback league ID
-        budget: 18000000,
-        transferBudget: 6000000,
-        tier: 'Mid',
-        teamMorale: 'Feliz',
-        primaryColor: '#FFFFFF',
-        secondaryColor: '#000000',
-        country: 'CHI',
-        conmebolRanking: 18,
-        squad: createGenericSquad(9101, 'Colo-Colo', 75, '#FFFFFF', '#000000')
-    },
-    {
-        id: 9102,
-        name: 'Universidad de Chile',
-        shortName: 'U. de Chile',
-        logo: '',
-        leagueId: LeagueId.COPA_DE_PRIMERA,
-        budget: 14000000,
-        transferBudget: 4500000,
-        tier: 'Mid',
-        teamMorale: 'Normal',
-        primaryColor: '#003DA5',
-        secondaryColor: '#C8102E',
-        country: 'CHI',
-        conmebolRanking: 32,
-        squad: createGenericSquad(9102, 'U. de Chile', 74, '#003DA5', '#C8102E')
-    },
-    {
-        id: 9103,
-        name: 'Universidad Católica',
-        shortName: 'U. Católica',
-        logo: '',
-        leagueId: LeagueId.COPA_DE_PRIMERA,
-        budget: 13000000,
-        transferBudget: 4000000,
-        tier: 'Mid',
-        teamMorale: 'Contento',
-        primaryColor: '#0055A5',
-        secondaryColor: '#FFFFFF',
-        country: 'CHI',
-        conmebolRanking: 38,
-        squad: createGenericSquad(9103, 'U. Católica', 73, '#0055A5', '#FFFFFF')
-    },
-    {
-        id: 9104,
-        name: 'Huachipato',
-        shortName: 'Huachipato',
-        logo: '',
-        leagueId: LeagueId.COPA_DE_PRIMERA,
-        budget: 9000000,
-        transferBudget: 2500000,
-        tier: 'Mid',
-        teamMorale: 'Contento',
-        primaryColor: '#003366',
-        secondaryColor: '#000000',
-        country: 'CHI',
-        conmebolRanking: 55,
-        squad: createGenericSquad(9104, 'Huachipato', 71, '#003366', '#000000')
-    },
-
-    // --- COLOMBIA (4) ---
-    {
-        id: 9105,
-        name: 'Atlético Nacional',
-        shortName: 'Atl. Nacional',
-        logo: '',
-        leagueId: LeagueId.COPA_DE_PRIMERA,
-        budget: 19000000,
-        transferBudget: 6500000,
-        tier: 'Mid',
-        teamMorale: 'Feliz',
-        primaryColor: '#00843D',
-        secondaryColor: '#FFFFFF',
-        country: 'COL',
-        conmebolRanking: 16,
-        squad: createGenericSquad(9105, 'Atl. Nacional', 76, '#00843D', '#FFFFFF')
-    },
-    {
-        id: 9106,
-        name: 'Millonarios',
-        shortName: 'Millonarios',
-        logo: '',
-        leagueId: LeagueId.COPA_DE_PRIMERA,
-        budget: 15000000,
-        transferBudget: 5000000,
-        tier: 'Mid',
-        teamMorale: 'Contento',
-        primaryColor: '#0033A0',
-        secondaryColor: '#FFFFFF',
-        country: 'COL',
-        conmebolRanking: 30,
-        squad: createGenericSquad(9106, 'Millonarios', 74, '#0033A0', '#FFFFFF')
-    },
-    {
-        id: 9107,
-        name: 'Junior de Barranquilla',
-        shortName: 'Junior',
-        logo: '',
-        leagueId: LeagueId.COPA_DE_PRIMERA,
-        budget: 16000000,
-        transferBudget: 5500000,
-        tier: 'Mid',
-        teamMorale: 'Contento',
-        primaryColor: '#DA291C',
-        secondaryColor: '#FFFFFF',
-        country: 'COL',
-        conmebolRanking: 28,
-        squad: createGenericSquad(9107, 'Junior', 74, '#DA291C', '#FFFFFF')
-    },
-    {
-        id: 9108,
-        name: 'Independiente Santa Fe',
-        shortName: 'Santa Fe',
-        logo: '',
-        leagueId: LeagueId.COPA_DE_PRIMERA,
-        budget: 11000000,
-        transferBudget: 3500000,
-        tier: 'Mid',
-        teamMorale: 'Contento',
-        primaryColor: '#E4002B',
-        secondaryColor: '#FFFFFF',
-        country: 'COL',
-        conmebolRanking: 44,
-        squad: createGenericSquad(9108, 'Santa Fe', 72, '#E4002B', '#FFFFFF')
-    },
-
     // --- BOLIVIA (4) ---
     {
         id: 9109,
@@ -963,8 +831,17 @@ export const KNOWN_CONMEBOL_META: Record<string, { country: ConmebolTeamMeta['co
     'Talleres (Córdoba)': { country: 'ARG', ranking: 26 },
     'Club Bolívar': { country: 'BOL', ranking: 27 },
     'Junior de Barranquilla': { country: 'COL', ranking: 28 },
+    'Junior': { country: 'COL', ranking: 28 },
     'Defensa y Justicia': { country: 'ARG', ranking: 29 },
     'Millonarios': { country: 'COL', ranking: 30 },
+    'América de Cali': { country: 'COL', ranking: 33 },
+    'Independiente Medellín': { country: 'COL', ranking: 36 },
+    'DIM': { country: 'COL', ranking: 36 },
+    'Deportes Tolima': { country: 'COL', ranking: 40 },
+    'Independiente Santa Fe': { country: 'COL', ranking: 44 },
+    'Santa Fe': { country: 'COL', ranking: 44 },
+    'Once Caldas': { country: 'COL', ranking: 48 },
+    'Deportivo Cali': { country: 'COL', ranking: 50 },
 };
 
 export const getTeamConmebolMeta = (team: Team): ConmebolTeamMeta => {
@@ -987,6 +864,12 @@ export const getTeamConmebolMeta = (team: Team): ConmebolTeamMeta => {
     }
     if (team.leagueId === LeagueId.COPA_DE_PRIMERA) {
         return { country: 'PAR', conmebolRanking: 35 + (team.id % 35) };
+    }
+    if (team.leagueId === LeagueId.PRIMERA_DIVISION_CHILE || team.leagueId === LeagueId.PRIMERA_B_CHILE) {
+        return { country: 'CHI', conmebolRanking: 35 + (team.id % 35) };
+    }
+    if (team.leagueId === LeagueId.PRIMERA_A_COLOMBIA || team.leagueId === LeagueId.PRIMERA_B_COLOMBIA) {
+        return { country: 'COL', conmebolRanking: 35 + (team.id % 35) };
     }
     return { country: 'ARG', conmebolRanking: 99 };
 };
