@@ -156,14 +156,37 @@ export function handleCupProgression(
         }
     }
 
-    // 2.4 Copa Argentina (Argentina)
+    // 2.4 Copa Argentina (Argentina - Disputada a lo largo de todo el año calendario)
+    // Ronda 1 (32avos): Semana 6 (Apertura)
+    // Ronda 2 (16avos): Semana 13 (Apertura)
+    // Ronda 3 (Cuartos): Semana 23 (Clausura)
+    // Ronda 4 (Semis): Semana 29 (Clausura)
+    // Ronda 5 (Final): Semana 35 (Cierre de Clausura regular, previo a playoffs)
     if (updatedCups.copaArgentina?.rounds?.length && !updatedCups.copaArgentina.winnerId) {
         const prevRoundsCount = updatedCups.copaArgentina.rounds.length;
-        const nextCupWeek = newWeek + 4;
+        const caWeekMap: Record<number, number> = {
+            0: 13, // Genera Ronda 2 (16avos) para la semana 13
+            1: 23, // Genera Ronda 3 (Cuartos) para la semana 23
+            2: 29, // Genera Ronda 4 (Semis) para la semana 29
+            3: 35  // Genera Ronda 5 (Gran Final) para la semana 35
+        };
+        const nextCupWeek = caWeekMap[updatedCups.copaArgentina.currentRoundIndex] || Math.min(35, Math.max(newWeek + 1, 6));
         updatedCups.copaArgentina = advanceCupRound(updatedCups.copaArgentina, teams, nextCupWeek, updatedSchedule);
         if (updatedCups.copaArgentina.rounds.length > prevRoundsCount) {
             const newRound = updatedCups.copaArgentina.rounds[updatedCups.copaArgentina.rounds.length - 1];
             updatedSchedule.push(...newRound.fixtures, ...(newRound.secondLegFixtures || []));
+        }
+
+        // Safety fallback: coronar campeón si la final concluyó
+        if (!updatedCups.copaArgentina.winnerId && updatedCups.copaArgentina.rounds.length > 0) {
+            const lastRound = updatedCups.copaArgentina.rounds[updatedCups.copaArgentina.rounds.length - 1];
+            if (lastRound.fixtures?.length === 1 && lastRound.fixtures[0].result !== undefined) {
+                const wId = determineCupWinner(lastRound.fixtures[0]);
+                if (wId) {
+                    updatedCups.copaArgentina.winnerId = wId;
+                    updatedCups.copaArgentina.phase = 'finished';
+                }
+            }
         }
     }
 

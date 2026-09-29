@@ -393,7 +393,7 @@ export function startNewSeason(currentState: GameState): GameState {
     const copaDelReyFixtures = copaDelReyRound1.map(m => ({ ...m, week: 4, isMidweek: true }));
     const dfbPokalFixtures = dfbPokalRound1.map(m => ({ ...m, week: 3, isMidweek: true }));
     const coppaItaliaFixtures = coppaItaliaRound1.map(m => ({ ...m, week: 4, isMidweek: true }));
-    const copaArgentinaFixtures = copaArgentinaRound1.map(m => ({ ...m, week: 5, isMidweek: true }));
+    const copaArgentinaFixtures = copaArgentinaRound1.map(m => ({ ...m, week: 6, isMidweek: true }));
 
     // 5.5 Generate European & South American Competitions (Dynamic Qualification)
     const getTopTeams = (lid: LeagueId, count: number) => {

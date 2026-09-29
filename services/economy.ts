@@ -330,7 +330,8 @@ export const generateStadium = (team: Team): Stadium => {
     const isSouthAm = [
         LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
         LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
-        LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE
+        LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE,
+        LeagueId.PRIMERA_A_COLOMBIA, LeagueId.PRIMERA_B_COLOMBIA
     ].includes(team.leagueId as LeagueId);
 
     const isMex = [LeagueId.LIGA_MX, LeagueId.LIGA_EXPANSION_MX].includes(team.leagueId as LeagueId);
@@ -371,7 +372,8 @@ export const generateSponsor = (
         LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
         LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
         LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE,
-        'LIGA_ARGENTINA', 'PRIMERA_NACIONAL', 'BRASILEIRAO', 'SERIE_B_BR', 'COPA_DE_PRIMERA'
+        LeagueId.PRIMERA_A_COLOMBIA, LeagueId.PRIMERA_B_COLOMBIA,
+        'LIGA_ARGENTINA', 'PRIMERA_NACIONAL', 'BRASILEIRAO', 'SERIE_B_BR', 'COPA_DE_PRIMERA', 'PRIMERA_A_COLOMBIA'
     ].includes(leagueId as any);
 
     const isMex = leagueId && [LeagueId.LIGA_MX, LeagueId.LIGA_EXPANSION_MX, 'LIGA_MX'].includes(leagueId as any);
@@ -497,7 +499,8 @@ export const calculateFinancialBreakdown = (
     const isSouthAm = [
         LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
         LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
-        LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE
+        LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE,
+        LeagueId.PRIMERA_A_COLOMBIA, LeagueId.PRIMERA_B_COLOMBIA
     ].includes(leagueId as any);
 
     // Ingresos
@@ -574,7 +577,8 @@ export const getAvailableLoans = (team: Team, leagueId: string): BankLoan[] => {
     const isSouthAm = [
         LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
         LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
-        LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE
+        LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE,
+        LeagueId.PRIMERA_A_COLOMBIA, LeagueId.PRIMERA_B_COLOMBIA
     ].includes(leagueId as any);
 
     const isMex = [LeagueId.LIGA_MX, LeagueId.LIGA_EXPANSION_MX].includes(leagueId as any);
@@ -742,6 +746,12 @@ export const getBaseWeeklyIncome = (leagueId: string): number => {
         case LeagueId.PRIMERA_B_CHILE:
         case 'PRIMERA_B_CHILE':
             return 15_000;
+        case LeagueId.PRIMERA_A_COLOMBIA:
+        case 'PRIMERA_A_COLOMBIA':
+            return 40_000;
+        case LeagueId.PRIMERA_B_COLOMBIA:
+        case 'PRIMERA_B_COLOMBIA':
+            return 15_000;
         default:
             return 250_000;
     }
@@ -809,6 +819,12 @@ export const calculatePrizeMoney = (leagueId: string, position: number): number 
             baseAmount = 5_000_000; break;
         case LeagueId.PRIMERA_B_CHILE:
         case 'PRIMERA_B_CHILE':
+            baseAmount = 1_500_000; break;
+        case LeagueId.PRIMERA_A_COLOMBIA:
+        case 'PRIMERA_A_COLOMBIA':
+            baseAmount = 6_000_000; break;
+        case LeagueId.PRIMERA_B_COLOMBIA:
+        case 'PRIMERA_B_COLOMBIA':
             baseAmount = 1_500_000; break;
         default:
             baseAmount = 10_000_000;

@@ -132,6 +132,8 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
     const expansionMxTeamsList = allTeamsCopy.filter(t => t.leagueId === LeagueId.LIGA_EXPANSION_MX);
     const chileanTeamsList = allTeamsCopy.filter(t => t.leagueId === LeagueId.PRIMERA_DIVISION_CHILE);
     const expansionChileTeamsList = allTeamsCopy.filter(t => t.leagueId === LeagueId.PRIMERA_B_CHILE);
+    const colombianTeamsList = allTeamsCopy.filter(t => t.leagueId === LeagueId.PRIMERA_A_COLOMBIA);
+    const expansionColombianTeamsList = allTeamsCopy.filter(t => t.leagueId === LeagueId.PRIMERA_B_COLOMBIA);
 
     // International competitions (Champions League, Copa Libertadores) are NOT generated
     // in season 1. They will be created by seasonManager.ts from season 2 onwards
@@ -163,7 +165,7 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
     const copaDelReyFixtures = copaDelReyRound1.map(m => ({ ...m, week: 4, isMidweek: true }));
     const dfbPokalFixtures = dfbPokalRound1.map(m => ({ ...m, week: 3, isMidweek: true }));
     const coppaItaliaFixtures = coppaItaliaRound1.map(m => ({ ...m, week: 4, isMidweek: true }));
-    const copaArgentinaFixtures = copaArgentinaRound1.map(m => ({ ...m, week: 5, isMidweek: true }));
+    const copaArgentinaFixtures = copaArgentinaRound1.map(m => ({ ...m, week: 6, isMidweek: true }));
     const copaMxFixtures = copaMxRound1.map(m => ({ ...m, week: 6, isMidweek: true }));
 
     // =========================================================================
@@ -309,6 +311,8 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
             [LeagueId.LIGA_EXPANSION_MX]: createInitialLeagueTable(expansionMxTeamsList),
             [LeagueId.PRIMERA_DIVISION_CHILE]: createInitialLeagueTable(chileanTeamsList),
             [LeagueId.PRIMERA_B_CHILE]: createInitialLeagueTable(expansionChileTeamsList),
+            [LeagueId.PRIMERA_A_COLOMBIA]: createInitialLeagueTable(colombianTeamsList),
+            [LeagueId.PRIMERA_B_COLOMBIA]: createInitialLeagueTable(expansionColombianTeamsList),
         },
         finances: {
             balance: selectedTeam.budget,

@@ -39,7 +39,8 @@ export function buildSudamericanaParticipants(context: SudamericanaQualification
         const seen = new Set<number>(usedIds);
 
         if (countryCode === 'ARG') {
-            if (argentineQualifiedIds.length > 0) {
+            // Priority to argentineQualifiedIds (clubs that earned qualification on sporting merit)
+            if (argentineQualifiedIds && argentineQualifiedIds.length > 0) {
                 argentineQualifiedIds.forEach(id => {
                     const t = findTeam(id);
                     if (t && !seen.has(t.id)) {
@@ -48,12 +49,17 @@ export function buildSudamericanaParticipants(context: SudamericanaQualification
                     }
                 });
             }
-            // Fallback from league
-            const fallbacks = allTeams.filter(t => t.leagueId === LeagueId.LIGA_ARGENTINA && !seen.has(t.id));
-            fallbacks.forEach(t => {
-                teams.push(t);
-                seen.add(t.id);
-            });
+            // Fallback from league ONLY if fewer than 6 qualified teams exist (e.g. fresh game start)
+            if (teams.length < 6) {
+                const fallbacks = allTeams
+                    .filter(t => t.leagueId === LeagueId.LIGA_ARGENTINA && !seen.has(t.id))
+                    .sort((a, b) => getTeamConmebolMeta(a).conmebolRanking - getTeamConmebolMeta(b).conmebolRanking);
+                for (const t of fallbacks) {
+                    if (teams.length >= 6) break;
+                    teams.push(t);
+                    seen.add(t.id);
+                }
+            }
         } else if (countryCode === 'BRA') {
             const brTeams = allTeams.filter(t => t.leagueId === LeagueId.BRASILEIRAO && !seen.has(t.id));
             brTeams.forEach(t => {
@@ -69,6 +75,12 @@ export function buildSudamericanaParticipants(context: SudamericanaQualification
         } else if (countryCode === 'CHI') {
             const chiTeams = allTeams.filter(t => t.leagueId === LeagueId.PRIMERA_DIVISION_CHILE && !seen.has(t.id));
             chiTeams.forEach(t => {
+                teams.push(t);
+                seen.add(t.id);
+            });
+        } else if (countryCode === 'COL') {
+            const colTeams = allTeams.filter(t => t.leagueId === LeagueId.PRIMERA_A_COLOMBIA && !seen.has(t.id));
+            colTeams.forEach(t => {
                 teams.push(t);
                 seen.add(t.id);
             });

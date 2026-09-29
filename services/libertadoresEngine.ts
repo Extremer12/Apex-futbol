@@ -43,20 +43,27 @@ export function buildLibertadoresParticipants(context: LibertadoresQualification
         if (sudamericanaChampion) seen.add(sudamericanaChampion.id);
 
         if (countryCode === 'ARG') {
-            // Priority to argentineQualifiedIds
-            argentineQualifiedIds.forEach(id => {
-                const t = findTeam(id);
-                if (t && !seen.has(t.id)) {
+            // Priority to argentineQualifiedIds (clubs that earned qualification on sporting merit)
+            if (argentineQualifiedIds && argentineQualifiedIds.length > 0) {
+                argentineQualifiedIds.forEach(id => {
+                    const t = findTeam(id);
+                    if (t && !seen.has(t.id)) {
+                        teams.push(t);
+                        seen.add(t.id);
+                    }
+                });
+            }
+            // Fallback from league ONLY if fewer than 6 qualified teams exist (e.g. fresh game start)
+            if (teams.length < 6) {
+                const fallbacks = allTeams
+                    .filter(t => t.leagueId === LeagueId.LIGA_ARGENTINA && !seen.has(t.id))
+                    .sort((a, b) => getTeamConmebolMeta(a).conmebolRanking - getTeamConmebolMeta(b).conmebolRanking);
+                for (const t of fallbacks) {
+                    if (teams.length >= 6) break;
                     teams.push(t);
                     seen.add(t.id);
                 }
-            });
-            // Fallback from league
-            const fallbacks = allTeams.filter(t => t.leagueId === LeagueId.LIGA_ARGENTINA && !seen.has(t.id));
-            fallbacks.forEach(t => {
-                teams.push(t);
-                seen.add(t.id);
-            });
+            }
         } else if (countryCode === 'BRA') {
             const brTeams = allTeams.filter(t => t.leagueId === LeagueId.BRASILEIRAO && !seen.has(t.id));
             brTeams.forEach(t => {
@@ -72,6 +79,12 @@ export function buildLibertadoresParticipants(context: LibertadoresQualification
         } else if (countryCode === 'CHI') {
             const chiTeams = allTeams.filter(t => t.leagueId === LeagueId.PRIMERA_DIVISION_CHILE && !seen.has(t.id));
             chiTeams.forEach(t => {
+                teams.push(t);
+                seen.add(t.id);
+            });
+        } else if (countryCode === 'COL') {
+            const colTeams = allTeams.filter(t => t.leagueId === LeagueId.PRIMERA_A_COLOMBIA && !seen.has(t.id));
+            colTeams.forEach(t => {
                 teams.push(t);
                 seen.add(t.id);
             });
@@ -92,7 +105,7 @@ export function buildLibertadoresParticipants(context: LibertadoresQualification
     };
 
     const southAmericanPool = [
-        ...allTeams.filter(t => t.leagueId === LeagueId.LIGA_ARGENTINA || t.leagueId === LeagueId.BRASILEIRAO || t.leagueId === LeagueId.COPA_DE_PRIMERA || t.leagueId === LeagueId.PRIMERA_DIVISION_CHILE),
+        ...allTeams.filter(t => t.leagueId === LeagueId.LIGA_ARGENTINA || t.leagueId === LeagueId.BRASILEIRAO || t.leagueId === LeagueId.COPA_DE_PRIMERA || t.leagueId === LeagueId.PRIMERA_DIVISION_CHILE || t.leagueId === LeagueId.PRIMERA_A_COLOMBIA),
         ...SOUTH_AMERICAN_EXTRA_TEAMS
     ];
 
@@ -143,7 +156,13 @@ export function buildLibertadoresParticipants(context: LibertadoresQualification
     // Ensure directToGroups has exactly 28 teams (fill with next best available CONMEBOL teams if slot was free)
     if (directToGroups.length < 28) {
         const remaining = southAmericanPool
-            .filter(t => !usedIds.has(t.id))
+            .filter(t => {
+                if (usedIds.has(t.id)) return false;
+                if (argentineQualifiedIds && argentineQualifiedIds.length > 0 && t.leagueId === LeagueId.LIGA_ARGENTINA) {
+                    return false;
+                }
+                return true;
+            })
             .sort((a, b) => getTeamConmebolMeta(a).conmebolRanking - getTeamConmebolMeta(b).conmebolRanking);
         for (const t of remaining) {
             if (directToGroups.length >= 28) break;
@@ -155,7 +174,13 @@ export function buildLibertadoresParticipants(context: LibertadoresQualification
     // Ensure phase2Direct has exactly 13 teams
     if (phase2Direct.length < 13) {
         const remaining = southAmericanPool
-            .filter(t => !usedIds.has(t.id))
+            .filter(t => {
+                if (usedIds.has(t.id)) return false;
+                if (argentineQualifiedIds && argentineQualifiedIds.length > 0 && t.leagueId === LeagueId.LIGA_ARGENTINA) {
+                    return false;
+                }
+                return true;
+            })
             .sort((a, b) => getTeamConmebolMeta(a).conmebolRanking - getTeamConmebolMeta(b).conmebolRanking);
         for (const t of remaining) {
             if (phase2Direct.length >= 13) break;
@@ -167,7 +192,13 @@ export function buildLibertadoresParticipants(context: LibertadoresQualification
     // Ensure phase1Direct has exactly 6 teams
     if (phase1Direct.length < 6) {
         const remaining = southAmericanPool
-            .filter(t => !usedIds.has(t.id))
+            .filter(t => {
+                if (usedIds.has(t.id)) return false;
+                if (argentineQualifiedIds && argentineQualifiedIds.length > 0 && t.leagueId === LeagueId.LIGA_ARGENTINA) {
+                    return false;
+                }
+                return true;
+            })
             .sort((a, b) => getTeamConmebolMeta(a).conmebolRanking - getTeamConmebolMeta(b).conmebolRanking);
         for (const t of remaining) {
             if (phase1Direct.length >= 6) break;

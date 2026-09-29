@@ -210,7 +210,8 @@ export const generateTransferNegotiationResponse = async (player: Player, offer:
         LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
         LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
         LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE,
-        'LIGA_ARGENTINA', 'PRIMERA_NACIONAL', 'BRASILEIRAO', 'SERIE_B_BR', 'COPA_DE_PRIMERA'
+        LeagueId.PRIMERA_A_COLOMBIA, LeagueId.PRIMERA_B_COLOMBIA,
+        'LIGA_ARGENTINA', 'PRIMERA_NACIONAL', 'BRASILEIRAO', 'SERIE_B_BR', 'COPA_DE_PRIMERA', 'PRIMERA_A_COLOMBIA'
     ].includes(buyingTeam.leagueId as any);
 
     if (isEuropeanEliteLeague && isSouthAmericanBuyer && player.rating >= 83) {
@@ -291,7 +292,8 @@ export const generatePlayerContractNegotiationResponse = async (
         LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
         LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
         LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE,
-        'LIGA_ARGENTINA', 'PRIMERA_NACIONAL', 'BRASILEIRAO', 'SERIE_B_BR', 'COPA_DE_PRIMERA'
+        LeagueId.PRIMERA_A_COLOMBIA, LeagueId.PRIMERA_B_COLOMBIA,
+        'LIGA_ARGENTINA', 'PRIMERA_NACIONAL', 'BRASILEIRAO', 'SERIE_B_BR', 'COPA_DE_PRIMERA', 'PRIMERA_A_COLOMBIA'
     ].includes(buyingTeam.leagueId as any);
 
     if (isSouthAmericanBuyer && player.rating >= 83) {

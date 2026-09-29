@@ -1,4 +1,4 @@
-import { Team, Match, CupCompetition, EuropeanTableRow, CupGroup, LeagueTableRow } from '../../types';
+import { Team, Match, CupCompetition, EuropeanTableRow, CupGroup, LeagueTableRow, LeagueId } from '../../types';
 import { generateArgentinePlayoffs } from './argentineFormat';
 import { calculateTournamentStandings } from '../argentinaRegulations';
 
@@ -717,16 +717,33 @@ export const finalizeSingleCupCompetition = (
     while (!cup.winnerId && maxSafetyRounds > 0) {
         maxSafetyRounds--;
         if (!cup.rounds || cup.rounds.length === 0) break;
-        const currentRound = cup.rounds[cup.currentRoundIndex];
-        if (!currentRound || !currentRound.fixtures || currentRound.fixtures.length === 0) break;
 
-        currentRound.fixtures.forEach(f => {
+        // Ensure currentRoundIndex points to a valid round
+        if (cup.currentRoundIndex >= cup.rounds.length) {
+            cup.currentRoundIndex = Math.max(0, cup.rounds.length - 1);
+        }
+
+        const currentRound = cup.rounds[cup.currentRoundIndex];
+        if (!currentRound || !currentRound.fixtures || currentRound.fixtures.length === 0) {
+            let foundValid = false;
+            for (let r = cup.rounds.length - 1; r >= 0; r--) {
+                if (cup.rounds[r]?.fixtures?.length > 0) {
+                    cup.currentRoundIndex = r;
+                    foundValid = true;
+                    break;
+                }
+            }
+            if (!foundValid) break;
+        }
+
+        const activeRound = cup.rounds[cup.currentRoundIndex];
+        activeRound.fixtures.forEach(f => {
             if (!f.result) {
                 resolveUnplayedCupMatch(f, allTeams);
             }
         });
-        if (currentRound.secondLegFixtures) {
-            currentRound.secondLegFixtures.forEach(f => {
+        if (activeRound.secondLegFixtures) {
+            activeRound.secondLegFixtures.forEach(f => {
                 if (!f.result) {
                     resolveUnplayedCupMatch(f, allTeams);
                 }
@@ -734,16 +751,17 @@ export const finalizeSingleCupCompetition = (
         }
 
         const prevIndex = cup.currentRoundIndex;
-        cup = advanceCupRound(cup, allTeams, 0, [...currentRound.fixtures, ...(currentRound.secondLegFixtures || [])]);
+        cup = advanceCupRound(cup, allTeams, 0, [...activeRound.fixtures, ...(activeRound.secondLegFixtures || [])]);
         if (cup.winnerId) break;
+
         if (cup.currentRoundIndex === prevIndex && !cup.winnerId) {
             // Check if final was played in currentRound
-            if (currentRound.fixtures.length === 1 && currentRound.fixtures[0].result) {
+            if (activeRound.fixtures.length === 1 && activeRound.fixtures[0].result) {
                 let wId: number | null = null;
-                if (currentRound.secondLegFixtures && currentRound.secondLegFixtures.length === 1 && currentRound.secondLegFixtures[0].result) {
-                    wId = determineTwoLeggedTieWinner(currentRound.fixtures[0], currentRound.secondLegFixtures[0]);
+                if (activeRound.secondLegFixtures && activeRound.secondLegFixtures.length === 1 && activeRound.secondLegFixtures[0].result) {
+                    wId = determineTwoLeggedTieWinner(activeRound.fixtures[0], activeRound.secondLegFixtures[0]);
                 } else {
-                    wId = determineCupWinner(currentRound.fixtures[0]);
+                    wId = determineCupWinner(activeRound.fixtures[0]);
                 }
                 if (wId) {
                     cup.winnerId = wId;
@@ -751,8 +769,84 @@ export const finalizeSingleCupCompetition = (
                     break;
                 }
             }
+
+            // Force progression if advanceCupRound did not automatically advance
+            const roundWinners: number[] = [];
+            activeRound.fixtures.forEach((f, idx) => {
+                if (activeRound.secondLegFixtures && activeRound.secondLegFixtures[idx]) {
+                    const w = determineTwoLeggedTieWinner(f, activeRound.secondLegFixtures[idx]);
+                    if (w) roundWinners.push(w);
+                } else {
+                    const w = determineCupWinner(f);
+                    if (w) roundWinners.push(w);
+                }
+            });
+
+            if (roundWinners.length === 1) {
+                cup.winnerId = roundWinners[0];
+                cup.phase = 'finished';
+                break;
+            } else if (roundWinners.length > 1) {
+                const nextFix: Match[] = [];
+                for (let i = 0; i < roundWinners.length; i += 2) {
+                    if (i + 1 < roundWinners.length) {
+                        nextFix.push({
+                            week: 0,
+                            homeTeamId: roundWinners[i],
+                            awayTeamId: roundWinners[i + 1],
+                            competition: activeRound.fixtures[0]?.competition || 'FA_Cup',
+                            isCupMatch: true,
+                            isMidweek: true
+                        });
+                    }
+                }
+                if (nextFix.length > 0) {
+                    cup.rounds.push({
+                        name: nextFix.length === 1 ? 'Final' : 'Next Round',
+                        fixtures: nextFix,
+                        completed: false
+                    });
+                    cup.currentRoundIndex = cup.rounds.length - 1;
+                    continue;
+                } else {
+                    cup.winnerId = roundWinners[0];
+                    cup.phase = 'finished';
+                    break;
+                }
+            }
             break;
         }
+    }
+
+    // Absolute fallback: ensure a winner is 100% crowned so no tournament is ever left "En Disputa"
+    if (!cup.winnerId) {
+        let fallbackWinnerId: number | undefined;
+        if (cup.rounds && cup.rounds.length > 0) {
+            for (let r = cup.rounds.length - 1; r >= 0; r--) {
+                const round = cup.rounds[r];
+                if (round && round.fixtures && round.fixtures.length > 0) {
+                    const firstFixture = round.fixtures[0];
+                    if (!firstFixture.result) resolveUnplayedCupMatch(firstFixture, allTeams);
+                    fallbackWinnerId = determineCupWinner(firstFixture) || firstFixture.homeTeamId;
+                    if (fallbackWinnerId) break;
+                }
+            }
+        }
+        if (!fallbackWinnerId) {
+            const regionalTeams = allTeams.filter(t => {
+                if (cup.id === 'copa_argentina' || cup.id?.includes('apertura') || cup.id?.includes('clausura')) {
+                    return t.leagueId === LeagueId.LIGA_ARGENTINA;
+                }
+                if (cup.id === 'copa_del_rey') return t.leagueId === LeagueId.LA_LIGA;
+                if (cup.id === 'dfb_pokal') return t.leagueId === LeagueId.BUNDESLIGA;
+                if (cup.id === 'coppa_italia') return t.leagueId === LeagueId.SERIE_A;
+                if (cup.id === 'fa_cup' || cup.id === 'carabao_cup') return t.leagueId === LeagueId.PREMIER_LEAGUE;
+                return true;
+            });
+            fallbackWinnerId = regionalTeams[0]?.id || allTeams[0]?.id || 1;
+        }
+        cup.winnerId = fallbackWinnerId;
+        cup.phase = 'finished';
     }
 
     // Ensure winner is finalized and recorded in championsHistory

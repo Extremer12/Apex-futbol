@@ -92,6 +92,13 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                 { id: LeagueId.PRIMERA_DIVISION_CHILE, name: 'Primera División', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Liga%20de%20Primera/chile_liga-de-primera.football-logos.cc.svg', teams: '16', div: '1ª División' },
                 { id: LeagueId.PRIMERA_B_CHILE, name: 'Primera B / Ascenso', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Categoria%20Primera%20B/chile_liga-de-ascenso.football-logos.cc.svg', teams: '16', div: '2ª División' }
             ]
+        },
+        COL: {
+            title: 'Fútbol Colombiano',
+            leagues: [
+                { id: LeagueId.PRIMERA_A_COLOMBIA, name: 'Liga BetPlay (Primera A)', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Categor%C3%ADa%20Primera%20A/colombia_categoria-primera-a.football-logos.cc.svg', teams: '20', div: '1ª División' },
+                { id: LeagueId.PRIMERA_B_COLOMBIA, name: 'Torneo BetPlay (Primera B)', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Categor%C3%ADa%20Primera%20A/colombia_categoria-primera-a.football-logos.cc.svg', teams: '16', div: '2ª División' }
+            ]
         }
     };
 
@@ -103,6 +110,7 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
         { id: 'FRA' as CountryCode, name: 'Francia', flagUrl: 'https://flagcdn.com/fr.svg' },
         { id: 'ARG' as CountryCode, name: 'Argentina', flagUrl: 'https://flagcdn.com/ar.svg' },
         { id: 'BRA' as CountryCode, name: 'Brasil', flagUrl: 'https://flagcdn.com/br.svg' },
+        { id: 'COL' as CountryCode, name: 'Colombia', flagUrl: 'https://flagcdn.com/co.svg' },
         { id: 'CHI' as CountryCode, name: 'Chile', flagUrl: 'https://flagcdn.com/cl.svg' },
         { id: 'PAR' as CountryCode, name: 'Paraguay', flagUrl: 'https://flagcdn.com/py.svg' },
         { id: 'MEX' as CountryCode, name: 'México', flagUrl: 'https://flagcdn.com/mx.svg' },

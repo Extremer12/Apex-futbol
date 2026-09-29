@@ -1193,9 +1193,9 @@ test('Phase 2 Modularization: LEAGUE_REGISTRY and monotonic generatePlayerId', a
         generatePlayerId 
     } = await import('../services/simulation');
 
-    // 1. Verify LEAGUE_REGISTRY covers all 19 leagues
+    // 1. Verify LEAGUE_REGISTRY covers all 21 leagues
     const leagueKeys = Object.keys(LEAGUE_REGISTRY);
-    assert.equal(leagueKeys.length, 19, 'LEAGUE_REGISTRY must contain all 19 leagues');
+    assert.equal(leagueKeys.length, 21, 'LEAGUE_REGISTRY must contain all 21 leagues');
 
     const premierConfig = getLeagueConfig(LeagueId.PREMIER_LEAGUE);
     assert.equal(premierConfig.country, 'ENG');
@@ -1215,6 +1215,12 @@ test('Phase 2 Modularization: LEAGUE_REGISTRY and monotonic generatePlayerId', a
     assert.equal(chiConfig.relegationSlots, 2);
     assert.equal(chiConfig.relegatesTo, LeagueId.PRIMERA_B_CHILE);
 
+    const colConfig = getLeagueConfig(LeagueId.PRIMERA_A_COLOMBIA);
+    assert.equal(colConfig.country, 'COL');
+    assert.equal(colConfig.teamsCount, 20);
+    assert.equal(colConfig.relegationSlots, 2);
+    assert.equal(colConfig.relegatesTo, LeagueId.PRIMERA_B_COLOMBIA);
+
     const argConfig = getLeagueConfig(LeagueId.LIGA_ARGENTINA);
     assert.equal(argConfig.country, 'ARG');
     assert.equal(argConfig.region, 'southAmerica');
@@ -1223,7 +1229,7 @@ test('Phase 2 Modularization: LEAGUE_REGISTRY and monotonic generatePlayerId', a
     assert.equal(isSouthAmericanLeague(LeagueId.LA_LIGA), false);
 
     const pairs = getPromotionRelegationPairs();
-    assert.equal(pairs.length, 9, 'Must have 9 promotion/relegation pairs');
+    assert.equal(pairs.length, 10, 'Must have 10 promotion/relegation pairs');
 
     // 2. Verify monotonic generatePlayerId produces strictly unique IDs in rapid succession
     const idSet = new Set<number>();

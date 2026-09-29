@@ -281,6 +281,34 @@ export const LEAGUE_REGISTRY: Record<LeagueId, LeagueConfig> = {
         promotesTo: LeagueId.PRIMERA_DIVISION_CHILE,
         domesticCups: [],
         format: 'round-robin'
+    },
+    [LeagueId.PRIMERA_A_COLOMBIA]: {
+        id: LeagueId.PRIMERA_A_COLOMBIA,
+        name: 'Liga BetPlay / Primera A',
+        country: 'COL',
+        region: 'southAmerica',
+        division: 1,
+        teamsCount: 20,
+        maxWeeks: 38,
+        promotionSlots: 0,
+        relegationSlots: 2,
+        relegatesTo: LeagueId.PRIMERA_B_COLOMBIA,
+        domesticCups: [],
+        format: 'round-robin'
+    },
+    [LeagueId.PRIMERA_B_COLOMBIA]: {
+        id: LeagueId.PRIMERA_B_COLOMBIA,
+        name: 'Torneo BetPlay / Primera B',
+        country: 'COL',
+        region: 'southAmerica',
+        division: 2,
+        teamsCount: 16,
+        maxWeeks: 30,
+        promotionSlots: 2,
+        relegationSlots: 0,
+        promotesTo: LeagueId.PRIMERA_A_COLOMBIA,
+        domesticCups: [],
+        format: 'round-robin'
     }
 };
 

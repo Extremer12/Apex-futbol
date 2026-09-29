@@ -631,6 +631,38 @@ export const COMPETITION_HISTORICAL_CHAMPIONS: Record<string, CompetitionHistori
             { season: '2020', winnerName: 'Universidad Católica', runnerUp: 'Unión La Calera' },
             { season: '2019', winnerName: 'Universidad Católica', runnerUp: 'Colo-Colo' }
         ]
+    },
+
+    // =========================================================================
+    // 🇨🇴 COLOMBIA
+    // =========================================================================
+    'PRIMERA_A_COLOMBIA': {
+        id: 'PRIMERA_A_COLOMBIA',
+        name: 'Categoría Primera A de Colombia',
+        allTimeRanking: [
+            { teamName: 'Atlético Nacional', titles: 17, lastWonYear: 2022 },
+            { teamName: 'Millonarios', titles: 16, lastWonYear: 2023 },
+            { teamName: 'América de Cali', titles: 15, lastWonYear: 2020 },
+            { teamName: 'Deportivo Cali', titles: 10, lastWonYear: 2021 },
+            { teamName: 'Junior de Barranquilla', titles: 10, lastWonYear: 2023 },
+            { teamName: 'Independiente Santa Fe', titles: 9, lastWonYear: 2016 },
+            { teamName: 'Independiente Medellín', titles: 6, lastWonYear: 2016 },
+            { teamName: 'Once Caldas', titles: 4, lastWonYear: 2010 },
+            { teamName: 'Deportes Tolima', titles: 3, lastWonYear: 2021 },
+            { teamName: 'Deportivo Pasto', titles: 1, lastWonYear: 2006 },
+            { teamName: 'Deportes Quindío', titles: 1, lastWonYear: 1956 },
+            { teamName: 'Cúcuta Deportivo', titles: 1, lastWonYear: 2006 },
+            { teamName: 'Boyacá Chicó', titles: 1, lastWonYear: 2008 },
+            { teamName: 'Deportivo Pereira', titles: 1, lastWonYear: 2022 },
+            { teamName: 'Atlético Bucaramanga', titles: 1, lastWonYear: 2024 }
+        ],
+        recentEditions: [
+            { season: 'Apertura 2024', winnerName: 'Atlético Bucaramanga', runnerUp: 'Independiente Santa Fe' },
+            { season: 'Clausura 2023', winnerName: 'Junior', runnerUp: 'Independiente Medellín' },
+            { season: 'Apertura 2023', winnerName: 'Millonarios', runnerUp: 'Atlético Nacional' },
+            { season: 'Clausura 2022', winnerName: 'Deportivo Pereira', runnerUp: 'Independiente Medellín' },
+            { season: 'Apertura 2022', winnerName: 'Atlético Nacional', runnerUp: 'Deportes Tolima' }
+        ]
     }
 };
 
