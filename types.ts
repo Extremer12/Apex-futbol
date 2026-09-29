@@ -553,6 +553,7 @@ export interface CinematicEvent {
 }
 
 export interface GameState {
+  careerId?: string; // Identificador único y persistente de la carrera para evitar duplicados
   team: Team;
   allTeams: Team[];
   currentDate: Date;

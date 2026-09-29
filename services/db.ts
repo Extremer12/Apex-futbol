@@ -26,6 +26,7 @@ export interface SavedGameSummary {
     managerName?: string;
     slotType: SaveSlotType;
     lastSaved: Date;
+    careerId?: string;
 }
 
 export interface SavedGameData {
@@ -38,6 +39,7 @@ export interface SavedGameData {
     summary?: SavedGameSummary;
     lastSaved: Date;
     schemaVersion?: number;
+    careerId?: string;
 }
 
 const openDB = (): Promise<IDBDatabase> => {
@@ -107,6 +109,7 @@ export function buildSaveSummary(
         balance: gameState.finances?.balance,
         managerName: playerProfile?.name || gameState.playerProfile?.name || 'Mánager',
         slotType,
+        careerId: gameState.careerId || id,
         lastSaved: new Date()
     };
 }
@@ -123,6 +126,9 @@ export const saveGame = async (gameData: SavedGameData): Promise<void> => {
             const slotType: SaveSlotType = gameData.slotType || 
                 (gameData.id === AUTOSAVE_SLOT_ID ? 'autosave' : gameData.id === QUICKSAVE_SLOT_ID ? 'quicksave' : 'manual');
 
+            const careerId = gameData.careerId || storableGameState.careerId || gameData.id;
+            storableGameState.careerId = careerId;
+
             const summary = gameData.summary || buildSaveSummary(
                 gameData.id,
                 gameData.saveName,
@@ -130,9 +136,11 @@ export const saveGame = async (gameData: SavedGameData): Promise<void> => {
                 gameData.playerProfile,
                 slotType
             );
+            summary.careerId = careerId;
 
             const storableData: SavedGameData = {
                 ...gameData,
+                careerId,
                 gameState: storableGameState,
                 slotType,
                 summary,
@@ -140,7 +148,28 @@ export const saveGame = async (gameData: SavedGameData): Promise<void> => {
                 lastSaved: new Date()
             };
 
-            const request = store.put(storableData);
+            // REPLACEMENT GUARANTEE:
+            // Query all existing saves in this store. If any previous save belongs to this
+            // exact same career/club (by careerId or teamId) under a different id, delete it!
+            const getAllReq = store.getAll();
+            getAllReq.onsuccess = () => {
+                const existing = getAllReq.result || [];
+                existing.forEach((prev: SavedGameData) => {
+                    const prevCareerId = prev.careerId || prev.gameState?.careerId;
+                    const sameCareer = prevCareerId && prevCareerId === careerId;
+                    const sameTeam = !prevCareerId && prev.gameState?.team?.id === storableGameState.team?.id;
+                    if ((sameCareer || sameTeam) && prev.id !== gameData.id) {
+                        store.delete(prev.id);
+                    }
+                });
+
+                store.put(storableData);
+            };
+
+            getAllReq.onerror = () => {
+                store.put(storableData);
+            };
+
             transaction.oncomplete = () => {
                 db.close();
                 resolve();
@@ -158,10 +187,13 @@ export const saveGame = async (gameData: SavedGameData): Promise<void> => {
 };
 
 export const saveQuickGame = async (gameState: GameState, playerProfile: PlayerProfile): Promise<SavedGameData> => {
+    const saveId = gameState.careerId || QUICKSAVE_SLOT_ID;
     const saveName = `${gameState.team.name} - Guardado Rápido`;
-    const summary = buildSaveSummary(QUICKSAVE_SLOT_ID, saveName, gameState, playerProfile, 'quicksave');
+    const summary = buildSaveSummary(saveId, saveName, gameState, playerProfile, 'quicksave');
+    summary.careerId = gameState.careerId || saveId;
     const data: SavedGameData = {
-        id: QUICKSAVE_SLOT_ID,
+        id: saveId,
+        careerId: gameState.careerId || saveId,
         saveName,
         playerProfile,
         gameState,
@@ -175,10 +207,13 @@ export const saveQuickGame = async (gameState: GameState, playerProfile: PlayerP
 };
 
 export const saveAutoGame = async (gameState: GameState, playerProfile: PlayerProfile): Promise<SavedGameData> => {
+    const saveId = gameState.careerId || AUTOSAVE_SLOT_ID;
     const saveName = `${gameState.team.name} - Autoguardado`;
-    const summary = buildSaveSummary(AUTOSAVE_SLOT_ID, saveName, gameState, playerProfile, 'autosave');
+    const summary = buildSaveSummary(saveId, saveName, gameState, playerProfile, 'autosave');
+    summary.careerId = gameState.careerId || saveId;
     const data: SavedGameData = {
-        id: AUTOSAVE_SLOT_ID,
+        id: saveId,
+        careerId: gameState.careerId || saveId,
         saveName,
         playerProfile,
         gameState,
@@ -206,10 +241,49 @@ export const getSavedGames = async (): Promise<SavedGameSummary[]> => {
 
         request.onsuccess = () => {
             const result = request.result || [];
-            const summaries = result.map((fullSave: SavedGameData) => {
+
+            // Deduplicate: Guarantee strictly 1 save entry per career
+            const careerMap = new Map<string, SavedGameData>();
+            const toDeleteIds: string[] = [];
+
+            result.forEach((item: SavedGameData) => {
+                const careerKey = item.careerId || item.gameState?.careerId || `team_${item.gameState?.team?.id || item.teamName}`;
+                const existing = careerMap.get(careerKey);
+                if (!existing) {
+                    careerMap.set(careerKey, item);
+                } else {
+                    const timeExisting = new Date(existing.lastSaved).getTime();
+                    const timeCurrent = new Date(item.lastSaved).getTime();
+                    if (timeCurrent > timeExisting) {
+                        toDeleteIds.push(existing.id);
+                        careerMap.set(careerKey, item);
+                    } else {
+                        toDeleteIds.push(item.id);
+                    }
+                }
+            });
+
+            // Asynchronously clean up stale duplicate rows
+            if (toDeleteIds.length > 0) {
+                setTimeout(async () => {
+                    try {
+                        const cleanupDb = await openDB();
+                        const cleanupTx = cleanupDb.transaction(STORE_NAME, 'readwrite');
+                        const cleanupStore = cleanupTx.objectStore(STORE_NAME);
+                        toDeleteIds.forEach(id => cleanupStore.delete(id));
+                        cleanupTx.oncomplete = () => cleanupDb.close();
+                    } catch (e) {
+                        console.warn("Background cleanup of duplicate saves failed:", e);
+                    }
+                }, 50);
+            }
+
+            const uniqueSaves = Array.from(careerMap.values());
+            const summaries = uniqueSaves.map((fullSave: SavedGameData) => {
                 if (fullSave.summary) {
                     return {
                         ...fullSave.summary,
+                        careerId: fullSave.careerId || fullSave.summary.careerId,
                         lastSaved: new Date(fullSave.summary.lastSaved || fullSave.lastSaved)
                     };
                 }
@@ -222,7 +296,6 @@ export const getSavedGames = async (): Promise<SavedGameSummary[]> => {
                     slotType
                 );
             }).sort((a, b) => {
-                // Priority: autosave and quicksave at top if recent, otherwise sort by timestamp
                 const timeA = new Date(a.lastSaved).getTime();
                 const timeB = new Date(b.lastSaved).getTime();
                 return timeB - timeA;

@@ -245,7 +245,7 @@ function AppLogic() {
                     <SaveGameModal
                         onSave={handleConfirmSave}
                         onClose={closeSaveModal}
-                        defaultName={saveMode === 'overwrite' ? (currentSaveName || `${gameState?.team?.name} Carrera`) : `${gameState?.team?.name} Carrera (Nueva)`}
+                        defaultName={currentSaveName || `${gameState?.team?.name} - Temp ${gameState?.season || 1}`}
                         mode={saveMode}
                     />
                 )}

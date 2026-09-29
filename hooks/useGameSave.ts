@@ -29,16 +29,17 @@ export function useGameSave(
     // Initial Auto-Save on career start
     useEffect(() => {
         if (appState === 'GAME_ACTIVE' && gameState && playerProfile && !currentSaveId) {
-            const autoId = `save_${Date.now()}`;
-            const autoName = `${gameState.team.name} - Temp ${gameState.season || 1}`;
-            setCurrentSaveId(autoId);
-            setCurrentSaveName(autoName);
+            const careerId = gameState.careerId || `career_${gameState.team.id}_${Date.now()}`;
+            const careerName = `${gameState.team.name} - Temp ${gameState.season || 1}`;
+            setCurrentSaveId(careerId);
+            setCurrentSaveName(careerName);
 
             const initialSaveData: SavedGameData = {
-                id: autoId,
-                saveName: autoName,
+                id: careerId,
+                careerId,
+                saveName: careerName,
                 playerProfile,
-                gameState,
+                gameState: { ...gameState, careerId },
                 teamName: gameState.team.name,
                 slotType: 'manual',
                 lastSaved: new Date(),
@@ -50,7 +51,7 @@ export function useGameSave(
                     // Cloud backup in background without blocking UI
                     supabase.auth.getUser().then(({ data: { user } }) => {
                         if (user) {
-                            uploadSaveToCloud(autoId, autoName, gameState, playerProfile).catch((err) => {
+                            uploadSaveToCloud(careerId, careerName, gameState, playerProfile).catch((err) => {
                                 console.warn("[Apex Cloud] Initial cloud backup failed:", err);
                             });
                         }
@@ -74,12 +75,13 @@ export function useGameSave(
         if (!gameState || !playerProfile) return;
         try {
             setIsSaving(true);
-            await saveAutoGame(gameState, playerProfile);
+            const saveId = gameState.careerId || currentSaveId || `career_${gameState.team.id}_${Date.now()}`;
+            await saveAutoGame({ ...gameState, careerId: saveId }, playerProfile);
             setLastSaved(new Date());
             // Opportunistic background cloud backup
             supabase.auth.getUser().then(({ data: { user } }) => {
                 if (user) {
-                    uploadSaveToCloud(AUTOSAVE_SLOT_ID, `${gameState.team.name} (Autoguardado)`, gameState, playerProfile).catch((err) => {
+                    uploadSaveToCloud(saveId, currentSaveName || `${gameState.team.name} (Autoguardado)`, gameState, playerProfile).catch((err) => {
                         console.warn("[Apex Cloud] Autosave cloud backup failed:", err);
                     });
                 }
@@ -91,14 +93,15 @@ export function useGameSave(
         } finally {
             setIsSaving(false);
         }
-    }, [gameState, playerProfile]);
+    }, [gameState, playerProfile, currentSaveId, currentSaveName]);
 
     // Quick-Save triggered by user shortcut or button
     const performQuickSave = useCallback(async () => {
         if (!gameState || !playerProfile) return false;
         try {
             setIsSaving(true);
-            await saveQuickGame(gameState, playerProfile);
+            const saveId = gameState.careerId || currentSaveId || `career_${gameState.team.id}_${Date.now()}`;
+            await saveQuickGame({ ...gameState, careerId: saveId }, playerProfile);
             setLastSaved(new Date());
             showNotification(`⚡ Guardado rápido: ${gameState.team.name}`, 'success');
             return true;
@@ -109,13 +112,15 @@ export function useGameSave(
         } finally {
             setIsSaving(false);
         }
-    }, [gameState, playerProfile, showNotification]);
+    }, [gameState, playerProfile, currentSaveId, showNotification]);
 
     const performLoadGame = useCallback(async (id: string) => {
         const savedData = await loadGame(id);
         if (savedData) {
+            const careerId = savedData.careerId || savedData.gameState.careerId || savedData.id;
             const rehydratedGameState: GameState = {
                 ...savedData.gameState,
+                careerId,
                 playerProfile: savedData.playerProfile || savedData.gameState.playerProfile,
                 currentDate: new Date(savedData.gameState.currentDate),
                 boardConfidence: savedData.gameState.boardConfidence != null ? savedData.gameState.boardConfidence : 75,
@@ -123,7 +128,7 @@ export function useGameSave(
             };
 
             dispatch({ type: 'LOAD_GAME', payload: rehydratedGameState });
-            setCurrentSaveId(savedData.id);
+            setCurrentSaveId(careerId);
             setCurrentSaveName(savedData.saveName);
             setLastSaved(new Date(savedData.lastSaved));
             showNotification(`Partida "${savedData.saveName}" cargada`, 'success');
@@ -139,8 +144,10 @@ export function useGameSave(
         try {
             const cloudData = await downloadCloudSave(slotId);
             if (cloudData) {
+                const careerId = cloudData.gameState.careerId || slotId;
                 const rehydratedGameState: GameState = {
                     ...cloudData.gameState,
+                    careerId,
                     playerProfile: cloudData.playerProfile || cloudData.gameState.playerProfile,
                     currentDate: new Date(cloudData.gameState.currentDate),
                     boardConfidence: cloudData.gameState.boardConfidence != null ? cloudData.gameState.boardConfidence : 75,
@@ -148,14 +155,15 @@ export function useGameSave(
                 };
 
                 dispatch({ type: 'LOAD_GAME', payload: rehydratedGameState });
-                setCurrentSaveId(slotId);
+                setCurrentSaveId(careerId);
                 setCurrentSaveName(cloudData.saveName);
                 const now = new Date();
                 setLastSaved(now);
 
                 // Cache into IndexedDB for offline access
                 await saveGame({
-                    id: slotId,
+                    id: careerId,
+                    careerId,
                     saveName: cloudData.saveName,
                     playerProfile: cloudData.playerProfile,
                     gameState: rehydratedGameState,
@@ -174,20 +182,19 @@ export function useGameSave(
         return null;
     }, [dispatch, showNotification]);
 
-    const performSaveGame = useCallback(async (saveName: string, saveMode: 'new' | 'overwrite') => {
+    const performSaveGame = useCallback(async (saveName: string, _saveMode?: 'new' | 'overwrite') => {
         if (!gameState || !playerProfile) return false;
 
-        const saveId = (saveMode === 'overwrite' && currentSaveId)
-            ? currentSaveId
-            : `save_${Date.now()}`;
-
+        // Guaranteed single canonical ID per career: always replaces!
+        const saveId = gameState.careerId || currentSaveId || `career_${gameState.team.id}_${Date.now()}`;
         const now = new Date();
 
         const saveData: SavedGameData = {
             id: saveId,
+            careerId: saveId,
             saveName: saveName,
             playerProfile,
-            gameState,
+            gameState: { ...gameState, careerId: saveId },
             teamName: gameState.team.name,
             slotType: 'manual',
             lastSaved: now,
@@ -209,10 +216,10 @@ export function useGameSave(
                         })
                         .catch((cloudErr) => {
                             console.warn("[Apex Cloud] Sync failed, saved locally:", cloudErr);
-                            showNotification(saveMode === 'new' ? "Nueva partida guardada (local)" : "Partida guardada (local)", 'success');
+                            showNotification("Partida guardada correctamente (local)", 'success');
                         });
                 } else {
-                    showNotification(saveMode === 'new' ? "Nueva partida guardada" : "Partida guardada correctamente", 'success');
+                    showNotification("Partida guardada correctamente", 'success');
                 }
             }).catch((authErr) => {
                 console.warn("[Apex Cloud] Auth check failed:", authErr);

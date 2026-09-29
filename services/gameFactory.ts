@@ -464,6 +464,7 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
         achievements: getInitialAchievements(),
         seasonHistory: [],
         playerProfile: playerProfile || undefined,
+        careerId: `career_${playerTeamCopy.id}_${Date.now()}`,
     };
 
     // Calculate dynamic initial fan approval

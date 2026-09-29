@@ -142,6 +142,7 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
                 preferredCurrency: loadedState.preferredCurrency || 'EUR',
                 preferredLanguage,
                 playerProfile: loadedState.playerProfile || undefined,
+                careerId: loadedState.careerId || (loadedState as any).id || `career_${playerTeamWithCoach.id}_legacy`,
             };
 
             // If fanApproval factors were all 0, compute realistic factors immediately

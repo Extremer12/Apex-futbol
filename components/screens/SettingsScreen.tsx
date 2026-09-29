@@ -232,16 +232,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onSaveGame, onQu
                     <div className="p-4 bg-slate-800/30 flex flex-col sm:flex-row gap-3">
                         <button
                             onClick={() => onSaveGame('overwrite')}
-                            disabled={!currentSaveName}
-                            className="flex-1 bg-sky-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-sky-500 transition-colors disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed shadow-lg shadow-sky-600/10"
+                            className="flex-1 bg-sky-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-sky-500 transition-colors shadow-lg shadow-sky-600/10 flex items-center justify-center gap-2 cursor-pointer active:scale-98"
                         >
-                            Guardar Partida
-                        </button>
-                        <button
-                            onClick={() => onSaveGame('new')}
-                            className="flex-1 bg-slate-700 text-white font-bold py-3 px-4 rounded-lg hover:bg-slate-600 transition-colors border border-slate-600"
-                        >
-                            Guardar como Nueva
+                            <span>Guardar Progreso</span>
                         </button>
                     </div>
                 </div>

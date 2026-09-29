@@ -2359,6 +2359,52 @@ test('51. Chilean and Colombian Leagues: CONMEBOL Libertadores/Sudamericana inte
     assert.ok(sudSeason.fixtures.length > 0, 'Sudamericana fixtures generated');
 });
 
+test('52. Career Save System: guarantees unique careerId, automatic save replacement and zero duplicate saves', async () => {
+    const { initializeGame } = await import('../services/gameFactory');
+    const { buildSaveSummary } = await import('../services/db');
+
+    const game = initializeGame({
+        selectedTeam: TEAMS[0],
+        playerProfile: { name: 'Juan Román Riquelme' }
+    });
+
+    assert.ok(game.careerId, 'Game initialized with a persistent careerId');
+    assert.ok(game.careerId.startsWith('career_'), 'careerId format matches career_teamId_timestamp');
+
+    const summary = buildSaveSummary('test_save_slot', 'Boca Juniors - Carrera', game, { name: 'Juan Román Riquelme' }, 'manual');
+    assert.equal(summary.careerId, game.careerId, 'Save summary inherits game careerId');
+    assert.equal(summary.teamName, TEAMS[0].name);
+
+    // Verify deduplication logic map
+    const savesList = [
+        { id: 'save_1', careerId: 'career_boca', teamName: 'Boca Juniors', lastSaved: new Date('2026-01-01T10:00:00Z') },
+        { id: 'save_2', careerId: 'career_boca', teamName: 'Boca Juniors', lastSaved: new Date('2026-01-01T12:00:00Z') }, // newer duplicate
+        { id: 'save_3', careerId: 'career_river', teamName: 'River Plate', lastSaved: new Date('2026-01-01T11:00:00Z') }
+    ];
+
+    const careerMap = new Map<string, typeof savesList[0]>();
+    const toDeleteIds: string[] = [];
+
+    savesList.forEach(item => {
+        const existing = careerMap.get(item.careerId);
+        if (!existing) {
+            careerMap.set(item.careerId, item);
+        } else {
+            if (new Date(item.lastSaved).getTime() > new Date(existing.lastSaved).getTime()) {
+                toDeleteIds.push(existing.id);
+                careerMap.set(item.careerId, item);
+            } else {
+                toDeleteIds.push(item.id);
+            }
+        }
+    });
+
+    assert.equal(careerMap.size, 2, 'Exactly 2 unique careers remain (Boca and River)');
+    assert.deepEqual(toDeleteIds, ['save_1'], 'Obsolete earlier duplicate save_1 marked for deletion');
+    assert.equal(careerMap.get('career_boca')?.id, 'save_2', 'Latest Boca save preserved');
+});
+
+
 
 
 

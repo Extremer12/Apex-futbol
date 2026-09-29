@@ -29,20 +29,40 @@ export async function uploadSaveToCloud(
         throw new Error('Debes iniciar sesión con Google para guardar en la nube.');
     }
 
-    // Check existing saves count if this is a new slot
+    // Determine canonical slotId for this career to guarantee replacement
+    const canonicalSlotId = gameState.careerId || slotId;
+
+    // Check existing saves count and check if user already has a save for this team/career
     const { data: existingSaves } = await supabase
         .from('cloud_saves')
-        .select('slot_id')
+        .select('id, slot_id, team_id')
         .eq('user_id', user.id);
 
-    const isExistingSlot = existingSaves?.some(s => s.slot_id === slotId);
-    if (!isExistingSlot && existingSaves && existingSaves.length >= MAX_CLOUD_SAVES) {
-        throw new Error(`Has alcanzado el límite máximo de ${MAX_CLOUD_SAVES} ranuras en la nube. Sobrescribe una existente o elimina una para continuar.`);
+    // If an existing save has the same team_id under an older different slot_id, delete the old slot
+    const duplicateSlot = existingSaves?.find(s => 
+        s.slot_id !== canonicalSlotId && s.team_id === gameState.team.id
+    );
+
+    if (duplicateSlot) {
+        await supabase
+            .from('cloud_saves')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('slot_id', duplicateSlot.slot_id);
+    }
+
+    const remainingSlots = existingSaves?.filter(s => 
+        s.slot_id !== canonicalSlotId && (!duplicateSlot || s.slot_id !== duplicateSlot.slot_id)
+    ) || [];
+
+    if (remainingSlots.length >= MAX_CLOUD_SAVES) {
+        throw new Error(`Has alcanzado el límite máximo de ${MAX_CLOUD_SAVES} carreras en la nube. Sobrescribe una existente o elimina una para continuar.`);
     }
 
     // Clean non-serializable objects and prune transient/oversized data before serialization
     const stateToSerialize = {
         ...gameState,
+        careerId: canonicalSlotId,
         viewingPlayer: null,
         newsFeed: gameState.newsFeed ? gameState.newsFeed.slice(0, 60) : [],
         cinematicQueue: [],
@@ -68,7 +88,7 @@ export async function uploadSaveToCloud(
         .upsert(
             {
                 user_id: user.id,
-                slot_id: slotId,
+                slot_id: canonicalSlotId,
                 save_name: saveName,
                 team_id: gameState.team.id,
                 team_name: gameState.team.name,
@@ -106,16 +126,40 @@ export async function getCloudSaves(): Promise<CloudSaveSummary[]> {
         return [];
     }
 
-    return (data || []).map((row) => ({
-        id: row.id,
-        slotId: row.slot_id,
-        saveName: row.save_name,
-        teamId: row.team_id,
-        teamName: row.team_name,
-        season: row.season,
-        gameDate: row.game_date,
-        updatedAt: row.updated_at,
-    }));
+    // Deduplicate by team_id / career so multiple cloud saves of the same career never appear
+    const seenTeams = new Map<number, CloudSaveSummary>();
+    const duplicateIdsToDelete: string[] = [];
+
+    (data || []).forEach((row) => {
+        const item: CloudSaveSummary = {
+            id: row.id,
+            slotId: row.slot_id,
+            saveName: row.save_name,
+            teamId: row.team_id,
+            teamName: row.team_name,
+            season: row.season,
+            gameDate: row.game_date,
+            updatedAt: row.updated_at,
+        };
+
+        if (!seenTeams.has(row.team_id)) {
+            seenTeams.set(row.team_id, item);
+        } else {
+            // Already seen a more recent save for this club (since ordered by updated_at desc)
+            duplicateIdsToDelete.push(row.id);
+        }
+    });
+
+    if (duplicateIdsToDelete.length > 0) {
+        supabase
+            .from('cloud_saves')
+            .delete()
+            .in('id', duplicateIdsToDelete)
+            .then(() => console.log(`[Apex Cloud] Cleaned up ${duplicateIdsToDelete.length} obsolete duplicate cloud saves`))
+            .catch(err => console.warn('[Apex Cloud] Duplicate cleanup failed:', err));
+    }
+
+    return Array.from(seenTeams.values());
 }
 
 export async function downloadCloudSave(slotId: string): Promise<{
