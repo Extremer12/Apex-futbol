@@ -32,6 +32,10 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
         LeagueId.BRASILEIRAO,
         LeagueId.SERIE_B_BR,
         LeagueId.COPA_DE_PRIMERA,
+        LeagueId.PRIMERA_DIVISION_CHILE,
+        LeagueId.PRIMERA_B_CHILE,
+        LeagueId.PRIMERA_A_COLOMBIA,
+        LeagueId.PRIMERA_B_COLOMBIA,
         LeagueId.LIGA_MX,
         LeagueId.LIGA_EXPANSION_MX
     ].includes(selectedTeam.leagueId);

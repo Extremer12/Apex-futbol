@@ -10,6 +10,9 @@ export const PROMOTION_RELEGATION_PAIRS: [LeagueId, LeagueId][] = [
     [LeagueId.LIGUE_1, LeagueId.LIGUE_2],
     [LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL],
     [LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR],
+    [LeagueId.LIGA_MX, LeagueId.LIGA_EXPANSION_MX],
+    [LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE],
+    [LeagueId.PRIMERA_A_COLOMBIA, LeagueId.PRIMERA_B_COLOMBIA],
 ];
 
 export const handlePromotionRelegation = (allTeams: Team[], leagueTables: Record<LeagueId, LeagueTableRow[]>): Team[] => {
@@ -47,8 +50,16 @@ export const handlePromotionRelegation = (allTeams: Team[], leagueTables: Record
             if (promo1) promotedIds.push(promo1);
             if (promo2 && promo2 !== promo1) promotedIds.push(promo2);
         } else {
-            relegatedIds = sortedDiv1.slice(-3).map(r => r.teamId);
-            promotedIds = sortedDiv2.slice(0, 3).map(r => r.teamId);
+            const slots = [
+                LeagueId.PRIMERA_DIVISION_CHILE,
+                LeagueId.PRIMERA_A_COLOMBIA,
+                LeagueId.LIGA_MX,
+                LeagueId.BUNDESLIGA,
+                LeagueId.LIGUE_1
+            ].includes(div1) ? 2 : (div1 === LeagueId.BRASILEIRAO ? 4 : 3);
+
+            relegatedIds = sortedDiv1.slice(-slots).map(r => r.teamId);
+            promotedIds = sortedDiv2.slice(0, slots).map(r => r.teamId);
         }
 
         // Preserve zone balance for Liga Argentina (15 in A, 15 in B) and Primera Nacional (19 in A, 19 in B)

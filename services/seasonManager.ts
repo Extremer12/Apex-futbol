@@ -25,7 +25,11 @@ export function startNewSeason(currentState: GameState): GameState {
         LeagueId.PRIMERA_NACIONAL,
         LeagueId.BRASILEIRAO,
         LeagueId.SERIE_B_BR,
-        LeagueId.COPA_DE_PRIMERA
+        LeagueId.COPA_DE_PRIMERA,
+        LeagueId.PRIMERA_DIVISION_CHILE,
+        LeagueId.PRIMERA_B_CHILE,
+        LeagueId.PRIMERA_A_COLOMBIA,
+        LeagueId.PRIMERA_B_COLOMBIA
     ].includes(currentState.team.leagueId);
 
     const newSeasonYear = currentState.season + 1;
@@ -77,7 +81,9 @@ export function startNewSeason(currentState: GameState): GameState {
         [LeagueId.LIGA_MX]: 'Liga MX',
         [LeagueId.LIGA_EXPANSION_MX]: 'Liga de Expansión MX',
         [LeagueId.PRIMERA_DIVISION_CHILE]: 'Primera División de Chile',
-        [LeagueId.PRIMERA_B_CHILE]: 'Primera B de Chile'
+        [LeagueId.PRIMERA_B_CHILE]: 'Primera B de Chile',
+        [LeagueId.PRIMERA_A_COLOMBIA]: 'Liga BetPlay (Primera A Colombia)',
+        [LeagueId.PRIMERA_B_COLOMBIA]: 'Torneo BetPlay (Primera B Colombia)'
     };
 
     // Ensure all competitions of the season are crowned and finalized before awarding trophies
@@ -310,8 +316,16 @@ export function startNewSeason(currentState: GameState): GameState {
                     if (t) promotedNames.push(t.name);
                 }
             } else {
-                relegatedNames = sorted1.slice(-3).map(r => processedTeams.find(t => t.id === r.teamId)?.name).filter(Boolean) as string[];
-                promotedNames = sorted2.slice(0, 3).map(p => processedTeams.find(t => t.id === p.teamId)?.name).filter(Boolean) as string[];
+                const slots = [
+                    LeagueId.PRIMERA_DIVISION_CHILE,
+                    LeagueId.PRIMERA_A_COLOMBIA,
+                    LeagueId.LIGA_MX,
+                    LeagueId.BUNDESLIGA,
+                    LeagueId.LIGUE_1
+                ].includes(div1) ? 2 : (div1 === LeagueId.BRASILEIRAO ? 4 : 3);
+
+                relegatedNames = sorted1.slice(-slots).map(r => processedTeams.find(t => t.id === r.teamId)?.name).filter(Boolean) as string[];
+                promotedNames = sorted2.slice(0, slots).map(p => processedTeams.find(t => t.id === p.teamId)?.name).filter(Boolean) as string[];
             }
             
             if (relegatedNames.length > 0 || promotedNames.length > 0) {
@@ -1058,7 +1072,8 @@ export function startNewSeason(currentState: GameState): GameState {
                 LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
                 LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
                 LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE,
-                'LIGA_ARGENTINA', 'PRIMERA_NACIONAL', 'BRASILEIRAO', 'SERIE_B_BR', 'COPA_DE_PRIMERA'
+                LeagueId.PRIMERA_A_COLOMBIA, LeagueId.PRIMERA_B_COLOMBIA,
+                'LIGA_ARGENTINA', 'PRIMERA_NACIONAL', 'BRASILEIRAO', 'SERIE_B_BR', 'COPA_DE_PRIMERA', 'PRIMERA_A_COLOMBIA'
             ].includes(userLeagueId as any);
 
             const isMex = [LeagueId.LIGA_MX, LeagueId.LIGA_EXPANSION_MX, 'LIGA_MX'].includes(userLeagueId as any);

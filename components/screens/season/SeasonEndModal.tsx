@@ -62,13 +62,16 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
         { id: 'all', label: 'Todos los Torneos' },
         { id: 'Internacional', label: 'Internacionales' },
         { id: 'Argentina', label: 'Argentina' },
+        { id: 'Brasil', label: 'Brasil' },
+        { id: 'Colombia', label: 'Colombia' },
+        { id: 'Chile', label: 'Chile' },
+        { id: 'Paraguay', label: 'Paraguay' },
+        { id: 'México', label: 'México' },
         { id: 'Inglaterra', label: 'Inglaterra' },
         { id: 'España', label: 'España' },
         { id: 'Italia', label: 'Italia' },
         { id: 'Alemania', label: 'Alemania' },
         { id: 'Francia', label: 'Francia' },
-        { id: 'Brasil', label: 'Brasil' },
-        { id: 'Paraguay', label: 'Paraguay' },
     ];
 
     const filteredChampions = selectedRegion === 'all'

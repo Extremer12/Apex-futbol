@@ -4,7 +4,7 @@ import { finalizeSeasonCompetitions, determineTwoLeggedTieWinner, determineCupWi
 
 export interface CompetitionChampionItem {
     name: string;
-    region: 'Internacional' | 'Argentina' | 'Inglaterra' | 'España' | 'Italia' | 'Alemania' | 'Francia' | 'Brasil' | 'Paraguay';
+    region: 'Internacional' | 'Argentina' | 'Inglaterra' | 'España' | 'Italia' | 'Alemania' | 'Francia' | 'Brasil' | 'Paraguay' | 'Chile' | 'Colombia' | 'México';
     category: 'Liga' | 'Copa' | 'Ascenso';
     team: Team | null;
     statusBadge?: string;
@@ -499,6 +499,61 @@ export const getSeasonSummaryData = (gameState: GameState): SeasonSummaryData =>
             category: 'Liga',
             team: getLeagueWinner(LeagueId.COPA_DE_PRIMERA),
             statusBadge: 'Campeón'
+        },
+
+        // Chile
+        {
+            name: 'Primera División de Chile',
+            region: 'Chile',
+            category: 'Liga',
+            team: getLeagueWinner(LeagueId.PRIMERA_DIVISION_CHILE),
+            statusBadge: 'Campeón'
+        },
+        {
+            name: 'Primera B de Chile',
+            region: 'Chile',
+            category: 'Ascenso',
+            team: getLeagueWinner(LeagueId.PRIMERA_B_CHILE),
+            statusBadge: 'Campeón Ascenso'
+        },
+
+        // Colombia
+        {
+            name: 'Liga BetPlay (Primera A)',
+            region: 'Colombia',
+            category: 'Liga',
+            team: getLeagueWinner(LeagueId.PRIMERA_A_COLOMBIA),
+            statusBadge: 'Campeón'
+        },
+        {
+            name: 'Torneo BetPlay (Primera B)',
+            region: 'Colombia',
+            category: 'Ascenso',
+            team: getLeagueWinner(LeagueId.PRIMERA_B_COLOMBIA),
+            statusBadge: 'Campeón Ascenso'
+        },
+
+        // México
+        {
+            name: 'Liga MX',
+            region: 'México',
+            category: 'Liga',
+            team: getLeagueWinner(LeagueId.LIGA_MX),
+            statusBadge: 'Campeón'
+        },
+        {
+            name: 'Liga de Expansión MX',
+            region: 'México',
+            category: 'Ascenso',
+            team: getLeagueWinner(LeagueId.LIGA_EXPANSION_MX),
+            statusBadge: 'Campeón Ascenso'
+        },
+        {
+            name: 'Copa MX',
+            region: 'México',
+            category: 'Copa',
+            team: resolveCupChampion(gameState.cups.copaMx),
+            statusBadge: 'Campeón Copa'
         }
     ];
 
@@ -528,7 +583,6 @@ export const getSeasonSummaryData = (gameState: GameState): SeasonSummaryData =>
         if (promo1) promotedTeams.push(promo1);
         if (promo2 && promo2.id !== promo1?.id) promotedTeams.push(promo2);
     } else {
-        // Standard European leagues: 3 relegated, 3 promoted
         const div1Table = gameState.leagueTables[userLeagueId] || [];
         const lowerLeagueMap: Record<string, LeagueId> = {
             [LeagueId.PREMIER_LEAGUE]: LeagueId.CHAMPIONSHIP,
@@ -537,6 +591,9 @@ export const getSeasonSummaryData = (gameState: GameState): SeasonSummaryData =>
             [LeagueId.SERIE_A]: LeagueId.SERIE_B_ITA,
             [LeagueId.LIGUE_1]: LeagueId.LIGUE_2,
             [LeagueId.BRASILEIRAO]: LeagueId.SERIE_B_BR,
+            [LeagueId.LIGA_MX]: LeagueId.LIGA_EXPANSION_MX,
+            [LeagueId.PRIMERA_DIVISION_CHILE]: LeagueId.PRIMERA_B_CHILE,
+            [LeagueId.PRIMERA_A_COLOMBIA]: LeagueId.PRIMERA_B_COLOMBIA,
         };
         const lowerLeagueId = lowerLeagueMap[userLeagueId];
         const div2Table = lowerLeagueId ? (gameState.leagueTables[lowerLeagueId] || []) : [];
@@ -544,14 +601,34 @@ export const getSeasonSummaryData = (gameState: GameState): SeasonSummaryData =>
         const sortedDiv1 = [...div1Table].sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference);
         const sortedDiv2 = [...div2Table].sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference);
 
-        relegatedTeams = sortedDiv1.slice(-3).map(r => findTeam(r.teamId)).filter(Boolean) as Team[];
-        promotedTeams = sortedDiv2.slice(0, 3).map(r => findTeam(r.teamId)).filter(Boolean) as Team[];
+        const slots = [
+            LeagueId.PRIMERA_DIVISION_CHILE,
+            LeagueId.PRIMERA_A_COLOMBIA,
+            LeagueId.LIGA_MX,
+            LeagueId.BUNDESLIGA,
+            LeagueId.LIGUE_1
+        ].includes(userLeagueId as LeagueId) ? 2 : (userLeagueId === LeagueId.BRASILEIRAO ? 4 : 3);
+
+        relegatedTeams = sortedDiv1.slice(-slots).map(r => findTeam(r.teamId)).filter(Boolean) as Team[];
+        promotedTeams = sortedDiv2.slice(0, slots).map(r => findTeam(r.teamId)).filter(Boolean) as Team[];
     }
 
     // International qualifications
     const libertadoresQualified: Team[] = [];
     const sudamericanaQualified: Team[] = [];
     const championsLeagueQualified: Team[] = [];
+
+    const isSouthAmericanContext = [
+        LeagueId.LIGA_ARGENTINA,
+        LeagueId.PRIMERA_NACIONAL,
+        LeagueId.BRASILEIRAO,
+        LeagueId.SERIE_B_BR,
+        LeagueId.COPA_DE_PRIMERA,
+        LeagueId.PRIMERA_DIVISION_CHILE,
+        LeagueId.PRIMERA_B_CHILE,
+        LeagueId.PRIMERA_A_COLOMBIA,
+        LeagueId.PRIMERA_B_COLOMBIA
+    ].includes(userLeagueId as LeagueId);
 
     if (isArgentina) {
         const argTable = gameState.leagueTables[LeagueId.LIGA_ARGENTINA] || [];
@@ -563,6 +640,16 @@ export const getSeasonSummaryData = (gameState: GameState): SeasonSummaryData =>
         qualification.sudamericana.forEach(entry => {
             const t = findTeam(entry.teamId);
             if (t && !sudamericanaQualified.some(q => q.id === t.id)) sudamericanaQualified.push(t);
+        });
+    } else if (isSouthAmericanContext) {
+        // South American leagues: Top 4 -> Libertadores, next 4 -> Sudamericana
+        sortedTable.slice(0, 4).forEach(r => {
+            const t = findTeam(r.teamId);
+            if (t) libertadoresQualified.push(t);
+        });
+        sortedTable.slice(4, 8).forEach(r => {
+            const t = findTeam(r.teamId);
+            if (t) sudamericanaQualified.push(t);
         });
     } else {
         // European Top 4 -> Champions League

@@ -2288,6 +2288,78 @@ test('50. Dynamic Squad Power, Aging, Deterioration, Regens & AI Transfer Window
     assert.ok(progression.updatedTeams[0].squadPower!.overall > 0, 'Squad power overall must be positive');
 });
 
+test('51. Chilean and Colombian Leagues: CONMEBOL Libertadores/Sudamericana integration and Season-End Champions Summary', async () => {
+    const { TEAMS } = await import('../constants');
+    const { initializeGame } = await import('../services/gameFactory');
+    const { getSeasonSummaryData } = await import('../services/seasonUtils');
+    const { initializeLibertadoresSeason } = await import('../services/libertadoresEngine');
+    const { initializeSudamericanaSeason, buildSudamericanaParticipants } = await import('../services/sudamericanaEngine');
+
+    // 1. Verify Colombian and Chilean clubs exist in TEAMS with valid logos
+    const colTeams = TEAMS.filter(t => t.leagueId === LeagueId.PRIMERA_A_COLOMBIA);
+    const chiTeams = TEAMS.filter(t => t.leagueId === LeagueId.PRIMERA_DIVISION_CHILE);
+    assert.equal(colTeams.length, 20, '20 Colombian Primera A teams');
+    assert.equal(chiTeams.length, 16, '16 Chilean Primera Division teams');
+
+    colTeams.forEach(t => {
+        assert.ok(t.logo && t.logo.length > 10, `Colombian club ${t.name} must have a valid logo URL`);
+        assert.ok(t.squad.length >= 11, `Colombian club ${t.name} must have squad >= 11`);
+    });
+
+    // 2. Initialize Game with a Colombian Club (e.g. Atlético Nacional)
+    const nac = colTeams.find(t => t.name.includes('Nacional')) || colTeams[0];
+    const gameState = initializeGame({ selectedTeam: nac });
+
+    assert.equal(gameState.team.leagueId, LeagueId.PRIMERA_A_COLOMBIA);
+    assert.ok(gameState.leagueTables[LeagueId.PRIMERA_A_COLOMBIA], 'Colombian league table initialized');
+    assert.ok(gameState.leagueTables[LeagueId.PRIMERA_DIVISION_CHILE], 'Chilean league table initialized');
+
+    // 3. Test Season End Summary
+    const summary = getSeasonSummaryData(gameState);
+    assert.ok(summary.allChampions.some(c => c.region === 'Colombia' && c.name.includes('Primera A')), 'Colombia Primera A in allChampions');
+    assert.ok(summary.allChampions.some(c => c.region === 'Colombia' && c.name.includes('Primera B')), 'Colombia Primera B in allChampions');
+    assert.ok(summary.allChampions.some(c => c.region === 'Chile' && c.name.includes('Primera División')), 'Chile Primera Division in allChampions');
+    assert.ok(summary.allChampions.some(c => c.region === 'Chile' && c.name.includes('Primera B')), 'Chile Primera B in allChampions');
+
+    // 4. Test CONMEBOL Libertadores & Sudamericana inclusion of Chile & Colombia
+    const libInit = initializeLibertadoresSeason({
+        allTeams: TEAMS,
+        lastLibertadoresWinnerId: undefined,
+        lastSudamericanaWinnerId: undefined,
+        argentineQualifiedIds: []
+    });
+
+    const libParticipants = new Set<number>();
+    libInit.cup.groups?.forEach(g => g.teams.forEach(id => libParticipants.add(id)));
+    libInit.fixtures.forEach(m => { libParticipants.add(m.homeTeamId); libParticipants.add(m.awayTeamId); });
+
+    const colInLib = TEAMS.filter(t => t.leagueId === LeagueId.PRIMERA_A_COLOMBIA && libParticipants.has(t.id));
+    const chiInLib = TEAMS.filter(t => t.leagueId === LeagueId.PRIMERA_DIVISION_CHILE && libParticipants.has(t.id));
+
+    assert.ok(colInLib.length >= 2, `At least 2 Colombian clubs in Libertadores (found ${colInLib.length})`);
+    assert.ok(chiInLib.length >= 2, `At least 2 Chilean clubs in Libertadores (found ${chiInLib.length})`);
+
+    const sudParticipants = buildSudamericanaParticipants({
+        allTeams: TEAMS,
+        lastSudamericanaWinnerId: undefined,
+        argentineQualifiedIds: [],
+        libertadoresPhase3Losers: []
+    });
+
+    assert.ok(sudParticipants.nationalPreliminaries['COL'].length === 4, '4 Colombian clubs in Sudamericana preliminary');
+    assert.ok(sudParticipants.nationalPreliminaries['CHI'].length === 4, '4 Chilean clubs in Sudamericana preliminary');
+
+    const sudSeason = initializeSudamericanaSeason({
+        allTeams: TEAMS,
+        lastSudamericanaWinnerId: undefined,
+        argentineQualifiedIds: [],
+        libertadoresPhase3Losers: []
+    });
+    assert.ok(sudSeason.cup.groups?.length === 8, '8 groups in Sudamericana');
+    assert.ok(sudSeason.fixtures.length > 0, 'Sudamericana fixtures generated');
+});
+
+
 
 
 
