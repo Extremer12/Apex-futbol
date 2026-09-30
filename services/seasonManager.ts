@@ -143,6 +143,9 @@ export function startNewSeason(currentState: GameState): GameState {
     const caWinner = getCupWinnerId(currentState.cups.copaArgentina);
     if (caWinner) trophiesToAward.push({ teamId: caWinner, name: 'Copa Argentina', type: 'cup' });
 
+    const copaMxWinner = getCupWinnerId(currentState.cups.copaMx);
+    if (copaMxWinner) trophiesToAward.push({ teamId: copaMxWinner, name: 'Copa MX', type: 'cup' });
+
     const apWinner = getCupWinnerId(currentState.cups.aperturaPlayoffs);
     if (apWinner) trophiesToAward.push({ teamId: apWinner, name: 'Torneo Apertura', type: 'league' });
 
@@ -385,6 +388,8 @@ export function startNewSeason(currentState: GameState): GameState {
     const newSerieBTeams = getLeagueTeams(LeagueId.SERIE_B_ITA);
     const newArgTeams = getLeagueTeams(LeagueId.LIGA_ARGENTINA);
     const newNacTeams = getLeagueTeams(LeagueId.PRIMERA_NACIONAL);
+    const newMxTeams = getLeagueTeams(LeagueId.LIGA_MX);
+    const newExpTeams = getLeagueTeams(LeagueId.LIGA_EXPANSION_MX);
 
     // 5. Generate new cup draws (National Cups)
     const englishTeamsNewSeason = [...newPlTeams, ...newChTeams];
@@ -392,6 +397,7 @@ export function startNewSeason(currentState: GameState): GameState {
     const germanTeamsNewSeason = [...newGerTeams, ...newZweiteTeams];
     const italianTeamsNewSeason = [...newItaTeams, ...newSerieBTeams];
     const argentinianTeamsNewSeason = [...newArgTeams, ...newNacTeams];
+    const mexicanTeamsNewSeason = [...newMxTeams, ...newExpTeams];
 
     const playerTeamId = currentState.team?.id;
     const faCupRound1 = generateCupDraw(englishTeamsNewSeason, 'Round 1', 'FA_Cup', playerTeamId);
@@ -400,6 +406,7 @@ export function startNewSeason(currentState: GameState): GameState {
     const dfbPokalRound1 = generateCupDraw(germanTeamsNewSeason, 'Round 1', 'DFB_Pokal', playerTeamId);
     const coppaItaliaRound1 = generateCupDraw(italianTeamsNewSeason, 'Round 1', 'Coppa_Italia', playerTeamId);
     const copaArgentinaRound1 = generateCupDraw(argentinianTeamsNewSeason, 'Round 1', 'Copa_Argentina', playerTeamId);
+    const copaMxRound1 = generateCupDraw(mexicanTeamsNewSeason, 'Round 1', 'Copa_MX', playerTeamId);
 
     // Assign cup fixtures to specific weeks (always midweek to prevent clashing with weekend league matches)
     const faCupFixtures = faCupRound1.map(m => ({ ...m, week: 5, isMidweek: true }));
@@ -408,6 +415,7 @@ export function startNewSeason(currentState: GameState): GameState {
     const dfbPokalFixtures = dfbPokalRound1.map(m => ({ ...m, week: 3, isMidweek: true }));
     const coppaItaliaFixtures = coppaItaliaRound1.map(m => ({ ...m, week: 4, isMidweek: true }));
     const copaArgentinaFixtures = copaArgentinaRound1.map(m => ({ ...m, week: 6, isMidweek: true }));
+    const copaMxFixtures = copaMxRound1.map(m => ({ ...m, week: 6, isMidweek: true }));
 
     // 5.5 Generate European & South American Competitions (Dynamic Qualification)
     const getTopTeams = (lid: LeagueId, count: number) => {
@@ -519,7 +527,7 @@ export function startNewSeason(currentState: GameState): GameState {
 
     const fullSchedule = [
         ...newSeasonSchedule, 
-        ...faCupFixtures, ...carabaoCupFixtures, ...copaDelReyFixtures, ...dfbPokalFixtures, ...coppaItaliaFixtures, ...copaArgentinaFixtures,
+        ...faCupFixtures, ...carabaoCupFixtures, ...copaDelReyFixtures, ...dfbPokalFixtures, ...coppaItaliaFixtures, ...copaArgentinaFixtures, ...copaMxFixtures,
         ...clFixtures, ...elFixtures, ...libGroupFixtures, ...sudGroupFixtures, ...intercontinentalFixtures
     ];
 
@@ -1004,6 +1012,12 @@ export function startNewSeason(currentState: GameState): GameState {
                 type: 'knockout', phase: 'knockout',
                 rounds: [{ name: 'Round 1', fixtures: copaArgentinaFixtures, completed: false }],
                 currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: buildArchiveChampions(currentState.cups.copaArgentina) }
+            },
+            copaMx: {
+                id: 'copa_mx', name: 'Copa MX', 
+                type: 'knockout', phase: 'knockout',
+                rounds: [{ name: 'Round 1', fixtures: copaMxFixtures, completed: false }],
+                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: buildArchiveChampions(currentState.cups.copaMx) }
             },
             aperturaPlayoffs: {
                 id: 'apertura_playoffs', name: 'Playoffs Apertura', 

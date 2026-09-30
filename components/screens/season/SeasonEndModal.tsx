@@ -243,22 +243,29 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
                                 {champs.map((item, idx) => (
                                     <div
                                         key={idx}
-                                        className="bg-slate-900/70 border border-white/5 hover:border-amber-500/30 rounded-2xl p-4 transition-all hover:bg-slate-900 flex items-center justify-between gap-3 shadow-lg"
+                                        className="relative overflow-hidden bg-gradient-to-br from-slate-900/90 via-[#0e1422] to-slate-950 border border-white/10 hover:border-amber-500/40 rounded-2xl p-4 transition-all hover:bg-slate-900 flex items-center justify-between gap-3 shadow-lg group"
                                     >
-                                        <div className="flex items-center gap-3 min-w-0">
-                                            <div className="w-9 h-9 shrink-0 flex items-center justify-center">
+                                        {/* Subtle Gold Laurel / Trophy Ambient Watermark */}
+                                        <Trophy className="absolute right-2 -bottom-2 w-16 h-16 text-amber-500/10 group-hover:text-amber-500/15 transition-colors pointer-events-none" />
+                                        <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-500/40 via-yellow-300 to-amber-500/40 opacity-80" />
+
+                                        <div className="flex items-center gap-3 min-w-0 relative z-10">
+                                            <div className="w-10 h-10 shrink-0 flex items-center justify-center relative">
                                                 {item.team ? (
-                                                    <TeamLogo team={item.team} className="w-full h-full object-contain drop-shadow" />
+                                                    <>
+                                                        <div className="absolute inset-0 rounded-full bg-amber-500/15 blur-sm" />
+                                                        <TeamLogo team={item.team} className="w-full h-full object-contain drop-shadow relative z-10" />
+                                                    </>
                                                 ) : (
-                                                    <Trophy className="w-6 h-6 text-amber-500/30" />
+                                                    <Trophy className="w-6 h-6 text-amber-500/40" />
                                                 )}
                                             </div>
 
                                             <div className="min-w-0">
-                                                <span className="text-[10px] font-bold text-amber-400/90 uppercase tracking-wider block truncate">
+                                                <span className="text-[10px] font-black text-amber-400 uppercase tracking-wider block truncate">
                                                     {item.name}
                                                 </span>
-                                                <h4 className="text-sm font-black text-white truncate">
+                                                <h4 className="text-sm font-black text-white truncate drop-shadow-sm">
                                                     {item.team?.name || 'En Disputa'}
                                                 </h4>
                                                 <span className="text-[10px] text-slate-400 font-medium">
@@ -267,7 +274,7 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
                                             </div>
                                         </div>
 
-                                        <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/20 shrink-0">
+                                        <span className="text-[10px] font-black uppercase px-3 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 shrink-0 shadow-sm relative z-10">
                                             {item.statusBadge || 'Campeón'}
                                         </span>
                                     </div>

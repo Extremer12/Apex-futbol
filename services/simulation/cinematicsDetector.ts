@@ -126,6 +126,7 @@ export function detectCinematicEvents(
         { key: 'dfbPokal' as const, name: 'DFB-Pokal 2026', accent: '#059669' },
         { key: 'coppaItalia' as const, name: 'Coppa Italia 2026', accent: '#2563EB' },
         { key: 'copaArgentina' as const, name: 'Copa Argentina 2026', accent: '#0284C7' },
+        { key: 'copaMx' as const, name: 'Copa MX 2026', accent: '#059669' },
     ];
 
     for (const gc of genericCups) {

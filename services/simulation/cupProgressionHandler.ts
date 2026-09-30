@@ -190,6 +190,34 @@ export function handleCupProgression(
         }
     }
 
+    // 2.5 Copa MX (México)
+    if (updatedCups.copaMx?.rounds?.length && !updatedCups.copaMx.winnerId) {
+        const prevRoundsCount = updatedCups.copaMx.rounds.length;
+        const mxWeekMap: Record<number, number> = {
+            0: 14, // Cuartos de Final
+            1: 22, // Semifinales
+            2: 30  // Gran Final
+        };
+        const nextCupWeek = mxWeekMap[updatedCups.copaMx.currentRoundIndex] || Math.min(34, Math.max(newWeek + 2, 8));
+        updatedCups.copaMx = advanceCupRound(updatedCups.copaMx, teams, nextCupWeek, updatedSchedule);
+        if (updatedCups.copaMx.rounds.length > prevRoundsCount) {
+            const newRound = updatedCups.copaMx.rounds[updatedCups.copaMx.rounds.length - 1];
+            updatedSchedule.push(...newRound.fixtures, ...(newRound.secondLegFixtures || []));
+        }
+
+        // Safety fallback: coronar campeón si la final concluyó
+        if (!updatedCups.copaMx.winnerId && updatedCups.copaMx.rounds.length > 0) {
+            const lastRound = updatedCups.copaMx.rounds[updatedCups.copaMx.rounds.length - 1];
+            if (lastRound.fixtures?.length === 1 && lastRound.fixtures[0].result !== undefined) {
+                const wId = determineCupWinner(lastRound.fixtures[0]);
+                if (wId) {
+                    updatedCups.copaMx.winnerId = wId;
+                    updatedCups.copaMx.phase = 'finished';
+                }
+            }
+        }
+    }
+
     // 3. Copa Libertadores
     if (updatedCups.copaLibertadores && !updatedCups.copaLibertadores.winnerId) {
         const libertadoresMatches = justPlayedMatches.filter(m => m.competition === 'Copa_Libertadores');

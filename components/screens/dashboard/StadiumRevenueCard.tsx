@@ -2,6 +2,8 @@ import React from 'react';
 import { GameState } from '../../../types';
 import { calculateMatchdayRevenue } from '../../../services/economy';
 import { formatCurrencyShort } from '../../../utils';
+import { StadiumSilhouette } from '../../ui/GameCardDecorations';
+import { Landmark } from 'lucide-react';
 
 interface StadiumRevenueCardProps {
     gameState: GameState;
@@ -49,15 +51,20 @@ export const StadiumRevenueCard: React.FC<StadiumRevenueCardProps> = ({ gameStat
     }, [leaguePosition]);
 
     return (
-        <div className="apex-card p-5 relative overflow-hidden group">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-                <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                        <span className="text-[9px] font-black tracking-[0.2em] text-white/40 uppercase block">
-                            Ingresos del Estadio • {stadium.name}
-                        </span>
-                        <span className="text-[9px] px-1.5 py-0.2 bg-white/5 border border-white/10 rounded text-white/60 font-semibold">
-                            Cap. {stadium.capacity.toLocaleString()}
+        <div className="apex-card p-5 sm:p-6 relative overflow-hidden group border border-white/10 hover:border-amber-500/30 transition-all shadow-xl">
+            {/* Architectural Stadium Silhouette Watermark */}
+            <StadiumSilhouette opacity={0.14} className="absolute right-0 bottom-0 pointer-events-none w-64 h-36 overflow-hidden" />
+            <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-amber-500/5 rounded-full blur-2xl pointer-events-none" />
+
+            <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <div className="flex items-center gap-1.5 text-[9px] font-black tracking-[0.2em] text-white/50 uppercase">
+                            <Landmark className="w-3.5 h-3.5 text-[var(--apex-gold)]" />
+                            <span>Ingresos del Estadio • {stadium.name}</span>
+                        </div>
+                        <span className="text-[9px] px-2 py-0.5 bg-black/40 border border-white/10 rounded-full text-white/70 font-semibold shadow-sm">
+                            Cap. {stadium.capacity.toLocaleString()} espectadores
                         </span>
                     </div>
 
@@ -73,11 +80,11 @@ export const StadiumRevenueCard: React.FC<StadiumRevenueCardProps> = ({ gameStat
                 </div>
                 
                 {/* Attendance & Revenue Histogram */}
-                <div className="flex items-end gap-1.5 h-14 shrink-0">
+                <div className="flex items-end gap-1.5 h-14 shrink-0 bg-black/30 p-2 rounded-xl border border-white/5">
                     {barData.map((h, i) => (
                         <div 
                             key={i} 
-                            className="w-2 sm:w-2.5 bg-gradient-to-t from-[var(--apex-gold)]/60 to-yellow-200 rounded-t-sm opacity-50 group-hover:opacity-100 transition-opacity" 
+                            className="w-2 sm:w-2.5 bg-gradient-to-t from-[var(--apex-gold)]/60 to-yellow-200 rounded-t-sm opacity-60 group-hover:opacity-100 transition-opacity shadow-[0_0_8px_rgba(212,175,55,0.2)]" 
                             style={{ height: `${h}%` }}
                             title={`Aforo estimado: ${h}%`}
                         />
@@ -85,7 +92,7 @@ export const StadiumRevenueCard: React.FC<StadiumRevenueCardProps> = ({ gameStat
                 </div>
 
                 {/* Breakdown per Channel */}
-                <div className="flex flex-col gap-2 min-w-[140px] w-full md:w-auto">
+                <div className="flex flex-col gap-2 min-w-[150px] w-full md:w-auto bg-black/40 p-3 rounded-xl border border-white/5">
                     <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-wider border-b border-white/5 pb-1">
                         <span className="text-white/40">Día de Partido</span>
                         <span className="text-white font-extrabold">{formatCurrencyShort(monthlyMatchday)}</span>

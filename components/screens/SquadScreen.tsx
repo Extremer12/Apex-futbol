@@ -32,6 +32,7 @@ import {
 } from '../../utils/playerUtils';
 import { calculateSquadPower } from '../../services/squadProgressionService';
 import { TacticalLineupView } from './squad/TacticalLineupView';
+import { getPlayerCardRarity } from '../ui/GameCardDecorations';
 
 interface SquadScreenProps {
     gameState: GameState;
@@ -455,19 +456,16 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
                                 const potTier = getPlayerPotentialTier(player);
                                 const tierBadge = getTierBadge(potTier);
                                 const moraleInfo = getMoraleIndicator(player.morale);
+                                const rarity = getPlayerCardRarity(player.rating);
 
                                 return (
                                     <div
                                         key={player.id}
                                         onClick={() => onViewPlayer(player)}
-                                        className="group relative bg-[#0E131F] hover:bg-[#121828] border border-white/10 hover:border-[var(--apex-gold)]/50 rounded-xl p-3 transition-all duration-200 cursor-pointer shadow-md hover:shadow-lg hover:-translate-y-0.5 flex flex-col justify-between overflow-hidden"
+                                        className={`group relative ${rarity.containerClass} border rounded-2xl p-3.5 transition-all duration-200 cursor-pointer shadow-md hover:shadow-2xl hover:-translate-y-1 flex flex-col justify-between overflow-hidden`}
                                     >
-                                        {/* Barra superior fina de acento según media */}
-                                        <div className={`absolute top-0 left-0 right-0 h-0.5 ${
-                                            player.rating >= 80 ? 'bg-gradient-to-r from-amber-500 via-amber-300 to-amber-500' :
-                                            player.rating >= 74 ? 'bg-gradient-to-r from-emerald-500 to-teal-400' :
-                                            'bg-gradient-to-r from-slate-600 to-slate-500'
-                                        }`} />
+                                        {/* Barra superior de acento según rareza */}
+                                        <div className={`absolute top-0 left-0 right-0 h-1 ${rarity.borderTopGradient}`} />
 
                                         <div>
                                             {/* Header de la Tarjeta: Foto + Info Principal + Rating Badge */}
@@ -502,17 +500,11 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
                                                     </div>
                                                 </div>
 
-                                                {/* Rating OVR */}
-                                                <div className={`flex items-center justify-center w-9 h-9 rounded-xl shrink-0 font-black text-sm shadow-sm border ${
-                                                    player.rating >= 80 
-                                                        ? 'bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 border-amber-300 shadow-amber-500/20' 
-                                                        : player.rating >= 74
-                                                        ? 'bg-white/10 text-white border-white/20'
-                                                        : 'bg-black/40 text-slate-400 border-white/5'
-                                                }`}>
+                                                {/* Rating OVR Plate (FC Mobile / Ultimate Team Shield) */}
+                                                <div className={`flex items-center justify-center w-10 h-10 rounded-xl shrink-0 font-black text-sm shadow-md border ${rarity.badgeClass}`}>
                                                     <span>{player.rating}</span>
-                                                    {player.rating >= 85 && (
-                                                        <Star className="w-2.5 h-2.5 fill-slate-950 ml-0.5 inline" />
+                                                    {rarity.hasSparkle && (
+                                                        <Star className="w-2.5 h-2.5 fill-current ml-0.5 inline" />
                                                     )}
                                                 </div>
                                             </div>
@@ -815,27 +807,34 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
                                 const tierBadge = getTierBadge(potTier);
                                 const growth = Math.max(0, potential - player.rating);
                                 const isSquadFull = gameState.team.squad.length >= 25;
-                                const isTopGem = potential >= 82;
+                                const isTopGem = potential >= 84;
+                                const rarity = getPlayerCardRarity(player.rating, potential);
 
                                 return (
                                     <div 
                                         key={player.id} 
-                                        className={`bg-[#0E131F] hover:bg-[#121828] border rounded-2xl p-3.5 transition-all duration-200 shadow-xl flex flex-col justify-between group ${
-                                            isTopGem 
-                                                ? 'border-[var(--apex-gold)]/40 hover:border-[var(--apex-gold)] hover:shadow-[0_0_20px_rgba(212,175,55,0.15)]' 
-                                                : 'border-white/10 hover:border-white/20'
+                                        className={`border rounded-2xl p-3.5 transition-all duration-200 shadow-xl flex flex-col justify-between group relative overflow-hidden ${rarity.containerClass} ${
+                                            isTopGem ? 'hover:scale-[1.02]' : 'hover:border-white/20'
                                         }`}
                                     >
+                                        {/* Barra superior de acento según rareza */}
+                                        <div className={`absolute top-0 left-0 right-0 h-1 ${rarity.borderTopGradient}`} />
+
                                         <div>
                                             {/* Cabecera de la Tarjeta */}
                                             <div className="flex items-center justify-between gap-2 mb-2.5">
-                                                <div className="flex items-center gap-1.5">
+                                                <div className="flex items-center gap-1.5 flex-wrap">
                                                     <span className={`px-2 py-0.5 rounded text-[8.5px] font-black border uppercase tracking-wider ${getPositionColor(player.position)}`}>
                                                         {player.position}
                                                     </span>
                                                     <span className={`px-2 py-0.5 rounded text-[8.5px] font-black border uppercase tracking-wider ${tierBadge.color}`}>
                                                         {tierBadge.label}
                                                     </span>
+                                                    {isTopGem && (
+                                                        <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest bg-violet-500/20 text-violet-300 border border-violet-500/40 flex items-center gap-0.5 shadow-sm">
+                                                            <Sparkles className="w-2.5 h-2.5" /> Joya
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 <span className="text-[11px] font-bold text-slate-400">{age} años</span>
                                             </div>
@@ -843,11 +842,12 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
                                             {/* Foto y Datos del Jugador con Botón Inspeccionar */}
                                             <div className="flex items-center gap-3 mb-3">
                                                 <div className="relative shrink-0 cursor-pointer" onClick={() => onViewPlayer(player)}>
+                                                    <div className="absolute inset-0 rounded-xl bg-amber-500/10 blur-sm pointer-events-none" />
                                                     <PlayerPhoto 
                                                         player={player} 
-                                                        className="w-12 h-12 rounded-xl border border-white/10 shadow-md object-cover group-hover:scale-105 transition-transform" 
+                                                        className="w-12 h-12 rounded-xl border border-white/10 shadow-md object-cover group-hover:scale-105 transition-transform relative z-10" 
                                                     />
-                                                    <div className="absolute -bottom-1 -right-1 px-1.5 py-0.2 rounded-full text-[8.5px] font-black bg-slate-900 border border-white/30 text-white shadow">
+                                                    <div className={`absolute -bottom-1 -right-1 px-1.5 py-0.2 rounded-full text-[8.5px] font-black shadow z-20 border ${rarity.badgeClass}`}>
                                                         {player.rating}
                                                     </div>
                                                 </div>
@@ -882,17 +882,17 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
                                                     </span>
                                                 </div>
 
-                                                {/* Barra de progreso de desarrollo */}
-                                                <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden relative flex">
+                                                {/* Barra de progreso de desarrollo con efecto neón */}
+                                                <div className="w-full h-2 rounded-full bg-slate-900 border border-white/5 overflow-hidden relative flex">
                                                     {/* Rating actual (base 0 - 100) */}
                                                     <div 
-                                                        className="h-full bg-emerald-500 rounded-l-full" 
+                                                        className="h-full bg-emerald-500 rounded-l-full shadow-[0_0_8px_rgba(16,185,129,0.5)]" 
                                                         style={{ width: `${Math.min(100, (player.rating / 99) * 100)}%` }} 
                                                         title={`Media actual: ${player.rating}`}
                                                     />
                                                     {/* Margen de crecimiento hasta potencial */}
                                                     <div 
-                                                        className="h-full bg-gradient-to-r from-amber-500 to-[var(--apex-gold)] opacity-75" 
+                                                        className="h-full bg-gradient-to-r from-amber-500 via-[var(--apex-gold)] to-yellow-300 opacity-90 shadow-[0_0_8px_rgba(245,158,11,0.5)]" 
                                                         style={{ width: `${Math.min(100 - (player.rating / 99) * 100, (growth / 99) * 100)}%` }} 
                                                         title={`Margen de crecimiento: +${growth} puntos`}
                                                     />

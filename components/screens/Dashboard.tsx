@@ -10,7 +10,8 @@ import { LeagueTableMini } from './dashboard/LeagueTableMini';
 import { StadiumRevenueCard } from './dashboard/StadiumRevenueCard';
 import { HeroSection, PendingSimulationResults } from './dashboard/HeroSection';
 import { PlayerAvatar } from '../ui/PlayerAvatar';
-import { X, ArrowRight, Newspaper, Landmark, Award, ShieldAlert } from 'lucide-react';
+import { RadarWatermark, getPlayerCardRarity } from '../ui/GameCardDecorations';
+import { X, ArrowRight, Newspaper, Landmark, Award, ShieldAlert, Radio } from 'lucide-react';
 
 // HELPER FOR PLAYER IMAGES (backwards compatibility)
 export const getPlayerImage = (name: string) => `https://images.fotmob.com/image_resources/playerimages/737066.png`;
@@ -302,51 +303,73 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({
                     </div>
 
                     {/* Radar de Fichajes */}
-                    <div className="lg:col-span-5 apex-card overflow-hidden flex flex-col">
-                        <div className="p-4 border-b border-white/5 bg-black/20 flex justify-between items-center">
+                    <div className="lg:col-span-5 apex-card overflow-hidden flex flex-col relative group">
+                        {/* High-Tech Radar Watermark */}
+                        <RadarWatermark opacity={0.06} accentColor="#10B981" />
+
+                        <div className="p-3.5 sm:p-4 border-b border-white/5 bg-black/30 flex justify-between items-center relative z-10">
                             <div>
-                                <span className="text-[10px] font-black tracking-[0.2em] text-white/60 uppercase">Radar de Fichajes</span>
-                                <div className="text-[8px] font-bold text-white/30 uppercase">Oportunidades de Mercado</div>
+                                <div className="flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+                                    <span className="text-[10px] font-black tracking-[0.2em] text-white/70 uppercase">Radar de Fichajes</span>
+                                </div>
+                                <div className="text-[8px] font-bold text-white/40 uppercase mt-0.5">Oportunidades de Mercado</div>
                             </div>
-                            <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase bg-[var(--apex-gold)]/10 text-[var(--apex-gold)] border border-[var(--apex-gold)]/20">
-                                Scouting
+                            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded text-[8px] font-black uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.15)]">
+                                <Radio className="w-2.5 h-2.5 animate-pulse" />
+                                <span>Scouting</span>
                             </span>
                         </div>
-                        <div className="p-4 space-y-2.5 flex-1">
-                            {marketTargets.map((target) => (
-                                <div 
-                                    key={target.player.id} 
-                                    onClick={() => handlePlayerClick(target.player.name)}
-                                    className="flex items-center gap-3 p-2.5 bg-black/30 hover:bg-white/[0.03] rounded-xl border border-white/5 hover:border-[var(--apex-gold)]/30 transition-all cursor-pointer group"
-                                >
-                                    <div className="w-10 h-10 rounded-xl border border-white/10 bg-slate-900 flex items-center justify-center shrink-0 overflow-hidden relative">
-                                        <PlayerAvatar 
-                                            player={target.player} 
-                                            className="w-full h-full object-cover" 
-                                        />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-1.5">
-                                            <span className="text-xs font-black text-white group-hover:text-[var(--apex-gold)] truncate transition-colors">
-                                                {target.player.name}
-                                            </span>
-                                            <span className="text-[9px] font-black px-1.5 py-0.2 bg-white/10 text-white/90 rounded shrink-0">
-                                                {target.player.rating}
-                                            </span>
+                        <div className="p-3 sm:p-4 space-y-2.5 flex-1 relative z-10">
+                            {marketTargets.map((target) => {
+                                const rarity = getPlayerCardRarity(target.player.rating, target.player.potential);
+                                return (
+                                    <div 
+                                        key={target.player.id} 
+                                        onClick={() => handlePlayerClick(target.player.name)}
+                                        className="flex items-center gap-3 p-2.5 bg-black/40 hover:bg-white/[0.04] rounded-xl border border-white/5 hover:border-[var(--apex-gold)]/40 transition-all cursor-pointer group/item relative overflow-hidden"
+                                    >
+                                        {/* Left Accent Stripe */}
+                                        <div className={`absolute left-0 top-0 bottom-0 w-1 ${
+                                            target.player.rating >= 85 ? 'bg-violet-400' :
+                                            target.player.rating >= 80 ? 'bg-amber-400' :
+                                            'bg-emerald-400'
+                                        }`} />
+
+                                        {/* Avatar with Rarity Ring */}
+                                        <div className="w-10 h-10 rounded-xl border border-white/10 bg-slate-900 flex items-center justify-center shrink-0 overflow-hidden relative shadow-inner">
+                                            <PlayerAvatar 
+                                                player={target.player} 
+                                                className="w-full h-full object-cover group-hover/item:scale-105 transition-transform duration-300" 
+                                            />
                                         </div>
-                                        <div className="text-[9px] text-white/40 font-bold uppercase truncate flex items-center gap-1.5">
-                                            <span className="text-white/60 font-black">{target.player.position}</span>
-                                            <span>•</span>
-                                            <span className="truncate">{target.clubName}</span>
-                                            <span>•</span>
-                                            <span className="text-emerald-400 font-semibold">{formatCurrencyShort(target.player.value)}</span>
+
+                                        {/* Details */}
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs font-black text-white group-hover/item:text-[var(--apex-gold)] truncate transition-colors">
+                                                    {target.player.name}
+                                                </span>
+                                                <span className={`text-[9px] font-black px-1.5 py-0.5 rounded shrink-0 shadow-sm border ${rarity.badgeClass}`}>
+                                                    {target.player.rating}
+                                                </span>
+                                            </div>
+                                            <div className="text-[9px] text-white/40 font-bold uppercase truncate flex items-center gap-1.5 mt-0.5">
+                                                <span className="text-white/70 font-black">{target.player.position}</span>
+                                                <span>•</span>
+                                                <span className="truncate">{target.clubName}</span>
+                                                <span>•</span>
+                                                <span className="text-emerald-400 font-semibold">{formatCurrencyShort(target.player.value)}</span>
+                                            </div>
                                         </div>
+
+                                        {/* Opportunity Tag */}
+                                        <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase shrink-0 border ${target.tagColor}`}>
+                                            {target.tag}
+                                        </span>
                                     </div>
-                                    <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase shrink-0 border ${target.tagColor}`}>
-                                        {target.tag}
-                                    </span>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
                 </div>

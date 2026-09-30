@@ -260,6 +260,7 @@ export const getSeasonSummaryData = (gameState: GameState): SeasonSummaryData =>
     // Cups
     const cupsToCheck: [string, CupCompetition | undefined][] = [
         ['Copa Argentina', gameState.cups.copaArgentina],
+        ['Copa MX', gameState.cups.copaMx],
         ['FA Cup', gameState.cups.faCup],
         ['Carabao Cup', gameState.cups.carabaoCup],
         ['Copa del Rey', gameState.cups.copaDelRey],

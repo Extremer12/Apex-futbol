@@ -6,6 +6,7 @@ import { Trophy, TrendingUp, TrendingDown, ArrowUpRight } from 'lucide-react';
 import { TeamLogo } from '../../../data/teams/helpers';
 import { isSeasonCompleted, getSeasonSummaryData, getMatchKickoffTime } from '../../../services/seasonUtils';
 import { getTeamStadium } from '../../../data/stadiums';
+import { PitchWatermark, BattleVsEmblem, TacticalBoardWatermark } from '../../ui/GameCardDecorations';
 
 function isTeamEliminatedFromCup(cup: any, teamId: number): boolean {
     if (!cup) return false;
@@ -334,20 +335,24 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         }
 
         return (
-            <div className="apex-card p-10 flex flex-col items-center justify-center min-h-[280px] text-center group">
-                <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-6 border border-white/10 group-hover:border-[var(--apex-gold)]/50 transition-colors">
-                    <UsersIcon className="w-8 h-8 text-[var(--apex-gold)] opacity-50" />
+            <div className="apex-card p-8 sm:p-10 flex flex-col items-center justify-center min-h-[290px] text-center group relative overflow-hidden border border-white/10 hover:border-emerald-500/40 transition-colors shadow-2xl">
+                {/* Tactical Blueprint Watermark */}
+                <TacticalBoardWatermark opacity={0.12} />
+                <div className="absolute -top-12 -right-12 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+
+                <div className="relative z-10 w-16 h-16 bg-gradient-to-br from-emerald-500/20 to-teal-500/10 rounded-2xl flex items-center justify-center mb-4 border border-emerald-500/30 group-hover:border-emerald-400/60 shadow-[0_0_20px_rgba(16,185,129,0.15)] transition-all">
+                    <UsersIcon className="w-8 h-8 text-emerald-400 drop-shadow" />
                 </div>
-                <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">
+                <h2 className="relative z-10 text-xl sm:text-2xl font-black text-white uppercase tracking-tight mb-2">
                     {specialStageTitle || 'Semana de Entrenamiento'}
                 </h2>
-                <p className="text-[10px] text-white/40 uppercase tracking-[0.2em] mb-8 max-w-md">
-                    {specialStageDesc || 'No hay partidos programados. La plantilla está enfocada en entrenamiento táctico y recuperación.'}
+                <p className="relative z-10 text-[11px] text-slate-300/80 leading-relaxed mb-6 max-w-md">
+                    {specialStageDesc || 'No hay partidos oficiales programados para tu club en esta jornada. La plantilla continúa con su régimen de preparación táctica y preparación física.'}
                 </p>
                 <button 
                     onClick={onPlayMatch}
                     disabled={isSimulating}
-                    className={`apex-btn-gold w-full max-w-xs flex items-center justify-center gap-2 ${isSimulating ? 'opacity-70 cursor-not-allowed' : ''}`}
+                    className={`relative z-10 apex-btn-gold w-full max-w-xs flex items-center justify-center gap-2 ${isSimulating ? 'opacity-70 cursor-not-allowed' : ''}`}
                 >
                     {isSimulating ? (
                         <>
@@ -477,56 +482,83 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     else playButtonText = `⚽ Jugar Fecha ${nextMatch.week}`;
 
     return (
-        <div className="apex-card p-6 relative overflow-hidden group min-h-[280px] flex flex-col justify-center">
-            <div className="flex justify-between items-center mb-4">
-                <span className="text-[9px] font-black tracking-[0.3em] text-[var(--apex-gold)] uppercase">Próximo Partido</span>
-                <span className="text-[10px] font-black tracking-[0.15em] text-white/80 uppercase bg-white/5 px-2.5 py-0.5 rounded-lg border border-white/10">
+        <div className="apex-card p-6 relative overflow-hidden group min-h-[290px] flex flex-col justify-center border border-white/10 hover:border-[var(--apex-gold)]/40 transition-colors shadow-2xl">
+            {/* Dynamic Pitch Line Watermark & Atmospheric Lighting */}
+            <PitchWatermark opacity={0.09} accentColor="#D4AF37" />
+            
+            {/* Subtle Stadium Light Flare Beams */}
+            <div className="absolute -top-10 -left-10 w-44 h-44 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-10 -right-10 w-44 h-44 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] via-transparent to-black/30 pointer-events-none" />
+
+            <div className="relative z-10 flex justify-between items-center mb-4">
+                <span className="text-[9px] font-black tracking-[0.3em] text-[var(--apex-gold)] uppercase flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--apex-gold)] animate-pulse" />
+                    Próximo Partido
+                </span>
+                <span className="text-[10px] font-black tracking-[0.15em] text-white/90 uppercase bg-black/60 px-3 py-1 rounded-full border border-white/10 shadow-sm flex items-center gap-1">
+                    <Trophy className="w-3 h-3 text-[var(--apex-gold)] opacity-70" />
                     {stageInfo.competition}
                 </span>
             </div>
 
-            {/* Symmetrical Matchup Grid */}
-            <div className="grid grid-cols-11 items-center mb-6 w-full">
+            {/* Symmetrical Matchup Grid with FC Mobile / Clash Royale Battle Emblem */}
+            <div className="relative z-10 grid grid-cols-11 items-center mb-5 w-full">
                 {/* Home Team (Cols 1-5) */}
                 <div className="col-span-5 flex flex-col items-center text-center px-1">
-                    <div className="w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center mb-2.5 drop-shadow-[0_4px_16px_rgba(0,0,0,0.5)]">
-                        {homeTeamObj && <TeamLogo team={homeTeamObj} className="w-full h-full object-contain" />}
+                    <div className="relative group/crest">
+                        <div className="absolute inset-0 rounded-full bg-amber-500/15 blur-xl opacity-0 group-hover/crest:opacity-100 transition-opacity" />
+                        <div className="w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center mb-2.5 drop-shadow-[0_8px_20px_rgba(0,0,0,0.6)] relative z-10">
+                            {homeTeamObj && <TeamLogo team={homeTeamObj} className="w-full h-full object-contain" />}
+                        </div>
                     </div>
                     <span className="text-xs sm:text-sm font-black text-white uppercase tracking-tight line-clamp-1 w-full text-center" title={homeTeamObj?.name}>
                         {homeTeamObj?.shortName || homeTeamObj?.name || 'Local'}
                     </span>
-                    {homeTeamObj?.id === gameState.team.id && (
-                        <span className="text-[8px] font-black uppercase text-[var(--apex-gold)] bg-[var(--apex-gold)]/10 px-1.5 py-0.5 rounded border border-[var(--apex-gold)]/20 mt-1">
+                    {homeTeamObj?.id === gameState.team.id ? (
+                        <span className="text-[8px] font-black uppercase text-[var(--apex-gold)] bg-[var(--apex-gold)]/10 px-2 py-0.5 rounded-full border border-[var(--apex-gold)]/30 mt-1 shadow-sm">
                             Tu Club
+                        </span>
+                    ) : (
+                        <span className="text-[8px] font-bold uppercase text-slate-400 bg-white/5 px-2 py-0.5 rounded-full border border-white/5 mt-1">
+                            Local
                         </span>
                     )}
                 </div>
 
-                {/* VS Center (Col 6) */}
+                {/* VS Center Battle Emblem (Col 6) */}
                 <div className="col-span-1 flex flex-col items-center justify-center text-center">
-                    <span className="text-2xl sm:text-3xl font-black italic text-white/20 select-none">VS</span>
+                    <BattleVsEmblem size="md" />
                 </div>
 
                 {/* Away Team (Cols 7-11) */}
                 <div className="col-span-5 flex flex-col items-center text-center px-1">
-                    <div className="w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center mb-2.5 drop-shadow-[0_4px_16px_rgba(0,0,0,0.5)]">
-                        {awayTeamObj && <TeamLogo team={awayTeamObj} className="w-full h-full object-contain" />}
+                    <div className="relative group/crest">
+                        <div className="absolute inset-0 rounded-full bg-cyan-500/15 blur-xl opacity-0 group-hover/crest:opacity-100 transition-opacity" />
+                        <div className="w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center mb-2.5 drop-shadow-[0_8px_20px_rgba(0,0,0,0.6)] relative z-10">
+                            {awayTeamObj && <TeamLogo team={awayTeamObj} className="w-full h-full object-contain" />}
+                        </div>
                     </div>
                     <span className="text-xs sm:text-sm font-black text-white uppercase tracking-tight line-clamp-1 w-full text-center" title={awayTeamObj?.name}>
                         {awayTeamObj?.shortName || awayTeamObj?.name || 'Visitante'}
                     </span>
-                    {awayTeamObj?.id === gameState.team.id && (
-                        <span className="text-[8px] font-black uppercase text-[var(--apex-gold)] bg-[var(--apex-gold)]/10 px-1.5 py-0.5 rounded border border-[var(--apex-gold)]/20 mt-1">
+                    {awayTeamObj?.id === gameState.team.id ? (
+                        <span className="text-[8px] font-black uppercase text-[var(--apex-gold)] bg-[var(--apex-gold)]/10 px-2 py-0.5 rounded-full border border-[var(--apex-gold)]/30 mt-1 shadow-sm">
                             Tu Club
+                        </span>
+                    ) : (
+                        <span className="text-[8px] font-bold uppercase text-slate-400 bg-white/5 px-2 py-0.5 rounded-full border border-white/5 mt-1">
+                            Visitante
                         </span>
                     )}
                 </div>
             </div>
 
-            <div className="flex flex-col items-center gap-1.5 mb-6">
+            {/* Stage Info & Stadium Pill */}
+            <div className="relative z-10 flex flex-col items-center gap-1.5 mb-5">
                 <div className="flex items-center gap-2">
                     {stageInfo.isPlayoffOrCup ? (
-                        <span className={`text-[10px] sm:text-xs font-black uppercase px-3 py-1 rounded-full border shadow-md flex items-center gap-1.5 ${
+                        <span className={`text-[10px] sm:text-xs font-black uppercase px-3.5 py-1 rounded-full border shadow-md flex items-center gap-1.5 ${
                             stageInfo.isFinal 
                                 ? 'bg-amber-500/20 text-amber-300 border-amber-400/50 animate-pulse' 
                                 : 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40'
@@ -535,21 +567,21 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                             <span>{stageInfo.stage} • {getMatchKickoffTime(nextMatch)}</span>
                         </span>
                     ) : (
-                        <span className="text-[10px] sm:text-xs font-black text-white uppercase tracking-wider">
+                        <span className="text-[10px] sm:text-xs font-black text-white uppercase tracking-wider bg-black/40 px-3 py-1 rounded-full border border-white/10">
                             Jornada {nextMatch.week} • {getMatchKickoffTime(nextMatch)}
                         </span>
                     )}
                 </div>
-                <div className="flex items-center gap-2 text-white/40">
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" strokeWidth={2} /></svg>
-                    <span className="text-[9px] font-bold uppercase tracking-widest">{isHome ? (gameState.stadium?.name || gameState.team.stadiumName || getTeamStadium(gameState.team).name) : (opponent?.stadiumName || getTeamStadium(opponent).name)}</span>
+                <div className="flex items-center gap-1.5 text-white/50 text-[9px] font-bold uppercase tracking-widest bg-white/[0.03] px-2.5 py-0.5 rounded-md border border-white/5">
+                    <svg className="w-3 h-3 text-[var(--apex-gold)] opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" strokeWidth={2} /></svg>
+                    <span>{isHome ? (gameState.stadium?.name || gameState.team.stadiumName || getTeamStadium(gameState.team).name) : (opponent?.stadiumName || getTeamStadium(opponent).name)}</span>
                 </div>
             </div>
 
             <button 
                 onClick={onPlayMatch}
                 disabled={isSimulating}
-                className={`w-full py-4 bg-gradient-to-r from-[var(--apex-gold)] to-yellow-600 text-black font-black text-xs uppercase tracking-[0.2em] rounded-xl shadow-[0_10px_30px_rgba(200,168,78,0.3)] transition-all flex items-center justify-center gap-2 group/btn ${isSimulating ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98] cursor-pointer'}`}
+                className={`relative z-10 w-full py-4 bg-gradient-to-r from-[var(--apex-gold)] to-yellow-600 text-black font-black text-xs uppercase tracking-[0.2em] rounded-xl shadow-[0_10px_30px_rgba(200,168,78,0.3)] transition-all flex items-center justify-center gap-2 group/btn ${isSimulating ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98] cursor-pointer'}`}
             >
                 {isSimulating ? (
                     <>

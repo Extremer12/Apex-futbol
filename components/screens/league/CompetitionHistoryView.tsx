@@ -5,6 +5,7 @@ import { customPacksService } from '../../../services/customPacks/packService';
 import { Trophy, History, Shield, Award, Calendar, ChevronRight, Star, Sparkles } from 'lucide-react';
 import { TeamLogo, GenericTeamShield, TEAM_LOGOS } from '../../../data/teams/helpers';
 import { getCompetitionHistoricalRecord } from '../../../data/historicalHonours';
+import { TrophyLaurelWatermark, PodiumRankBadge } from '../../ui/GameCardDecorations';
 
 interface CompetitionHistoryViewProps {
     competition: CompetitionItem;
@@ -125,14 +126,26 @@ export const CompetitionHistoryView: React.FC<CompetitionHistoryViewProps> = ({
             const sn = (t.shortName || '').toLowerCase().trim();
             if (tn === cleanLower || sn === cleanLower) return true;
 
-            const strippedTn = tn.replace(/^(fc|ac|ca|csd|ssv|rcd|afc|cf|sc)\s+/i, '').trim();
-            const strippedClean = cleanLower.replace(/^(fc|ac|ca|csd|ssv|rcd|afc|cf|sc)\s+/i, '').trim();
-            if (strippedTn && strippedTn === strippedClean) return true;
+            const strippedTn = tn.replace(/^(fc|ac|ca|csd|ssv|rcd|afc|cf|sc|cd|club|deportivo)\s+/i, '').replace(/\s+(fc|cf)$/i, '').trim();
+            const strippedClean = cleanLower.replace(/^(fc|ac|ca|csd|ssv|rcd|afc|cf|sc|cd|club|deportivo)\s+/i, '').replace(/\s+(fc|cf)$/i, '').trim();
+            if (strippedTn && strippedClean && strippedTn === strippedClean) return true;
 
             // Safe alias links
             if ((cleanLower === 'manchester united' || cleanLower === 'man united') && (tn === 'manchester utd' || sn === 'mun')) return true;
             if ((cleanLower === 'estudiantes lp' || cleanLower === 'estudiantes') && tn.includes('estudiantes de la plata')) return true;
             if ((cleanLower === 'gimnasia lp' || cleanLower === 'gimnasia la plata') && tn.includes('gimnasia y esgrima la plata')) return true;
+
+            // Mexican clubs aliases
+            if ((cleanLower === 'chivas' || cleanLower === 'guadalajara') && (tn.includes('guadalajara') || sn.includes('chivas'))) return true;
+            if ((cleanLower === 'américa' || cleanLower === 'america') && (tn.includes('américa') || tn.includes('america'))) return true;
+            if (cleanLower === 'pumas' && (tn.includes('universidad nacional') || sn.includes('pumas'))) return true;
+            if (cleanLower === 'monterrey' && (tn.includes('monterrey') || sn.includes('rayados'))) return true;
+            if (cleanLower === 'toluca' && tn.includes('toluca')) return true;
+            if (cleanLower === 'pachuca' && tn.includes('pachuca')) return true;
+            if ((cleanLower === 'león' || cleanLower === 'leon') && (tn.includes('león') || tn.includes('leon'))) return true;
+            if (cleanLower === 'puebla' && tn.includes('puebla')) return true;
+            if (cleanLower === 'necaxa' && tn.includes('necaxa')) return true;
+            if (cleanLower === 'atlas' && tn.includes('atlas')) return true;
 
             return false;
         });
@@ -151,11 +164,13 @@ export const CompetitionHistoryView: React.FC<CompetitionHistoryViewProps> = ({
     return (
         <div className="space-y-4 animate-fade-in">
             {/* Header Banner - Compact, Broadcast Style */}
-            <div className="rounded-xl bg-gradient-to-r from-slate-900 via-[#0E1524] to-slate-900 border border-white/10 p-4 relative overflow-hidden shadow-lg">
+            <div className="rounded-2xl bg-gradient-to-r from-slate-900 via-[#0E1524] to-slate-900 border border-white/10 p-4 sm:p-5 relative overflow-hidden shadow-2xl">
                 <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-[var(--apex-gold)]/10 to-transparent pointer-events-none" />
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative z-10">
-                    <div className="flex items-center gap-3.5">
-                        <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center p-2 rounded-xl bg-black/50 border border-white/10 shrink-0 shadow-inner">
+                <TrophyLaurelWatermark opacity={0.12} accentColor="#F59E0B" />
+
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+                    <div className="flex items-center gap-3.5 sm:gap-4">
+                        <div className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center p-2 rounded-2xl bg-black/60 border border-white/15 shrink-0 shadow-[0_0_20px_rgba(0,0,0,0.6)] backdrop-blur-sm">
                             <img src={logo} alt={competition.name} className="w-full h-full object-contain drop-shadow-md" />
                         </div>
                         <div>
@@ -165,18 +180,18 @@ export const CompetitionHistoryView: React.FC<CompetitionHistoryViewProps> = ({
                                 </span>
                                 <span className="text-slate-400 text-[11px] font-mono">Temporada {gameState.season}</span>
                             </div>
-                            <h2 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight mt-0.5">
+                            <h2 className="text-lg sm:text-2xl font-black text-white uppercase tracking-tight mt-0.5">
                                 Palmarés: {competition.name}
                             </h2>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
-                        <div className="px-3 py-1.5 rounded-lg bg-black/40 border border-white/10 text-center">
+                        <div className="px-3.5 py-2 rounded-xl bg-black/50 border border-white/10 text-center shadow-inner">
                             <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Campeones</div>
                             <div className="text-xs sm:text-sm font-black text-amber-400 font-mono">{titleTally.length} Clubes</div>
                         </div>
-                        <div className="px-3 py-1.5 rounded-lg bg-black/40 border border-white/10 text-center">
+                        <div className="px-3.5 py-2 rounded-xl bg-black/50 border border-white/10 text-center shadow-inner">
                             <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Registros</div>
                             <div className="text-xs sm:text-sm font-black text-white font-mono">{totalEditionsCount} Ediciones</div>
                         </div>
@@ -187,8 +202,8 @@ export const CompetitionHistoryView: React.FC<CompetitionHistoryViewProps> = ({
             {/* Grid of Historical Records */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                 {/* Columna Izquierda: Palmarés / Títulos por Club (5 columnas en desktop) */}
-                <div className="lg:col-span-5 rounded-xl bg-[#0B0F19] border border-white/10 p-4 shadow-xl space-y-3 flex flex-col">
-                    <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
+                <div className="lg:col-span-5 rounded-2xl bg-[#0B0F19] border border-white/10 p-4 shadow-xl space-y-3 flex flex-col relative overflow-hidden">
+                    <div className="flex items-center justify-between border-b border-white/10 pb-2.5 relative z-10">
                         <div className="flex items-center gap-2">
                             <Trophy className="w-4 h-4 text-[var(--apex-gold)]" />
                             <h3 className="text-xs font-black text-white uppercase tracking-wider">Títulos Registrados</h3>
@@ -199,13 +214,13 @@ export const CompetitionHistoryView: React.FC<CompetitionHistoryViewProps> = ({
                     </div>
 
                     {titleTally.length === 0 ? (
-                        <div className="text-center py-10 text-slate-500 space-y-2 flex-1 flex flex-col justify-center">
+                        <div className="text-center py-10 text-slate-500 space-y-2 flex-1 flex flex-col justify-center relative z-10">
                             <Shield className="w-8 h-8 mx-auto opacity-30 text-slate-400" />
                             <p className="text-xs font-bold uppercase tracking-wider">Sin títulos archivados</p>
                             <p className="text-[11px] text-slate-500">Se registrarán al culminar la temporada en curso.</p>
                         </div>
                     ) : (
-                        <div className="space-y-1.5 max-h-[520px] overflow-y-auto pr-1 custom-scrollbar">
+                        <div className="space-y-1.5 max-h-[520px] overflow-y-auto pr-1 custom-scrollbar relative z-10">
                             {titleTally.map((t, idx) => {
                                 const isUserTeam = gameState.team.name.toLowerCase() === t.name.toLowerCase() || 
                                     t.name.toLowerCase().includes(gameState.team.name.toLowerCase());
@@ -213,25 +228,17 @@ export const CompetitionHistoryView: React.FC<CompetitionHistoryViewProps> = ({
                                 return (
                                     <div 
                                         key={idx}
-                                        className={`flex items-center justify-between p-2.5 rounded-lg border transition-all ${
+                                        className={`flex items-center justify-between p-2.5 rounded-xl border transition-all relative overflow-hidden ${
                                             isUserTeam
-                                                ? 'bg-amber-500/10 border-amber-500/40 shadow-sm'
+                                                ? 'bg-amber-500/10 border-amber-500/50 shadow-[0_0_12px_rgba(245,158,11,0.15)]'
+                                                : idx === 0 
+                                                ? 'bg-gradient-to-r from-amber-500/10 via-slate-900/60 to-transparent border-amber-500/30' 
                                                 : 'bg-white/[0.02] border-white/5 hover:border-white/15'
                                         }`}
                                     >
                                         <div className="flex items-center gap-2.5 min-w-0">
-                                            {/* Rank Badge */}
-                                            <div className={`w-5 h-5 rounded-md flex items-center justify-center font-black text-[10px] shrink-0 ${
-                                                idx === 0 
-                                                    ? 'bg-gradient-to-br from-amber-400 to-yellow-500 text-slate-950 shadow-sm' 
-                                                    : idx === 1 
-                                                    ? 'bg-slate-300 text-slate-900 font-bold' 
-                                                    : idx === 2 
-                                                    ? 'bg-amber-700 text-amber-100 font-bold' 
-                                                    : 'bg-slate-800 text-slate-400'
-                                            }`}>
-                                                {idx + 1}
-                                            </div>
+                                            {/* Podium Rank Badge */}
+                                            <PodiumRankBadge rank={idx + 1} />
 
                                             {/* Team Official Shield */}
                                             <div className="w-6 h-6 shrink-0 flex items-center justify-center">
@@ -239,17 +246,26 @@ export const CompetitionHistoryView: React.FC<CompetitionHistoryViewProps> = ({
                                             </div>
 
                                             {/* Team Name */}
-                                            <span className={`text-xs truncate ${
-                                                isUserTeam 
-                                                    ? 'font-black text-amber-300' 
-                                                    : 'font-semibold text-white'
-                                            }`}>
-                                                {t.name}
-                                            </span>
+                                            <div className="flex items-center gap-1.5 truncate">
+                                                <span className={`text-xs truncate ${
+                                                    isUserTeam 
+                                                        ? 'font-black text-amber-300' 
+                                                        : idx === 0 
+                                                        ? 'font-black text-white' 
+                                                        : 'font-semibold text-white/90'
+                                                }`}>
+                                                    {t.name}
+                                                </span>
+                                                {isUserTeam && (
+                                                    <span className="text-[8px] font-black uppercase px-1 py-0.2 rounded bg-amber-400 text-slate-950 shrink-0">
+                                                        TU CLUB
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
 
                                         {/* Trophy Count Badge */}
-                                        <div className="flex items-center gap-1 text-xs font-black text-amber-400 font-mono bg-black/40 px-2 py-0.5 rounded border border-amber-500/20 shrink-0 ml-2">
+                                        <div className="flex items-center gap-1.5 text-xs font-black text-amber-400 font-mono bg-black/50 px-2 py-0.5 rounded-lg border border-amber-500/20 shrink-0 ml-2">
                                             <Trophy className="w-3 h-3 text-amber-400" />
                                             <span>{t.count}</span>
                                         </div>

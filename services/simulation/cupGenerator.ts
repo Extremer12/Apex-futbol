@@ -464,6 +464,7 @@ export const advanceCupRound = (
     if (cup.id === 'dfb_pokal') competitionType = 'DFB_Pokal';
     if (cup.id === 'coppa_italia') competitionType = 'Coppa_Italia';
     if (cup.id === 'copa_argentina') competitionType = 'Copa_Argentina';
+    if (cup.id === 'copa_mx') competitionType = 'Copa_MX';
     if (cup.id === 'apertura_playoffs') competitionType = 'Playoffs_Apertura';
     if (cup.id === 'clausura_playoffs') competitionType = 'Playoffs_Clausura';
     if (cup.id === 'nacional_reducido') competitionType = 'Nacional_Reducido';
@@ -794,7 +795,7 @@ export const finalizeSingleCupCompetition = (
                             week: 0,
                             homeTeamId: roundWinners[i],
                             awayTeamId: roundWinners[i + 1],
-                            competition: activeRound.fixtures[0]?.competition || 'FA_Cup',
+                            competition: activeRound.fixtures[0]?.competition || (cup.id === 'copa_mx' ? 'Copa_MX' : 'FA_Cup'),
                             isCupMatch: true,
                             isMidweek: true
                         });
@@ -837,6 +838,7 @@ export const finalizeSingleCupCompetition = (
                 if (cup.id === 'copa_argentina' || cup.id?.includes('apertura') || cup.id?.includes('clausura')) {
                     return t.leagueId === LeagueId.LIGA_ARGENTINA;
                 }
+                if (cup.id === 'copa_mx') return t.leagueId === LeagueId.LIGA_MX;
                 if (cup.id === 'copa_del_rey') return t.leagueId === LeagueId.LA_LIGA;
                 if (cup.id === 'dfb_pokal') return t.leagueId === LeagueId.BUNDESLIGA;
                 if (cup.id === 'coppa_italia') return t.leagueId === LeagueId.SERIE_A;

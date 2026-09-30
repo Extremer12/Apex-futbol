@@ -592,6 +592,7 @@ export interface GameState {
     dfbPokal: CupCompetition;
     coppaItalia: CupCompetition;
     copaArgentina?: CupCompetition;
+    copaMx?: CupCompetition;
     aperturaPlayoffs?: CupCompetition;
     clausuraPlayoffs?: CupCompetition;
     nacionalPrimerAscenso?: CupCompetition;

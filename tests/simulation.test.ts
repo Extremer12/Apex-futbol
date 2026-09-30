@@ -2406,6 +2406,40 @@ test('52. Career Save System: guarantees unique careerId, automatic save replace
     assert.equal(careerMap.get('career_boca')?.id, 'save_2', 'Latest Boca save preserved');
 });
 
+test('53. Liga MX: Copa MX is initialized, crowns a champion, and never finishes En Disputa', async () => {
+    const { initializeGame } = await import('../services/gameFactory');
+    const { finalizeSeasonCompetitions } = await import('../services/simulation/cupGenerator');
+    const { getSeasonSummaryData } = await import('../services/seasonUtils');
+    const { LeagueId } = await import('../types');
+
+    const clubAmerica = TEAMS.find(t => t.leagueId === LeagueId.LIGA_MX) || TEAMS[0];
+
+    const state = initializeGame({
+        selectedTeam: clubAmerica,
+        playerProfile: { name: 'Santiago Baños', country: 'MEX', age: 50, style: 'galactico', difficulty: 'normal' }
+    });
+
+    // 1. Verify Copa MX is properly initialized in state.cups
+    assert.ok(state.cups.copaMx, 'Copa MX must exist in initial cups');
+    assert.equal(state.cups.copaMx.id, 'copa_mx');
+    assert.ok(state.cups.copaMx.rounds.length > 0, 'Copa MX must have round 1 initialized');
+    assert.ok(state.cups.copaMx.rounds[0].fixtures.length > 0, 'Copa MX must have fixtures');
+
+    // 2. Finalize season competitions
+    finalizeSeasonCompetitions(state.cups as any, state.allTeams, state.schedule);
+
+    // 3. Copa MX must have a crowned champion
+    assert.ok(state.cups.copaMx.winnerId, 'Copa MX must have a winnerId crowned');
+    assert.equal(state.cups.copaMx.phase, 'finished', 'Copa MX phase must be finished');
+
+    // 4. Verify getSeasonSummaryData for Mexican league
+    const summary = getSeasonSummaryData(state);
+    const copaMxItem = summary.allChampions.find(c => c.name === 'Copa MX');
+    assert.ok(copaMxItem, 'Copa MX champion item must exist in summary');
+    assert.ok(copaMxItem.team !== null, 'Copa MX champion team must not be null');
+    assert.notEqual(copaMxItem.team?.name, 'En Disputa', 'Copa MX champion must not be "En Disputa"');
+});
+
 
 
 

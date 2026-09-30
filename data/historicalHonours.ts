@@ -609,6 +609,38 @@ export const COMPETITION_HISTORICAL_CHAMPIONS: Record<string, CompetitionHistori
         ]
     },
 
+    'COPA_MX': {
+        id: 'COPA_MX',
+        name: 'Copa MX',
+        allTimeRanking: [
+            { teamName: 'Club América', titles: 6, lastWonYear: 2019 },
+            { teamName: 'Club León', titles: 5, lastWonYear: 1972 },
+            { teamName: 'Puebla', titles: 5, lastWonYear: 2015 },
+            { teamName: 'CD Guadalajara', titles: 4, lastWonYear: 2017 },
+            { teamName: 'Cruz Azul', titles: 4, lastWonYear: 2018 },
+            { teamName: 'Atlas FC', titles: 4, lastWonYear: 1968 },
+            { teamName: 'Necaxa', titles: 4, lastWonYear: 2018 },
+            { teamName: 'CF Monterrey', titles: 3, lastWonYear: 2020 },
+            { teamName: 'Tigres UANL', titles: 3, lastWonYear: 2014 },
+            { teamName: 'Deportivo Toluca', titles: 2, lastWonYear: 1989 },
+            { teamName: 'Santos Laguna', titles: 1, lastWonYear: 2014 },
+            { teamName: 'Querétaro FC', titles: 1, lastWonYear: 2016 },
+            { teamName: 'Monarcas Morelia', titles: 1, lastWonYear: 2013 }
+        ],
+        recentEditions: [
+            { season: '2019/20', winnerName: 'CF Monterrey', runnerUp: 'Club Tijuana', score: '2-1 (agg)' },
+            { season: 'Clausura 2019', winnerName: 'Club América', runnerUp: 'FC Juárez', score: '1-0' },
+            { season: 'Apertura 2018', winnerName: 'Cruz Azul', runnerUp: 'CF Monterrey', score: '2-0' },
+            { season: 'Clausura 2018', winnerName: 'Necaxa', runnerUp: 'Deportivo Toluca', score: '1-0' },
+            { season: 'Apertura 2017', winnerName: 'CF Monterrey', runnerUp: 'CF Pachuca', score: '1-0' },
+            { season: 'Clausura 2017', winnerName: 'CD Guadalajara', runnerUp: 'Monarcas Morelia', score: '0-0 (3-1 pen.)' },
+            { season: 'Apertura 2016', winnerName: 'Querétaro FC', runnerUp: 'CD Guadalajara', score: '0-0 (3-2 pen.)' },
+            { season: 'Clausura 2016', winnerName: 'Veracruz', runnerUp: 'Necaxa', score: '4-1' },
+            { season: 'Apertura 2015', winnerName: 'CD Guadalajara', runnerUp: 'Club León', score: '1-0' },
+            { season: 'Clausura 2015', winnerName: 'Puebla', runnerUp: 'CD Guadalajara', score: '4-2' }
+        ]
+    },
+
     // =========================================================================
     // 🇨🇱 CHILE
     // =========================================================================
@@ -953,6 +985,149 @@ export const CLUB_HISTORICAL_HONOURS: Record<string, ClubHonours> = {
         intercontinental: 0,
         totalOfficialTitles: 1,
         highlights: ['1x Torneo Apertura (2025 A)', 'Histórico título de Primera División']
+    },
+    // Club América
+    'club américa': {
+        clubName: 'Club América',
+        leagueTitles: 15,
+        domesticCups: 7, // 6 Copa MX, Campeón de Campeones
+        continentalCups: 7, // 7 CONCACAF Champions Cup (Récord)
+        intercontinental: 2, // 2 Copas Interamericanas
+        totalOfficialTitles: 35,
+        highlights: ['15x Liga MX (Máximo ganador de México)', '7x Copa de Campeones CONCACAF (Récord)', '6x Copa MX', '2x Copa Interamericana']
+    },
+    'américa': {
+        clubName: 'Club América',
+        leagueTitles: 15,
+        domesticCups: 7,
+        continentalCups: 7,
+        intercontinental: 2,
+        totalOfficialTitles: 35,
+        highlights: ['15x Liga MX (Máximo ganador de México)', '7x Copa de Campeones CONCACAF (Récord)', '6x Copa MX', '2x Copa Interamericana']
+    },
+    // CD Guadalajara (Chivas)
+    'cd guadalajara': {
+        clubName: 'CD Guadalajara',
+        leagueTitles: 12,
+        domesticCups: 4,
+        continentalCups: 2, // 2 CONCACAF Champions Cup
+        intercontinental: 0,
+        totalOfficialTitles: 26,
+        highlights: ['12x Liga MX', '4x Copa MX', '2x Copa de Campeones CONCACAF', 'Histórico Campeonísimo del fútbol mexicano']
+    },
+    'chivas': {
+        clubName: 'CD Guadalajara',
+        leagueTitles: 12,
+        domesticCups: 4,
+        continentalCups: 2,
+        intercontinental: 0,
+        totalOfficialTitles: 26,
+        highlights: ['12x Liga MX', '4x Copa MX', '2x Copa de Campeones CONCACAF', 'Histórico Campeonísimo del fútbol mexicano']
+    },
+    // Cruz Azul
+    'cruz azul': {
+        clubName: 'Cruz Azul',
+        leagueTitles: 9,
+        domesticCups: 4,
+        continentalCups: 6, // 6 CONCACAF Champions Cup
+        intercontinental: 0,
+        totalOfficialTitles: 24,
+        highlights: ['9x Liga MX', '6x Copa de Campeones CONCACAF', '4x Copa MX', 'Subcampeón Copa Libertadores (2001)']
+    },
+    // Tigres UANL
+    'tigres uanl': {
+        clubName: 'Tigres UANL',
+        leagueTitles: 8,
+        domesticCups: 3,
+        continentalCups: 1, // 1 CONCACAF Champions Cup
+        intercontinental: 0,
+        totalOfficialTitles: 16,
+        highlights: ['8x Liga MX', '1x Copa de Campeones CONCACAF (2020)', 'Subcampeón Mundial de Clubes (2020)', '3x Copa MX']
+    },
+    'tigres': {
+        clubName: 'Tigres UANL',
+        leagueTitles: 8,
+        domesticCups: 3,
+        continentalCups: 1,
+        intercontinental: 0,
+        totalOfficialTitles: 16,
+        highlights: ['8x Liga MX', '1x Copa de Campeones CONCACAF (2020)', 'Subcampeón Mundial de Clubes (2020)', '3x Copa MX']
+    },
+    // CF Monterrey (Rayados)
+    'cf monterrey': {
+        clubName: 'CF Monterrey',
+        leagueTitles: 5,
+        domesticCups: 3,
+        continentalCups: 5, // 5 CONCACAF Champions Cup
+        intercontinental: 0,
+        totalOfficialTitles: 15,
+        highlights: ['5x Copa de Campeones CONCACAF', '5x Liga MX', '3x Copa MX', '2x Podio en Mundial de Clubes']
+    },
+    'monterrey': {
+        clubName: 'CF Monterrey',
+        leagueTitles: 5,
+        domesticCups: 3,
+        continentalCups: 5,
+        intercontinental: 0,
+        totalOfficialTitles: 15,
+        highlights: ['5x Copa de Campeones CONCACAF', '5x Liga MX', '3x Copa MX', '2x Podio en Mundial de Clubes']
+    },
+    // Deportivo Toluca
+    'deportivo toluca': {
+        clubName: 'Deportivo Toluca',
+        leagueTitles: 10,
+        domesticCups: 2,
+        continentalCups: 2, // 2 CONCACAF Champions Cup
+        intercontinental: 0,
+        totalOfficialTitles: 18,
+        highlights: ['10x Liga MX (Tercer club más laureado)', '2x Copa de Campeones CONCACAF', '2x Copa MX']
+    },
+    'toluca': {
+        clubName: 'Deportivo Toluca',
+        leagueTitles: 10,
+        domesticCups: 2,
+        continentalCups: 2,
+        intercontinental: 0,
+        totalOfficialTitles: 18,
+        highlights: ['10x Liga MX (Tercer club más laureado)', '2x Copa de Campeones CONCACAF', '2x Copa MX']
+    },
+    // Pumas UNAM
+    'club universidad nacional': {
+        clubName: 'Pumas UNAM',
+        leagueTitles: 7,
+        domesticCups: 1,
+        continentalCups: 3,
+        intercontinental: 1, // 1 Interamericana
+        totalOfficialTitles: 14,
+        highlights: ['7x Liga MX', '3x Copa de Campeones CONCACAF', '1x Copa Interamericana (1981)', 'Primer Bicampeón en torneos cortos']
+    },
+    'pumas unam': {
+        clubName: 'Pumas UNAM',
+        leagueTitles: 7,
+        domesticCups: 1,
+        continentalCups: 3,
+        intercontinental: 1,
+        totalOfficialTitles: 14,
+        highlights: ['7x Liga MX', '3x Copa de Campeones CONCACAF', '1x Copa Interamericana (1981)', 'Primer Bicampeón en torneos cortos']
+    },
+    // CF Pachuca
+    'cf pachuca': {
+        clubName: 'CF Pachuca',
+        leagueTitles: 7,
+        domesticCups: 0,
+        continentalCups: 7, // 6 CONCACAF + 1 Copa Sudamericana (2006)
+        intercontinental: 0,
+        totalOfficialTitles: 15,
+        highlights: ['1x Copa Sudamericana (2006 - Único club mexicano campeón de CONMEBOL)', '6x Copa de Campeones CONCACAF', '7x Liga MX']
+    },
+    'pachuca': {
+        clubName: 'CF Pachuca',
+        leagueTitles: 7,
+        domesticCups: 0,
+        continentalCups: 7,
+        intercontinental: 0,
+        totalOfficialTitles: 15,
+        highlights: ['1x Copa Sudamericana (2006 - Único club mexicano campeón de CONMEBOL)', '6x Copa de Campeones CONCACAF', '7x Liga MX']
     }
 };
 
@@ -960,12 +1135,17 @@ export const CLUB_HISTORICAL_HONOURS: Record<string, ClubHonours> = {
  * Returns historical record for a competition
  */
 export function getCompetitionHistoricalRecord(competitionId: string): CompetitionHistoricalRecord | null {
+    if (!competitionId) return null;
     if (COMPETITION_HISTORICAL_CHAMPIONS[competitionId]) {
         return COMPETITION_HISTORICAL_CHAMPIONS[competitionId];
     }
+    const cleanId = competitionId.toUpperCase().replace(/[\s-]+/g, '_');
+    if (COMPETITION_HISTORICAL_CHAMPIONS[cleanId]) {
+        return COMPETITION_HISTORICAL_CHAMPIONS[cleanId];
+    }
     const upper = competitionId.toUpperCase();
     for (const [key, val] of Object.entries(COMPETITION_HISTORICAL_CHAMPIONS)) {
-        if (key === upper || val.name.toLowerCase() === competitionId.toLowerCase()) {
+        if (key === upper || key === cleanId || val.name.toLowerCase() === competitionId.toLowerCase()) {
             return val;
         }
     }
