@@ -493,20 +493,26 @@ export const COMPETITION_HISTORICAL_CHAMPIONS: Record<string, CompetitionHistori
             { teamName: 'Racing Club', titles: 18, lastWonYear: 2019 },
             { teamName: 'Independiente', titles: 16, lastWonYear: 2002 },
             { teamName: 'San Lorenzo', titles: 15, lastWonYear: 2013 },
-            { teamName: 'Vélez Sarsfield', titles: 10, lastWonYear: 2013 },
-            { teamName: 'Estudiantes LP', titles: 6, lastWonYear: 2010 },
+            { teamName: 'Vélez Sarsfield', titles: 11, lastWonYear: 2024 },
+            { teamName: 'Estudiantes LP', titles: 7, lastWonYear: 2025 },
             { teamName: 'Newell’s Old Boys', titles: 6, lastWonYear: 2013 },
-            { teamName: 'Rosario Central', titles: 4, lastWonYear: 1987 },
+            { teamName: 'Rosario Central', titles: 5, lastWonYear: 2025 },
             { teamName: 'Huracán', titles: 5, lastWonYear: 1973 },
             { teamName: 'Argentinos Juniors', titles: 3, lastWonYear: 2010 },
             { teamName: 'Lanús', titles: 2, lastWonYear: 2016 },
             { teamName: 'Ferro Carril Oeste', titles: 2, lastWonYear: 1984 },
             { teamName: 'Quilmes', titles: 2, lastWonYear: 1978 },
             { teamName: 'Banfield', titles: 1, lastWonYear: 2009 },
+            { teamName: 'Platense', titles: 1, lastWonYear: 2025 },
+            { teamName: 'Belgrano', titles: 1, lastWonYear: 2026 },
             { teamName: 'Gimnasia LP', titles: 1, lastWonYear: 1929 },
             { teamName: 'Arsenal de Sarandí', titles: 1, lastWonYear: 2012 }
         ],
         recentEditions: [
+            { season: '2026 A', winnerName: 'Belgrano', runnerUp: 'Talleres' },
+            { season: '2025 C', winnerName: 'Estudiantes LP', runnerUp: 'Racing Club' },
+            { season: '2025 A', winnerName: 'Platense', runnerUp: 'Huracán' },
+            { season: '2025 L', winnerName: 'Rosario Central', runnerUp: 'Boca Juniors' },
             { season: '2024', winnerName: 'Vélez Sarsfield', runnerUp: 'Huracán' },
             { season: '2023', winnerName: 'River Plate', runnerUp: 'Talleres' },
             { season: '2022', winnerName: 'Boca Juniors', runnerUp: 'Racing Club' },
@@ -869,6 +875,84 @@ export const CLUB_HISTORICAL_HONOURS: Record<string, ClubHonours> = {
         intercontinental: 3, // 3 Intercontinentales
         totalOfficialTitles: 64,
         highlights: ['3x Copa Libertadores (1971, 1980, 1988)', '3x Copa Intercontinental', '49x Campeonato Uruguayo']
+    },
+    // San Lorenzo
+    'san lorenzo': {
+        clubName: 'San Lorenzo',
+        leagueTitles: 15,
+        domesticCups: 2,
+        continentalCups: 3, // 1 Libertadores (2014), 1 Sudamericana (2002), 1 Mercosur (2001)
+        intercontinental: 0,
+        totalOfficialTitles: 22,
+        highlights: ['1x Copa Libertadores (2014)', '1x Copa Sudamericana (2002)', '15x Liga Argentina', '1x Copa Mercosur (2001)']
+    },
+    // Vélez Sarsfield
+    'velez sarsfield': {
+        clubName: 'Vélez Sarsfield',
+        leagueTitles: 11,
+        domesticCups: 1,
+        continentalCups: 4, // 1 Libertadores (1994), 1 Interamericana, 1 Supercopa, 1 Recopa
+        intercontinental: 1, // 1 Intercontinental (1994 vs Milan)
+        totalOfficialTitles: 17,
+        highlights: ['1x Copa Intercontinental (1994)', '1x Copa Libertadores (1994)', '11x Liga Argentina (Última: 2024)', '1x Supercopa Sudamericana']
+    },
+    'vélez sarsfield': {
+        clubName: 'Vélez Sarsfield',
+        leagueTitles: 11,
+        domesticCups: 1,
+        continentalCups: 4,
+        intercontinental: 1,
+        totalOfficialTitles: 17,
+        highlights: ['1x Copa Intercontinental (1994)', '1x Copa Libertadores (1994)', '11x Liga Argentina (Última: 2024)', '1x Supercopa Sudamericana']
+    },
+    // Estudiantes LP
+    'estudiantes lp': {
+        clubName: 'Estudiantes LP',
+        leagueTitles: 7,
+        domesticCups: 3, // 1 Copa Argentina (2023), 1 Copa de la Liga (2024)
+        continentalCups: 5, // 4 Libertadores, 1 Interamericana
+        intercontinental: 1, // 1 Intercontinental (1968 vs Man United)
+        totalOfficialTitles: 16,
+        highlights: ['4x Copa Libertadores (1968, 1969, 1970, 2009)', '1x Copa Intercontinental (1968)', '7x Liga Argentina (Última: Clausura 2025)', '1x Copa Argentina (2023)']
+    },
+    'estudiantes de la plata': {
+        clubName: 'Estudiantes de La Plata',
+        leagueTitles: 7,
+        domesticCups: 3,
+        continentalCups: 5,
+        intercontinental: 1,
+        totalOfficialTitles: 16,
+        highlights: ['4x Copa Libertadores (1968, 1969, 1970, 2009)', '1x Copa Intercontinental (1968)', '7x Liga Argentina (Última: Clausura 2025)', '1x Copa Argentina (2023)']
+    },
+    // Rosario Central
+    'rosario central': {
+        clubName: 'Rosario Central',
+        leagueTitles: 5,
+        domesticCups: 6, // 1 Copa Argentina (2018), 1 Copa de la Liga (2023)
+        continentalCups: 1, // 1 Copa CONMEBOL (1995)
+        intercontinental: 0,
+        totalOfficialTitles: 12,
+        highlights: ['5x Liga Argentina (Última: 2025 L)', '1x Copa CONMEBOL (1995)', '1x Copa Argentina (2018)', '1x Copa de la Liga (2023)']
+    },
+    // Belgrano
+    'belgrano': {
+        clubName: 'Belgrano',
+        leagueTitles: 1,
+        domesticCups: 0,
+        continentalCups: 0,
+        intercontinental: 0,
+        totalOfficialTitles: 1,
+        highlights: ['1x Torneo Apertura (2026 A)', 'Histórico ascenso y clasificaciones internacionales']
+    },
+    // Platense
+    'platense': {
+        clubName: 'Platense',
+        leagueTitles: 1,
+        domesticCups: 0,
+        continentalCups: 0,
+        intercontinental: 0,
+        totalOfficialTitles: 1,
+        highlights: ['1x Torneo Apertura (2025 A)', 'Histórico título de Primera División']
     }
 };
 

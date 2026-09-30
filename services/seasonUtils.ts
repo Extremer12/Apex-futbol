@@ -552,7 +552,7 @@ export const getSeasonSummaryData = (gameState: GameState): SeasonSummaryData =>
             name: 'Copa MX',
             region: 'México',
             category: 'Copa',
-            team: resolveCupChampion(gameState.cups.copaMx),
+            team: resolveCupChampion((gameState.cups as any)?.copaMx),
             statusBadge: 'Campeón Copa'
         }
     ];

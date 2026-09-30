@@ -82,7 +82,28 @@ export const CompetitionHistoryView: React.FC<CompetitionHistoryViewProps> = ({
                 if (r.leagueChampion) {
                     counts[r.leagueChampion] = (counts[r.leagueChampion] || 0) + 1;
                 }
+                // For Argentine league: Torneo Apertura and Clausura count as official league titles
+                if (competition.id === 'LIGA_ARGENTINA' || competition.name.toLowerCase().includes('argentina')) {
+                    r.cupWinners?.forEach(cw => {
+                        const cn = cw.cupName.toLowerCase();
+                        if (cn.includes('apertura') || cn.includes('clausura')) {
+                            counts[cw.winnerName] = (counts[cw.winnerName] || 0) + 1;
+                        }
+                    });
+                }
             });
+
+            // Also tally any current season completed Apertura/Clausura
+            if (competition.id === 'LIGA_ARGENTINA' || competition.name.toLowerCase().includes('argentina')) {
+                const apChamp = gameState.cups.aperturaPlayoffs?.winnerId 
+                    ? gameState.allTeams.find(t => t.id === gameState.cups.aperturaPlayoffs?.winnerId)?.name
+                    : null;
+                const clChamp = gameState.cups.clausuraPlayoffs?.winnerId 
+                    ? gameState.allTeams.find(t => t.id === gameState.cups.clausuraPlayoffs?.winnerId)?.name
+                    : null;
+                if (apChamp) counts[apChamp] = (counts[apChamp] || 0) + 1;
+                if (clChamp) counts[clChamp] = (counts[clChamp] || 0) + 1;
+            }
         }
 
         return Object.entries(counts)
@@ -306,9 +327,29 @@ export const CompetitionHistoryView: React.FC<CompetitionHistoryViewProps> = ({
                                                     {renderClubBadge(rec.leagueChampion || '', "w-5 h-5")}
                                                 </div>
                                                 <div className="text-xs font-black text-white">
-                                                    Campeón: <span className="text-amber-300">{rec.leagueChampion || 'N/A'}</span>
+                                                    {competition.id === 'LIGA_ARGENTINA' || competition.name.toLowerCase().includes('argentina') ? 'Tabla Anual: ' : 'Campeón: '}
+                                                    <span className="text-amber-300">{rec.leagueChampion || 'N/A'}</span>
                                                 </div>
                                             </div>
+
+                                            {/* Sub-torneos argentinos (Apertura / Clausura) si existen en la temporada */}
+                                            {rec.cupWinners && rec.cupWinners.some(cw => cw.cupName.toLowerCase().includes('apertura') || cw.cupName.toLowerCase().includes('clausura')) && (
+                                                <div className="pt-1.5 border-t border-white/5 grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                                                    {rec.cupWinners
+                                                        .filter(cw => cw.cupName.toLowerCase().includes('apertura') || cw.cupName.toLowerCase().includes('clausura'))
+                                                        .map((cw, ci) => (
+                                                            <div key={ci} className="flex items-center gap-2 bg-black/30 px-2 py-1 rounded">
+                                                                <div className="w-4 h-4 shrink-0 flex items-center justify-center">
+                                                                    {renderClubBadge(cw.winnerName, "w-4 h-4")}
+                                                                </div>
+                                                                <div className="text-[10px] text-white truncate">
+                                                                    <span className="text-slate-400 font-bold">{cw.cupName}: </span>
+                                                                    <span className="text-amber-300 font-black">{cw.winnerName}</span>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                 </div>

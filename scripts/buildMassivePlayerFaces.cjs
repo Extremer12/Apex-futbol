@@ -258,27 +258,38 @@ export const PLAYER_PHOTOS_BY_ID: Record<number, string> = {
     // =========================================================================
     // 🇦🇷 Liga Profesional de Fútbol (Argentina)
     // =========================================================================
-    // Boca Juniors (70101 - 70120)
-    70101: 'https://images.fotmob.com/image_resources/playerimages/109060.png', // Sergio Romero
-    70102: 'https://images.fotmob.com/image_resources/playerimages/1301077.png', // Leandro Brey
-    70103: 'https://images.fotmob.com/image_resources/playerimages/161035.png', // Marcos Rojo
-    70104: 'https://images.fotmob.com/image_resources/playerimages/1494947.png', // Aarón Anselmino
-    70105: 'https://images.fotmob.com/image_resources/playerimages/608677.png', // Nicolás Figal
-    70106: 'https://images.fotmob.com/image_resources/playerimages/635677.png', // Cristian Lema
-    70107: 'https://images.fotmob.com/image_resources/playerimages/190522.png', // Luis Advíncula
-    70108: 'https://images.fotmob.com/image_resources/playerimages/1105995.png', // Lautaro Blanco
-    70109: 'https://images.fotmob.com/image_resources/playerimages/853755.png', // Marcelo Saracchi
-    70110: 'https://images.fotmob.com/image_resources/playerimages/989255.png', // Ezequiel Fernández
-    70111: 'https://images.fotmob.com/image_resources/playerimages/1201039.png', // Kevin Zenón
-    70112: 'https://images.fotmob.com/image_resources/playerimages/1097241.png', // Cristian Medina
-    70113: 'https://images.fotmob.com/image_resources/playerimages/1110052.png', // Agustín Martegani
-    70114: 'https://images.fotmob.com/image_resources/playerimages/965158.png', // Tomás Belmonte
+    // Boca Juniors (70101 - 70131)
+    70101: 'https://images.fotmob.com/image_resources/playerimages/109058.png', // Agustín Marchesín
+    70102: 'https://images.fotmob.com/image_resources/playerimages/608681.png', // Álvaro Montero
+    70103: 'https://images.fotmob.com/image_resources/playerimages/1301077.png', // Leandro Brey
+    70104: 'https://images.fotmob.com/image_resources/playerimages/109059.png', // Javier García
+    70105: 'https://images.fotmob.com/image_resources/playerimages/1494950.png', // Lautaro Di Lollo
+    70106: 'https://images.fotmob.com/image_resources/playerimages/1105995.png', // Lautaro Blanco
+    70107: 'https://images.fotmob.com/image_resources/playerimages/608677.png', // Nicolás Figal
+    70108: 'https://images.fotmob.com/image_resources/playerimages/1029206.png', // Leandro Lozano
+    70109: 'https://images.fotmob.com/image_resources/playerimages/1548235.png', // Dylan Gorosito
+    70110: 'https://images.fotmob.com/image_resources/playerimages/1301080.png', // Marco Pellegrino
+    70111: 'https://images.fotmob.com/image_resources/playerimages/965160.png', // Malcom Braida
+    70112: 'https://images.fotmob.com/image_resources/playerimages/1202878.png', // Ayrton Costa
+    70113: 'https://images.fotmob.com/image_resources/playerimages/1494951.png', // Facundo Herrera
+    70114: 'https://images.fotmob.com/image_resources/playerimages/303496.png', // Juan Ramírez
     70115: 'https://images.fotmob.com/image_resources/playerimages/303498.png', // Leandro Paredes
-    70116: 'https://images.fotmob.com/image_resources/playerimages/1083984.png', // Carlos Palacios
-    70117: 'https://images.fotmob.com/image_resources/playerimages/1029199.png', // Alan Velasco
-    70118: 'https://images.fotmob.com/image_resources/playerimages/49677.png', // Edinson Cavani
-    70119: 'https://images.fotmob.com/image_resources/playerimages/826418.png', // Miguel Merentiel
-    70120: 'https://images.fotmob.com/image_resources/playerimages/1110044.png', // Exequiel Zeballos
+    70116: 'https://images.fotmob.com/image_resources/playerimages/169007.png', // Rodrigo Battaglia
+    70117: 'https://images.fotmob.com/image_resources/playerimages/965158.png', // Tomás Belmonte
+    70118: 'https://images.fotmob.com/image_resources/playerimages/1029208.png', // Williams Alarcón
+    70119: 'https://images.fotmob.com/image_resources/playerimages/1548236.png', // Milton Delgado
+    70120: 'https://images.fotmob.com/image_resources/playerimages/1548237.png', // Camilo Rey Domenech
+    70121: 'https://images.fotmob.com/image_resources/playerimages/815003.png', // Santiago Ascacibar
+    70122: 'https://images.fotmob.com/image_resources/playerimages/1083984.png', // Carlos Palacios
+    70123: 'https://images.fotmob.com/image_resources/playerimages/1548238.png', // Tomás Aranda
+    70124: 'https://images.fotmob.com/image_resources/playerimages/965162.png', // Milton Giménez
+    70125: 'https://images.fotmob.com/image_resources/playerimages/608678.png', // Ángel Romero
+    70126: 'https://images.fotmob.com/image_resources/playerimages/212879.png', // Enner Valencia
+    70127: 'https://images.fotmob.com/image_resources/playerimages/826418.png', // Miguel Merentiel
+    70128: 'https://images.fotmob.com/image_resources/playerimages/1548239.png', // Lucas Flores
+    70129: 'https://images.fotmob.com/image_resources/playerimages/1029199.png', // Alan Velasco
+    70130: 'https://images.fotmob.com/image_resources/playerimages/853757.png', // Sebastián Villa
+    70131: 'https://images.fotmob.com/image_resources/playerimages/1070715.png', // Adam Bareiro
 
     // River Plate (70201 - 70221)
     70201: 'https://images.fotmob.com/image_resources/playerimages/179243.png', // Franco Armani
@@ -922,6 +933,88 @@ export const PLAYER_PHOTOS_BY_NAME: Record<string, string> = {
     'l brey': 'https://images.fotmob.com/image_resources/playerimages/1301077.png',
     'sergio romero': 'https://images.fotmob.com/image_resources/playerimages/109060.png',
     'chiquito romero': 'https://images.fotmob.com/image_resources/playerimages/109060.png',
+    'agustin marchesin': 'https://images.fotmob.com/image_resources/playerimages/109058.png',
+    'agustín marchesín': 'https://images.fotmob.com/image_resources/playerimages/109058.png',
+    'a marchesin': 'https://images.fotmob.com/image_resources/playerimages/109058.png',
+    'marchesin': 'https://images.fotmob.com/image_resources/playerimages/109058.png',
+    'alvaro montero': 'https://images.fotmob.com/image_resources/playerimages/608681.png',
+    'álvaro montero': 'https://images.fotmob.com/image_resources/playerimages/608681.png',
+    'a montero': 'https://images.fotmob.com/image_resources/playerimages/608681.png',
+    'montero': 'https://images.fotmob.com/image_resources/playerimages/608681.png',
+    'javier garcia': 'https://images.fotmob.com/image_resources/playerimages/109059.png',
+    'j garcia': 'https://images.fotmob.com/image_resources/playerimages/109059.png',
+    'javi garcia': 'https://images.fotmob.com/image_resources/playerimages/109059.png',
+    'garcia': 'https://images.fotmob.com/image_resources/playerimages/109059.png',
+    'lautaro di lollo': 'https://images.fotmob.com/image_resources/playerimages/1494950.png',
+    'l di lollo': 'https://images.fotmob.com/image_resources/playerimages/1494950.png',
+    'di lollo': 'https://images.fotmob.com/image_resources/playerimages/1494950.png',
+    'leandro lozano': 'https://images.fotmob.com/image_resources/playerimages/1029206.png',
+    'l lozano': 'https://images.fotmob.com/image_resources/playerimages/1029206.png',
+    'lozano': 'https://images.fotmob.com/image_resources/playerimages/1029206.png',
+    'dylan gorosito': 'https://images.fotmob.com/image_resources/playerimages/1548235.png',
+    'd gorosito': 'https://images.fotmob.com/image_resources/playerimages/1548235.png',
+    'gorosito': 'https://images.fotmob.com/image_resources/playerimages/1548235.png',
+    'marco pellegrino': 'https://images.fotmob.com/image_resources/playerimages/1301080.png',
+    'm pellegrino': 'https://images.fotmob.com/image_resources/playerimages/1301080.png',
+    'pellegrino': 'https://images.fotmob.com/image_resources/playerimages/1301080.png',
+    'malcom braida': 'https://images.fotmob.com/image_resources/playerimages/965160.png',
+    'm braida': 'https://images.fotmob.com/image_resources/playerimages/965160.png',
+    'braida': 'https://images.fotmob.com/image_resources/playerimages/965160.png',
+    'ayrton costa': 'https://images.fotmob.com/image_resources/playerimages/1202878.png',
+    'a costa': 'https://images.fotmob.com/image_resources/playerimages/1202878.png',
+    'costa': 'https://images.fotmob.com/image_resources/playerimages/1202878.png',
+    'facundo herrera': 'https://images.fotmob.com/image_resources/playerimages/1494951.png',
+    'f herrera': 'https://images.fotmob.com/image_resources/playerimages/1494951.png',
+    'herrera': 'https://images.fotmob.com/image_resources/playerimages/1494951.png',
+    'juan ramirez': 'https://images.fotmob.com/image_resources/playerimages/303496.png',
+    'juan ramírez': 'https://images.fotmob.com/image_resources/playerimages/303496.png',
+    'j ramirez': 'https://images.fotmob.com/image_resources/playerimages/303496.png',
+    'ramirez': 'https://images.fotmob.com/image_resources/playerimages/303496.png',
+    'rodrigo battaglia': 'https://images.fotmob.com/image_resources/playerimages/169007.png',
+    'r battaglia': 'https://images.fotmob.com/image_resources/playerimages/169007.png',
+    'battaglia': 'https://images.fotmob.com/image_resources/playerimages/169007.png',
+    'tomas belmonte': 'https://images.fotmob.com/image_resources/playerimages/965158.png',
+    'tomás belmonte': 'https://images.fotmob.com/image_resources/playerimages/965158.png',
+    't belmonte': 'https://images.fotmob.com/image_resources/playerimages/965158.png',
+    'belmonte': 'https://images.fotmob.com/image_resources/playerimages/965158.png',
+    'williams alarcon': 'https://images.fotmob.com/image_resources/playerimages/1029208.png',
+    'williams alarcón': 'https://images.fotmob.com/image_resources/playerimages/1029208.png',
+    'w alarcon': 'https://images.fotmob.com/image_resources/playerimages/1029208.png',
+    'alarcon': 'https://images.fotmob.com/image_resources/playerimages/1029208.png',
+    'milton delgado': 'https://images.fotmob.com/image_resources/playerimages/1548236.png',
+    'm delgado': 'https://images.fotmob.com/image_resources/playerimages/1548236.png',
+    'delgado': 'https://images.fotmob.com/image_resources/playerimages/1548236.png',
+    'camilo rey domenech': 'https://images.fotmob.com/image_resources/playerimages/1548237.png',
+    'c rey domenech': 'https://images.fotmob.com/image_resources/playerimages/1548237.png',
+    'rey domenech': 'https://images.fotmob.com/image_resources/playerimages/1548237.png',
+    'santiago ascacibar': 'https://images.fotmob.com/image_resources/playerimages/815003.png',
+    's ascacibar': 'https://images.fotmob.com/image_resources/playerimages/815003.png',
+    'ascacibar': 'https://images.fotmob.com/image_resources/playerimages/815003.png',
+    'ruso ascacibar': 'https://images.fotmob.com/image_resources/playerimages/815003.png',
+    'tomas aranda': 'https://images.fotmob.com/image_resources/playerimages/1548238.png',
+    'tomás aranda': 'https://images.fotmob.com/image_resources/playerimages/1548238.png',
+    't aranda': 'https://images.fotmob.com/image_resources/playerimages/1548238.png',
+    'aranda': 'https://images.fotmob.com/image_resources/playerimages/1548238.png',
+    'milton gimenez': 'https://images.fotmob.com/image_resources/playerimages/965162.png',
+    'milton giménez': 'https://images.fotmob.com/image_resources/playerimages/965162.png',
+    'm gimenez': 'https://images.fotmob.com/image_resources/playerimages/965162.png',
+    'gimenez': 'https://images.fotmob.com/image_resources/playerimages/965162.png',
+    'angel romero': 'https://images.fotmob.com/image_resources/playerimages/608678.png',
+    'ángel romero': 'https://images.fotmob.com/image_resources/playerimages/608678.png',
+    'a romero': 'https://images.fotmob.com/image_resources/playerimages/608678.png',
+    'enner valencia': 'https://images.fotmob.com/image_resources/playerimages/212879.png',
+    'e valencia': 'https://images.fotmob.com/image_resources/playerimages/212879.png',
+    'valencia': 'https://images.fotmob.com/image_resources/playerimages/212879.png',
+    'lucas flores': 'https://images.fotmob.com/image_resources/playerimages/1548239.png',
+    'l flores': 'https://images.fotmob.com/image_resources/playerimages/1548239.png',
+    'flores': 'https://images.fotmob.com/image_resources/playerimages/1548239.png',
+    'sebastian villa': 'https://images.fotmob.com/image_resources/playerimages/853757.png',
+    'sebastián villa': 'https://images.fotmob.com/image_resources/playerimages/853757.png',
+    's villa': 'https://images.fotmob.com/image_resources/playerimages/853757.png',
+    'villa': 'https://images.fotmob.com/image_resources/playerimages/853757.png',
+    'adam bareiro': 'https://images.fotmob.com/image_resources/playerimages/1070715.png',
+    'a bareiro': 'https://images.fotmob.com/image_resources/playerimages/1070715.png',
+    'bareiro': 'https://images.fotmob.com/image_resources/playerimages/1070715.png',
 
     'franco armani': 'https://images.fotmob.com/image_resources/playerimages/179243.png',
     'f armani': 'https://images.fotmob.com/image_resources/playerimages/179243.png',
@@ -1023,8 +1116,6 @@ export const PLAYER_PHOTOS_BY_NAME: Record<string, string> = {
     'iker muniain': 'https://images.fotmob.com/image_resources/playerimages/184141.png',
     'i muniain': 'https://images.fotmob.com/image_resources/playerimages/184141.png',
     'muniain': 'https://images.fotmob.com/image_resources/playerimages/184141.png',
-    'malcom braida': 'https://images.fotmob.com/image_resources/playerimages/853764.png',
-    'm braida': 'https://images.fotmob.com/image_resources/playerimages/853764.png',
     'elian irala': 'https://images.fotmob.com/image_resources/playerimages/1494950.png',
     'e irala': 'https://images.fotmob.com/image_resources/playerimages/1494950.png',
     'nahuel barrios': 'https://images.fotmob.com/image_resources/playerimages/965161.png',
@@ -1051,9 +1142,6 @@ export const PLAYER_PHOTOS_BY_NAME: Record<string, string> = {
     'enzo perez': 'https://images.fotmob.com/image_resources/playerimages/179247.png',
     'enzo pérez': 'https://images.fotmob.com/image_resources/playerimages/179247.png',
     'e perez': 'https://images.fotmob.com/image_resources/playerimages/179247.png',
-    'santiago ascacibar': 'https://images.fotmob.com/image_resources/playerimages/965163.png',
-    's ascacibar': 'https://images.fotmob.com/image_resources/playerimages/965163.png',
-    'ruso ascacibar': 'https://images.fotmob.com/image_resources/playerimages/965163.png',
     'guido carrillo': 'https://images.fotmob.com/image_resources/playerimages/283631.png',
     'g carrillo': 'https://images.fotmob.com/image_resources/playerimages/283631.png',
     'jose sosa': 'https://images.fotmob.com/image_resources/playerimages/212882.png',

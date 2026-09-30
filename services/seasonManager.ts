@@ -73,7 +73,7 @@ export function startNewSeason(currentState: GameState): GameState {
         [LeagueId.SERIE_B_ITA]: 'Serie B',
         [LeagueId.LIGUE_1]: 'Ligue 1',
         [LeagueId.LIGUE_2]: 'Ligue 2',
-        [LeagueId.LIGA_ARGENTINA]: 'Liga Profesional de Fútbol',
+        [LeagueId.LIGA_ARGENTINA]: 'Liga Argentina (Tabla Anual)',
         [LeagueId.PRIMERA_NACIONAL]: 'Primera Nacional',
         [LeagueId.BRASILEIRAO]: 'Brasileirão Série A',
         [LeagueId.SERIE_B_BR]: 'Brasileirão Série B',
@@ -144,10 +144,10 @@ export function startNewSeason(currentState: GameState): GameState {
     if (caWinner) trophiesToAward.push({ teamId: caWinner, name: 'Copa Argentina', type: 'cup' });
 
     const apWinner = getCupWinnerId(currentState.cups.aperturaPlayoffs);
-    if (apWinner) trophiesToAward.push({ teamId: apWinner, name: 'Torneo Apertura', type: 'cup' });
+    if (apWinner) trophiesToAward.push({ teamId: apWinner, name: 'Torneo Apertura', type: 'league' });
 
     const clWinner = getCupWinnerId(currentState.cups.clausuraPlayoffs);
-    if (clWinner) trophiesToAward.push({ teamId: clWinner, name: 'Torneo Clausura', type: 'cup' });
+    if (clWinner) trophiesToAward.push({ teamId: clWinner, name: 'Torneo Clausura', type: 'league' });
 
     const paWinner = getCupWinnerId(currentState.cups.nacionalPrimerAscenso);
     if (paWinner) trophiesToAward.push({ teamId: paWinner, name: 'Primera Nacional (1º Ascenso)', type: 'cup' });

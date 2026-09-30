@@ -15,7 +15,11 @@ import {
     List, 
     Users, 
     Briefcase, 
-    Star 
+    Star,
+    Shield,
+    Eye,
+    GraduationCap,
+    Flame
 } from 'lucide-react';
 import { ConfirmationModal } from '../common/ConfirmationModal';
 import { useToast } from '../common/ToastProvider';
@@ -27,6 +31,7 @@ import {
     getTierBadge 
 } from '../../utils/playerUtils';
 import { calculateSquadPower } from '../../services/squadProgressionService';
+import { TacticalLineupView } from './squad/TacticalLineupView';
 
 interface SquadScreenProps {
     gameState: GameState;
@@ -38,7 +43,7 @@ type SortDirection = 'desc' | 'asc';
 type FilterPosition = 'ALL' | 'POR' | 'DEF' | 'CEN' | 'DEL';
 
 export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps) => {
-    const [activeTab, setActiveTab] = useState<'FIRST_TEAM' | 'ACADEMY'>('FIRST_TEAM');
+    const [activeTab, setActiveTab] = useState<'FIRST_TEAM' | 'TACTICS' | 'ACADEMY'>('FIRST_TEAM');
     const [viewMode, setViewMode] = useState<'GRID' | 'TABLE'>(() => {
         return (localStorage.getItem('apex_squad_view_mode') as 'GRID' | 'TABLE') || 'GRID';
     });
@@ -52,6 +57,8 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
         return (localStorage.getItem('apex_squad_sort_direction') as SortDirection) || 'desc';
     });
     const [filterPosition, setFilterPosition] = useState<FilterPosition>('ALL');
+    const [academyFilter, setAcademyFilter] = useState<FilterPosition>('ALL');
+    const [academySearch, setAcademySearch] = useState('');
     const [playerToPromote, setPlayerToPromote] = useState<Player | null>(null);
     const { showToast } = useToast();
 
@@ -181,6 +188,29 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
         }
     });
 
+    const academyStats = React.useMemo(() => {
+        const academy = gameState.youthAcademy || [];
+        if (academy.length === 0) {
+            return { count: 0, avgRating: 0, avgPotential: 0, topGems: 0 };
+        }
+        const avgRating = Math.round(academy.reduce((acc, p) => acc + p.rating, 0) / academy.length);
+        const avgPotential = Math.round(academy.reduce((acc, p) => acc + getPlayerPotential(p), 0) / academy.length);
+        const topGems = academy.filter(p => getPlayerPotential(p) >= 82).length;
+        return { count: academy.length, avgRating, avgPotential, topGems };
+    }, [gameState.youthAcademy]);
+
+    const filteredAcademy = React.useMemo(() => {
+        const academy = gameState.youthAcademy || [];
+        return academy.filter(player => {
+            if (academyFilter !== 'ALL' && player.position !== academyFilter) return false;
+            if (academySearch.trim()) {
+                const query = academySearch.toLowerCase().trim();
+                if (!player.name.toLowerCase().includes(query)) return false;
+            }
+            return true;
+        }).sort((a, b) => getPlayerPotential(b) - getPlayerPotential(a));
+    }, [gameState.youthAcademy, academyFilter, academySearch]);
+
     return (
         <div className="p-3 sm:p-5 md:p-6 space-y-4 sm:space-y-5 animate-fade-in pb-24 max-w-[1400px] mx-auto">
             {/* Header & Tabs */}
@@ -207,6 +237,17 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
                     >
                         <Users className="w-3.5 h-3.5" />
                         <span>Primer Equipo</span>
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('TACTICS')}
+                        className={`px-3.5 py-1.5 flex items-center gap-2 font-black text-xs uppercase tracking-wider transition-all rounded-lg cursor-pointer ${
+                            activeTab === 'TACTICS' 
+                                ? 'bg-[var(--apex-gold)] text-slate-950 font-black shadow-md' 
+                                : 'text-white/60 hover:text-white'
+                        }`}
+                    >
+                        <Shield className="w-3.5 h-3.5" />
+                        <span>Alineación Táctica</span>
                     </button>
                     <button
                         onClick={() => setActiveTab('ACADEMY')}
@@ -633,83 +674,250 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
                 </div>
             )}
 
+            {activeTab === 'TACTICS' && (
+                <TacticalLineupView gameState={gameState} dispatch={dispatch} />
+            )}
+
             {activeTab === 'ACADEMY' && (
                 <div className="space-y-4">
-                    <div className="bg-[#0E131F] border border-white/10 p-5 rounded-2xl shadow-xl text-center border-t-2 border-[var(--apex-gold)]">
-                        <div className="w-12 h-12 rounded-2xl bg-[var(--apex-gold)]/10 border border-[var(--apex-gold)]/30 flex items-center justify-center mx-auto mb-2 text-[var(--apex-gold)] shadow-inner">
-                            <Sparkles className="w-6 h-6" />
+                    {/* 🎓 PANEL DE CONTROL DE LA CANTERA */}
+                    <div className="bg-gradient-to-br from-[#121929] via-[#0E131F] to-[#0a0d14] border border-white/10 p-4 sm:p-5 rounded-2xl shadow-2xl border-t-2 border-[var(--apex-gold)]">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-white/10">
+                            <div className="flex items-center gap-3.5">
+                                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[var(--apex-gold)]/20 to-amber-500/10 border border-[var(--apex-gold)]/40 flex items-center justify-center text-[var(--apex-gold)] shadow-xl shrink-0">
+                                    <GraduationCap className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[10px] font-black uppercase text-[var(--apex-gold)] tracking-widest">
+                                            Semillero del Club
+                                        </span>
+                                        <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                            Fútbol Base
+                                        </span>
+                                    </div>
+                                    <h3 className="text-xl font-black text-white uppercase tracking-tight">Academia Juvenil</h3>
+                                    <p className="text-white/60 text-xs mt-0.5">
+                                        Forma a las futuras estrellas mundiales del club y asciende a los talentos más destacados al primer equipo.
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Estado de Vacantes en Primer Equipo */}
+                            <div className="bg-black/50 border border-white/10 rounded-xl p-2.5 sm:px-4 flex items-center gap-3 shrink-0">
+                                <div className="text-right">
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Cupos Primer Equipo</span>
+                                    <span className={`text-xs font-black uppercase ${gameState.team.squad.length < 25 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                        {gameState.team.squad.length < 25 
+                                            ? `${25 - gameState.team.squad.length} Disponibles (${gameState.team.squad.length}/25)`
+                                            : 'Plantel Lleno (25/25)'}
+                                    </span>
+                                </div>
+                                <div className={`w-3 h-3 rounded-full ${gameState.team.squad.length < 25 ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
+                            </div>
                         </div>
-                        <h3 className="text-lg font-black text-white uppercase tracking-tight">Academia Juvenil</h3>
-                        <p className="text-white/60 text-xs max-w-lg mx-auto leading-relaxed mt-1">
-                            Semillero de promesas del club. Asciende a los mejores talentos al primer equipo para potenciar su carrera profesional.
-                        </p>
+
+                        {/* Métricas Rápidas de la Academia */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 pt-3.5">
+                            <div className="bg-black/40 border border-white/5 rounded-xl p-2.5 sm:p-3 text-center">
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Canteranos</span>
+                                <span className="text-lg font-black text-white">{academyStats.count}</span>
+                                <span className="text-[9px] text-slate-500 block">En desarrollo</span>
+                            </div>
+                            <div className="bg-black/40 border border-white/5 rounded-xl p-2.5 sm:p-3 text-center">
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Potencial Promedio</span>
+                                <span className="text-lg font-black text-[var(--apex-gold)] flex items-center justify-center gap-1">
+                                    {academyStats.avgPotential || '--'} <Star className="w-3.5 h-3.5 fill-[var(--apex-gold)]" />
+                                </span>
+                                <span className="text-[9px] text-slate-500 block">Techo estimado</span>
+                            </div>
+                            <div className="bg-black/40 border border-white/5 rounded-xl p-2.5 sm:p-3 text-center">
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Joyas de Élite (82+)</span>
+                                <span className="text-lg font-black text-emerald-400 flex items-center justify-center gap-1">
+                                    {academyStats.topGems} <Sparkles className="w-3.5 h-3.5" />
+                                </span>
+                                <span className="text-[9px] text-slate-500 block">Promesas mundiales</span>
+                            </div>
+                            <div className="bg-black/40 border border-white/5 rounded-xl p-2.5 sm:p-3 text-center">
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Media Base</span>
+                                <span className="text-lg font-black text-sky-400">{academyStats.avgRating || '--'}</span>
+                                <span className="text-[9px] text-slate-500 block">Nivel actual</span>
+                            </div>
+                        </div>
                     </div>
 
+                    {/* 🔍 FILTROS Y BÚSQUEDA DE CANTERA */}
+                    <div className="bg-[#0E131F] border border-white/10 rounded-2xl p-3 sm:p-4 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3">
+                        {/* Selector de Posición */}
+                        <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 custom-scrollbar">
+                            {(['ALL', 'POR', 'DEF', 'CEN', 'DEL'] as FilterPosition[]).map(pos => (
+                                <button
+                                    key={pos}
+                                    onClick={() => setAcademyFilter(pos)}
+                                    className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
+                                        academyFilter === pos
+                                            ? 'bg-[var(--apex-gold)] text-slate-950 shadow-md'
+                                            : 'bg-black/40 text-slate-400 hover:text-white hover:bg-white/5 border border-white/5'
+                                    }`}
+                                >
+                                    {pos === 'ALL' ? 'Todos' : pos}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Buscador de Nombre */}
+                        <div className="relative w-full sm:w-64">
+                            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <input
+                                type="text"
+                                placeholder="Buscar canterano..."
+                                value={academySearch}
+                                onChange={(e) => setAcademySearch(e.target.value)}
+                                className="w-full pl-8 pr-8 py-1.5 bg-black/40 border border-white/10 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[var(--apex-gold)]/60 transition-colors"
+                            />
+                            {academySearch && (
+                                <button
+                                    onClick={() => setAcademySearch('')}
+                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                                >
+                                    <X className="w-3.5 h-3.5" />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* 🗂️ GRID DE JUGADORES DE LA CANTERA */}
                     {gameState.youthAcademy.length === 0 ? (
-                        <div className="bg-[#0E131F] border border-white/10 rounded-2xl p-16 text-center flex flex-col items-center gap-3 text-white/40">
-                            <Sparkles className="w-10 h-10 opacity-30" />
-                            <p className="text-xs uppercase tracking-wider font-bold">No hay jugadores en la cantera actualmente.</p>
+                        <div className="bg-[#0E131F] border border-white/10 rounded-2xl p-16 text-center flex flex-col items-center gap-3 text-white/40 shadow-xl">
+                            <GraduationCap className="w-12 h-12 opacity-30 text-[var(--apex-gold)]" />
+                            <h4 className="text-sm uppercase tracking-wider font-black text-white">No hay jugadores en la cantera actualmente</h4>
+                            <p className="text-xs text-slate-400 max-w-md">
+                                Al final de cada temporada o mediante la inversión en ojeadores llegarán nuevas camadas de jóvenes promesas.
+                            </p>
+                        </div>
+                    ) : filteredAcademy.length === 0 ? (
+                        <div className="bg-[#0E131F] border border-white/10 rounded-2xl p-12 text-center flex flex-col items-center gap-2 text-white/40 shadow-xl">
+                            <Search className="w-8 h-8 opacity-30" />
+                            <p className="text-xs font-bold text-slate-300">No se encontraron canteranos con los filtros seleccionados.</p>
+                            <button
+                                onClick={() => { setAcademyFilter('ALL'); setAcademySearch(''); }}
+                                className="mt-2 text-xs font-black text-[var(--apex-gold)] underline cursor-pointer"
+                            >
+                                Restablecer filtros
+                            </button>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-3">
-                            {gameState.youthAcademy.map(player => {
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+                            {filteredAcademy.map(player => {
                                 const age = getPlayerAge(player);
                                 const potential = getPlayerPotential(player);
                                 const potTier = getPlayerPotentialTier(player);
                                 const tierBadge = getTierBadge(potTier);
+                                const growth = Math.max(0, potential - player.rating);
+                                const isSquadFull = gameState.team.squad.length >= 25;
+                                const isTopGem = potential >= 82;
 
                                 return (
                                     <div 
                                         key={player.id} 
-                                        className="bg-[#0E131F] hover:bg-[#121828] border border-white/10 hover:border-[var(--apex-gold)]/50 rounded-xl p-3 transition-all duration-200 shadow-md flex flex-col justify-between"
+                                        className={`bg-[#0E131F] hover:bg-[#121828] border rounded-2xl p-3.5 transition-all duration-200 shadow-xl flex flex-col justify-between group ${
+                                            isTopGem 
+                                                ? 'border-[var(--apex-gold)]/40 hover:border-[var(--apex-gold)] hover:shadow-[0_0_20px_rgba(212,175,55,0.15)]' 
+                                                : 'border-white/10 hover:border-white/20'
+                                        }`}
                                     >
                                         <div>
-                                            <div className="flex items-center justify-between gap-2 mb-2">
+                                            {/* Cabecera de la Tarjeta */}
+                                            <div className="flex items-center justify-between gap-2 mb-2.5">
                                                 <div className="flex items-center gap-1.5">
-                                                    <span className={`px-1.5 py-0.2 rounded text-[8px] font-black border uppercase tracking-wider ${getPositionColor(player.position)}`}>
+                                                    <span className={`px-2 py-0.5 rounded text-[8.5px] font-black border uppercase tracking-wider ${getPositionColor(player.position)}`}>
                                                         {player.position}
                                                     </span>
-                                                    <span className={`px-1.5 py-0.2 rounded text-[8px] font-black border uppercase tracking-wider ${tierBadge.color}`}>
+                                                    <span className={`px-2 py-0.5 rounded text-[8.5px] font-black border uppercase tracking-wider ${tierBadge.color}`}>
                                                         {tierBadge.label}
                                                     </span>
                                                 </div>
-                                                <span className="text-[10px] font-semibold text-slate-400">{age} años</span>
+                                                <span className="text-[11px] font-bold text-slate-400">{age} años</span>
                                             </div>
 
-                                            <div className="flex items-center gap-2.5 mb-2.5">
-                                                <PlayerPhoto 
-                                                    player={player} 
-                                                    className="w-10 h-10 rounded-xl border border-white/10 shadow-sm object-cover shrink-0" 
-                                                />
-                                                <div className="min-w-0 flex-1">
-                                                    <h4 className="font-black text-sm text-white truncate uppercase tracking-tight">
-                                                        {player.name}
+                                            {/* Foto y Datos del Jugador con Botón Inspeccionar */}
+                                            <div className="flex items-center gap-3 mb-3">
+                                                <div className="relative shrink-0 cursor-pointer" onClick={() => onViewPlayer(player)}>
+                                                    <PlayerPhoto 
+                                                        player={player} 
+                                                        className="w-12 h-12 rounded-xl border border-white/10 shadow-md object-cover group-hover:scale-105 transition-transform" 
+                                                    />
+                                                    <div className="absolute -bottom-1 -right-1 px-1.5 py-0.2 rounded-full text-[8.5px] font-black bg-slate-900 border border-white/30 text-white shadow">
+                                                        {player.rating}
+                                                    </div>
+                                                </div>
+
+                                                <div className="min-w-0 flex-1 cursor-pointer" onClick={() => onViewPlayer(player)}>
+                                                    <h4 className="font-black text-sm text-white truncate uppercase tracking-tight group-hover:text-[var(--apex-gold)] transition-colors flex items-center gap-1">
+                                                        <span>{player.name}</span>
                                                     </h4>
-                                                    <span className="text-[10px] text-slate-400">{getPositionName(player.position)}</span>
+                                                    <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.5">
+                                                        <span>{getPositionName(player.position)}</span>
+                                                        <span>•</span>
+                                                        <span className="text-slate-500">{player.dominantFoot === 'Izquierda' ? 'Zurdo' : 'Diestro'}</span>
+                                                    </div>
                                                 </div>
+
+                                                <button
+                                                    onClick={() => onViewPlayer(player)}
+                                                    className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer shrink-0"
+                                                    title="Ver ficha completa"
+                                                >
+                                                    <Eye className="w-3.5 h-3.5" />
+                                                </button>
                                             </div>
 
-                                            {/* Panel Potencial */}
-                                            <div className="grid grid-cols-2 gap-1.5 bg-black/40 rounded-lg p-2 border border-white/5 mb-3 text-center">
-                                                <div>
-                                                    <span className="text-[7.5px] font-black text-slate-400 uppercase tracking-wider block">Media Actual</span>
-                                                    <span className="text-xs font-black text-white">{player.rating}</span>
-                                                </div>
-                                                <div>
-                                                    <span className="text-[7.5px] font-black text-slate-400 uppercase tracking-wider block">Potencial</span>
-                                                    <span className="text-xs font-black text-[var(--apex-gold)] flex items-center justify-center gap-1">
-                                                        {potential} <Sparkles className="w-2.5 h-2.5" />
+                                            {/* 📊 BARRA DUAL DE CRECIMIENTO: RATING VS POTENCIAL */}
+                                            <div className="bg-black/50 rounded-xl p-2.5 border border-white/5 mb-3 space-y-1.5">
+                                                <div className="flex items-center justify-between text-[10px]">
+                                                    <span className="text-slate-400 font-bold">Media: <strong className="text-white font-black">{player.rating}</strong></span>
+                                                    <span className="text-slate-400 font-bold flex items-center gap-1">
+                                                        Potencial: <strong className="text-[var(--apex-gold)] font-black">{potential}</strong>
+                                                        <Star className="w-2.5 h-2.5 fill-[var(--apex-gold)] text-[var(--apex-gold)]" />
                                                     </span>
+                                                </div>
+
+                                                {/* Barra de progreso de desarrollo */}
+                                                <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden relative flex">
+                                                    {/* Rating actual (base 0 - 100) */}
+                                                    <div 
+                                                        className="h-full bg-emerald-500 rounded-l-full" 
+                                                        style={{ width: `${Math.min(100, (player.rating / 99) * 100)}%` }} 
+                                                        title={`Media actual: ${player.rating}`}
+                                                    />
+                                                    {/* Margen de crecimiento hasta potencial */}
+                                                    <div 
+                                                        className="h-full bg-gradient-to-r from-amber-500 to-[var(--apex-gold)] opacity-75" 
+                                                        style={{ width: `${Math.min(100 - (player.rating / 99) * 100, (growth / 99) * 100)}%` }} 
+                                                        title={`Margen de crecimiento: +${growth} puntos`}
+                                                    />
+                                                </div>
+
+                                                <div className="flex items-center justify-between text-[9px] text-slate-400 pt-0.5">
+                                                    <span className="font-bold text-emerald-400">+{growth} pts de margen</span>
+                                                    <span className="font-semibold text-slate-500">{player.morale || 'Motivado'}</span>
                                                 </div>
                                             </div>
                                         </div>
 
+                                        {/* Botón de Ascenso al Primer Equipo */}
                                         <button
                                             onClick={() => handlePromote(player)}
-                                            className="w-full py-1.5 rounded-lg bg-gradient-to-r from-[var(--apex-gold)] to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-[11px] uppercase tracking-wider shadow-sm transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+                                            disabled={isSquadFull}
+                                            className={`w-full py-2 rounded-xl font-black text-xs uppercase tracking-wider shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                                                isSquadFull
+                                                    ? 'bg-slate-800/80 text-slate-500 border border-slate-700/50 cursor-not-allowed'
+                                                    : 'bg-gradient-to-r from-[var(--apex-gold)] to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 active:scale-95 shadow-[0_4px_15px_rgba(212,175,55,0.25)]'
+                                            }`}
+                                            title={isSquadFull ? 'La plantilla está completa (25 jugadores)' : 'Ascender al jugador al primer equipo'}
                                         >
-                                            <Sparkles className="w-3 h-3" />
-                                            <span>Ascender al Primer Equipo</span>
+                                            <TrendingUpIcon className="w-3.5 h-3.5" />
+                                            <span>{isSquadFull ? 'Plantel Lleno (25/25)' : 'Ascender al Primer Equipo'}</span>
                                         </button>
                                     </div>
                                 );

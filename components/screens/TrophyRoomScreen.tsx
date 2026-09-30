@@ -26,14 +26,16 @@ const REGION_OPTIONS = [
     { id: 'ALL', label: 'Todos' },
     { id: 'INT', label: 'Internacionales', isInternational: true },
     { id: 'ARG', label: 'Argentina', country: 'Argentina' },
+    { id: 'BRA', label: 'Brasil', country: 'Brasil' },
+    { id: 'CHI', label: 'Chile', country: 'Chile' },
+    { id: 'COL', label: 'Colombia', country: 'Colombia' },
+    { id: 'PAR', label: 'Paraguay', country: 'Paraguay' },
     { id: 'ESP', label: 'España', country: 'España' },
     { id: 'ENG', label: 'Inglaterra', country: 'Inglaterra' },
     { id: 'GER', label: 'Alemania', country: 'Alemania' },
     { id: 'ITA', label: 'Italia', country: 'Italia' },
     { id: 'FRA', label: 'Francia', country: 'Francia' },
-    { id: 'BRA', label: 'Brasil', country: 'Brasil' },
     { id: 'MEX', label: 'México', country: 'México' },
-    { id: 'PAR', label: 'Paraguay', country: 'Paraguay' },
 ];
 
 const CATEGORY_THEMES = {

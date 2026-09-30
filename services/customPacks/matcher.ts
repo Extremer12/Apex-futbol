@@ -84,6 +84,19 @@ export function getPlayerMatchKeys(player: { id?: number | string; name?: string
 
         const rawSlug = player.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
         if (rawSlug && !keys.includes(rawSlug)) keys.push(rawSlug);
+
+        // Clean name with spaces: "m merentiel"
+        const nameClean = player.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[_\-\.\,\']/g, ' ').replace(/\s+/g, ' ').trim();
+        if (nameClean && !keys.includes(nameClean)) keys.push(nameClean);
+
+        // Last name extraction: "M. Merentiel" -> "merentiel"
+        const parts = nameClean.split(' ');
+        if (parts.length > 1) {
+            const lastName = parts[parts.length - 1];
+            if (lastName.length >= 3 && !keys.includes(lastName)) {
+                keys.push(lastName);
+            }
+        }
     }
     return keys;
 }

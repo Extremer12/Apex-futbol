@@ -250,14 +250,13 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({
                                                     />
                                                 </div>
                                             ) : (
-                                                <img 
-                                                    src={`https://images.unsplash.com/photo-${idx === 0 ? '1574629810360-7efbbe195018' : idx === 1 ? '1511886929837-354d827aae26' : '1522778119026-d647f0596c20'}?auto=format&fit=crop&q=80&w=400`} 
-                                                    alt="News" 
-                                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
-                                                    onError={(e) => {
-                                                        (e.target as HTMLImageElement).src = '/sinlogo.png';
-                                                    }}
-                                                />
+                                                <div className="w-full h-full relative bg-gradient-to-br from-slate-900 via-slate-800 to-black flex items-center justify-center border border-white/5 overflow-hidden">
+                                                    <div 
+                                                        className="absolute inset-0 bg-cover bg-center opacity-30 mix-blend-overlay"
+                                                        style={{ backgroundImage: 'url("/bg-pitch.png")' }}
+                                                    />
+                                                    <Newspaper className="w-7 h-7 text-[var(--apex-gold)]/80 relative z-10 transition-transform duration-500 group-hover:scale-110" />
+                                                </div>
                                             )}
                                         </div>
 

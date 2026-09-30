@@ -337,7 +337,9 @@ test('handlePromotionRelegation promotes top teams and relegates bottom teams', 
         [LeagueId.LIGA_MX]: [],
         [LeagueId.LIGA_EXPANSION_MX]: [],
         [LeagueId.PRIMERA_DIVISION_CHILE]: [],
-        [LeagueId.PRIMERA_B_CHILE]: []
+        [LeagueId.PRIMERA_B_CHILE]: [],
+        [LeagueId.PRIMERA_A_COLOMBIA]: [],
+        [LeagueId.PRIMERA_B_COLOMBIA]: []
     };
 
     const updatedTeams = handlePromotionRelegation(allTeams, leagueTables);
@@ -2099,9 +2101,9 @@ test('Player Ages & Transfer Realism: Preserves authentic ages and rejects Europ
     assert.ok(lewandowski, 'Lewandowski must exist in Barcelona squad');
     assert.equal(lewandowski?.age, 36, 'Lewandowski must preserve his authentic age 36');
 
-    const cavani = gameState.team.squad.find(p => p.id === 70119);
-    assert.ok(cavani, 'Cavani must exist in Boca Juniors squad');
-    assert.equal(cavani?.age, 37, 'Cavani must preserve his authentic age 37');
+    const paredes = gameState.team.squad.find(p => p.id === 70115);
+    assert.ok(paredes, 'Paredes must exist in Boca Juniors squad');
+    assert.equal(paredes?.age, 32, 'Paredes must preserve his authentic age 32');
 
     // 2. Verify European stars reject moves to South America
     const transferResponse = await generateTransferNegotiationResponse(

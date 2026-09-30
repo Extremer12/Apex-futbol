@@ -36,6 +36,8 @@ export const ARG_COMPETITION_LOGOS: Record<string, string> = {
     COPA_MX: `${COMMUNITY_PACK_CDN}/Liga%20MX/mexico_copa-mx.football-logos.cc.svg`,
     PRIMERA_DIVISION_CHILE: `${COMMUNITY_PACK_CDN}/Liga%20de%20Primera/chile_liga-de-primera.football-logos.cc.svg`,
     PRIMERA_B_CHILE: `${COMMUNITY_PACK_CDN}/Categoria%20Primera%20B/chile_liga-de-ascenso.football-logos.cc.svg`,
+    PRIMERA_A_COLOMBIA: `${COMMUNITY_PACK_CDN}/Categor%C3%ADa%20Primera%20A/colombia_categoria-primera-a.football-logos.cc.svg`,
+    PRIMERA_B_COLOMBIA: `${COMMUNITY_PACK_CDN}/Categor%C3%ADa%20Primera%20A/colombia_categoria-primera-a.football-logos.cc.svg`,
     
     // Torneos y Copas Internacionales
     CHAMPIONS_LEAGUE: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_uefa-champions-league.football-logos.cc.svg`,
@@ -92,7 +94,12 @@ export const ARG_COMPETITION_LOGOS: Record<string, string> = {
     'categoria-primera-b': `${COMMUNITY_PACK_CDN}/Categoria%20Primera%20B/chile_liga-de-ascenso.football-logos.cc.svg`,
     'categoria_primera_b': `${COMMUNITY_PACK_CDN}/Categoria%20Primera%20B/chile_liga-de-ascenso.football-logos.cc.svg`,
     'liga-de-ascenso': `${COMMUNITY_PACK_CDN}/Categoria%20Primera%20B/chile_liga-de-ascenso.football-logos.cc.svg`,
-    'liga_de_ascenso': `${COMMUNITY_PACK_CDN}/Categoria%20Primera%20B/chile_liga-de-ascenso.football-logos.cc.svg`,
+    'primera-a-colombia': `${COMMUNITY_PACK_CDN}/Categor%C3%ADa%20Primera%20A/colombia_categoria-primera-a.football-logos.cc.svg`,
+    'primera_a_colombia': `${COMMUNITY_PACK_CDN}/Categor%C3%ADa%20Primera%20A/colombia_categoria-primera-a.football-logos.cc.svg`,
+    'categoria-primera-a': `${COMMUNITY_PACK_CDN}/Categor%C3%ADa%20Primera%20A/colombia_categoria-primera-a.football-logos.cc.svg`,
+    'categoria_primera_a': `${COMMUNITY_PACK_CDN}/Categor%C3%ADa%20Primera%20A/colombia_categoria-primera-a.football-logos.cc.svg`,
+    'primera-b-colombia': `${COMMUNITY_PACK_CDN}/Categor%C3%ADa%20Primera%20A/colombia_categoria-primera-a.football-logos.cc.svg`,
+    'primera_b_colombia': `${COMMUNITY_PACK_CDN}/Categor%C3%ADa%20Primera%20A/colombia_categoria-primera-a.football-logos.cc.svg`,
     'champions_league': `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_uefa-champions-league.football-logos.cc.svg`,
     'copa_libertadores': `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_conmebol-libertadores.football-logos.cc.svg`,
     'copa_sudamericana': `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_conmebol-copa-sudamericana.football-logos.cc.svg`,

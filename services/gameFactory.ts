@@ -58,7 +58,7 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
                 isInjured: false,
                 isSuspended: false
             })),
-            coach: generateRandomCoach(t.tier)
+            coach: t.coach ? { ...t.coach } : generateRandomCoach(t.tier)
         };
         teamObj.squadPower = calculateSquadPower(teamObj);
         return teamObj;

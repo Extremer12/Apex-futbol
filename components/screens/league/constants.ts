@@ -106,6 +106,7 @@ export const ALL_COMPETITIONS: CompetitionItem[] = [
 
     // España
     { id: 'LA_LIGA', name: 'La Liga', type: 'LEAGUE', logo: LEAGUE_LOGOS.LA_LIGA, country: 'España', flagUrl: 'https://flagcdn.com/es.svg', category: 'DOMESTIC', isFirstDiv: true },
+    { id: 'SEGUNDA_DIVISION_ESP', name: 'LaLiga Hypermotion', type: 'LEAGUE', logo: LEAGUE_LOGOS.SEGUNDA_DIVISION_ESP, country: 'España', flagUrl: 'https://flagcdn.com/es.svg', category: 'DOMESTIC', isFirstDiv: false },
     { id: 'COPA_DEL_REY', name: 'Copa del Rey', type: 'CUP', logo: CUP_LOGOS.copa_del_rey, country: 'España', flagUrl: 'https://flagcdn.com/es.svg', category: 'DOMESTIC', cupKey: 'copaDelRey' },
 
     // Alemania
@@ -115,6 +116,7 @@ export const ALL_COMPETITIONS: CompetitionItem[] = [
 
     // Italia
     { id: 'SERIE_A', name: 'Serie A', type: 'LEAGUE', logo: LEAGUE_LOGOS.SERIE_A, country: 'Italia', flagUrl: 'https://flagcdn.com/it.svg', category: 'DOMESTIC', isFirstDiv: true },
+    { id: 'SERIE_B_ITA', name: 'Serie B', type: 'LEAGUE', logo: LEAGUE_LOGOS.SERIE_B_ITA, country: 'Italia', flagUrl: 'https://flagcdn.com/it.svg', category: 'DOMESTIC', isFirstDiv: false },
     { id: 'COPPA_ITALIA', name: 'Coppa Italia', type: 'CUP', logo: CUP_LOGOS.coppa_italia, country: 'Italia', flagUrl: 'https://flagcdn.com/it.svg', category: 'DOMESTIC', cupKey: 'coppaItalia' },
 
     // Francia

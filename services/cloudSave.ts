@@ -151,10 +151,7 @@ export async function getCloudSaves(): Promise<CloudSaveSummary[]> {
     });
 
     if (duplicateIdsToDelete.length > 0) {
-        supabase
-            .from('cloud_saves')
-            .delete()
-            .in('id', duplicateIdsToDelete)
+        Promise.resolve(supabase.from('cloud_saves').delete().in('id', duplicateIdsToDelete))
             .then(() => console.log(`[Apex Cloud] Cleaned up ${duplicateIdsToDelete.length} obsolete duplicate cloud saves`))
             .catch(err => console.warn('[Apex Cloud] Duplicate cleanup failed:', err));
     }
