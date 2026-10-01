@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GameState, Team } from '../../types';
 import { TeamLogo } from '../../data/teams/helpers';
 import { getTeamStadium } from '../../data/stadiums';
+import { MatchHighlight2D, MatchHighlightData } from './MatchHighlight2D';
 
 interface FullScreenMatchSimulationProps {
     gameState: GameState;
@@ -89,6 +90,33 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
     const [isShaking, setIsShaking] = useState(false);
     const [goalPopup, setGoalPopup] = useState<{ team: string; text: string } | null>(null);
 
+    // 2D Match Highlight simulation state
+    const [activeHighlight, setActiveHighlight] = useState<MatchHighlightData | null>(null);
+    const [highlights2DEnabled, setHighlights2DEnabled] = useState<boolean>(() => {
+        try {
+            const saved = localStorage.getItem('apex_highlights_2d');
+            return saved !== 'false';
+        } catch {
+            return true;
+        }
+    });
+
+    const toggleHighlights2D = () => {
+        setHighlights2DEnabled(prev => {
+            const next = !prev;
+            try {
+                localStorage.setItem('apex_highlights_2d', String(next));
+            } catch (_) {}
+            return next;
+        });
+    };
+
+    const startSimulationLoopRef = useRef<() => void>(() => {});
+    const isPausedForGoalRef = useRef(false);
+    const stepRef = useRef(0);
+    const highlights2DEnabledRef = useRef(highlights2DEnabled);
+    highlights2DEnabledRef.current = highlights2DEnabled;
+
     const commentaryEndRef = useRef<HTMLDivElement>(null);
     const processedEventsRef = useRef<Set<string>>(new Set());
     const intervalRef = useRef<any>(null);
@@ -156,6 +184,8 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
     const handleSkipToEnd = () => {
         if (intervalRef.current) clearInterval(intervalRef.current);
         if (goalTimeoutRef.current) clearTimeout(goalTimeoutRef.current);
+        isPausedForGoalRef.current = false;
+        setActiveHighlight(null);
         setIsShaking(false);
         setGoalPopup(null);
         if (!finalResult) return;
@@ -177,7 +207,33 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
         ]);
     };
 
-    // Main Simulation Loop with True Pause on Goals
+    // Callback when 2D highlight completes or is skipped
+    const handleHighlightComplete = useCallback(() => {
+        setActiveHighlight(null);
+        setIsShaking(false);
+        isPausedForGoalRef.current = false;
+        if (!isFinished) {
+            startSimulationLoopRef.current();
+        }
+    }, [isFinished]);
+
+    // Manual Replay Trigger from commentary feed
+    const handleWatchReplay = useCallback((evt: ParsedEvent) => {
+        if (!isFinished) {
+            isPausedForGoalRef.current = true;
+            if (intervalRef.current) clearInterval(intervalRef.current);
+        }
+        setActiveHighlight({
+            minute: evt.minute,
+            type: evt.type === 'save' ? 'save' : 'goal',
+            text: evt.text,
+            isHome: evt.isHome ?? false,
+            homeTeam,
+            awayTeam,
+        });
+    }, [isFinished, homeTeam, awayTeam]);
+
+    // Main Simulation Loop with True Pause on Goals & 2D Highlights
     useEffect(() => {
         if (!finalResult) {
             onMatchComplete();
@@ -188,17 +244,17 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
         const interval = 50;
         const totalSteps = duration / interval;
         const minuteIncrement = totalMatchMinutes / totalSteps;
-        let step = 0;
-        let isPausedForGoal = false;
+        stepRef.current = 0;
+        isPausedForGoalRef.current = false;
 
         const startSimulationLoop = () => {
             if (intervalRef.current) clearInterval(intervalRef.current);
 
             intervalRef.current = setInterval(() => {
-                if (isPausedForGoal) return;
+                if (isPausedForGoalRef.current) return;
 
-                step++;
-                const currentMinute = Math.min(totalMatchMinutes, Math.floor(step * minuteIncrement));
+                stepRef.current++;
+                const currentMinute = Math.min(totalMatchMinutes, Math.floor(stepRef.current * minuteIncrement));
                 setMinute(currentMinute);
 
                 // Process pending events up to current minute
@@ -220,9 +276,9 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
                             }));
                         }
 
-                        // If a goal happens, immediately PAUSE simulation and celebrate!
+                        // If a goal happens, immediately PAUSE simulation and celebrate or trigger 2D!
                         if (ev.type === 'goal') {
-                            isPausedForGoal = true;
+                            isPausedForGoalRef.current = true;
                             clearInterval(intervalRef.current);
 
                             // Pin the minute to the goal minute
@@ -237,20 +293,31 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
                                 away: goalsUpToNow.filter(g => !g.isHome).length
                             });
 
-                            // Trigger celebration popup and shake
-                            setIsShaking(true);
-                            setGoalPopup({
-                                team: ev.teamName || (ev.isHome ? homeTeam.name : awayTeam.name),
-                                text: ev.text.replace(/^\d+'\s*/, '')
-                            });
+                            if (highlights2DEnabledRef.current) {
+                                setActiveHighlight({
+                                    minute: ev.minute,
+                                    type: 'goal',
+                                    text: ev.text,
+                                    isHome: ev.isHome ?? false,
+                                    homeTeam,
+                                    awayTeam,
+                                });
+                            } else {
+                                // Trigger celebration popup and shake
+                                setIsShaking(true);
+                                setGoalPopup({
+                                    team: ev.teamName || (ev.isHome ? homeTeam.name : awayTeam.name),
+                                    text: ev.text.replace(/^\d+'\s*/, '')
+                                });
 
-                            const celebrationDuration = Math.max(1200, 2000 / (speedMultiplier === 4 ? 2 : 1));
-                            goalTimeoutRef.current = setTimeout(() => {
-                                setIsShaking(false);
-                                setGoalPopup(null);
-                                isPausedForGoal = false;
-                                startSimulationLoop();
-                            }, celebrationDuration);
+                                const celebrationDuration = Math.max(1200, 2000 / (speedMultiplier === 4 ? 2 : 1));
+                                goalTimeoutRef.current = setTimeout(() => {
+                                    setIsShaking(false);
+                                    setGoalPopup(null);
+                                    isPausedForGoalRef.current = false;
+                                    startSimulationLoop();
+                                }, celebrationDuration);
+                            }
 
                             return; // Stop processing further events in this tick
                         }
@@ -267,7 +334,7 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
                 }
 
                 // Dynamic possession & momentum fluctuations
-                if (step % 4 === 0) {
+                if (stepRef.current % 4 === 0) {
                     setStats(prev => {
                         const shift = (Math.random() * 4 - 2);
                         const newHomePoss = Math.min(75, Math.max(25, prev.homePossession + shift));
@@ -288,7 +355,7 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
                 }
 
                 // Match finished
-                if (step >= totalSteps) {
+                if (stepRef.current >= totalSteps) {
                     clearInterval(intervalRef.current);
                     setMinute(totalMatchMinutes);
                     setDisplayScore({ home: finalResult.homeScore, away: finalResult.awayScore });
@@ -307,13 +374,14 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
             }, interval);
         };
 
+        startSimulationLoopRef.current = startSimulationLoop;
         startSimulationLoop();
 
         return () => {
             if (intervalRef.current) clearInterval(intervalRef.current);
             if (goalTimeoutRef.current) clearTimeout(goalTimeoutRef.current);
         };
-    }, [finalResult, speedMultiplier, allParsedEvents, totalMatchMinutes]);
+    }, [finalResult, speedMultiplier, allParsedEvents, totalMatchMinutes, homeTeam, awayTeam, onMatchComplete]);
 
     // Outcome determination for player
     const playerWon = (isHome && displayScore.home > displayScore.away) || (!isHome && displayScore.away > displayScore.home);
@@ -321,8 +389,16 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
 
     return (
         <div className={`fixed inset-0 z-50 flex flex-col bg-[#06090e] text-slate-100 overflow-hidden select-none ${isShaking ? 'animate-screen-shake' : ''}`}>
-            {/* Goal Explosion Banner */}
-            {goalPopup && (
+            {/* 2D Match Highlight Modal */}
+            {activeHighlight && (
+                <MatchHighlight2D
+                    highlight={activeHighlight}
+                    onComplete={handleHighlightComplete}
+                />
+            )}
+
+            {/* Goal Explosion Banner (used when 2D is disabled) */}
+            {goalPopup && !activeHighlight && (
                 <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/75 backdrop-blur-md animate-fade-in pointer-events-none px-4">
                     <div className="text-center space-y-3 transform animate-scale-in">
                         <div className="text-xs font-black tracking-[0.4em] uppercase text-yellow-400 bg-yellow-500/20 px-4 py-1.5 rounded-full inline-block border border-yellow-500/30">
@@ -368,8 +444,20 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
                     </div>
                 </div>
 
-                {/* Match Complete Header Button */}
+                {/* Match Complete Header Button & 2D Toggle */}
                 <div className="flex items-center gap-2">
+                    <button
+                        onClick={toggleHighlights2D}
+                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-all border ${
+                            highlights2DEnabled
+                                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30'
+                                : 'bg-slate-800/60 text-slate-400 border-slate-700 hover:bg-slate-800'
+                        }`}
+                        title={highlights2DEnabled ? 'Animaciones 2D automáticas activadas' : 'Animaciones 2D automáticas desactivadas'}
+                    >
+                        <span>🎬 2D {highlights2DEnabled ? 'ACTIVADO' : 'DESACTIVADO'}</span>
+                    </button>
+
                     {isFinished && (
                         <button
                             onClick={onMatchComplete}
@@ -526,7 +614,18 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
                                             {evt.minute}'
                                         </div>
                                         <div className="flex-1 text-xs leading-relaxed">
-                                            {evt.text}
+                                            <div>{evt.text}</div>
+                                            {(evt.type === 'goal' || evt.type === 'save') && (
+                                                <button
+                                                    onClick={() => handleWatchReplay(evt)}
+                                                    className="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[10px] font-black tracking-wide uppercase bg-yellow-500/15 hover:bg-yellow-500/25 text-yellow-300 border border-yellow-500/30 transition-all cursor-pointer shadow-sm"
+                                                >
+                                                    <svg className="w-2.5 h-2.5 text-yellow-400" fill="currentColor" viewBox="0 0 24 24">
+                                                        <path d="M8 5v14l11-7z" />
+                                                    </svg>
+                                                    <span>Ver Jugada 2D</span>
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 ))
