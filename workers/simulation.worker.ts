@@ -488,19 +488,27 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
 
                     if (currentCup) {
                         const assignGoals = (team: Team, goals: number) => {
-                            const startingXI = team.squad.slice(0, 11);
+                            if (!team || goals <= 0) return;
+                            const squad = Array.isArray(team.squad) ? team.squad.filter(p => p && p.id !== undefined) : [];
+                            if (squad.length === 0) return;
+
+                            const pool = squad.filter(p => p.position === 'DEL' || p.position === 'CEN');
+                            const candidates = pool.length > 0 ? pool : squad;
+
                             for (let i = 0; i < goals; i++) {
-                                const scorer = startingXI[Math.floor(Math.random() * startingXI.length)];
+                                const scorer = candidates[Math.floor(Math.random() * candidates.length)] || candidates[0];
+                                if (!scorer || scorer.id === undefined) continue;
                                 if (!currentCup.statistics) currentCup.statistics = { topScorers: [], championsHistory: [] };
-                                const existingScorer = currentCup.statistics.topScorers.find((s: any) => s.playerId === scorer.id);
+                                if (!Array.isArray(currentCup.statistics.topScorers)) currentCup.statistics.topScorers = [];
+                                const existingScorer = currentCup.statistics.topScorers.find((s: any) => s && s.playerId === scorer.id);
                                 if (existingScorer) {
                                     existingScorer.goals++;
                                 } else {
                                     currentCup.statistics.topScorers.push({
                                         playerId: scorer.id,
-                                        playerName: scorer.name,
+                                        playerName: scorer.name || 'Goleador',
                                         teamId: team.id,
-                                        teamName: team.name,
+                                        teamName: team.name || '',
                                         goals: 1
                                     });
                                 }
