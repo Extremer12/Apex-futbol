@@ -38,7 +38,6 @@ const clamp = (val: number, min = 0, max = 1) => Math.max(min, Math.min(max, val
 const lerp = (a: number, b: number, t: number) => a + (b - a) * clamp(t);
 const easeOutQuad = (t: number) => t * (2 - t);
 const easeInQuad = (t: number) => t * t;
-const easeInOutQuad = (t: number) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
 
 interface CanvasPlayer {
     id: string;
@@ -50,16 +49,6 @@ interface CanvasPlayer {
     y: number;
     color: string;
     secColor: string;
-}
-
-interface Particle {
-    x: number;
-    y: number;
-    vx: number;
-    vy: number;
-    size: number;
-    color: string;
-    alpha: number;
 }
 
 // Authentic Spanish / Latin football surnames for fallback
@@ -171,9 +160,8 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
     const animFrameRef = useRef<number | null>(null);
     const startTimeRef = useRef<number | null>(null);
     const progressRef = useRef(0);
-    const particlesRef = useRef<Particle[]>([]);
     const ballTrailRef = useRef<{ x: number; y: number; alpha: number }[]>([]);
-    const hasSpawnedGoalParticles = useRef(false);
+    const hasTriggeredGoalBanner = useRef(false);
 
     // Keyboard controls
     useEffect(() => {
@@ -193,9 +181,8 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
     const handleRestart = () => {
         startTimeRef.current = null;
         progressRef.current = 0;
-        particlesRef.current = [];
         ballTrailRef.current = [];
-        hasSpawnedGoalParticles.current = false;
+        hasTriggeredGoalBanner.current = false;
         setGoalBannerVisible(false);
         setIsPlaying(true);
     };
@@ -251,11 +238,9 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
             if (playType === 'THROUGH_BALL_1V1') {
                 playTitle = `⚡ Pase Filtrado de ${aName} y Definición Mano a Mano`;
                 
-                // Assister drives forward with natural cadence
                 const aX = lerp(410, 500, easeOutQuad(clamp(t / 0.35)));
                 const aY = lerp(310, 290, clamp(t / 0.35));
 
-                // Scorer makes bursting diagonal run behind CBs
                 let sX = 520, sY = 220;
                 if (t < 0.35) {
                     sX = lerp(520, 610, t / 0.35);
@@ -267,10 +252,9 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
                 } else {
                     const st = (t - 0.70) / 0.30;
                     sX = lerp(770, 840, easeOutQuad(st));
-                    sY = lerp(245, 160, easeOutQuad(st)); // run to corner flag
+                    sY = lerp(245, 160, easeOutQuad(st));
                 }
 
-                // Goalkeeper rushes out to close angle, then dives
                 let gkX = 885, gkY = 270;
                 if (t >= 0.35 && t < 0.70) {
                     gkX = lerp(885, 815, easeOutQuad((t - 0.35) / 0.35));
@@ -280,7 +264,6 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
                     gkY = lerp(255, 295, easeOutQuad((t - 0.70) / 0.16));
                 }
 
-                // Ball positions (Goal inside at y=305, between 205 and 335)
                 if (t < 0.32) {
                     ball = { x: aX + 12, y: aY - 2, z: 0, inNet: false };
                     phaseDesc = `${aName} conduce y filtra al claro...`;
@@ -302,18 +285,14 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
                     netDistortion = Math.sin(nt * Math.PI * 4) * (1 - nt) * 16;
                 }
 
-                // All players have continuous organic movement!
                 players = [
                     { id: 'att1', name: aName, isAttacker: true, x: aX, y: aY, color: attPrimary, secColor: attSecondary },
                     { id: 'att2', name: sName, isAttacker: true, isKey: true, x: sX, y: sY, color: attPrimary, secColor: attSecondary },
                     { id: 'att3', name: getAttSurname(2), isAttacker: true, x: lerp(460, 680, easeOutQuad(t * 0.8)), y: lerp(390, 370, t), color: attPrimary, secColor: attSecondary },
                     { id: 'att4', name: getAttSurname(3), isAttacker: true, x: lerp(340, 520, easeOutQuad(t * 0.7)), y: lerp(180, 200, t), color: attPrimary, secColor: attSecondary },
                     { id: 'gk', name: gkName, isAttacker: false, isGK: true, x: gkX, y: gkY, color: '#eab308', secColor: '#0f172a' },
-                    // Center Back 1 desperately turns and chases
                     { id: 'cb1', name: getDefSurname(1), isAttacker: false, x: lerp(570, 730, easeOutQuad(t * 0.85)), y: lerp(220, 240, t), color: defPrimary, secColor: defSecondary },
-                    // Center Back 2 drops deep covering
                     { id: 'cb2', name: getDefSurname(2), isAttacker: false, x: lerp(600, 720, easeOutQuad(t * 0.75)), y: lerp(300, 280, t), color: defPrimary, secColor: defSecondary },
-                    // Lateral retreats tracking the winger
                     { id: 'fb', name: getDefSurname(3), isAttacker: false, x: lerp(500, 690, t * 0.7), y: lerp(410, 380, t), color: defPrimary, secColor: defSecondary },
                 ];
             }
@@ -322,15 +301,11 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
             else if (playType === 'WING_CROSS_HEADER') {
                 playTitle = `🌪️ Desborde de ${aName} y Cabezazo de ${sName}`;
                 
-                // Winger starts already in attacking third, advances smoothly (no teleport!)
                 const wX = lerp(590, 760, easeOutQuad(clamp(t / 0.42)));
                 const wY = lerp(435, 435, clamp(t / 0.42));
-
-                // Defending fullback jockeying and trying to block
                 const fbX = lerp(640, 755, easeOutQuad(clamp(t / 0.42)));
                 const fbY = lerp(415, 425, clamp(t / 0.42));
 
-                // Scorer movement in the box (shakes off marker, attacks near post)
                 let sX = 660, sY = 265;
                 if (t < 0.40) {
                     sX = lerp(660, 690, t / 0.40);
@@ -345,7 +320,6 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
                     sY = lerp(245, 160, easeOutQuad(st));
                 }
 
-                // Goalkeeper shuffles across goal, dives up to top corner
                 let gkX = 885, gkY = 270;
                 if (t >= 0.40 && t < 0.70) {
                     gkY = lerp(270, 285, (t - 0.40) / 0.30);
@@ -366,7 +340,6 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
                     ball = { x: lerp(770, 918, easeOutQuad(st)), y: lerp(245, 226, easeOutQuad(st)), z: lerp(22, 12, st), inNet: false };
                     phaseDesc = `¡${sName} le gana el salto a todos y mete el frentazo!`;
                 } else {
-                    // Ball lands cleanly inside net (y = 226, well below top post 205)
                     ball = { x: 922, y: 226, z: 10, inNet: true };
                     phaseDesc = `¡GOOOLAZO! Al ángulo superior.`;
                     const nt = (t - 0.80) / 0.20;
@@ -379,18 +352,14 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
                     { id: 'att3', name: getAttSurname(2), isAttacker: true, x: lerp(580, 740, t * 0.6), y: lerp(180, 205, t), color: attPrimary, secColor: attSecondary },
                     { id: 'att4', name: getAttSurname(3), isAttacker: true, x: lerp(480, 620, t * 0.5), y: 310, color: attPrimary, secColor: attSecondary },
                     { id: 'gk', name: gkName, isAttacker: false, isGK: true, x: gkX, y: gkY, color: '#eab308', secColor: '#0f172a' },
-                    // Fullback marking winger
                     { id: 'def1', name: getDefSurname(1), isAttacker: false, x: fbX, y: fbY, color: defPrimary, secColor: defSecondary },
-                    // Center Back battling with Scorer
                     { id: 'def2', name: getDefSurname(2), isAttacker: false, x: lerp(700, 765, t * 0.6), y: lerp(260, 252, t), color: defPrimary, secColor: defSecondary },
-                    // Second Center Back covering far post
                     { id: 'def3', name: getDefSurname(3), isAttacker: false, x: lerp(680, 740, t * 0.5), y: lerp(210, 215, t), color: defPrimary, secColor: defSecondary },
-                    // Opposite Fullback
                     { id: 'def4', name: getDefSurname(4), isAttacker: false, x: lerp(630, 700, t * 0.4), y: 150, color: defPrimary, secColor: defSecondary },
                 ];
             }
 
-            // 3. TIKI-TAKA COLECTIVO (12 players moving in unison!)
+            // 3. TIKI-TAKA COLECTIVO
             else if (playType === 'TIKI_TAKA_TRIANGLE') {
                 playTitle = `🔄 Toque y Triangulación Colectiva`;
                 const m1X = lerp(400, 440, t * 0.6);
@@ -425,7 +394,6 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
                     netDistortion = Math.sin(nt * Math.PI * 4) * (1 - nt) * 15;
                 }
 
-                // Defensive block shifts laterally to close gaps
                 players = [
                     { id: 'att1', name: getAttSurname(2), isAttacker: true, x: m1X, y: m1Y, color: attPrimary, secColor: attSecondary },
                     { id: 'att2', name: getAttSurname(3), isAttacker: true, x: m2X, y: m2Y, color: attPrimary, secColor: attSecondary },
@@ -434,7 +402,6 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
                     { id: 'att5', name: getAttSurname(4), isAttacker: true, x: lerp(580, 690, t * 0.5), y: 150, color: attPrimary, secColor: attSecondary },
                     { id: 'att6', name: getAttSurname(5), isAttacker: true, x: lerp(460, 540, t * 0.6), y: 440, color: attPrimary, secColor: attSecondary },
                     { id: 'gk', name: gkName, isAttacker: false, isGK: true, x: lerp(885, 875, t * 0.5), y: lerp(270, 255, t * 0.7), color: '#eab308', secColor: '#0f172a' },
-                    // Defenders shifting as a coordinated unit
                     { id: 'def1', name: getDefSurname(1), isAttacker: false, x: lerp(720, 755, t * 0.4), y: lerp(220, 235, t * 0.6), color: defPrimary, secColor: defSecondary },
                     { id: 'def2', name: getDefSurname(2), isAttacker: false, x: lerp(710, 745, t * 0.5), y: lerp(300, 290, t * 0.6), color: defPrimary, secColor: defSecondary },
                     { id: 'def3', name: getDefSurname(3), isAttacker: false, x: lerp(650, 685, t * 0.6), y: 380, color: defPrimary, secColor: defSecondary },
@@ -443,28 +410,21 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
                 ];
             }
 
-            // 4. FREE KICK BEND (13 players - Wall jumps, ball curves CLEANLY INSIDE the goalmouth!)
+            // 4. FREE KICK BEND
             else if (playType === 'FREE_KICK_BEND') {
                 playTitle = `🎯 Tiro Libre Maestro al Ángulo`;
                 const fkX = 590, fkY = 240;
-                
-                // Taker run-up
                 const sX = lerp(560, 590, clamp(t / 0.35));
                 const sY = lerp(250, 240, clamp(t / 0.35));
-
-                // 4-man defensive wall leaps at the kick
                 const wallJump = (t >= 0.35 && t <= 0.62) ? Math.sin(((t - 0.35) / 0.27) * Math.PI) * 14 : 0;
 
-                // Goalkeeper positioning and dive
                 let gkX = 885, gkY = 280;
                 if (t >= 0.38) {
                     const st = (t - 0.38) / 0.32;
                     gkX = lerp(885, 868, easeOutQuad(st));
-                    gkY = lerp(280, 230, easeOutQuad(st)); // dives up towards the shot
+                    gkY = lerp(280, 230, easeOutQuad(st));
                 }
 
-                // Ball curves over the wall (at x=710, y=240, Z=28) and dips into (918, 226)
-                // Note: top post is at 205, so y = 226 is 21px INSIDE the top post!
                 if (t < 0.35) {
                     ball = { x: fkX, y: fkY, z: 0, inNet: false };
                     phaseDesc = `${sName} mide la barrera y se concentra...`;
@@ -478,7 +438,6 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
                     };
                     phaseDesc = `¡SUPERÓ LA BARRERA CON EFECTO Y BAJA CON VENENO!`;
                 } else {
-                    // Ball lands cleanly inside the goal
                     ball = { x: 922, y: 226, z: 14, inNet: true };
                     phaseDesc = `¡¡GOLAZO MONUMENTAL DE TIRO LIBRE!!`;
                     const nt = (t - 0.70) / 0.30;
@@ -491,18 +450,16 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
                     { id: 'att3', name: getAttSurname(2), isAttacker: true, x: lerp(720, 770, t * 0.5), y: 310, color: attPrimary, secColor: attSecondary },
                     { id: 'att4', name: getAttSurname(3), isAttacker: true, x: lerp(680, 730, t * 0.6), y: 170, color: attPrimary, secColor: attSecondary },
                     { id: 'gk', name: gkName, isAttacker: false, isGK: true, x: gkX, y: gkY, color: '#eab308', secColor: '#0f172a' },
-                    // 4-Man Defensive Wall that leaps together
                     { id: 'w1', name: getDefSurname(1), isAttacker: false, x: 710, y: 215 - wallJump, color: defPrimary, secColor: defSecondary },
                     { id: 'w2', name: getDefSurname(2), isAttacker: false, x: 710, y: 235 - wallJump, color: defPrimary, secColor: defSecondary },
                     { id: 'w3', name: getDefSurname(3), isAttacker: false, x: 710, y: 255 - wallJump, color: defPrimary, secColor: defSecondary },
                     { id: 'w4', name: getDefSurname(4), isAttacker: false, x: 710, y: 275 - wallJump, color: defPrimary, secColor: defSecondary },
-                    // In-box markers tracking runners
                     { id: 'def5', name: getDefSurname(5), isAttacker: false, x: lerp(750, 780, t * 0.4), y: 295, color: defPrimary, secColor: defSecondary },
                     { id: 'def6', name: getDefSurname(6), isAttacker: false, x: lerp(730, 760, t * 0.5), y: 185, color: defPrimary, secColor: defSecondary },
                 ];
             }
 
-            // 5. CORNER KICK HEADER (15 players in box, intense action)
+            // 5. CORNER KICK HEADER
             else if (playType === 'CORNER_KICK_HEADER') {
                 playTitle = `📐 Córner al Área y Frentazo en el Tumulto`;
                 const cornerX = 885, cornerY = 475;
@@ -531,7 +488,6 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
                     netDistortion = Math.sin(nt * Math.PI * 4) * (1 - nt) * 18;
                 }
 
-                // 15 players packed in box, everyone jostling and shifting
                 players = [
                     { id: 'att1', name: aName, isAttacker: true, x: cornerX, y: cornerY, color: attPrimary, secColor: attSecondary },
                     { id: 'att2', name: sName, isAttacker: true, isKey: true, x: sX, y: sY, color: attPrimary, secColor: attSecondary },
@@ -539,10 +495,8 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
                     { id: 'att4', name: getAttSurname(3), isAttacker: true, x: lerp(810, 830, t * 0.4), y: 260, color: attPrimary, secColor: attSecondary },
                     { id: 'att5', name: getAttSurname(4), isAttacker: true, x: lerp(660, 680, t * 0.3), y: 270, color: attPrimary, secColor: attSecondary },
                     { id: 'gk', name: gkName, isAttacker: false, isGK: true, x: lerp(885, 865, t * 0.6), y: lerp(270, 245, t * 0.6), color: '#eab308', secColor: '#0f172a' },
-                    // Post defenders
                     { id: 'def1', name: getDefSurname(1), isAttacker: false, x: 885, y: 215, color: defPrimary, secColor: defSecondary },
                     { id: 'def2', name: getDefSurname(2), isAttacker: false, x: 885, y: 325, color: defPrimary, secColor: defSecondary },
-                    // Man markers
                     { id: 'def3', name: getDefSurname(3), isAttacker: false, x: lerp(770, 800, t * 0.5), y: lerp(250, 242, t * 0.5), color: defPrimary, secColor: defSecondary },
                     { id: 'def4', name: getDefSurname(4), isAttacker: false, x: lerp(785, 815, t * 0.4), y: 285, color: defPrimary, secColor: defSecondary },
                     { id: 'def5', name: getDefSurname(5), isAttacker: false, x: 825, y: 275, color: defPrimary, secColor: defSecondary },
@@ -551,11 +505,10 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
                 ];
             }
 
-            // 6. COUNTER ATTACK BLITZ (Costa a costa con ritmo coordinado)
+            // 6. COUNTER ATTACK BLITZ
             else if (playType === 'COUNTER_ATTACK_BLITZ') {
                 playTitle = `⚡ Contragolpe Letal de Costa a Costa`;
                 
-                // Realistic measured sprint speeds (smooth accelerations)
                 const sX = lerp(450, 770, easeOutQuad(t));
                 const sY = lerp(290, 260, t);
                 const wX = lerp(510, 790, easeOutQuad(t));
@@ -584,14 +537,13 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
                     { id: 'att2', name: sName, isAttacker: true, isKey: true, x: sX, y: sY, color: attPrimary, secColor: attSecondary },
                     { id: 'att3', name: getAttSurname(2), isAttacker: true, x: lerp(380, 680, easeOutQuad(t)), y: 170, color: attPrimary, secColor: attSecondary },
                     { id: 'gk', name: gkName, isAttacker: false, isGK: true, x: lerp(885, 860, t * 0.6), y: 270, color: '#eab308', secColor: '#0f172a' },
-                    // Defenders running back in emergency retreat
                     { id: 'def1', name: getDefSurname(1), isAttacker: false, x: lerp(520, 760, easeOutQuad(t * 0.95)), y: 245, color: defPrimary, secColor: defSecondary },
                     { id: 'def2', name: getDefSurname(2), isAttacker: false, x: lerp(560, 780, easeOutQuad(t * 0.9)), y: 320, color: defPrimary, secColor: defSecondary },
                     { id: 'def3', name: getDefSurname(3), isAttacker: false, x: lerp(480, 720, easeOutQuad(t * 0.85)), y: 190, color: defPrimary, secColor: defSecondary },
                 ];
             }
 
-            // 7. SOLO DRIBBLE GOLAZO (Slalom individual)
+            // 7. SOLO DRIBBLE GOLAZO
             else if (playType === 'SOLO_DRIBBLE_GOLAZO') {
                 playTitle = `🌟 Obra de Arte Individual de ${sName}`;
                 let sX = 540, sY = 270;
@@ -773,24 +725,10 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
                 phaseRef.current.textContent = phaseDesc;
             }
 
-            // Spawn Goal Confetti / Sparks on impact
-            if (type === 'goal' && ball.inNet && !hasSpawnedGoalParticles.current) {
-                hasSpawnedGoalParticles.current = true;
+            // Trigger Clean Goal Banner on impact (Zero confetti!)
+            if (type === 'goal' && ball.inNet && !hasTriggeredGoalBanner.current) {
+                hasTriggeredGoalBanner.current = true;
                 setGoalBannerVisible(true);
-                const sparkColors = ['#facc15', '#f59e0b', '#ffffff', '#38bdf8', '#4ade80'];
-                for (let i = 0; i < 40; i++) {
-                    const angle = (Math.PI * 0.8) + (Math.random() * Math.PI * 0.4);
-                    const speed = 3 + Math.random() * 8;
-                    particlesRef.current.push({
-                        x: 885,
-                        y: 270 + (Math.random() * 80 - 40),
-                        vx: Math.cos(angle) * speed,
-                        vy: Math.sin(angle) * speed,
-                        size: 2.5 + Math.random() * 3,
-                        color: sparkColors[Math.floor(Math.random() * sparkColors.length)],
-                        alpha: 1
-                    });
-                }
             }
 
             // -------------------------------------------------------------
@@ -859,7 +797,6 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
             ctx.stroke();
 
             // 3. Goal Net with Physics Distortion
-            // Post top: 205, Post bottom: 335. Net extends to x = 940
             const netBackX = 940 + netDistortion;
             ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
             ctx.beginPath();
@@ -938,23 +875,20 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
                 ctx.arc(p.x, p.y - 3, r - 3, Math.PI * 0.9, Math.PI * 2.1);
                 ctx.stroke();
 
-                // Clean Modern Token Core (NO NUMBERS AS REQUESTED!)
+                // Clean Modern Token Core (NO NUMBERS!)
                 if (p.isGK) {
-                    // Goalkeeper distinctive icon
                     ctx.fillStyle = '#0f172a';
                     ctx.font = '12px sans-serif';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
                     ctx.fillText('🧤', p.x, p.y);
                 } else {
-                    // Sleek concentric inner circle
                     ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
                     ctx.lineWidth = 1.2;
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, r - 6, 0, Math.PI * 2);
                     ctx.stroke();
 
-                    // Subtle inner accent core dot
                     ctx.fillStyle = p.secColor;
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
@@ -987,7 +921,6 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
             ballTrailRef.current.push({ x: ball.x, y: ball.y - ball.z, alpha: 1 });
             if (ballTrailRef.current.length > 6) ballTrailRef.current.shift();
 
-            // Motion trail
             for (let i = 0; i < ballTrailRef.current.length - 1; i++) {
                 const pt = ballTrailRef.current[i];
                 ctx.fillStyle = `rgba(255, 255, 255, ${0.1 + (i / ballTrailRef.current.length) * 0.35})`;
@@ -1023,34 +956,10 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
             ctx.lineWidth = 0.8;
             ctx.stroke();
 
-            // Pentagon pattern on ball
             ctx.fillStyle = '#0f172a';
             ctx.beginPath();
             ctx.arc(ball.x, bY, 2.2 * bScale, 0, Math.PI * 2);
             ctx.fill();
-
-            // 6. Confetti & Sparks Physics on Goal
-            if (particlesRef.current.length > 0) {
-                for (let i = particlesRef.current.length - 1; i >= 0; i--) {
-                    const pt = particlesRef.current[i];
-                    pt.x += pt.vx;
-                    pt.y += pt.vy;
-                    pt.vy += 0.15; // Gravity
-                    pt.alpha -= 0.015;
-
-                    if (pt.alpha <= 0) {
-                        particlesRef.current.splice(i, 1);
-                        continue;
-                    }
-
-                    ctx.fillStyle = pt.color;
-                    ctx.globalAlpha = pt.alpha;
-                    ctx.beginPath();
-                    ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-                ctx.globalAlpha = 1.0;
-            }
 
             // Next frame
             if (t >= 1) {
@@ -1076,7 +985,7 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/85 backdrop-blur-xl p-2 sm:p-4 select-none animate-fade-in">
+        <div className="fixed inset-0 z-50 flex flex-col bg-[#07130a] text-slate-100 select-none animate-fade-in p-0 sm:p-4 sm:items-center sm:justify-center sm:bg-black/85 sm:backdrop-blur-xl">
             {/* Ambient Stadium Glow */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
                 <div 
@@ -1085,79 +994,81 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
                 />
             </div>
 
-            {/* Broadcast Theatre Modal */}
-            <div className="relative w-full max-w-5xl flex flex-col rounded-2xl overflow-hidden border border-white/15 bg-slate-950/90 shadow-[0_20px_60px_rgba(0,0,0,0.8)]">
+            {/* Broadcast Theatre Modal - Fullscreen on mobile, centered card on desktop */}
+            <div className="relative w-full h-full sm:h-auto sm:max-w-5xl flex flex-col sm:rounded-2xl overflow-hidden bg-slate-950/95 sm:border sm:border-white/15 sm:shadow-[0_20px_60px_rgba(0,0,0,0.8)]">
                 
                 {/* 1. TOP BROADCAST BAR */}
-                <div className="relative z-10 flex items-center justify-between px-3 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border-b border-white/10">
+                <div className="relative z-10 flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3 bg-slate-950/95 border-b border-white/10 pt-safe shrink-0">
                     <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/20 border border-red-500/40">
-                            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                            <span className="text-[10px] font-black tracking-widest text-red-400 uppercase">
+                        <div className="flex items-center gap-1.5 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-red-500/20 border border-red-500/40">
+                            <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-red-500 animate-pulse" />
+                            <span className="text-[9px] sm:text-[10px] font-black tracking-widest text-red-400 uppercase">
                                 REPETICIÓN 2D
                             </span>
                         </div>
-                        <span className="px-2 py-0.5 rounded bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-xs font-black font-mono">
+                        <span className="px-1.5 py-0.5 rounded bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-[11px] sm:text-xs font-black font-mono">
                             {minute}'
                         </span>
-                        <div className="hidden sm:flex items-center gap-2 text-xs font-bold text-slate-300">
-                            <span className="text-white">{attackingTeam.name}</span>
-                            <span className="text-slate-500">vs</span>
-                            <span className="text-white">{defendingTeam.name}</span>
+                        <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-bold text-slate-300 truncate max-w-[130px] sm:max-w-none">
+                            <span className="text-white truncate">{attackingTeam.name}</span>
+                            <span className="text-slate-500 text-[10px]">vs</span>
+                            <span className="text-white truncate">{defendingTeam.name}</span>
                         </div>
                     </div>
 
                     {/* Speed & Replay Controls */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
                         <button
                             onClick={() => setSpeedMultiplier(s => s === 1 ? 1.5 : s === 1.5 ? 2 : 1)}
-                            className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] font-mono font-bold text-slate-300 border border-slate-700 transition-all"
+                            className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-[10px] sm:text-[11px] font-mono font-bold text-slate-300 border border-slate-700 transition-all"
                             title="Velocidad de reproducción"
                         >
                             {speedMultiplier}x
                         </button>
                         <button
                             onClick={handleRestart}
-                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-all"
+                            className="p-1 sm:p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-all"
                             title="Repetir jugada"
                         >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                             </svg>
                         </button>
                         <button
                             onClick={onComplete}
-                            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs border border-white/20 transition-all"
+                            className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-bold text-[11px] sm:text-xs border border-white/20 transition-all"
                         >
                             <span>Omitir</span>
                             <span className="text-[10px] text-slate-400 font-mono hidden sm:inline">(ESC)</span>
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
                             </svg>
                         </button>
                     </div>
                 </div>
 
-                {/* 2. THE 60 FPS CANVAS ARENA */}
-                <div className="relative w-full aspect-[16/9] sm:aspect-[16/8.8] bg-[#0c2f17] overflow-hidden select-none">
+                {/* 2. THE 60 FPS CANVAS ARENA - Edge-to-edge on mobile with green turf atmosphere */}
+                <div className="relative flex-1 w-full min-h-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#11401f] via-[#0c2f17] to-[#06170b] flex items-center justify-center overflow-hidden select-none">
                     
                     {/* Hardware Accelerated Canvas */}
-                    <canvas
-                        ref={canvasRef}
-                        className="w-full h-full block select-none"
-                    />
+                    <div className="w-full h-full flex items-center justify-center p-0 sm:p-2">
+                        <canvas
+                            ref={canvasRef}
+                            className="w-full h-auto max-h-full aspect-[16/9] sm:aspect-[16/8.8] block select-none shadow-2xl max-sm:scale-105 origin-center"
+                        />
+                    </div>
 
-                    {/* Goal Celebratory Flash Overlay */}
+                    {/* Goal Flash Overlay (Clean, no confetti) */}
                     {goalBannerVisible && type === 'goal' && (
-                        <div className="absolute inset-0 pointer-events-none z-30 flex items-center justify-center bg-black/30 animate-fade-in">
+                        <div className="absolute inset-0 pointer-events-none z-30 flex items-center justify-center bg-black/40 animate-fade-in px-4">
                             <div className="text-center transform animate-scale-in">
-                                <span className="text-xs font-black uppercase tracking-[0.4em] text-yellow-400 drop-shadow">
+                                <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.4em] text-yellow-400 drop-shadow">
                                     Apex Highlight
                                 </span>
-                                <h1 className="text-5xl sm:text-7xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-500 drop-shadow-[0_0_30px_rgba(234,179,8,0.9)]">
+                                <h1 className="text-4xl sm:text-7xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-500 drop-shadow-[0_0_30px_rgba(234,179,8,0.9)]">
                                     ¡GOOOOOL!
                                 </h1>
-                                <p className="text-sm sm:text-lg font-bold text-white uppercase tracking-wider drop-shadow mt-1">
+                                <p className="text-xs sm:text-lg font-bold text-white uppercase tracking-wider drop-shadow mt-0.5">
                                     {scorer?.name || attackingTeam.name}
                                 </p>
                             </div>
@@ -1165,17 +1076,17 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
                     )}
 
                     {/* Live Commentary Overlay Banner */}
-                    <div className="absolute bottom-2.5 left-3 right-3 sm:left-6 sm:right-6 pointer-events-none">
-                        <div className="flex items-center justify-between px-3.5 py-2 rounded-xl bg-slate-950/85 backdrop-blur-md border border-white/10 shadow-lg">
-                            <div className="flex items-center gap-2.5 min-w-0">
-                                <span className="text-base sm:text-lg">
+                    <div className="absolute bottom-2 left-2 right-2 sm:bottom-2.5 sm:left-6 sm:right-6 pointer-events-none">
+                        <div className="flex items-center justify-between px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-slate-950/90 backdrop-blur-md border border-white/10 shadow-lg">
+                            <div className="flex items-center gap-2 min-w-0">
+                                <span className="text-sm sm:text-lg">
                                     {type === 'goal' ? '⚽' : '🧤'}
                                 </span>
                                 <div className="truncate">
-                                    <p ref={subtitleRef} className="text-[11px] sm:text-xs font-black text-yellow-400 uppercase tracking-wide truncate">
+                                    <p ref={subtitleRef} className="text-[10px] sm:text-xs font-black text-yellow-400 uppercase tracking-wide truncate">
                                         Cargando jugada...
                                     </p>
-                                    <p ref={phaseRef} className="text-[10px] sm:text-xs text-slate-300 font-medium truncate">
+                                    <p ref={phaseRef} className="text-[9px] sm:text-xs text-slate-300 font-medium truncate">
                                         {text}
                                     </p>
                                 </div>
@@ -1185,19 +1096,19 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
                 </div>
 
                 {/* 3. BOTTOM SCRUBBER & PLAYER PROFILE */}
-                <div className="relative z-10 px-3 sm:px-6 py-3 bg-slate-950 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="relative z-10 px-3 sm:px-6 py-2 sm:py-3 bg-slate-950 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3 pb-safe shrink-0">
                     
                     {/* Scorer / Protagonist Card */}
-                    <div className="flex items-center gap-3 w-full sm:w-auto">
-                        <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-yellow-400/60 shrink-0 bg-slate-900 shadow-md">
+                    <div className="flex items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-yellow-400/60 shrink-0 bg-slate-900 shadow-md">
                             <PlayerAvatar player={scorer || undefined} className="w-full h-full object-cover" />
                         </div>
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1 sm:flex-initial">
                             <div className="flex items-center gap-2">
                                 <span className="text-xs sm:text-sm font-black text-white truncate">
                                     {scorer?.name || attackingTeam.name}
                                 </span>
-                                <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                                <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 shrink-0">
                                     {scorer?.position || 'DEL'}
                                 </span>
                             </div>
@@ -1208,7 +1119,7 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
                     </div>
 
                     {/* Progress Bar & Media Controls */}
-                    <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                    <div className="flex items-center gap-2.5 sm:gap-3 w-full sm:w-auto justify-between sm:justify-end">
                         {/* Progress Scrubber */}
                         <div className="flex-1 sm:w-48 flex items-center gap-2">
                             <div className="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden">
@@ -1223,15 +1134,15 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
                         {/* Play/Pause Button */}
                         <button
                             onClick={togglePlay}
-                            className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white border border-slate-700 transition-all"
+                            className="p-1.5 sm:p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white border border-slate-700 transition-all"
                             title={isPlaying ? 'Pausar (Espacio)' : 'Reproducir (Espacio)'}
                         >
                             {isPlaying ? (
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 9v6m4-6v6" />
                                 </svg>
                             ) : (
-                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M8 5v14l11-7z" />
                                 </svg>
                             )}
@@ -1240,7 +1151,7 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
                         {/* Dismiss / Continue Button */}
                         <button
                             onClick={onComplete}
-                            className="px-4 py-2 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-600 hover:brightness-110 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-yellow-500/20 transition-all flex items-center gap-1.5"
+                            className="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-600 hover:brightness-110 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-yellow-500/20 transition-all flex items-center gap-1.5 shrink-0"
                         >
                             <span>Continuar</span>
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
