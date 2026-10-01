@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Player, Team } from '../../types';
 import { PlayerAvatar } from '../ui/PlayerAvatar';
 
@@ -43,7 +43,6 @@ const easeInOutQuad = (t: number) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
 interface CanvasPlayer {
     id: string;
     name: string;
-    number: string;
     isAttacker: boolean;
     isGK?: boolean;
     isKey?: boolean;
@@ -62,6 +61,13 @@ interface Particle {
     color: string;
     alpha: number;
 }
+
+// Authentic Spanish / Latin football surnames for fallback
+const AUTHENTIC_SURNAMES = [
+    'Romero', 'Martínez', 'Gómez', 'Rodríguez', 'López', 'Fernández', 
+    'Díaz', 'Pérez', 'González', 'Silva', 'Castro', 'Álvarez', 
+    'Benítez', 'Sosa', 'Torres', 'Medina', 'Morales', 'Suárez'
+];
 
 export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
     highlight,
@@ -99,13 +105,24 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
         return mids[0] || null;
     }, [highlight.assister, attackingTeam, scorer, text]);
 
-    // Roster of real players from squads
-    const attackingSquad = useMemo(() => attackingTeam.squad.slice(0, 11), [attackingTeam]);
-    const defendingSquad = useMemo(() => defendingTeam.squad.slice(0, 11), [defendingTeam]);
+    // Goalkeeper
     const goalkeeper = useMemo(() => {
         const gk = defendingTeam.squad.find(p => p.position === 'POR');
         return gk || defendingTeam.squad[0];
     }, [defendingTeam]);
+
+    // Helper functions to get 100% REAL player surnames from squads
+    const getAttSurname = (idx: number): string => {
+        const p = attackingTeam.squad[idx];
+        if (p?.name) return p.name.split(' ').slice(-1)[0];
+        return AUTHENTIC_SURNAMES[idx % AUTHENTIC_SURNAMES.length];
+    };
+
+    const getDefSurname = (idx: number): string => {
+        const p = defendingTeam.squad[idx];
+        if (p?.name) return p.name.split(' ').slice(-1)[0];
+        return AUTHENTIC_SURNAMES[(idx + 6) % AUTHENTIC_SURNAMES.length];
+    };
 
     // Determine play type with 11 varied possibilities
     const playType: HighlightPlayType = useMemo(() => {
@@ -147,8 +164,8 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
     const [speedMultiplier, setSpeedMultiplier] = useState<1 | 1.5 | 2>(1);
     const [goalBannerVisible, setGoalBannerVisible] = useState(false);
 
-    // Punchy 3.0s base duration for high energy
-    const baseDuration = 3200;
+    // Natural 3.2s duration
+    const baseDuration = 3300;
     const durationMs = baseDuration / speedMultiplier;
 
     const animFrameRef = useRef<number | null>(null);
@@ -183,10 +200,10 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
         setIsPlaying(true);
     };
 
-    // Names for actors
-    const sName = scorer?.name.split(' ').slice(-1)[0] || 'Goleador';
-    const aName = assister?.name.split(' ').slice(-1)[0] || 'Asistidor';
-    const gkName = goalkeeper?.name.split(' ').slice(-1)[0] || 'Arquero';
+    // Protagonist names
+    const sName = scorer?.name.split(' ').slice(-1)[0] || getAttSurname(0);
+    const aName = assister?.name.split(' ').slice(-1)[0] || getAttSurname(1);
+    const gkName = goalkeeper?.name.split(' ').slice(-1)[0] || getDefSurname(0);
 
     // =========================================================================
     // HIGH-PERFORMANCE 60 FPS CANVAS ENGINE
@@ -216,329 +233,379 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
             const t = clamp(elapsed / durationMs, 0, 1);
             progressRef.current = t;
 
-            // Update DOM progress bar & text without triggering React re-renders!
+            // Update DOM progress bar without React re-renders!
             if (progressBarRef.current) {
                 progressBarRef.current.style.width = `${Math.round(t * 100)}%`;
             }
 
             // -------------------------------------------------------------
-            // SCENE COMPUTATION (Choreography State)
+            // SCENE COMPUTATION WITH LIVING MOVEMENT FOR ALL PLAYERS
             // -------------------------------------------------------------
             let ball = { x: 400, y: 270, z: 0, inNet: false };
             let players: CanvasPlayer[] = [];
             let playTitle = '';
             let phaseDesc = '';
             let netDistortion = 0;
-            const goalTime = 0.76;
 
             // 1. THROUGH BALL 1v1
             if (playType === 'THROUGH_BALL_1V1') {
                 playTitle = `⚡ Pase Filtrado de ${aName} y Definición Mano a Mano`;
-                const aX = lerp(340, 430, easeOutQuad(clamp(t / 0.35)));
-                const aY = lerp(310, 280, clamp(t / 0.35));
+                
+                // Assister drives forward with natural cadence
+                const aX = lerp(410, 500, easeOutQuad(clamp(t / 0.35)));
+                const aY = lerp(310, 290, clamp(t / 0.35));
 
-                let sX = 480, sY = 200;
+                // Scorer makes bursting diagonal run behind CBs
+                let sX = 520, sY = 220;
                 if (t < 0.35) {
-                    sX = lerp(480, 580, easeInQuad(t / 0.35));
-                    sY = lerp(200, 220, t / 0.35);
+                    sX = lerp(520, 610, t / 0.35);
+                    sY = lerp(220, 230, t / 0.35);
                 } else if (t < 0.70) {
                     const st = (t - 0.35) / 0.35;
-                    sX = lerp(580, 750, easeOutQuad(st));
-                    sY = lerp(220, 240, st);
+                    sX = lerp(610, 770, easeOutQuad(st));
+                    sY = lerp(230, 245, st);
                 } else {
                     const st = (t - 0.70) / 0.30;
-                    sX = lerp(750, 830, easeOutQuad(st));
-                    sY = lerp(240, 160, easeOutQuad(st));
+                    sX = lerp(770, 840, easeOutQuad(st));
+                    sY = lerp(245, 160, easeOutQuad(st)); // run to corner flag
                 }
 
-                let gkX = 890, gkY = 270;
-                if (t >= 0.40 && t < 0.70) {
-                    gkX = lerp(890, 810, easeOutQuad((t - 0.40) / 0.30));
-                    gkY = lerp(270, 255, (t - 0.40) / 0.30);
+                // Goalkeeper rushes out to close angle, then dives
+                let gkX = 885, gkY = 270;
+                if (t >= 0.35 && t < 0.70) {
+                    gkX = lerp(885, 815, easeOutQuad((t - 0.35) / 0.35));
+                    gkY = lerp(270, 255, (t - 0.35) / 0.35);
                 } else if (t >= 0.70) {
-                    gkX = lerp(810, 850, easeOutQuad((t - 0.70) / 0.15));
-                    gkY = lerp(255, 290, easeOutQuad((t - 0.70) / 0.15));
+                    gkX = lerp(815, 850, easeOutQuad((t - 0.70) / 0.16));
+                    gkY = lerp(255, 295, easeOutQuad((t - 0.70) / 0.16));
                 }
 
+                // Ball positions (Goal inside at y=305, between 205 and 335)
                 if (t < 0.32) {
                     ball = { x: aX + 12, y: aY - 2, z: 0, inNet: false };
-                    phaseDesc = `${aName} levanta la cabeza y busca el hueco...`;
+                    phaseDesc = `${aName} conduce y filtra al claro...`;
                 } else if (t < 0.52) {
                     const st = (t - 0.32) / 0.20;
-                    ball = { x: lerp(aX + 12, 670, easeOutQuad(st)), y: lerp(aY - 2, 235, st), z: Math.sin(st * Math.PI) * 4, inNet: false };
-                    phaseDesc = `¡Pase entre líneas perfecto al pique de ${sName}!`;
+                    ball = { x: lerp(aX + 12, 690, easeOutQuad(st)), y: lerp(aY - 2, 240, st), z: Math.sin(st * Math.PI) * 4, inNet: false };
+                    phaseDesc = `¡Pase milimétrico al desmarque de ${sName}!`;
                 } else if (t < 0.70) {
                     ball = { x: sX + 12, y: sY + 4, z: 0, inNet: false };
-                    phaseDesc = `¡Mano a mano! ${sName} encara en velocidad...`;
+                    phaseDesc = `¡Mano a mano! ${sName} encara a ${gkName}...`;
                 } else if (t < 0.82) {
                     const st = (t - 0.70) / 0.12;
-                    ball = { x: lerp(762, 915, easeOutQuad(st)), y: lerp(244, 305, easeOutQuad(st)), z: lerp(0, 16, st), inNet: false };
-                    phaseDesc = `¡Definición cruzada al palo más lejano!`;
+                    ball = { x: lerp(782, 918, easeOutQuad(st)), y: lerp(249, 305, easeOutQuad(st)), z: lerp(0, 14, st), inNet: false };
+                    phaseDesc = `¡Definió con comba cruzada al segundo palo!`;
                 } else {
-                    ball = { x: 918, y: 308, z: 6, inNet: true };
+                    ball = { x: 922, y: 305, z: 4, inNet: true };
                     phaseDesc = `¡GOOOOOL! Impecable resolución.`;
                     const nt = (t - 0.82) / 0.18;
                     netDistortion = Math.sin(nt * Math.PI * 4) * (1 - nt) * 16;
                 }
 
+                // All players have continuous organic movement!
                 players = [
-                    { id: 'att1', name: aName, number: '10', isAttacker: true, x: aX, y: aY, color: attPrimary, secColor: attSecondary },
-                    { id: 'att2', name: sName, number: '9', isAttacker: true, isKey: true, x: sX, y: sY, color: attPrimary, secColor: attSecondary },
-                    { id: 'att3', name: 'Extremo', number: '7', isAttacker: true, x: lerp(480, 620, t * 0.7), y: 390, color: attPrimary, secColor: attSecondary },
-                    { id: 'att4', name: 'Volante', number: '8', isAttacker: true, x: lerp(320, 480, t * 0.5), y: 160, color: attPrimary, secColor: attSecondary },
-                    { id: 'gk', name: gkName, number: '1', isAttacker: false, isGK: true, x: gkX, y: gkY, color: '#eab308', secColor: '#0f172a' },
-                    { id: 'cb1', name: 'Central 1', number: '2', isAttacker: false, x: lerp(580, 710, easeOutQuad(t * 0.8)), y: 220, color: defPrimary, secColor: defSecondary },
-                    { id: 'cb2', name: 'Central 2', number: '6', isAttacker: false, x: lerp(610, 740, easeOutQuad(t * 0.7)), y: 320, color: defPrimary, secColor: defSecondary },
-                    { id: 'fb', name: 'Lateral', number: '3', isAttacker: false, x: lerp(490, 650, t * 0.6), y: 430, color: defPrimary, secColor: defSecondary },
+                    { id: 'att1', name: aName, isAttacker: true, x: aX, y: aY, color: attPrimary, secColor: attSecondary },
+                    { id: 'att2', name: sName, isAttacker: true, isKey: true, x: sX, y: sY, color: attPrimary, secColor: attSecondary },
+                    { id: 'att3', name: getAttSurname(2), isAttacker: true, x: lerp(460, 680, easeOutQuad(t * 0.8)), y: lerp(390, 370, t), color: attPrimary, secColor: attSecondary },
+                    { id: 'att4', name: getAttSurname(3), isAttacker: true, x: lerp(340, 520, easeOutQuad(t * 0.7)), y: lerp(180, 200, t), color: attPrimary, secColor: attSecondary },
+                    { id: 'gk', name: gkName, isAttacker: false, isGK: true, x: gkX, y: gkY, color: '#eab308', secColor: '#0f172a' },
+                    // Center Back 1 desperately turns and chases
+                    { id: 'cb1', name: getDefSurname(1), isAttacker: false, x: lerp(570, 730, easeOutQuad(t * 0.85)), y: lerp(220, 240, t), color: defPrimary, secColor: defSecondary },
+                    // Center Back 2 drops deep covering
+                    { id: 'cb2', name: getDefSurname(2), isAttacker: false, x: lerp(600, 720, easeOutQuad(t * 0.75)), y: lerp(300, 280, t), color: defPrimary, secColor: defSecondary },
+                    // Lateral retreats tracking the winger
+                    { id: 'fb', name: getDefSurname(3), isAttacker: false, x: lerp(500, 690, t * 0.7), y: lerp(410, 380, t), color: defPrimary, secColor: defSecondary },
                 ];
             }
 
-            // 2. WING CROSS & HEADER (8-10 players)
+            // 2. WING CROSS & HEADER
             else if (playType === 'WING_CROSS_HEADER') {
                 playTitle = `🌪️ Desborde de ${aName} y Cabezazo de ${sName}`;
-                const wX = lerp(450, 780, easeOutQuad(clamp(t / 0.38)));
-                const wY = lerp(460, 450, clamp(t / 0.38));
+                
+                // Winger starts already in attacking third, advances smoothly (no teleport!)
+                const wX = lerp(590, 760, easeOutQuad(clamp(t / 0.42)));
+                const wY = lerp(435, 435, clamp(t / 0.42));
 
-                let sX = 640, sY = 260;
-                if (t < 0.38) {
-                    sX = lerp(600, 680, t / 0.38);
-                } else if (t < 0.68) {
-                    sX = lerp(680, 760, easeOutQuad((t - 0.38) / 0.30));
-                    sY = lerp(260, 240, (t - 0.38) / 0.30);
+                // Defending fullback jockeying and trying to block
+                const fbX = lerp(640, 755, easeOutQuad(clamp(t / 0.42)));
+                const fbY = lerp(415, 425, clamp(t / 0.42));
+
+                // Scorer movement in the box (shakes off marker, attacks near post)
+                let sX = 660, sY = 265;
+                if (t < 0.40) {
+                    sX = lerp(660, 690, t / 0.40);
+                    sY = lerp(265, 270, t / 0.40);
+                } else if (t < 0.70) {
+                    const st = (t - 0.40) / 0.30;
+                    sX = lerp(690, 770, easeOutQuad(st));
+                    sY = lerp(270, 245, st);
                 } else {
-                    sX = lerp(760, 810, easeOutQuad((t - 0.68) / 0.32));
-                    sY = lerp(240, 160, easeOutQuad((t - 0.68) / 0.32));
+                    const st = (t - 0.70) / 0.30;
+                    sX = lerp(770, 810, easeOutQuad(st));
+                    sY = lerp(245, 160, easeOutQuad(st));
                 }
 
-                let gkX = 890, gkY = 270;
-                if (t >= 0.40 && t < 0.68) {
-                    gkY = lerp(270, 285, (t - 0.40) / 0.28);
-                } else if (t >= 0.68) {
-                    gkX = lerp(890, 875, easeOutQuad((t - 0.68) / 0.14));
-                    gkY = lerp(285, 225, easeOutQuad((t - 0.68) / 0.14));
+                // Goalkeeper shuffles across goal, dives up to top corner
+                let gkX = 885, gkY = 270;
+                if (t >= 0.40 && t < 0.70) {
+                    gkY = lerp(270, 285, (t - 0.40) / 0.30);
+                } else if (t >= 0.70) {
+                    gkX = lerp(885, 875, easeOutQuad((t - 0.70) / 0.15));
+                    gkY = lerp(285, 230, easeOutQuad((t - 0.70) / 0.15));
                 }
 
-                if (t < 0.36) {
-                    ball = { x: wX + 12, y: wY - 2, z: 0, inNet: false };
-                    phaseDesc = `¡${aName} desborda a fondo por la banda!`;
-                } else if (t < 0.68) {
-                    const st = (t - 0.36) / 0.32;
-                    ball = { x: lerp(wX + 12, 760, st), y: lerp(wY - 2, 240, easeOutQuad(st)), z: Math.sin(st * Math.PI) * 48, inNet: false };
-                    phaseDesc = `¡Centro aéreo al corazón del área chica!`;
-                } else if (t < 0.78) {
-                    const st = (t - 0.68) / 0.10;
-                    ball = { x: lerp(760, 915, easeOutQuad(st)), y: lerp(240, 222, easeOutQuad(st)), z: lerp(24, 14, st), inNet: false };
-                    phaseDesc = `¡${sName} se eleva y mete un testazo demoledor!`;
+                if (t < 0.40) {
+                    ball = { x: wX + 10, y: wY - 2, z: 0, inNet: false };
+                    phaseDesc = `¡${aName} desborda con potencia por la banda!`;
+                } else if (t < 0.70) {
+                    const st = (t - 0.40) / 0.30;
+                    ball = { x: lerp(wX + 10, 770, st), y: lerp(wY - 2, 245, easeOutQuad(st)), z: Math.sin(st * Math.PI) * 48, inNet: false };
+                    phaseDesc = `¡Centro bombeado al corazón del área!`;
+                } else if (t < 0.80) {
+                    const st = (t - 0.70) / 0.10;
+                    ball = { x: lerp(770, 918, easeOutQuad(st)), y: lerp(245, 226, easeOutQuad(st)), z: lerp(22, 12, st), inNet: false };
+                    phaseDesc = `¡${sName} le gana el salto a todos y mete el frentazo!`;
                 } else {
-                    ball = { x: 918, y: 222, z: 12, inNet: true };
-                    phaseDesc = `¡GOOOLAZO! Imparable al rincón superior.`;
-                    const nt = (t - 0.78) / 0.22;
+                    // Ball lands cleanly inside net (y = 226, well below top post 205)
+                    ball = { x: 922, y: 226, z: 10, inNet: true };
+                    phaseDesc = `¡GOOOLAZO! Al ángulo superior.`;
+                    const nt = (t - 0.80) / 0.20;
                     netDistortion = Math.sin(nt * Math.PI * 4) * (1 - nt) * 16;
                 }
 
                 players = [
-                    { id: 'att1', name: aName, number: '11', isAttacker: true, x: wX, y: wY, color: attPrimary, secColor: attSecondary },
-                    { id: 'att2', name: sName, number: '9', isAttacker: true, isKey: true, x: sX, y: sY, color: attPrimary, secColor: attSecondary },
-                    { id: 'att3', name: 'Segundo 9', number: '19', isAttacker: true, x: lerp(560, 720, t * 0.6), y: 310, color: attPrimary, secColor: attSecondary },
-                    { id: 'att4', name: 'Volante', number: '8', isAttacker: true, x: lerp(450, 600, t * 0.5), y: 210, color: attPrimary, secColor: attSecondary },
-                    { id: 'gk', name: gkName, number: '1', isAttacker: false, isGK: true, x: gkX, y: gkY, color: '#eab308', secColor: '#0f172a' },
-                    { id: 'cb1', name: 'Central 1', number: '2', isAttacker: false, x: lerp(710, 755, t * 0.6), y: 250, color: defPrimary, secColor: defSecondary },
-                    { id: 'cb2', name: 'Central 2', number: '6', isAttacker: false, x: lerp(680, 730, t * 0.5), y: 310, color: defPrimary, secColor: defSecondary },
-                    { id: 'fb1', name: 'Lateral Der', number: '4', isAttacker: false, x: lerp(520, 730, easeOutQuad(t * 0.5)), y: 440, color: defPrimary, secColor: defSecondary },
-                    { id: 'fb2', name: 'Lateral Izq', number: '3', isAttacker: false, x: 670, y: 150, color: defPrimary, secColor: defSecondary },
+                    { id: 'att1', name: aName, isAttacker: true, x: wX, y: wY, color: attPrimary, secColor: attSecondary },
+                    { id: 'att2', name: sName, isAttacker: true, isKey: true, x: sX, y: sY, color: attPrimary, secColor: attSecondary },
+                    { id: 'att3', name: getAttSurname(2), isAttacker: true, x: lerp(580, 740, t * 0.6), y: lerp(180, 205, t), color: attPrimary, secColor: attSecondary },
+                    { id: 'att4', name: getAttSurname(3), isAttacker: true, x: lerp(480, 620, t * 0.5), y: 310, color: attPrimary, secColor: attSecondary },
+                    { id: 'gk', name: gkName, isAttacker: false, isGK: true, x: gkX, y: gkY, color: '#eab308', secColor: '#0f172a' },
+                    // Fullback marking winger
+                    { id: 'def1', name: getDefSurname(1), isAttacker: false, x: fbX, y: fbY, color: defPrimary, secColor: defSecondary },
+                    // Center Back battling with Scorer
+                    { id: 'def2', name: getDefSurname(2), isAttacker: false, x: lerp(700, 765, t * 0.6), y: lerp(260, 252, t), color: defPrimary, secColor: defSecondary },
+                    // Second Center Back covering far post
+                    { id: 'def3', name: getDefSurname(3), isAttacker: false, x: lerp(680, 740, t * 0.5), y: lerp(210, 215, t), color: defPrimary, secColor: defSecondary },
+                    // Opposite Fullback
+                    { id: 'def4', name: getDefSurname(4), isAttacker: false, x: lerp(630, 700, t * 0.4), y: 150, color: defPrimary, secColor: defSecondary },
                 ];
             }
 
-            // 3. TIKI-TAKA COLECTIVO (12-14 players on pitch!)
+            // 3. TIKI-TAKA COLECTIVO (12 players moving in unison!)
             else if (playType === 'TIKI_TAKA_TRIANGLE') {
                 playTitle = `🔄 Toque y Triangulación Colectiva`;
-                const m1X = 380, m1Y = 320;
-                const m2X = 520, m2Y = 220;
-                const aX = 640, aY = 360;
-                const sX = lerp(680, 790, easeOutQuad(t));
-                const sY = lerp(270, 260, t);
+                const m1X = lerp(400, 440, t * 0.6);
+                const m1Y = lerp(320, 310, t * 0.6);
+                const m2X = lerp(510, 550, t * 0.6);
+                const m2Y = lerp(230, 220, t * 0.6);
+                const aX = lerp(630, 670, t * 0.7);
+                const aY = lerp(350, 320, t * 0.7);
+                const sX = lerp(670, 790, easeOutQuad(t));
+                const sY = lerp(270, 255, t);
 
                 if (t < 0.22) {
                     const st = t / 0.22;
                     ball = { x: lerp(m1X, m2X, st), y: lerp(m1Y, m2Y, st), z: 0, inNet: false };
-                    phaseDesc = `Circulación paciente en la medular...`;
+                    phaseDesc = `Toque de primera en la medular...`;
                 } else if (t < 0.44) {
                     const st = (t - 0.22) / 0.22;
                     ball = { x: lerp(m2X, aX, st), y: lerp(m2Y, aY, st), z: 0, inNet: false };
-                    phaseDesc = `¡Toque rápido al primer palo desarticulando la marca!`;
+                    phaseDesc = `¡Pase entre líneas para ${aName}!`;
                 } else if (t < 0.68) {
                     const st = (t - 0.44) / 0.24;
-                    ball = { x: lerp(aX, 780, easeOutQuad(st)), y: lerp(aY, 260, easeOutQuad(st)), z: 0, inNet: false };
-                    phaseDesc = `¡Pared perfecta y pase de la muerte a ${sName}!`;
+                    ball = { x: lerp(aX, 780, easeOutQuad(st)), y: lerp(aY, 255, easeOutQuad(st)), z: 0, inNet: false };
+                    phaseDesc = `¡Pase de la muerte atrás para ${sName}!`;
                 } else if (t < 0.78) {
                     const st = (t - 0.68) / 0.10;
-                    ball = { x: lerp(780, 915, easeOutQuad(st)), y: lerp(260, 240, easeOutQuad(st)), z: lerp(0, 10, st), inNet: false };
-                    phaseDesc = `¡Empalme al fondo de la red sin oposición!`;
+                    ball = { x: lerp(780, 918, easeOutQuad(st)), y: lerp(255, 245, easeOutQuad(st)), z: lerp(0, 10, st), inNet: false };
+                    phaseDesc = `¡Remate de primera a la red!`;
                 } else {
-                    ball = { x: 918, y: 240, z: 4, inNet: true };
-                    phaseDesc = `¡GOLAZO COLECTIVO! Jugada de manual.`;
+                    ball = { x: 922, y: 245, z: 4, inNet: true };
+                    phaseDesc = `¡GOLAZO COLECTIVO! Fútbol total.`;
                     const nt = (t - 0.78) / 0.22;
                     netDistortion = Math.sin(nt * Math.PI * 4) * (1 - nt) * 15;
                 }
 
+                // Defensive block shifts laterally to close gaps
                 players = [
-                    { id: 'att1', name: 'Mediocentro', number: '5', isAttacker: true, x: m1X, y: m1Y, color: attPrimary, secColor: attSecondary },
-                    { id: 'att2', name: 'Interior', number: '8', isAttacker: true, x: m2X, y: m2Y, color: attPrimary, secColor: attSecondary },
-                    { id: 'att3', name: aName, number: '10', isAttacker: true, x: aX, y: aY, color: attPrimary, secColor: attSecondary },
-                    { id: 'att4', name: sName, number: '9', isAttacker: true, isKey: true, x: sX, y: sY, color: attPrimary, secColor: attSecondary },
-                    { id: 'att5', name: 'Extremo Izq', number: '11', isAttacker: true, x: 620, y: 140, color: attPrimary, secColor: attSecondary },
-                    { id: 'att6', name: 'Lateral', number: '4', isAttacker: true, x: 490, y: 440, color: attPrimary, secColor: attSecondary },
-                    { id: 'gk', name: gkName, number: '1', isAttacker: false, isGK: true, x: 890, y: 270, color: '#eab308', secColor: '#0f172a' },
-                    { id: 'cb1', name: 'Central 1', number: '2', isAttacker: false, x: 740, y: 220, color: defPrimary, secColor: defSecondary },
-                    { id: 'cb2', name: 'Central 2', number: '6', isAttacker: false, x: 730, y: 310, color: defPrimary, secColor: defSecondary },
-                    { id: 'fb1', name: 'Marcador', number: '3', isAttacker: false, x: 670, y: 390, color: defPrimary, secColor: defSecondary },
-                    { id: 'dm1', name: 'Pivote Def', number: '5', isAttacker: false, x: 570, y: 270, color: defPrimary, secColor: defSecondary },
-                    { id: 'dm2', name: 'Contención', number: '8', isAttacker: false, x: 480, y: 230, color: defPrimary, secColor: defSecondary },
+                    { id: 'att1', name: getAttSurname(2), isAttacker: true, x: m1X, y: m1Y, color: attPrimary, secColor: attSecondary },
+                    { id: 'att2', name: getAttSurname(3), isAttacker: true, x: m2X, y: m2Y, color: attPrimary, secColor: attSecondary },
+                    { id: 'att3', name: aName, isAttacker: true, x: aX, y: aY, color: attPrimary, secColor: attSecondary },
+                    { id: 'att4', name: sName, isAttacker: true, isKey: true, x: sX, y: sY, color: attPrimary, secColor: attSecondary },
+                    { id: 'att5', name: getAttSurname(4), isAttacker: true, x: lerp(580, 690, t * 0.5), y: 150, color: attPrimary, secColor: attSecondary },
+                    { id: 'att6', name: getAttSurname(5), isAttacker: true, x: lerp(460, 540, t * 0.6), y: 440, color: attPrimary, secColor: attSecondary },
+                    { id: 'gk', name: gkName, isAttacker: false, isGK: true, x: lerp(885, 875, t * 0.5), y: lerp(270, 255, t * 0.7), color: '#eab308', secColor: '#0f172a' },
+                    // Defenders shifting as a coordinated unit
+                    { id: 'def1', name: getDefSurname(1), isAttacker: false, x: lerp(720, 755, t * 0.4), y: lerp(220, 235, t * 0.6), color: defPrimary, secColor: defSecondary },
+                    { id: 'def2', name: getDefSurname(2), isAttacker: false, x: lerp(710, 745, t * 0.5), y: lerp(300, 290, t * 0.6), color: defPrimary, secColor: defSecondary },
+                    { id: 'def3', name: getDefSurname(3), isAttacker: false, x: lerp(650, 685, t * 0.6), y: 380, color: defPrimary, secColor: defSecondary },
+                    { id: 'def4', name: getDefSurname(4), isAttacker: false, x: lerp(560, 590, t * 0.5), y: 260, color: defPrimary, secColor: defSecondary },
+                    { id: 'def5', name: getDefSurname(5), isAttacker: false, x: lerp(490, 520, t * 0.4), y: 210, color: defPrimary, secColor: defSecondary },
                 ];
             }
 
-            // 4. CORNER KICK HEADER (15 players in box!)
-            else if (playType === 'CORNER_KICK_HEADER') {
-                playTitle = `📐 Córner al Área y Frentazo en el Tumulto`;
-                const cornerX = 890, cornerY = 480;
-                let sX = 770, sY = 250;
-                if (t > 0.40) {
-                    sX = lerp(770, 810, easeOutQuad((t - 0.40) / 0.28));
-                    sY = lerp(250, 235, (t - 0.40) / 0.28);
-                }
-
-                if (t < 0.35) {
-                    ball = { x: cornerX - 10, y: cornerY - 10, z: 0, inNet: false };
-                    phaseDesc = `${aName} acomoda el balón en la esquina...`;
-                } else if (t < 0.68) {
-                    const st = (t - 0.35) / 0.33;
-                    ball = { x: lerp(cornerX, 810, st), y: lerp(cornerY, 235, easeOutQuad(st)), z: Math.sin(st * Math.PI) * 55, inNet: false };
-                    phaseDesc = `¡Centro cerrado con veneno a la olla!`;
-                } else if (t < 0.78) {
-                    const st = (t - 0.68) / 0.10;
-                    ball = { x: lerp(810, 915, easeOutQuad(st)), y: lerp(235, 215, easeOutQuad(st)), z: lerp(20, 10, st), inNet: false };
-                    phaseDesc = `¡${sName} anticipa a todos y mete el frentazo al arco!`;
-                } else {
-                    ball = { x: 918, y: 215, z: 8, inNet: true };
-                    phaseDesc = `¡GOOOOOL DE CÓRNER! Locura en el área.`;
-                    const nt = (t - 0.78) / 0.22;
-                    netDistortion = Math.sin(nt * Math.PI * 4) * (1 - nt) * 18;
-                }
-
-                players = [
-                    { id: 'att1', name: aName, number: '11', isAttacker: true, x: cornerX, y: cornerY, color: attPrimary, secColor: attSecondary },
-                    { id: 'att2', name: sName, number: '9', isAttacker: true, isKey: true, x: sX, y: sY, color: attPrimary, secColor: attSecondary },
-                    { id: 'att3', name: 'Central Atacante', number: '2', isAttacker: true, x: 790, y: 290, color: attPrimary, secColor: attSecondary },
-                    { id: 'att4', name: 'Espigado', number: '14', isAttacker: true, x: 830, y: 260, color: attPrimary, secColor: attSecondary },
-                    { id: 'att5', name: 'Reboteador', number: '8', isAttacker: true, x: 670, y: 270, color: attPrimary, secColor: attSecondary },
-                    { id: 'gk', name: gkName, number: '1', isAttacker: false, isGK: true, x: 890, y: 250, color: '#eab308', secColor: '#0f172a' },
-                    { id: 'cb1', name: 'Defensor 1', number: '2', isAttacker: false, x: 805, y: 240, color: defPrimary, secColor: defSecondary },
-                    { id: 'cb2', name: 'Defensor 2', number: '6', isAttacker: false, x: 790, y: 275, color: defPrimary, secColor: defSecondary },
-                    { id: 'cb3', name: 'Poste 1', number: '3', isAttacker: false, x: 890, y: 205, color: defPrimary, secColor: defSecondary },
-                    { id: 'cb4', name: 'Poste 2', number: '4', isAttacker: false, x: 890, y: 335, color: defPrimary, secColor: defSecondary },
-                    { id: 'cb5', name: 'Marca 1', number: '5', isAttacker: false, x: 820, y: 280, color: defPrimary, secColor: defSecondary },
-                    { id: 'cb6', name: 'Marca 2', number: '7', isAttacker: false, x: 835, y: 220, color: defPrimary, secColor: defSecondary },
-                    { id: 'cb7', name: 'Salida', number: '10', isAttacker: false, x: 660, y: 350, color: defPrimary, secColor: defSecondary },
-                ];
-            }
-
-            // 5. FREE KICK BEND (13 players with 4-man wall!)
+            // 4. FREE KICK BEND (13 players - Wall jumps, ball curves CLEANLY INSIDE the goalmouth!)
             else if (playType === 'FREE_KICK_BEND') {
                 playTitle = `🎯 Tiro Libre Maestro al Ángulo`;
-                const fkX = 580, fkY = 220;
-                let sX = lerp(550, 580, clamp(t / 0.35));
-                let sY = lerp(230, 220, clamp(t / 0.35));
+                const fkX = 590, fkY = 240;
+                
+                // Taker run-up
+                const sX = lerp(560, 590, clamp(t / 0.35));
+                const sY = lerp(250, 240, clamp(t / 0.35));
 
-                // 4-Man Defensive Wall jumps at shot
-                const wallJump = (t >= 0.35 && t <= 0.60) ? Math.sin(((t - 0.35) / 0.25) * Math.PI) * 12 : 0;
+                // 4-man defensive wall leaps at the kick
+                const wallJump = (t >= 0.35 && t <= 0.62) ? Math.sin(((t - 0.35) / 0.27) * Math.PI) * 14 : 0;
 
+                // Goalkeeper positioning and dive
+                let gkX = 885, gkY = 280;
+                if (t >= 0.38) {
+                    const st = (t - 0.38) / 0.32;
+                    gkX = lerp(885, 868, easeOutQuad(st));
+                    gkY = lerp(280, 230, easeOutQuad(st)); // dives up towards the shot
+                }
+
+                // Ball curves over the wall (at x=710, y=240, Z=28) and dips into (918, 226)
+                // Note: top post is at 205, so y = 226 is 21px INSIDE the top post!
                 if (t < 0.35) {
                     ball = { x: fkX, y: fkY, z: 0, inNet: false };
-                    phaseDesc = `${sName} mide los pasos y respira hondo...`;
-                } else if (t < 0.68) {
-                    const st = (t - 0.35) / 0.33;
+                    phaseDesc = `${sName} mide la barrera y se concentra...`;
+                } else if (t < 0.70) {
+                    const st = (t - 0.35) / 0.35;
                     ball = { 
-                        x: lerp(fkX, 915, easeOutQuad(st)), 
-                        y: lerp(fkY, 218, easeOutQuad(st)), 
+                        x: lerp(fkX, 918, easeOutQuad(st)), 
+                        y: lerp(fkY, 226, easeOutQuad(st)), 
                         z: Math.sin(st * Math.PI) * 32, 
                         inNet: false 
                     };
-                    phaseDesc = `¡SUPERÓ LA BARRERA CON UNA COMBA PERFECTA!`;
+                    phaseDesc = `¡SUPERÓ LA BARRERA CON EFECTO Y BAJA CON VENENO!`;
                 } else {
-                    ball = { x: 918, y: 218, z: 18, inNet: true };
-                    phaseDesc = `¡¡GOLAZO DE TIRO LIBRE!! ¡AL ÁNGULO!`;
-                    const nt = (t - 0.68) / 0.32;
+                    // Ball lands cleanly inside the goal
+                    ball = { x: 922, y: 226, z: 14, inNet: true };
+                    phaseDesc = `¡¡GOLAZO MONUMENTAL DE TIRO LIBRE!!`;
+                    const nt = (t - 0.70) / 0.30;
                     netDistortion = Math.sin(nt * Math.PI * 5) * (1 - nt) * 18;
                 }
 
                 players = [
-                    { id: 'att1', name: sName, number: '10', isAttacker: true, isKey: true, x: sX, y: sY, color: attPrimary, secColor: attSecondary },
-                    { id: 'att2', name: 'Distractor', number: '7', isAttacker: true, x: 570, y: 260, color: attPrimary, secColor: attSecondary },
-                    { id: 'att3', name: 'Cargador', number: '9', isAttacker: true, x: 740, y: 290, color: attPrimary, secColor: attSecondary },
-                    { id: 'gk', name: gkName, number: '1', isAttacker: false, isGK: true, x: lerp(890, 875, easeOutQuad(t * 0.7)), y: lerp(280, 225, easeOutQuad(t * 0.7)), color: '#eab308', secColor: '#0f172a' },
-                    // 4-Man Wall
-                    { id: 'w1', name: 'Barrera 1', number: '2', isAttacker: false, x: 690, y: 200 - wallJump, color: defPrimary, secColor: defSecondary },
-                    { id: 'w2', name: 'Barrera 2', number: '4', isAttacker: false, x: 690, y: 220 - wallJump, color: defPrimary, secColor: defSecondary },
-                    { id: 'w3', name: 'Barrera 3', number: '5', isAttacker: false, x: 690, y: 240 - wallJump, color: defPrimary, secColor: defSecondary },
-                    { id: 'w4', name: 'Barrera 4', number: '6', isAttacker: false, x: 690, y: 260 - wallJump, color: defPrimary, secColor: defSecondary },
-                    // Penalty box markers
-                    { id: 'cb1', name: 'Central', number: '3', isAttacker: false, x: 770, y: 280, color: defPrimary, secColor: defSecondary },
-                    { id: 'cb2', name: 'Lateral', number: '8', isAttacker: false, x: 780, y: 320, color: defPrimary, secColor: defSecondary },
+                    { id: 'att1', name: sName, isAttacker: true, isKey: true, x: sX, y: sY, color: attPrimary, secColor: attSecondary },
+                    { id: 'att2', name: getAttSurname(1), isAttacker: true, x: 580, y: 275, color: attPrimary, secColor: attSecondary },
+                    { id: 'att3', name: getAttSurname(2), isAttacker: true, x: lerp(720, 770, t * 0.5), y: 310, color: attPrimary, secColor: attSecondary },
+                    { id: 'att4', name: getAttSurname(3), isAttacker: true, x: lerp(680, 730, t * 0.6), y: 170, color: attPrimary, secColor: attSecondary },
+                    { id: 'gk', name: gkName, isAttacker: false, isGK: true, x: gkX, y: gkY, color: '#eab308', secColor: '#0f172a' },
+                    // 4-Man Defensive Wall that leaps together
+                    { id: 'w1', name: getDefSurname(1), isAttacker: false, x: 710, y: 215 - wallJump, color: defPrimary, secColor: defSecondary },
+                    { id: 'w2', name: getDefSurname(2), isAttacker: false, x: 710, y: 235 - wallJump, color: defPrimary, secColor: defSecondary },
+                    { id: 'w3', name: getDefSurname(3), isAttacker: false, x: 710, y: 255 - wallJump, color: defPrimary, secColor: defSecondary },
+                    { id: 'w4', name: getDefSurname(4), isAttacker: false, x: 710, y: 275 - wallJump, color: defPrimary, secColor: defSecondary },
+                    // In-box markers tracking runners
+                    { id: 'def5', name: getDefSurname(5), isAttacker: false, x: lerp(750, 780, t * 0.4), y: 295, color: defPrimary, secColor: defSecondary },
+                    { id: 'def6', name: getDefSurname(6), isAttacker: false, x: lerp(730, 760, t * 0.5), y: 185, color: defPrimary, secColor: defSecondary },
                 ];
             }
 
-            // 6. COUNTER ATTACK BLITZ (Costa a costa a máxima velocidad)
+            // 5. CORNER KICK HEADER (15 players in box, intense action)
+            else if (playType === 'CORNER_KICK_HEADER') {
+                playTitle = `📐 Córner al Área y Frentazo en el Tumulto`;
+                const cornerX = 885, cornerY = 475;
+                
+                let sX = 750, sY = 260;
+                if (t > 0.35) {
+                    sX = lerp(750, 805, easeOutQuad((t - 0.35) / 0.30));
+                    sY = lerp(260, 235, (t - 0.35) / 0.30);
+                }
+
+                if (t < 0.35) {
+                    ball = { x: cornerX - 8, y: cornerY - 8, z: 0, inNet: false };
+                    phaseDesc = `${aName} levanta el brazo y prepara el centro...`;
+                } else if (t < 0.68) {
+                    const st = (t - 0.35) / 0.33;
+                    ball = { x: lerp(cornerX, 805, st), y: lerp(cornerY, 235, easeOutQuad(st)), z: Math.sin(st * Math.PI) * 55, inNet: false };
+                    phaseDesc = `¡Centro cerrado con rosca al punto de penal!`;
+                } else if (t < 0.78) {
+                    const st = (t - 0.68) / 0.10;
+                    ball = { x: lerp(805, 918, easeOutQuad(st)), y: lerp(235, 222, easeOutQuad(st)), z: lerp(20, 10, st), inNet: false };
+                    phaseDesc = `¡${sName} anticipa de cabeza al primer palo!`;
+                } else {
+                    ball = { x: 922, y: 222, z: 8, inNet: true };
+                    phaseDesc = `¡GOOOOOL DE CÓRNER! Frentazo letal.`;
+                    const nt = (t - 0.78) / 0.22;
+                    netDistortion = Math.sin(nt * Math.PI * 4) * (1 - nt) * 18;
+                }
+
+                // 15 players packed in box, everyone jostling and shifting
+                players = [
+                    { id: 'att1', name: aName, isAttacker: true, x: cornerX, y: cornerY, color: attPrimary, secColor: attSecondary },
+                    { id: 'att2', name: sName, isAttacker: true, isKey: true, x: sX, y: sY, color: attPrimary, secColor: attSecondary },
+                    { id: 'att3', name: getAttSurname(2), isAttacker: true, x: lerp(770, 810, t * 0.5), y: 290, color: attPrimary, secColor: attSecondary },
+                    { id: 'att4', name: getAttSurname(3), isAttacker: true, x: lerp(810, 830, t * 0.4), y: 260, color: attPrimary, secColor: attSecondary },
+                    { id: 'att5', name: getAttSurname(4), isAttacker: true, x: lerp(660, 680, t * 0.3), y: 270, color: attPrimary, secColor: attSecondary },
+                    { id: 'gk', name: gkName, isAttacker: false, isGK: true, x: lerp(885, 865, t * 0.6), y: lerp(270, 245, t * 0.6), color: '#eab308', secColor: '#0f172a' },
+                    // Post defenders
+                    { id: 'def1', name: getDefSurname(1), isAttacker: false, x: 885, y: 215, color: defPrimary, secColor: defSecondary },
+                    { id: 'def2', name: getDefSurname(2), isAttacker: false, x: 885, y: 325, color: defPrimary, secColor: defSecondary },
+                    // Man markers
+                    { id: 'def3', name: getDefSurname(3), isAttacker: false, x: lerp(770, 800, t * 0.5), y: lerp(250, 242, t * 0.5), color: defPrimary, secColor: defSecondary },
+                    { id: 'def4', name: getDefSurname(4), isAttacker: false, x: lerp(785, 815, t * 0.4), y: 285, color: defPrimary, secColor: defSecondary },
+                    { id: 'def5', name: getDefSurname(5), isAttacker: false, x: 825, y: 275, color: defPrimary, secColor: defSecondary },
+                    { id: 'def6', name: getDefSurname(6), isAttacker: false, x: 835, y: 220, color: defPrimary, secColor: defSecondary },
+                    { id: 'def7', name: getDefSurname(7), isAttacker: false, x: 670, y: 340, color: defPrimary, secColor: defSecondary },
+                ];
+            }
+
+            // 6. COUNTER ATTACK BLITZ (Costa a costa con ritmo coordinado)
             else if (playType === 'COUNTER_ATTACK_BLITZ') {
-                playTitle = `⚡ Contragolpe Letal a Toda Velocidad`;
-                const speedT = easeOutQuad(t);
-                const sX = lerp(350, 780, speedT);
-                const sY = lerp(300, 260, speedT);
-                const wX = lerp(420, 830, speedT);
-                const wY = lerp(420, 360, speedT);
+                playTitle = `⚡ Contragolpe Letal de Costa a Costa`;
+                
+                // Realistic measured sprint speeds (smooth accelerations)
+                const sX = lerp(450, 770, easeOutQuad(t));
+                const sY = lerp(290, 260, t);
+                const wX = lerp(510, 790, easeOutQuad(t));
+                const wY = lerp(410, 370, t);
 
                 if (t < 0.40) {
                     ball = { x: wX + 10, y: wY, z: 0, inNet: false };
-                    phaseDesc = `¡Salida fulgurante tras recuperar la pelota!`;
-                } else if (t < 0.65) {
-                    const st = (t - 0.40) / 0.25;
-                    ball = { x: lerp(wX, sX + 20, st), y: lerp(wY, sY, st), z: 2, inNet: false };
-                    phaseDesc = `¡Pase rasante al segundo palo superando a los defensores!`;
-                } else if (t < 0.76) {
-                    const st = (t - 0.65) / 0.11;
-                    ball = { x: lerp(sX + 20, 915, easeOutQuad(st)), y: lerp(sY, 280, easeOutQuad(st)), z: lerp(0, 10, st), inNet: false };
-                    phaseDesc = `¡${sName} se barre y la manda a guardar!`;
+                    phaseDesc = `¡Transición fulminante a campo abierto!`;
+                } else if (t < 0.66) {
+                    const st = (t - 0.40) / 0.26;
+                    ball = { x: lerp(wX, sX + 15, st), y: lerp(wY, sY, st), z: 2, inNet: false };
+                    phaseDesc = `¡Centro rasante cruzado al segundo palo!`;
+                } else if (t < 0.78) {
+                    const st = (t - 0.66) / 0.12;
+                    ball = { x: lerp(sX + 15, 918, easeOutQuad(st)), y: lerp(sY, 280, easeOutQuad(st)), z: lerp(0, 10, st), inNet: false };
+                    phaseDesc = `¡${sName} se tira en plancha y la empuja a la red!`;
                 } else {
-                    ball = { x: 918, y: 280, z: 4, inNet: true };
-                    phaseDesc = `¡CONTRAGOLPE LETAL! Definición quirúrgica.`;
-                    const nt = (t - 0.76) / 0.24;
+                    ball = { x: 922, y: 280, z: 4, inNet: true };
+                    phaseDesc = `¡CONTRAGOLPE LETAL! Máxima eficacia.`;
+                    const nt = (t - 0.78) / 0.22;
                     netDistortion = Math.sin(nt * Math.PI * 4) * (1 - nt) * 16;
                 }
 
                 players = [
-                    { id: 'att1', name: aName, number: '7', isAttacker: true, x: wX, y: wY, color: attPrimary, secColor: attSecondary },
-                    { id: 'att2', name: sName, number: '9', isAttacker: true, isKey: true, x: sX, y: sY, color: attPrimary, secColor: attSecondary },
-                    { id: 'att3', name: 'Acompañante', number: '11', isAttacker: true, x: lerp(300, 680, speedT), y: 170, color: attPrimary, secColor: attSecondary },
-                    { id: 'gk', name: gkName, number: '1', isAttacker: false, isGK: true, x: 890, y: 270, color: '#eab308', secColor: '#0f172a' },
-                    { id: 'cb1', name: 'Defensor 1', number: '2', isAttacker: false, x: lerp(450, 770, speedT * 0.9), y: 240, color: defPrimary, secColor: defSecondary },
-                    { id: 'cb2', name: 'Defensor 2', number: '6', isAttacker: false, x: lerp(500, 790, speedT * 0.8), y: 310, color: defPrimary, secColor: defSecondary },
+                    { id: 'att1', name: aName, isAttacker: true, x: wX, y: wY, color: attPrimary, secColor: attSecondary },
+                    { id: 'att2', name: sName, isAttacker: true, isKey: true, x: sX, y: sY, color: attPrimary, secColor: attSecondary },
+                    { id: 'att3', name: getAttSurname(2), isAttacker: true, x: lerp(380, 680, easeOutQuad(t)), y: 170, color: attPrimary, secColor: attSecondary },
+                    { id: 'gk', name: gkName, isAttacker: false, isGK: true, x: lerp(885, 860, t * 0.6), y: 270, color: '#eab308', secColor: '#0f172a' },
+                    // Defenders running back in emergency retreat
+                    { id: 'def1', name: getDefSurname(1), isAttacker: false, x: lerp(520, 760, easeOutQuad(t * 0.95)), y: 245, color: defPrimary, secColor: defSecondary },
+                    { id: 'def2', name: getDefSurname(2), isAttacker: false, x: lerp(560, 780, easeOutQuad(t * 0.9)), y: 320, color: defPrimary, secColor: defSecondary },
+                    { id: 'def3', name: getDefSurname(3), isAttacker: false, x: lerp(480, 720, easeOutQuad(t * 0.85)), y: 190, color: defPrimary, secColor: defSecondary },
                 ];
             }
 
             // 7. SOLO DRIBBLE GOLAZO (Slalom individual)
             else if (playType === 'SOLO_DRIBBLE_GOLAZO') {
                 playTitle = `🌟 Obra de Arte Individual de ${sName}`;
-                let sX = 520, sY = 270;
+                let sX = 540, sY = 270;
                 if (t < 0.30) {
-                    sX = lerp(520, 630, t / 0.30);
+                    sX = lerp(540, 640, t / 0.30);
                     sY = lerp(270, 240, t / 0.30);
                 } else if (t < 0.60) {
-                    sX = lerp(630, 760, (t - 0.30) / 0.30);
-                    sY = lerp(240, 290, (t - 0.30) / 0.30); // slalom cut
+                    sX = lerp(640, 750, (t - 0.30) / 0.30);
+                    sY = lerp(240, 285, (t - 0.30) / 0.30);
                 } else if (t < 0.75) {
-                    sX = lerp(760, 830, (t - 0.60) / 0.15);
-                    sY = lerp(290, 250, (t - 0.60) / 0.15);
+                    sX = lerp(750, 830, (t - 0.60) / 0.15);
+                    sY = lerp(285, 255, (t - 0.60) / 0.15);
                 } else {
-                    sX = lerp(830, 870, (t - 0.75) / 0.25);
+                    sX = lerp(830, 860, (t - 0.75) / 0.25);
                 }
 
                 if (t < 0.30) {
@@ -546,23 +613,23 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
                     phaseDesc = `¡${sName} deja al primer marcador en el camino con una pisada!`;
                 } else if (t < 0.60) {
                     ball = { x: sX + 10, y: sY + 2, z: 0, inNet: false };
-                    phaseDesc = `¡Qué caño metió! ¡Pasa entre dos defensores!`;
+                    phaseDesc = `¡Qué caño! Pasa entre dos defensores rivales...`;
                 } else if (t < 0.74) {
                     ball = { x: sX + 12, y: sY + 2, z: 0, inNet: false };
-                    phaseDesc = `¡Elude al arquero que queda pagando en el piso!`;
+                    phaseDesc = `¡Elude a ${gkName} que queda en el camino!`;
                 } else {
                     const st = (t - 0.74) / 0.10;
-                    ball = { x: lerp(842, 915, clamp(st)), y: 250, z: 0, inNet: t >= 0.84 };
-                    phaseDesc = `¡GOLAZO MONUMENTAL! La empujó al arco vacío.`;
+                    ball = { x: lerp(842, 918, clamp(st)), y: 255, z: 0, inNet: t >= 0.84 };
+                    phaseDesc = `¡GOLAZO MONUMENTAL! Toque suave a la red.`;
                     if (t >= 0.84) netDistortion = Math.sin((t - 0.84) * 20) * 12;
                 }
 
                 players = [
-                    { id: 'att1', name: sName, number: '10', isAttacker: true, isKey: true, x: sX, y: sY, color: attPrimary, secColor: attSecondary },
-                    { id: 'gk', name: gkName, number: '1', isAttacker: false, isGK: true, x: lerp(890, 820, easeOutQuad(t * 0.6)), y: lerp(270, 280, t * 0.6), color: '#eab308', secColor: '#0f172a' },
-                    { id: 'cb1', name: 'Central 1', number: '2', isAttacker: false, x: lerp(640, 680, t * 0.3), y: 230, color: defPrimary, secColor: defSecondary },
-                    { id: 'cb2', name: 'Central 2', number: '6', isAttacker: false, x: 740, y: 270, color: defPrimary, secColor: defSecondary },
-                    { id: 'fb', name: 'Lateral', number: '3', isAttacker: false, x: 670, y: 340, color: defPrimary, secColor: defSecondary },
+                    { id: 'att1', name: sName, isAttacker: true, isKey: true, x: sX, y: sY, color: attPrimary, secColor: attSecondary },
+                    { id: 'gk', name: gkName, isAttacker: false, isGK: true, x: lerp(885, 810, easeOutQuad(t * 0.65)), y: lerp(270, 280, t * 0.65), color: '#eab308', secColor: '#0f172a' },
+                    { id: 'def1', name: getDefSurname(1), isAttacker: false, x: lerp(640, 670, t * 0.3), y: 235, color: defPrimary, secColor: defSecondary },
+                    { id: 'def2', name: getDefSurname(2), isAttacker: false, x: lerp(710, 745, t * 0.4), y: 275, color: defPrimary, secColor: defSecondary },
+                    { id: 'def3', name: getDefSurname(3), isAttacker: false, x: lerp(660, 710, t * 0.5), y: 340, color: defPrimary, secColor: defSecondary },
                 ];
             }
 
@@ -571,36 +638,36 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
                 playTitle = `💥 Cañonazo al Poste y Rebote Oportunista`;
                 if (t < 0.35) {
                     const st = t / 0.35;
-                    ball = { x: lerp(540, 890, easeInQuad(st)), y: lerp(290, 210, st), z: lerp(0, 30, st), inNet: false };
-                    phaseDesc = `¡Bombazo furibundo que se estrella en el travesaño!`;
+                    ball = { x: lerp(540, 885, easeInQuad(st)), y: lerp(290, 208, st), z: lerp(0, 30, st), inNet: false };
+                    phaseDesc = `¡Bombazo furibundo que revienta el travesaño!`;
                 } else if (t < 0.65) {
                     const st = (t - 0.35) / 0.30;
-                    ball = { x: lerp(890, 770, easeOutQuad(st)), y: lerp(210, 270, st), z: lerp(30, 8, st), inNet: false };
+                    ball = { x: lerp(885, 760, easeOutQuad(st)), y: lerp(208, 270, st), z: lerp(30, 8, st), inNet: false };
                     phaseDesc = `¡El balón sale disparado al corazón del área!`;
                 } else if (t < 0.78) {
                     const st = (t - 0.65) / 0.13;
-                    ball = { x: lerp(770, 915, easeOutQuad(st)), y: lerp(270, 280, st), z: lerp(8, 12, st), inNet: false };
+                    ball = { x: lerp(760, 918, easeOutQuad(st)), y: lerp(270, 280, st), z: lerp(8, 12, st), inNet: false };
                     phaseDesc = `¡${sName} captura el rebote y fusila de primera!`;
                 } else {
-                    ball = { x: 918, y: 280, z: 8, inNet: true };
-                    phaseDesc = `¡GOOOOOL! Atento para capturar la segunda jugada.`;
+                    ball = { x: 922, y: 280, z: 8, inNet: true };
+                    phaseDesc = `¡GOOOOOL! Atento para cazar la segunda jugada.`;
                     const nt = (t - 0.78) / 0.22;
                     netDistortion = Math.sin(nt * Math.PI * 4) * (1 - nt) * 16;
                 }
 
                 players = [
-                    { id: 'att1', name: aName, number: '8', isAttacker: true, x: 540, y: 290, color: attPrimary, secColor: attSecondary },
-                    { id: 'att2', name: sName, number: '9', isAttacker: true, isKey: true, x: lerp(680, 770, easeOutQuad(t)), y: lerp(250, 270, t), color: attPrimary, secColor: attSecondary },
-                    { id: 'gk', name: gkName, number: '1', isAttacker: false, isGK: true, x: 890, y: lerp(230, 270, t), color: '#eab308', secColor: '#0f172a' },
-                    { id: 'cb1', name: 'Central 1', number: '2', isAttacker: false, x: 760, y: 230, color: defPrimary, secColor: defSecondary },
-                    { id: 'cb2', name: 'Central 2', number: '6', isAttacker: false, x: 780, y: 320, color: defPrimary, secColor: defSecondary },
+                    { id: 'att1', name: aName, isAttacker: true, x: 540, y: 290, color: attPrimary, secColor: attSecondary },
+                    { id: 'att2', name: sName, isAttacker: true, isKey: true, x: lerp(680, 765, easeOutQuad(t)), y: lerp(250, 270, t), color: attPrimary, secColor: attSecondary },
+                    { id: 'gk', name: gkName, isAttacker: false, isGK: true, x: 885, y: lerp(230, 270, t), color: '#eab308', secColor: '#0f172a' },
+                    { id: 'def1', name: getDefSurname(1), isAttacker: false, x: lerp(740, 770, t * 0.5), y: 230, color: defPrimary, secColor: defSecondary },
+                    { id: 'def2', name: getDefSurname(2), isAttacker: false, x: lerp(760, 780, t * 0.5), y: 320, color: defPrimary, secColor: defSecondary },
                 ];
             }
 
             // 9. LONG RANGE STRIKE
             else if (playType === 'LONG_RANGE_STRIKE') {
                 playTitle = `🚀 Misil Teledirigido desde Fuera del Área`;
-                const sX = lerp(510, 600, easeOutQuad(clamp(t / 0.38)));
+                const sX = lerp(530, 610, easeOutQuad(clamp(t / 0.38)));
                 const sY = lerp(300, 260, clamp(t / 0.38));
 
                 if (t < 0.38) {
@@ -608,21 +675,21 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
                     phaseDesc = `${sName} se acomoda el balón para sacar el latigazo...`;
                 } else if (t < 0.65) {
                     const st = (t - 0.38) / 0.27;
-                    ball = { x: lerp(612, 915, easeInQuad(st)), y: lerp(264, 218, easeOutQuad(st)), z: lerp(0, 26, st), inNet: false };
+                    ball = { x: lerp(622, 918, easeInQuad(st)), y: lerp(264, 222, easeOutQuad(st)), z: lerp(0, 24, st), inNet: false };
                     phaseDesc = `¡¡QUÉ BOMBAZO TREMENDO AL ÁNGULO!!`;
                 } else {
-                    ball = { x: 918, y: 218, z: 22, inNet: true };
+                    ball = { x: 922, y: 222, z: 20, inNet: true };
                     phaseDesc = `¡¡GOLAZO MONUMENTAL!! Inalcanzable.`;
                     const nt = (t - 0.65) / 0.35;
                     netDistortion = Math.sin(nt * Math.PI * 5) * (1 - nt) * 18;
                 }
 
                 players = [
-                    { id: 'att1', name: sName, number: '10', isAttacker: true, isKey: true, x: sX, y: sY, color: attPrimary, secColor: attSecondary },
-                    { id: 'att2', name: 'Delantero', number: '9', isAttacker: true, x: 710, y: 190, color: attPrimary, secColor: attSecondary },
-                    { id: 'gk', name: gkName, number: '1', isAttacker: false, isGK: true, x: lerp(890, 865, easeOutQuad(t * 0.7)), y: lerp(270, 220, easeOutQuad(t * 0.7)), color: '#eab308', secColor: '#0f172a' },
-                    { id: 'cb1', name: 'Central 1', number: '2', isAttacker: false, x: 670, y: 255, color: defPrimary, secColor: defSecondary },
-                    { id: 'cb2', name: 'Central 2', number: '6', isAttacker: false, x: 710, y: 320, color: defPrimary, secColor: defSecondary },
+                    { id: 'att1', name: sName, isAttacker: true, isKey: true, x: sX, y: sY, color: attPrimary, secColor: attSecondary },
+                    { id: 'att2', name: getAttSurname(1), isAttacker: true, x: lerp(680, 720, t * 0.4), y: 190, color: attPrimary, secColor: attSecondary },
+                    { id: 'gk', name: gkName, isAttacker: false, isGK: true, x: lerp(885, 860, easeOutQuad(t * 0.7)), y: lerp(270, 224, easeOutQuad(t * 0.7)), color: '#eab308', secColor: '#0f172a' },
+                    { id: 'def1', name: getDefSurname(1), isAttacker: false, x: lerp(640, 680, t * 0.6), y: 255, color: defPrimary, secColor: defSecondary },
+                    { id: 'def2', name: getDefSurname(2), isAttacker: false, x: lerp(690, 720, t * 0.4), y: 310, color: defPrimary, secColor: defSecondary },
                 ];
             }
 
@@ -630,12 +697,12 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
             else if (playType === 'PENALTY_KICK') {
                 playTitle = `🎯 Definición Desde los Doce Pasos`;
                 const runUp = clamp(t / 0.38);
-                const sX = lerp(680, 755, easeInQuad(runUp));
+                const sX = lerp(690, 755, easeInQuad(runUp));
                 const sY = 270;
 
-                let gkX = 890, gkY = 270;
+                let gkX = 885, gkY = 270;
                 if (t >= 0.35 && t < 0.65) {
-                    gkX = lerp(890, 875, easeOutQuad((t - 0.35) / 0.30));
+                    gkX = lerp(885, 870, easeOutQuad((t - 0.35) / 0.30));
                     gkY = lerp(270, 315, easeOutQuad((t - 0.35) / 0.30));
                 }
 
@@ -644,33 +711,33 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
                     phaseDesc = `${sName} toma carrera concentrado...`;
                 } else if (t < 0.60) {
                     const st = (t - 0.38) / 0.22;
-                    ball = { x: lerp(760, 915, easeOutQuad(st)), y: lerp(270, 225, easeOutQuad(st)), z: lerp(0, 15, st), inNet: false };
+                    ball = { x: lerp(760, 918, easeOutQuad(st)), y: lerp(270, 226, easeOutQuad(st)), z: lerp(0, 14, st), inNet: false };
                     phaseDesc = `¡Engañó por completo al guardameta!`;
                 } else {
-                    ball = { x: 918, y: 225, z: 10, inNet: true };
+                    ball = { x: 922, y: 226, z: 10, inNet: true };
                     phaseDesc = `¡GOOOOOL DE PENAL! Gran categoría.`;
                     const nt = (t - 0.60) / 0.40;
                     netDistortion = Math.sin(nt * Math.PI * 4) * (1 - nt) * 15;
                 }
 
                 players = [
-                    { id: 'att1', name: sName, number: '9', isAttacker: true, isKey: true, x: sX, y: sY, color: attPrimary, secColor: attSecondary },
-                    { id: 'gk', name: gkName, number: '1', isAttacker: false, isGK: true, x: gkX, y: gkY, color: '#eab308', secColor: '#0f172a' },
-                    { id: 'cb1', name: 'Defensor 1', number: '2', isAttacker: false, x: 630, y: 220, color: defPrimary, secColor: defSecondary },
-                    { id: 'cb2', name: 'Defensor 2', number: '6', isAttacker: false, x: 630, y: 320, color: defPrimary, secColor: defSecondary },
-                    { id: 'att2', name: 'Compañero', number: '8', isAttacker: true, x: 620, y: 270, color: attPrimary, secColor: attSecondary },
+                    { id: 'att1', name: sName, isAttacker: true, isKey: true, x: sX, y: sY, color: attPrimary, secColor: attSecondary },
+                    { id: 'gk', name: gkName, isAttacker: false, isGK: true, x: gkX, y: gkY, color: '#eab308', secColor: '#0f172a' },
+                    { id: 'def1', name: getDefSurname(1), isAttacker: false, x: 630, y: 220, color: defPrimary, secColor: defSecondary },
+                    { id: 'def2', name: getDefSurname(2), isAttacker: false, x: 630, y: 320, color: defPrimary, secColor: defSecondary },
+                    { id: 'att2', name: getAttSurname(1), isAttacker: true, x: 620, y: 270, color: attPrimary, secColor: attSecondary },
                 ];
             }
 
             // 11. MIRACLE SAVE
             else {
                 playTitle = `🧤 ¡Paradón Impresionante de ${gkName}!`;
-                const aX = lerp(640, 750, easeOutQuad(clamp(t / 0.38)));
+                const aX = lerp(650, 750, easeOutQuad(clamp(t / 0.38)));
                 const aY = 250;
 
-                let gkX = 890, gkY = 270;
+                let gkX = 885, gkY = 270;
                 if (t >= 0.38 && t < 0.60) {
-                    gkX = lerp(890, 860, easeOutQuad((t - 0.38) / 0.22));
+                    gkX = lerp(885, 860, easeOutQuad((t - 0.38) / 0.22));
                     gkY = lerp(270, 225, easeOutQuad((t - 0.38) / 0.22));
                 }
 
@@ -683,22 +750,22 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
                     phaseDesc = `¡Vuela ${gkName} estirando la mano derecha!`;
                 } else if (t < 0.75) {
                     const st = (t - 0.55) / 0.20;
-                    ball = { x: lerp(862, 895, st), y: lerp(225, 205, easeOutQuad(st)), z: lerp(18, 25, st), inNet: false };
+                    ball = { x: lerp(862, 885, st), y: lerp(225, 205, easeOutQuad(st)), z: lerp(18, 25, st), inNet: false };
                     phaseDesc = `¡¡MANOTAZO MILAGROSO!! ¡EL BALÓN PEGA EN EL POSTE!`;
                 } else {
                     const st = (t - 0.75) / 0.25;
-                    ball = { x: lerp(895, 820, easeOutQuad(st)), y: lerp(205, 140, easeOutQuad(st)), z: lerp(25, 0, st), inNet: false };
+                    ball = { x: lerp(885, 810, easeOutQuad(st)), y: lerp(205, 140, easeOutQuad(st)), z: lerp(25, 0, st), inNet: false };
                     phaseDesc = `¡Salvada antológica para evitar el gol!`;
                 }
 
                 players = [
-                    { id: 'att1', name: sName, number: '9', isAttacker: true, isKey: true, x: aX, y: aY, color: attPrimary, secColor: attSecondary },
-                    { id: 'gk', name: gkName, number: '1', isAttacker: false, isGK: true, isKey: true, x: gkX, y: gkY, color: '#eab308', secColor: '#0f172a' },
-                    { id: 'cb1', name: 'Central 1', number: '2', isAttacker: false, x: 710, y: 280, color: defPrimary, secColor: defSecondary },
+                    { id: 'att1', name: sName, isAttacker: true, isKey: true, x: aX, y: aY, color: attPrimary, secColor: attSecondary },
+                    { id: 'gk', name: gkName, isAttacker: false, isGK: true, isKey: true, x: gkX, y: gkY, color: '#eab308', secColor: '#0f172a' },
+                    { id: 'def1', name: getDefSurname(1), isAttacker: false, x: lerp(700, 725, t * 0.5), y: 280, color: defPrimary, secColor: defSecondary },
                 ];
             }
 
-            // Update Subtitle & Phase Text
+            // Update Subtitle & Phase Text directly in DOM
             if (subtitleRef.current && subtitleRef.current.textContent !== playTitle) {
                 subtitleRef.current.textContent = playTitle;
             }
@@ -712,10 +779,10 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
                 setGoalBannerVisible(true);
                 const sparkColors = ['#facc15', '#f59e0b', '#ffffff', '#38bdf8', '#4ade80'];
                 for (let i = 0; i < 40; i++) {
-                    const angle = (Math.PI * 0.8) + (Math.random() * Math.PI * 0.4); // shoots out from goalmouth
+                    const angle = (Math.PI * 0.8) + (Math.random() * Math.PI * 0.4);
                     const speed = 3 + Math.random() * 8;
                     particlesRef.current.push({
-                        x: 890,
+                        x: 885,
                         y: 270 + (Math.random() * 80 - 40),
                         vx: Math.cos(angle) * speed,
                         vy: Math.sin(angle) * speed,
@@ -727,19 +794,18 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
             }
 
             // -------------------------------------------------------------
-            // CANVAS DRAWING (Hardware-Accelerated Zero DOM Overhead)
+            // CANVAS DRAWING (Ultra Fast, Zero DOM / React Overhead)
             // -------------------------------------------------------------
-            // 1. Clear & Background
             ctx.clearRect(0, 0, width, height);
 
-            // Alternating grass stripes
+            // 1. Lush Pitch Lawn with vertical bands
             const stripeWidth = 48;
             for (let x = 0; x < width; x += stripeWidth) {
                 ctx.fillStyle = (Math.floor(x / stripeWidth) % 2 === 0) ? '#11401f' : '#144b25';
                 ctx.fillRect(x, 0, stripeWidth, height);
             }
 
-            // Subtle pitch vignette
+            // Radial stadium lighting
             const grad = ctx.createRadialGradient(width / 2, height / 2, 100, width / 2, height / 2, width * 0.6);
             grad.addColorStop(0, 'rgba(255, 255, 255, 0.05)');
             grad.addColorStop(1, 'rgba(0, 0, 0, 0.55)');
@@ -751,7 +817,7 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
             ctx.lineWidth = 3;
 
             // Outer boundary
-            ctx.strokeRect(40, 30, 855, 480);
+            ctx.strokeRect(40, 30, 845, 480);
 
             // Midfield line & center circle
             ctx.beginPath();
@@ -763,17 +829,16 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
             ctx.arc(140, 270, 85, 0, Math.PI * 2);
             ctx.stroke();
 
-            // Center spot
             ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
             ctx.beginPath();
             ctx.arc(140, 270, 4, 0, Math.PI * 2);
             ctx.fill();
 
             // Penalty Area (18-yard box)
-            ctx.strokeRect(675, 95, 220, 350);
+            ctx.strokeRect(665, 95, 220, 350);
 
             // 6-yard box
-            ctx.strokeRect(810, 185, 85, 170);
+            ctx.strokeRect(800, 185, 85, 170);
 
             // Penalty Spot
             ctx.beginPath();
@@ -787,36 +852,37 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
 
             // Corner Arcs
             ctx.beginPath();
-            ctx.arc(895, 30, 20, Math.PI * 0.5, Math.PI);
+            ctx.arc(885, 30, 20, Math.PI * 0.5, Math.PI);
             ctx.stroke();
             ctx.beginPath();
-            ctx.arc(895, 510, 20, Math.PI, Math.PI * 1.5);
+            ctx.arc(885, 510, 20, Math.PI, Math.PI * 1.5);
             ctx.stroke();
 
             // 3. Goal Net with Physics Distortion
-            const netBackX = 935 + netDistortion;
+            // Post top: 205, Post bottom: 335. Net extends to x = 940
+            const netBackX = 940 + netDistortion;
             ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
             ctx.beginPath();
-            ctx.moveTo(895, 210);
-            ctx.lineTo(netBackX, 215);
-            ctx.lineTo(netBackX, 325);
-            ctx.lineTo(895, 330);
+            ctx.moveTo(885, 205);
+            ctx.lineTo(netBackX, 212);
+            ctx.lineTo(netBackX, 328);
+            ctx.lineTo(885, 335);
             ctx.closePath();
             ctx.fill();
 
             // Net Grid Lines
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
             ctx.lineWidth = 1;
-            for (let ny = 210; ny <= 330; ny += 10) {
+            for (let ny = 205; ny <= 335; ny += 10) {
                 ctx.beginPath();
-                ctx.moveTo(895, ny);
+                ctx.moveTo(885, ny);
                 ctx.lineTo(netBackX, ny + (ny - 270) * 0.05);
                 ctx.stroke();
             }
-            for (let nx = 895; nx <= netBackX; nx += 8) {
+            for (let nx = 885; nx <= netBackX; nx += 8) {
                 ctx.beginPath();
-                ctx.moveTo(nx, 210);
-                ctx.lineTo(nx, 330);
+                ctx.moveTo(nx, 205);
+                ctx.lineTo(nx, 335);
                 ctx.stroke();
             }
 
@@ -824,22 +890,22 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
             ctx.strokeStyle = '#ffffff';
             ctx.lineWidth = 5;
             ctx.beginPath();
-            ctx.moveTo(895, 210);
-            ctx.lineTo(895, 330);
+            ctx.moveTo(885, 205);
+            ctx.lineTo(885, 335);
             ctx.stroke();
 
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
-            ctx.arc(895, 210, 4, 0, Math.PI * 2);
-            ctx.arc(895, 330, 4, 0, Math.PI * 2);
+            ctx.arc(885, 205, 4, 0, Math.PI * 2);
+            ctx.arc(885, 335, 4, 0, Math.PI * 2);
             ctx.fill();
 
-            // 4. Draw Players (Tokens / Chips)
+            // 4. Draw Players (CLEAN MODERN TOKENS - NO NUMBERS!)
             for (let i = 0; i < players.length; i++) {
                 const p = players[i];
                 const r = 16;
 
-                // Native Drop Shadow circle (Ultra Fast vs SVG Filters!)
+                // Native Drop Shadow circle
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.38)';
                 ctx.beginPath();
                 ctx.arc(p.x, p.y + 4, r + 1, 0, Math.PI * 2);
@@ -854,13 +920,13 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
                     ctx.stroke();
                 }
 
-                // Main Token Body
+                // Main Token Body (team primary color)
                 ctx.fillStyle = p.color;
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Border
+                // Token Border (team secondary color)
                 ctx.strokeStyle = p.secColor;
                 ctx.lineWidth = 2.5;
                 ctx.stroke();
@@ -872,19 +938,36 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
                 ctx.arc(p.x, p.y - 3, r - 3, Math.PI * 0.9, Math.PI * 2.1);
                 ctx.stroke();
 
-                // Jersey Number / GK Badge
-                ctx.fillStyle = p.isGK ? '#0f172a' : p.secColor;
-                ctx.font = 'bold 11px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(p.isGK ? '🧤' : p.number, p.x, p.y);
+                // Clean Modern Token Core (NO NUMBERS AS REQUESTED!)
+                if (p.isGK) {
+                    // Goalkeeper distinctive icon
+                    ctx.fillStyle = '#0f172a';
+                    ctx.font = '12px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('🧤', p.x, p.y);
+                } else {
+                    // Sleek concentric inner circle
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+                    ctx.lineWidth = 1.2;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, r - 6, 0, Math.PI * 2);
+                    ctx.stroke();
 
-                // Player Surname Floating Pill
-                ctx.fillStyle = 'rgba(8, 12, 20, 0.85)';
+                    // Subtle inner accent core dot
+                    ctx.fillStyle = p.secColor;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Player Surname Floating Pill (100% REAL PLAYER SURNAMES)
+                ctx.fillStyle = 'rgba(6, 10, 18, 0.88)';
                 ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
                 ctx.lineWidth = 0.8;
+                ctx.font = 'bold 9px sans-serif';
                 const textWidth = ctx.measureText(p.name).width;
-                const pillW = Math.max(48, textWidth + 10);
+                const pillW = Math.max(48, textWidth + 12);
                 const pillH = 14;
                 const pillX = p.x - pillW / 2;
                 const pillY = p.y + r + 3;
@@ -895,16 +978,16 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
                 ctx.stroke();
 
                 ctx.fillStyle = '#f8fafc';
-                ctx.font = 'bold 9px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
                 ctx.fillText(p.name, p.x, pillY + 7);
             }
 
             // 5. Ball Trail & Ball Physics
-            // Update Ball Trail buffer
             ballTrailRef.current.push({ x: ball.x, y: ball.y - ball.z, alpha: 1 });
             if (ballTrailRef.current.length > 6) ballTrailRef.current.shift();
 
-            // Draw motion trail
+            // Motion trail
             for (let i = 0; i < ballTrailRef.current.length - 1; i++) {
                 const pt = ballTrailRef.current[i];
                 ctx.fillStyle = `rgba(255, 255, 255, ${0.1 + (i / ballTrailRef.current.length) * 0.35})`;
@@ -913,7 +996,7 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
                 ctx.fill();
             }
 
-            // Ball Shadow (moves and scales with altitude Z)
+            // Ball Shadow (moves with altitude Z)
             const shadowRadius = Math.max(3, 7 + ball.z * 0.2);
             ctx.fillStyle = `rgba(0, 0, 0, ${Math.max(0.15, 0.45 - ball.z * 0.008)})`;
             ctx.beginPath();
@@ -924,7 +1007,6 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
             const bY = ball.y - ball.z;
             const bScale = 1 + ball.z * 0.02;
 
-            // Ball glow if aerial
             if (ball.z > 8) {
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
                 ctx.beginPath();
@@ -941,7 +1023,7 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
             ctx.lineWidth = 0.8;
             ctx.stroke();
 
-            // Ball pentagon pattern
+            // Pentagon pattern on ball
             ctx.fillStyle = '#0f172a';
             ctx.beginPath();
             ctx.arc(ball.x, bY, 2.2 * bScale, 0, Math.PI * 2);
@@ -1127,7 +1209,7 @@ export const MatchHighlight2D: React.FC<MatchHighlight2DProps> = ({
 
                     {/* Progress Bar & Media Controls */}
                     <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-                        {/* Progress Scrubber (Zero React Re-render direct DOM ref) */}
+                        {/* Progress Scrubber */}
                         <div className="flex-1 sm:w-48 flex items-center gap-2">
                             <div className="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden">
                                 <div 
