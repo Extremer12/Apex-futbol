@@ -40,18 +40,21 @@ interface ProjectedRound {
 }
 
 const ROUND_NAME_MAP: Record<string, string> = {
-    'Round of 32': 'Dieciseisavos',
+    'Round of 32': 'Dieciseisavos de Final',
+    'Round 1': 'Dieciseisavos de Final',
     'Playoffs 16vos': 'Playoffs 16vos',
     'Playoff 16vos': 'Playoffs 16vos',
-    'Dieciseisavos de Final': 'Dieciseisavos',
-    'Round 1': '16vos de Final',
+    'Dieciseisavos de Final': 'Dieciseisavos de Final',
+    'Dieciseisavos': 'Dieciseisavos de Final',
     'Round of 16': 'Octavos de Final',
     'Octavos de Final': 'Octavos de Final',
     'Octavos': 'Octavos de Final',
     'Quarter-Final': 'Cuartos de Final',
+    'Quarterfinals': 'Cuartos de Final',
     'Cuartos de Final': 'Cuartos de Final',
     'Cuartos': 'Cuartos de Final',
     'Semi-Final': 'Semifinales',
+    'Semifinals': 'Semifinales',
     'Semifinales': 'Semifinales',
     'Semis': 'Semifinales',
     'Final': 'Gran Final',
@@ -131,7 +134,8 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = React.memo(({
                     expectedMatchCount = Math.max(1, Math.floor(numInitialFixtures / Math.pow(2, rIdx)));
                 }
             }
-            const roundName = actualRound?.name || roundTitles[rIdx] || `Ronda ${rIdx + 1}`;
+            const isGenericName = !actualRound?.name || /^r(ound|onda)\s*\d+$/i.test(actualRound.name.trim());
+            const roundName = (!isGenericName && actualRound?.name) ? actualRound.name : (roundTitles[rIdx] || actualRound?.name || `Ronda ${rIdx + 1}`);
             const roundMatches: ProjectedMatch[] = [];
 
             for (let mIdx = 0; mIdx < expectedMatchCount; mIdx++) {
@@ -594,12 +598,51 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = React.memo(({
 });
 
 const formatCompactRoundName = (name: string): string => {
-    const lower = name.toLowerCase();
-    if (lower.includes('final') && !lower.includes('semi') && !lower.includes('cuart')) return 'Final';
-    if (lower.includes('semi')) return 'Semis';
-    if (lower.includes('cuart') || lower.includes('quarter')) return 'Cuartos';
-    if (lower.includes('16') || lower.includes('octav')) return 'Octavos';
-    if (lower.includes('32') || lower.includes('dieciseis') || lower.includes('16vos') || lower.includes('playoff')) return '16vos';
+    const lower = name.toLowerCase().trim();
+
+    // 1. Playoff / 16vos / 32 teams FIRST
+    if (
+        lower.includes('32') || 
+        lower.includes('dieciseis') || 
+        lower.includes('16vo') || 
+        lower.includes('playoff')
+    ) {
+        return '16vos';
+    }
+
+    // 2. Octavos / Round of 16 / 8vos
+    if (
+        lower.includes('octav') || 
+        lower.includes('round of 16') || 
+        lower.includes('8vo')
+    ) {
+        return 'Octavos';
+    }
+
+    // 3. Cuartos / Quarter / 4tos
+    if (
+        lower.includes('cuart') || 
+        lower.includes('quarter') || 
+        lower.includes('4to')
+    ) {
+        return 'Cuartos';
+    }
+
+    // 4. Semifinales / Semi
+    if (lower.includes('semi')) {
+        return 'Semis';
+    }
+
+    // 5. Final: ONLY if it's the actual final and not octavos/cuartos/dieciseisavos
+    if (
+        lower === 'final' || 
+        lower === 'gran final' || 
+        lower.includes('intercontinental') ||
+        (lower.includes('final') && !lower.includes('de final'))
+    ) {
+        return 'Final';
+    }
+
     return name;
 };
 

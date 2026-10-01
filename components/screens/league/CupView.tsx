@@ -148,6 +148,38 @@ export const CupView: React.FC<CupViewProps> = React.memo(({
         };
     }, [gameState.schedule, isCompetitionMatch]);
 
+    // Helper mapping for official stage titles
+    const roundNameMap: Record<string, string> = useMemo(() => ({
+        'Final': 'Gran Final',
+        'Semi-Final': 'Semifinales',
+        'Quarter-Final': 'Cuartos de Final',
+        'Round of 16': 'Octavos de Final',
+        'Round of 32': 'Dieciseisavos de Final',
+        'Playoffs 16vos': 'Playoffs 16vos',
+        'Playoff 16vos': 'Playoffs 16vos',
+        'Final Intercontinental': 'Duelo por la Gloria Eterna'
+    }), []);
+
+    const resolveRoundTitle = useCallback((rawName?: string, fixtureCount?: number): string => {
+        if (!rawName) return 'Fase Eliminatoria';
+        const trimmed = rawName.trim();
+        if (roundNameMap[trimmed]) return roundNameMap[trimmed];
+
+        const lower = trimmed.toLowerCase();
+        if (lower.startsWith('round 1') || lower.startsWith('ronda 1')) {
+            if (fixtureCount && fixtureCount >= 16) return 'Dieciseisavos de Final';
+            if (fixtureCount && fixtureCount >= 8) return 'Octavos de Final';
+            if (fixtureCount && fixtureCount >= 4) return 'Cuartos de Final';
+            return 'Primera Ronda';
+        }
+        if (lower.includes('32') || lower.includes('dieciseis') || lower.includes('16vo') || lower.includes('playoff')) return 'Dieciseisavos de Final';
+        if (lower.includes('octav') || lower.includes('16') || lower.includes('8vo')) return 'Octavos de Final';
+        if (lower.includes('cuart') || lower.includes('quarter') || lower.includes('4to')) return 'Cuartos de Final';
+        if (lower.includes('semi')) return 'Semifinales';
+        if (lower.includes('final')) return 'Gran Final';
+        return trimmed;
+    }, [roundNameMap]);
+
     // Extract available stage groupings for the Fixtures tab with real scheduled results
     const stages = useMemo(() => {
         const stageList: { id: string; name: string; matches: Match[] }[] = [];
@@ -186,14 +218,15 @@ export const CupView: React.FC<CupViewProps> = React.memo(({
         // Add Knockout rounds (including BOTH Ida and Vuelta fixtures)
         if (cup.rounds && cup.rounds.length > 0) {
             cup.rounds.forEach((r, idx) => {
-                const leg1Matches = (r.fixtures || []).map(f => syncFixtureWithSchedule({ ...f, leg: f.leg || 1 }, r.name));
-                const leg2Matches = (r.secondLegFixtures || []).map(f => syncFixtureWithSchedule({ ...f, leg: 2 }, r.name));
+                const stageName = resolveRoundTitle(r.name, r.fixtures?.length);
+                const leg1Matches = (r.fixtures || []).map(f => syncFixtureWithSchedule({ ...f, leg: f.leg || 1 }, stageName));
+                const leg2Matches = (r.secondLegFixtures || []).map(f => syncFixtureWithSchedule({ ...f, leg: 2 }, stageName));
                 const combinedMatches = [...leg1Matches, ...leg2Matches];
 
                 if (combinedMatches.length > 0) {
                     stageList.push({
                         id: `round_${idx}`,
-                        name: r.name,
+                        name: stageName,
                         matches: combinedMatches
                     });
                 }
@@ -201,7 +234,7 @@ export const CupView: React.FC<CupViewProps> = React.memo(({
         }
 
         return stageList;
-    }, [cup, syncFixtureWithSchedule]);
+    }, [cup, syncFixtureWithSchedule, resolveRoundTitle]);
 
     const [selectedStageId, setSelectedStageId] = useState<string>('');
     const currentStage = useMemo(() => {
@@ -238,18 +271,9 @@ export const CupView: React.FC<CupViewProps> = React.memo(({
     const currentRound = cup.rounds?.[cup.currentRoundIndex];
     const isFinished = !!cup.winnerId;
 
-    const roundNameMap: Record<string, string> = {
-        'Final': 'Gran Final',
-        'Semi-Final': 'Semifinales',
-        'Quarter-Final': 'Cuartos de Final',
-        'Round of 16': 'Octavos de Final',
-        'Round of 32': 'Dieciseisavos de Final',
-        'Playoffs 16vos': 'Playoffs 16vos',
-        'Playoff 16vos': 'Playoffs 16vos',
-        'Final Intercontinental': 'Duelo por la Gloria Eterna'
-    };
-
-    const currentStageTitle = currentRound ? (roundNameMap[currentRound.name] || currentRound.name) : (cup.phase === 'swiss' ? 'Fase de Liga' : cup.phase === 'groups' ? 'Fase de Grupos' : 'Finalizada');
+    const currentStageTitle = currentRound 
+        ? resolveRoundTitle(currentRound.name, currentRound.fixtures?.length) 
+        : (cup.phase === 'swiss' ? 'Fase de Liga' : cup.phase === 'groups' ? 'Fase de Grupos' : 'Finalizada');
 
     return (
         <div className={`bg-gradient-to-br ${theme.bg} border-2 ${theme.border} rounded-3xl shadow-2xl overflow-hidden animate-fade-in`}>
