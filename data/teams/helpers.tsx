@@ -2,6 +2,8 @@ import React from 'react';
 import { Player } from '../../types';
 
 import { customPacksService } from '../../services/customPacks/packService';
+import { resourceManager } from '../../services/resources/ResourceManager';
+import { ResourceFallback } from '../../services/resources/ResourceFallback';
 
 export const getTeamInitials = (name?: string): string => {
   if (!name) return 'FC';
@@ -121,17 +123,25 @@ export const TeamLogo: React.FC<{
 
   // Subscribe to pack updates so logo updates in real-time
   React.useEffect(() => {
-    return customPacksService.subscribe(() => {
+    const unsub1 = customPacksService.subscribe(() => {
       setError(false);
       setTick(t => t + 1);
     });
+    const unsub2 = resourceManager.subscribe(() => {
+      setError(false);
+      setTick(t => t + 1);
+    });
+    return () => {
+      unsub1();
+      unsub2();
+    };
   }, []);
 
   if (!team) {
     return <GenericTeamShield name="Club" className={className} />;
   }
 
-  const logoUrl = customPacksService.resolveTeamLogo(team);
+  const logoUrl = resourceManager.teamLogo(team.id, team);
 
   if (!logoUrl || error) {
     return (
@@ -158,12 +168,19 @@ export const TeamLogo: React.FC<{
 
 // Player Photo Component (Used for rendering with Community Pack support)
 export const PlayerPhoto: React.FC<{ player?: { id?: number | string; name: string; photo?: string; position?: string }; className?: string; primaryColor?: string }> = React.memo(({ player, className = "w-10 h-10" }) => {
-  const initialPhoto = player ? (customPacksService.resolvePlayerPhoto(player) || '/sinrostro.png') : '/sinrostro.png';
-  const [imgSrc, setImgSrc] = React.useState<string>(initialPhoto);
+  const getInitial = () => {
+    if (!player) return ResourceFallback.playerFace('Jugador');
+    return resourceManager.playerFace(player.id, player);
+  };
+
+  const [imgSrc, setImgSrc] = React.useState<string>(getInitial);
 
   React.useEffect(() => {
-    const resolved = player ? (customPacksService.resolvePlayerPhoto(player) || '/sinrostro.png') : '/sinrostro.png';
-    setImgSrc(resolved);
+    setImgSrc(getInitial());
+    const unsub = resourceManager.subscribe(() => {
+      setImgSrc(getInitial());
+    });
+    return unsub;
   }, [player?.id, player?.name, player?.photo]);
 
   return (
@@ -176,8 +193,9 @@ export const PlayerPhoto: React.FC<{ player?: { id?: number | string; name: stri
         decoding="async"
         referrerPolicy="no-referrer"
         onError={() => {
-          if (imgSrc !== '/sinrostro.png') {
-            setImgSrc('/sinrostro.png');
+          const fallback = ResourceFallback.playerFace(player?.name || 'Jugador');
+          if (imgSrc !== fallback) {
+            setImgSrc(fallback);
           }
         }}
       />
@@ -275,13 +293,13 @@ const LAST_NAMES = [
 ];
 
 // Helper to generate generic squad for Championship, Second Division, and South American teams
-export const createGenericSquad = (
+export function createGenericSquad(
   startId: number,
   teamName: string,
   avgRating: number = 70,
   _primaryColor?: string,
   _secondaryColor?: string
-): Player[] => {
+): Player[] {
   const positions: { pos: 'POR' | 'DEF' | 'CEN' | 'DEL', count: number }[] = [
     { pos: 'POR', count: 2 },
     { pos: 'DEF', count: 6 },

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { customPacksService } from '../../services/customPacks/packService';
+import { resourceManager } from '../../services/resources/ResourceManager';
+import { ResourceFallback } from '../../services/resources/ResourceFallback';
 import { useGameStore } from '../../state/gameStore';
 
 export interface PlayerAvatarProps {
@@ -71,8 +72,9 @@ export const PlayerAvatar: React.FC<PlayerAvatarProps> = React.memo(({
         return 'linear-gradient(135deg, #1e293b 0%, #090d16 100%)';
     }, [primaryColor]);
 
-    const resolvedUrl = player ? customPacksService.resolvePlayerPhoto(player) : '/sinrostro.png';
-    const finalPhoto = (hasError || !resolvedUrl) ? '/sinrostro.png' : resolvedUrl;
+    const fallbackUrl = useMemo(() => ResourceFallback.playerFace(player), [player?.name, player?.position]);
+    const resolvedUrl = player ? resourceManager.playerFace(player.id, player) : fallbackUrl;
+    const finalPhoto = (hasError || !resolvedUrl) ? fallbackUrl : resolvedUrl;
 
     return (
         <div className={`${className} relative flex items-center justify-center shrink-0 rounded-full overflow-hidden border border-white/10 shadow-sm bg-slate-900/60 transition-all`}>

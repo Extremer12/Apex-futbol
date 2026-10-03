@@ -136,3 +136,9 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
         });
     }
 }));
+
+// Connect resource manager reactive updates to game store
+import { registerPacksStoreNotifier } from '../services/resources/ResourceManager';
+registerPacksStoreNotifier(() => {
+    useGameStore.setState(s => ({ packsVersion: (s.packsVersion || 0) + 1 }));
+});

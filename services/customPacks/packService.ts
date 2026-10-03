@@ -4,6 +4,7 @@ import { normalizeKey, getTeamMatchKeys, getCompetitionMatchKeys, getPlayerMatch
 
 import { ARG_CLUB_LOGOS_BY_ID, ARG_CLUB_LOGOS_BY_NAME, ARG_COMPETITION_LOGOS } from './argentineLogos';
 import { PLAYER_PHOTOS_BY_ID, PLAYER_PHOTOS_BY_NAME } from './playerPhotos';
+import { resourceManager } from '../resources/ResourceManager';
 
 export type PackUpdateListener = () => void;
 
@@ -399,122 +400,19 @@ class CustomPacksService {
         return undefined;
     }
 
-    public resolveTeamLogo(team?: { id?: number | string; name?: string; shortName?: string; logo?: string }): string | undefined {
+    public resolveTeamLogo(team?: { id?: number | string; name?: string; shortName?: string; logo?: string; primaryColor?: string; secondaryColor?: string }): string | undefined {
         if (!team) return undefined;
-        const cacheKey = `${team.id ?? ''}_${team.name ?? ''}_${team.logo ?? ''}`;
-        if (this.teamLogoCache.has(cacheKey)) {
-            return this.teamLogoCache.get(cacheKey);
-        }
-
-        let result: string | undefined;
-
-        // 1. Direct lookup by ID in custom packs or built-in packs (unambiguous)
-        if (team.id !== undefined && team.id !== null) {
-            const idKeys = [String(team.id), `team_${team.id}`];
-            const customById = this.getCustomLogo('teams', idKeys);
-            if (customById) {
-                result = customById;
-            } else if (ARG_CLUB_LOGOS_BY_ID[team.id]) {
-                result = ARG_CLUB_LOGOS_BY_ID[team.id];
-            }
-        }
-
-        // 2. Direct exact name lookup in built-in ARG_CLUB_LOGOS_BY_NAME (before broad fuzzy custom search)
-        if (!result && team.name) {
-            const lower = team.name.toLowerCase().trim();
-            const norm = normalizeKey(team.name);
-            if (ARG_CLUB_LOGOS_BY_NAME[lower]) {
-                result = ARG_CLUB_LOGOS_BY_NAME[lower];
-            } else if (norm && ARG_CLUB_LOGOS_BY_NAME[norm]) {
-                result = ARG_CLUB_LOGOS_BY_NAME[norm];
-            }
-        }
-
-        // 3. Name-based custom pack lookup (exact slug first, then normalized)
-        if (!result) {
-            const keys = getTeamMatchKeys(team);
-            const custom = this.getCustomLogo('teams', keys);
-            if (custom) {
-                result = custom;
-            }
-        }
-
-        // 4. Fallback to team's explicit logo field
-        if (!result && team.logo && team.logo.trim().length > 0) {
-            result = team.logo;
-        }
-
-        this.teamLogoCache.set(cacheKey, result);
-        return result;
+        return resourceManager.teamLogo(team.id, team);
     }
 
     public resolveCompetitionLogo(competitionId: string, name?: string, defaultLogo?: string): string | undefined {
-        const cacheKey = `${competitionId}_${name ?? ''}_${defaultLogo ?? ''}`;
-        if (this.competitionLogoCache.has(cacheKey)) {
-            return this.competitionLogoCache.get(cacheKey);
-        }
-
-        let result: string | undefined;
-        const keys = getCompetitionMatchKeys(competitionId, name);
-        const custom = this.getCustomLogo('competitions', keys);
-        if (custom) {
-            result = custom;
-        } else if (ARG_COMPETITION_LOGOS[competitionId]) {
-            result = ARG_COMPETITION_LOGOS[competitionId];
-        } else {
-            const norm = normalizeKey(competitionId);
-            if (ARG_COMPETITION_LOGOS[norm]) {
-                result = ARG_COMPETITION_LOGOS[norm];
-            } else if (name) {
-                const nameNorm = normalizeKey(name);
-                if (ARG_COMPETITION_LOGOS[nameNorm]) {
-                    result = ARG_COMPETITION_LOGOS[nameNorm];
-                }
-            }
-        }
-
-        if (!result) {
-            result = defaultLogo || undefined;
-        }
-
-        this.competitionLogoCache.set(cacheKey, result);
-        return result;
+        const result = resourceManager.competitionLogo(competitionId, name);
+        return result || defaultLogo || undefined;
     }
 
-    public resolvePlayerPhoto(player?: { id?: number | string; name?: string; photo?: string }): string {
+    public resolvePlayerPhoto(player?: { id?: number | string; name?: string; photo?: string; position?: string }): string {
         if (!player) return '/sinrostro.png';
-        const cacheKey = `${player.id ?? ''}_${player.name ?? ''}_${player.photo ?? ''}`;
-        if (this.playerPhotoCache.has(cacheKey)) {
-            return this.playerPhotoCache.get(cacheKey)!;
-        }
-
-        let result = player.photo || '/sinrostro.png';
-        const keys = getPlayerMatchKeys(player);
-        const custom = this.getCustomLogo('players', keys);
-        if (custom) {
-            result = custom;
-        } else if (this.isPlayerFacesPackActive()) {
-            // 1. Direct ID lookup in Player Faces Pack
-            if (player.id !== undefined && player.id !== null) {
-                const numId = Number(player.id);
-                if (PLAYER_PHOTOS_BY_ID[numId]) {
-                    result = PLAYER_PHOTOS_BY_ID[numId];
-                }
-            }
-
-            // 2. Name lookup in Player Faces Pack if not matched by ID
-            if (result === '/sinrostro.png' || result === player.photo) {
-                for (const k of keys) {
-                    if (PLAYER_PHOTOS_BY_NAME[k]) {
-                        result = PLAYER_PHOTOS_BY_NAME[k];
-                        break;
-                    }
-                }
-            }
-        }
-
-        this.playerPhotoCache.set(cacheKey, result);
-        return result;
+        return resourceManager.playerFace(player.id, player);
     }
 
     /**

@@ -13,6 +13,7 @@ import { getBaseWeeklyIncome, generateStadium, generateSponsor, generateSponsorM
 import { formatDate } from '../utils';
 import { getInitialAchievements } from './achievementService';
 import { calculateFanApproval } from './political';
+import { resourceManager } from './resources/ResourceManager';
 import { calculateSquadPower } from './squadProgressionService';
 import { generateInitialClubStaff, generateStaffMarket } from './staffService';
 
@@ -420,7 +421,7 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
             championsLeague: {
                 id: 'champions_league',
                 name: 'UEFA Champions League',
-                logo: 'https://tmssl.akamaized.net/images/logo/header/cl.png',
+                logo: resourceManager.competitionLogo('champions_league', 'UEFA Champions League'),
                 type: 'swiss',
                 phase: 'swiss',
                 swissTable: clSwiss.table,
@@ -432,7 +433,7 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
             europaLeague: {
                 id: 'europa_league',
                 name: 'UEFA Europa League',
-                logo: 'https://tmssl.akamaized.net/images/logo/header/el.png',
+                logo: resourceManager.competitionLogo('europa_league', 'UEFA Europa League'),
                 type: 'swiss',
                 phase: 'swiss',
                 swissTable: elSwiss.table,
@@ -444,7 +445,7 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
             copaIntercontinental: {
                 id: 'copa_intercontinental',
                 name: 'Copa Intercontinental',
-                logo: 'https://tmssl.akamaized.net/images/logo/header/cwc.png',
+                logo: resourceManager.competitionLogo('copa_intercontinental', 'Copa Intercontinental'),
                 type: 'knockout',
                 phase: 'knockout',
                 rounds: intercontinentalFixtures.length > 0 ? [{

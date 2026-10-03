@@ -13,8 +13,10 @@ import { PlayerAvatar } from '../ui/PlayerAvatar';
 import { RadarWatermark, getPlayerCardRarity } from '../ui/GameCardDecorations';
 import { X, ArrowRight, Newspaper, Landmark, Award, ShieldAlert, Radio } from 'lucide-react';
 
+import { resourceManager } from '../../services/resources/ResourceManager';
+
 // HELPER FOR PLAYER IMAGES (backwards compatibility)
-export const getPlayerImage = (name: string) => `https://images.fotmob.com/image_resources/playerimages/737066.png`;
+export const getPlayerImage = (name: string) => resourceManager.playerFace(undefined, { name });
 
 interface DashboardProps {
     gameState: GameState;

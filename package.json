@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "tsx --test \"tests/**/*.test.ts\"",
+    "build-pack": "tsx scripts/buildPack.ts",
     "sync:argentina": "tsx scripts/syncPromiedosSquads.ts"
   },
   "dependencies": {

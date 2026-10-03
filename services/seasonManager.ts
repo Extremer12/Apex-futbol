@@ -13,6 +13,7 @@ import { initializeLibertadoresSeason } from './libertadoresEngine';
 import { initializeSudamericanaSeason } from './sudamericanaEngine';
 import { SOUTH_AMERICAN_EXTRA_TEAMS } from '../data/teams/southAmericanClubs';
 import { TOURNAMENT_LOGOS } from './customPacks/argentineLogos';
+import { resourceManager } from './resources/ResourceManager';
 import { processFullSeasonSquadProgression } from './squadProgressionService';
 
 /**
@@ -1068,7 +1069,7 @@ export function startNewSeason(currentState: GameState): GameState {
             },
             copaSudamericana: {
                 id: 'copa_sudamericana', name: 'Copa Sudamericana', 
-                logo: 'https://tmssl.akamaized.net/images/logo/header/cpa.png',
+                logo: resourceManager.competitionLogo('copa_sudamericana', 'Copa Sudamericana'),
                 type: 'groups', phase: 'groups',
                 groups: sudGroups,
                 rounds: [],
