@@ -155,7 +155,9 @@ export const ligaMxTeams: Team[] = [
             { id: 110607, name: 'Jesús Angulo (Canelo)', position: 'CEN', rating: 78, potential: 80, age: 27, value: 5000000, wage: 32000, morale: 'Feliz', contractYears: 3 },
             { id: 110608, name: 'Alexis Vega', position: 'DEL', rating: 81, potential: 82, age: 26, value: 9000000, wage: 52000, morale: 'Feliz', contractYears: 3 },
             { id: 110609, name: 'Paulinho', position: 'DEL', rating: 82, potential: 82, age: 31, value: 9500000, wage: 55000, morale: 'Feliz', contractYears: 3 },
-            { id: 110610, name: 'Robert Morales', position: 'DEL', rating: 76, potential: 79, age: 25, value: 3800000, wage: 26000, morale: 'Contento', contractYears: 3 }
+            { id: 110610, name: 'Robert Morales', position: 'DEL', rating: 76, potential: 79, age: 25, value: 3800000, wage: 26000, morale: 'Contento', contractYears: 3 },
+            { id: 110611, name: 'Brian García', position: 'DEF', rating: 76, potential: 78, age: 26, value: 3200000, wage: 24000, morale: 'Contento', contractYears: 3 },
+            { id: 110612, name: 'Franco Romero', position: 'CEN', rating: 76, potential: 78, age: 25, value: 3000000, wage: 24000, morale: 'Feliz', contractYears: 3 }
         ]
     },
     {
@@ -213,9 +215,139 @@ export const ligaMxTeams: Team[] = [
 ];
 
 export const ligaExpansionMxTeams: Team[] = [
-    { id: 1151, name: 'Atlante', logo: 'https://tmssl.akamaized.net/images/wappen/head/10008.png', leagueId: LeagueId.LIGA_EXPANSION_MX, budget: 6000000, transferBudget: 1500000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#C8102E', squad: [] },
-    { id: 1152, name: 'Cancún FC', logo: 'https://tmssl.akamaized.net/images/wappen/head/81261.png', leagueId: LeagueId.LIGA_EXPANSION_MX, budget: 5000000, transferBudget: 1200000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#00B4D8', secondaryColor: '#000000', squad: [] },
-    { id: 1153, name: 'Celaya', logo: 'https://tmssl.akamaized.net/images/wappen/head/14087.png', leagueId: LeagueId.LIGA_EXPANSION_MX, budget: 4500000, transferBudget: 1000000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#FFFFFF', squad: [] },
-    { id: 1154, name: 'Leones Negros', logo: 'https://tmssl.akamaized.net/images/wappen/head/20398.png', leagueId: LeagueId.LIGA_EXPANSION_MX, budget: 5000000, transferBudget: 1200000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#000000', secondaryColor: '#FFD700', squad: [] },
-    { id: 1155, name: 'Atlético Morelia', logo: 'https://tmssl.akamaized.net/images/wappen/head/81262.png', leagueId: LeagueId.LIGA_EXPANSION_MX, budget: 5000000, transferBudget: 1200000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#FFD700', secondaryColor: '#C8102E', squad: [] }
+    {
+        id: 1151,
+        name: 'Atlante',
+        shortName: 'Atlante',
+        logo: 'https://tmssl.akamaized.net/images/wappen/head/10008.png',
+        leagueId: LeagueId.LIGA_EXPANSION_MX,
+        budget: 6000000,
+        transferBudget: 1500000,
+        tier: 'Mid',
+        teamMorale: 'Normal',
+        primaryColor: '#003DA5',
+        secondaryColor: '#C8102E',
+        squad: [
+            { id: 115101, name: 'Humberto Hernández', position: 'POR', rating: 74, potential: 74, age: 38, value: 600000, wage: 12000, morale: 'Feliz', contractYears: 1 },
+            { id: 115102, name: 'Carlos Villanueva', position: 'DEF', rating: 72, potential: 74, age: 28, value: 1100000, wage: 10000, morale: 'Contento', contractYears: 2 },
+            { id: 115103, name: 'Armando Escobar', position: 'DEF', rating: 73, potential: 75, age: 29, value: 1300000, wage: 11000, morale: 'Feliz', contractYears: 2 },
+            { id: 115104, name: 'Diego Cruz', position: 'DEF', rating: 71, potential: 73, age: 27, value: 950000, wage: 8500, morale: 'Contento', contractYears: 2 },
+            { id: 115105, name: 'Christian Bermúdez', position: 'CEN', rating: 74, potential: 74, age: 36, value: 700000, wage: 14000, morale: 'Feliz', contractYears: 1 },
+            { id: 115106, name: 'Ronaldo González', position: 'CEN', rating: 73, potential: 77, age: 24, value: 1400000, wage: 11000, morale: 'Feliz', contractYears: 3 },
+            { id: 115107, name: 'Édgar Jiménez', position: 'CEN', rating: 71, potential: 75, age: 22, value: 1000000, wage: 7500, morale: 'Contento', contractYears: 3 },
+            { id: 115108, name: 'Daniel Lajud', position: 'CEN', rating: 73, potential: 76, age: 25, value: 1300000, wage: 10500, morale: 'Feliz', contractYears: 2 },
+            { id: 115109, name: 'Maximiliano García', position: 'DEL', rating: 72, potential: 76, age: 23, value: 1200000, wage: 9000, morale: 'Contento', contractYears: 3 },
+            { id: 115110, name: 'Rafael Durán', position: 'DEL', rating: 73, potential: 75, age: 26, value: 1350000, wage: 11000, morale: 'Feliz', contractYears: 2 },
+            { id: 115111, name: 'Arturo Sánchez', position: 'DEL', rating: 71, potential: 75, age: 24, value: 1000000, wage: 8000, morale: 'Normal', contractYears: 2 },
+            { id: 115112, name: 'Francisco Reyes', position: 'DEF', rating: 70, potential: 74, age: 23, value: 850000, wage: 7000, morale: 'Contento', contractYears: 3 }
+        ]
+    },
+    {
+        id: 1152,
+        name: 'Cancún FC',
+        shortName: 'Cancún FC',
+        logo: 'https://tmssl.akamaized.net/images/wappen/head/81261.png',
+        leagueId: LeagueId.LIGA_EXPANSION_MX,
+        budget: 5000000,
+        transferBudget: 1200000,
+        tier: 'Mid',
+        teamMorale: 'Normal',
+        primaryColor: '#00B4D8',
+        secondaryColor: '#000000',
+        squad: [
+            { id: 115201, name: 'Gustavo Gutiérrez', position: 'POR', rating: 72, potential: 75, age: 26, value: 1000000, wage: 9000, morale: 'Feliz', contractYears: 2 },
+            { id: 115202, name: 'Hedgardo Marín', position: 'DEF', rating: 72, potential: 72, age: 31, value: 850000, wage: 10000, morale: 'Contento', contractYears: 2 },
+            { id: 115203, name: 'Rodrigo Reyes', position: 'DEF', rating: 72, potential: 76, age: 23, value: 1200000, wage: 9000, morale: 'Feliz', contractYears: 3 },
+            { id: 115204, name: 'Benjamín Galindo Jr.', position: 'DEF', rating: 71, potential: 74, age: 25, value: 950000, wage: 8000, morale: 'Contento', contractYears: 2 },
+            { id: 115205, name: 'Johan Alonzo', position: 'CEN', rating: 73, potential: 76, age: 24, value: 1300000, wage: 10000, morale: 'Feliz', contractYears: 3 },
+            { id: 115206, name: 'Jorge Díaz Price', position: 'CEN', rating: 73, potential: 75, age: 26, value: 1250000, wage: 11000, morale: 'Feliz', contractYears: 2 },
+            { id: 115207, name: 'Junior Moreira', position: 'CEN', rating: 71, potential: 75, age: 23, value: 950000, wage: 8000, morale: 'Normal', contractYears: 3 },
+            { id: 115208, name: 'Alan Rodríguez', position: 'CEN', rating: 71, potential: 76, age: 22, value: 1000000, wage: 7500, morale: 'Contento', contractYears: 3 },
+            { id: 115209, name: 'José Rodríguez', position: 'DEL', rating: 74, potential: 77, age: 25, value: 1500000, wage: 12000, morale: 'Feliz', contractYears: 2 },
+            { id: 115210, name: 'Alfonso Tamay', position: 'DEL', rating: 72, potential: 72, age: 30, value: 900000, wage: 9500, morale: 'Contento', contractYears: 2 },
+            { id: 115211, name: 'Cheick Traoré', position: 'DEL', rating: 71, potential: 77, age: 21, value: 1100000, wage: 8000, morale: 'Contento', contractYears: 3 },
+            { id: 115212, name: 'Paul Uscanga', position: 'CEN', rating: 71, potential: 71, age: 32, value: 700000, wage: 8500, morale: 'Normal', contractYears: 1 }
+        ]
+    },
+    {
+        id: 1153,
+        name: 'Celaya',
+        shortName: 'Celaya',
+        logo: 'https://tmssl.akamaized.net/images/wappen/head/14087.png',
+        leagueId: LeagueId.LIGA_EXPANSION_MX,
+        budget: 4500000,
+        transferBudget: 1000000,
+        tier: 'Lower',
+        teamMorale: 'Normal',
+        primaryColor: '#003DA5',
+        secondaryColor: '#FFFFFF',
+        squad: [
+            { id: 115301, name: 'Gabino Espinoza', position: 'POR', rating: 71, potential: 73, age: 28, value: 900000, wage: 8000, morale: 'Feliz', contractYears: 2 },
+            { id: 115302, name: 'Daniel Cervantes', position: 'DEF', rating: 71, potential: 71, age: 32, value: 650000, wage: 8500, morale: 'Contento', contractYears: 1 },
+            { id: 115303, name: 'Ricardo Peña', position: 'DEF', rating: 71, potential: 76, age: 23, value: 1000000, wage: 7500, morale: 'Contento', contractYears: 3 },
+            { id: 115304, name: 'Noé Topete', position: 'DEF', rating: 70, potential: 75, age: 24, value: 850000, wage: 7000, morale: 'Normal', contractYears: 2 },
+            { id: 115305, name: 'Adolfo Domínguez', position: 'CEN', rating: 72, potential: 72, age: 31, value: 850000, wage: 9500, morale: 'Contento', contractYears: 2 },
+            { id: 115306, name: 'Lucas de Oliveira', position: 'CEN', rating: 72, potential: 76, age: 25, value: 1200000, wage: 9000, morale: 'Feliz', contractYears: 3 },
+            { id: 115307, name: 'Michell Rodríguez', position: 'CEN', rating: 73, potential: 77, age: 23, value: 1400000, wage: 10000, morale: 'Feliz', contractYears: 3 },
+            { id: 115308, name: 'Eduardo del Ángel', position: 'CEN', rating: 70, potential: 74, age: 24, value: 850000, wage: 7000, morale: 'Contento', contractYears: 2 },
+            { id: 115309, name: 'Bryan Mendoza', position: 'DEL', rating: 73, potential: 75, age: 26, value: 1300000, wage: 10500, morale: 'Feliz', contractYears: 2 },
+            { id: 115310, name: 'Martín Barragán', position: 'DEL', rating: 72, potential: 72, age: 32, value: 800000, wage: 11000, morale: 'Contento', contractYears: 2 },
+            { id: 115311, name: 'Allan Wlk', position: 'DEL', rating: 71, potential: 78, age: 21, value: 1150000, wage: 8000, morale: 'Feliz', contractYears: 3 },
+            { id: 115312, name: 'Carlos Monges', position: 'DEL', rating: 70, potential: 73, age: 27, value: 800000, wage: 7500, morale: 'Normal', contractYears: 2 }
+        ]
+    },
+    {
+        id: 1154,
+        name: 'Leones Negros',
+        shortName: 'Leones Negros',
+        logo: 'https://tmssl.akamaized.net/images/wappen/head/20398.png',
+        leagueId: LeagueId.LIGA_EXPANSION_MX,
+        budget: 5000000,
+        transferBudget: 1200000,
+        tier: 'Mid',
+        teamMorale: 'Normal',
+        primaryColor: '#000000',
+        secondaryColor: '#FFD700',
+        squad: [
+            { id: 115401, name: 'Salim Hernández', position: 'POR', rating: 73, potential: 76, age: 25, value: 1200000, wage: 9500, morale: 'Feliz', contractYears: 3 },
+            { id: 115402, name: 'Arturo Ledesma', position: 'DEF', rating: 72, potential: 72, age: 34, value: 600000, wage: 9500, morale: 'Contento', contractYears: 1 },
+            { id: 115403, name: 'Ulises Torres', position: 'DEF', rating: 72, potential: 74, age: 26, value: 1100000, wage: 9000, morale: 'Feliz', contractYears: 2 },
+            { id: 115404, name: 'Jonathan Sánchez', position: 'DEF', rating: 72, potential: 73, age: 29, value: 1000000, wage: 9000, morale: 'Contento', contractYears: 2 },
+            { id: 115405, name: 'Jairo González', position: 'DEF', rating: 71, potential: 71, age: 32, value: 650000, wage: 8500, morale: 'Normal', contractYears: 1 },
+            { id: 115406, name: 'Alejandro Organista', position: 'CEN', rating: 73, potential: 77, age: 23, value: 1400000, wage: 10000, morale: 'Feliz', contractYears: 3 },
+            { id: 115407, name: 'Edson Rivera', position: 'CEN', rating: 73, potential: 73, age: 32, value: 900000, wage: 11000, morale: 'Contento', contractYears: 2 },
+            { id: 115408, name: 'Adrián Villalobos', position: 'CEN', rating: 72, potential: 74, age: 26, value: 1100000, wage: 9000, morale: 'Feliz', contractYears: 2 },
+            { id: 115409, name: 'Jahaziel Marchand', position: 'CEN', rating: 71, potential: 76, age: 22, value: 1000000, wage: 7500, morale: 'Contento', contractYears: 3 },
+            { id: 115410, name: 'Edson Torres', position: 'DEL', rating: 74, potential: 77, age: 25, value: 1500000, wage: 12000, morale: 'Feliz', contractYears: 3 },
+            { id: 115411, name: 'Carlos Fierro', position: 'DEL', rating: 73, potential: 73, age: 29, value: 1200000, wage: 12500, morale: 'Feliz', contractYears: 2 },
+            { id: 115412, name: 'Alberto Ocejo', position: 'DEL', rating: 72, potential: 74, age: 26, value: 1100000, wage: 9500, morale: 'Contento', contractYears: 2 }
+        ]
+    },
+    {
+        id: 1155,
+        name: 'Atlético Morelia',
+        shortName: 'Morelia',
+        logo: 'https://tmssl.akamaized.net/images/wappen/head/81262.png',
+        leagueId: LeagueId.LIGA_EXPANSION_MX,
+        budget: 5000000,
+        transferBudget: 1200000,
+        tier: 'Mid',
+        teamMorale: 'Normal',
+        primaryColor: '#FFD700',
+        secondaryColor: '#C8102E',
+        squad: [
+            { id: 115501, name: 'Antonio Torres', position: 'POR', rating: 72, potential: 75, age: 27, value: 1000000, wage: 9000, morale: 'Feliz', contractYears: 2 },
+            { id: 115502, name: 'Leobardo López', position: 'DEF', rating: 71, potential: 71, age: 40, value: 300000, wage: 8000, morale: 'Feliz', contractYears: 1 },
+            { id: 115503, name: 'Diego García', position: 'DEF', rating: 72, potential: 74, age: 26, value: 1100000, wage: 9000, morale: 'Contento', contractYears: 2 },
+            { id: 115504, name: 'Mario Trejo', position: 'DEF', rating: 71, potential: 75, age: 24, value: 950000, wage: 8000, morale: 'Contento', contractYears: 3 },
+            { id: 115505, name: 'Javier Ibarra', position: 'CEN', rating: 73, potential: 76, age: 25, value: 1300000, wage: 10000, morale: 'Feliz', contractYears: 3 },
+            { id: 115506, name: 'Omar Islas', position: 'CEN', rating: 73, potential: 74, age: 27, value: 1250000, wage: 10500, morale: 'Feliz', contractYears: 2 },
+            { id: 115507, name: 'Damián Torres', position: 'CEN', rating: 72, potential: 74, age: 27, value: 1100000, wage: 9000, morale: 'Contento', contractYears: 2 },
+            { id: 115508, name: 'Rolando González', position: 'CEN', rating: 71, potential: 73, age: 28, value: 900000, wage: 8500, morale: 'Normal', contractYears: 2 },
+            { id: 115509, name: 'Christopher Engelhart', position: 'DEL', rating: 73, potential: 77, age: 24, value: 1400000, wage: 10500, morale: 'Feliz', contractYears: 3 },
+            { id: 115510, name: 'Paolo Yrizar', position: 'DEL', rating: 73, potential: 75, age: 26, value: 1300000, wage: 11000, morale: 'Feliz', contractYears: 2 },
+            { id: 115511, name: 'Brayan Trejo', position: 'DEL', rating: 72, potential: 75, age: 25, value: 1150000, wage: 9500, morale: 'Contento', contractYears: 2 },
+            { id: 115512, name: 'Alonso Flores', position: 'DEL', rating: 71, potential: 77, age: 22, value: 1050000, wage: 7500, morale: 'Contento', contractYears: 3 }
+        ]
+    }
 ];

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LoadingSpinner } from '../icons';
-import { AboutModal, PlaceholderModal } from './PlaceholderModals';
+import { AchievementsModal } from './AchievementsModal';
+import { StartSettingsModal } from './StartSettingsModal';
 import { getSavedGames } from '../../services/db';
 import { getCloudSaves } from '../../services/cloudSave';
 import { supabase } from '../../services/supabase';
@@ -26,7 +27,7 @@ interface StartScreenProps {
 
 export const StartScreen: React.FC<StartScreenProps> = ({ onNewGame, onLoadGameScreen }) => {
     const [currentView, setCurrentView] = useState<'MENU' | 'PACKS'>('MENU');
-    const [modal, setModal] = useState<'achievements' | 'stats' | 'about' | 'leaderboard' | null>(null);
+    const [modal, setModal] = useState<'achievements' | 'about' | 'leaderboard' | null>(null);
     const [hasSaves, setHasSaves] = useState(false);
     const [isCheckingSaves, setIsCheckingSaves] = useState(true);
 
@@ -85,9 +86,13 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onNewGame, onLoadGameS
     // --- MAIN START MENU VIEW ---
     return (
         <div className="min-h-screen flex flex-col relative overflow-hidden bg-[#0A0E17]">
-            {modal === 'achievements' && <PlaceholderModal title="Logros" onClose={() => setModal(null)} />}
-            {modal === 'stats' && <PlaceholderModal title="Estadísticas" onClose={() => setModal(null)} />}
-            {modal === 'about' && <AboutModal onClose={() => setModal(null)} />}
+            {modal === 'achievements' && <AchievementsModal onClose={() => setModal(null)} />}
+            {modal === 'about' && (
+                <StartSettingsModal 
+                    onClose={() => setModal(null)} 
+                    onOpenPacks={() => setCurrentView('PACKS')} 
+                />
+            )}
             {modal === 'leaderboard' && <LeaderboardModal onClose={() => setModal(null)} />}
 
             {/* Background layers (COMPLETELY STATIC, NO MOVEMENT, PERFECT TOP CLARITY) */}

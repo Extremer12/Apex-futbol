@@ -221,3 +221,39 @@ export async function deleteCloudSave(slotId: string): Promise<void> {
         throw new Error(`Error al eliminar partida en la nube: ${error.message}`);
     }
 }
+
+/**
+ * Permanently deletes all user data stored in the cloud (cloud saves, leaderboard entries, profile)
+ * and signs out. Required for Google Play Store Account/Data Deletion Policy compliance.
+ */
+export async function deleteAllUserDataFromCloud(): Promise<void> {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+        return;
+    }
+
+    try {
+        // 1. Delete all cloud saves for this user
+        await supabase.from('cloud_saves').delete().eq('user_id', user.id);
+
+        // 2. Delete user's leaderboard entries
+        await supabase.from('leaderboards').delete().eq('user_id', user.id);
+
+        // 3. Delete user's profile record
+        await supabase.from('profiles').delete().eq('id', user.id);
+
+        // 4. Delete the auth account itself via SECURITY DEFINER RPC (Play Store Account Deletion compliance)
+        try {
+            await (supabase.rpc as any)('delete_own_account');
+        } catch (rpcErr) {
+            console.warn('RPC delete_own_account notice:', rpcErr);
+        }
+
+        // 5. Sign out
+        await supabase.auth.signOut();
+    } catch (err) {
+        console.error('Error deleting cloud user data:', err);
+        throw err;
+    }
+}

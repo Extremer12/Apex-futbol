@@ -535,6 +535,11 @@ export const ARG_CLUB_LOGOS_BY_ID: Record<number | string, string> = {
     1132: `${COMMUNITY_PACK_CDN}/Liga%20de%20Expansi%C3%B3n%20MX/mexico_tapatio.football-logos.cc.svg`,
     1133: `${COMMUNITY_PACK_CDN}/Liga%20de%20Expansi%C3%B3n%20MX/mexico_tepatitlan-fc.football-logos.cc.svg`,
     1134: `${COMMUNITY_PACK_CDN}/Liga%20de%20Expansi%C3%B3n%20MX/mexico_tlaxcala-fc.football-logos.cc.svg`,
+    1151: 'https://tmssl.akamaized.net/images/wappen/head/10008.png',
+    1152: `${COMMUNITY_PACK_CDN}/Liga%20de%20Expansi%C3%B3n%20MX/mexico_cancun-fc.football-logos.cc.svg`,
+    1153: 'https://tmssl.akamaized.net/images/wappen/head/14087.png',
+    1154: `${COMMUNITY_PACK_CDN}/Liga%20de%20Expansi%C3%B3n%20MX/mexico_leones-negros-udeg.football-logos.cc.svg`,
+    1155: `${COMMUNITY_PACK_CDN}/Liga%20de%20Expansi%C3%B3n%20MX/mexico_atletico-morelia.football-logos.cc.svg`,
 
     // ==========================================
     // Liga de Primera (Chile) (IDs 1201-1216)
@@ -604,6 +609,46 @@ export const ARG_CLUB_LOGOS_BY_ID: Record<number | string, string> = {
     1351: `${COMMUNITY_PACK_CDN}/Categor%C3%ADa%20Primera%20A/colombia_llaneros.football-logos.cc.svg`,
     1352: `${COMMUNITY_PACK_CDN}/Categor%C3%ADa%20Primera%20A/colombia_union-magdalena.football-logos.cc.svg`,
     1353: `${COMMUNITY_PACK_CDN}/Categor%C3%ADa%20Primera%20A/colombia_internacional-de-bogota.football-logos.cc.svg`,
+
+    // ==========================================
+    // Primera Nacional Adicionales
+    // ==========================================
+    750: 'https://tmssl.akamaized.net/images/wappen/head/11568.png', // Acassuso
+    780: 'https://tmssl.akamaized.net/images/wappen/head/4478.png',  // Atlético de Rafaela
+    783: 'https://tmssl.akamaized.net/images/wappen/head/22877.png', // Ferrocarril Midland
+
+    // ==========================================
+    // CONMEBOL Sudamérica (IDs 9129-9156)
+    // ==========================================
+    9129: `${COMMUNITY_PACK_CDN}/Liga%20de%20Primera/chile_coquimbo-unido.football-logos.cc.svg`, // Coquimbo Unido
+    9130: `${COMMUNITY_PACK_CDN}/Liga%20de%20Primera/chile_everton-de-vina-del-mar.football-logos.cc.svg`, // Everton
+    9131: `${COMMUNITY_PACK_CDN}/Categoria%20Primera%20B/chile_union-espanola.football-logos.cc.svg`, // Unión Española
+    9132: `${COMMUNITY_PACK_CDN}/Liga%20de%20Primera/chile_cd-palestino.football-logos.cc.svg`, // Palestino
+    9133: `${COMMUNITY_PACK_CDN}/Categor%C3%ADa%20Primera%20A/colombia_america-de-cali.football-logos.cc.svg`, // América de Cali
+    9134: `${COMMUNITY_PACK_CDN}/Categor%C3%ADa%20Primera%20A/colombia_independiente-medellin.football-logos.cc.svg`, // Independiente Medellín
+    9135: `${COMMUNITY_PACK_CDN}/Categor%C3%ADa%20Primera%20A/colombia_deportes-tolima.football-logos.cc.svg`, // Deportes Tolima
+    9136: `${COMMUNITY_PACK_CDN}/Categor%C3%ADa%20Primera%20A/colombia_once-caldas.football-logos.cc.svg`, // Once Caldas
+
+    9137: 'https://tmssl.akamaized.net/images/wappen/head/6311.png',  // Oriente Petrolero
+    9138: 'https://tmssl.akamaized.net/images/wappen/head/6310.png',  // Club Blooming
+    9139: 'https://tmssl.akamaized.net/images/wappen/head/78536.png', // Real Tomayapo
+    9140: 'https://tmssl.akamaized.net/images/wappen/head/20046.png', // Nacional Potosí
+    9141: 'https://tmssl.akamaized.net/images/wappen/head/14742.png', // Universidad Católica (Ecu)
+    9142: 'https://tmssl.akamaized.net/images/wappen/head/43355.png', // Delfín SC
+    9143: 'https://tmssl.akamaized.net/images/wappen/head/14755.png', // SD Aucas
+    9144: 'https://tmssl.akamaized.net/images/wappen/head/6314.png',  // Deportivo Cuenca
+    9145: 'https://tmssl.akamaized.net/images/wappen/head/6317.png',  // Universidad César Vallejo
+    9146: 'https://tmssl.akamaized.net/images/wappen/head/21105.png', // Cusco FC
+    9147: 'https://tmssl.akamaized.net/images/wappen/head/3514.png',  // Cienciano
+    9148: 'https://tmssl.akamaized.net/images/wappen/head/19747.png', // Sport Huancayo
+    9149: 'https://tmssl.akamaized.net/images/wappen/head/4181.png',  // Danubio FC
+    9150: 'https://tmssl.akamaized.net/images/wappen/head/4182.png',  // Montevideo Wanderers
+    9151: 'https://tmssl.akamaized.net/images/wappen/head/14751.png', // Cerro Largo FC
+    9152: 'https://tmssl.akamaized.net/images/wappen/head/11130.png', // Racing Club de Montevideo
+    9153: 'https://tmssl.akamaized.net/images/wappen/head/36696.png', // Metropolitanos FC
+    9154: 'https://tmssl.akamaized.net/images/wappen/head/54930.png', // Academia Puerto Cabello
+    9155: 'https://tmssl.akamaized.net/images/wappen/head/14810.png', // Deportivo La Guaira
+    9156: 'https://tmssl.akamaized.net/images/wappen/head/98711.png', // Deportivo Rayo Zuliano
 };
 
 export const ARG_CLUB_LOGOS_BY_NAME: Record<string, string> = {

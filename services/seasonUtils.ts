@@ -191,7 +191,7 @@ export const getSeasonSummaryData = (gameState: GameState): SeasonSummaryData =>
 
     const isArgentina = gameState.team.leagueId === LeagueId.LIGA_ARGENTINA;
     const userLeagueId = gameState.team.leagueId;
-    const table = gameState.leagueTables[userLeagueId] || [];
+    const table = (userLeagueId !== 'CONMEBOL' ? gameState.leagueTables[userLeagueId] : []) || [];
     const sortedTable = [...table].sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference);
     
     const userRowIndex = sortedTable.findIndex(r => r.teamId === gameState.team.id);
@@ -211,7 +211,7 @@ export const getSeasonSummaryData = (gameState: GameState): SeasonSummaryData =>
     };
 
     // Champions
-    const leagueChampion = getLeagueWinner(userLeagueId);
+    const leagueChampion = userLeagueId !== 'CONMEBOL' ? getLeagueWinner(userLeagueId) : null;
 
     const resolveCupChampion = (cup?: CupCompetition): Team | null => {
         if (!cup) return null;

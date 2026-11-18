@@ -130,7 +130,7 @@ export interface Team {
   name: string;
   shortName?: string;
   logo: string;
-  leagueId: LeagueId; // Added for multi-league support
+  leagueId: LeagueId | 'CONMEBOL'; // Added for multi-league support
   zone?: 'A' | 'B'; // For Argentine 2026 30-team format
   budget: number; // Main budget in millions
   transferBudget: number; // Transfer budget in millions
@@ -637,7 +637,7 @@ export interface Achievement {
 
 export interface SeasonHistoryRecord {
   season: number;
-  leagueId: LeagueId;
+  leagueId: LeagueId | 'CONMEBOL';
   leagueName: string;
   userTeamId: number;
   userTeamName: string;

@@ -3,6 +3,7 @@ import { TEAMS } from '../../constants';
 import { Team, PlayerProfile, LeagueId, CountryCode } from '../../types';
 import { TeamLogo } from '../../data/teams/helpers';
 import { formatCurrency } from '../../utils';
+import { resourceManager } from '../../services/resources';
 
 interface TeamSelectionProps {
     player: PlayerProfile;
@@ -246,7 +247,7 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                                 className="w-full apex-card p-5 flex items-center gap-4 transition-all duration-300 hover:border-[rgba(200,168,78,0.3)] active:scale-[0.98] animate-scale-in"
                                 style={{ animationDelay: `${i * 100}ms` }}
                             >
-                                <img src={l.logo} alt={l.name} className="w-12 h-12 object-contain drop-shadow-md" />
+                                <img src={resourceManager.leagueLogo(l.id, l.name) || l.logo} alt={l.name} className="w-12 h-12 object-contain drop-shadow-md" />
                                 <div className="flex-1 text-left">
                                     <div className="text-base font-extrabold text-white">{l.name}</div>
                                     <div className="text-[10px]" style={{ color: 'var(--apex-text-secondary)' }}>{l.teams} Clubes • {l.div}</div>
@@ -270,7 +271,7 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                             <span className="text-xs font-bold text-white uppercase truncate">{COUNTRIES.find(c => c.id === selectedCountry)?.name}</span>
                         </div>
                         <div className="flex-1 apex-card p-3 flex items-center gap-2.5">
-                            {currentLeague && <img src={currentLeague.logo} alt="" className="w-5 h-5 object-contain" />}
+                            {currentLeague && <img src={resourceManager.leagueLogo(currentLeague.id, currentLeague.name) || currentLeague.logo} alt="" className="w-5 h-5 object-contain" />}
                             <span className="text-xs font-bold text-white truncate">{currentLeague?.name}</span>
                             <span className="text-[9px] ml-auto text-white/50">{currentLeague?.teams} Clubes</span>
                         </div>

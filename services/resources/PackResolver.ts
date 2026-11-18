@@ -73,11 +73,13 @@ export class PackResolver {
             }
         }
 
-        // 3. Query Default Built-in Community Provider
-        const defaultResolution = this.queryDefaultProvider(type, idStr, extraMeta);
-        if (defaultResolution) {
-            ResourceCache.setInMemory(cacheKey, defaultResolution.url);
-            return defaultResolution;
+        // 3. Query Default Built-in Community Provider (active only when community packs are enabled)
+        if (this.isCommunityActive()) {
+            const defaultResolution = this.queryDefaultProvider(type, idStr, extraMeta);
+            if (defaultResolution) {
+                ResourceCache.setInMemory(cacheKey, defaultResolution.url);
+                return defaultResolution;
+            }
         }
 
         // 4. Zero-network Fallback (Guaranteed to return a valid vector image)
@@ -154,6 +156,18 @@ export class PackResolver {
             }
             default:
                 return undefined;
+        }
+    }
+
+    /**
+     * Check if community content is active (Safe Mode for App Store compliance)
+     */
+    private static isCommunityActive(): boolean {
+        if (typeof window === 'undefined') return true;
+        try {
+            return localStorage.getItem('apex_community_packs_active') === 'true';
+        } catch {
+            return false;
         }
     }
 

@@ -311,11 +311,35 @@ class CustomPacksService {
     public isPlayerFacesPackActive(): boolean {
         if (typeof window === 'undefined') return true;
         try {
-            const val = localStorage.getItem('apex_pack_player_faces_active');
-            return val === null ? true : val === 'true';
+            return localStorage.getItem('apex_pack_player_faces_active') === 'true';
         } catch {
-            return true;
+            return false;
         }
+    }
+
+    public isCommunityPacksActive(): boolean {
+        if (typeof window === 'undefined') return true;
+        try {
+            return localStorage.getItem('apex_community_packs_active') === 'true';
+        } catch {
+            return false;
+        }
+    }
+
+    public setCommunityPacksActive(active: boolean): void {
+        if (typeof window === 'undefined') return;
+        try {
+            if (active) {
+                localStorage.setItem('apex_community_packs_active', 'true');
+            } else {
+                localStorage.removeItem('apex_community_packs_active');
+            }
+            this.setAllPacksActive(active);
+            resourceManager.clearAllCache().catch(() => {});
+        } catch (e) {
+            console.error('Failed to set community packs master state:', e);
+        }
+        this.notifyListeners();
     }
 
     public setPlayerFacesPackActive(active: boolean): void {
@@ -336,6 +360,7 @@ class CustomPacksService {
         if (typeof window === 'undefined') return;
         try {
             const keys = [
+                'apex_community_packs_active',
                 'apex_pack_argentine_active',
                 'apex_pack_otros_arg_active',
                 'apex_pack_english_active',

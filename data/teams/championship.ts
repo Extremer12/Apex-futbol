@@ -107,7 +107,11 @@ export const championshipTeams: Team[] = [
       { id: 10605, name: 'M. Núñez', position: 'CEN', rating: 77, potential: 80, age: 24, value: 8000000, wage: 30000, morale: 'Feliz', contractYears: 3 },
       { id: 10606, name: 'A. Crnac', position: 'DEL', rating: 75, potential: 83, age: 20, value: 7000000, wage: 22000, morale: 'Feliz', contractYears: 4 },
       { id: 10607, name: 'J. Sainz', position: 'DEL', rating: 78, potential: 82, age: 23, value: 11000000, wage: 35000, morale: 'Feliz', contractYears: 4 },
-      { id: 10608, name: 'J. Sargent', position: 'DEL', rating: 79, potential: 82, age: 24, value: 13000000, wage: 45000, morale: 'Feliz', contractYears: 4 }
+      { id: 10608, name: 'J. Sargent', position: 'DEL', rating: 79, potential: 82, age: 24, value: 13000000, wage: 45000, morale: 'Feliz', contractYears: 4 },
+      { id: 10609, name: 'J. Stacey', position: 'DEF', rating: 75, potential: 75, age: 28, value: 1600000, wage: 18000, morale: 'Contento', contractYears: 2 },
+      { id: 10610, name: 'C. Doyle', position: 'DEF', rating: 76, potential: 83, age: 21, value: 3800000, wage: 20000, morale: 'Feliz', contractYears: 3 },
+      { id: 10611, name: 'E. Marcondes', position: 'CEN', rating: 75, potential: 75, age: 29, value: 1700000, wage: 18000, morale: 'Normal', contractYears: 2 },
+      { id: 10612, name: 'C. Fassnacht', position: 'DEL', rating: 75, potential: 75, age: 31, value: 1500000, wage: 18000, morale: 'Normal', contractYears: 1 }
     ]
   },
   {
@@ -123,7 +127,9 @@ export const championshipTeams: Team[] = [
       { id: 10907, name: 'F. Azaz', position: 'CEN', rating: 77, potential: 80, age: 24, value: 8000000, wage: 30000, morale: 'Feliz', contractYears: 3 },
       { id: 10908, name: 'B. Doak', position: 'DEL', rating: 76, potential: 87, age: 18, value: 10000000, wage: 25000, morale: 'Feliz', contractYears: 4 },
       { id: 10909, name: 'T. Conway', position: 'DEL', rating: 76, potential: 82, age: 22, value: 7500000, wage: 28000, morale: 'Contento', contractYears: 4 },
-      { id: 10910, name: 'E. Latte Lath', position: 'DEL', rating: 78, potential: 80, age: 25, value: 11000000, wage: 40000, morale: 'Feliz', contractYears: 3 }
+      { id: 10910, name: 'E. Latte Lath', position: 'DEL', rating: 78, potential: 80, age: 25, value: 11000000, wage: 40000, morale: 'Feliz', contractYears: 3 },
+      { id: 10911, name: 'J. Howson', position: 'CEN', rating: 75, potential: 75, age: 36, value: 800000, wage: 18000, morale: 'Feliz', contractYears: 1 },
+      { id: 10912, name: 'D. Burgzorg', position: 'DEL', rating: 75, potential: 77, age: 26, value: 2200000, wage: 18000, morale: 'Normal', contractYears: 2 }
     ]
   },
   {
@@ -138,7 +144,10 @@ export const championshipTeams: Team[] = [
       { id: 11506, name: 'E. Kayembe', position: 'CEN', rating: 77, potential: 78, age: 26, value: 7000000, wage: 32000, morale: 'Feliz', contractYears: 3 },
       { id: 11507, name: 'G. Chakvetadze', position: 'CEN', rating: 78, potential: 81, age: 25, value: 9500000, wage: 35000, morale: 'Feliz', contractYears: 4 },
       { id: 11508, name: 'K. Baah', position: 'DEL', rating: 76, potential: 82, age: 21, value: 6500000, wage: 22000, morale: 'Contento', contractYears: 4 },
-      { id: 11509, name: 'V. Bayo', position: 'DEL', rating: 76, potential: 76, age: 27, value: 5500000, wage: 30000, morale: 'Normal', contractYears: 2 }
+      { id: 11509, name: 'V. Bayo', position: 'DEL', rating: 76, potential: 76, age: 27, value: 5500000, wage: 30000, morale: 'Normal', contractYears: 2 },
+      { id: 11510, name: 'J. Morris', position: 'DEF', rating: 74, potential: 77, age: 23, value: 1600000, wage: 14000, morale: 'Contento', contractYears: 3 },
+      { id: 11511, name: 'T. Ince', position: 'DEL', rating: 75, potential: 75, age: 32, value: 1400000, wage: 18000, morale: 'Normal', contractYears: 1 },
+      { id: 11512, name: 'R. Vata', position: 'DEL', rating: 75, potential: 83, age: 19, value: 2800000, wage: 12000, morale: 'Feliz', contractYears: 4 }
     ]
   },
   {
@@ -154,7 +163,9 @@ export const championshipTeams: Team[] = [
       { id: 10307, name: 'L. Walsh', position: 'CEN', rating: 75, potential: 77, age: 27, value: 4000000, wage: 25000, morale: 'Normal', contractYears: 3 },
       { id: 10308, name: 'T. Chong', position: 'DEL', rating: 77, potential: 80, age: 24, value: 8500000, wage: 38000, morale: 'Feliz', contractYears: 3 },
       { id: 10309, name: 'C. Morris', position: 'DEL', rating: 77, potential: 77, age: 28, value: 8000000, wage: 40000, morale: 'Feliz', contractYears: 3 },
-      { id: 10310, name: 'E. Adebayo', position: 'DEL', rating: 77, potential: 79, age: 26, value: 8500000, wage: 38000, morale: 'Contento', contractYears: 3 }
+      { id: 10310, name: 'E. Adebayo', position: 'DEL', rating: 77, potential: 79, age: 26, value: 8500000, wage: 38000, morale: 'Contento', contractYears: 3 },
+      { id: 10311, name: 'R. Burke', position: 'DEF', rating: 75, potential: 76, age: 28, value: 1600000, wage: 18000, morale: 'Normal', contractYears: 2 },
+      { id: 10312, name: 'J. Clark', position: 'CEN', rating: 75, potential: 75, age: 31, value: 1200000, wage: 16000, morale: 'Contento', contractYears: 2 }
     ]
   },
   {
@@ -185,7 +196,11 @@ export const championshipTeams: Team[] = [
       { id: 11805, name: 'W. Burger', position: 'CEN', rating: 77, potential: 82, age: 23, value: 8000000, wage: 30000, morale: 'Feliz', contractYears: 4 },
       { id: 11806, name: 'B. Manhoef', position: 'DEL', rating: 77, potential: 83, age: 22, value: 9000000, wage: 28000, morale: 'Feliz', contractYears: 4 },
       { id: 11807, name: 'T. Cannon', position: 'DEL', rating: 76, potential: 82, age: 21, value: 7000000, wage: 25000, morale: 'Feliz', contractYears: 3 },
-      { id: 11808, name: 'S. Gallagher', position: 'DEL', rating: 75, potential: 75, age: 29, value: 3500000, wage: 25000, morale: 'Normal', contractYears: 2 }
+      { id: 11808, name: 'S. Gallagher', position: 'DEL', rating: 75, potential: 75, age: 29, value: 3500000, wage: 25000, morale: 'Normal', contractYears: 2 },
+      { id: 11809, name: 'E. Stevens', position: 'DEF', rating: 74, potential: 74, age: 34, value: 700000, wage: 14000, morale: 'Normal', contractYears: 1 },
+      { id: 11810, name: 'J. Tchamadeu', position: 'DEF', rating: 75, potential: 81, age: 21, value: 2500000, wage: 14000, morale: 'Feliz', contractYears: 3 },
+      { id: 11811, name: 'J. Thompson', position: 'CEN', rating: 75, potential: 75, age: 27, value: 1600000, wage: 16000, morale: 'Contento', contractYears: 2 },
+      { id: 11812, name: 'A. Vidigal', position: 'DEL', rating: 75, potential: 77, age: 26, value: 2000000, wage: 16000, morale: 'Normal', contractYears: 2 }
     ]
   },
   {
@@ -201,7 +216,9 @@ export const championshipTeams: Team[] = [
       { id: 11907, name: 'T. Cantwell', position: 'CEN', rating: 77, potential: 77, age: 26, value: 7000000, wage: 35000, morale: 'Feliz', contractYears: 3 },
       { id: 11908, name: 'T. Dolan', position: 'DEL', rating: 76, potential: 80, age: 22, value: 6500000, wage: 25000, morale: 'Contento', contractYears: 3 },
       { id: 11909, name: 'Y. Ohashi', position: 'DEL', rating: 76, potential: 77, age: 28, value: 5500000, wage: 26000, morale: 'Feliz', contractYears: 3 },
-      { id: 11910, name: 'M. Gueye', position: 'DEL', rating: 75, potential: 81, age: 21, value: 4500000, wage: 18000, morale: 'Normal', contractYears: 3 }
+      { id: 11910, name: 'M. Gueye', position: 'DEL', rating: 75, potential: 81, age: 21, value: 4500000, wage: 18000, morale: 'Normal', contractYears: 3 },
+      { id: 11911, name: 'C. Brittain', position: 'DEF', rating: 75, potential: 76, age: 26, value: 1800000, wage: 16000, morale: 'Contento', contractYears: 2 },
+      { id: 11912, name: 'A. Weimann', position: 'DEL', rating: 75, potential: 75, age: 33, value: 1200000, wage: 18000, morale: 'Normal', contractYears: 1 }
     ]
   },
   {
@@ -216,7 +233,10 @@ export const championshipTeams: Team[] = [
       { id: 10706, name: 'R. Slater', position: 'CEN', rating: 75, potential: 77, age: 24, value: 4000000, wage: 20000, morale: 'Normal', contractYears: 3 },
       { id: 10707, name: 'M. Belloumi', position: 'DEL', rating: 76, potential: 83, age: 22, value: 7500000, wage: 22000, morale: 'Feliz', contractYears: 4 },
       { id: 10708, name: 'L. Millar', position: 'DEL', rating: 76, potential: 78, age: 24, value: 6000000, wage: 25000, morale: 'Contento', contractYears: 3 },
-      { id: 10709, name: 'C. Bedia', position: 'DEL', rating: 76, potential: 77, age: 28, value: 5500000, wage: 28000, morale: 'Normal', contractYears: 2 }
+      { id: 10709, name: 'C. Bedia', position: 'DEL', rating: 76, potential: 77, age: 28, value: 5500000, wage: 28000, morale: 'Normal', contractYears: 2 },
+      { id: 10710, name: 'L. Coyle', position: 'DEF', rating: 75, potential: 75, age: 29, value: 1500000, wage: 16000, morale: 'Contento', contractYears: 2 },
+      { id: 10711, name: 'X. Simons', position: 'CEN', rating: 75, potential: 80, age: 21, value: 2500000, wage: 14000, morale: 'Feliz', contractYears: 3 },
+      { id: 10712, name: 'A. Kamara', position: 'DEL', rating: 75, potential: 82, age: 21, value: 2800000, wage: 15000, morale: 'Feliz', contractYears: 4 }
     ]
   },
   {
@@ -232,7 +252,9 @@ export const championshipTeams: Team[] = [
       { id: 11407, name: 'O. Cooper', position: 'CEN', rating: 75, potential: 79, age: 24, value: 4500000, wage: 20000, morale: 'Contento', contractYears: 3 },
       { id: 11408, name: 'R. Ronald', position: 'DEL', rating: 76, potential: 81, age: 23, value: 6500000, wage: 22000, morale: 'Feliz', contractYears: 4 },
       { id: 11409, name: 'Ž. Vipotnik', position: 'DEL', rating: 76, potential: 81, age: 22, value: 6500000, wage: 25000, morale: 'Contento', contractYears: 4 },
-      { id: 11410, name: 'L. Cullen', position: 'DEL', rating: 75, potential: 77, age: 25, value: 4000000, wage: 20000, morale: 'Normal', contractYears: 2 }
+      { id: 11410, name: 'L. Cullen', position: 'DEL', rating: 75, potential: 77, age: 25, value: 4000000, wage: 20000, morale: 'Normal', contractYears: 2 },
+      { id: 11411, name: 'K. Naughton', position: 'DEF', rating: 74, potential: 74, age: 36, value: 600000, wage: 14000, morale: 'Normal', contractYears: 1 },
+      { id: 11412, name: 'J. Fulton', position: 'CEN', rating: 75, potential: 75, age: 30, value: 1500000, wage: 16000, morale: 'Contento', contractYears: 2 }
     ]
   },
   {
@@ -300,7 +322,9 @@ export const championshipTeams: Team[] = [
       { id: 11007, name: 'M. Frøkjær', position: 'CEN', rating: 76, potential: 79, age: 25, value: 5500000, wage: 25000, morale: 'Normal', contractYears: 3 },
       { id: 11008, name: 'S. Greenwood', position: 'DEL', rating: 75, potential: 80, age: 22, value: 5000000, wage: 22000, morale: 'Feliz', contractYears: 3 },
       { id: 11009, name: 'E. Riis', position: 'DEL', rating: 76, potential: 78, age: 26, value: 5500000, wage: 28000, morale: 'Normal', contractYears: 2 },
-      { id: 11010, name: 'W. Keane', position: 'DEL', rating: 75, potential: 75, age: 31, value: 3000000, wage: 25000, morale: 'Normal', contractYears: 2 }
+      { id: 11010, name: 'W. Keane', position: 'DEL', rating: 75, potential: 75, age: 31, value: 3000000, wage: 25000, morale: 'Normal', contractYears: 2 },
+      { id: 11011, name: 'R. Ledson', position: 'CEN', rating: 74, potential: 74, age: 27, value: 1300000, wage: 14000, morale: 'Normal', contractYears: 2 },
+      { id: 11012, name: 'K. Best', position: 'DEF', rating: 74, potential: 81, age: 19, value: 2200000, wage: 10000, morale: 'Contento', contractYears: 4 }
     ]
   },
   {
@@ -384,7 +408,9 @@ export const championshipTeams: Team[] = [
       { id: 12107, name: 'M. Whittaker', position: 'DEL', rating: 78, potential: 83, age: 23, value: 11000000, wage: 30000, morale: 'Feliz', contractYears: 4 },
       { id: 12108, name: 'I. Cissoko', position: 'DEL', rating: 76, potential: 82, age: 21, value: 6500000, wage: 20000, morale: 'Feliz', contractYears: 3 },
       { id: 12109, name: 'R. Hardie', position: 'DEL', rating: 76, potential: 77, age: 27, value: 4500000, wage: 24000, morale: 'Contento', contractYears: 2 },
-      { id: 12110, name: 'M. Obafemi', position: 'DEL', rating: 75, potential: 78, age: 24, value: 4000000, wage: 22000, morale: 'Normal', contractYears: 2 }
+      { id: 12110, name: 'M. Obafemi', position: 'DEL', rating: 75, potential: 78, age: 24, value: 4000000, wage: 22000, morale: 'Normal', contractYears: 2 },
+      { id: 12111, name: 'J. Pleguezuelo', position: 'DEF', rating: 74, potential: 74, age: 27, value: 1300000, wage: 14000, morale: 'Normal', contractYears: 2 },
+      { id: 12112, name: 'C. Wright', position: 'CEN', rating: 74, potential: 76, age: 24, value: 1500000, wage: 13000, morale: 'Contento', contractYears: 2 }
     ]
   },
   {

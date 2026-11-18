@@ -52,9 +52,13 @@ export const CommunityPacksSection: React.FC = () => {
     // Feedback notifications
     const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
+    // Master Community Safe Mode state
+    const [isCommunityActive, setIsCommunityActive] = useState(() => customPacksService.isCommunityPacksActive());
+
     // Reload packs from manager
     const refreshPacks = () => {
         setInstalledPacks(PackManager.getInstalledPacks());
+        setIsCommunityActive(customPacksService.isCommunityPacksActive());
     };
 
     useEffect(() => {
@@ -241,6 +245,20 @@ export const CommunityPacksSection: React.FC = () => {
         }
     };
 
+    // Toggle Master Community Safe Mode
+    const handleToggleCommunityMaster = () => {
+        const nextState = !isCommunityActive;
+        customPacksService.setCommunityPacksActive(nextState);
+        setIsCommunityActive(nextState);
+        refreshPacks();
+        setFeedback({
+            type: 'success',
+            message: nextState
+                ? '¡Packs Comunitarios Activados! Escudos de clubes y caras reales listos al 100%.'
+                : 'Modo Seguro activado para Google Play. El juego utiliza escudos vectoriales y siluetas genéricas.'
+        });
+    };
+
     // Reset everything to generic fallback
     const handleClearAll = async () => {
         if (!window.confirm('¿Deseas desinstalar todos los packs comunitarios y restablecer el juego a base mínima genérica?')) {
@@ -315,6 +333,56 @@ export const CommunityPacksSection: React.FC = () => {
                     >
                         <Upload className="w-3.5 h-3.5" />
                         <span>Contribuir</span>
+                    </button>
+                </div>
+            </div>
+
+            {/* 1-CLICK MASTER TOGGLE: MODO COMUNIDAD / MODO SEGURO */}
+            <div className={`p-5 rounded-2xl border transition-all duration-300 shadow-xl ${
+                isCommunityActive
+                    ? 'bg-gradient-to-r from-amber-950/40 via-slate-900 to-slate-900 border-[var(--apex-gold)]/40 shadow-yellow-500/5'
+                    : 'bg-gradient-to-r from-slate-900 via-slate-900 to-sky-950/40 border-sky-500/30'
+            }`}>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${
+                                isCommunityActive
+                                    ? 'bg-[var(--apex-gold)]/20 text-[var(--apex-gold)] border-[var(--apex-gold)]/40'
+                                    : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                            }`}>
+                                {isCommunityActive ? '✨ Contenido Real Activo' : '🛡️ Modo Seguro (Play Store)'}
+                            </span>
+                        </div>
+                        <h3 className="text-base font-black text-white">
+                            Escudos de Clubes y Caras Reales (1 Clic)
+                        </h3>
+                        <p className="text-xs text-slate-400 max-w-xl">
+                            {isCommunityActive
+                                ? 'Los 382 escudos reales de clubes, torneos y fotos de futbolistas están activos en todo el juego.'
+                                : 'Por defecto el juego inicia en Modo Seguro con escudos vectoriales para cumplir las políticas de Google Play. Actívalo con 1 clic para disfrutar del contenido real.'}
+                        </p>
+                    </div>
+
+                    <button
+                        onClick={handleToggleCommunityMaster}
+                        className={`px-5 py-3 rounded-xl font-black text-xs uppercase tracking-wider transition-all shadow-lg flex items-center justify-center gap-2 shrink-0 cursor-pointer active:scale-98 ${
+                            isCommunityActive
+                                ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+                                : 'bg-gradient-to-r from-[var(--apex-gold)] to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 shadow-yellow-500/20'
+                        }`}
+                    >
+                        {isCommunityActive ? (
+                            <>
+                                <RotateCcw className="w-4 h-4" />
+                                <span>Volver a Modo Seguro</span>
+                            </>
+                        ) : (
+                            <>
+                                <Sparkles className="w-4 h-4 text-slate-950" />
+                                <span>Activar Todo con 1 Clic</span>
+                            </>
+                        )}
                     </button>
                 </div>
             </div>

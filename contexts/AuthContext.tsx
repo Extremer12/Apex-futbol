@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase, signInWithGoogle as supabaseSignInWithGoogle, signOut as supabaseSignOut } from '../services/supabase';
+import { supabase, signInWithGoogle as supabaseSignInWithGoogle, signOut as supabaseSignOut, isSupabaseConfigured } from '../services/supabase';
 import { Tables } from '../types/supabase';
 
 export type UserProfile = Tables<'profiles'>;
@@ -10,6 +10,7 @@ interface AuthContextType {
     session: Session | null;
     profile: UserProfile | null;
     loading: boolean;
+    isConfigured: boolean;
     signInWithGoogle: () => Promise<void>;
     signOut: () => Promise<void>;
     refreshProfile: () => Promise<void>;
@@ -93,6 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 session,
                 profile,
                 loading,
+                isConfigured: isSupabaseConfigured(),
                 signInWithGoogle,
                 signOut,
                 refreshProfile,

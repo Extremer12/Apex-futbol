@@ -1,30 +1,61 @@
 {
   "name": "Apex AI Football President",
-  "short_name": "Apex Football",
+  "short_name": "Apex AI",
   "description": "Simulador de gestión futbolística y presidencia deportiva de élite impulsado por IA.",
+  "id": "/",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0A0E17",
   "theme_color": "#0A0E17",
   "orientation": "portrait-primary",
+  "lang": "es",
+  "dir": "ltr",
+  "categories": [
+    "games",
+    "sports",
+    "entertainment"
+  ],
   "icons": [
+    {
+      "src": "/logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
     {
       "src": "/logo-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/logo-sinfondo-512.png",
+      "src": "/logo-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot-narrow.png",
+      "sizes": "941x1672",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Panel de Gestión y Presidencia Deportiva"
     },
     {
-      "src": "/logo-sinfondo-192.png",
-      "sizes": "192x192",
+      "src": "/screenshot-wide.png",
+      "sizes": "1920x1080",
       "type": "image/png",
-      "purpose": "any"
+      "form_factor": "wide",
+      "label": "Apex Football Simulator en Pantalla Grande"
     }
   ]
 }

@@ -31,7 +31,7 @@ export function startNewSeason(currentState: GameState): GameState {
         LeagueId.PRIMERA_B_CHILE,
         LeagueId.PRIMERA_A_COLOMBIA,
         LeagueId.PRIMERA_B_COLOMBIA
-    ].includes(currentState.team.leagueId);
+    ].includes(currentState.team.leagueId as LeagueId);
 
     const newSeasonYear = currentState.season + 1;
     const newDate = isSouthAmerica 
@@ -873,7 +873,7 @@ export function startNewSeason(currentState: GameState): GameState {
     });
 
     // 7.6 Build Season History Record
-    const userTable = currentState.leagueTables[userLeagueId] || [];
+    const userTable = (userLeagueId !== 'CONMEBOL' ? currentState.leagueTables[userLeagueId] : []) || [];
     const sortedUserTable = [...userTable].sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference);
     const userRow = sortedUserTable.find(r => r.teamId === currentState.team.id);
     const leagueChampionTeam = processedTeams.find(t => t.id === sortedUserTable[0]?.teamId)?.name || 'Desconocido';
@@ -891,7 +891,7 @@ export function startNewSeason(currentState: GameState): GameState {
     const seasonRecord: SeasonHistoryRecord = {
         season: currentSeason,
         leagueId: userLeagueId,
-        leagueName: LEAGUE_TROPHY_NAMES[userLeagueId] || userLeagueId.replace(/_/g, ' '),
+        leagueName: (userLeagueId !== 'CONMEBOL' ? LEAGUE_TROPHY_NAMES[userLeagueId] : undefined) || userLeagueId.replace(/_/g, ' '),
         userTeamId: currentState.team.id,
         userTeamName: currentState.team.name,
         userPosition: playerPosition,

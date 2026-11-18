@@ -7,7 +7,8 @@
 
 import { ResourceType, ResourceResolution } from '../ResourceTypes';
 import { ResourceFallback } from '../ResourceFallback';
-import { ARG_CLUB_LOGOS_BY_ID, ARG_COMPETITION_LOGOS, COMMUNITY_PACK_CDN } from '../../customPacks/argentineLogos';
+import { ARG_CLUB_LOGOS_BY_ID, ARG_CLUB_LOGOS_BY_NAME, ARG_COMPETITION_LOGOS, COMMUNITY_PACK_CDN } from '../../customPacks/argentineLogos';
+import { PLAYER_PHOTOS_BY_ID, PLAYER_PHOTOS_BY_NAME } from '../../customPacks/playerPhotos';
 
 export class DefaultResourceProvider {
     public static readonly ID = 'default-official-provider';
@@ -18,7 +19,7 @@ export class DefaultResourceProvider {
      */
     public static resolveTeamLogo(teamId: number | string, meta?: { name?: string; logo?: string; primaryColor?: string; secondaryColor?: string }): ResourceResolution | null {
         // 1. Direct ID in ARG_CLUB_LOGOS_BY_ID
-        const directLogo = ARG_CLUB_LOGOS_BY_ID[teamId];
+        const directLogo = ARG_CLUB_LOGOS_BY_ID[teamId] || (typeof teamId === 'number' ? ARG_CLUB_LOGOS_BY_ID[String(teamId)] : undefined);
         if (directLogo) {
             return {
                 url: directLogo,
@@ -28,13 +29,20 @@ export class DefaultResourceProvider {
             };
         }
 
-        // 2. By clean normalized slug if name is provided
+        // 2. By name (checking raw, normalized, and slug)
         if (meta?.name) {
-            const cleanSlug = meta.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
-            const fromMap = ARG_CLUB_LOGOS_BY_ID[cleanSlug];
-            if (fromMap) {
+            const rawLower = meta.name.toLowerCase().trim();
+            const cleanNorm = rawLower.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            const cleanSlug = cleanNorm.replace(/[^a-z0-9]/g, '');
+
+            const fromName = ARG_CLUB_LOGOS_BY_NAME[rawLower] 
+                || ARG_CLUB_LOGOS_BY_NAME[cleanNorm] 
+                || ARG_CLUB_LOGOS_BY_NAME[cleanSlug]
+                || ARG_CLUB_LOGOS_BY_ID[cleanSlug];
+
+            if (fromName) {
                 return {
-                    url: fromMap,
+                    url: fromName,
                     source: 'builtin-cdn',
                     packId: this.ID,
                     isFallback: false
@@ -88,31 +96,50 @@ export class DefaultResourceProvider {
 
     /**
      * Resolve Player Face
-     * Serves through community pack CDN instead of external scraping sites.
+     * Serves through community pack CDN / real photos without third-party scraping.
      */
     public static resolvePlayerFace(playerId: number | string, meta?: { name?: string; photo?: string }): ResourceResolution | null {
         const numId = Number(playerId);
-        if (isNaN(numId) || numId <= 0) {
-            if (meta?.photo && !meta.photo.includes('fotmob.com') && meta.photo !== '/sinrostro.png') {
+
+        // 1. Check PLAYER_PHOTOS_BY_ID
+        if (!isNaN(numId) && numId > 0) {
+            const photoById = PLAYER_PHOTOS_BY_ID[numId] || (PLAYER_PHOTOS_BY_ID as Record<string, string>)[String(numId)];
+            if (photoById) {
                 return {
-                    url: meta.photo,
+                    url: photoById,
                     source: 'builtin-cdn',
                     packId: this.ID,
                     isFallback: false
                 };
             }
-            return null;
         }
 
-        // Community player faces stored in GitHub CDN
-        // Structure: /Players/{playerId}.webp
-        const communityFaceUrl = `${this.BASE_CDN}/Players/${numId}.webp`;
-        return {
-            url: communityFaceUrl,
-            source: 'builtin-cdn',
-            packId: this.ID,
-            isFallback: false
-        };
+        // 2. Check PLAYER_PHOTOS_BY_NAME
+        if (meta?.name) {
+            const rawLower = meta.name.toLowerCase().trim();
+            const cleanNorm = rawLower.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            const photoByName = PLAYER_PHOTOS_BY_NAME[rawLower] || PLAYER_PHOTOS_BY_NAME[cleanNorm];
+            if (photoByName) {
+                return {
+                    url: photoByName,
+                    source: 'builtin-cdn',
+                    packId: this.ID,
+                    isFallback: false
+                };
+            }
+        }
+
+        // 3. Valid meta.photo if provided (and not a fallback/broken placeholder)
+        if (meta?.photo && typeof meta.photo === 'string' && meta.photo.trim() !== '' && meta.photo !== '/sinrostro.png' && !meta.photo.includes('fotmob.com/image_resources/playerimages/0.')) {
+            return {
+                url: meta.photo,
+                source: 'builtin-cdn',
+                packId: this.ID,
+                isFallback: false
+            };
+        }
+
+        return null;
     }
 
     /**

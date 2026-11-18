@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { HelpModal } from '../gameflow/PlaceholderModals';
 import { QuestionMarkCircleIcon, TrashIcon } from '../icons';
 import { clearAllData } from '../../services/db';
+import { deleteAllUserDataFromCloud } from '../../services/cloudSave';
+import { PrivacyPolicyModal } from '../settings/PrivacyPolicyModal';
 import { Modal } from '../ui/Modal';
 
 import { GameAction } from '../../state/reducer';
@@ -28,6 +30,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onSaveGame, onQu
     const [isQuitModalOpen, setIsQuitModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+    const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
+    const [deleteCloudToo, setDeleteCloudToo] = useState(true);
     const [isDeleting, setIsDeleting] = useState(false);
     const [matchSpeed, setMatchSpeed] = useState<'1' | '2' | '4'>(() => {
         try {
@@ -47,14 +51,20 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onSaveGame, onQu
     const handleClearData = async () => {
         setIsDeleting(true);
         try {
+            if (user && deleteCloudToo) {
+                await deleteAllUserDataFromCloud();
+            }
             await clearAllData();
+            try {
+                localStorage.clear();
+            } catch (_) {}
             window.location.reload(); // Force reload to clear state
         } catch (e) {
             console.error(e);
             setIsDeleting(false);
             setIsDeleteModalOpen(false);
         }
-    }
+    };
 
     return (
         <div className="p-4 md:p-6 max-w-2xl mx-auto space-y-8 pb-24">
@@ -87,27 +97,47 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onSaveGame, onQu
 
             {/* Modal de Confirmación de Borrado Total */}
             {isDeleteModalOpen && (
-                <Modal title="¿Borrar TODOS los Datos?" onClose={() => setIsDeleteModalOpen(false)}>
+                <Modal title="¿Borrar Datos y Reiniciar?" onClose={() => setIsDeleteModalOpen(false)}>
                     <div className="space-y-4">
                         <div className="bg-red-900/20 border border-red-500/50 p-4 rounded-lg">
-                            <p className="text-red-400 font-bold text-sm uppercase mb-1">Advertencia</p>
+                            <p className="text-red-400 font-bold text-sm uppercase mb-1">Advertencia de Seguridad</p>
                             <p className="text-slate-300 text-sm">
-                                Esta acción eliminará permanentemente <strong>todas las partidas guardadas</strong> y reiniciará la aplicación a su estado original. No se puede deshacer.
+                                Esta acción eliminará permanentemente <strong>todas las partidas guardadas locales</strong> y reiniciará la aplicación a su estado inicial. No se puede deshacer.
                             </p>
                         </div>
+
+                        {user && (
+                            <div className="bg-slate-800/80 border border-slate-700 p-3 rounded-lg space-y-2">
+                                <label className="flex items-start gap-2.5 cursor-pointer">
+                                    <input 
+                                        type="checkbox"
+                                        checked={deleteCloudToo}
+                                        onChange={(e) => setDeleteCloudToo(e.target.checked)}
+                                        className="mt-0.5 rounded border-slate-600 text-red-600 focus:ring-red-500 bg-slate-900"
+                                    />
+                                    <div className="text-xs">
+                                        <span className="text-white font-bold block">Eliminar también mi cuenta y partidas en la nube</span>
+                                        <span className="text-slate-400 block mt-0.5">
+                                            Borra las partidas de respaldo en Supabase vinculadas a <strong className="text-sky-400">{user.email}</strong> y retira tus récords del Salón de la Fama (Directiva de eliminación de cuenta de Google Play).
+                                        </span>
+                                    </div>
+                                </label>
+                            </div>
+                        )}
+
                         <div className="flex justify-end gap-3 pt-2">
                             <button 
                                 onClick={() => setIsDeleteModalOpen(false)} 
-                                className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+                                className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-lg transition-colors text-xs"
                             >
                                 Cancelar
                             </button>
                             <button 
                                 onClick={handleClearData} 
                                 disabled={isDeleting}
-                                className="bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-4 rounded-lg transition-colors shadow-lg shadow-red-600/20 flex items-center gap-2"
+                                className="bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-4 rounded-lg transition-colors shadow-lg shadow-red-600/20 flex items-center gap-2 text-xs"
                             >
-                                {isDeleting ? 'Borrando...' : 'Sí, Borrar Todo'}
+                                {isDeleting ? 'Procesando...' : (user && deleteCloudToo ? 'Sí, Eliminar Cuenta y Datos' : 'Sí, Borrar Todo')}
                             </button>
                         </div>
                     </div>
@@ -115,6 +145,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onSaveGame, onQu
             )}
             
             {isLeaderboardOpen && <LeaderboardModal onClose={() => setIsLeaderboardOpen(false)} />}
+            {isPrivacyModalOpen && <PrivacyPolicyModal onClose={() => setIsPrivacyModalOpen(false)} />}
 
             <div className="flex items-center justify-between">
                 <h2 className="text-3xl font-bold text-sky-400">Ajustes y Sistema</h2>
@@ -132,17 +163,17 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onSaveGame, onQu
                                 {profile?.avatar_url ? (
                                     <img
                                         src={profile.avatar_url}
-                                        alt={profile.display_name || 'Avatar'}
+                                        alt={profile.full_name || profile.email || 'Avatar'}
                                         className="w-12 h-12 rounded-full border-2 border-[var(--apex-gold)] shadow-md"
                                     />
                                 ) : (
                                     <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-lg font-black text-[var(--apex-gold)] border border-slate-700">
-                                        {(profile?.display_name || user.email || 'U').charAt(0).toUpperCase()}
+                                        {(profile?.full_name || user.email || 'U').charAt(0).toUpperCase()}
                                     </div>
                                 )}
                                 <div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-white font-bold text-base">{profile?.display_name || 'Presidente'}</span>
+                                        <span className="text-white font-bold text-base">{profile?.full_name || user.email?.split('@')[0] || 'Presidente'}</span>
                                         <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-900/30 text-green-400 border border-green-500/30">
                                             Google Conectado
                                         </span>
@@ -390,16 +421,55 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onSaveGame, onQu
                 <CommunityPacksSection />
             </div>
 
+            {/* Legal & Privacy Section */}
+            <div className="space-y-4">
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                    <span>🛡️ Legal y Privacidad</span>
+                </h3>
+                <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h4 className="text-white font-bold text-sm">Política de Privacidad y Protección de Datos</h4>
+                        <p className="text-xs text-slate-400 mt-1">
+                            Directivas de Google Play Store, funcionamiento 100% offline y derechos de eliminación total de cuenta.
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                        <button
+                            onClick={() => setIsPrivacyModalOpen(true)}
+                            className="px-3.5 py-2 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 rounded-lg text-xs font-bold transition-all"
+                        >
+                            Ver Política
+                        </button>
+                        <a
+                            href="/privacy.html"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 rounded-lg text-xs font-bold transition-all"
+                            title="Abrir en pestaña nueva"
+                        >
+                            ↗
+                        </a>
+                    </div>
+                </div>
+            </div>
+
             {/* Danger Zone */}
             <div className="space-y-4 pt-4 border-t border-slate-800/50">
-                <h3 className="text-sm font-bold text-red-500 uppercase tracking-wider flex items-center gap-2">
-                    <TrashIcon className="w-4 h-4" /> Zona de Peligro
-                </h3>
+                <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-bold text-red-500 uppercase tracking-wider flex items-center gap-2">
+                        <TrashIcon className="w-4 h-4" /> Zona de Peligro
+                    </h3>
+                    <span className="text-[11px] text-slate-500">Google Play Account Deletion</span>
+                </div>
+                <p className="text-xs text-slate-400">
+                    Eliminación permanente de datos locales, partidas guardadas y cuenta en la nube conforme a las directivas de Google Play.
+                </p>
                 <button 
                     onClick={() => setIsDeleteModalOpen(true)}
                     className="w-full bg-red-900/20 border border-red-900/50 text-red-400 hover:bg-red-900/40 hover:text-red-200 font-semibold py-3 px-4 rounded-lg transition-all text-sm flex items-center justify-center gap-2"
                 >
-                    Borrar Todos los Datos y Reiniciar
+                    <TrashIcon className="w-4 h-4" />
+                    {user ? 'Borrar Datos / Eliminar Cuenta en la Nube' : 'Borrar Todos los Datos y Reiniciar'}
                 </button>
             </div>
         </div>

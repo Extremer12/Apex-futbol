@@ -39,7 +39,7 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
         LeagueId.PRIMERA_B_COLOMBIA,
         LeagueId.LIGA_MX,
         LeagueId.LIGA_EXPANSION_MX
-    ].includes(selectedTeam.leagueId);
+    ].includes(selectedTeam.leagueId as LeagueId);
 
     const now = isSouthAmerica ? new Date('2026-01-15T12:00:00') : new Date('2026-08-10T12:00:00');
 

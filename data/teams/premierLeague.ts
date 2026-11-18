@@ -26,7 +26,7 @@ export const premierLeagueTeams: Team[] = [
   },
   {
     id: 2, name: 'Aston Villa', logo: createTeamLogo(TEAM_LOGOS['Aston Villa'], 'Aston Villa'), leagueId: LeagueId.PREMIER_LEAGUE, budget: 180, transferBudget: 50, tier: 'Mid', teamMorale: 'Feliz',
-    primaryColor: '#670E36', secondaryColor: '#95BJE5',
+    primaryColor: '#670E36', secondaryColor: '#95BFE5',
     squad: [
       { id: 201, name: 'O. Watkins', position: 'DEL', rating: 85, value: 65, wage: 130000, morale: 'Feliz', contractYears: 4 },
       { id: 202, name: 'Douglas Luiz', position: 'CEN', rating: 83, value: 60, wage: 75000, morale: 'Contento', contractYears: 3 },

@@ -15,10 +15,10 @@ export const PlaceholderModal: React.FC<{ title: string; onClose: () => void }> 
 export const AboutModal: React.FC<{ onClose: () => void }> = ({ onClose }) => (
      <Modal title="Acerca de Apex AI" onClose={onClose}>
         <div className="space-y-4 text-slate-300 text-sm">
-            <p><strong>Apex AI</strong> es un simulador de gestión de fútbol para un solo jugador en el que te pones en la piel del presidente de un club.</p>
+            <p><strong>Apex AI</strong> es un simulador de gestión de fútbol en el que te pones en la piel del presidente de un club.</p>
             <p>Tu misión es llevar a tu equipo a la gloria gestionando las finanzas, navegando por el mercado de fichajes y manteniendo alta la moral de la directiva y del equipo. Cada decisión cuenta.</p>
-            <p>El juego utiliza la IA generativa de Google para crear noticias dinámicas, informes de partidos y escenarios de negociación, haciendo que cada partida sea única.</p>
-             <p className="text-xs text-slate-500 pt-4 border-t border-slate-800">Este juego es una demostración de frontend y no almacena datos en un servidor. Todo el progreso se guarda localmente en tu navegador.</p>
+            <p>El juego cuenta con sincronización en la nube mediante Supabase, tablas de clasificación mundiales y personalización completa de escudos y fotos.</p>
+             <p className="text-xs text-slate-500 pt-4 border-t border-slate-800">Apex AI Football President v1.0.0 Oficial • Cumple con las normativas de privacidad y protección de datos.</p>
         </div>
     </Modal>
 );

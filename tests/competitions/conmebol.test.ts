@@ -150,8 +150,8 @@ test('Copa Sudamericana: advances to Octavos de Final (Week 24) with group winne
 test('Copa Sudamericana: champion earns qualification into Copa Libertadores Pot 2', async () => {
     const { buildLibertadoresParticipants } = await import('../../services/libertadoresEngine');
 
-    // Sudamericana champion is team 9130 (Everton de Viña)
-    const sudWinnerId = 9130;
+    // Sudamericana champion is team 1207 (Everton de Viña del Mar)
+    const sudWinnerId = 1207;
     const participants = buildLibertadoresParticipants({
         allTeams: TEAMS,
         lastSudamericanaWinnerId: sudWinnerId
