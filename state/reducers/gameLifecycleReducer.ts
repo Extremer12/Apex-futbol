@@ -181,8 +181,13 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
             const playerTable = newLeagueTables[playerLeagueId] || [];
             const playerPosition = playerTable.find(row => row.teamId === state.team.id)?.position || 10;
 
-            // Check if there was a home match this week
-            const currentMatch = state.schedule.find(m => m.week === state.currentWeek && (m.homeTeamId === state.team.id || m.awayTeamId === state.team.id));
+            // Check if there was a home match in this specific turn (weekend vs midweek)
+            const isMidweekTurn = state.currentTurn === 'midweek';
+            const currentMatch = state.schedule.find(m => 
+                m.week === state.currentWeek && 
+                Boolean(m.isMidweek) === isMidweekTurn && 
+                (m.homeTeamId === state.team.id || m.awayTeamId === state.team.id)
+            );
             const wasHomeMatch = currentMatch?.homeTeamId === state.team.id;
 
             const breakdown = calculateFinancialBreakdown(
@@ -195,7 +200,8 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
                 playerLeagueId,
                 state.finances.ticketPolicy,
                 state.finances.activeLoans,
-                state.finances.clubDirectives
+                state.finances.clubDirectives,
+                state.scouts
             );
 
             // Update balance based on breakdown
@@ -289,8 +295,8 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
                 allTeams: newAllTeams,
                 team: {
                     ...updatedPlayerTeam,
-                    coach: action.payload.coachReport ? {
-                        ...updatedPlayerTeam.coach!,
+                    coach: (updatedPlayerTeam.coach && action.payload.coachReport) ? {
+                        ...updatedPlayerTeam.coach,
                         satisfactionLevel: action.payload.coachReport.satisfaction
                     } : updatedPlayerTeam.coach
                 },

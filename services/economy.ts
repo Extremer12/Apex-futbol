@@ -1,4 +1,4 @@
-import { Stadium, Sponsor, Team, FinancialBreakdown, LeagueId, SponsorSector, SponsorPrestige, TicketPolicy, BankLoan, ClubDirectives } from '../types';
+import { Stadium, Sponsor, Team, FinancialBreakdown, LeagueId, SponsorSector, SponsorPrestige, TicketPolicy, BankLoan, ClubDirectives, Scout } from '../types';
 import { getTeamStadium } from '../data/stadiums';
 
 export interface BrandDefinition {
@@ -494,7 +494,8 @@ export const calculateFinancialBreakdown = (
     leagueId: string,
     ticketPolicy: TicketPolicy = 'standard',
     activeLoans: BankLoan[] = [],
-    clubDirectives?: ClubDirectives
+    clubDirectives?: ClubDirectives,
+    scouts: Scout[] = []
 ): FinancialBreakdown => {
     const isSouthAm = [
         LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
@@ -502,6 +503,8 @@ export const calculateFinancialBreakdown = (
         LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE,
         LeagueId.PRIMERA_A_COLOMBIA, LeagueId.PRIMERA_B_COLOMBIA
     ].includes(leagueId as any);
+    const isMex = [LeagueId.LIGA_MX, LeagueId.LIGA_EXPANSION_MX].includes(leagueId as any);
+    const regionScale = isSouthAm ? 0.20 : isMex ? 0.40 : 1.0;
 
     // Ingresos
     const matchdayRevenue = wasHomeMatch ? calculateMatchdayRevenue(stadium, leaguePosition, false, ticketPolicy) : 0;
@@ -535,9 +538,18 @@ export const calculateFinancialBreakdown = (
 
     // Gastos
     const wageExpenses = team.squad.reduce((sum, p) => sum + p.wage, 0);
-    const coachExpenses = team.coach?.salary || 0;
+    let staffSalaries = 0;
+    if (team.clubStaff) {
+        if (team.clubStaff.doctor) staffSalaries += team.clubStaff.doctor.salary;
+        if (team.clubStaff.fitnessCoach) staffSalaries += team.clubStaff.fitnessCoach.salary;
+        if (team.clubStaff.sportingDirector) staffSalaries += team.clubStaff.sportingDirector.salary;
+        if (team.clubStaff.youthCoach) staffSalaries += team.clubStaff.youthCoach.salary;
+    }
+    const scoutsSalaries = scouts.reduce((sum, sc) => sum + sc.salary, 0);
+    const coachExpenses = (team.coach?.salary || 0) + staffSalaries + scoutsSalaries;
     const stadiumExpenses = stadium.maintenanceCost;
-    const operationalExpenses = team.tier === 'Top' ? 250000 : team.tier === 'Mid' ? 100000 : 40000;
+    const baseOps = team.tier === 'Top' ? 250000 : team.tier === 'Mid' ? 100000 : 40000;
+    const operationalExpenses = Math.floor(baseOps * regionScale);
     const transferExpenses = transfersThisWeek.bought;
 
     return {
@@ -568,7 +580,8 @@ export const getNetWeeklyIncome = (breakdown: FinancialBreakdown): number => {
         breakdown.transferExpenses +
         (breakdown.loanExpenses || 0) +
         (breakdown.youthAcademyExpenses || 0) +
-        (breakdown.merchandisingExpenses || 0);
+        (breakdown.merchandisingExpenses || 0) +
+        (breakdown.winBonusExpenses || 0);
 
     return income - expenses;
 };
@@ -632,8 +645,18 @@ export interface FinancialHealthEvaluation {
 export const evaluateFinancialHealth = (
     finances: { balance: number; activeLoans?: BankLoan[] },
     netWeeklyIncome: number,
-    weeksRemainingInSeason: number = 30
+    weeksRemainingInSeason: number = 30,
+    leagueId?: string
 ): FinancialHealthEvaluation => {
+    const isSouthAm = leagueId && [
+        LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
+        LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
+        LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE,
+        LeagueId.PRIMERA_A_COLOMBIA, LeagueId.PRIMERA_B_COLOMBIA
+    ].includes(leagueId as any);
+    const isMex = leagueId && [LeagueId.LIGA_MX, LeagueId.LIGA_EXPANSION_MX].includes(leagueId as any);
+    const scale = isSouthAm ? 0.20 : isMex ? 0.40 : 1.0;
+
     const totalDebt = (finances.activeLoans || []).reduce((sum, l) => sum + (l.remainingAmount || 0), 0);
     const projectedEndBalance = finances.balance + (netWeeklyIncome * weeksRemainingInSeason);
 
@@ -655,12 +678,12 @@ export const evaluateFinancialHealth = (
         description = 'El volumen de préstamos activos y el flujo de caja negativo comprometen la liquidez.';
         color = '#F97316';
         fairPlayCompliant = false;
-    } else if (netWeeklyIncome > 200_000 && finances.balance > 15_000_000 && totalDebt === 0) {
+    } else if (netWeeklyIncome > (180_000 * scale) && finances.balance > (12_000_000 * scale) && totalDebt === 0) {
         grade = 'AAA';
         label = 'Máxima Solvencia';
         description = 'Excelente capacidad financiera, superávit holgado y nulo endeudamiento bancario.';
         color = 'var(--apex-green)';
-    } else if (netWeeklyIncome >= 50_000 && finances.balance > 5_000_000) {
+    } else if (netWeeklyIncome >= (40_000 * scale) && finances.balance > (4_000_000 * scale)) {
         grade = 'AA';
         label = 'Solidez Notable';
         description = 'Finanzas saludables y capacidad de maniobra para afrontar fichajes e infraestructura.';
@@ -681,6 +704,58 @@ export const evaluateFinancialHealth = (
         projectedEndBalance,
         fairPlayCompliant
     };
+};
+
+export const getFacilityUpgradeCost = (
+    nextLevel: number,
+    tier: Team['tier'] = 'Mid',
+    leagueId?: string
+): number => {
+    const isSouthAm = leagueId && [
+        LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
+        LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
+        LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE,
+        LeagueId.PRIMERA_A_COLOMBIA, LeagueId.PRIMERA_B_COLOMBIA
+    ].includes(leagueId as any);
+    const isMex = leagueId && [LeagueId.LIGA_MX, LeagueId.LIGA_EXPANSION_MX].includes(leagueId as any);
+    const scale = isSouthAm ? 0.20 : isMex ? 0.40 : 1.0;
+
+    const baseCost = nextLevel * (tier === 'Top' ? 3_500_000 : tier === 'Mid' ? 1_600_000 : 700_000);
+    return Math.floor(baseCost * scale);
+};
+
+export const getStadiumExpansionCost = (
+    capacity: number,
+    tier: Team['tier'] = 'Mid',
+    leagueId?: string
+): number => {
+    const isSouthAm = leagueId && [
+        LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
+        LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
+        LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE,
+        LeagueId.PRIMERA_A_COLOMBIA, LeagueId.PRIMERA_B_COLOMBIA
+    ].includes(leagueId as any);
+    return Math.floor(capacity * (isSouthAm ? 400 : 1000));
+};
+
+export const getDirectiveCosts = (
+    directives?: ClubDirectives,
+    leagueId?: string
+) => {
+    const isSouthAm = leagueId && [
+        LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
+        LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
+        LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE,
+        LeagueId.PRIMERA_A_COLOMBIA, LeagueId.PRIMERA_B_COLOMBIA
+    ].includes(leagueId as any);
+    const isMex = leagueId && [LeagueId.LIGA_MX, LeagueId.LIGA_EXPANSION_MX].includes(leagueId as any);
+    const scale = isSouthAm ? 0.20 : isMex ? 0.40 : 1.0;
+
+    const youthCost = directives?.youthInvestment === 'high' ? Math.floor(65_000 * scale) : directives?.youthInvestment === 'medium' ? Math.floor(22_000 * scale) : 0;
+    const marketingCost = directives?.globalMarketing ? Math.floor(25_000 * scale) : 0;
+    const winBonusCost = directives?.winBonuses === 'high' ? Math.floor(40_000 * scale) : directives?.winBonuses === 'normal' ? Math.floor(15_000 * scale) : 0;
+
+    return { youthCost, marketingCost, winBonusCost, scale };
 };
 
 /**

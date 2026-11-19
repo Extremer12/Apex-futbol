@@ -179,13 +179,54 @@ export class DefaultResourceProvider {
         return null;
     }
 
+    public static readonly COMMUNITY_TROPHIES: Record<string, string> = {
+        champions_league: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_uefa-champions-league.football-logos.cc.svg`,
+        copa_libertadores: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_conmebol-libertadores.football-logos.cc.svg`,
+        copa_sudamericana: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_conmebol-copa-sudamericana.football-logos.cc.svg`,
+        copa_intercontinental: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_fifa-intercontinental-cup.football-logos.cc.svg`,
+        copa_argentina: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_copa-argentina.football-logos.cc.svg`,
+        europa_league: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_uefa-europa-league.football-logos.cc.svg`,
+        liga_argentina: `${COMMUNITY_PACK_CDN}/Argentina/primera_division/argentina_argentina-primera-division.football-logos.cc.svg`,
+        premier_league: `${COMMUNITY_PACK_CDN}/Premier%20League/england_english-premier-league.football-logos.cc.svg`,
+        brasileirao: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_campeonato-brasileiro-serie-a.football-logos.cc.svg`,
+        copa_de_primera: `${COMMUNITY_PACK_CDN}/Copa%20de%20Primera/paraguay_copa-de-primera.football-logos.cc.svg`,
+        liga_mx: `${COMMUNITY_PACK_CDN}/Liga%20MX/mexico_liga-mx.football-logos.cc.svg`,
+        primera_division_chile: `${COMMUNITY_PACK_CDN}/Liga%20de%20Primera/chile_liga-de-primera.football-logos.cc.svg`,
+    };
+
     /**
      * Resolve Trophy Image
      */
-    public static resolveTrophy(competitionId: string): ResourceResolution | null {
+    public static resolveTrophy(competitionId: string, name?: string): ResourceResolution | null {
         const normalized = competitionId.toLowerCase().replace(/[^a-z0-9]/g, '_');
-        // If trophy asset exists in tournament logos
-        const compLogo = this.resolveCompetitionLogo(competitionId);
+        
+        // 1. Direct match in Community Trophies
+        const directTrophy = this.COMMUNITY_TROPHIES[normalized];
+        if (directTrophy) {
+            return {
+                url: directTrophy,
+                source: 'builtin-cdn',
+                packId: this.ID,
+                isFallback: false
+            };
+        }
+
+        // 2. Direct match by name
+        if (name) {
+            const cleanName = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '_');
+            const nameTrophy = this.COMMUNITY_TROPHIES[cleanName];
+            if (nameTrophy) {
+                return {
+                    url: nameTrophy,
+                    source: 'builtin-cdn',
+                    packId: this.ID,
+                    isFallback: false
+                };
+            }
+        }
+
+        // 3. Fallback to tournament logo if present
+        const compLogo = this.resolveCompetitionLogo(competitionId, name);
         if (compLogo) {
             return {
                 url: compLogo.url,

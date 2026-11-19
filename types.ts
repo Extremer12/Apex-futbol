@@ -525,6 +525,7 @@ export interface FinancialBreakdown {
   loanExpenses?: number;        // Amortización e intereses de préstamos
   youthAcademyExpenses?: number;// Inversión en fuerzas básicas y scouting
   merchandisingExpenses?: number;// Costo de campañas comerciales
+  winBonusExpenses?: number;    // Primas a la plantilla por victorias
 }
 
 

@@ -198,7 +198,7 @@ export const evaluateElectionPitch = async (pitch: string, team: Team, player: P
     return { success, feedback };
 }
 
-// NUEVA LÓGICA: Negociaciones deterministas
+import { getSportingDirectorEffect } from './staffService';
 export const generateTransferNegotiationResponse = async (player: Player, offer: number, buyingTeam: Team, sellingTeam: Team, attempts: number = 0): Promise<NegotiationResponse> => {
     // 0. Prestigio Continental: Estrellas de élite europea (rating >= 83) rechazan fichar por ligas sudamericanas
     const isEuropeanEliteLeague = [
@@ -251,9 +251,13 @@ export const generateTransferNegotiationResponse = async (player: Player, offer:
     const patience = Math.random(); 
     const greed = Math.random();
 
-    // Umbrales
-    const acceptThreshold = 1.15 + (greed * 0.25) - (patience * 0.15); // Entre 1.0 y 1.4 veces el valor
-    const rejectThreshold = 0.75 - (greed * 0.1); // Si es menos del 70-75%, rechazo directo.
+    // 3. Influencia del Director Deportivo en las exigencias del club vendedor
+    const { transferDiscountPct: discountPct } = getSportingDirectorEffect(buyingTeam.clubStaff?.sportingDirector);
+    const discountMultiplier = 1 - (discountPct / 100);
+
+    // Umbrales (el Director Deportivo reduce las pretensiones económicas del vendedor)
+    const acceptThreshold = (1.15 + (greed * 0.25) - (patience * 0.15)) * discountMultiplier;
+    const rejectThreshold = (0.75 - (greed * 0.1)) * discountMultiplier;
 
     if (ratio >= acceptThreshold) {
         return {
@@ -315,8 +319,10 @@ export const generatePlayerContractNegotiationResponse = async (
     }
 
     // Evaluación económica
+    const sportingDirector = buyingTeam.clubStaff?.sportingDirector;
+    const directorWageHelp = sportingDirector && sportingDirector.power >= 75 ? 0.05 : 0;
     const hasGoodBonus = signingBonus >= (expectedWage * 15) / 1000000;
-    if (wageRatio >= 1.02 || (wageRatio >= 0.94 && hasGoodBonus)) {
+    if (wageRatio >= (1.02 - directorWageHelp) || (wageRatio >= (0.94 - directorWageHelp) && hasGoodBonus)) {
         const acceptMessages = [
             `Las condiciones contractuales satisfacen plenamente a ${player.name}. ¡Estamos listos para estampar la firma!`,
             `Acuerdo total entre las partes. ${player.name} vestirá con orgullo la camiseta del ${buyingTeam.name}.`,
@@ -397,8 +403,9 @@ export const generateTransferOffer = async (player: Player, sellingTeam: Team, p
     if (viableBuyers.length === 0) return null;
 
     const buyer = viableBuyers[Math.floor(Math.random() * viableBuyers.length)];
-    // Oferta realista: entre el 85% y el 125% del valor de mercado
-    const variance = 0.85 + (Math.random() * 0.35);
+    // Oferta realista: entre el 85% y el 125% del valor de mercado, potenciada si el club vendedor tiene un Director Deportivo top
+    const directorBonus = sellingTeam.clubStaff?.sportingDirector ? (sellingTeam.clubStaff.sportingDirector.power / 400) : 0;
+    const variance = 0.85 + directorBonus + (Math.random() * 0.35);
     const offerValue = Math.round(pValue * variance);
     const msgTemplate = OFFER_MESSAGES[Math.floor(Math.random() * OFFER_MESSAGES.length)];
 

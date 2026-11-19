@@ -1,5 +1,6 @@
 import { Team, Match, LeagueTableRow, Morale, Player } from '../../types';
 import { getTacticalMatchup } from '../coaching';
+import { getCoachEffect, getDoctorEffect, getFitnessEffect } from '../staffService';
 import { generateRandomName } from '../../utils';
 
 export const FORMATION_CONFIG: Record<string, Record<Player['position'], number>> = {
@@ -26,7 +27,7 @@ export const generatePlayerId = (): number => {
     return lastPlayerId * 1000 + Math.floor(Math.random() * 1000);
 };
 
-export const generateYouthPlayer = (tier: Team['tier'] = 'Lower'): Player => {
+export const generateYouthPlayer = (tier: Team['tier'] = 'Lower', youthCoachBonus: number = 0): Player => {
     const positions: Player['position'][] = ['POR', 'DEF', 'CEN', 'DEL'];
     const position = positions[Math.floor(Math.random() * positions.length)];
 
@@ -34,7 +35,8 @@ export const generateYouthPlayer = (tier: Team['tier'] = 'Lower'): Player => {
     if (tier === 'Mid') baseRating = 60;
     if (tier === 'Top') baseRating = 64;
 
-    const rating = Math.min(85, Math.max(45, baseRating + Math.floor(Math.random() * 13) - 5));
+    const bonus = Math.max(0, Math.min(15, youthCoachBonus));
+    const rating = Math.min(88, Math.max(45, baseRating + bonus + Math.floor(Math.random() * 13) - 5));
     const value = Math.round((rating * rating * rating) / 8000) / 10;
 
     return {
@@ -116,9 +118,8 @@ export const selectMatchSquad = (team: Team): { starters: Player[]; subs: Player
 };
 
 export const getTeamStatsFromSquad = (starters: Player[], coach: Team['coach']) => {
-    const coachPower = coach?.prestige || 65;
-    const powerBonus = (coachPower - 65) * 0.05;
-    const satisfactionBonus = (coach?.satisfactionLevel || 80) / 100;
+    const { lineRatingBonus: powerBonus } = getCoachEffect(coach);
+    const satisfactionBonus = (coach?.satisfactionLevel ?? 75) / 100;
 
     const getLineRating = (pos: Player['position']) => {
         const line = starters.filter(p => p.position === pos);
@@ -153,9 +154,8 @@ export const simulateMatch = (
 
     // Apply match effects to players (minutes, appearances, fatigue mitigation from fitness coach)
     const processMatchParticipation = (squad: { starters: Player[], subs: Player[] }, team: Team) => {
-        const fitnessCoach = team.clubStaff?.fitnessCoach;
-        const fitnessPower = fitnessCoach?.power ?? (team.tier === 'Top' ? 78 : team.tier === 'Mid' ? 68 : 55);
-        const fatigueMitigation = Math.max(0, Math.min(0.25, ((fitnessPower - 45) / 55) * 0.25));
+        const { fatigueResistancePct } = getFitnessEffect(team.clubStaff?.fitnessCoach);
+        const fatigueMitigation = fatigueResistancePct / 100;
 
         squad.starters.forEach(p => {
             p.stats = p.stats ? { ...p.stats } : { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 };
@@ -243,9 +243,8 @@ export const simulateMatch = (
 
     const processRandomEvents = (squad: { starters: Player[], subs: Player[] }, teamName: string, team: Team) => {
         const doctor = team.clubStaff?.doctor;
-        const doctorPower = doctor?.power ?? (team.tier === 'Top' ? 78 : team.tier === 'Mid' ? 68 : 55);
-        // Doctor power directly scales injury chance (Power 95: 0.60x, Power 56: 1.12x, Power 40: 1.33x)
-        const doctorFactor = Math.max(0.40, Math.min(1.45, (140 - doctorPower) / 75));
+        const { injuryFactor: doctorFactor } = getDoctorEffect(doctor);
+        const doctorPower = doctor?.power ?? 40;
 
         squad.starters.forEach(p => {
             const baseInjuryChance = p.condition && p.condition < 60 ? 0.03 : 0.01;

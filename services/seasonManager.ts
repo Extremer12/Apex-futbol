@@ -53,10 +53,15 @@ export function startNewSeason(currentState: GameState): GameState {
         .map(p => ({ ...p, age: (p.age || 16) + 1 }))
         .filter(p => p.age !== undefined && p.age <= 19);
 
-    // Add new talent
-    const newProspectsCount = 3 + Math.floor(Math.random() * 3); // 3-5 new players
+    // Add new talent (potenciado por la calidad del Director de Cantera y la Inversión en Fuerzas Básicas)
+    const youthCoach = currentState.team.clubStaff?.youthCoach || updatedPlayerTeam.clubStaff?.youthCoach;
+    const youthBonus = youthCoach ? Math.max(0, Math.min(12, Math.round(((youthCoach.power - 50) / 50) * 10))) : 0;
+    const youthInvestment = currentState.finances?.clubDirectives?.youthInvestment;
+    const directiveBonus = youthInvestment === 'high' ? 6 : youthInvestment === 'medium' ? 3 : 0;
+    const totalYouthBonus = youthBonus + directiveBonus;
+    const newProspectsCount = (youthInvestment === 'high' ? 4 : 3) + Math.floor(Math.random() * 2);
     for (let i = 0; i < newProspectsCount; i++) {
-        updatedAcademy.push(generateYouthPlayer(updatedPlayerTeam.tier));
+        updatedAcademy.push(generateYouthPlayer(updatedPlayerTeam.tier, totalYouthBonus));
     }
 
     // 2.5 Process Trophies
@@ -698,6 +703,13 @@ export function startNewSeason(currentState: GameState): GameState {
                 const secondDivs = PROMOTION_RELEGATION_PAIRS.map(p => p[1]);
                 const wasInSecondDiv = secondDivs.includes(currentState.team.leagueId as LeagueId);
                 if (wasInSecondDiv && playerPosition <= 3) achieved = true;
+            } else if (sponsor.bonus.condition === 'win_cup') {
+                // Check if user team won any cup this season
+                const userCups = Object.values(currentState.cups || {});
+                achieved = userCups.some(c => {
+                    const lastWinner = c.statistics?.championsHistory?.slice(-1)[0];
+                    return lastWinner?.teamId === currentState.team.id;
+                });
             }
             
             if (achieved) {

@@ -47,6 +47,7 @@ export type GameAction =
     | { type: 'UPDATE_CLUB_DIRECTIVES'; payload: Partial<import('../types').ClubDirectives> }
     | { type: 'UPGRADE_FACILITY'; payload: { cost: number } }
     | { type: 'REMOVE_SPONSOR_OFFER'; payload: { sponsorId: string } }
+    | { type: 'REFRESH_SPONSOR_MARKET' }
     | { type: 'EXPAND_STADIUM' }
     | { type: 'SET_FAN_APPROVAL'; payload: FanApproval }
     | { type: 'UPDATE_FINANCES'; payload: GameState['finances'] }
@@ -125,6 +126,7 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 case 'UPDATE_CLUB_DIRECTIVES':
                 case 'UPGRADE_FACILITY':
                 case 'REMOVE_SPONSOR_OFFER':
+                case 'REFRESH_SPONSOR_MARKET':
                 case 'EXPAND_STADIUM':
                 case 'UPDATE_FINANCES':
                 case 'UPDATE_STADIUM':

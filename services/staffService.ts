@@ -125,81 +125,86 @@ export const generateInitialClubStaff = (tier: 'Top' | 'Mid' | 'Lower', leagueId
     };
 };
 
+export const VACANT_STAFF_POWER = 40;
+
 /**
- * Calculador de efectos directos sobre el plantel
+ * Calculador de efectos directos sobre el plantel (Fuente Única de Verdad)
  */
 export const getDoctorEffect = (doctor?: StaffMember) => {
-    const power = doctor?.power ?? 50;
-    // Potencia 95 -> reducción del ~45% de lesiones
-    // Potencia 56 -> neutral/ligero aumento
-    const injuryReductionPct = Math.round(((power - 60) / 100) * 80);
-    const recoveryBonusChance = Math.max(0, Math.min(60, Math.round((power - 50) * 1.1)));
+    const power = doctor?.power ?? VACANT_STAFF_POWER;
+    const injuryFactor = Math.max(0.40, Math.min(1.50, (140 - power) / 75));
+    const injuryReductionPct = Math.round((1 - injuryFactor) * 100);
+    const recoveryBonusChance = Math.max(0, Math.min(50, Math.round((power - 45) * 1.0)));
 
     return {
+        injuryFactor,
         injuryReductionPct,
         recoveryBonusChance,
         description: power >= 85
-            ? 'Cuerpo médico de élite mundial. Reduce drásticamente lesiones musculares y cura bajas hasta dos semanas antes.'
+            ? 'Cuerpo médico de élite. Reduce lesiones y acelera recuperaciones.'
             : power >= 70
-            ? 'Servicios médicos competentes con buena capacidad diagnóstica y prevención habitual.'
-            : 'Área médica precaria. Frecuencia elevada de lesiones musculares y tiempos de recuperación prolongados.'
+            ? 'Servicios médicos competentes con buena prevención.'
+            : 'Área médica precaria. Mayor riesgo de lesiones y bajas largas.'
     };
 };
 
 export const getFitnessEffect = (fitnessCoach?: StaffMember) => {
-    const power = fitnessCoach?.power ?? 50;
-    const fatigueResistancePct = Math.max(5, Math.min(30, Math.round(((power - 40) / 60) * 28)));
-    const weeklyRecoveryBonus = Math.floor(power / 6); // +8 a +16 extra de condición cada semana
+    const power = fitnessCoach?.power ?? VACANT_STAFF_POWER;
+    const fatigueResistancePct = Math.max(0, Math.min(25, Math.round(((power - 40) / 60) * 25)));
+    const weeklyRecoveryBonus = Math.floor(power / 6);
 
     return {
         fatigueResistancePct,
         weeklyRecoveryBonus,
         description: power >= 85
-            ? 'Preparación física de primer nivel. El equipo llega entero al minuto 90 y recupera energía a gran velocidad entre partidos.'
+            ? 'Preparación física de primer nivel. Máxima resistencia y recuperación.'
             : power >= 70
-            ? 'Acondicionamiento físico equilibrado que permite competir dos veces por semana con rotaciones moderadas.'
-            : 'Falta de intensidad física. El plantel sufre fatiga extrema y agotamiento en tramos decisivos.'
+            ? 'Acondicionamiento equilibrado para competir cada semana.'
+            : 'Falta de intensidad física. El plantel sufre fatiga en tramos clave.'
     };
 };
 
 export const getSportingDirectorEffect = (director?: StaffMember) => {
-    const power = director?.power ?? 50;
-    const transferDiscountPct = Math.max(0, Math.min(15, Math.round((power / 100) * 14)));
+    const power = director?.power ?? VACANT_STAFF_POWER;
+    const transferDiscountPct = Math.max(0, Math.min(15, Math.round(((power - 40) / 60) * 15)));
 
     return {
         transferDiscountPct,
+        incomingOfferBonusPct: transferDiscountPct,
         description: power >= 85
-            ? 'Director deportivo con peso internacional. Consigue rebajas de hasta un 15% en compras y atrae ofertas superiores por tus descartes.'
+            ? 'Director deportivo de peso internacional. Rebajas de hasta 15% en fichajes.'
             : power >= 70
-            ? 'Gestión técnica sólida con buena red de intermediarios en el mercado nacional.'
-            : 'Escasa influencia negociadora. Los clubes exigen primas elevadas por sus futbolistas.'
+            ? 'Gestión técnica sólida con buena red de intermediarios.'
+            : 'Escasa influencia negociadora en el mercado.'
     };
 };
 
 export const getYouthCoachEffect = (youthCoach?: StaffMember) => {
-    const power = youthCoach?.power ?? 50;
-    const academyBonusPoints = Math.max(0, Math.min(12, Math.round(((power - 50) / 50) * 10)));
+    const power = youthCoach?.power ?? VACANT_STAFF_POWER;
+    const academyBonusPoints = Math.max(0, Math.min(12, Math.round(((power - 40) / 60) * 12)));
 
     return {
         academyBonusPoints,
         description: power >= 85
-            ? 'Metodología formativa de clase mundial. Produce periódicamente wonderkids con potencial de estrella internacional.'
+            ? 'Metodología formativa de élite. Produce juveniles con gran potencial.'
             : power >= 70
-            ? 'Cantera productiva con canteranos sólidos aptos para debutar en el primer equipo.'
-            : 'Fútbol base limitado. Los graduados de la academia rara vez alcanzan nivel para el plantel profesional.'
+            ? 'Cantera productiva con juveniles aptos para el primer equipo.'
+            : 'Fútbol base limitado. Graduados con menor proyección.'
     };
 };
 
 export const getCoachEffect = (coach?: Coach) => {
-    const power = coach?.prestige ?? 60;
-    const lineRatingBonus = Number((((power - 65) / 100) * 5).toFixed(1));
+    const power = coach?.prestige ?? VACANT_STAFF_POWER;
+    const lineRatingBonus = Number(((power - 65) * 0.05).toFixed(2));
 
     return {
         lineRatingBonus,
-        description: power >= 85
-            ? `DT de élite mundial (${coach?.style}). Otorga un bono táctico de +${lineRatingBonus > 0 ? lineRatingBonus : 0} al poder colectivo del equipo.`
+        description: !coach
+            ? 'Sin DT titular. El equipo rinde por debajo de su potencial táctico.'
+            : power >= 85
+            ? `DT de élite (${coach.style}). Aporta +${lineRatingBonus > 0 ? lineRatingBonus : 0} al nivel táctico.`
             : power >= 70
-            ? `Entrenador respetado (${coach?.style}). Esquema táctico ordenado y buen manejo del vestuario.`
-            : `Director técnico de perfil bajo (${coach?.style}). Dificultades tácticas ante rivales de jerarquía.`
+            ? `Entrenador respetado (${coach.style}). Esquema ordenado.`
+            : `DT de perfil bajo (${coach.style}). Menor impacto táctico.`
     };
 };

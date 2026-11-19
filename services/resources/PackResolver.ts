@@ -186,7 +186,7 @@ export class PackResolver {
             case 'flag':
                 return DefaultResourceProvider.resolveCountryFlag(identifier);
             case 'trophy':
-                return DefaultResourceProvider.resolveTrophy(identifier);
+                return DefaultResourceProvider.resolveTrophy(identifier, meta?.name);
             default:
                 return null;
         }

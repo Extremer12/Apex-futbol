@@ -4,6 +4,7 @@
 import { Team, LeagueTableRow, Match, Morale, LeagueId, COMPETITION_TO_CUP_KEY, CupKey } from '../types';
 import { simulateMatch, simulateMacroMatch } from '../services/simulation';
 import { updateTeamMorale } from '../services/morale';
+import { getDoctorEffect, getFitnessEffect } from '../services/staffService';
 
 // Helpers removed as they are now imported from services/morale.ts
 
@@ -107,9 +108,8 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
 
                 // Heal injuries / suspensions if week advances
                 if (newP.isInjured && newP.injuryWeeksRemaining) {
-                    const docPower = t.clubStaff?.doctor?.power ?? (t.tier === 'Top' ? 78 : t.tier === 'Mid' ? 68 : 55);
-                    const healBonusChance = Math.max(0, Math.min(0.50, (docPower - 50) / 100));
-                    const weeksToHeal = Math.random() < healBonusChance ? 2 : 1;
+                    const { recoveryBonusChance } = getDoctorEffect(t.clubStaff?.doctor);
+                    const weeksToHeal = Math.random() < (recoveryBonusChance / 100) ? 2 : 1;
 
                     newP.injuryWeeksRemaining = Math.max(0, newP.injuryWeeksRemaining - weeksToHeal);
                     if (newP.injuryWeeksRemaining <= 0) {
@@ -127,8 +127,7 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
 
                 // Recover condition for players boosted by fitness coach
                 if (!newP.condition || newP.condition < 100) {
-                    const fitnessPower = t.clubStaff?.fitnessCoach?.power ?? (t.tier === 'Top' ? 78 : t.tier === 'Mid' ? 68 : 55);
-                    const recoveryBonus = Math.floor(fitnessPower / 6);
+                    const { weeklyRecoveryBonus: recoveryBonus } = getFitnessEffect(t.clubStaff?.fitnessCoach);
                     newP.condition = Math.round(Math.min(100, (newP.condition || 100) + 12 + recoveryBonus));
                 }
 
@@ -422,12 +421,44 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                     awayTeam.teamMorale = updateTeamMorale(awayTeam.teamMorale, awayResult);
 
                     if (homeTeam.id === playerTeamId) {
-                        if (homeResult === 'W') confidenceChange += 2;
+                        if (homeResult === 'W') {
+                            confidenceChange += 2;
+                            const winBonus = finances.clubDirectives?.winBonuses;
+                            if (winBonus === 'high') {
+                                confidenceChange += 1;
+                                homeTeam.squad.forEach(p => {
+                                    if (p.morale === 'Descontento') p.morale = 'Normal';
+                                    else if (p.morale === 'Normal') p.morale = 'Contento';
+                                    else if (p.morale === 'Contento') p.morale = 'Feliz';
+                                });
+                            } else if (winBonus === 'normal') {
+                                homeTeam.squad.forEach(p => {
+                                    if (p.morale === 'Descontento') p.morale = 'Normal';
+                                    else if (p.morale === 'Normal' && Math.random() > 0.4) p.morale = 'Contento';
+                                });
+                            }
+                        }
                         if (homeResult === 'D') confidenceChange -= 1;
                         if (homeResult === 'L') confidenceChange -= 4;
                     }
                     if (awayTeam.id === playerTeamId) {
-                        if (awayResult === 'W') confidenceChange += 3;
+                        if (awayResult === 'W') {
+                            confidenceChange += 3;
+                            const winBonus = finances.clubDirectives?.winBonuses;
+                            if (winBonus === 'high') {
+                                confidenceChange += 1;
+                                awayTeam.squad.forEach(p => {
+                                    if (p.morale === 'Descontento') p.morale = 'Normal';
+                                    else if (p.morale === 'Normal') p.morale = 'Contento';
+                                    else if (p.morale === 'Contento') p.morale = 'Feliz';
+                                });
+                            } else if (winBonus === 'normal') {
+                                awayTeam.squad.forEach(p => {
+                                    if (p.morale === 'Descontento') p.morale = 'Normal';
+                                    else if (p.morale === 'Normal' && Math.random() > 0.4) p.morale = 'Contento';
+                                });
+                            }
+                        }
                         if (awayResult === 'D') confidenceChange += 1;
                         if (awayResult === 'L') confidenceChange -= 2;
                     }
@@ -619,21 +650,36 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
             });
         }
 
-        // Scouting Progress Logic
+        // Scouting Progress Logic (Intelligent specialized scouting)
         const updatedScoutedPlayerIds = { ...scoutedPlayerIds };
         const newsToAdd: any[] = [];
         
         if (scouts && scouts.length > 0) {
-            // Scouts advance knowledge on random players in the market
             const allMarketPlayers = updatedAllTeams.flatMap(t => t.squad);
             scouts.forEach(scout => {
-                // Find a player that isn't fully scouted yet
-                const potentialTargets = allMarketPlayers.filter(p => (updatedScoutedPlayerIds[p.id] || 0) < 100);
-                if (potentialTargets.length > 0) {
-                    const target = potentialTargets[Math.floor(Math.random() * potentialTargets.length)];
-                    const currentLevel = updatedScoutedPlayerIds[target.id] || 0;
-                    const increment = (scout.efficiency / 5) + (Math.random() * 5);
-                    updatedScoutedPlayerIds[target.id] = Math.min(100, currentLevel + increment);
+                // Find candidates that aren't fully scouted yet
+                let candidatePool = allMarketPlayers.filter(p => (updatedScoutedPlayerIds[p.id] || 0) < 100);
+                if (scout.specialty) {
+                    if (scout.specialty === 'Youth') {
+                        const youthPool = candidatePool.filter(p => (p.age || 20) <= 21);
+                        if (youthPool.length > 0) candidatePool = youthPool;
+                    } else {
+                        const posPool = candidatePool.filter(p => p.position === scout.specialty);
+                        if (posPool.length > 0) candidatePool = posPool;
+                    }
+                }
+
+                if (candidatePool.length > 0) {
+                    // High efficiency scouts can scout up to 2 targets in parallel per week
+                    const countToScout = scout.efficiency >= 85 ? 2 : 1;
+                    for (let c = 0; c < countToScout && candidatePool.length > 0; c++) {
+                        const targetIdx = Math.floor(Math.random() * candidatePool.length);
+                        const target = candidatePool[targetIdx];
+                        candidatePool.splice(targetIdx, 1);
+                        const currentLevel = updatedScoutedPlayerIds[target.id] || 0;
+                        const increment = Math.round((scout.efficiency / 3) + (Math.random() * 8) + 10);
+                        updatedScoutedPlayerIds[target.id] = Math.min(100, currentLevel + increment);
+                    }
                 }
             });
         }

@@ -152,34 +152,120 @@ export function evaluateAchievements(gameState: GameState): {
     };
 
     const trophies = gameState.team.trophyCabinet || [];
+    const userTeamId = gameState.team.id;
+    const userTeamName = (gameState.team.name || '').toLowerCase();
     
-    // 1. Trophies
+    // 1. First Trophy
     if (trophies.length > 0) {
         unlock('first_trophy');
     }
 
-    if (trophies.some(t => t.name.toLowerCase().includes('copa') || t.name.toLowerCase().includes('cup') || t.name.toLowerCase().includes('pokal'))) {
+    // 2. Cup King (National Cups - excluding league titles with "Copa" like Paraguay's Copa de Primera)
+    const isNationalCup = (name?: string) => {
+        if (!name) return false;
+        const lower = name.toLowerCase();
+        if (lower.includes('copa de primera') || lower.includes('primera división') || lower.includes('campeonato') || lower.includes('liga')) return false;
+        return lower.includes('copa argentina') || lower.includes('fa cup') || lower.includes('copa del rey') ||
+               lower.includes('dfb-pokal') || lower.includes('coppa italia') || lower.includes('carabao') ||
+               lower.includes('coupe de france') || lower.includes('copa mx') || lower.includes('pokal') ||
+               (lower.includes('copa') && !lower.includes('libertadores') && !lower.includes('sudamericana') && !lower.includes('intercontinental')) ||
+               (lower.includes('cup') && !lower.includes('champions') && !lower.includes('world'));
+    };
+    if (trophies.some(t => isNationalCup(t?.name))) {
         unlock('cup_king');
     }
 
-    if (trophies.some(t => t.name.toLowerCase().includes('champions') || t.name.toLowerCase().includes('libertadores'))) {
+    // 3. Continental Glory (UCL, Libertadores, UEL, Sudamericana)
+    if (trophies.some(t => {
+        const lower = (t?.name || '').toLowerCase();
+        return lower.includes('champions') || lower.includes('libertadores') || lower.includes('europa') || lower.includes('sudamericana');
+    })) {
         unlock('continental_glory');
     }
 
-    if (trophies.some(t => t.name.toLowerCase().includes('intercontinental'))) {
+    // 4. World Champion (Intercontinental / Club World Cup)
+    if (trophies.some(t => {
+        const lower = (t?.name || '').toLowerCase();
+        return lower.includes('intercontinental') || lower.includes('mundial') || lower.includes('world');
+    })) {
         unlock('world_champion');
     }
 
-    // 2. Finances (Magnate)
+    // 5. The Treble (League + National Cup + Continental Cup in a single season)
+    const trophiesBySeason: Record<number, string[]> = {};
+    trophies.forEach(t => {
+        if (t?.season) {
+            trophiesBySeason[t.season] = trophiesBySeason[t.season] || [];
+            if (t.name) trophiesBySeason[t.season].push(t.name);
+        }
+    });
+    for (const s of Object.keys(trophiesBySeason)) {
+        const names = trophiesBySeason[Number(s)] || [];
+        const hasLeague = names.some(n => {
+            const l = (n || '').toLowerCase();
+            return l.includes('liga') || l.includes('premier') || l.includes('serie a') || l.includes('bundesliga') || l.includes('division') || l.includes('campeonato');
+        });
+        const hasCup = names.some(n => isNationalCup(n));
+        const hasContinental = names.some(n => {
+            const l = (n || '').toLowerCase();
+            return l.includes('champions') || l.includes('libertadores') || l.includes('europa') || l.includes('sudamericana');
+        });
+        if (hasLeague && hasCup && hasContinental) {
+            unlock('the_treble');
+            break;
+        }
+    }
+
+    // 6. Finances (Magnate: balance >= €100M)
+    const currentBalance = gameState.finances?.balance || 0;
     const tycoonAch = currentAchievements.find(a => a.id === 'tycoon');
     if (tycoonAch) {
-        tycoonAch.progress = Math.min(100, Math.max(0, Math.floor(gameState.finances.balance)));
-        if (gameState.finances.balance >= 100) {
+        const balanceInMillions = Math.floor(currentBalance / 1_000_000);
+        tycoonAch.progress = Math.min(100, Math.max(0, balanceInMillions));
+        if (currentBalance >= 100_000_000) {
             unlock('tycoon');
         }
     }
 
-    // 3. Scouting (Master Scout)
+    // 7. Stadium Facility & Modern Coliseum
+    if (gameState.stadium && (gameState.stadium.facilityLevel > 1 || gameState.stadium.capacity > 65000)) {
+        unlock('stadium_expansion');
+    }
+
+    // 8. Democratic Mandate (Re-election with > 70% approval)
+    if (gameState.mandate && (gameState.mandate.totalMandates > 1 || (gameState.mandate.termsCompleted && gameState.mandate.termsCompleted >= 1)) &&
+        (gameState.mandate.approvalRating >= 70 || (gameState.fanApproval && gameState.fanApproval.sociosApproval >= 70))) {
+        unlock('re_election');
+    }
+
+    // 9. Wonderkid Academy (Promoted Academy player or world-class youth prospect)
+    const hasWonderkid = (gameState.team.squad || []).some(p => 
+        (p.origin === 'youth' || (p as any).isYouth || (p.age && p.age <= 21 && p.potential && p.potential >= 82))
+    );
+    if (hasWonderkid) {
+        unlock('wonderkid_academy');
+    }
+
+    // 10. Star Squad Member (Galáctico: rating >= 88)
+    if ((gameState.team.squad || []).some(p => p.rating >= 88)) {
+        unlock('galactic_signing');
+    }
+
+    // 11. Big Sale (Historical sale >= €40M)
+    const hasBigSaleNews = (gameState.newsFeed || []).some(n => {
+        const t = (n?.title || '').toLowerCase();
+        const c = (n?.content || '').toLowerCase();
+        const isSale = t.includes('venta') || t.includes('traspaso') || c.includes('traspasado') || c.includes('vendido');
+        return isSale && (c.includes('40m') || c.includes('50m') || c.includes('60m') || c.includes('70m') || c.includes('80m') || c.includes('90m') || c.includes('100m') || c.includes('40.000.000') || c.includes('€40'));
+    });
+    if (hasBigSaleNews) {
+        unlock('big_sale');
+    }
+    if (hasBigSaleNews) {
+        unlock('big_sale');
+    }
+
+    // 12. Scouting (Master Scout: 5+ players 100% scouted)
     const fullyScoutedCount = Object.values(gameState.scoutedPlayerIds || {}).filter(lvl => lvl >= 100).length;
     const scoutAch = currentAchievements.find(a => a.id === 'master_scout');
     if (scoutAch) {
@@ -189,14 +275,38 @@ export function evaluateAchievements(gameState: GameState): {
         }
     }
 
-    // 4. Star Squad Member (Galáctico)
-    if (gameState.team.squad.some(p => p.rating >= 88)) {
-        unlock('galactic_signing');
+    // 13. Clean Sheet (Defensive Lock: win with zero goals conceded)
+    const playedMatches = (gameState.schedule || []).filter(m => m.played);
+    const hasCleanSheetWin = playedMatches.some(m => {
+        const isHome = m.homeTeamId === userTeamId || m.homeTeam?.toLowerCase() === userTeamName;
+        const isAway = m.awayTeamId === userTeamId || m.awayTeam?.toLowerCase() === userTeamName;
+        if (isHome && m.homeScore > m.awayScore && m.awayScore === 0) return true;
+        if (isAway && m.awayScore > m.homeScore && m.homeScore === 0) return true;
+        return false;
+    });
+    if (hasCleanSheetWin) {
+        unlock('clean_sheet');
     }
 
-    // 5. Stadium Facility
-    if (gameState.stadium && (gameState.stadium.facilityLevel > 1 || gameState.stadium.capacity > 65000)) {
-        unlock('stadium_expansion');
+    // 14. Historic Rout (Win by 4+ goals margin)
+    const hasHistoricRout = playedMatches.some(m => {
+        const isHome = m.homeTeamId === userTeamId || m.homeTeam?.toLowerCase() === userTeamName;
+        const isAway = m.awayTeamId === userTeamId || m.awayTeam?.toLowerCase() === userTeamName;
+        if (isHome && (m.homeScore - m.awayScore >= 4)) return true;
+        if (isAway && (m.awayScore - m.homeScore >= 4)) return true;
+        return false;
+    });
+    if (hasHistoricRout) {
+        unlock('historic_rout');
+    }
+
+    // 15. Individual Glory (Golden Boot or Ballon d'Or winner)
+    const hasIndividualGlory = (gameState.seasonHistory || []).some(rec => 
+        (rec?.goldenBootWinner && (((rec.goldenBootWinner.teamName || '').toLowerCase() === userTeamName) || (gameState.team.squad || []).some(p => p.name === rec.goldenBootWinner?.name))) ||
+        (rec?.ballonDorWinner && (((rec.ballonDorWinner.teamName || '').toLowerCase() === userTeamName) || (gameState.team.squad || []).some(p => p.name === rec.ballonDorWinner?.name)))
+    );
+    if (hasIndividualGlory) {
+        unlock('individual_glory');
     }
 
     return {

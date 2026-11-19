@@ -78,6 +78,49 @@ export const COMPETITION_HISTORICAL_CHAMPIONS: Record<string, CompetitionHistori
         ]
     },
 
+    'EUROPA_LEAGUE': {
+        id: 'EUROPA_LEAGUE',
+        name: 'UEFA Europa League',
+        allTimeRanking: [
+            { teamName: 'Sevilla', titles: 7, lastWonYear: 2023 },
+            { teamName: 'Inter Milano', titles: 3, lastWonYear: 1998 },
+            { teamName: 'Juventus', titles: 3, lastWonYear: 1993 },
+            { teamName: 'Liverpool', titles: 3, lastWonYear: 2001 },
+            { teamName: 'Atlético Madrid', titles: 3, lastWonYear: 2018 },
+            { teamName: 'Borussia Mgladbach', titles: 2, lastWonYear: 1979 },
+            { teamName: 'Tottenham', titles: 2, lastWonYear: 1984 },
+            { teamName: 'Real Madrid', titles: 2, lastWonYear: 1986 },
+            { teamName: 'IFK Göteborg', titles: 2, lastWonYear: 1987 },
+            { teamName: 'Parma', titles: 2, lastWonYear: 1999 },
+            { teamName: 'Feyenoord', titles: 2, lastWonYear: 2002 },
+            { teamName: 'Porto', titles: 2, lastWonYear: 2011 },
+            { teamName: 'Chelsea', titles: 2, lastWonYear: 2019 },
+            { teamName: 'Eintracht Frankfurt', titles: 2, lastWonYear: 2022 },
+            { teamName: 'Atalanta', titles: 1, lastWonYear: 2024 },
+            { teamName: 'Manchester United', titles: 1, lastWonYear: 2017 },
+            { teamName: 'Villarreal', titles: 1, lastWonYear: 2021 },
+            { teamName: 'Ajax', titles: 1, lastWonYear: 1992 },
+            { teamName: 'Bayern München', titles: 1, lastWonYear: 1996 },
+            { teamName: 'Schalke 04', titles: 1, lastWonYear: 1997 },
+            { teamName: 'Valencia', titles: 1, lastWonYear: 2004 },
+            { teamName: 'CSKA Moscow', titles: 1, lastWonYear: 2005 },
+            { teamName: 'Zenit', titles: 1, lastWonYear: 2008 },
+            { teamName: 'Shakhtar Donetsk', titles: 1, lastWonYear: 2009 }
+        ],
+        recentEditions: [
+            { season: '2023/24', winnerName: 'Atalanta', runnerUp: 'Bayer Leverkusen', score: '3-0' },
+            { season: '2022/23', winnerName: 'Sevilla', runnerUp: 'AS Roma', score: '1-1 (4-1 pen.)' },
+            { season: '2021/22', winnerName: 'Eintracht Frankfurt', runnerUp: 'Rangers', score: '1-1 (5-4 pen.)' },
+            { season: '2020/21', winnerName: 'Villarreal', runnerUp: 'Manchester United', score: '1-1 (11-10 pen.)' },
+            { season: '2019/20', winnerName: 'Sevilla', runnerUp: 'Inter Milano', score: '3-2' },
+            { season: '2018/19', winnerName: 'Chelsea', runnerUp: 'Arsenal', score: '4-1' },
+            { season: '2017/18', winnerName: 'Atlético Madrid', runnerUp: 'Olympique de Marseille', score: '3-0' },
+            { season: '2016/17', winnerName: 'Manchester United', runnerUp: 'Ajax', score: '2-0' },
+            { season: '2015/16', winnerName: 'Sevilla', runnerUp: 'Liverpool', score: '3-1' },
+            { season: '2014/15', winnerName: 'Sevilla', runnerUp: 'Dnipro', score: '3-2' }
+        ]
+    },
+
     'COPA_LIBERTADORES': {
         id: 'COPA_LIBERTADORES',
         name: 'CONMEBOL Libertadores',

@@ -128,27 +128,176 @@ export class ResourceFallback {
     }
 
     /**
-     * Fallback for a trophy
+     * Fallback for a trophy: Generates distinct vector silhouettes per tournament type.
+     * Guaranteed zero-network, high-fidelity and 100% App Store compliant.
      */
     public static trophy(name?: string): string {
+        const key = (name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+        // 1. European Cup with large curved handles (Champions League / Europa League)
+        if (key.includes('champions') || key.includes('europa') || key.includes('ucl') || key.includes('orejona')) {
+            const svg = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 140" width="120" height="140">
+                <defs>
+                    <linearGradient id="silver" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#ffffff"/>
+                        <stop offset="35%" stop-color="#cbd5e1"/>
+                        <stop offset="70%" stop-color="#94a3b8"/>
+                        <stop offset="100%" stop-color="#475569"/>
+                    </linearGradient>
+                    <linearGradient id="gold-inner" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#fef08a"/>
+                        <stop offset="100%" stop-color="#eab308"/>
+                    </linearGradient>
+                </defs>
+                <!-- Large Iconic Handles -->
+                <path d="M 32 30 C 10 32, 6 78, 38 82" fill="none" stroke="url(#silver)" stroke-width="6" stroke-linecap="round"/>
+                <path d="M 88 30 C 110 32, 114 78, 82 82" fill="none" stroke="url(#silver)" stroke-width="6" stroke-linecap="round"/>
+                <!-- Cup Inner Glow & Body -->
+                <path d="M 34 22 L 86 22 C 86 52, 78 86, 60 92 C 42 86, 34 52, 34 22 Z" fill="url(#silver)"/>
+                <ellipse cx="60" cy="22" rx="26" ry="6" fill="url(#gold-inner)" opacity="0.9"/>
+                <!-- Central Emblem Stripe -->
+                <line x1="60" y1="28" x2="60" y2="82" stroke="#ffffff" stroke-width="1.5" stroke-opacity="0.4"/>
+                <!-- Stem & Pedestal Base -->
+                <path d="M 54 92 L 66 92 L 68 112 L 52 112 Z" fill="url(#silver)"/>
+                <rect x="40" y="112" width="40" height="8" rx="2" fill="#64748b"/>
+                <rect x="32" y="120" width="56" height="12" rx="3" fill="#0f172a" stroke="url(#silver)" stroke-width="1.5"/>
+            </svg>
+            `.trim();
+            return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+        }
+
+        // 2. Copa Libertadores / Copa Sudamericana (Pedestal cilíndrico de madera + aro y figura)
+        if (key.includes('libertadores') || key.includes('sudamericana') || key.includes('conmebol')) {
+            const svg = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 140" width="120" height="140">
+                <defs>
+                    <linearGradient id="wood" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#451a03"/>
+                        <stop offset="50%" stop-color="#78350f"/>
+                        <stop offset="100%" stop-color="#291004"/>
+                    </linearGradient>
+                    <linearGradient id="bronze-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#fde047"/>
+                        <stop offset="50%" stop-color="#d97706"/>
+                        <stop offset="100%" stop-color="#78350f"/>
+                    </linearGradient>
+                </defs>
+                <!-- Crest Figure on top -->
+                <circle cx="60" cy="18" r="7" fill="url(#bronze-gold)"/>
+                <path d="M 57 25 L 63 25 L 61 36 L 59 36 Z" fill="url(#bronze-gold)"/>
+                <!-- Upper Spherical Body -->
+                <circle cx="60" cy="46" r="16" fill="url(#bronze-gold)"/>
+                <path d="M 44 46 C 44 38, 76 38, 76 46" fill="none" stroke="#ffffff" stroke-width="1.5" opacity="0.6"/>
+                <!-- Iconic Tiered Wooden Pedestal -->
+                <path d="M 52 62 L 68 62 L 72 82 L 48 82 Z" fill="url(#bronze-gold)"/>
+                <rect x="42" y="82" width="36" height="42" rx="3" fill="url(#wood)" stroke="#92400e" stroke-width="1"/>
+                <!-- Badges on base -->
+                <rect x="46" y="86" width="6" height="5" rx="1" fill="#fef08a" opacity="0.8"/>
+                <rect x="57" y="86" width="6" height="5" rx="1" fill="#fef08a" opacity="0.8"/>
+                <rect x="68" y="86" width="6" height="5" rx="1" fill="#fef08a" opacity="0.8"/>
+                <rect x="46" y="94" width="6" height="5" rx="1" fill="#fef08a" opacity="0.8"/>
+                <rect x="57" y="94" width="6" height="5" rx="1" fill="#fef08a" opacity="0.8"/>
+                <rect x="68" y="94" width="6" height="5" rx="1" fill="#fef08a" opacity="0.8"/>
+                <rect x="34" y="124" width="52" height="10" rx="3" fill="#1c1917" stroke="url(#bronze-gold)" stroke-width="1.5"/>
+            </svg>
+            `.trim();
+            return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+        }
+
+        // 3. Intercontinental Cup / World Champion (Globe on golden spiral arches)
+        if (key.includes('intercontinental') || key.includes('mundial') || key.includes('world') || key.includes('clubes')) {
+            const svg = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 140" width="120" height="140">
+                <defs>
+                    <linearGradient id="gold-world" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#fef08a"/>
+                        <stop offset="40%" stop-color="#eab308"/>
+                        <stop offset="100%" stop-color="#854d0e"/>
+                    </linearGradient>
+                    <radialGradient id="globe-glow" cx="40%" cy="40%" r="60%">
+                        <stop offset="0%" stop-color="#60a5fa"/>
+                        <stop offset="70%" stop-color="#1d4ed8"/>
+                        <stop offset="100%" stop-color="#0f172a"/>
+                    </radialGradient>
+                </defs>
+                <!-- World Globe at top -->
+                <circle cx="60" cy="34" r="16" fill="url(#globe-glow)" stroke="url(#gold-world)" stroke-width="2"/>
+                <ellipse cx="60" cy="34" rx="16" ry="6" fill="none" stroke="#93c5fd" stroke-width="1" opacity="0.6"/>
+                <line x1="60" y1="18" x2="60" y2="50" stroke="#93c5fd" stroke-width="1" opacity="0.6"/>
+                <!-- Supporting Golden Arches -->
+                <path d="M 38 72 C 36 48, 48 38, 56 34" fill="none" stroke="url(#gold-world)" stroke-width="4.5" stroke-linecap="round"/>
+                <path d="M 82 72 C 84 48, 72 38, 64 34" fill="none" stroke="url(#gold-world)" stroke-width="4.5" stroke-linecap="round"/>
+                <path d="M 44 86 C 42 66, 60 52, 60 52" fill="none" stroke="url(#gold-world)" stroke-width="3"/>
+                <!-- Stem & Base -->
+                <path d="M 52 82 L 68 82 L 72 110 L 48 110 Z" fill="url(#gold-world)"/>
+                <rect x="36" y="110" width="48" height="8" rx="2" fill="#713f12"/>
+                <rect x="30" y="118" width="60" height="14" rx="4" fill="#0f172a" stroke="url(#gold-world)" stroke-width="1.8"/>
+            </svg>
+            `.trim();
+            return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+        }
+
+        // 4. Meisterschale / Plate style trophy (Bundesliga)
+        if (key.includes('bundesliga') || key.includes('zweite') || key.includes('plato') || key.includes('schale')) {
+            const svg = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 140" width="120" height="140">
+                <defs>
+                    <linearGradient id="plate-silver" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#ffffff"/>
+                        <stop offset="40%" stop-color="#e2e8f0"/>
+                        <stop offset="80%" stop-color="#94a3b8"/>
+                        <stop offset="100%" stop-color="#475569"/>
+                    </linearGradient>
+                    <radialGradient id="plate-gold" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" stop-color="#fef08a"/>
+                        <stop offset="60%" stop-color="#eab308"/>
+                        <stop offset="100%" stop-color="#a16207"/>
+                    </radialGradient>
+                </defs>
+                <!-- Shadow Pedestal -->
+                <ellipse cx="60" cy="122" rx="38" ry="8" fill="#090d16" opacity="0.6"/>
+                <rect x="38" y="114" width="44" height="12" rx="3" fill="#1e293b" stroke="url(#plate-silver)" stroke-width="1.5"/>
+                <!-- Plate Body (Tilted 3D perspective) -->
+                <circle cx="60" cy="62" r="46" fill="url(#plate-silver)" stroke="#ffffff" stroke-width="2"/>
+                <circle cx="60" cy="62" r="36" fill="none" stroke="url(#plate-gold)" stroke-width="4"/>
+                <circle cx="60" cy="62" r="22" fill="url(#plate-silver)" stroke="#475569" stroke-width="1"/>
+                <circle cx="60" cy="62" r="10" fill="url(#plate-gold)"/>
+                <!-- Rays / Gems around circumference -->
+                <circle cx="60" cy="24" r="3" fill="url(#plate-gold)"/>
+                <circle cx="60" cy="100" r="3" fill="url(#plate-gold)"/>
+                <circle cx="22" cy="62" r="3" fill="url(#plate-gold)"/>
+                <circle cx="98" cy="62" r="3" fill="url(#plate-gold)"/>
+            </svg>
+            `.trim();
+            return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+        }
+
+        // 5. Classic Golden Cup (Default for Leagues and Domestic Cups)
         const svg = `
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 140" width="120" height="140">
             <defs>
                 <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" stop-color="#fef08a"/>
-                    <stop offset="50%" stop-color="#eab308"/>
-                    <stop offset="100%" stop-color="#a16207"/>
+                    <stop offset="35%" stop-color="#facc15"/>
+                    <stop offset="70%" stop-color="#ca8a04"/>
+                    <stop offset="100%" stop-color="#854d0e"/>
+                </linearGradient>
+                <linearGradient id="gold-highlight" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#ffffff" stop-opacity="0.6"/>
+                    <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
                 </linearGradient>
             </defs>
             <!-- Handles -->
-            <path d="M30 35 C15 35 15 65 35 70" fill="none" stroke="url(#gold)" stroke-width="5" stroke-linecap="round"/>
-            <path d="M90 35 C105 35 105 65 85 70" fill="none" stroke="url(#gold)" stroke-width="5" stroke-linecap="round"/>
+            <path d="M 30 35 C 14 36, 14 68, 36 72" fill="none" stroke="url(#gold)" stroke-width="5" stroke-linecap="round"/>
+            <path d="M 90 35 C 106 36, 106 68, 84 72" fill="none" stroke="url(#gold)" stroke-width="5" stroke-linecap="round"/>
             <!-- Cup Body -->
-            <path d="M30 25 L90 25 L82 72 C78 86 68 94 60 96 C52 94 42 86 38 72 Z" fill="url(#gold)"/>
+            <path d="M 28 24 L 92 24 L 84 74 C 80 88, 70 96, 60 98 C 50 96, 40 88, 36 74 Z" fill="url(#gold)"/>
+            <path d="M 32 26 L 88 26 L 82 50 C 70 56, 50 56, 38 50 Z" fill="url(#gold-highlight)"/>
             <!-- Stem & Base -->
-            <path d="M54 96 L66 96 L68 114 L52 114 Z" fill="url(#gold)"/>
-            <rect x="42" y="114" width="36" height="8" rx="2" fill="#a16207"/>
-            <rect x="36" y="122" width="48" height="10" rx="3" fill="#1e293b" stroke="url(#gold)" stroke-width="1.5"/>
+            <path d="M 54 98 L 66 98 L 69 116 L 51 116 Z" fill="url(#gold)"/>
+            <rect x="40" y="116" width="40" height="8" rx="2" fill="#713f12"/>
+            <rect x="32" y="124" width="56" height="12" rx="3" fill="#0f172a" stroke="url(#gold)" stroke-width="1.8"/>
         </svg>
         `.trim();
 

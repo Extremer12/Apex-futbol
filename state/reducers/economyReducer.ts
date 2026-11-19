@@ -1,5 +1,6 @@
 import { GameState, NewsItem } from '../../types';
 import { formatDate, formatCurrency } from '../../utils';
+import { generateSponsorMarket } from '../../services/economy';
 import type { GameAction } from '../reducer';
 
 // Actions handled by this reducer
@@ -13,6 +14,7 @@ type EconomyAction = Extract<GameAction,
     | { type: 'UPDATE_CLUB_DIRECTIVES' }
     | { type: 'UPGRADE_FACILITY' }
     | { type: 'REMOVE_SPONSOR_OFFER' }
+    | { type: 'REFRESH_SPONSOR_MARKET' }
     | { type: 'EXPAND_STADIUM' }
     | { type: 'UPDATE_FINANCES' }
     | { type: 'UPDATE_STADIUM' }
@@ -265,6 +267,14 @@ export function handleEconomyAction(state: GameState, action: EconomyAction): Ga
             return {
                 ...state,
                 availableSponsors: state.availableSponsors.filter(s => s.id !== sponsorId)
+            };
+        }
+
+        case 'REFRESH_SPONSOR_MARKET': {
+            const freshSponsors = generateSponsorMarket(state.team.tier, state.team.leagueId);
+            return {
+                ...state,
+                availableSponsors: freshSponsors
             };
         }
 

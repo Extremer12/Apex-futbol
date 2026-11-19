@@ -36,7 +36,7 @@ export function handleStaffAction(state: GameState, action: StaffAction): GameSt
 
             // Remove from market & add new coach
             const remainingCoaches = (state.availableCoaches || []).filter(c => c.id !== coachId);
-            const newMarket = [...remainingCoaches, generateRandomCoach(state.team.tier)];
+            const newMarket = [...remainingCoaches, generateRandomCoach(state.team.tier, state.team.leagueId)];
 
             return {
                 ...state,
@@ -219,7 +219,7 @@ export function handleStaffAction(state: GameState, action: StaffAction): GameSt
             const { playerId } = action.payload;
             const currentLevel = state.scoutedPlayerIds[playerId] || 0;
 
-            const scoutingCost = 0.1;
+            const scoutingCost = state.team.tier === 'Top' ? 25000 : state.team.tier === 'Mid' ? 12000 : 5000;
             if (state.finances.balance < scoutingCost) return state;
 
             return {

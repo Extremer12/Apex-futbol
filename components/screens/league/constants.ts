@@ -48,6 +48,7 @@ export const LEAGUE_LOGOS: Record<string, string> = {
 
 export const CUP_LOGOS: Record<string, string> = {
     champions_league: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Football%20Tournament%20%26%20Competition%20Logos/tournaments_uefa-champions-league.football-logos.cc.svg',
+    europa_league: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Football%20Tournament%20%26%20Competition%20Logos/tournaments_uefa-europa-league.football-logos.cc.svg',
     copa_libertadores: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Football%20Tournament%20%26%20Competition%20Logos/tournaments_conmebol-libertadores.football-logos.cc.svg',
     copa_sudamericana: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Football%20Tournament%20%26%20Competition%20Logos/tournaments_conmebol-copa-sudamericana.football-logos.cc.svg',
     copa_intercontinental: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Football%20Tournament%20%26%20Competition%20Logos/tournaments_fifa-intercontinental-cup.football-logos.cc.svg',
@@ -64,6 +65,7 @@ export const CUP_LOGOS: Record<string, string> = {
 
 export const CUP_THEMES: Record<string, { accent: string; bg: string; border: string }> = {
     champions_league: { accent: 'text-indigo-400', bg: 'from-indigo-950 via-slate-950 to-slate-950', border: 'border-indigo-500/40' },
+    europa_league: { accent: 'text-amber-500', bg: 'from-amber-950 via-slate-950 to-slate-950', border: 'border-orange-500/40' },
     copa_libertadores: { accent: 'text-amber-400', bg: 'from-amber-950 via-slate-950 to-slate-950', border: 'border-amber-500/40' },
     copa_sudamericana: { accent: 'text-amber-500', bg: 'from-amber-950 via-slate-950 to-slate-950', border: 'border-amber-600/40' },
     copa_intercontinental: { accent: 'text-emerald-400', bg: 'from-emerald-950 via-slate-950 to-slate-950', border: 'border-emerald-500/40' },
@@ -94,6 +96,7 @@ export const ALL_COMPETITIONS: CompetitionItem[] = [
     // Internacionales
     { id: 'CLUB_RANKINGS', name: 'Rankings CONMEBOL / UEFA', type: 'CUP', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Football%20Tournament%20%26%20Competition%20Logos/tournaments_conmebol-libertadores.football-logos.cc.svg', category: 'INTERNATIONAL' },
     { id: 'CHAMPIONS_LEAGUE', name: 'Champions League', type: 'CUP', logo: CUP_LOGOS.champions_league, category: 'INTERNATIONAL', cupKey: 'championsLeague' },
+    { id: 'EUROPA_LEAGUE', name: 'UEFA Europa League', type: 'CUP', logo: CUP_LOGOS.europa_league, category: 'INTERNATIONAL', cupKey: 'europaLeague' },
     { id: 'COPA_LIBERTADORES', name: 'Copa Libertadores', type: 'CUP', logo: CUP_LOGOS.copa_libertadores, category: 'INTERNATIONAL', cupKey: 'copaLibertadores' },
     { id: 'COPA_SUDAMERICANA', name: 'Copa Sudamericana', type: 'CUP', logo: CUP_LOGOS.copa_sudamericana, category: 'INTERNATIONAL', cupKey: 'copaSudamericana' },
     { id: 'COPA_INTERCONTINENTAL', name: 'Copa Intercontinental', type: 'CUP', logo: CUP_LOGOS.copa_intercontinental, category: 'INTERNATIONAL', cupKey: 'copaIntercontinental' },

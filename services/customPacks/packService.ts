@@ -416,7 +416,7 @@ class CustomPacksService {
         this.notifyListeners();
     }
 
-    public getCustomLogo(category: 'teams' | 'competitions' | 'players', keys: string[]): string | undefined {
+    public getCustomLogo(category: 'teams' | 'competitions' | 'players' | 'trophies', keys: string[]): string | undefined {
         for (const k of keys) {
             const id = `${category}:${k}`;
             const found = this.inMemoryAssets.get(id);
@@ -440,8 +440,12 @@ class CustomPacksService {
         return resourceManager.playerFace(player.id, player);
     }
 
+    public resolveTrophy(competitionId: string, name?: string): string {
+        return resourceManager.trophy(competitionId, name);
+    }
+
     /**
-     * Import a .ZIP file containing folders like /teams/, /competitions/, /players/
+     * Import a .ZIP file containing folders like /teams/, /competitions/, /players/, /trophies/
      */
     public async importZipPack(
         file: File | Blob,
@@ -476,8 +480,10 @@ class CustomPacksService {
             }
 
             // Determine category from folder path
-            let category: 'teams' | 'competitions' | 'players' = 'teams';
-            if (lowerPath.includes('competition') || lowerPath.includes('competitions') || lowerPath.includes('leagues') || lowerPath.includes('cups') || lowerPath.includes('copas')) {
+            let category: 'teams' | 'competitions' | 'players' | 'trophies' = 'teams';
+            if (lowerPath.includes('troph') || lowerPath.includes('trofeo') || lowerPath.includes('palmares') || lowerPath.includes('cups_trophies')) {
+                category = 'trophies';
+            } else if (lowerPath.includes('competition') || lowerPath.includes('competitions') || lowerPath.includes('leagues') || lowerPath.includes('cups') || lowerPath.includes('copas')) {
                 category = 'competitions';
             } else if (lowerPath.includes('player') || lowerPath.includes('players') || lowerPath.includes('jugadores')) {
                 category = 'players';

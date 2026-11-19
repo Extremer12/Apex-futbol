@@ -5,8 +5,8 @@ const DB_VERSION = 1;
 const STORE_NAME = 'assets';
 
 export interface StoredAsset {
-    id: string; // e.g. "teams:bocajuniors" or "competitions:premierleague"
-    category: 'teams' | 'competitions' | 'players';
+    id: string; // e.g. "teams:bocajuniors" or "competitions:premierleague" or "trophies:champions_league"
+    category: 'teams' | 'competitions' | 'players' | 'trophies';
     identifier: string; // raw or normalized identifier
     blob?: Blob;
     url?: string;

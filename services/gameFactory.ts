@@ -462,10 +462,10 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
         availableStaff: generateStaffMarket(playerTeamCopy.tier, playerTeamCopy.leagueId),
         stadium: generateStadium(playerTeamCopy),
         sponsors: [
-            generateSponsor('shirt', playerTeamCopy.tier),
-            generateSponsor('kit', playerTeamCopy.tier)
+            generateSponsor('shirt', playerTeamCopy.tier, playerTeamCopy.leagueId),
+            generateSponsor('kit', playerTeamCopy.tier, playerTeamCopy.leagueId)
         ],
-        availableSponsors: generateSponsorMarket(playerTeamCopy.tier),
+        availableSponsors: generateSponsorMarket(playerTeamCopy.tier, playerTeamCopy.leagueId),
         scouts: [],
         scoutedPlayerIds: {},
         cinematicQueue: [],  // No international draws in season 1

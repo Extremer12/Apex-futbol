@@ -357,8 +357,10 @@ export function processFullSeasonSquadProgression(
         let squad = [...remainingSquad, ...regensForTeam];
 
         // Ensure minimum squad size of 20 players (and maximum 26)
+        const youthCoach = team.clubStaff?.youthCoach;
+        const youthBonus = youthCoach ? Math.max(0, Math.min(12, Math.round(((youthCoach.power - 50) / 50) * 10))) : 0;
         while (squad.length < 20) {
-            squad.push(generateYouthPlayer(team.tier));
+            squad.push(generateYouthPlayer(team.tier, youthBonus));
         }
         if (squad.length > 26 && !isUserTeam) {
             // AI trims lowest rated fringe players
