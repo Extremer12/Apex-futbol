@@ -201,6 +201,18 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ gameState, dispatc
     const handleSelectStyle = (styleId: string) => {
         setSelectedStyle(styleId);
         setShowStyleModal(false);
+        dispatch({
+            type: 'UPDATE_PLAYER_PROFILE',
+            payload: { style: styleId }
+        });
+        if (typeof window !== 'undefined') {
+            try {
+                const current = playerProfile || { name: 'Presidente' };
+                localStorage.setItem('apex_last_player_profile', JSON.stringify({ ...current, style: styleId }));
+            } catch (e) {
+                // ignore
+            }
+        }
     };
 
     return (

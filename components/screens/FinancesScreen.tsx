@@ -113,6 +113,13 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = ({ gameState, dispa
     // Budget Reallocation State
     const [reallocateDirection, setReallocateDirection] = useState<'to_transfers' | 'to_balance'>('to_transfers');
     const [reallocateAmount, setReallocateAmount] = useState<number>(1_000_000);
+    const [confirmModal, setConfirmModal] = useState<{
+        title: string;
+        message: string;
+        confirmText?: string;
+        confirmColor?: string;
+        onConfirm: () => void;
+    } | null>(null);
 
     // Calculate current position
     const playerTable = leagueTables[team.leagueId] || [];
@@ -160,10 +167,15 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = ({ gameState, dispa
     // Handlers
     const handleExpandStadium = () => {
         if (!stadium.expansionCost) return;
-        if (confirm(`¿Iniciar obras de ampliación del estadio a ${stadium.expansionCapacity?.toLocaleString()} espectadores por ${formatCurrency(stadium.expansionCost)}?`)) {
-            dispatch({ type: 'EXPAND_STADIUM' });
-            showToast(`Obras de ampliación en marcha en el ${stadium.name}. Capacidad aumentada.`, 'success');
-        }
+        setConfirmModal({
+            title: 'Ampliación de Estadio',
+            message: `¿Iniciar obras de ampliación del estadio a ${stadium.expansionCapacity?.toLocaleString()} espectadores por ${formatCurrency(stadium.expansionCost)}?`,
+            confirmText: 'Comenzar Obras',
+            onConfirm: () => {
+                dispatch({ type: 'EXPAND_STADIUM' });
+                showToast(`Obras de ampliación en marcha en el ${stadium.name}. Capacidad aumentada.`, 'success');
+            }
+        });
     };
 
     const handleUpgradeFacility = () => {
@@ -174,10 +186,15 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = ({ gameState, dispa
             showToast('Fondos insuficientes para modernizar las zonas VIP.', 'error');
             return;
         }
-        if (confirm(`¿Modernizar instalaciones VIP y palcos al Nivel ${nextLevel} por ${formatCurrency(cost)}? (+12.5% ingresos de día de partido)`)) {
-            dispatch({ type: 'UPGRADE_FACILITY', payload: { cost } });
-            showToast(`¡Instalaciones VIP modernizadas al Nivel ${nextLevel}!`, 'success');
-        }
+        setConfirmModal({
+            title: 'Modernización de Palcos y Zonas VIP',
+            message: `¿Modernizar instalaciones VIP y palcos al Nivel ${nextLevel} por ${formatCurrency(cost)}? (+12.5% ingresos de día de partido)`,
+            confirmText: 'Aprobar Inversión',
+            onConfirm: () => {
+                dispatch({ type: 'UPGRADE_FACILITY', payload: { cost } });
+                showToast(`¡Instalaciones VIP modernizadas al Nivel ${nextLevel}!`, 'success');
+            }
+        });
     };
 
     const handleSetTicketPolicy = (policy: TicketPolicy) => {
@@ -219,10 +236,15 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = ({ gameState, dispa
     };
 
     const handleTakeLoan = (loan: BankLoan) => {
-        if (confirm(`¿Solicitar préstamo "${loan.name}" por ${formatCurrency(loan.principal)}? Se amortizará a razón de ${formatCurrency(loan.weeklyPayment)}/semana durante ${loan.remainingWeeks} semanas.`)) {
-            dispatch({ type: 'TAKE_LOAN', payload: { loan } });
-            showToast(`Línea de crédito activada: +${formatCurrency(loan.principal)} añadidos al balance.`, 'success');
-        }
+        setConfirmModal({
+            title: 'Solicitud de Crédito Bancario',
+            message: `¿Solicitar préstamo "${loan.name}" por ${formatCurrency(loan.principal)}? Se amortizará a razón de ${formatCurrency(loan.weeklyPayment)}/semana durante ${loan.remainingWeeks} semanas.`,
+            confirmText: 'Solicitar Fondos',
+            onConfirm: () => {
+                dispatch({ type: 'TAKE_LOAN', payload: { loan } });
+                showToast(`Línea de crédito activada: +${formatCurrency(loan.principal)} añadidos al balance.`, 'success');
+            }
+        });
     };
 
     const handleRepayLoan = (loanId: string) => {
@@ -234,10 +256,16 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = ({ gameState, dispa
             return;
         }
 
-        if (confirm(`¿Amortizar la totalidad del crédito "${targetLoan.name}" abonando ${formatCurrency(targetLoan.remainingAmount)}? Se eliminará la cuota semanal.`)) {
-            dispatch({ type: 'REPAY_LOAN', payload: { loanId } });
-            showToast(`¡Préstamo cancelado! Cuota semanal de ${formatCurrency(targetLoan.weeklyPayment)} eliminada.`, 'success');
-        }
+        setConfirmModal({
+            title: 'Amortización de Préstamo',
+            message: `¿Amortizar la totalidad del crédito "${targetLoan.name}" abonando ${formatCurrency(targetLoan.remainingAmount)}? Se eliminará la cuota semanal.`,
+            confirmText: 'Amortizar Deuda',
+            confirmColor: 'bg-emerald-500 hover:bg-emerald-400 text-black',
+            onConfirm: () => {
+                dispatch({ type: 'REPAY_LOAN', payload: { loanId } });
+                showToast(`¡Préstamo cancelado! Cuota semanal de ${formatCurrency(targetLoan.weeklyPayment)} eliminada.`, 'success');
+            }
+        });
     };
 
     // Negotiation Engine
@@ -1622,6 +1650,50 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = ({ gameState, dispa
                                     className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase tracking-wider cursor-pointer shadow-lg shadow-red-600/30"
                                 >
                                     Abonar y Rescindir
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+                {/* In-App Confirmation Modal */}
+                {confirmModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="bg-[#121926] border border-white/10 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4"
+                        >
+                            <h3 className="text-base font-bold text-white flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-[var(--apex-gold)]" />
+                                {confirmModal.title}
+                            </h3>
+                            <p className="text-sm text-slate-300 leading-relaxed">
+                                {confirmModal.message}
+                            </p>
+                            <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
+                                <button
+                                    onClick={() => setConfirmModal(null)}
+                                    className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/5 border border-white/10 transition-all cursor-pointer"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        const cb = confirmModal.onConfirm;
+                                        setConfirmModal(null);
+                                        cb();
+                                    }}
+                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-lg ${
+                                        confirmModal.confirmColor || 'bg-[var(--apex-gold)] hover:brightness-110 text-black'
+                                    }`}
+                                >
+                                    {confirmModal.confirmText || 'Confirmar'}
                                 </button>
                             </div>
                         </motion.div>

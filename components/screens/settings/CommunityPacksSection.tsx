@@ -51,6 +51,13 @@ export const CommunityPacksSection: React.FC = () => {
 
     // Feedback notifications
     const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+    const [confirmModal, setConfirmModal] = useState<{
+        title: string;
+        message: string;
+        confirmText?: string;
+        confirmColor?: string;
+        onConfirm: () => void;
+    } | null>(null);
 
     // Master Community Safe Mode state
     const [isCommunityActive, setIsCommunityActive] = useState(() => customPacksService.isCommunityPacksActive());
@@ -169,23 +176,27 @@ export const CommunityPacksSection: React.FC = () => {
 
     // Uninstall Pack
     const handleUninstall = async (packId: string, packName: string) => {
-        if (!window.confirm(`¿Estás seguro de desinstalar "${packName}"? Los recursos visuales volverán a los genéricos.`)) {
-            return;
-        }
-
-        try {
-            await PackManager.uninstallPack(packId);
-            refreshPacks();
-            setFeedback({
-                type: 'success',
-                message: `Pack "${packName}" desinstalado.`
-            });
-        } catch (err: any) {
-            setFeedback({
-                type: 'error',
-                message: `Error al desinstalar: ${err.message}`
-            });
-        }
+        setConfirmModal({
+            title: 'Desinstalar Pack Comunitario',
+            message: `¿Estás seguro de desinstalar "${packName}"? Los recursos visuales volverán a los genéricos.`,
+            confirmText: 'Desinstalar',
+            confirmColor: 'bg-red-600 hover:bg-red-500 text-white',
+            onConfirm: async () => {
+                try {
+                    await PackManager.uninstallPack(packId);
+                    refreshPacks();
+                    setFeedback({
+                        type: 'success',
+                        message: `Pack "${packName}" desinstalado.`
+                    });
+                } catch (err: any) {
+                    setFeedback({
+                        type: 'error',
+                        message: err.message || 'Error al desinstalar.'
+                    });
+                }
+            }
+        });
     };
 
     // Change Priority
@@ -261,18 +272,23 @@ export const CommunityPacksSection: React.FC = () => {
 
     // Reset everything to generic fallback
     const handleClearAll = async () => {
-        if (!window.confirm('¿Deseas desinstalar todos los packs comunitarios y restablecer el juego a base mínima genérica?')) {
-            return;
-        }
-        for (const pack of installedPacks) {
-            await PackManager.uninstallPack(pack.packId);
-        }
-        await customPacksService.clearAllPacks();
-        await resourceManager.clearAllCache();
-        refreshPacks();
-        setFeedback({
-            type: 'success',
-            message: 'Todos los recursos comunitarios fueron removidos. El juego funciona con placeholders procedurales.'
+        setConfirmModal({
+            title: 'Restablecer Recursos Comunitarios',
+            message: '¿Deseas desinstalar todos los packs comunitarios y restablecer el juego a base mínima genérica?',
+            confirmText: 'Restablecer Todo',
+            confirmColor: 'bg-red-600 hover:bg-red-500 text-white',
+            onConfirm: async () => {
+                for (const pack of installedPacks) {
+                    await PackManager.uninstallPack(pack.packId);
+                }
+                await customPacksService.clearAllPacks();
+                await resourceManager.clearAllCache();
+                refreshPacks();
+                setFeedback({
+                    type: 'success',
+                    message: 'Todos los recursos comunitarios fueron removidos. El juego funciona con placeholders procedurales.'
+                });
+            }
         });
     };
 
@@ -878,6 +894,41 @@ export const CommunityPacksSection: React.FC = () => {
                     Apex AI implementa un sistema declarativo desacoplado. Los packs son mantenidos de forma voluntaria por la comunidad. No se ejecutan scripts, código JavaScript ni WebAssembly dentro de los packs comunitarios. Los escudos y fotos corresponden a sus legítimos propietarios y se gestionan como personalizaciones locales del usuario.
                 </p>
             </div>
+
+            {/* In-App Confirmation Modal */}
+            {confirmModal && (
+                <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+                    <div className="bg-[#121926] border border-white/10 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+                        <h3 className="text-base font-bold text-white flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-[var(--apex-gold)]" />
+                            {confirmModal.title}
+                        </h3>
+                        <p className="text-sm text-slate-300 leading-relaxed">
+                            {confirmModal.message}
+                        </p>
+                        <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
+                            <button
+                                onClick={() => setConfirmModal(null)}
+                                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/5 border border-white/10 transition-all cursor-pointer"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={() => {
+                                    const cb = confirmModal.onConfirm;
+                                    setConfirmModal(null);
+                                    cb();
+                                }}
+                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-lg ${
+                                    confirmModal.confirmColor || 'bg-[var(--apex-gold)] hover:brightness-110 text-black'
+                                }`}
+                            >
+                                {confirmModal.confirmText || 'Confirmar'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

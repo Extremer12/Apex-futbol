@@ -57,6 +57,7 @@ export type GameAction =
     | { type: 'SCOUT_PLAYER'; payload: { playerId: number } }
     | { type: 'SET_CURRENCY'; payload: 'EUR' | 'USD' }
     | { type: 'SET_LANGUAGE'; payload: 'en' | 'es' }
+    | { type: 'UPDATE_PLAYER_PROFILE'; payload: Partial<PlayerProfile> }
     | { type: 'RECORD_TRIGGERED_EVENT'; payload: string };
 
 export const initialState: GameState | null = null;
@@ -69,6 +70,7 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
         case 'RESET_GAME':
         case 'ADVANCE_WEEK_SUCCESS':
         case 'START_NEW_SEASON':
+        case 'UPDATE_PLAYER_PROFILE':
             return handleGameLifecycleAction(state, action);
 
         default: {

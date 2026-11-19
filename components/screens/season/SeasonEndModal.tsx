@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GameState } from '../../../types';
 import { getSeasonSummaryData } from '../../../services/seasonUtils';
 import { TeamLogo } from '../../../data/teams/helpers';
 import { Trophy, TrendingUp, TrendingDown, Award, Globe, CheckCircle2 } from 'lucide-react';
 import { calculatePresidentialScore, submitPresidentialScore } from '../../../services/leaderboard';
+import { supabase } from '../../../services/supabase';
 
 interface SeasonEndModalProps {
     gameState: GameState;
@@ -36,6 +37,35 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
         boardConf,
         seasonsCount
     );
+
+    // Auto-submit score to global leaderboard if user is authenticated with Google/Supabase
+    useEffect(() => {
+        let isMounted = true;
+        const autoSubmit = async () => {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user && !scoreSubmitted && !isSubmittingScore) {
+                    setIsSubmittingScore(true);
+                    await submitPresidentialScore({
+                        managerName: gameState.playerProfile?.name || 'Presidente',
+                        teamName: gameState.team.name,
+                        season: seasonsCount,
+                        trophiesCount,
+                        clubValue: clubVal,
+                        fanApproval: fanApp,
+                        boardConfidence: boardConf,
+                    });
+                    if (isMounted) setScoreSubmitted(true);
+                }
+            } catch (err) {
+                console.error("Auto submit leaderboard error:", err);
+            } finally {
+                if (isMounted) setIsSubmittingScore(false);
+            }
+        };
+        autoSubmit();
+        return () => { isMounted = false; };
+    }, []);
 
     const handleSubmitLeaderboard = async () => {
         if (isSubmittingScore || scoreSubmitted) return;

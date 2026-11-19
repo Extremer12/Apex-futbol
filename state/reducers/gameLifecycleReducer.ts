@@ -17,6 +17,7 @@ type GameLifecycleAction = Extract<GameAction,
     | { type: 'RESET_GAME' }
     | { type: 'ADVANCE_WEEK_SUCCESS' }
     | { type: 'START_NEW_SEASON' }
+    | { type: 'UPDATE_PLAYER_PROFILE' }
 >;
 
 export function handleGameLifecycleAction(state: GameState | null, action: GameLifecycleAction): GameState | null {
@@ -328,6 +329,17 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
                 console.error("Error crítico al iniciar nueva temporada:", error);
                 return state;
             }
+        }
+
+        case 'UPDATE_PLAYER_PROFILE': {
+            if (!state) return null;
+            return {
+                ...state,
+                playerProfile: {
+                    ...(state.playerProfile || { name: 'Presidente' }),
+                    ...action.payload
+                }
+            };
         }
 
         default:

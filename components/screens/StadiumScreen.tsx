@@ -46,29 +46,29 @@ export const StadiumScreen: React.FC<StadiumScreenProps> = ({ gameState, dispatc
             return;
         }
 
-        dispatch({ type: 'UPDATE_STADIUM', payload: { ...stadium, facilityLevel: stadium.facilityLevel + 1 } });
-        dispatch({ type: 'UPDATE_FINANCES', payload: { ...finances, balance: finances.balance - cost, balanceHistory: [...finances.balanceHistory, finances.balance - cost] } });
+        dispatch({ type: 'UPGRADE_FACILITY', payload: { cost } });
         showToast("¡Instalaciones mejoradas con éxito!", 'success');
     };
 
     const handleStartExpansion = () => {
         const cost = stadium.expansionCost || (stadium.capacity * 1000);
+        const newCapacity = stadium.expansionCapacity || Math.floor(stadium.capacity * 1.25);
         if (finances.balance < cost) {
             showToast(`Necesitas ${formatCurrencyShort(cost)} para la ampliación.`, 'error');
             return;
         }
 
-        // In a realistic system, this would take weeks. For now we apply it immediately.
-        const newCapacity = Math.floor(stadium.capacity * 1.25);
-        dispatch({ 
-            type: 'UPDATE_STADIUM', 
-            payload: { 
-                ...stadium, 
-                capacity: newCapacity,
-                maintenanceCost: stadium.maintenanceCost * 1.2
-            } 
-        });
-        dispatch({ type: 'UPDATE_FINANCES', payload: { ...finances, balance: finances.balance - cost, balanceHistory: [...finances.balanceHistory, finances.balance - cost] } });
+        if (!stadium.expansionCost || !stadium.expansionCapacity) {
+            dispatch({ 
+                type: 'UPDATE_STADIUM', 
+                payload: { 
+                    ...stadium, 
+                    expansionCost: cost,
+                    expansionCapacity: newCapacity
+                } 
+            });
+        }
+        dispatch({ type: 'EXPAND_STADIUM' });
         showToast(`Ampliación completada. Nueva capacidad: ${newCapacity.toLocaleString()} asientos.`, 'success');
         setIsExpanding(false);
     };

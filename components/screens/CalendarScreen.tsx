@@ -21,14 +21,31 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ gameState }) => 
         setSelectedWeek(Math.max(1, gameState.currentWeek));
     }, [gameState.currentWeek]);
 
-    const getTeamById = (id: number): Team | undefined => gameState.allTeams.find(t => t.id === id);
+    // Memoized Map for O(1) team lookups across match renders
+    const teamMap = useMemo(() => {
+        const map = new Map<number, Team>();
+        if (gameState.allTeams) {
+            for (let i = 0; i < gameState.allTeams.length; i++) {
+                map.set(gameState.allTeams[i].id, gameState.allTeams[i]);
+            }
+        }
+        return map;
+    }, [gameState.allTeams]);
+
+    const getTeamById = (id: number): Team | undefined => teamMap.get(id);
 
     const isSouthAmerica = [
         LeagueId.LIGA_ARGENTINA,
         LeagueId.PRIMERA_NACIONAL,
         LeagueId.BRASILEIRAO,
         LeagueId.SERIE_B_BR,
-        LeagueId.COPA_DE_PRIMERA
+        LeagueId.COPA_DE_PRIMERA,
+        LeagueId.LIGA_MX,
+        LeagueId.LIGA_EXPANSION_MX,
+        LeagueId.PRIMERA_DIVISION_CHILE,
+        LeagueId.PRIMERA_B_CHILE,
+        LeagueId.PRIMERA_A_COLOMBIA,
+        LeagueId.PRIMERA_B_COLOMBIA
     ].includes(gameState.team.leagueId);
 
     const getMonthName = (week: number) => {
@@ -55,7 +72,7 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ gameState }) => 
         let isInt = false;
         let isDomesticCup = false;
 
-        if (comp.includes('Champions') || comp.includes('Europa') || comp.includes('Libertadores') || comp.includes('Intercontinental')) {
+        if (comp.includes('Champions') || comp.includes('Europa') || comp.includes('Libertadores') || comp.includes('Sudamericana') || comp.includes('Intercontinental')) {
             isInt = true;
         } else if (isCupMatch || comp.includes('Cup') || comp.includes('Copa') || comp.includes('Pokal') || comp.includes('Playoffs') || comp.includes('Reducido')) {
             isDomesticCup = true;
@@ -495,7 +512,7 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ gameState }) => 
                                         Sin partidos de liga programados en esta fecha
                                     </div>
                                 ) : (
-                                    weekMatches.weekendMatches.map((m, idx) => renderCleanMatchRow(m, idx, gameState, setSelectedDetailMatch))
+                                    weekMatches.weekendMatches.map((m, idx) => renderCleanMatchRow(m, idx, gameState, setSelectedDetailMatch, teamMap))
                                 )}
                             </div>
                         </div>
@@ -518,7 +535,7 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ gameState }) => 
                                         Sin partidos de copa en esta fecha
                                     </div>
                                 ) : (
-                                    weekMatches.midweekMatches.map((m, idx) => renderCleanMatchRow(m, idx, gameState, setSelectedDetailMatch))
+                                    weekMatches.midweekMatches.map((m, idx) => renderCleanMatchRow(m, idx, gameState, setSelectedDetailMatch, teamMap))
                                 )}
                             </div>
                         </div>
@@ -638,10 +655,11 @@ function renderCleanMatchRow(
     match: Match, 
     idx: number, 
     gameState: GameState, 
-    onSelectMatch: (m: Match) => void
+    onSelectMatch: (m: Match) => void,
+    teamMap?: Map<number, Team>
 ) {
-    const home = gameState.allTeams.find(t => t.id === match.homeTeamId);
-    const away = gameState.allTeams.find(t => t.id === match.awayTeamId);
+    const home = teamMap?.get(match.homeTeamId) ?? gameState.allTeams.find(t => t.id === match.homeTeamId);
+    const away = teamMap?.get(match.awayTeamId) ?? gameState.allTeams.find(t => t.id === match.awayTeamId);
     const isPlayerMatch = match.homeTeamId === gameState.team.id || match.awayTeamId === gameState.team.id;
     const isPlayed = match.result !== undefined;
 

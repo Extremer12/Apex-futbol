@@ -36,11 +36,36 @@ export default defineConfig({
             }
             return 'vendor-other';
           }
+          if (normalizedId.includes('playerPhotos')) {
+            return 'data-player-photos';
+          }
           if (normalizedId.includes('/constants/teamLogos') || normalizedId.includes('/constants/championship')) {
             return 'data-logos';
           }
           if (normalizedId.includes('/data/teams/')) {
-            return 'data-teams';
+            if (
+              normalizedId.includes('ligaArgentina') ||
+              normalizedId.includes('brasileirao') ||
+              normalizedId.includes('ligaChile') ||
+              normalizedId.includes('ligaColombia') ||
+              normalizedId.includes('copaDePrimera') ||
+              normalizedId.includes('ligaMx') ||
+              normalizedId.includes('southAmericanClubs')
+            ) {
+              return 'data-teams-latam';
+            }
+            if (
+              normalizedId.includes('premierLeague') ||
+              normalizedId.includes('championship') ||
+              normalizedId.includes('laLiga') ||
+              normalizedId.includes('bundesliga') ||
+              normalizedId.includes('serieA') ||
+              normalizedId.includes('ligue1') ||
+              normalizedId.includes('secondDivisions')
+            ) {
+              return 'data-teams-europe';
+            }
+            return 'data-teams-core';
           }
         }
       }
