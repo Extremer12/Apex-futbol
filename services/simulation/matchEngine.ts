@@ -162,14 +162,14 @@ export const simulateMatch = (
             p.stats.appearances += 1;
             p.stats.minutes += 90;
             const drain = (15 + Math.random() * 15) * (1 - fatigueMitigation);
-            p.condition = Math.max(10, (p.condition ?? 100) - drain);
+            p.condition = Math.round(Math.max(10, (p.condition ?? 100) - drain));
         });
         squad.subs.forEach(p => {
             p.stats = p.stats ? { ...p.stats } : { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 };
             p.stats.appearances += 1;
             p.stats.minutes += 30;
             const drain = (5 + Math.random() * 10) * (1 - fatigueMitigation);
-            p.condition = Math.max(10, (p.condition ?? 100) - drain);
+            p.condition = Math.round(Math.max(10, (p.condition ?? 100) - drain));
         });
     };
 

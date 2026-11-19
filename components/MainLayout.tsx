@@ -170,19 +170,11 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                     )}
                     <Header gameState={gameState} onNavigate={setActiveScreen} />
                     <main className="pb-24 overflow-x-hidden min-h-[calc(100vh-140px)]">
-                        <AnimatePresence mode="wait" initial={false}>
-                            <motion.div
-                                key={activeScreen}
-                                initial={{ opacity: 0, y: 6 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0 }}
-                                transition={{ duration: 0.12, ease: 'easeOut' }}
-                            >
-                                <React.Suspense fallback={<div className="flex items-center justify-center py-20"><LoadingSpinner /></div>}>
-                                    {renderContent()}
-                                </React.Suspense>
-                            </motion.div>
-                        </AnimatePresence>
+                        <div key={activeScreen} className="animate-fade-in">
+                            <React.Suspense fallback={<div className="flex items-center justify-center py-20"><LoadingSpinner /></div>}>
+                                {renderContent()}
+                            </React.Suspense>
+                        </div>
                     </main>
                     <BottomNav
                         activeScreen={activeScreen}

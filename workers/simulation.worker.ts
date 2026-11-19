@@ -129,7 +129,7 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                 if (!newP.condition || newP.condition < 100) {
                     const fitnessPower = t.clubStaff?.fitnessCoach?.power ?? (t.tier === 'Top' ? 78 : t.tier === 'Mid' ? 68 : 55);
                     const recoveryBonus = Math.floor(fitnessPower / 6);
-                    newP.condition = Math.min(100, (newP.condition || 100) + 12 + recoveryBonus);
+                    newP.condition = Math.round(Math.min(100, (newP.condition || 100) + 12 + recoveryBonus));
                 }
 
                 // Ensure stats exists

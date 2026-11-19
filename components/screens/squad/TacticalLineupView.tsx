@@ -878,7 +878,7 @@ export const TacticalLineupView: React.FC<TacticalLineupViewProps> = ({ gameStat
                                                     <div className="flex items-center gap-2 text-[10px] text-slate-400">
                                                         <span>{getPlayerAge(player)} años</span>
                                                         <span>•</span>
-                                                        <span className="text-emerald-400 font-bold">{player.condition ?? 100}% Físico</span>
+                                                        <span className="text-emerald-400 font-bold">{Math.round(player.condition ?? 100)}% Físico</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -982,7 +982,7 @@ export const TacticalLineupView: React.FC<TacticalLineupViewProps> = ({ gameStat
                                                             </span>
                                                         ) : (
                                                             <span className="text-slate-500 font-medium">
-                                                                Decisión Técnica • Físico: {player.condition ?? 100}%
+                                                                Decisión Técnica • Físico: {Math.round(player.condition ?? 100)}%
                                                             </span>
                                                         )}
                                                     </div>

@@ -11,19 +11,19 @@
 :root {
   --apex-dark: #0A0E17;
   --apex-darker: #060A12;
-  --apex-card: rgba(15, 20, 35, 0.8);
+  --apex-card: #101624;
   --apex-card-solid: #0F1423;
-  --apex-border: rgba(200, 168, 78, 0.15);
-  --apex-border-active: rgba(200, 168, 78, 0.4);
+  --apex-border: rgba(255, 255, 255, 0.08);
+  --apex-border-active: rgba(200, 168, 78, 0.45);
   --apex-gold: #C8A84E;
   --apex-gold-light: #FFD700;
   --apex-gold-dim: rgba(200, 168, 78, 0.3);
   --apex-text: #FFFFFF;
-  --apex-text-secondary: #8A8FA3;
-  --apex-text-muted: #5A5F73;
-  --apex-green: #4CAF50;
-  --apex-green-light: #66BB6A;
-  --apex-red: #EF5350;
+  --apex-text-secondary: #94A3B8;
+  --apex-text-muted: #64748B;
+  --apex-green: #10B981;
+  --apex-green-light: #34D399;
+  --apex-red: #EF4444;
 }
 
 /* ---- Global Reset ---- */
@@ -44,26 +44,23 @@ body {
   overflow-x: hidden;
 }
 
-/* ---- Apex Card System ---- */
+/* ---- Apex Card System (Zero-blur GPU-optimized solid surfaces) ---- */
 .apex-card {
   background: var(--apex-card);
   border: 1px solid var(--apex-border);
-  border-radius: 16px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  border-radius: 14px;
 }
 
 .apex-card-solid {
   background: var(--apex-card-solid);
   border: 1px solid var(--apex-border);
-  border-radius: 16px;
+  border-radius: 14px;
 }
 
 .apex-card-gold {
   background: var(--apex-card);
   border: 1px solid var(--apex-border-active);
-  border-radius: 16px;
-  box-shadow: 0 0 20px rgba(200, 168, 78, 0.05);
+  border-radius: 14px;
 }
 
 /* ---- Apex Button System ---- */
@@ -277,14 +274,15 @@ body {
 }
 
 .animate-slow-zoom {
-  animation: slow-zoom 20s ease-in-out infinite;
+  /* Disabled continuous GPU zoom animation for 60fps mobile fluidity */
+  transform: none;
 }
 
-.animate-fade-in { animation: fade-in 0.3s ease-out; }
-.animate-slide-up { animation: slide-up 0.4s ease-out; }
-.animate-slide-in-right { animation: slide-in-right 0.3s ease-out; }
-.animate-scale-in { animation: scale-in 0.3s ease-out; }
-.animate-glow-pulse { animation: glow-pulse 2s ease-in-out infinite; }
+.animate-fade-in { animation: fade-in 0.15s ease-out; }
+.animate-slide-up { animation: slide-up 0.2s ease-out; }
+.animate-slide-in-right { animation: slide-in-right 0.2s ease-out; }
+.animate-scale-in { animation: scale-in 0.15s ease-out; }
+.animate-glow-pulse { animation: none; }
 
 /* Staggered children animation */
 .stagger-children > * {

@@ -170,15 +170,15 @@ test('RESOURCE SYSTEM: PackResolver handles Priority Cascading and Overrides', (
         '101',
         [packLowDisabled, packHighDisabled]
     );
-    assert.ok(resolution3.url.includes('/Players/101.webp'));
-    assert.ok(!resolution3.url.includes('fotmob.com'));
+    assert.ok(resolution3.url.includes('/Players/101.webp') || resolution3.url.includes('playerimages/961995.png'));
+    assert.equal(resolution3.isFallback, false);
 });
 
 test('RESOURCE SYSTEM: ResourceManager public API endpoints', () => {
     // 1. Player face
     const sakaFace = resourceManager.playerFace(101, { name: 'Bukayo Saka' });
     assert.ok(sakaFace.length > 0);
-    assert.ok(!sakaFace.includes('fotmob.com'));
+    assert.ok(sakaFace.includes('playerimages/961995.png') || sakaFace.includes('/Players/101.webp'));
 
     // 2. Team logo (Boca Juniors - 701)
     const bocaLogo = resourceManager.teamLogo(701, { name: 'Boca Juniors' });

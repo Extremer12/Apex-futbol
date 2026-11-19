@@ -1,9 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Player, Team, GameState } from '../../../types';
 import { GameAction } from '../../../state/reducer';
 import { TeamLogo, PlayerPhoto } from '../../../data/teams/helpers';
 import { 
-    formatCurrencyShort, 
     formatWeeklyWage,
     formatTransferFee 
 } from '../../../utils';
@@ -11,7 +10,6 @@ import {
     getPlayerAge, 
     getPlayerPotential, 
     getPlayerPotentialTier, 
-    getTierBadge, 
     getExpectedWage 
 } from '../../../utils/playerUtils';
 import { 
@@ -46,7 +44,7 @@ interface TransfersMarketTabProps {
     onStartNegotiation: (player: Player) => void;
 }
 
-export const TransfersMarketTab: React.FC<TransfersMarketTabProps> = ({
+export const TransfersMarketTab: React.FC<TransfersMarketTabProps> = React.memo(({
     gameState,
     dispatch,
     marketOpen,
@@ -68,32 +66,47 @@ export const TransfersMarketTab: React.FC<TransfersMarketTabProps> = ({
     const { showToast } = useToast();
     const pageSize = 24;
 
-    const filteredPlayers = React.useMemo(() => {
+    // O(1) lookup map from player.id -> Team
+    const playerTeamMap = useMemo(() => {
+        const map = new Map<number, Team>();
+        for (const t of allTeams) {
+            for (const p of t.squad) {
+                map.set(p.id, t);
+            }
+        }
+        return map;
+    }, [allTeams]);
+
+    const filteredPlayers = useMemo(() => {
+        const query = filterName.toLowerCase().trim();
+        const normBudget = gameState.finances.transferBudget < 10_000 ? gameState.finances.transferBudget * 1_000_000 : gameState.finances.transferBudget;
+        const normBalance = gameState.finances.balance < 10_000 ? gameState.finances.balance * 1_000_000 : gameState.finances.balance;
+        const maxSpendable = Math.min(normBudget, normBalance);
+
         return availablePlayers.filter(player => {
-            if (filterName && !player.name.toLowerCase().includes(filterName.toLowerCase())) {
+            if (query && !player.name.toLowerCase().includes(query)) {
                 return false;
             }
             if (filterPos !== 'ALL' && player.position !== filterPos) {
                 return false;
             }
-            const age = getPlayerAge(player);
-            const pot = getPlayerPotential(player);
-            const potTier = getPlayerPotentialTier(player);
 
-            if (filterCategory === 'WONDERKIDS') {
-                if (potTier !== 'Wonderkid' && (age > 22 || pot < 85)) return false;
-            } else if (filterCategory === 'PRIME') {
-                if (age < 23 || age > 29) return false;
-            } else if (filterCategory === 'VETERANS') {
-                if (age < 30) return false;
-            } else if (filterCategory === 'EXPIRING') {
-                if (player.contractYears > 1) return false;
-            } else if (filterCategory === 'AFFORDABLE') {
-                const normPlayerValue = player.value < 10_000 ? player.value * 1_000_000 : player.value;
-                const normBudget = gameState.finances.transferBudget < 10_000 ? gameState.finances.transferBudget * 1_000_000 : gameState.finances.transferBudget;
-                const normBalance = gameState.finances.balance < 10_000 ? gameState.finances.balance * 1_000_000 : gameState.finances.balance;
-                const maxSpendable = Math.min(normBudget, normBalance);
-                if (normPlayerValue > maxSpendable) return false;
+            if (filterCategory !== 'ALL') {
+                const age = getPlayerAge(player);
+                if (filterCategory === 'WONDERKIDS') {
+                    const pot = getPlayerPotential(player);
+                    const potTier = getPlayerPotentialTier(player);
+                    if (potTier !== 'Wonderkid' && (age > 22 || pot < 85)) return false;
+                } else if (filterCategory === 'PRIME') {
+                    if (age < 23 || age > 29) return false;
+                } else if (filterCategory === 'VETERANS') {
+                    if (age < 30) return false;
+                } else if (filterCategory === 'EXPIRING') {
+                    if (player.contractYears > 1) return false;
+                } else if (filterCategory === 'AFFORDABLE') {
+                    const normPlayerValue = player.value < 10_000 ? player.value * 1_000_000 : player.value;
+                    if (normPlayerValue > maxSpendable) return false;
+                }
             }
             return true;
         }).sort((a, b) => {
@@ -115,18 +128,17 @@ export const TransfersMarketTab: React.FC<TransfersMarketTabProps> = ({
     }, [availablePlayers, filterName, filterPos, filterCategory, sortOption, gameState.finances.transferBudget, gameState.finances.balance]);
 
     const totalPages = Math.max(1, Math.ceil(filteredPlayers.length / pageSize));
-    const paginatedPlayers = React.useMemo(() => {
+    const paginatedPlayers = useMemo(() => {
         const start = (currentPage - 1) * pageSize;
         return filteredPlayers.slice(start, start + pageSize);
     }, [filteredPlayers, currentPage, pageSize]);
 
-    const getRatingDisplay = (player: Player) => {
+    const getRatingBadge = (player: Player) => {
         const scoutingLevel = gameState.scoutedPlayerIds[player.id] || 0;
-        
         if (scoutingLevel >= 100) {
             return (
-                <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[var(--apex-gold)]/10 border border-[var(--apex-gold)]/40 shadow-[0_0_15px_rgba(200,168,78,0.2)]">
-                    <span className="font-black text-sm text-[var(--apex-gold)]">{player.rating}</span>
+                <div className="w-9 h-9 rounded-xl bg-[var(--apex-gold)]/15 border border-[var(--apex-gold)]/40 flex items-center justify-center shrink-0">
+                    <span className="font-black text-xs text-[var(--apex-gold)]">{player.rating}</span>
                 </div>
             );
         }
@@ -136,47 +148,43 @@ export const TransfersMarketTab: React.FC<TransfersMarketTabProps> = ({
         const max = Math.min(99, player.rating + range);
 
         return (
-            <div className="flex flex-col items-center">
-                <span className="font-bold text-white/60 text-xs">{min}-{max}</span>
-                <div className="w-10 h-1 bg-black/50 rounded-full mt-1.5 overflow-hidden border border-white/5">
-                    <div className="h-full bg-white/30" style={{ width: `${scoutingLevel}%` }}></div>
-                </div>
+            <div className="px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-center shrink-0">
+                <span className="font-bold text-slate-300 text-[11px] block leading-none">{min}-{max}</span>
+                <span className="text-[8px] text-slate-500 font-semibold uppercase">OVR</span>
             </div>
         );
     };
 
     return (
-        <div className="space-y-4">
-            {/* Panel de Control y Filtros Unificado & Limpio */}
-            <div className={`bg-[#0E131F] border border-white/10 rounded-2xl p-3 sm:p-4 shadow-lg space-y-3 ${!marketOpen && 'opacity-60 pointer-events-none'}`}>
-                {/* Fila 1: Buscador + Posición + Orden */}
-                <div className="flex flex-col md:flex-row items-center gap-2.5">
-                    {/* Buscador */}
+        <div className="space-y-3.5">
+            {/* Compact Filter Panel */}
+            <div className={`apex-card p-3 sm:p-3.5 space-y-2.5 ${!marketOpen && 'opacity-60 pointer-events-none'}`}>
+                <div className="flex flex-col md:flex-row items-center gap-2">
+                    {/* Search Input */}
                     <div className="relative flex-1 w-full">
-                        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
+                        <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
                         <input 
                             type="text" 
-                            placeholder="Buscar jugador por nombre o apellido..." 
+                            placeholder="Buscar jugador..." 
                             value={filterName} 
                             onChange={e => {
                                 setFilterName(e.target.value);
                                 setCurrentPage(1);
                             }} 
-                            className="w-full pl-9 pr-8 py-2 bg-black/40 border border-white/10 rounded-xl text-white text-xs placeholder-white/30 focus:outline-none focus:border-[var(--apex-gold)] transition-colors" 
+                            className="w-full pl-8 pr-8 py-1.5 bg-black/40 border border-white/10 rounded-xl text-white text-xs placeholder-slate-500 focus:outline-none focus:border-[var(--apex-gold)]" 
                         />
                         {filterName && (
                             <button
                                 onClick={() => { setFilterName(''); setCurrentPage(1); }}
-                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white cursor-pointer"
-                                title="Limpiar búsqueda"
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white cursor-pointer"
                             >
                                 <X className="w-3.5 h-3.5" />
                             </button>
                         )}
                     </div>
 
-                    {/* Selector de Posiciones Segmentado */}
-                    <div className="flex items-center gap-1 w-full md:w-auto bg-black/40 p-1 rounded-xl border border-white/10 shrink-0 overflow-x-auto justify-center">
+                    {/* Position Segmented Filter */}
+                    <div className="flex items-center gap-1 w-full md:w-auto bg-black/40 p-1 rounded-xl border border-white/5 shrink-0 overflow-x-auto justify-between sm:justify-center">
                         {([
                             { id: 'ALL', label: 'Todos' },
                             { id: 'POR', label: 'POR' },
@@ -190,10 +198,10 @@ export const TransfersMarketTab: React.FC<TransfersMarketTabProps> = ({
                                     setFilterPos(pos.id as any);
                                     setCurrentPage(1);
                                 }}
-                                className={`px-2.5 py-1 rounded-lg font-black text-[10px] tracking-wider uppercase transition-all cursor-pointer ${
+                                className={`px-2.5 py-1 rounded-lg font-bold text-[10px] uppercase transition-colors cursor-pointer ${
                                     filterPos === pos.id 
-                                        ? 'bg-[var(--apex-gold)] text-slate-950 font-black shadow-sm' 
-                                        : 'text-white/60 hover:text-white'
+                                        ? 'bg-[var(--apex-gold)] text-slate-950 font-black' 
+                                        : 'text-slate-400 hover:text-white'
                                 }`}
                             >
                                 {pos.label}
@@ -201,34 +209,33 @@ export const TransfersMarketTab: React.FC<TransfersMarketTabProps> = ({
                         ))}
                     </div>
 
-                    {/* Selector de Orden */}
+                    {/* Sort Select */}
                     <div className="flex items-center gap-1.5 w-full md:w-auto bg-black/40 px-3 py-1.5 rounded-xl border border-white/10 shrink-0">
                         <ArrowUpDown className="w-3 h-3 text-[var(--apex-gold)]" />
-                        <span className="text-[10px] text-white/40 font-bold uppercase tracking-wider">Orden:</span>
                         <select
                             value={sortOption}
                             onChange={e => setSortOption(e.target.value as SortOption)}
-                            className="bg-transparent text-white text-xs font-bold focus:outline-none cursor-pointer"
+                            className="bg-transparent text-white text-xs font-bold focus:outline-none cursor-pointer w-full"
                         >
-                            <option value="rating" className="bg-[#0E131F] text-white">Valoración Media</option>
-                            <option value="potential" className="bg-[#0E131F] text-white">Mayor Potencial</option>
-                            <option value="value" className="bg-[#0E131F] text-white">Valor de Mercado</option>
-                            <option value="age" className="bg-[#0E131F] text-white">Juventud (Edad)</option>
-                            <option value="wage" className="bg-[#0E131F] text-white">Salario Actual</option>
+                            <option value="rating" className="bg-[#0E131F] text-white">Media (OVR)</option>
+                            <option value="potential" className="bg-[#0E131F] text-white">Potencial</option>
+                            <option value="value" className="bg-[#0E131F] text-white">Valor</option>
+                            <option value="age" className="bg-[#0E131F] text-white">Edad</option>
+                            <option value="wage" className="bg-[#0E131F] text-white">Salario</option>
                         </select>
                     </div>
                 </div>
 
-                {/* Fila 2: Categorías Rápidas & Contador */}
+                {/* Quick Categories & Count */}
                 <div className="flex items-center justify-between gap-2 pt-2 border-t border-white/5">
-                    <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar flex-1 py-0.5">
+                    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar flex-1">
                         {[
                             { id: 'ALL', label: 'Todos' },
-                            { id: 'WONDERKIDS', label: '⭐ Promesas (<22)' },
-                            { id: 'PRIME', label: '⚡ Plenitud (23-29)' },
-                            { id: 'VETERANS', label: '👑 Veteranos (30+)' },
-                            { id: 'EXPIRING', label: '📄 Fin de Contrato' },
-                            { id: 'AFFORDABLE', label: '💰 En Presupuesto' },
+                            { id: 'WONDERKIDS', label: 'Sub-22' },
+                            { id: 'PRIME', label: '23-29 años' },
+                            { id: 'VETERANS', label: '30+ años' },
+                            { id: 'EXPIRING', label: 'Fin Contrato' },
+                            { id: 'AFFORDABLE', label: 'En Presupuesto' },
                         ].map(cat => {
                             const isActive = filterCategory === cat.id;
                             return (
@@ -238,10 +245,10 @@ export const TransfersMarketTab: React.FC<TransfersMarketTabProps> = ({
                                         setFilterCategory(cat.id as CategoryFilter);
                                         setCurrentPage(1);
                                     }}
-                                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all border whitespace-nowrap cursor-pointer ${
+                                    className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors border whitespace-nowrap cursor-pointer ${
                                         isActive 
-                                            ? 'bg-white/20 text-white border-white/30 shadow-sm' 
-                                            : 'bg-white/[0.02] text-white/50 border-white/5 hover:bg-white/[0.06] hover:text-white'
+                                            ? 'bg-white/15 text-white border-white/25 font-bold' 
+                                            : 'bg-transparent text-slate-400 border-white/5 hover:text-white'
                                     }`}
                                 >
                                     {cat.label}
@@ -250,94 +257,81 @@ export const TransfersMarketTab: React.FC<TransfersMarketTabProps> = ({
                         })}
                     </div>
 
-                    <div className="hidden sm:flex items-center gap-2 text-[10px] font-bold text-white/40 uppercase tracking-wider shrink-0 pl-2">
-                        <span>{filteredPlayers.length} jugadores</span>
+                    <div className="hidden sm:flex items-center gap-1.5 text-[10px] font-semibold text-slate-500 shrink-0 pl-2">
+                        <span>{filteredPlayers.length} resultados</span>
                         <span>•</span>
-                        <span>Pág {currentPage}/{totalPages}</span>
+                        <span>{currentPage}/{totalPages}</span>
                     </div>
                 </div>
             </div>
 
-            {/* Player Grid */}
-            <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 ${!marketOpen && 'opacity-60 pointer-events-none'}`}>
+            {/* Clean Player Grid */}
+            <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 ${!marketOpen && 'opacity-60 pointer-events-none'}`}>
                 {paginatedPlayers.map(player => {
-                    const playerTeam = allTeams.find(t => t.squad.some(p => p.id === player.id));
+                    const playerTeam = playerTeamMap.get(player.id);
                     const age = getPlayerAge(player);
-                    const potTier = getPlayerPotentialTier(player);
-                    const tierBadge = getTierBadge(potTier);
                     const expectedWage = getExpectedWage(player, myTeam.tier, 'FirstTeam');
+                    const isScouted = (gameState.scoutedPlayerIds[player.id] || 0) >= 100;
 
                     return (
-                        <div key={player.id} className="group apex-card p-4 hover:border-[var(--apex-border-active)] transition-all duration-300 flex flex-col justify-between">
-                            <div>
-                                {/* Player Card Top: Photo, Name, Team Logo */}
-                                <div className="flex items-start justify-between gap-3 mb-3">
-                                    <div className="flex items-center gap-3">
-                                        <PlayerPhoto player={player} className="w-12 h-12 rounded-xl border border-white/10 shadow-md group-hover:scale-105 transition-transform" />
-                                        <div>
-                                            <h3 className="font-black text-sm text-white leading-tight group-hover:text-[var(--apex-gold)] transition-colors">
-                                                {player.name}
-                                            </h3>
-                                            <div className="flex items-center gap-1.5 mt-1">
-                                                <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-white/10 text-white/70 uppercase">
-                                                    {player.position}
-                                                </span>
-                                                <span className="text-[10px] text-white/50 font-bold">{age} años</span>
-                                            </div>
+                        <div key={player.id} className="apex-card p-3.5 hover:border-white/20 transition-colors flex flex-col justify-between gap-3">
+                            {/* Top Row: Photo, Name, Team, OVR */}
+                            <div className="flex items-center justify-between gap-2.5">
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                    <PlayerPhoto player={player} className="w-11 h-11 rounded-full shrink-0" />
+                                    <div className="min-w-0">
+                                        <h3 className="font-bold text-sm text-white truncate">
+                                            {player.name}
+                                        </h3>
+                                        <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-slate-400 truncate">
+                                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-white/10 text-slate-200 uppercase">
+                                                {player.position}
+                                            </span>
+                                            <span>{age}a</span>
+                                            {playerTeam && (
+                                                <>
+                                                    <span>•</span>
+                                                    <div className="w-3.5 h-3.5 shrink-0 inline-flex">
+                                                        <TeamLogo team={playerTeam} />
+                                                    </div>
+                                                    <span className="truncate">{playerTeam.shortName || playerTeam.name}</span>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
-
-                                    <div className="w-9 h-9 flex-shrink-0 bg-white/5 rounded-lg p-1 border border-white/10" title={playerTeam?.name}>
-                                        <TeamLogo team={playerTeam} />
-                                    </div>
                                 </div>
 
-                                {/* Badges & Contract Status */}
-                                <div className="flex flex-wrap items-center gap-1.5 mb-3">
-                                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-md border uppercase ${tierBadge.color}`}>
-                                        {tierBadge.label}
-                                    </span>
-                                    {player.contractYears <= 1 && (
-                                        <span className="text-[9px] font-black px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/30 uppercase">
-                                            Expira ({player.contractYears}a)
-                                        </span>
-                                    )}
-                                </div>
+                                {getRatingBadge(player)}
+                            </div>
 
-                                {/* Stats Row: Rating, Value, Wages */}
-                                <div className="bg-white/[0.03] p-2 rounded-xl border border-white/5 grid grid-cols-3 gap-1.5 text-center mb-3">
-                                    <div className="flex flex-col items-center justify-center">
-                                        <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider block mb-0.5">Nivel</span>
-                                        {getRatingDisplay(player)}
-                                    </div>
-                                    <div className="flex flex-col items-center justify-center border-x border-white/5 px-1">
-                                        <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider block mb-0.5">Valor</span>
-                                        <span className="text-xs font-black text-emerald-400 truncate w-full">{formatTransferFee(player.value)}</span>
-                                    </div>
-                                    <div className="flex flex-col items-center justify-center">
-                                        <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider block mb-0.5">Salario</span>
-                                        <span className="text-[10px] font-black text-slate-200 truncate w-full">{formatWeeklyWage(expectedWage)}</span>
-                                    </div>
+                            {/* Financial Info */}
+                            <div className="grid grid-cols-2 gap-2 py-2 px-2.5 rounded-xl bg-black/30 border border-white/5 text-center">
+                                <div>
+                                    <span className="text-[9px] text-slate-500 font-semibold uppercase block">Valor</span>
+                                    <span className="text-xs font-bold text-emerald-400 truncate block">{formatTransferFee(player.value)}</span>
+                                </div>
+                                <div className="border-l border-white/5">
+                                    <span className="text-[9px] text-slate-500 font-semibold uppercase block">Salario Est.</span>
+                                    <span className="text-xs font-bold text-slate-300 truncate block">{formatWeeklyWage(expectedWage)}</span>
                                 </div>
                             </div>
 
-                            {/* Action Buttons */}
-                            <div className="flex items-center gap-2 pt-2 border-t border-white/5">
-                                {(gameState.scoutedPlayerIds[player.id] || 0) < 100 && (
+                            {/* Actions */}
+                            <div className="flex items-center gap-2">
+                                {!isScouted && (
                                     <button
                                         onClick={() => {
                                             dispatch({ type: 'SCOUT_PLAYER', payload: { playerId: player.id } });
-                                            showToast(`Ojeador asignado a observar a ${player.name}`, 'info');
+                                            showToast(`Ojeador asignado a ${player.name}`, 'info');
                                         }}
-                                        className="px-3 py-2 rounded-xl bg-white/5 text-white/60 hover:text-white hover:bg-white/10 transition-all border border-white/10 text-[10px] font-bold uppercase flex items-center gap-1 cursor-pointer active:scale-95"
-                                        title="Observar y desbloquear informe completo"
+                                        className="px-3 py-2 rounded-xl bg-white/5 text-slate-300 hover:text-white hover:bg-white/10 transition-colors border border-white/10 text-[11px] font-bold cursor-pointer"
                                     >
-                                        <Search className="w-3 h-3" /> Ojear
+                                        Ojear
                                     </button>
                                 )}
                                 <button
                                     onClick={() => onStartNegotiation(player)}
-                                    className="flex-1 py-2.5 rounded-xl bg-[var(--apex-gold)] text-black hover:bg-yellow-400 font-black text-xs uppercase tracking-wider transition-all shadow-md shadow-[var(--apex-gold)]/20 flex items-center justify-center cursor-pointer active:scale-95"
+                                    className="flex-1 py-2 rounded-xl bg-[var(--apex-gold)] text-slate-950 hover:bg-yellow-400 font-black text-xs uppercase tracking-wider transition-colors cursor-pointer"
                                 >
                                     Fichar
                                 </button>
@@ -347,23 +341,23 @@ export const TransfersMarketTab: React.FC<TransfersMarketTabProps> = ({
                 })}
             </div>
 
-            {/* Pagination Controls */}
+            {/* Pagination */}
             {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-3 pt-6">
+                <div className="flex items-center justify-center gap-3 pt-4">
                     <button
                         onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                         disabled={currentPage === 1}
-                        className="px-4 py-2 rounded-xl bg-black/40 border border-white/10 text-white font-bold text-xs disabled:opacity-30 disabled:pointer-events-none hover:bg-white/5 flex items-center gap-1"
+                        className="px-3.5 py-2 rounded-xl bg-black/40 border border-white/10 text-white font-bold text-xs disabled:opacity-30 disabled:pointer-events-none hover:bg-white/5 flex items-center gap-1 cursor-pointer"
                     >
                         <ChevronLeft className="w-4 h-4" /> Anterior
                     </button>
-                    <span className="text-xs font-black text-white/60 uppercase">
+                    <span className="text-xs font-bold text-slate-400">
                         {currentPage} / {totalPages}
                     </span>
                     <button
                         onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                         disabled={currentPage === totalPages}
-                        className="px-4 py-2 rounded-xl bg-black/40 border border-white/10 text-white font-bold text-xs disabled:opacity-30 disabled:pointer-events-none hover:bg-white/5 flex items-center gap-1"
+                        className="px-3.5 py-2 rounded-xl bg-black/40 border border-white/10 text-white font-bold text-xs disabled:opacity-30 disabled:pointer-events-none hover:bg-white/5 flex items-center gap-1 cursor-pointer"
                     >
                         Siguiente <ChevronRight className="w-4 h-4" />
                     </button>
@@ -371,4 +365,4 @@ export const TransfersMarketTab: React.FC<TransfersMarketTabProps> = ({
             )}
         </div>
     );
-};
+});

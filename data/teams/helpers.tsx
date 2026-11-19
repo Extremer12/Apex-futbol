@@ -1,9 +1,36 @@
 import React from 'react';
 import { Player } from '../../types';
-
 import { customPacksService } from '../../services/customPacks/packService';
 import { resourceManager } from '../../services/resources/ResourceManager';
 import { ResourceFallback } from '../../services/resources/ResourceFallback';
+
+// Single shared module-level subscription for all TeamLogo & PlayerPhoto instances
+let packsVersionCounter = 0;
+const packListeners = new Set<() => void>();
+let isGlobalSubscribed = false;
+
+function ensureGlobalPackSubscription() {
+  if (isGlobalSubscribed || typeof window === 'undefined') return;
+  isGlobalSubscribed = true;
+  const bump = () => {
+    packsVersionCounter++;
+    packListeners.forEach(fn => fn());
+  };
+  customPacksService.subscribe(bump);
+  resourceManager.subscribe(bump);
+}
+
+function subscribeToPackChanges(cb: () => void) {
+  ensureGlobalPackSubscription();
+  packListeners.add(cb);
+  return () => {
+    packListeners.delete(cb);
+  };
+}
+
+function getPacksVersionSnapshot() {
+  return packsVersionCounter;
+}
 
 export const getTeamInitials = (name?: string): string => {
   if (!name) return 'FC';
@@ -106,7 +133,7 @@ export const GenericTeamShield: React.FC<{
   );
 });
 
-// Team Logo Component (Used for rendering with Community Pack support)
+// Team Logo Component (Zero-subscription, centralized Zustand version reactivity)
 export const TeamLogo: React.FC<{
   team?: {
     id?: number | string;
@@ -119,23 +146,11 @@ export const TeamLogo: React.FC<{
   className?: string;
 }> = React.memo(({ team, className = "w-full h-full" }) => {
   const [error, setError] = React.useState(false);
-  const [, setTick] = React.useState(0);
+  const packsVersion = React.useSyncExternalStore(subscribeToPackChanges, getPacksVersionSnapshot, getPacksVersionSnapshot);
 
-  // Subscribe to pack updates so logo updates in real-time
   React.useEffect(() => {
-    const unsub1 = customPacksService.subscribe(() => {
-      setError(false);
-      setTick(t => t + 1);
-    });
-    const unsub2 = resourceManager.subscribe(() => {
-      setError(false);
-      setTick(t => t + 1);
-    });
-    return () => {
-      unsub1();
-      unsub2();
-    };
-  }, []);
+    if (error) setError(false);
+  }, [packsVersion, team?.id]);
 
   if (!team) {
     return <GenericTeamShield name="Club" className={className} />;
@@ -159,32 +174,30 @@ export const TeamLogo: React.FC<{
       <img
         src={logoUrl}
         alt={`${team.name || 'Club'} logo`}
+        loading="lazy"
+        decoding="async"
         onError={() => setError(true)}
-        className="w-full h-full object-contain drop-shadow-md"
+        className="w-full h-full object-contain"
       />
     </div>
   );
 });
 
-// Player Photo Component (Used for rendering with Community Pack support)
+// Player Photo Component (Zero-subscription, single-pass render)
 export const PlayerPhoto: React.FC<{ player?: { id?: number | string; name: string; photo?: string; position?: string }; className?: string; primaryColor?: string }> = React.memo(({ player, className = "w-10 h-10" }) => {
-  const getInitial = () => {
-    if (!player) return ResourceFallback.playerFace('Jugador');
-    return resourceManager.playerFace(player.id, player);
-  };
-
-  const [imgSrc, setImgSrc] = React.useState<string>(getInitial);
+  const [hasError, setHasError] = React.useState(false);
+  const packsVersion = React.useSyncExternalStore(subscribeToPackChanges, getPacksVersionSnapshot, getPacksVersionSnapshot);
 
   React.useEffect(() => {
-    setImgSrc(getInitial());
-    const unsub = resourceManager.subscribe(() => {
-      setImgSrc(getInitial());
-    });
-    return unsub;
-  }, [player?.id, player?.name, player?.photo]);
+    if (hasError) setHasError(false);
+  }, [packsVersion, player?.id, player?.name]);
+
+  const fallback = React.useMemo(() => ResourceFallback.playerFace(player || 'Jugador'), [player?.name, player?.position]);
+  const resolved = player ? resourceManager.playerFace(player.id, player) : fallback;
+  const imgSrc = (hasError || !resolved) ? fallback : resolved;
 
   return (
-    <div className={`${className} relative flex items-center justify-center shrink-0 rounded-full overflow-hidden border border-white/10 shadow-sm bg-slate-900/60`}>
+    <div className={`${className} relative flex items-center justify-center shrink-0 rounded-full overflow-hidden border border-white/10 bg-slate-900`}>
       <img
         src={imgSrc}
         alt={player?.name || 'Jugador'}
@@ -193,10 +206,7 @@ export const PlayerPhoto: React.FC<{ player?: { id?: number | string; name: stri
         decoding="async"
         referrerPolicy="no-referrer"
         onError={() => {
-          const fallback = ResourceFallback.playerFace(player?.name || 'Jugador');
-          if (imgSrc !== fallback) {
-            setImgSrc(fallback);
-          }
+          if (!hasError) setHasError(true);
         }}
       />
     </div>

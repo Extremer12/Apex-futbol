@@ -25,6 +25,7 @@ import { generateNews } from './services/gameLogic';
 import { formatDate, setGlobalCurrency } from './utils';
 import { eventEngine } from './services/eventEngine';
 import { customPacksService } from './services/customPacks/packService';
+import { resourceManager } from './services/resources/ResourceManager';
 
 // Custom Hooks
 import { useGameSave } from './hooks/useGameSave';
@@ -56,9 +57,16 @@ function AppLogic() {
 
     // Single global subscription to custom packs updates (replaces hundreds of per-avatar listeners)
     useEffect(() => {
-        return customPacksService.subscribe(() => {
+        const unsub1 = customPacksService.subscribe(() => {
             incrementPacksVersion();
         });
+        const unsub2 = resourceManager.subscribe(() => {
+            incrementPacksVersion();
+        });
+        return () => {
+            unsub1();
+            unsub2();
+        };
     }, [incrementPacksVersion]);
 
     // Sync global currency formatters
