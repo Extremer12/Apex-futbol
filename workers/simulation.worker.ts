@@ -1,7 +1,7 @@
 // Web Worker for match simulation
 // This runs in a separate thread to prevent UI freezing
 
-import { Team, LeagueTableRow, Match, Morale, LeagueId, COMPETITION_TO_CUP_KEY, CupKey } from '../types';
+import { Team, LeagueTableRow, Match, Morale, LeagueId, COMPETITION_TO_CUP_KEY, CupKey, Player, PlayerMatchResult } from '../types';
 import { simulateMatch, simulateMacroMatch } from '../services/simulation';
 import { updateTeamMorale } from '../services/morale';
 import { getDoctorEffect, getFitnessEffect } from '../services/staffService';
@@ -50,20 +50,7 @@ interface SimulationOutput {
         newCupMatches?: Match[];
         updatedLeagueTables: Record<LeagueId, LeagueTableRow[]>;
         confidenceChange: number;
-        playerMatchResult: { 
-            homeTeamId?: number;
-            awayTeamId?: number;
-            competition?: string;
-            week?: number;
-            isMidweek?: boolean;
-            homeScore: number; 
-            awayScore: number; 
-            penalties?: { home: number; away: number }; 
-            events?: string[]; 
-            scorers?: any[]; 
-            leg?: 1 | 2;
-            aggregateScore?: { home: number; away: number };
-        } | null;
+        playerMatchResult: PlayerMatchResult | null;
         updatedCups: any;
         updatedScoutedPlayerIds: Record<number, number>;
         newsToAdd?: any[];
@@ -187,20 +174,7 @@ self.onmessage = async (e: MessageEvent<SimulationInput>) => {
         const weeklyNet = (finances.weeklyIncome - finances.weeklyWages) / 1_000_000;
         let confidenceChange = weeklyNet > 0 ? 1 : (userPlayedThisWeek ? -1 : 0);
 
-        let playerMatchResult: { 
-            homeTeamId?: number;
-            awayTeamId?: number;
-            competition?: string;
-            week?: number;
-            isMidweek?: boolean;
-            homeScore: number; 
-            awayScore: number; 
-            penalties?: { home: number; away: number }; 
-            events?: string[]; 
-            scorers?: any[]; 
-            leg?: 1 | 2;
-            aggregateScore?: { home: number; away: number };
-        } | null = null;
+        let playerMatchResult: PlayerMatchResult | null = null;
 
         // Pre-index teams for O(1) instant lookups
         const teamMap = new Map<number, Team>(updatedAllTeams.map(t => [t.id, t]));

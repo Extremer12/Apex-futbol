@@ -194,7 +194,14 @@ export const simulateMatch = (
     isCupMatch: boolean = false,
     isUserMatch: boolean = false,
     aggregateContext?: { firstLegHomeScore: number; firstLegAwayScore: number }
-): { homeScore: number; awayScore: number, events: string[], scorers: { playerId: number, playerName: string, minute: number }[], penalties?: { home: number, away: number } } => {
+): { 
+    homeScore: number; 
+    awayScore: number; 
+    events: string[]; 
+    scorers: { playerId: number; playerName: string; minute: number }[]; 
+    penalties?: { home: number; away: number };
+    stats?: MatchLiveStats;
+} => {
     
     // Select squads
     const homeSquad = selectMatchSquad(homeTeam);

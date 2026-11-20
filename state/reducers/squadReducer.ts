@@ -134,7 +134,7 @@ export function handleSquadAction(state: GameState, action: SquadAction): GameSt
                 const betterMorale = p.morale === 'Enojado' ? 'Descontento' : p.morale === 'Descontento' ? 'Normal' : 'Contento';
                 return {
                     ...p,
-                    morale: betterMorale as const
+                    morale: betterMorale as Player['morale']
                 };
             });
             const updatedTeam = { ...state.team, squad: updatedSquad };
@@ -175,7 +175,7 @@ export function handleSquadAction(state: GameState, action: SquadAction): GameSt
             }
             const updatedSquad = state.team.squad.map(p => ({
                 ...p,
-                morale: (p.morale === 'Descontento' || p.morale === 'Enojado' ? 'Normal' : 'Feliz') as const
+                morale: (p.morale === 'Descontento' || p.morale === 'Enojado' ? 'Normal' : 'Feliz') as Player['morale']
             }));
             const updatedCoach = state.team.coach 
                 ? { ...state.team.coach, satisfactionLevel: Math.min(100, (state.team.coach.satisfactionLevel || 75) + 8) }

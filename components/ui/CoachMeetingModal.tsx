@@ -1,10 +1,4 @@
 
-import React from 'react';
-import { Player, CoachRequest, CoachReport } from '../../types';
-import { Modal } from './Modal';
-import { UsersIcon, SparklesIcon, TrendingUpIcon, AwardIcon } from '../icons';
-import { formatCurrencyShort } from '../../utils';
-
 import React, { useState } from 'react';
 import { Player, CoachRequest, CoachReport } from '../../types';
 import { GameAction } from '../../state/reducer';

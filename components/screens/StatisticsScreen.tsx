@@ -37,7 +37,7 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
 
     // 1-Tap Quick Access Shortcuts for Manager's Club
     const userLeagueComp = ALL_COMPETITIONS.find(c => c.id === userTeam.leagueId);
-    const userCountry = userLeagueComp?.country || userTeam.country || 'Argentina';
+    const userCountry = userLeagueComp?.country || (userTeam as any).country || 'Argentina';
     const userCupComp = ALL_COMPETITIONS.find(c => c.country === userCountry && c.type === 'CUP');
     const isEuropean = ['Inglaterra', 'España', 'Alemania', 'Italia', 'Francia'].includes(userCountry);
     const userContinentalComp = ALL_COMPETITIONS.find(c => c.id === (isEuropean ? 'CHAMPIONS_LEAGUE' : 'COPA_LIBERTADORES'));

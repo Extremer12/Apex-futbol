@@ -233,14 +233,14 @@ export function evaluateAchievements(gameState: GameState): {
     }
 
     // 8. Democratic Mandate (Re-election with > 70% approval)
-    if (gameState.mandate && (gameState.mandate.totalMandates > 1 || (gameState.mandate.termsCompleted && gameState.mandate.termsCompleted >= 1)) &&
-        (gameState.mandate.approvalRating >= 70 || (gameState.fanApproval && gameState.fanApproval.sociosApproval >= 70))) {
+    if (gameState.mandate && gameState.mandate.totalMandates > 1 &&
+        ((gameState.fanApproval?.rating ?? 50) >= 70)) {
         unlock('re_election');
     }
 
     // 9. Wonderkid Academy (Promoted Academy player or world-class youth prospect)
     const hasWonderkid = (gameState.team.squad || []).some(p => 
-        (p.origin === 'youth' || (p as any).isYouth || (p.age && p.age <= 21 && p.potential && p.potential >= 82))
+        ((p as any).origin === 'youth' || (p as any).isYouth || (p.age && p.age <= 21 && p.potential && p.potential >= 82))
     );
     if (hasWonderkid) {
         unlock('wonderkid_academy');
@@ -253,14 +253,11 @@ export function evaluateAchievements(gameState: GameState): {
 
     // 11. Big Sale (Historical sale >= €40M)
     const hasBigSaleNews = (gameState.newsFeed || []).some(n => {
-        const t = (n?.title || '').toLowerCase();
-        const c = (n?.content || '').toLowerCase();
+        const t = (n?.headline || '').toLowerCase();
+        const c = (n?.body || '').toLowerCase();
         const isSale = t.includes('venta') || t.includes('traspaso') || c.includes('traspasado') || c.includes('vendido');
         return isSale && (c.includes('40m') || c.includes('50m') || c.includes('60m') || c.includes('70m') || c.includes('80m') || c.includes('90m') || c.includes('100m') || c.includes('40.000.000') || c.includes('€40'));
     });
-    if (hasBigSaleNews) {
-        unlock('big_sale');
-    }
     if (hasBigSaleNews) {
         unlock('big_sale');
     }
@@ -276,12 +273,13 @@ export function evaluateAchievements(gameState: GameState): {
     }
 
     // 13. Clean Sheet (Defensive Lock: win with zero goals conceded)
-    const playedMatches = (gameState.schedule || []).filter(m => m.played);
+    const playedMatches = (gameState.schedule || []).filter(m => !!m.result);
     const hasCleanSheetWin = playedMatches.some(m => {
-        const isHome = m.homeTeamId === userTeamId || m.homeTeam?.toLowerCase() === userTeamName;
-        const isAway = m.awayTeamId === userTeamId || m.awayTeam?.toLowerCase() === userTeamName;
-        if (isHome && m.homeScore > m.awayScore && m.awayScore === 0) return true;
-        if (isAway && m.awayScore > m.homeScore && m.homeScore === 0) return true;
+        if (!m.result) return false;
+        const isHome = m.homeTeamId === userTeamId;
+        const isAway = m.awayTeamId === userTeamId;
+        if (isHome && m.result.homeScore > m.result.awayScore && m.result.awayScore === 0) return true;
+        if (isAway && m.result.awayScore > m.result.homeScore && m.result.homeScore === 0) return true;
         return false;
     });
     if (hasCleanSheetWin) {
@@ -290,10 +288,11 @@ export function evaluateAchievements(gameState: GameState): {
 
     // 14. Historic Rout (Win by 4+ goals margin)
     const hasHistoricRout = playedMatches.some(m => {
-        const isHome = m.homeTeamId === userTeamId || m.homeTeam?.toLowerCase() === userTeamName;
-        const isAway = m.awayTeamId === userTeamId || m.awayTeam?.toLowerCase() === userTeamName;
-        if (isHome && (m.homeScore - m.awayScore >= 4)) return true;
-        if (isAway && (m.awayScore - m.homeScore >= 4)) return true;
+        if (!m.result) return false;
+        const isHome = m.homeTeamId === userTeamId;
+        const isAway = m.awayTeamId === userTeamId;
+        if (isHome && (m.result.homeScore - m.result.awayScore >= 4)) return true;
+        if (isAway && (m.result.awayScore - m.result.homeScore >= 4)) return true;
         return false;
     });
     if (hasHistoricRout) {

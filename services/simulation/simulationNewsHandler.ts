@@ -193,7 +193,7 @@ export async function generateWeeklyNewsAndOffers(
     // 5. Cinematic Headline News
     if (cinematicEvents.length > 0) {
         newsToAdd.push({
-            id: `cup_start_news_${newWeek}`,
+            id: `cup_start_news_${simulatedWeek}`,
             headline: cinematicEvents[0].title,
             body: cinematicEvents[0].subtitle,
             date: formatDate(newDate),
@@ -235,7 +235,7 @@ export async function generateWeeklyNewsAndOffers(
         }
 
         newsToAdd.unshift({
-            id: `match_news_${Date.now()}_${newWeek}`,
+            id: `match_news_${Date.now()}_${simulatedWeek}`,
             headline,
             body,
             date: formatDate(newDate),
