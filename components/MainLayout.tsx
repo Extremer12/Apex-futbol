@@ -170,7 +170,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                     )}
                     <Header gameState={gameState} onNavigate={setActiveScreen} />
                     <main className="pb-24 overflow-x-hidden min-h-[calc(100vh-140px)]">
-                        <div key={activeScreen} className="animate-fade-in">
+                        <div className="animate-fade-in">
                             <React.Suspense fallback={<div className="flex items-center justify-center py-20"><LoadingSpinner /></div>}>
                                 {renderContent()}
                             </React.Suspense>

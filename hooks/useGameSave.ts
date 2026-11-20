@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { GameState, PlayerProfile } from '../types';
 import { GameAction } from '../state/reducer';
+import { useGameStore } from '../state/gameStore';
 import { 
     saveGame, 
     loadGame, 
@@ -21,18 +22,18 @@ export function useGameSave(
     dispatch: React.Dispatch<GameAction>,
     showNotification: (msg: string, type?: 'success' | 'error' | 'info' | 'warning') => void
 ) {
-    const [currentSaveId, setCurrentSaveId] = useState<string | null>(null);
-    const [currentSaveName, setCurrentSaveName] = useState<string | null>(null);
-    const [lastSaved, setLastSaved] = useState<Date | null>(null);
-    const [isSaving, setIsSaving] = useState(false);
+    const currentSaveId = useGameStore(s => s.currentSaveId);
+    const currentSaveName = useGameStore(s => s.currentSaveName);
+    const lastSaved = useGameStore(s => s.lastSaved);
+    const isSaving = useGameStore(s => s.isSaving);
+    const setSaveState = useGameStore(s => s.setSaveState);
 
     // Initial Auto-Save on career start
     useEffect(() => {
         if (appState === 'GAME_ACTIVE' && gameState && playerProfile && !currentSaveId) {
             const careerId = gameState.careerId || `career_${gameState.team.id}_${Date.now()}`;
             const careerName = `${gameState.team.name} - Temp ${gameState.season || 1}`;
-            setCurrentSaveId(careerId);
-            setCurrentSaveName(careerName);
+            setSaveState({ currentSaveId: careerId, currentSaveName: careerName });
 
             const initialSaveData: SavedGameData = {
                 id: careerId,
@@ -47,7 +48,7 @@ export function useGameSave(
 
             saveGame(initialSaveData)
                 .then(() => {
-                    setLastSaved(new Date());
+                    setSaveState({ lastSaved: new Date() });
                     // Cloud backup in background without blocking UI
                     supabase.auth.getUser().then(({ data: { user } }) => {
                         if (user) {
@@ -61,23 +62,25 @@ export function useGameSave(
                 })
                 .catch(err => console.error("Initial save failed:", err));
         }
-    }, [appState, gameState, playerProfile, currentSaveId]);
+    }, [appState, gameState, playerProfile, currentSaveId, setSaveState]);
 
     const resetSaveState = useCallback(() => {
-        setCurrentSaveId(null);
-        setCurrentSaveName(null);
-        setLastSaved(null);
-        setIsSaving(false);
-    }, []);
+        setSaveState({
+            currentSaveId: null,
+            currentSaveName: null,
+            lastSaved: null,
+            isSaving: false
+        });
+    }, [setSaveState]);
 
     // Controlled Auto-Save triggered at week completion or milestone
     const performAutoSave = useCallback(async () => {
         if (!gameState || !playerProfile) return;
         try {
-            setIsSaving(true);
+            setSaveState({ isSaving: true });
             const saveId = gameState.careerId || currentSaveId || `career_${gameState.team.id}_${Date.now()}`;
             await saveAutoGame({ ...gameState, careerId: saveId }, playerProfile);
-            setLastSaved(new Date());
+            setSaveState({ lastSaved: new Date() });
             // Opportunistic background cloud backup
             supabase.auth.getUser().then(({ data: { user } }) => {
                 if (user) {
@@ -91,18 +94,18 @@ export function useGameSave(
         } catch (err) {
             console.error("Autosave error:", err);
         } finally {
-            setIsSaving(false);
+            setSaveState({ isSaving: false });
         }
-    }, [gameState, playerProfile, currentSaveId, currentSaveName]);
+    }, [gameState, playerProfile, currentSaveId, currentSaveName, setSaveState]);
 
     // Quick-Save triggered by user shortcut or button
     const performQuickSave = useCallback(async () => {
         if (!gameState || !playerProfile) return false;
         try {
-            setIsSaving(true);
+            setSaveState({ isSaving: true });
             const saveId = gameState.careerId || currentSaveId || `career_${gameState.team.id}_${Date.now()}`;
             await saveQuickGame({ ...gameState, careerId: saveId }, playerProfile);
-            setLastSaved(new Date());
+            setSaveState({ lastSaved: new Date() });
             showNotification(`⚡ Guardado rápido: ${gameState.team.name}`, 'success');
             return true;
         } catch (err) {
@@ -110,9 +113,9 @@ export function useGameSave(
             showNotification('Error al realizar guardado rápido', 'error');
             return false;
         } finally {
-            setIsSaving(false);
+            setSaveState({ isSaving: false });
         }
-    }, [gameState, playerProfile, currentSaveId, showNotification]);
+    }, [gameState, playerProfile, currentSaveId, showNotification, setSaveState]);
 
     const performLoadGame = useCallback(async (id: string) => {
         const savedData = await loadGame(id);
@@ -128,9 +131,11 @@ export function useGameSave(
             };
 
             dispatch({ type: 'LOAD_GAME', payload: rehydratedGameState });
-            setCurrentSaveId(careerId);
-            setCurrentSaveName(savedData.saveName);
-            setLastSaved(new Date(savedData.lastSaved));
+            setSaveState({
+                currentSaveId: careerId,
+                currentSaveName: savedData.saveName,
+                lastSaved: new Date(savedData.lastSaved)
+            });
             showNotification(`Partida "${savedData.saveName}" cargada`, 'success');
             return savedData.playerProfile;
         } else {
@@ -138,7 +143,7 @@ export function useGameSave(
             showNotification("Error al cargar la partida", "error");
             return null;
         }
-    }, [dispatch, showNotification]);
+    }, [dispatch, showNotification, setSaveState]);
 
     const performLoadCloudGame = useCallback(async (slotId: string) => {
         try {
@@ -155,10 +160,12 @@ export function useGameSave(
                 };
 
                 dispatch({ type: 'LOAD_GAME', payload: rehydratedGameState });
-                setCurrentSaveId(careerId);
-                setCurrentSaveName(cloudData.saveName);
                 const now = new Date();
-                setLastSaved(now);
+                setSaveState({
+                    currentSaveId: careerId,
+                    currentSaveName: cloudData.saveName,
+                    lastSaved: now
+                });
 
                 // Cache into IndexedDB for offline access
                 await saveGame({
@@ -180,7 +187,7 @@ export function useGameSave(
             showNotification('Error al cargar partida de la nube', 'error');
         }
         return null;
-    }, [dispatch, showNotification]);
+    }, [dispatch, showNotification, setSaveState]);
 
     const performSaveGame = useCallback(async (saveName: string, _saveMode?: 'new' | 'overwrite') => {
         if (!gameState || !playerProfile) return false;
@@ -201,11 +208,13 @@ export function useGameSave(
         };
 
         try {
-            setIsSaving(true);
+            setSaveState({ isSaving: true });
             await saveGame(saveData);
-            setCurrentSaveId(saveId);
-            setCurrentSaveName(saveName);
-            setLastSaved(now);
+            setSaveState({
+                currentSaveId: saveId,
+                currentSaveName: saveName,
+                lastSaved: now
+            });
 
             // Cloud sync in background
             supabase.auth.getUser().then(({ data: { user } }) => {
@@ -232,9 +241,9 @@ export function useGameSave(
             showNotification("Error al guardar la partida", "error");
             return false;
         } finally {
-            setIsSaving(false);
+            setSaveState({ isSaving: false });
         }
-    }, [gameState, playerProfile, currentSaveId, showNotification]);
+    }, [gameState, playerProfile, currentSaveId, showNotification, setSaveState]);
 
     return {
         currentSaveId,

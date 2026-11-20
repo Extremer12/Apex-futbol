@@ -1,6 +1,8 @@
 import { Stadium, Sponsor, Team, FinancialBreakdown, LeagueId, SponsorSector, SponsorPrestige, TicketPolicy, BankLoan, ClubDirectives, Scout } from '../types';
 import { getTeamStadium } from '../data/stadiums';
 
+export type { FinancialBreakdown };
+
 export interface BrandDefinition {
     name: string;
     type: Sponsor['type'];

@@ -24,50 +24,32 @@ const SeasonEndModal = React.lazy(() => import('./components/screens/season/Seas
 import { generateNews } from './services/gameLogic';
 import { formatDate, setGlobalCurrency } from './utils';
 import { eventEngine } from './services/eventEngine';
-import { customPacksService } from './services/customPacks/packService';
-import { resourceManager } from './services/resources/ResourceManager';
 
 // Custom Hooks
 import { useGameSave } from './hooks/useGameSave';
 import { useSimulation } from './hooks/useSimulation';
 
 function AppLogic() {
-    const {
-        appState,
-        setAppState,
-        playerProfile,
-        setPlayerProfile,
-        selectedTeam,
-        setSelectedTeam,
-        electionResult,
-        setElectionResult,
-        activeScreen,
-        setActiveScreen,
-        gameState,
-        dispatch,
-        currentEvent,
-        setCurrentEvent,
-        isSeasonEndModalOpen,
-        setIsSeasonEndModalOpen,
-        isStartingSeason,
-        setIsStartingSeason,
-        incrementPacksVersion,
-        resetGameData
-    } = useGameStore();
-
-    // Single global subscription to custom packs updates (replaces hundreds of per-avatar listeners)
-    useEffect(() => {
-        const unsub1 = customPacksService.subscribe(() => {
-            incrementPacksVersion();
-        });
-        const unsub2 = resourceManager.subscribe(() => {
-            incrementPacksVersion();
-        });
-        return () => {
-            unsub1();
-            unsub2();
-        };
-    }, [incrementPacksVersion]);
+    // Fine-grained Zustand atomic selectors to avoid full-tree re-renders on arbitrary store mutations
+    const appState = useGameStore(s => s.appState);
+    const setAppState = useGameStore(s => s.setAppState);
+    const playerProfile = useGameStore(s => s.playerProfile);
+    const setPlayerProfile = useGameStore(s => s.setPlayerProfile);
+    const selectedTeam = useGameStore(s => s.selectedTeam);
+    const setSelectedTeam = useGameStore(s => s.setSelectedTeam);
+    const electionResult = useGameStore(s => s.electionResult);
+    const setElectionResult = useGameStore(s => s.setElectionResult);
+    const activeScreen = useGameStore(s => s.activeScreen);
+    const setActiveScreen = useGameStore(s => s.setActiveScreen);
+    const gameState = useGameStore(s => s.gameState);
+    const dispatch = useGameStore(s => s.dispatch);
+    const currentEvent = useGameStore(s => s.currentEvent);
+    const setCurrentEvent = useGameStore(s => s.setCurrentEvent);
+    const isSeasonEndModalOpen = useGameStore(s => s.isSeasonEndModalOpen);
+    const setIsSeasonEndModalOpen = useGameStore(s => s.setIsSeasonEndModalOpen);
+    const isStartingSeason = useGameStore(s => s.isStartingSeason);
+    const setIsStartingSeason = useGameStore(s => s.setIsStartingSeason);
+    const resetGameData = useGameStore(s => s.resetGameData);
 
     // Sync global currency formatters
     useEffect(() => {

@@ -142,3 +142,6 @@ import { registerPacksStoreNotifier } from '../services/resources/ResourceManage
 registerPacksStoreNotifier(() => {
     useGameStore.setState(s => ({ packsVersion: (s.packsVersion || 0) + 1 }));
 });
+
+// Re-export canonical selectors & helpers
+export * from './selectors';

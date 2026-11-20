@@ -1,29 +1,23 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Player, Team, SquadRole } from '../../../types';
-import { LoadingSpinner } from '../../icons';
 import { 
-    ArrowRight, 
     ChevronLeft, 
     Check, 
     UserCheck, 
-    Shield, 
-    FileText, 
-    Sparkles, 
     Building2, 
     AlertCircle, 
-    X, 
-    Award, 
     PenTool, 
-    Flame,
-    DollarSign,
-    Calendar,
-    Star
+    FileText 
 } from 'lucide-react';
-import { formatCurrency, formatWeeklyWage } from '../../../utils';
+import { formatCurrency } from '../../../utils';
 import { PlayerAvatar } from '../../ui/PlayerAvatar';
-import { TeamLogo } from '../../../data/teams/helpers';
 import { ClubChatMessage } from './ClubNegotiationModal';
 import { AgentChatMessage } from './ContractNegotiationModal';
+import { NegotiationDossier } from './negotiation/NegotiationDossier';
+import { NegotiationChatFeed } from './negotiation/NegotiationChatFeed';
+import { ClubFeeNegotiator } from './negotiation/ClubFeeNegotiator';
+import { ContractNegotiator } from './negotiation/ContractNegotiator';
+import { SigningCeremony } from './negotiation/SigningCeremony';
 
 interface TransferNegotiationSuiteProps {
     negotiatingPlayer: Player;
@@ -70,7 +64,7 @@ const roleDescriptions: Record<SquadRole, { label: string; badge: string; desc: 
     Prospect: { label: 'Joven Promesa', badge: 'Futuro', desc: 'Desarrollo progresivo con proyección' },
 };
 
-export const TransferNegotiationSuite: React.FC<TransferNegotiationSuiteProps> = ({
+export const TransferNegotiationSuite: React.FC<TransferNegotiationSuiteProps> = React.memo(({
     negotiatingPlayer,
     sellingTeam,
     myTeam,
@@ -101,12 +95,10 @@ export const TransferNegotiationSuite: React.FC<TransferNegotiationSuiteProps> =
     isNegotiationDead,
     onClose,
 }) => {
-    // Mobile modal for detailed scouting dossier
     const [showMobileDossier, setShowMobileDossier] = useState(false);
     const chatScrollRef = useRef<HTMLDivElement>(null);
 
-    // --- DEFENSIVE NORMALIZATION OF FINANCIAL AMOUNTS ---
-    // Handles legacy or shorthand numbers (< 10,000 means millions, e.g. 35 -> 35,000,000)
+    // Defensive normalization of financial amounts
     const normMarketValue = useMemo(() => {
         const val = negotiatingPlayer.value;
         if (val && val > 0 && val < 10_000) return val * 1_000_000;
@@ -127,7 +119,6 @@ export const TransferNegotiationSuite: React.FC<TransferNegotiationSuiteProps> =
         return clubBalance || 5_000_000;
     }, [clubBalance]);
 
-    // Ensure clubOfferFee is normalized in state
     useEffect(() => {
         if (clubOfferFee > 0 && clubOfferFee < 10_000) {
             setClubOfferFee(clubOfferFee * 1_000_000);
@@ -142,7 +133,6 @@ export const TransferNegotiationSuite: React.FC<TransferNegotiationSuiteProps> =
     }, [negotiatingPlayer.wage]);
 
     const wageDifferencePercent = Math.round(((offeredWage - currentWage) / currentWage) * 100);
-
     const maxPatienceAttempts = 3;
     const remainingAttempts = Math.max(0, maxPatienceAttempts - clubAttempts);
 
@@ -169,7 +159,6 @@ export const TransferNegotiationSuite: React.FC<TransferNegotiationSuiteProps> =
     const isFeeAffordable = activeOfferFee <= normBalance;
     const currentStage = isContractAgreed ? 3 : negotiationPhase === 'CONTRACT' ? 2 : 1;
 
-    // Helper functions for safe offer manipulation
     const adjustFee = (delta: number) => {
         setClubOfferFee(prev => {
             const current = prev < 10_000 ? prev * 1_000_000 : prev;
@@ -183,13 +172,11 @@ export const TransferNegotiationSuite: React.FC<TransferNegotiationSuiteProps> =
 
     return (
         <div className="fixed inset-0 z-50 bg-[#070A13] text-white flex flex-col overflow-hidden animate-fade-in select-none">
-            {/* Ambient executive atmosphere backdrops */}
             <div className="absolute top-0 left-1/3 w-[500px] h-[250px] bg-blue-600/10 blur-[130px] rounded-full pointer-events-none" />
             <div className="absolute bottom-0 right-1/4 w-[500px] h-[250px] bg-[var(--apex-gold)]/10 blur-[130px] rounded-full pointer-events-none" />
 
             {/* TOP PRESIDENTIAL NAVIGATION BAR */}
             <header className="h-16 px-4 sm:px-6 bg-[#0B0F19]/90 backdrop-blur-xl border-b border-white/10 flex items-center justify-between shrink-0 relative z-30">
-                {/* Left: Back button */}
                 <button
                     onClick={onClose}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white/70 hover:text-white hover:bg-white/5 transition-all cursor-pointer"
@@ -199,9 +186,8 @@ export const TransferNegotiationSuite: React.FC<TransferNegotiationSuiteProps> =
                     <span className="sm:hidden">Salir</span>
                 </button>
 
-                {/* Center: Presidential 3-Stage Indicator */}
+                {/* Presidential 3-Stage Indicator */}
                 <div className="flex items-center gap-1.5 sm:gap-3">
-                    {/* Stage 1: Club Transfer */}
                     <div className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-bold transition-all ${
                         currentStage === 1
                             ? 'bg-[var(--apex-gold)] text-black shadow-lg shadow-[var(--apex-gold)]/20 font-black'
@@ -220,7 +206,6 @@ export const TransferNegotiationSuite: React.FC<TransferNegotiationSuiteProps> =
 
                     <div className={`w-3 sm:w-6 h-[1px] ${currentStage > 1 ? 'bg-emerald-500/50' : 'bg-white/15'}`} />
 
-                    {/* Stage 2: Contract */}
                     <div className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-bold transition-all ${
                         currentStage === 2
                             ? 'bg-[var(--apex-gold)] text-black shadow-lg shadow-[var(--apex-gold)]/20 font-black'
@@ -239,7 +224,6 @@ export const TransferNegotiationSuite: React.FC<TransferNegotiationSuiteProps> =
 
                     <div className={`w-3 sm:w-6 h-[1px] ${currentStage > 2 ? 'bg-emerald-500/50' : 'bg-white/15'}`} />
 
-                    {/* Stage 3: Official Signing */}
                     <div className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-bold transition-all ${
                         currentStage === 3
                             ? 'bg-gradient-to-r from-emerald-400 to-teal-400 text-black font-black shadow-lg shadow-emerald-500/20'
@@ -253,7 +237,7 @@ export const TransferNegotiationSuite: React.FC<TransferNegotiationSuiteProps> =
                     </div>
                 </div>
 
-                {/* Right: Club Treasury Status (Dual display: Saldo + Presupuesto) */}
+                {/* Club Treasury Status */}
                 <div className="flex items-center gap-3 sm:gap-4">
                     <div className="text-right">
                         <span className="text-[9px] sm:text-[10px] text-white/40 font-bold uppercase tracking-wider block">Saldo Total</span>
@@ -267,7 +251,7 @@ export const TransferNegotiationSuite: React.FC<TransferNegotiationSuiteProps> =
                 </div>
             </header>
 
-            {/* COMPACT PLAYER STRIP (Visible on mobile/tablet to eliminate screen hoarding) */}
+            {/* COMPACT PLAYER STRIP (Mobile) */}
             <div className="lg:hidden px-4 py-2.5 bg-[#0B0F19]/95 border-b border-white/10 flex items-center justify-between shrink-0 z-20">
                 <div className="flex items-center gap-2.5 min-w-0">
                     <div className="relative shrink-0">
@@ -304,120 +288,17 @@ export const TransferNegotiationSuite: React.FC<TransferNegotiationSuiteProps> =
 
             {/* MAIN PRESIDENTIAL WORKSPACE */}
             <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden relative z-10">
-                {/* DESKTOP LEFT DOSSIER (Executive Scouting Briefing) */}
-                <aside className="hidden lg:flex lg:col-span-4 bg-[#0B0F19]/60 border-r border-white/10 p-6 flex-col justify-between overflow-y-auto custom-scrollbar backdrop-blur-md">
-                    <div className="space-y-6">
-                        {/* Presidential Heading Badge */}
-                        <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--apex-gold)] flex items-center gap-1.5">
-                                <Shield className="w-3.5 h-3.5" />
-                                Dirección Deportiva
-                            </span>
-                            <span className="text-[10px] font-bold text-white/40">Informe Confidencial</span>
-                        </div>
+                <NegotiationDossier
+                    negotiatingPlayer={negotiatingPlayer}
+                    sellingTeam={sellingTeam}
+                    normMarketValue={normMarketValue}
+                    currentWage={currentWage}
+                    remainingAttempts={remainingAttempts}
+                    positionStyle={positionStyle}
+                />
 
-                        {/* Player Hero Profile */}
-                        <div className="flex flex-col items-center text-center">
-                            <div className="relative mb-3">
-                                <PlayerAvatar
-                                    player={negotiatingPlayer}
-                                    className="w-24 h-24 rounded-full border-2 border-white/20 shadow-2xl drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]"
-                                    primaryColor={sellingTeam?.primaryColor}
-                                />
-                                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-500 to-[var(--apex-gold)] text-black font-black text-xs px-2.5 py-0.5 rounded-full shadow-lg whitespace-nowrap">
-                                    {negotiatingPlayer.rating} OVR
-                                </div>
-                            </div>
-
-                            <h1 className="text-xl font-black text-white tracking-tight">{negotiatingPlayer.name}</h1>
-
-                            <div className="flex items-center gap-2 mt-1.5">
-                                <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border ${positionStyle.border} ${positionStyle.bg} ${positionStyle.color}`}>
-                                    {positionStyle.name}
-                                </span>
-                                {negotiatingPlayer.age && (
-                                    <span className="text-xs text-white/60 font-semibold">
-                                        {negotiatingPlayer.age} años
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Market & Financial Specs */}
-                        <div className="grid grid-cols-2 gap-2.5">
-                            <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5">
-                                <span className="text-[9px] font-bold text-white/40 uppercase tracking-wider block">Valor de Mercado</span>
-                                <span className="text-sm font-black text-emerald-400">{formatCurrency(normMarketValue)}</span>
-                            </div>
-                            <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5">
-                                <span className="text-[9px] font-bold text-white/40 uppercase tracking-wider block">Ficha Actual</span>
-                                <span className="text-sm font-black text-white/90">{formatWeeklyWage(currentWage)}</span>
-                            </div>
-                        </div>
-
-                        {/* Current Club Context */}
-                        {sellingTeam && (
-                            <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/5 flex items-center gap-3">
-                                <div className="w-9 h-9 shrink-0">
-                                    <TeamLogo team={sellingTeam} className="w-full h-full" />
-                                </div>
-                                <div className="min-w-0">
-                                    <span className="text-[9px] font-bold text-white/40 uppercase tracking-wider block">Club Propietario</span>
-                                    <h4 className="text-xs font-bold text-white truncate">{sellingTeam.name}</h4>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Patience / Tension Level */}
-                        <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/5 space-y-2">
-                            <div className="flex items-center justify-between text-xs">
-                                <span className="text-white/60 font-bold flex items-center gap-1">
-                                    <Flame className="w-3.5 h-3.5 text-amber-400" />
-                                    Tolerancia de la Contraparte
-                                </span>
-                                <span className={`text-xs font-black uppercase ${
-                                    remainingAttempts === 3 ? 'text-emerald-400' : remainingAttempts === 2 ? 'text-amber-400' : 'text-rose-400'
-                                }`}>
-                                    {remainingAttempts === 3 ? 'Receptiva' : remainingAttempts === 2 ? 'Tensa' : remainingAttempts === 1 ? 'Último Intento' : 'Roto'}
-                                </span>
-                            </div>
-
-                            <div className="grid grid-cols-3 gap-1.5 h-1.5">
-                                {[1, 2, 3].map((step) => (
-                                    <div 
-                                        key={step} 
-                                        className={`rounded-full transition-all duration-300 ${
-                                            step <= remainingAttempts 
-                                                ? remainingAttempts === 3 ? 'bg-emerald-400' : remainingAttempts === 2 ? 'bg-amber-400' : 'bg-rose-400' 
-                                                : 'bg-white/10'
-                                        }`} 
-                                    />
-                                ))}
-                            </div>
-                            <span className="text-[10px] text-white/40 block leading-tight">
-                                {remainingAttempts > 0 
-                                    ? `Quedan ${remainingAttempts} intento(s) formales antes de abandonar la mesa.` 
-                                    : 'Las negociaciones han colapsado definitivamente.'}
-                            </span>
-                        </div>
-
-                        {/* Strategic Presidential Tip */}
-                        <div className="p-3 rounded-xl bg-[var(--apex-gold)]/5 border border-[var(--apex-gold)]/15 flex items-start gap-2.5">
-                            <Sparkles className="w-4 h-4 text-[var(--apex-gold)] shrink-0 mt-0.5" />
-                            <p className="text-[11px] text-white/70 leading-relaxed">
-                                Como presidente, encontrar el acuerdo justo preserva la salud económica de la entidad y la química del plantel.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="pt-4 border-t border-white/5 text-[9px] text-white/30 text-center uppercase tracking-wider font-bold">
-                        Gabinete Presidencial • Apex Management
-                    </div>
-                </aside>
-
-                {/* RIGHT EXECUTIVE BOARDROOM (Live Dialogue & Presidential Deck) */}
+                {/* BOARDROOM SECTION */}
                 <section className="lg:col-span-8 flex flex-col h-full bg-[#050811]/50 overflow-hidden">
-                    {/* Counterpart Identity Dossier Bar */}
                     <div className="px-4 sm:px-6 py-3 border-b border-white/10 bg-[#0B0F19]/40 flex items-center justify-between shrink-0">
                         <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-white/70">
@@ -445,83 +326,17 @@ export const TransferNegotiationSuite: React.FC<TransferNegotiationSuiteProps> =
                         )}
                     </div>
 
-                    {/* PRESIDENTIAL DIALOGUE FEED */}
-                    <div 
-                        ref={chatScrollRef}
-                        className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3.5 custom-scrollbar min-h-0"
-                    >
-                        {negotiationPhase === 'CLUB' ? (
-                            clubChatHistory.map((msg, idx) => (
-                                <div 
-                                    key={idx} 
-                                    className={`flex ${msg.sender === 'user' ? 'justify-end' : msg.sender === 'system' ? 'justify-center' : 'justify-start'} animate-fade-in`}
-                                >
-                                    {msg.sender === 'system' ? (
-                                        <div className="text-[11px] font-semibold text-white/60 bg-white/[0.04] border border-white/5 px-3.5 py-1.5 rounded-full text-center max-w-[90%]">
-                                            {msg.text}
-                                        </div>
-                                    ) : msg.sender === 'user' ? (
-                                        <div className="bg-gradient-to-r from-[var(--apex-gold)] to-amber-500 text-black font-black px-4 py-2.5 rounded-2xl rounded-tr-xs max-w-[85%] sm:max-w-[70%] text-xs shadow-lg">
-                                            <div className="text-[9px] text-black/60 uppercase font-bold mb-0.5 tracking-wider">Tu Propuesta Presidencial</div>
-                                            {msg.text}
-                                        </div>
-                                    ) : (
-                                        <div className="bg-slate-900/90 border border-white/15 p-4 rounded-2xl rounded-tl-xs max-w-[90%] sm:max-w-[80%] text-white shadow-xl space-y-2">
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-[9px] font-black text-[var(--apex-gold)] uppercase tracking-wider flex items-center gap-1.5">
-                                                    <Building2 className="w-3 h-3" />
-                                                    Respuesta del {sellingTeam?.name || 'Club'}
-                                                </span>
-                                            </div>
-                                            <p className="text-xs font-medium leading-relaxed text-slate-200">
-                                                "{msg.text}"
-                                            </p>
-                                            {msg.counter && (
-                                                <div className="pt-2 border-t border-white/10 flex items-center justify-between text-xs bg-black/30 -mx-4 -mb-4 p-3 rounded-b-2xl">
-                                                    <span className="text-white/60 text-[11px] font-bold">Exigencia mínima del club:</span>
-                                                    <span className="font-black text-[var(--apex-gold)] text-sm">{formatCurrency(msg.counter)}</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            ))
-                        ) : (
-                            agentChatHistory.map((msg, idx) => (
-                                <div 
-                                    key={idx} 
-                                    className={`flex ${msg.sender === 'user' ? 'justify-end' : msg.sender === 'system' ? 'justify-center' : 'justify-start'} animate-fade-in`}
-                                >
-                                    {msg.sender === 'system' ? (
-                                        <div className="text-[11px] font-semibold text-white/60 bg-white/[0.04] border border-white/5 px-3.5 py-1.5 rounded-full text-center max-w-[90%]">
-                                            {msg.text}
-                                        </div>
-                                    ) : msg.sender === 'user' ? (
-                                        <div className="bg-gradient-to-r from-[var(--apex-gold)] to-amber-500 text-black font-black px-4 py-2.5 rounded-2xl rounded-tr-xs max-w-[85%] sm:max-w-[70%] text-xs shadow-lg">
-                                            <div className="text-[9px] text-black/60 uppercase font-bold mb-0.5 tracking-wider">Oferta Contractual Presentada</div>
-                                            {msg.text}
-                                        </div>
-                                    ) : (
-                                        <div className="bg-slate-900/90 border border-white/15 p-4 rounded-2xl rounded-tl-xs max-w-[90%] sm:max-w-[80%] text-white shadow-xl space-y-2">
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-[9px] font-black text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                                                    <UserCheck className="w-3 h-3" />
-                                                    Representante Oficial
-                                                </span>
-                                            </div>
-                                            <p className="text-xs font-medium leading-relaxed text-slate-200">
-                                                "{msg.text}"
-                                            </p>
-                                        </div>
-                                    )}
-                                </div>
-                            ))
-                        )}
-                    </div>
+                    <NegotiationChatFeed
+                        negotiationPhase={negotiationPhase}
+                        clubChatHistory={clubChatHistory}
+                        agentChatHistory={agentChatHistory}
+                        sellingTeam={sellingTeam}
+                        negotiatingPlayer={negotiatingPlayer}
+                        chatScrollRef={chatScrollRef}
+                    />
 
-                    {/* PRESIDENTIAL ACTION DECK (Docked at the bottom, spacious and clean) */}
+                    {/* PRESIDENTIAL ACTION DECK */}
                     <div className="p-4 sm:p-5 bg-[#080C16] border-t border-white/10 shrink-0 relative z-20">
-                        {/* CASE 1: NEGOTIATION COLLAPSED / DEAD */}
                         {isNegotiationDead ? (
                             <div className="space-y-3 text-center py-2 animate-fade-in">
                                 <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-bold flex items-center justify-center gap-2">
@@ -536,450 +351,65 @@ export const TransferNegotiationSuite: React.FC<TransferNegotiationSuiteProps> =
                                 </button>
                             </div>
                         ) : isContractAgreed ? (
-                            /* CASE 2: STAGE 3 - PRESIDENTIAL SIGNING CEREMONY */
-                            <div className="space-y-4 animate-fade-in">
-                                <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-emerald-950/40 via-slate-900/80 to-slate-900/90 border border-emerald-500/30 space-y-3">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2 text-emerald-400 font-black text-xs uppercase tracking-widest">
-                                            <Award className="w-4 h-4" />
-                                            ¡Acuerdo Total Alcanzado!
-                                        </div>
-                                        <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 bg-emerald-500/10 text-emerald-400 rounded-full border border-emerald-500/20">
-                                            Listo para Rúbrica
-                                        </span>
-                                    </div>
-
-                                    {/* Deal Summary Grid */}
-                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-center">
-                                        <div className="p-2.5 rounded-xl bg-black/40 border border-white/5">
-                                            <span className="text-[9px] text-white/40 uppercase font-bold block">Traspaso al Club</span>
-                                            <span className="text-xs font-black text-[var(--apex-gold)]">{formatCurrency(agreedFee)}</span>
-                                        </div>
-                                        <div className="p-2.5 rounded-xl bg-black/40 border border-white/5">
-                                            <span className="text-[9px] text-white/40 uppercase font-bold block">Ficha Semanal</span>
-                                            <span className="text-xs font-black text-emerald-400">{formatWeeklyWage(offeredWage)}</span>
-                                        </div>
-                                        <div className="p-2.5 rounded-xl bg-black/40 border border-white/5">
-                                            <span className="text-[9px] text-white/40 uppercase font-bold block">Duración</span>
-                                            <span className="text-xs font-black text-white">{offeredYears} temporadas</span>
-                                        </div>
-                                        <div className="p-2.5 rounded-xl bg-black/40 border border-white/5">
-                                            <span className="text-[9px] text-white/40 uppercase font-bold block">Rol en Equipo</span>
-                                            <span className="text-xs font-black text-white">{roleDescriptions[offeredRole].label}</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <button
-                                    onClick={onFinalizeSigning}
-                                    className="w-full py-4 bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 hover:brightness-110 text-black font-black text-xs uppercase tracking-widest rounded-xl shadow-xl shadow-emerald-500/25 flex items-center justify-center gap-2 cursor-pointer active:scale-98 transition-all"
-                                >
-                                    <PenTool className="w-4 h-4" />
-                                    <span>Estampar Rúbrica Presidencial y Anunciar Fichaje</span>
-                                </button>
-                            </div>
+                            <SigningCeremony
+                                agreedFee={agreedFee}
+                                offeredWage={offeredWage}
+                                offeredYears={offeredYears}
+                                offeredRole={offeredRole}
+                                roleDescriptions={roleDescriptions}
+                                onFinalizeSigning={onFinalizeSigning}
+                            />
                         ) : negotiationPhase === 'CLUB' ? (
-                            /* CASE 3: STAGE 1 - CLUB TRANSFER FEE NEGOTIATION */
-                            agreedFee !== null ? (
-                                <div className="space-y-3.5 animate-fade-in">
-                                    <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-9 h-9 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
-                                                <Check className="w-5 h-5 stroke-[3]" />
-                                            </div>
-                                            <div>
-                                                <h4 className="text-xs font-black text-emerald-400 uppercase tracking-wider">Traspaso Acordado con el Club</h4>
-                                                <p className="text-[11px] text-white/70">Monto pactado: <strong className="text-white">{formatCurrency(agreedFee)}</strong></p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={onProceedToContract}
-                                        className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer active:scale-98 transition-all"
-                                    >
-                                        <span>Avanzar a la Negociación de Contrato del Jugador</span>
-                                        <ArrowRight className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="space-y-3">
-                                    {/* Proposal Header & Ratio Tag */}
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <span className="text-[10px] text-white/40 font-bold uppercase tracking-wider block">Propuesta de Traspaso</span>
-                                            <span className="text-lg sm:text-xl font-black text-[var(--apex-gold)] tracking-tight">
-                                                {formatCurrency(activeOfferFee)}
-                                            </span>
-                                        </div>
-
-                                        <div className="flex items-center gap-2">
-                                            <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg ${
-                                                valueRatio >= 110 
-                                                    ? 'text-emerald-400 bg-emerald-500/15 border border-emerald-500/30' 
-                                                    : valueRatio >= 90 
-                                                        ? 'text-[var(--apex-gold)] bg-[var(--apex-gold)]/15 border border-[var(--apex-gold)]/30' 
-                                                        : 'text-rose-400 bg-rose-500/15 border border-rose-500/30'
-                                            }`}>
-                                                {valueRatio}% del Valor de Mercado
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {/* Slider with proper min/max/step */}
-                                    <input
-                                        type="range"
-                                        min={Math.max(500_000, Math.round(normMarketValue * 0.2))}
-                                        max={maxAllowedFee}
-                                        step={500_000}
-                                        value={activeOfferFee}
-                                        onChange={e => setClubOfferFee(Number(e.target.value))}
-                                        className="w-full accent-[var(--apex-gold)] cursor-pointer h-2 bg-white/10 rounded-lg appearance-none"
-                                        disabled={isClubNegotiating}
-                                    />
-
-                                    {/* Ergonomic Quick Stepper & Preset Buttons */}
-                                    <div className="grid grid-cols-5 gap-1.5">
-                                        <button
-                                            type="button"
-                                            onClick={() => adjustFee(-5_000_000)}
-                                            className="py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-[11px] font-bold text-white/70 border border-white/5 cursor-pointer active:scale-95"
-                                        >
-                                            -5M
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => adjustFee(-1_000_000)}
-                                            className="py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-[11px] font-bold text-white/70 border border-white/5 cursor-pointer active:scale-95"
-                                        >
-                                            -1M
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setClubOfferFee(normMarketValue)}
-                                            className="py-1.5 bg-[var(--apex-gold)]/10 hover:bg-[var(--apex-gold)]/20 rounded-lg text-[11px] font-black text-[var(--apex-gold)] border border-[var(--apex-gold)]/30 cursor-pointer active:scale-95 truncate px-1"
-                                        >
-                                            100% Valor
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => adjustFee(1_000_000)}
-                                            className="py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-[11px] font-bold text-white/70 border border-white/5 cursor-pointer active:scale-95"
-                                        >
-                                            +1M
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => adjustFee(5_000_000)}
-                                            className="py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-[11px] font-bold text-white/70 border border-white/5 cursor-pointer active:scale-95"
-                                        >
-                                            +5M
-                                        </button>
-                                    </div>
-
-                                    {/* Budget & Treasury Impact Indicator */}
-                                    <div className="space-y-1.5 px-1">
-                                        {activeOfferFee <= normBudget ? (
-                                            <div className="flex items-center justify-between text-[11px]">
-                                                <span className="text-white/40">Presupuesto restante tras traspaso:</span>
-                                                <span className="font-black text-emerald-400">
-                                                    {formatCurrency(remainingBudgetAfterFee)}
-                                                </span>
-                                            </div>
-                                        ) : activeOfferFee <= normBalance ? (
-                                            <div className="space-y-1.5 pt-0.5">
-                                                <div className="flex items-center justify-between text-[11px]">
-                                                    <span className="text-white/40">Presupuesto asignado ({formatCurrency(normBudget)}):</span>
-                                                    <span className="font-black text-white/70">Agotado (100%)</span>
-                                                </div>
-                                                <div className="flex items-center justify-between text-[11px]">
-                                                    <span className="text-amber-400 font-bold">Aporte adicional de Tesorería:</span>
-                                                    <span className="font-black text-amber-400">
-                                                        +{formatCurrency(activeOfferFee - normBudget)}
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center justify-between text-[11px]">
-                                                    <span className="text-white/40">Saldo club restante:</span>
-                                                    <span className="font-black text-emerald-400">
-                                                        {formatCurrency(remainingBalanceAfterFee)}
-                                                    </span>
-                                                </div>
-                                                <div className="p-2 rounded-lg bg-[var(--apex-gold)]/10 border border-[var(--apex-gold)]/20 text-[10px] text-[var(--apex-gold)] font-bold flex items-center gap-1.5">
-                                                    <span>👑 Autorización Presidencial: Fondos cubiertos por la tesorería del club.</span>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="flex items-center justify-between text-[11px]">
-                                                <span className="text-rose-400 font-bold">Supera el saldo total en tesorería ({formatCurrency(normBalance)}):</span>
-                                                <span className="font-black text-rose-400">
-                                                    {formatCurrency(remainingBalanceAfterFee)}
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Action Button */}
-                                    <button
-                                        onClick={onSendClubOffer}
-                                        disabled={isClubNegotiating || activeOfferFee <= 0 || !isFeeAffordable}
-                                        className="w-full py-3.5 bg-gradient-to-r from-[var(--apex-gold)] to-amber-500 hover:brightness-110 text-black font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-[var(--apex-gold)]/20 disabled:opacity-40 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
-                                    >
-                                        {isClubNegotiating ? <LoadingSpinner /> : (
-                                            <>
-                                                <Building2 className="w-4 h-4" />
-                                                <span>Presentar Oferta Formal de {formatCurrency(activeOfferFee)}</span>
-                                            </>
-                                        )}
-                                    </button>
-                                </div>
-                            )
+                            <ClubFeeNegotiator
+                                activeOfferFee={activeOfferFee}
+                                normMarketValue={normMarketValue}
+                                normBudget={normBudget}
+                                normBalance={normBalance}
+                                maxAllowedFee={maxAllowedFee}
+                                valueRatio={valueRatio}
+                                isFeeAffordable={isFeeAffordable}
+                                isClubNegotiating={isClubNegotiating}
+                                agreedFee={agreedFee}
+                                remainingBudgetAfterFee={remainingBudgetAfterFee}
+                                remainingBalanceAfterFee={remainingBalanceAfterFee}
+                                setClubOfferFee={setClubOfferFee}
+                                adjustFee={adjustFee}
+                                onSendClubOffer={onSendClubOffer}
+                                onProceedToContract={onProceedToContract}
+                            />
                         ) : (
-                            /* CASE 4: STAGE 2 - CONTRACT NEGOTIATION WITH AGENT (Spacious, orderly & non-overlapping) */
-                            <div className="space-y-4">
-                                {/* Clause 1: Weekly Wage */}
-                                <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-2.5">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-[10px] font-black uppercase tracking-wider text-white/50 flex items-center gap-1.5">
-                                            <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
-                                            Ficha Salarial Semanal
-                                        </span>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-[10px] text-white/40">Cobra: {formatWeeklyWage(currentWage)}</span>
-                                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
-                                                wageDifferencePercent >= 0 
-                                                    ? 'text-emerald-400 bg-emerald-500/15' 
-                                                    : 'text-rose-400 bg-rose-500/15'
-                                            }`}>
-                                                {wageDifferencePercent >= 0 ? `+${wageDifferencePercent}%` : `${wageDifferencePercent}%`}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
-                                        <div className="text-base sm:text-lg font-black text-emerald-400 tracking-tight">
-                                            {formatWeeklyWage(offeredWage)}
-                                        </div>
-
-                                        {/* Steppers with explicit widths to never overflow */}
-                                        <div className="flex items-center gap-1.5">
-                                            <button
-                                                type="button"
-                                                onClick={() => adjustWage(-10_000)}
-                                                className="px-2.5 py-1.5 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white rounded-lg text-xs font-bold border border-white/5 cursor-pointer active:scale-95"
-                                            >
-                                                -10K
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => adjustWage(-5_000)}
-                                                className="px-2.5 py-1.5 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white rounded-lg text-xs font-bold border border-white/5 cursor-pointer active:scale-95"
-                                            >
-                                                -5K
-                                            </button>
-                                            <div className="flex items-center bg-black/60 border border-white/15 rounded-lg px-2 py-1">
-                                                <input
-                                                    type="number"
-                                                    value={Math.round(offeredWage / 1000)}
-                                                    onChange={e => setOfferedWage(Math.max(1000, Number(e.target.value) * 1000))}
-                                                    className="w-16 bg-transparent text-white font-black text-xs text-center focus:outline-none"
-                                                />
-                                                <span className="text-[10px] text-white/40 font-bold">K</span>
-                                            </div>
-                                            <button
-                                                type="button"
-                                                onClick={() => adjustWage(5_000)}
-                                                className="px-2.5 py-1.5 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white rounded-lg text-xs font-bold border border-white/5 cursor-pointer active:scale-95"
-                                            >
-                                                +5K
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => adjustWage(10_000)}
-                                                className="px-2.5 py-1.5 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white rounded-lg text-xs font-bold border border-white/5 cursor-pointer active:scale-95"
-                                            >
-                                                +10K
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Clauses 2 & 3: Duración y Rol (Clean 2-column layout) */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    {/* Duración */}
-                                    <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-2.5">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-[10px] font-black uppercase tracking-wider text-white/50 flex items-center gap-1.5">
-                                                <Calendar className="w-3.5 h-3.5 text-[var(--apex-gold)]" />
-                                                Duración del Contrato
-                                            </span>
-                                            <span className="text-xs font-black text-white">{offeredYears} temporadas</span>
-                                        </div>
-
-                                        <div className="grid grid-cols-5 gap-1.5">
-                                            {[1, 2, 3, 4, 5].map((yrs) => (
-                                                <button
-                                                    key={yrs}
-                                                    type="button"
-                                                    onClick={() => setOfferedYears(yrs)}
-                                                    className={`py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                                                        offeredYears === yrs
-                                                            ? 'bg-[var(--apex-gold)] text-black shadow-lg shadow-[var(--apex-gold)]/20'
-                                                            : 'bg-white/5 text-white/60 hover:text-white border border-white/5'
-                                                    }`}
-                                                >
-                                                    {yrs}a
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* Rol en la Plantilla */}
-                                    <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-2.5">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-[10px] font-black uppercase tracking-wider text-white/50 flex items-center gap-1.5">
-                                                <Star className="w-3.5 h-3.5 text-amber-400" />
-                                                Rol Deportivo
-                                            </span>
-                                            <span className="text-xs font-black text-[var(--apex-gold)]">{roleDescriptions[offeredRole].badge}</span>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-1.5">
-                                            {(['Key', 'FirstTeam', 'Rotation', 'Prospect'] as SquadRole[]).map((r) => (
-                                                <button
-                                                    key={r}
-                                                    type="button"
-                                                    onClick={() => setOfferedRole(r)}
-                                                    className={`py-1.5 px-2 rounded-xl text-[11px] font-bold truncate transition-all cursor-pointer text-center ${
-                                                        offeredRole === r
-                                                            ? 'bg-[var(--apex-gold)] text-black font-black shadow-md'
-                                                            : 'bg-white/5 text-white/60 hover:text-white border border-white/5'
-                                                    }`}
-                                                >
-                                                    {roleDescriptions[r].label}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Send Agent Offer Button */}
-                                <button
-                                    onClick={onSendAgentOffer}
-                                    disabled={isAgentNegotiating || offeredWage <= 0}
-                                    className="w-full py-3.5 bg-gradient-to-r from-[var(--apex-gold)] to-amber-500 hover:brightness-110 text-black font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-[var(--apex-gold)]/20 disabled:opacity-40 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
-                                >
-                                    {isAgentNegotiating ? <LoadingSpinner /> : (
-                                        <>
-                                            <UserCheck className="w-4 h-4" />
-                                            <span>Proponer Términos al Representante</span>
-                                        </>
-                                    )}
-                                </button>
-                            </div>
+                            <ContractNegotiator
+                                offeredWage={offeredWage}
+                                currentWage={currentWage}
+                                offeredYears={offeredYears}
+                                offeredRole={offeredRole}
+                                wageDifferencePercent={wageDifferencePercent}
+                                isAgentNegotiating={isAgentNegotiating}
+                                roleDescriptions={roleDescriptions}
+                                setOfferedWage={setOfferedWage}
+                                setOfferedYears={setOfferedYears}
+                                setOfferedRole={setOfferedRole}
+                                adjustWage={adjustWage}
+                                onSendAgentOffer={onSendAgentOffer}
+                            />
                         )}
                     </div>
                 </section>
             </main>
 
-            {/* MOBILE SCOUTING DOSSIER MODAL (Sliding drawer when user wants to inspect stats) */}
+            {/* Mobile Drawer */}
             {showMobileDossier && (
-                <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in">
-                    <div className="w-full sm:max-w-md bg-[#0F1423] border-t sm:border border-white/15 rounded-t-3xl sm:rounded-3xl p-6 space-y-5 max-h-[85vh] overflow-y-auto">
-                        <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                            <h3 className="text-xs font-black uppercase tracking-widest text-[var(--apex-gold)] flex items-center gap-2">
-                                <FileText className="w-4 h-4" />
-                                Dossier Técnico de Scouting
-                            </h3>
-                            <button
-                                onClick={() => setShowMobileDossier(false)}
-                                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:text-white cursor-pointer"
-                            >
-                                <X className="w-4 h-4" />
-                            </button>
-                        </div>
-
-                        {/* Player Header */}
-                        <div className="flex items-center gap-4">
-                            <div className="relative shrink-0">
-                                <PlayerAvatar
-                                    player={negotiatingPlayer}
-                                    className="w-16 h-16 rounded-full border-2 border-white/20"
-                                    primaryColor={sellingTeam?.primaryColor}
-                                />
-                                <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 bg-[var(--apex-gold)] text-black font-black text-[10px] px-2 rounded-full whitespace-nowrap">
-                                    {negotiatingPlayer.rating} OVR
-                                </div>
-                            </div>
-                            <div className="min-w-0">
-                                <h2 className="text-lg font-black text-white truncate">{negotiatingPlayer.name}</h2>
-                                <div className="flex items-center gap-2 mt-0.5">
-                                    <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${positionStyle.bg} ${positionStyle.color}`}>
-                                        {positionStyle.name}
-                                    </span>
-                                    {negotiatingPlayer.age && (
-                                        <span className="text-xs text-white/50">{negotiatingPlayer.age} años</span>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Metrics */}
-                        <div className="grid grid-cols-2 gap-2.5">
-                            <div className="p-3 rounded-xl bg-white/5 border border-white/5">
-                                <span className="text-[9px] font-bold text-white/40 uppercase block">Valor de Mercado</span>
-                                <span className="text-sm font-black text-emerald-400">{formatCurrency(normMarketValue)}</span>
-                            </div>
-                            <div className="p-3 rounded-xl bg-white/5 border border-white/5">
-                                <span className="text-[9px] font-bold text-white/40 uppercase block">Ficha Actual</span>
-                                <span className="text-sm font-black text-white">{formatWeeklyWage(currentWage)}</span>
-                            </div>
-                        </div>
-
-                        {/* Selling Club */}
-                        {sellingTeam && (
-                            <div className="p-3 rounded-xl bg-white/5 border border-white/5 flex items-center gap-3">
-                                <div className="w-8 h-8 shrink-0">
-                                    <TeamLogo team={sellingTeam} className="w-full h-full" />
-                                </div>
-                                <div>
-                                    <span className="text-[9px] font-bold text-white/40 uppercase block">Club Propietario</span>
-                                    <h4 className="text-xs font-bold text-white">{sellingTeam.name}</h4>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Patience status */}
-                        <div className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-2">
-                            <div className="flex items-center justify-between text-xs">
-                                <span className="text-white/60 font-bold">Paciencia restante</span>
-                                <span className={`font-black uppercase ${
-                                    remainingAttempts === 3 ? 'text-emerald-400' : remainingAttempts === 2 ? 'text-amber-400' : 'text-rose-400'
-                                }`}>
-                                    {remainingAttempts} / 3 intentos
-                                </span>
-                            </div>
-                            <div className="grid grid-cols-3 gap-1.5 h-1.5">
-                                {[1, 2, 3].map((step) => (
-                                    <div 
-                                        key={step} 
-                                        className={`rounded-full ${
-                                            step <= remainingAttempts 
-                                                ? remainingAttempts === 3 ? 'bg-emerald-400' : remainingAttempts === 2 ? 'bg-amber-400' : 'bg-rose-400' 
-                                                : 'bg-white/10'
-                                        }`} 
-                                    />
-                                ))}
-                            </div>
-                        </div>
-
-                        <button
-                            onClick={() => setShowMobileDossier(false)}
-                            className="w-full py-3 bg-[var(--apex-gold)] text-black font-black text-xs uppercase tracking-wider rounded-xl cursor-pointer"
-                        >
-                            Regresar a la Sala de Negociación
-                        </button>
-                    </div>
-                </div>
+                <NegotiationDossier
+                    negotiatingPlayer={negotiatingPlayer}
+                    sellingTeam={sellingTeam}
+                    normMarketValue={normMarketValue}
+                    currentWage={currentWage}
+                    remainingAttempts={remainingAttempts}
+                    positionStyle={positionStyle}
+                    isMobileDrawer={true}
+                    onCloseMobile={() => setShowMobileDossier(false)}
+                />
             )}
         </div>
     );
-};
+});

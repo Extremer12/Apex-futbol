@@ -42,6 +42,7 @@ interface TransfersMarketTabProps {
     currentPage: number;
     setCurrentPage: React.Dispatch<React.SetStateAction<number>>;
     onStartNegotiation: (player: Player) => void;
+    playerTeamMap?: Map<number, Team>;
 }
 
 export const TransfersMarketTab: React.FC<TransfersMarketTabProps> = React.memo(({
@@ -62,12 +63,14 @@ export const TransfersMarketTab: React.FC<TransfersMarketTabProps> = React.memo(
     currentPage,
     setCurrentPage,
     onStartNegotiation,
+    playerTeamMap: propPlayerTeamMap,
 }) => {
     const { showToast } = useToast();
     const pageSize = 24;
 
-    // O(1) lookup map from player.id -> Team
+    // O(1) lookup map from player.id -> Team (use prop if passed from parent to avoid duplicate traversal)
     const playerTeamMap = useMemo(() => {
+        if (propPlayerTeamMap) return propPlayerTeamMap;
         const map = new Map<number, Team>();
         for (const t of allTeams) {
             for (const p of t.squad) {
@@ -75,7 +78,7 @@ export const TransfersMarketTab: React.FC<TransfersMarketTabProps> = React.memo(
             }
         }
         return map;
-    }, [allTeams]);
+    }, [allTeams, propPlayerTeamMap]);
 
     const filteredPlayers = useMemo(() => {
         const query = filterName.toLowerCase().trim();

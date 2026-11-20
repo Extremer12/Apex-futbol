@@ -1,7 +1,7 @@
 import { GameState, PlayerProfile, Team } from '../types';
 
 const DB_NAME = 'ApexAIDB';
-const DB_VERSION = 2; // Incremented for rich save slot metadata
+const DB_VERSION = 3; // Incremented for careerId index and connection reuse
 const STORE_NAME = 'savedGames';
 
 // Schema version for save data compatibility
@@ -42,18 +42,62 @@ export interface SavedGameData {
     careerId?: string;
 }
 
-const openDB = (): Promise<IDBDatabase> => {
-    return new Promise((resolve, reject) => {
+// Connection singleton for low-latency non-blocking DB reuse
+let dbInstance: IDBDatabase | null = null;
+let dbPromise: Promise<IDBDatabase> | null = null;
+
+export const openDB = (): Promise<IDBDatabase> => {
+    if (typeof indexedDB === 'undefined') {
+        return Promise.reject(new Error("IndexedDB is not supported in this environment"));
+    }
+    if (dbInstance) {
+        return Promise.resolve(dbInstance);
+    }
+    if (dbPromise) {
+        return dbPromise;
+    }
+
+    dbPromise = new Promise((resolve, reject) => {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
-        request.onerror = () => reject("Error opening IndexedDB");
-        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => {
+            dbPromise = null;
+            reject(request.error || new Error("Error opening IndexedDB"));
+        };
+        request.onsuccess = () => {
+            dbInstance = request.result;
+            dbInstance.onversionchange = () => {
+                dbInstance?.close();
+                dbInstance = null;
+                dbPromise = null;
+            };
+            dbInstance.onclose = () => {
+                dbInstance = null;
+                dbPromise = null;
+            };
+            resolve(dbInstance);
+        };
         request.onupgradeneeded = (event) => {
             const db = (event.target as IDBOpenDBRequest).result;
+            let store: IDBObjectStore;
             if (!db.objectStoreNames.contains(STORE_NAME)) {
-                db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+            } else {
+                store = (event.target as IDBOpenDBRequest).transaction!.objectStore(STORE_NAME);
+            }
+            if (!store.indexNames.contains('careerId')) {
+                store.createIndex('careerId', 'careerId', { unique: false });
             }
         };
     });
+    return dbPromise;
+};
+
+export const closeDB = (): void => {
+    if (dbInstance) {
+        dbInstance.close();
+        dbInstance = null;
+    }
+    dbPromise = null;
 };
 
 /**
@@ -149,38 +193,39 @@ export const saveGame = async (gameData: SavedGameData): Promise<void> => {
             };
 
             // REPLACEMENT GUARANTEE:
-            // Query all existing saves in this store. If any previous save belongs to this
-            // exact same career/club (by careerId or teamId) under a different id, delete it!
-            const getAllReq = store.getAll();
-            getAllReq.onsuccess = () => {
-                const existing = getAllReq.result || [];
-                existing.forEach((prev: SavedGameData) => {
-                    const prevCareerId = prev.careerId || prev.gameState?.careerId;
-                    const sameCareer = prevCareerId && prevCareerId === careerId;
-                    const sameTeam = !prevCareerId && prev.gameState?.team?.id === storableGameState.team?.id;
-                    if ((sameCareer || sameTeam) && prev.id !== gameData.id) {
-                        store.delete(prev.id);
+            // Query only existing saves with this exact careerId via the index
+            // If any earlier save belongs to this career under a different id, delete it!
+            if (store.indexNames.contains('careerId')) {
+                const careerIndex = store.index('careerId');
+                const cursorReq = careerIndex.openKeyCursor(IDBKeyRange.only(careerId));
+                cursorReq.onsuccess = () => {
+                    const cursor = cursorReq.result;
+                    if (cursor) {
+                        const existingPrimaryKey = cursor.primaryKey as string;
+                        if (existingPrimaryKey !== gameData.id) {
+                            store.delete(existingPrimaryKey);
+                        }
+                        cursor.continue();
+                    } else {
+                        store.put(storableData);
                     }
-                });
-
+                };
+                cursorReq.onerror = () => {
+                    store.put(storableData);
+                };
+            } else {
+                // Compatibility fallback
                 store.put(storableData);
-            };
-
-            getAllReq.onerror = () => {
-                store.put(storableData);
-            };
+            }
 
             transaction.oncomplete = () => {
-                db.close();
                 resolve();
             };
             transaction.onerror = () => {
                 console.error("Error saving game to IndexedDB:", transaction.error);
-                db.close();
                 reject(transaction.error);
             };
         } catch (err) {
-            db.close();
             reject(err);
         }
     });
@@ -235,7 +280,6 @@ export const getSavedGames = async (): Promise<SavedGameSummary[]> => {
 
         request.onerror = () => {
             console.error("Error getting saved games:", request.error);
-            db.close();
             reject(request.error);
         };
 
@@ -271,7 +315,6 @@ export const getSavedGames = async (): Promise<SavedGameSummary[]> => {
                         const cleanupTx = cleanupDb.transaction(STORE_NAME, 'readwrite');
                         const cleanupStore = cleanupTx.objectStore(STORE_NAME);
                         toDeleteIds.forEach(id => cleanupStore.delete(id));
-                        cleanupTx.oncomplete = () => cleanupDb.close();
                     } catch (e) {
                         console.warn("Background cleanup of duplicate saves failed:", e);
                     }
@@ -300,7 +343,6 @@ export const getSavedGames = async (): Promise<SavedGameSummary[]> => {
                 const timeB = new Date(b.lastSaved).getTime();
                 return timeB - timeA;
             });
-            db.close();
             resolve(summaries);
         };
     });
@@ -315,13 +357,11 @@ export const loadGame = async (id: string): Promise<SavedGameData | null> => {
 
         request.onerror = () => {
             console.error("Error loading game:", request.error);
-            db.close();
             reject(request.error);
         };
 
         request.onsuccess = () => {
             const rawData = request.result;
-            db.close();
 
             if (!rawData) {
                 resolve(null);
@@ -350,12 +390,10 @@ export const deleteGame = async (id: string): Promise<void> => {
 
         request.onerror = () => {
             console.error("Error deleting game:", request.error);
-            db.close();
             reject(request.error);
         };
 
         request.onsuccess = () => {
-            db.close();
             resolve();
         };
     });
@@ -422,12 +460,10 @@ export const clearAllData = async (): Promise<void> => {
 
         request.onerror = () => {
             console.error("Error clearing data:", request.error);
-            db.close();
             reject(request.error);
         };
 
         request.onsuccess = () => {
-            db.close();
             resolve();
         };
     });

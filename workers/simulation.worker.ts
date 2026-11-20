@@ -5,37 +5,48 @@ import { Team, LeagueTableRow, Match, Morale, LeagueId, COMPETITION_TO_CUP_KEY, 
 import { simulateMatch, simulateMacroMatch } from '../services/simulation';
 import { updateTeamMorale } from '../services/morale';
 import { getDoctorEffect, getFitnessEffect } from '../services/staffService';
-
-// Helpers removed as they are now imported from services/morale.ts
-
+import { handleCupProgression } from '../services/simulation/cupProgressionHandler';
+import { detectCinematicEvents } from '../services/simulation/cinematicsDetector';
+import { generateWeeklyNewsAndOffers } from '../services/simulation/simulationNewsHandler';
+import { generateCoachReport } from '../services/gameLogic';
 
 interface SimulationInput {
     type: 'SIMULATE_WEEK';
     payload: {
+        requestId?: string;
         currentWeek: number;
         currentTurn: 'weekend' | 'midweek';
+        currentDate?: string | Date;
+        season?: number;
         weekMatches?: Match[];
         schedule?: Match[];
         leagueTables: Record<LeagueId, LeagueTableRow[]>;
         allTeams: Team[];
+        playerTeam?: Team;
         playerTeamId: number;
         cups: any;
         finances: {
             weeklyIncome: number;
             weeklyWages: number;
+            clubDirectives?: any;
         };
         scouts: any[];
         scoutedPlayerIds: Record<number, number>;
+        cinematicQueue?: any[];
+        youthAcademy?: any[];
     };
 }
 
 interface SimulationOutput {
     type: 'SIMULATION_COMPLETE';
     payload: {
+        requestId?: string;
+        modifiedTeams: Team[];
+        updatedAllTeams?: Team[];
         updatedWeekMatches: Match[];
         updatedSchedule?: Match[];
+        newCupMatches?: Match[];
         updatedLeagueTables: Record<LeagueId, LeagueTableRow[]>;
-        updatedAllTeams: Team[];
         confidenceChange: number;
         playerMatchResult: { 
             homeTeamId?: number;
@@ -48,33 +59,45 @@ interface SimulationOutput {
             penalties?: { home: number; away: number }; 
             events?: string[]; 
             scorers?: any[]; 
+            leg?: 1 | 2;
+            aggregateScore?: { home: number; away: number };
         } | null;
         updatedCups: any;
         updatedScoutedPlayerIds: Record<number, number>;
         newsToAdd?: any[];
+        newOffers?: any[];
+        coachReport?: any;
+        cinematicEvents?: any[];
     };
 }
 
 
 // Worker message handler
-self.onmessage = (e: MessageEvent<SimulationInput>) => {
+self.onmessage = async (e: MessageEvent<SimulationInput>) => {
     const { type, payload } = e.data;
 
     if (type === 'SIMULATE_WEEK') {
         const {
+            requestId,
             currentWeek,
             currentTurn,
+            currentDate,
+            season,
             weekMatches,
             schedule,
             leagueTables,
             allTeams,
+            playerTeam: inputPlayerTeam,
             playerTeamId,
             cups,
             finances,
             scouts,
-            scoutedPlayerIds
+            scoutedPlayerIds,
+            cinematicQueue,
+            youthAcademy
         } = payload;
 
+        const effectivePlayerTeam = inputPlayerTeam || allTeams.find(t => t.id === playerTeamId) || allTeams[0];
         const nextWeek = currentWeek;
         const isMidweek = currentTurn === 'midweek';
         const newSchedule = schedule ? [...schedule] : [];
@@ -88,8 +111,11 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
         });
 
         // Extract player team league for fast match routing
-        const playerTeam = allTeams.find(t => t.id === playerTeamId);
+        const playerTeam = effectivePlayerTeam;
         const playerLeagueId = playerTeam?.leagueId;
+
+        // Track modified teams for low-overhead delta transfer
+        const modifiedTeamIds = new Set<number>();
 
         // Lazy condition & status updates: only allocate memory when status or condition genuinely changes
         let updatedAllTeams = allTeams.map(t => {
@@ -142,6 +168,7 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
             });
 
             if (teamChanged) {
+                modifiedTeamIds.add(t.id);
                 return { ...t, squad: updatedSquad };
             }
 
@@ -212,6 +239,9 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
                 const homeTeam = teamMap.get(match.homeTeamId);
                 const awayTeam = teamMap.get(match.awayTeamId);
                 if (!homeTeam || !awayTeam) return;
+
+                modifiedTeamIds.add(match.homeTeamId);
+                modifiedTeamIds.add(match.awayTeamId);
 
                 let homeRow: LeagueTableRow | undefined;
                 let awayRow: LeagueTableRow | undefined;
@@ -701,18 +731,107 @@ self.onmessage = (e: MessageEvent<SimulationInput>) => {
             updatedLeagueTables[leagueId as LeagueId] = table;
         });
 
+        // =========================================================================
+        // PIPELINE OFF-MAIN-THREAD: PROGRESSION, CINEMATICS, NEWS & COACH REPORT
+        // =========================================================================
+
+        const simulatedWeek = currentWeek;
+        const newWeek = currentWeek + 1;
+        const newDate = currentDate ? new Date(currentDate) : new Date();
+        newDate.setDate(newDate.getDate() + 7);
+
+        // 1. Process Cup & Playoff Progression (Off-Main-Thread)
+        const currentSchedule = newSchedule.length > 0 ? newSchedule : (schedule ? [...schedule] : []);
+
+        const cupResult = handleCupProgression(
+            updatedCups,
+            currentSchedule,
+            updatedAllTeams,
+            simulatedWeek,
+            newWeek,
+            updatedLeagueTables,
+            currentTurn,
+            effectivePlayerTeam.id
+        );
+        updatedCups = cupResult.updatedCups;
+        const finalSchedule = cupResult.updatedSchedule;
+
+        // 2. Detect Champion & Achievement Cinematics (Off-Main-Thread)
+        const justPlayedMatches = finalSchedule.filter(
+            m => m.result !== undefined && m.week === simulatedWeek && !!m.isMidweek === isMidweek
+        );
+
+        const contextualGameState: any = {
+            team: effectivePlayerTeam,
+            cups, // Original cups state before progression to compare championship triggers
+            leagueTables,
+            season: season || (currentDate ? new Date(currentDate).getFullYear() : 2026),
+            cinematicQueue: cinematicQueue || [],
+            allTeams: updatedAllTeams,
+            currentWeek,
+            currentTurn,
+            currentDate: currentDate ? new Date(currentDate) : new Date(),
+            schedule: finalSchedule
+        };
+
+        const celebrationCinematics = detectCinematicEvents(
+            contextualGameState,
+            updatedCups,
+            updatedLeagueTables,
+            simulatedWeek,
+            newWeek,
+            justPlayedMatches
+        );
+
+        const allWeeklyCinematics = [...cupResult.cinematicEvents, ...celebrationCinematics];
+
+        // 3. Generate Weekly News & AI Transfer Offers (Off-Main-Thread)
+        const { newsToAdd: generatedNews, generatedOffers } = await generateWeeklyNewsAndOffers(
+            contextualGameState,
+            finalSchedule,
+            updatedAllTeams,
+            playerMatchResult,
+            newWeek,
+            newDate,
+            celebrationCinematics
+        );
+
+        // 4. Generate Coach Report (Off-Main-Thread)
+        const coachReportContext: any = {
+            ...contextualGameState,
+            team: updatedAllTeams.find(t => t.id === effectivePlayerTeam.id) || effectivePlayerTeam,
+            leagueTables: updatedLeagueTables,
+            youthAcademy: youthAcademy || []
+        };
+        const coachReport = generateCoachReport(coachReportContext);
+
+        // 5. Build Deltas for minimal postMessage serialization overhead
+        // Only transfer modified teams across the thread boundary
+        if (effectivePlayerTeam) {
+            modifiedTeamIds.add(effectivePlayerTeam.id);
+        }
+        const modifiedTeams = updatedAllTeams.filter(t => modifiedTeamIds.has(t.id));
+
+        // If cup progression created or removed fixtures, send finalSchedule; otherwise send undefined to use week matches delta
+        const originalScheduleCount = schedule ? schedule.length : 0;
+        const scheduleChangedStructurally = finalSchedule.length !== originalScheduleCount;
+
         const output: SimulationOutput = {
             type: 'SIMULATION_COMPLETE',
             payload: {
+                requestId,
+                modifiedTeams,
                 updatedWeekMatches,
-                updatedSchedule: newSchedule.length > 0 ? newSchedule : undefined,
+                updatedSchedule: scheduleChangedStructurally ? finalSchedule : undefined,
                 updatedLeagueTables,
-                updatedAllTeams,
                 confidenceChange,
                 playerMatchResult,
                 updatedCups,
                 updatedScoutedPlayerIds,
-                newsToAdd
+                newsToAdd: [...newsToAdd, ...generatedNews],
+                newOffers: generatedOffers,
+                coachReport,
+                cinematicEvents: allWeeklyCinematics
             }
         };
 

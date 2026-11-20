@@ -2,11 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { GameState, MatchPhase, PendingSimulationResults } from '../types';
 import { GameAction } from '../state/reducer';
 import { simulationWorker } from '../services/simulationWorker';
-import { generateCoachReport } from '../services/gameLogic';
-import { eventEngine, TriggeredEvent } from '../services/eventEngine';
-import { handleCupProgression } from '../services/simulation/cupProgressionHandler';
-import { detectCinematicEvents } from '../services/simulation/cinematicsDetector';
-import { generateWeeklyNewsAndOffers } from '../services/simulation/simulationNewsHandler';
+import { TriggeredEvent } from '../services/eventEngine';
 import { isSeasonCompleted } from '../services/seasonUtils';
 
 export function useSimulation(
@@ -34,82 +30,23 @@ export function useSimulation(
             await new Promise(resolve => setTimeout(resolve, 30));
             setMatchPhase('LIVE');
 
-            // 1. Worker simulation
+            // 1. Pipeline de Simulación 100% Off-Main-Thread (Worker)
+            // Ejecuta simulación, copas, eventos cinemáticos, noticias y reporte del DT en segundo plano
             const simulationResult = await simulationWorker.simulateWeek(gameState);
 
-            const newDate = new Date(gameState.currentDate);
-            newDate.setDate(newDate.getDate() + 7);
-            const newWeek = gameState.currentWeek + 1;
-            const simulatedWeek = gameState.currentWeek;
-
-            // 2. Restore React / JSX logos from previous state (logos stripped by Web Worker)
-            const originalLogoMap = new Map(gameState.allTeams.map(t => [t.id, t.logo]));
-            const restoredTeams = simulationResult.updatedAllTeams.map(updatedTeam => ({
-                ...updatedTeam,
-                logo: originalLogoMap.get(updatedTeam.id) || updatedTeam.logo
-            }));
-
-            // 3. Process Cup & Playoff Progression
-            const cupResult = handleCupProgression(
-                simulationResult.updatedCups,
-                simulationResult.updatedSchedule,
-                restoredTeams,
-                simulatedWeek,
-                newWeek,
-                simulationResult.updatedLeagueTables,
-                gameState.currentTurn,
-                gameState.team.id
-            );
-
-            // 4. Detect Champion & Achievement Cinematics
-            const justPlayedMatches = cupResult.updatedSchedule.filter(
-                m => m.result !== undefined && m.week === simulatedWeek && !!m.isMidweek === (gameState.currentTurn === 'midweek')
-            );
-            const celebrationCinematics = detectCinematicEvents(
-                gameState,
-                cupResult.updatedCups,
-                simulationResult.updatedLeagueTables,
-                simulatedWeek,
-                newWeek,
-                justPlayedMatches
-            );
-
-            // Combine progression cinematics with celebration cinematics to show only after user finishes the match
-            const allWeeklyCinematics = [...cupResult.cinematicEvents, ...celebrationCinematics];
-
-            // 5. Generate News & AI Transfer Offers
-            const { newsToAdd, generatedOffers } = await generateWeeklyNewsAndOffers(
-                gameState,
-                cupResult.updatedSchedule,
-                restoredTeams,
-                simulationResult.playerMatchResult,
-                newWeek,
-                newDate,
-                celebrationCinematics
-            );
-
-            // 6. Check Random Events (Desactivado temporalmente por solicitud del usuario)
-            // const triggeredEvent = eventEngine.triggerEvent(gameState);
-            // if (triggeredEvent) {
-            //     setCurrentEvent(triggeredEvent);
-            // }
-
-            // 7. Generate Coach Report
-            const coachReport = generateCoachReport(gameState);
-
-            // 8. Set Final Pending Results
+            // 2. Establecer resultados pendientes procesados íntegramente en el Worker
             setPendingResults({
-                newsToAdd,
-                updatedSchedule: cupResult.updatedSchedule,
+                newsToAdd: simulationResult.newsToAdd || [],
+                updatedSchedule: simulationResult.updatedSchedule,
                 updatedLeagueTables: simulationResult.updatedLeagueTables,
-                updatedAllTeams: restoredTeams,
+                updatedAllTeams: simulationResult.updatedAllTeams,
                 confidenceChange: simulationResult.confidenceChange,
-                newOffers: generatedOffers,
+                newOffers: simulationResult.newOffers || [],
                 playerMatchResult: simulationResult.playerMatchResult,
-                updatedCups: cupResult.updatedCups,
+                updatedCups: simulationResult.updatedCups,
                 updatedScoutedPlayerIds: simulationResult.updatedScoutedPlayerIds,
-                coachReport,
-                cinematicEvents: allWeeklyCinematics
+                coachReport: simulationResult.coachReport,
+                cinematicEvents: simulationResult.cinematicEvents || []
             });
 
             setMatchPhase('LIVE');

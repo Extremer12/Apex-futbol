@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { GameState, Player, SquadRole, Offer } from '../../types';
+import { GameState, Player, SquadRole, Offer, Team } from '../../types';
 import { GameAction } from '../../state/reducer';
 import { useGameStore } from '../../state/gameStore';
 import { 
@@ -121,19 +121,25 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
         }
     }, [normBudget, showBudgetModal]);
 
-    // All available players from other clubs - optimized single-pass with O(1) ID set
-    const availablePlayers = useMemo(() => {
+    // O(1) teams index map
+    const teamsById = useMemo(() => new Map(allTeams.map(t => [t.id, t])), [allTeams]);
+
+    // Fast indexed computation of available players and player-to-team map in a single pass
+    const { availablePlayers, playerTeamMap } = useMemo(() => {
         const mySquadIds = new Set(myTeam.squad.map(mp => mp.id));
-        const result: Player[] = [];
+        const playersList: Player[] = [];
+        const pTeamMap = new Map<number, Team>();
+
         for (const t of allTeams) {
-            if (t.id === myTeam.id) continue;
+            const isUserTeam = t.id === myTeam.id;
             for (const p of t.squad) {
-                if (!mySquadIds.has(p.id)) {
-                    result.push(p);
+                pTeamMap.set(p.id, t);
+                if (!isUserTeam && !mySquadIds.has(p.id)) {
+                    playersList.push(p);
                 }
             }
         }
-        return result;
+        return { availablePlayers: playersList, playerTeamMap: pTeamMap };
     }, [allTeams, myTeam.id, myTeam.squad]);
 
     // --- PHASE 1: START NEGOTIATION WITH CLUB ---
@@ -163,7 +169,7 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
     const handleSendClubOffer = async () => {
         if (!negotiatingPlayer) return;
         setIsClubNegotiating(true);
-        const sellingTeam = allTeams.find(t => t.squad.some(p => p.id === negotiatingPlayer.id)) || allTeams[0];
+        const sellingTeam = playerTeamMap.get(negotiatingPlayer.id) || allTeams[0];
         
         const newAttempts = clubAttempts + 1;
         setClubAttempts(newAttempts);
@@ -284,7 +290,7 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
     // --- INCOMING OFFERS ACTIONS ---
     const handleAcceptIncomingOffer = (offer: Offer) => {
         const player = myTeam.squad.find(p => p.id === offer.playerId);
-        const offeringTeam = allTeams.find(t => t.id === offer.offeringTeamId);
+        const offeringTeam = teamsById.get(offer.offeringTeamId);
         dispatch({ type: 'ACCEPT_OFFER', payload: { offerId: offer.id } });
         showToast(`Traspaso de ${player?.name || 'Jugador'} al ${offeringTeam?.name || 'club rival'} cerrado por ${formatCurrency(offer.counterOfferValue || offer.offerValue)}.`, 'success');
     };
@@ -296,7 +302,7 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
 
     const handleOpenCounterOffer = (offer: Offer) => {
         const player = myTeam.squad.find(p => p.id === offer.playerId)!;
-        const buyer = allTeams.find(t => t.id === offer.offeringTeamId)!;
+        const buyer = teamsById.get(offer.offeringTeamId) || allTeams[0];
         setCounterOfferModal({ offer, player, buyer });
         setCounterValue(Math.round(offer.offerValue * 1.25 * 10) / 10);
     };
@@ -474,6 +480,7 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
                     currentPage={currentPage}
                     setCurrentPage={setCurrentPage}
                     onStartNegotiation={startNegotiation}
+                    playerTeamMap={playerTeamMap}
                 />
             )}
 
