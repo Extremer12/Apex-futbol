@@ -65,24 +65,10 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
             return 1;
         }
     });
-    const [presidentialMode, setPresidentialMode] = useState<boolean>(() => {
-        try {
-            return localStorage.getItem('apex_presidential_mode') !== 'false';
-        } catch (_) {
-            return true;
-        }
-    });
-
     const speedMultiplierRef = useRef(speedMultiplier);
     speedMultiplierRef.current = speedMultiplier;
 
-    const presidentialModeRef = useRef(presidentialMode);
-    presidentialModeRef.current = presidentialMode;
-
     const currentMinuteRef = useRef(0);
-
-    const [activePromptMinute, setActivePromptMinute] = useState<number | null>(null);
-    const promptedMinutesRef = useRef<Set<number>>(new Set());
 
     const [activeTab, setActiveTab] = useState<'ticker' | 'stats'>('ticker');
     const [commentary, setCommentary] = useState<ParsedEvent[]>([]);
@@ -115,7 +101,6 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
     const [isShaking, setIsShaking] = useState(false);
     const [goalPopup, setGoalPopup] = useState<{ team: string; text: string } | null>(null);
 
-    const startSimulationLoopRef = useRef<() => void>(() => {});
     const isPausedForGoalRef = useRef(false);
     const stepRef = useRef(0);
 
@@ -190,52 +175,6 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
         } catch (_) {}
     };
 
-    const handleTogglePresidential = () => {
-        setPresidentialMode(prev => {
-            const next = !prev;
-            presidentialModeRef.current = next;
-            try {
-                localStorage.setItem('apex_presidential_mode', next.toString());
-            } catch (_) {}
-            return next;
-        });
-    };
-
-    const handlePresidentialDecision = (type: 'ATTACK' | 'DEFEND' | 'BONUS' | 'PASS') => {
-        const atMin = activePromptMinute || 45;
-        setActivePromptMinute(null);
-        isPausedForGoalRef.current = false;
-
-        if (type === 'ATTACK') {
-            const text = `${atMin}' ⚡ ¡Indicación del Palco Presidencial! El equipo adelanta sus líneas y asfixia al rival con presión alta.`;
-            setCommentary(prev => [...prev, { minute: atMin, type: 'normal', text, isHome }]);
-            setMomentum(prev => [...prev, isHome ? 35 : -35]);
-            setStats(prev => ({
-                ...prev,
-                homeShots: isHome ? prev.homeShots + 2 : prev.homeShots,
-                awayShots: !isHome ? prev.awayShots + 2 : prev.awayShots
-            }));
-        } else if (type === 'DEFEND') {
-            const text = `${atMin}' 🛡️ ¡Orden táctica del Palco! Bloque bajo, repliegue disciplinado y enfriar el ritmo del juego.`;
-            setCommentary(prev => [...prev, { minute: atMin, type: 'normal', text, isHome }]);
-            setMomentum(prev => [...prev, isHome ? 15 : -15]);
-        } else if (type === 'BONUS') {
-            const text = `${atMin}' 💼 ¡Inyección anímica del Presidente! Se anuncia una prima económica especial por conseguir la victoria.`;
-            setCommentary(prev => [...prev, { minute: atMin, type: 'normal', text, isHome }]);
-            setMomentum(prev => [...prev, isHome ? 45 : -45]);
-            setStats(prev => ({
-                ...prev,
-                homePossession: isHome ? Math.min(85, prev.homePossession + 6) : Math.max(15, prev.homePossession - 6),
-                awayPossession: !isHome ? Math.min(85, prev.awayPossession + 6) : Math.max(15, prev.awayPossession - 6)
-            }));
-            if (dispatch) {
-                dispatch({ type: 'AWARD_TEAM_BONUS', payload: { bonusPerPlayer: 10000 } });
-            }
-        }
-
-        startSimulationLoopRef.current();
-    };
-
     // Fast-forward / Skip to end
     const handleSkipToEnd = () => {
         if (intervalRef.current) clearInterval(intervalRef.current);
@@ -291,26 +230,6 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
                 );
                 const currentMinute = Math.floor(currentMinuteRef.current);
                 setMinute(currentMinute);
-
-                // Presidential Palco interactive decision at 45' and 70'
-                if (presidentialModeRef.current && currentMinute >= 45 && !promptedMinutesRef.current.has(45)) {
-                    promptedMinutesRef.current.add(45);
-                    isPausedForGoalRef.current = true;
-                    clearInterval(intervalRef.current);
-                    currentMinuteRef.current = 45;
-                    setMinute(45);
-                    setActivePromptMinute(45);
-                    return;
-                }
-                if (presidentialModeRef.current && currentMinute >= 70 && !promptedMinutesRef.current.has(70)) {
-                    promptedMinutesRef.current.add(70);
-                    isPausedForGoalRef.current = true;
-                    clearInterval(intervalRef.current);
-                    currentMinuteRef.current = 70;
-                    setMinute(70);
-                    setActivePromptMinute(70);
-                    return;
-                }
 
                 // Process pending events up to current minute
                 const pendingEvents = allParsedEvents.filter(
@@ -442,7 +361,6 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
             }, interval);
         };
 
-        startSimulationLoopRef.current = startSimulationLoop;
         startSimulationLoop();
 
         return () => {
@@ -473,72 +391,6 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
                         <p className="text-sm text-slate-300 max-w-md mx-auto line-clamp-2">
                             {goalPopup.text}
                         </p>
-                    </div>
-                </div>
-            )}
-
-            {/* Presidential Palco Interactive Modal at 45' and 70' */}
-            {activePromptMinute !== null && (
-                <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-lg animate-fade-in px-4">
-                    <div className="bg-slate-900/95 border-2 border-[var(--apex-gold)]/50 rounded-3xl p-6 sm:p-8 max-w-xl w-full shadow-[0_0_50px_rgba(234,179,8,0.25)] text-center space-y-5 animate-scale-in">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--apex-gold)]/10 border border-[var(--apex-gold)]/30 text-[var(--apex-gold)] text-xs font-black uppercase tracking-wider">
-                            <span>💼 Palco Presidencial</span>
-                            <span>•</span>
-                            <span>Minuto {activePromptMinute}' ({activePromptMinute === 45 ? 'Entretiempo' : 'Tramo Decisivo'})</span>
-                        </div>
-
-                        <div>
-                            <h2 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">
-                                Indicación al Vestuario
-                            </h2>
-                            <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-md mx-auto">
-                                Tienes la palabra para influir en el rumbo del partido. Elige una orden para el cuerpo técnico y el plantel:
-                            </p>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                            <button
-                                onClick={() => handlePresidentialDecision('ATTACK')}
-                                className="flex flex-col items-start p-4 rounded-2xl bg-gradient-to-br from-amber-500/10 to-orange-600/10 border border-amber-500/30 hover:border-amber-400 hover:bg-amber-500/20 text-left transition-all group shadow-md"
-                            >
-                                <div className="text-base sm:text-lg font-black text-amber-300 mb-1">⚡ Aumentar Presión</div>
-                                <div className="text-[11px] text-slate-300 leading-snug">
-                                    Adelantar líneas, presión alta en campo rival y buscar el arco con intensidad.
-                                </div>
-                            </button>
-
-                            <button
-                                onClick={() => handlePresidentialDecision('DEFEND')}
-                                className="flex flex-col items-start p-4 rounded-2xl bg-gradient-to-br from-sky-500/10 to-blue-600/10 border border-sky-500/30 hover:border-sky-400 hover:bg-sky-500/20 text-left transition-all group shadow-md"
-                            >
-                                <div className="text-base sm:text-lg font-black text-sky-300 mb-1">🛡️ Cerrar el Partido</div>
-                                <div className="text-[11px] text-slate-300 leading-snug">
-                                    Reorganizar en bloque bajo, controlar el reloj y anular las ocasiones del rival.
-                                </div>
-                            </button>
-
-                            <button
-                                onClick={() => handlePresidentialDecision('BONUS')}
-                                className="flex flex-col items-start p-4 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-green-600/10 border border-emerald-500/30 hover:border-emerald-400 hover:bg-emerald-500/20 text-left transition-all group shadow-md sm:col-span-2"
-                            >
-                                <div className="flex items-center justify-between w-full">
-                                    <span className="text-base sm:text-lg font-black text-emerald-300 mb-1">💼 Prima Extra por Victoria</span>
-                                    <span className="text-[10px] font-black uppercase text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/30">Inyección Anímica</span>
-                                </div>
-                                <div className="text-[11px] text-slate-300 leading-snug">
-                                    Ofrecer una prima económica al vestuario. Máximo impulso anímico y posesión para tus jugadores.
-                                </div>
-                            </button>
-                        </div>
-
-                        <div className="pt-2">
-                            <button
-                                onClick={() => handlePresidentialDecision('PASS')}
-                                className="text-xs font-bold text-slate-400 hover:text-white uppercase tracking-wider underline transition-colors"
-                            >
-                                Mantener indicación actual del DT (Continuar)
-                            </button>
-                        </div>
                     </div>
                 </div>
             )}
@@ -590,22 +442,6 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
                                 </button>
                             ))}
                         </div>
-                    )}
-
-                    {/* Palco Mode Toggle */}
-                    {!isFinished && (
-                        <button
-                            onClick={handleTogglePresidential}
-                            className={`hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-[11px] font-bold transition-all ${
-                                presidentialMode
-                                    ? 'bg-[var(--apex-gold)]/10 border-[var(--apex-gold)]/30 text-[var(--apex-gold)]'
-                                    : 'bg-white/5 border-white/10 text-slate-400 hover:text-white'
-                            }`}
-                            title="Pausa interactiva al 45' y 70' para decisiones del presidente"
-                        >
-                            <span>💼 Palco:</span>
-                            <span className="font-black">{presidentialMode ? 'ON' : 'OFF'}</span>
-                        </button>
                     )}
 
                     {/* Match Complete Header Button */}

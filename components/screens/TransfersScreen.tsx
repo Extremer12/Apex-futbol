@@ -2,41 +2,31 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { GameState, Player, SquadRole, Offer, Team } from '../../types';
 import { GameAction } from '../../state/reducer';
 import { useGameStore } from '../../state/gameStore';
+import { generateCounterOfferDecision } from '../../services/gameLogic';
 import { 
-    generateTransferNegotiationResponse, 
-    generatePlayerContractNegotiationResponse,
-    generateCounterOfferDecision 
-} from '../../services/gameLogic';
-import { Modal } from '../ui/Modal';
-import { 
-    formatCurrency,
-    formatCurrencyShort, 
+    formatCurrency, 
     formatWeeklyWage, 
-    formatTransferFee,
-    normalizeMonetaryValue,
+    formatTransferFee, 
+    normalizeMonetaryValue, 
     isTransferWindowOpen, 
     getNextTransferWindow 
 } from '../../utils';
-import { getExpectedWage } from '../../utils/playerUtils';
 import { 
     Clock, 
-    Briefcase, 
-    Users,
-    Inbox,
-    Tag,
-    ArrowRight,
-    CheckCircle2,
-    Sliders,
-    X
+    Users, 
+    Inbox, 
+    Tag, 
+    Sliders, 
+    X, 
+    Wallet,
+    ArrowUpRight
 } from 'lucide-react';
 import { useToast } from '../common/ToastProvider';
 
 import { TransfersMarketTab, CategoryFilter, SortOption } from './transfers/TransfersMarketTab';
 import { TransfersOffersTab } from './transfers/TransfersOffersTab';
 import { TransfersSquadTab } from './transfers/TransfersSquadTab';
-import { ClubChatMessage } from './transfers/ClubNegotiationModal';
-import { AgentChatMessage } from './transfers/ContractNegotiationModal';
-import { TransferNegotiationSuite } from './transfers/TransferNegotiationSuite';
+import { TransferNegotiationModal } from './transfers/TransferNegotiationModal';
 import { CounterOfferModal } from './transfers/CounterOfferModal';
 
 interface TransfersScreenProps {
@@ -63,33 +53,15 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
     // Navigation & Tabs
     const [activeTab, setActiveTab] = useState<MarketTab>('MARKET');
 
-    // Filters
+    // Filters for Market Tab
     const [filterName, setFilterName] = useState('');
     const [filterPos, setFilterPos] = useState<'ALL' | Player['position']>('ALL');
     const [filterCategory, setFilterCategory] = useState<CategoryFilter>('ALL');
     const [sortOption, setSortOption] = useState<SortOption>('rating');
     const [currentPage, setCurrentPage] = useState(1);
 
-    // --- 2-PHASE NEGOTIATION STATE ---
+    // Active Negotiation Modal
     const [negotiatingPlayer, setNegotiatingPlayer] = useState<Player | null>(null);
-    const [negotiationPhase, setNegotiationPhase] = useState<'CLUB' | 'CONTRACT'>('CLUB');
-    
-    // Phase 1: Club
-    const [clubOfferFee, setClubOfferFee] = useState<number>(0);
-    const [clubChatHistory, setClubChatHistory] = useState<ClubChatMessage[]>([]);
-    const [isClubNegotiating, setIsClubNegotiating] = useState(false);
-    const [clubAttempts, setClubAttempts] = useState(0);
-    const [agreedFee, setAgreedFee] = useState<number | null>(null);
-
-    // Phase 2: Player & Agent Contract
-    const [offeredWage, setOfferedWage] = useState<number>(0);
-    const [offeredYears, setOfferedYears] = useState<number>(3);
-    const [offeredRole, setOfferedRole] = useState<SquadRole>('FirstTeam');
-    const [offeredBonus, setOfferedBonus] = useState<number>(0);
-    const [agentChatHistory, setAgentChatHistory] = useState<AgentChatMessage[]>([]);
-    const [isAgentNegotiating, setIsAgentNegotiating] = useState(false);
-    const [isContractAgreed, setIsContractAgreed] = useState(false);
-    const [isNegotiationDead, setIsNegotiationDead] = useState(false);
 
     // Incoming offers counter-offer modal
     const [counterOfferModal, setCounterOfferModal] = useState<{ offer: Offer; player: Player; buyer: any } | null>(null);
@@ -97,25 +69,13 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
     const [isEvaluatingCounter, setIsEvaluatingCounter] = useState(false);
 
     // Financial normalization
-    const normBudget = useMemo(() => {
-        if (finances.transferBudget && finances.transferBudget < 10_000) {
-            return finances.transferBudget * 1_000_000;
-        }
-        return finances.transferBudget || 0;
-    }, [finances.transferBudget]);
-
-    const normBalance = useMemo(() => {
-        if (finances.balance && finances.balance < 10_000) {
-            return finances.balance * 1_000_000;
-        }
-        return finances.balance || 0;
-    }, [finances.balance]);
+    const normBudget = useMemo(() => normalizeMonetaryValue(finances.transferBudget, 0), [finances.transferBudget]);
+    const normBalance = useMemo(() => normalizeMonetaryValue(finances.balance, 0), [finances.balance]);
 
     // Presidential Budget Reallocation Modal
     const [showBudgetModal, setShowBudgetModal] = useState(false);
     const [newBudgetDraft, setNewBudgetDraft] = useState(normBudget);
 
-    // Keep draft synced when modal opens or budget changes
     useEffect(() => {
         if (!showBudgetModal) {
             setNewBudgetDraft(normBudget);
@@ -125,7 +85,7 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
     // O(1) teams index map
     const teamsById = useMemo(() => new Map(allTeams.map(t => [t.id, t])), [allTeams]);
 
-    // Fast indexed computation of available players and player-to-team map in a single pass
+    // Fast indexed computation of available players and player-to-team map
     const { availablePlayers, playerTeamMap } = useMemo(() => {
         const mySquadIds = new Set(myTeam.squad.map(mp => mp.id));
         const playersList: Player[] = [];
@@ -143,153 +103,45 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
         return { availablePlayers: playersList, playerTeamMap: pTeamMap };
     }, [allTeams, myTeam.id, myTeam.squad]);
 
-    // --- PHASE 1: START NEGOTIATION WITH CLUB ---
+    // Start Negotiation
     const startNegotiation = (player: Player) => {
-        const normValue = player.value && player.value < 10_000 ? player.value * 1_000_000 : (player.value || 1_000_000);
-        const playerToNegotiate = { ...player, value: normValue };
-        setNegotiatingPlayer(playerToNegotiate);
-        setNegotiationPhase('CLUB');
-        setClubOfferFee(normValue);
-        setClubChatHistory([
-            { sender: 'system', text: `Iniciando conversaciones con el club propietario por el traspaso de ${player.name}.` }
-        ]);
-        setClubAttempts(0);
-        setAgreedFee(null);
-
-        // Reset phase 2 defaults
-        const expWage = getExpectedWage(playerToNegotiate, myTeam.tier, 'FirstTeam');
-        setOfferedWage(expWage);
-        setOfferedYears(3);
-        setOfferedRole('FirstTeam');
-        setOfferedBonus(0);
-        setAgentChatHistory([]);
-        setIsContractAgreed(false);
-        setIsNegotiationDead(false);
+        const normValue = normalizeMonetaryValue(player.value, 1_000_000);
+        setNegotiatingPlayer({ ...player, value: normValue });
     };
 
-    const handleSendClubOffer = async () => {
-        if (!negotiatingPlayer) return;
-        setIsClubNegotiating(true);
-        const sellingTeam = playerTeamMap.get(negotiatingPlayer.id) || allTeams[0];
-        
-        const newAttempts = clubAttempts + 1;
-        setClubAttempts(newAttempts);
-        setClubChatHistory(prev => [...prev, { sender: 'user', text: `Oferta formal de traspaso: ${formatCurrency(clubOfferFee)}` }]);
-        
-        const response = await generateTransferNegotiationResponse(negotiatingPlayer, clubOfferFee, myTeam, sellingTeam, newAttempts);
-        
-        if (response.decision === 'accepted') {
-            setAgreedFee(clubOfferFee);
-            setClubChatHistory(prev => [
-                ...prev, 
-                { sender: 'rival', text: response.message },
-                { sender: 'system', text: `Acuerdo económico alcanzado con el club (${formatCurrency(clubOfferFee)}). Pasando a negociar el contrato del jugador.` }
-            ]);
-            setTimeout(() => {
-                setNegotiationPhase('CONTRACT');
-                setAgentChatHistory([
-                    { sender: 'system', text: `Reunión con el agente de ${negotiatingPlayer.name}. Define el salario, años de contrato y rol en la plantilla.` }
-                ]);
-            }, 1200);
-        } else if (response.decision === 'rejected') {
-            setIsNegotiationDead(true);
-            setClubChatHistory(prev => [
-                ...prev, 
-                { sender: 'rival', text: response.message },
-                { sender: 'system', text: `Las negociaciones se han roto definitivamente.` }
-            ]);
-        } else {
-            if (response.counterOffer) {
-                setClubOfferFee(response.counterOffer);
-            }
-            setClubChatHistory(prev => [
-                ...prev, 
-                { sender: 'rival', text: response.message, counter: response.counterOffer }
-            ]);
-        }
-        setIsClubNegotiating(false);
-    };
+    // Finalize Signing from Negotiation Modal
+    const handleFinalizeSigning = (payload: {
+        player: Player;
+        fee: number;
+        wage: number;
+        contractYears: number;
+        role: SquadRole;
+        signingBonus: number;
+    }) => {
+        const totalCashNeeded = payload.fee + payload.signingBonus;
 
-    // --- PHASE 2: NEGOTIATE WITH AGENT ---
-    const handleSendAgentOffer = async () => {
-        if (!negotiatingPlayer) return;
-        setIsAgentNegotiating(true);
-
-        setAgentChatHistory(prev => [
-            ...prev,
-            { 
-                sender: 'user', 
-                text: `Propuesta de contrato: ${formatWeeklyWage(offeredWage)}, ${offeredYears} años, Rol: ${
-                    offeredRole === 'Key' ? 'Jugador Clave' : offeredRole === 'FirstTeam' ? 'Titular' : offeredRole === 'Rotation' ? 'Rotación' : 'Promesa'
-                }${offeredBonus > 0 ? `, Prima: ${formatCurrency(offeredBonus * 1_000_000)}` : ''}` 
-            }
-        ]);
-
-        const response = await generatePlayerContractNegotiationResponse(
-            negotiatingPlayer,
-            offeredWage,
-            offeredYears,
-            offeredRole,
-            offeredBonus,
-            myTeam
-        );
-
-        if (response.decision === 'accepted') {
-            setIsContractAgreed(true);
-            setAgentChatHistory(prev => [
-                ...prev,
-                { sender: 'agent', text: response.message },
-                { sender: 'system', text: 'Acuerdo contractual alcanzado. Listo para formalizar el fichaje.' }
-            ]);
-        } else if (response.decision === 'rejected') {
-            setIsNegotiationDead(true);
-            setAgentChatHistory(prev => [
-                ...prev,
-                { sender: 'agent', text: response.message },
-                { sender: 'system', text: 'El jugador ha rechazado la propuesta y su agente da por concluidas las negociaciones.' }
-            ]);
-        } else {
-            if (response.counterOffer) {
-                setOfferedWage(response.counterOffer.wage);
-                setOfferedYears(response.counterOffer.contractYears);
-                setOfferedRole(response.counterOffer.role);
-                setOfferedBonus(response.counterOffer.signingBonus);
-            }
-            setAgentChatHistory(prev => [
-                ...prev,
-                { sender: 'agent', text: response.message }
-            ]);
-        }
-        setIsAgentNegotiating(false);
-    };
-
-    const handleFinalizeSigning = () => {
-        if (!negotiatingPlayer || agreedFee === null) return;
-        const rawBonus = normalizeMonetaryValue(offeredBonus, 0);
-        const totalInitialOutlay = agreedFee + rawBonus;
-
-        if (totalInitialOutlay > normBalance) {
-            showToast("El saldo total en tesorería del club no cubre el desembolso de la operación.", 'error');
+        if (totalCashNeeded > normBalance) {
+            showToast("El saldo total en tesorería del club no cubre el desembolso inicial de la operación.", 'error');
             return;
         }
 
         dispatch({
             type: 'SIGN_PLAYER',
             payload: {
-                player: negotiatingPlayer,
-                fee: agreedFee,
-                wage: offeredWage,
-                contractYears: offeredYears,
-                role: offeredRole,
-                signingBonus: rawBonus
+                player: payload.player,
+                fee: payload.fee,
+                wage: payload.wage,
+                contractYears: payload.contractYears,
+                role: payload.role,
+                signingBonus: payload.signingBonus
             }
         });
 
-        showToast(`¡${negotiatingPlayer.name} ha firmado oficialmente con el club!`, 'success');
+        showToast(`¡${payload.player.name} ha firmado oficialmente con el club!`, 'success');
         setNegotiatingPlayer(null);
     };
 
-    // --- INCOMING OFFERS ACTIONS ---
+    // Incoming Offers Handlers
     const handleAcceptIncomingOffer = (offer: Offer) => {
         const player = myTeam.squad.find(p => p.id === offer.playerId);
         const offeringTeam = teamsById.get(offer.offeringTeamId);
@@ -306,7 +158,8 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
         const player = myTeam.squad.find(p => p.id === offer.playerId)!;
         const buyer = teamsById.get(offer.offeringTeamId) || allTeams[0];
         setCounterOfferModal({ offer, player, buyer });
-        setCounterValue(Math.round(offer.offerValue * 1.25 * 10) / 10);
+        const initialOffer = normalizeMonetaryValue(offer.offerValue);
+        setCounterValue(Math.round((initialOffer * 1.25) / 100_000) * 100_000);
     };
 
     const handleSendCounterToBuyer = async () => {
@@ -329,7 +182,7 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
             showToast(`El ${buyer.name} rompió las negociaciones y retiró la oferta.`, 'warning');
             setCounterOfferModal(null);
         } else {
-            const newFee = result.newOfferValue || Math.round((offer.offerValue + counterValue) / 2 * 10) / 10;
+            const newFee = result.newOfferValue || Math.round((offer.offerValue + counterValue) / 2);
             dispatch({
                 type: 'UPDATE_OFFER',
                 payload: { ...offer, offerValue: newFee, status: 'negotiating', message: result.message }
@@ -343,84 +196,83 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
     const nextWindow = getNextTransferWindow(gameState.currentWeek);
 
     return (
-        <div className="p-4 md:p-6 space-y-6 pb-24 animate-fade-in">
-            {/* Top Bar / Header Compacto & Limpio */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-[#0E131F] border border-white/10 p-3.5 sm:p-4 rounded-2xl shadow-xl">
-                {/* Título & Badge de Mercado */}
+        <div className="p-3 sm:p-5 md:p-6 space-y-4 sm:space-y-5 pb-24 animate-fade-in select-none">
+            {/* 1. TOP PRESIDENTIAL BAR (Clean, Compact, Informative) */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-[#0B0F19] border border-white/10 p-3.5 sm:p-4 rounded-2xl shadow-xl">
+                {/* Title & Market Window Status */}
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/5 border border-amber-500/30 flex items-center justify-center shrink-0 shadow-inner">
+                    <div className="w-10 h-10 rounded-xl bg-[var(--apex-gold)]/10 border border-[var(--apex-gold)]/30 flex items-center justify-center shrink-0">
                         <Users className="w-5 h-5 text-[var(--apex-gold)]" />
                     </div>
                     <div>
                         <div className="flex items-center gap-2">
-                            <h1 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight">Mercado de Fichajes</h1>
+                            <h1 className="text-base sm:text-lg font-black text-white uppercase tracking-tight">Mercado de Fichajes</h1>
                             {marketOpen ? (
                                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                                    Abierto
+                                    Ventana Abierta
                                 </span>
                             ) : (
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-red-500/15 text-red-400 border border-red-500/30">
-                                    <Clock className="w-3 h-3 text-red-400" />
-                                    Cerrado
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                                    <Clock className="w-3 h-3 text-rose-400" />
+                                    Cerrado (Abre: {nextWindow})
                                 </span>
                             )}
                         </div>
-                        <p className="text-[11px] text-white/50 font-medium">Contrata futbolistas, gestiona ventas y negocia contratos</p>
+                        <p className="text-[11px] text-slate-400 font-medium">Contrataciones, venta de futbolistas y gestión de contratos</p>
                     </div>
                 </div>
 
-                {/* Panel Financiero Compacto */}
-                <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-6 bg-black/40 border border-white/10 px-3.5 py-2 rounded-xl text-xs">
+                {/* Financial Overview & Budget Reallocation */}
+                <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-5 bg-black/40 border border-white/10 px-3.5 py-2 rounded-xl text-xs">
                     <div>
-                        <p className="text-[9px] text-white/50 font-bold uppercase tracking-wider">Tesorería</p>
-                        <p className="text-sm font-black text-emerald-400">{formatTransferFee(normBalance)}</p>
+                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Tesorería</span>
+                        <span className="text-xs sm:text-sm font-black text-emerald-400">{formatTransferFee(normBalance)}</span>
                     </div>
-                    <div className="w-px h-6 bg-white/10" />
+                    <div className="w-px h-5 bg-white/10" />
                     <div>
-                        <p className="text-[9px] text-white/50 font-bold uppercase tracking-wider">Presupuesto Fichajes</p>
+                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Presupuesto Fichajes</span>
                         <div className="flex items-center gap-1.5">
-                            <p className="text-sm font-black text-[var(--apex-gold)]">{formatTransferFee(normBudget)}</p>
+                            <span className="text-xs sm:text-sm font-black text-[var(--apex-gold)]">{formatTransferFee(normBudget)}</span>
                             <button
                                 onClick={() => {
                                     setNewBudgetDraft(normBudget);
                                     setShowBudgetModal(true);
                                 }}
-                                className="px-1.5 py-0.5 rounded bg-white/5 hover:bg-white/15 border border-white/10 text-[9px] font-bold text-white/80 hover:text-[var(--apex-gold)] transition-all cursor-pointer flex items-center gap-1"
-                                title="Ajustar Presupuesto de Fichajes"
+                                className="p-1 rounded bg-white/5 hover:bg-white/15 text-slate-400 hover:text-[var(--apex-gold)] transition-colors cursor-pointer"
+                                title="Ajustar asignación de presupuesto"
                             >
-                                <Sliders className="w-2.5 h-2.5" />
-                                <span>Ajustar</span>
+                                <Sliders className="w-3 h-3" />
                             </button>
                         </div>
                     </div>
-                    <div className="w-px h-6 bg-white/10" />
+                    <div className="w-px h-5 bg-white/10" />
                     <div>
-                        <p className="text-[9px] text-white/50 font-bold uppercase tracking-wider">Masa Salarial</p>
-                        <p className="text-sm font-black text-white">{formatWeeklyWage(finances.weeklyWages)}</p>
+                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Masa Salarial</span>
+                        <span className="text-xs sm:text-sm font-black text-white">{formatWeeklyWage(finances.weeklyWages)}</span>
                     </div>
                 </div>
             </div>
 
-            {/* Pestañas Principales (Segmented Control Moderno) */}
-            <div className="flex items-center gap-1 bg-black/40 p-1 rounded-xl border border-white/10 overflow-x-auto custom-scrollbar">
+            {/* 2. SEGMENTED TABS */}
+            <div className="flex items-center gap-1.5 bg-black/40 p-1 rounded-xl border border-white/10 overflow-x-auto">
                 <button
                     onClick={() => setActiveTab('MARKET')}
                     className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer ${
                         activeTab === 'MARKET' 
                             ? 'bg-[var(--apex-gold)] text-slate-950 shadow-md font-black' 
-                            : 'text-white/60 hover:text-white'
+                            : 'text-slate-400 hover:text-white'
                     }`}
                 >
                     <Users className="w-3.5 h-3.5" />
-                    <span>Explorar Mercado</span>
+                    <span>Explorar Mercado ({availablePlayers.length})</span>
                 </button>
                 <button
                     onClick={() => setActiveTab('MY_SQUAD')}
                     className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer ${
                         activeTab === 'MY_SQUAD' 
                             ? 'bg-[var(--apex-gold)] text-slate-950 shadow-md font-black' 
-                            : 'text-white/60 hover:text-white'
+                            : 'text-slate-400 hover:text-white'
                     }`}
                 >
                     <Tag className="w-3.5 h-3.5" />
@@ -436,33 +288,20 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
                     className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 relative cursor-pointer ${
                         activeTab === 'OFFERS' 
                             ? 'bg-[var(--apex-gold)] text-slate-950 shadow-md font-black' 
-                            : 'text-white/60 hover:text-white'
+                            : 'text-slate-400 hover:text-white'
                     }`}
                 >
                     <Inbox className="w-3.5 h-3.5" />
                     <span>Ofertas Recibidas</span>
                     {incomingOffers.length > 0 && (
-                        <span className="w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center animate-pulse">
+                        <span className="w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center animate-pulse">
                             {incomingOffers.length}
                         </span>
                     )}
                 </button>
             </div>
 
-            {/* Aviso solo cuando el mercado está CERRADO */}
-            {!marketOpen && (
-                <div className="bg-slate-900/60 border border-red-500/30 rounded-2xl p-4 flex items-center gap-3 animate-fade-in backdrop-blur-md">
-                    <div className="w-9 h-9 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center justify-center shrink-0">
-                        <Clock className="w-4 h-4 text-red-400" />
-                    </div>
-                    <div>
-                        <h3 className="text-red-400 font-black uppercase tracking-wider text-xs">Mercado de Traspasos Cerrado</h3>
-                        <p className="text-slate-400 text-xs">Próxima apertura oficial: <span className="text-white font-bold">{nextWindow}</span>. No es posible fichar en este periodo.</p>
-                    </div>
-                </div>
-            )}
-
-            {/* TAB 1: MARKET */}
+            {/* 3. ACTIVE TAB CONTENT */}
             {activeTab === 'MARKET' && (
                 <TransfersMarketTab 
                     gameState={gameState}
@@ -486,7 +325,6 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
                 />
             )}
 
-            {/* TAB 2: MY SQUAD / SELL */}
             {activeTab === 'MY_SQUAD' && (
                 <TransfersSquadTab 
                     gameState={gameState}
@@ -496,7 +334,6 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
                 />
             )}
 
-            {/* TAB 3: OFFERS */}
             {activeTab === 'OFFERS' && (
                 <TransfersOffersTab 
                     incomingOffers={incomingOffers}
@@ -508,42 +345,20 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
                 />
             )}
 
-            {/* FULL-SCREEN IMMERSIVE NEGOTIATION SUITE */}
+            {/* 4. CLEAN PRESIDENTIAL NEGOTIATION MODAL */}
             {negotiatingPlayer && (
-                <TransferNegotiationSuite 
+                <TransferNegotiationModal 
                     negotiatingPlayer={negotiatingPlayer}
-                    sellingTeam={allTeams.find(t => t.squad.some(p => p.id === negotiatingPlayer.id))}
+                    sellingTeam={playerTeamMap.get(negotiatingPlayer.id) || allTeams.find(t => t.squad.some(p => p.id === negotiatingPlayer.id))}
                     myTeam={myTeam}
-                    transferBudget={finances.transferBudget && finances.transferBudget < 10_000 ? finances.transferBudget * 1_000_000 : finances.transferBudget}
-                    clubBalance={finances.balance && finances.balance < 10_000 ? finances.balance * 1_000_000 : finances.balance}
-                    negotiationPhase={negotiationPhase}
-                    clubOfferFee={clubOfferFee}
-                    setClubOfferFee={setClubOfferFee}
-                    clubChatHistory={clubChatHistory}
-                    clubAttempts={clubAttempts}
-                    isClubNegotiating={isClubNegotiating}
-                    agreedFee={agreedFee}
-                    onSendClubOffer={handleSendClubOffer}
-                    onProceedToContract={() => setNegotiationPhase('CONTRACT')}
-                    offeredWage={offeredWage}
-                    setOfferedWage={setOfferedWage}
-                    offeredYears={offeredYears}
-                    setOfferedYears={setOfferedYears}
-                    offeredRole={offeredRole}
-                    setOfferedRole={setOfferedRole}
-                    offeredBonus={offeredBonus}
-                    setOfferedBonus={setOfferedBonus}
-                    agentChatHistory={agentChatHistory}
-                    isAgentNegotiating={isAgentNegotiating}
-                    isContractAgreed={isContractAgreed}
-                    onSendAgentOffer={handleSendAgentOffer}
+                    transferBudget={normBudget}
+                    clubBalance={normBalance}
                     onFinalizeSigning={handleFinalizeSigning}
-                    isNegotiationDead={isNegotiationDead}
                     onClose={() => setNegotiatingPlayer(null)}
                 />
             )}
 
-            {/* COUNTER-OFFER MODAL */}
+            {/* 5. COUNTER-OFFER MODAL */}
             {counterOfferModal && (
                 <CounterOfferModal 
                     data={counterOfferModal}
@@ -555,10 +370,10 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
                 />
             )}
 
-            {/* PRESIDENTIAL BUDGET ALLOCATION MODAL */}
+            {/* 6. PRESIDENTIAL BUDGET ALLOCATION MODAL */}
             {showBudgetModal && (
                 <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
-                    <div className="w-full max-w-lg bg-[#0D121F] border border-white/15 rounded-3xl p-6 shadow-2xl space-y-6">
+                    <div className="w-full max-w-lg bg-[#0D121F] border border-white/15 rounded-3xl p-6 shadow-2xl space-y-5">
                         <div className="flex items-center justify-between pb-3 border-b border-white/10">
                             <div className="flex items-center gap-2.5">
                                 <div className="w-9 h-9 rounded-xl bg-[var(--apex-gold)]/10 border border-[var(--apex-gold)]/30 flex items-center justify-center text-[var(--apex-gold)]">
@@ -566,34 +381,34 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
                                 </div>
                                 <div>
                                     <h3 className="text-sm font-black text-white uppercase tracking-wider">Asignación Presidencial de Fondos</h3>
-                                    <p className="text-[11px] text-white/50">Ajusta el presupuesto destinado a traspasos con cargo a tesorería</p>
+                                    <p className="text-[11px] text-slate-400">Ajusta el presupuesto destinado a traspasos con cargo a tesorería</p>
                                 </div>
                             </div>
                             <button
                                 onClick={() => setShowBudgetModal(false)}
-                                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/60 hover:text-white cursor-pointer"
+                                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white cursor-pointer"
                             >
                                 <X className="w-4 h-4" />
                             </button>
                         </div>
 
-                        {/* Financial balance status */}
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10">
-                                <span className="text-[10px] font-bold text-white/40 uppercase block">Saldo Total en Tesorería</span>
-                                <span className="text-base font-black text-emerald-400">{formatCurrency(normBalance)}</span>
+                        {/* Balance status */}
+                        <div className="grid grid-cols-2 gap-3 text-center">
+                            <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/10">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase block">Saldo en Tesorería</span>
+                                <span className="text-sm font-black text-emerald-400">{formatCurrency(normBalance)}</span>
                             </div>
-                            <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10">
-                                <span className="text-[10px] font-bold text-white/40 uppercase block">Presupuesto Fichajes Actual</span>
-                                <span className="text-base font-black text-[var(--apex-gold)]">{formatCurrency(normBudget)}</span>
+                            <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/10">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase block">Presupuesto Actual</span>
+                                <span className="text-sm font-black text-[var(--apex-gold)]">{formatCurrency(normBudget)}</span>
                             </div>
                         </div>
 
                         {/* Slider & Presets */}
-                        <div className="space-y-4 p-4 rounded-2xl bg-black/40 border border-white/10">
+                        <div className="space-y-3 p-4 rounded-2xl bg-black/40 border border-white/10">
                             <div className="flex items-center justify-between">
-                                <span className="text-xs font-bold text-white/70">Nuevo Presupuesto Asignado:</span>
-                                <span className="text-lg font-black text-[var(--apex-gold)]">{formatCurrency(newBudgetDraft)}</span>
+                                <span className="text-xs font-bold text-slate-300">Nuevo Presupuesto Asignado:</span>
+                                <span className="text-base font-black text-[var(--apex-gold)]">{formatCurrency(newBudgetDraft)}</span>
                             </div>
 
                             <input
@@ -617,7 +432,7 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
                                         key={p.label}
                                         type="button"
                                         onClick={() => setNewBudgetDraft(Math.round(normBalance * p.factor))}
-                                        className="py-1.5 px-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-bold text-white/80 border border-white/5 cursor-pointer active:scale-95"
+                                        className="py-1.5 px-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-bold text-slate-300 border border-white/5 cursor-pointer active:scale-95 transition-all"
                                     >
                                         {p.label}
                                     </button>
@@ -625,15 +440,11 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
                             </div>
                         </div>
 
-                        <p className="text-[11px] text-white/40 leading-relaxed">
-                            💡 Como Presidente del club, tienes potestad plena para destinar reservas de caja al mercado de fichajes para acometer contrataciones galácticas.
-                        </p>
-
                         <div className="flex items-center gap-3 pt-2">
                             <button
                                 type="button"
                                 onClick={() => setShowBudgetModal(false)}
-                                className="flex-1 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white font-bold text-xs uppercase cursor-pointer"
+                                className="flex-1 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white font-bold text-xs uppercase cursor-pointer"
                             >
                                 Cancelar
                             </button>
@@ -650,7 +461,7 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
                                     showToast(`Presupuesto de traspasos establecido en ${formatCurrency(newBudgetDraft)}`, 'success');
                                     setShowBudgetModal(false);
                                 }}
-                                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[var(--apex-gold)] to-amber-500 hover:brightness-110 text-black font-black text-xs uppercase tracking-wider cursor-pointer shadow-lg shadow-[var(--apex-gold)]/20 active:scale-98"
+                                className="flex-1 py-3 rounded-xl bg-[var(--apex-gold)] hover:bg-yellow-400 text-slate-950 font-black text-xs uppercase tracking-wider cursor-pointer shadow-lg shadow-[var(--apex-gold)]/20 active:scale-98 transition-all"
                             >
                                 Confirmar Presupuesto
                             </button>

@@ -2,7 +2,7 @@ import React from 'react';
 import { Player, Offer, Team } from '../../../types';
 import { LoadingSpinner } from '../../icons';
 import { Modal } from '../../ui/Modal';
-import { formatTransferFee } from '../../../utils';
+import { formatTransferFee, normalizeMonetaryValue } from '../../../utils';
 
 interface CounterOfferModalProps {
     data: { offer: Offer; player: Player; buyer: Team };
@@ -21,7 +21,13 @@ export const CounterOfferModal: React.FC<CounterOfferModalProps> = ({
     onSendCounterToBuyer,
     onClose,
 }) => {
+    const rawInitialOffer = normalizeMonetaryValue(data.offer.offerValue);
     const displayMillions = Number((counterValue / 1_000_000).toFixed(2));
+
+    const setPercentageAbove = (percent: number) => {
+        const calculated = Math.round((rawInitialOffer * (1 + percent / 100)) / 100_000) * 100_000;
+        setCounterValue(calculated);
+    };
 
     return (
         <Modal 
@@ -34,8 +40,27 @@ export const CounterOfferModal: React.FC<CounterOfferModalProps> = ({
                         El <strong className="text-white">{data.buyer.name}</strong> ofreció inicialmente <strong className="text-emerald-400">{formatTransferFee(data.offer.offerValue)}</strong> por {data.player.name}.
                     </p>
                     <p className="text-[11px] text-white/50">
-                        Introduce la cantidad que exigirías para aceptar el traspaso inmediato.
+                        Selecciona un incremento porcentual o introduce la cantidad exacta requerida para aceptar la venta.
                     </p>
+                </div>
+
+                {/* Quick Presets */}
+                <div className="grid grid-cols-4 gap-1.5">
+                    {[
+                        { label: '+10%', val: 10 },
+                        { label: '+20%', val: 20 },
+                        { label: '+35%', val: 35 },
+                        { label: '+50%', val: 50 },
+                    ].map(p => (
+                        <button
+                            key={p.label}
+                            type="button"
+                            onClick={() => setPercentageAbove(p.val)}
+                            className="py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-300 border border-white/5 cursor-pointer active:scale-95 transition-all"
+                        >
+                            {p.label}
+                        </button>
+                    ))}
                 </div>
 
                 <div className="space-y-1">
@@ -60,14 +85,14 @@ export const CounterOfferModal: React.FC<CounterOfferModalProps> = ({
                 <div className="flex gap-2 pt-2">
                     <button
                         onClick={onClose}
-                        className="flex-1 py-3 rounded-xl bg-white/5 text-white/70 hover:bg-white/10 font-bold text-xs uppercase tracking-wider"
+                        className="flex-1 py-3 rounded-xl bg-white/5 text-white/70 hover:bg-white/10 font-bold text-xs uppercase tracking-wider cursor-pointer"
                     >
                         Cancelar
                     </button>
                     <button
                         onClick={onSendCounterToBuyer}
                         disabled={isEvaluatingCounter || counterValue <= 0}
-                        className="flex-1 py-3 rounded-xl bg-[var(--apex-gold)] hover:bg-yellow-400 text-black font-black text-xs uppercase tracking-wider disabled:opacity-40 flex items-center justify-center cursor-pointer"
+                        className="flex-1 py-3 rounded-xl bg-[var(--apex-gold)] hover:bg-yellow-400 text-black font-black text-xs uppercase tracking-wider disabled:opacity-40 flex items-center justify-center cursor-pointer shadow-md transition-all active:scale-98"
                     >
                         {isEvaluatingCounter ? <LoadingSpinner /> : `ENVIAR (${formatTransferFee(counterValue)})`}
                     </button>

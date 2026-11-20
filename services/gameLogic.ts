@@ -199,6 +199,22 @@ export const evaluateElectionPitch = async (pitch: string, team: Team, player: P
 }
 
 import { getSportingDirectorEffect } from './staffService';
+
+export const getEstimatedClubDemand = (player: Player, buyingTeam: Team): number => {
+    const value = normalizeMonetaryValue(player.value);
+    const { transferDiscountPct: discountPct } = getSportingDirectorEffect(buyingTeam.clubStaff?.sportingDirector);
+    const discountMultiplier = 1 - (discountPct / 100);
+
+    let demandMultiplier = 1.15;
+    if (player.isTransferListed) demandMultiplier -= 0.15;
+    if (player.contractYears <= 1) demandMultiplier -= 0.20;
+    if (player.age >= 32) demandMultiplier -= 0.10;
+    if (player.age <= 21 && (player.potential ?? 75) >= 84) demandMultiplier += 0.15;
+
+    demandMultiplier = Math.max(0.70, demandMultiplier * discountMultiplier);
+    return Math.round((value * demandMultiplier) / 100_000) * 100_000;
+};
+
 export const generateTransferNegotiationResponse = async (player: Player, offer: number, buyingTeam: Team, sellingTeam: Team, attempts: number = 0): Promise<NegotiationResponse> => {
     // 0. Prestigio Continental: Estrellas de élite europea (rating >= 83) rechazan fichar por ligas sudamericanas
     const isEuropeanEliteLeague = [
@@ -239,45 +255,31 @@ export const generateTransferNegotiationResponse = async (player: Player, offer:
     if (attempts >= 3) {
         return {
             decision: 'rejected',
-            message: `La directiva ha perdido la paciencia. Vuestras ofertas previas no demuestran un interés serio. Damos por concluidas las negociaciones por ${player.name}.`
+            message: `La directiva de ${sellingTeam.name} ha perdido la paciencia tras varias propuestas insatisfactorias. Damos por concluidas las negociaciones por ${player.name}.`
         };
     }
 
-    // Lógica básica de negociación
-    const value = player.value;
-    const ratio = offer / value;
+    const value = normalizeMonetaryValue(player.value);
+    const normOffer = normalizeMonetaryValue(offer);
+    const targetFee = getEstimatedClubDemand(player, buyingTeam);
+    const minAcceptFee = Math.round((targetFee * 0.95) / 100_000) * 100_000;
+    const rejectThreshold = Math.round((targetFee * 0.60) / 100_000) * 100_000;
 
-    // Factores aleatorios (Podría expandirse para basarse en rivalidad o finanzas)
-    const patience = Math.random(); 
-    const greed = Math.random();
-
-    // 3. Influencia del Director Deportivo en las exigencias del club vendedor
-    const { transferDiscountPct: discountPct } = getSportingDirectorEffect(buyingTeam.clubStaff?.sportingDirector);
-    const discountMultiplier = 1 - (discountPct / 100);
-
-    // Umbrales (el Director Deportivo reduce las pretensiones económicas del vendedor)
-    const acceptThreshold = (1.15 + (greed * 0.25) - (patience * 0.15)) * discountMultiplier;
-    const rejectThreshold = (0.75 - (greed * 0.1)) * discountMultiplier;
-
-    if (ratio >= acceptThreshold) {
+    if (normOffer >= minAcceptFee) {
         return {
             decision: 'accepted',
-            message: NEGOTIATION_ACCEPTED_MESSAGES[Math.floor(Math.random() * NEGOTIATION_ACCEPTED_MESSAGES.length)]
+            message: `El ${sellingTeam.name} ha aceptado vuestra propuesta de ${formatCurrency(normOffer)} por el traspaso de ${player.name}. ¡Autorizan iniciar el acuerdo contractual!`
         };
-    } else if (ratio <= rejectThreshold) {
+    } else if (normOffer < rejectThreshold) {
         return {
             decision: 'rejected',
-            message: NEGOTIATION_REJECTED_MESSAGES[Math.floor(Math.random() * NEGOTIATION_REJECTED_MESSAGES.length)]
+            message: `La directiva del ${sellingTeam.name} considera que ${formatCurrency(normOffer)} es una oferta insuficiente y ofensiva. Han decidido romper las negociaciones.`
         };
     } else {
-        // Counter offer: Promedio entre oferta y target
-        const target = value * acceptThreshold;
-        const counterAmount = Math.round((offer + target) / 2 * 10) / 10; 
-
         return {
             decision: 'counter',
-            message: NEGOTIATION_COUNTER_MESSAGES[Math.floor(Math.random() * NEGOTIATION_COUNTER_MESSAGES.length)](counterAmount),
-            counterOffer: counterAmount
+            message: `El ${sellingTeam.name} no acepta ${formatCurrency(normOffer)}, pero está dispuesto a cerrar el traspaso si eleváis la propuesta a ${formatCurrency(targetFee)}.`,
+            counterOffer: targetFee
         };
     }
 };
@@ -308,7 +310,9 @@ export const generatePlayerContractNegotiationResponse = async (
     }
 
     const expectedWage = getExpectedWage(player, buyingTeam.tier, role);
-    const wageRatio = wageOffer / Math.max(1, expectedWage);
+    const normWage = Math.max(1, wageOffer);
+    const normBonus = normalizeMonetaryValue(signingBonus, 0);
+    const wageRatio = normWage / Math.max(1, expectedWage);
     
     // Rol incompatible para jugadores de alta valoración
     if (player.rating >= 82 && (role === 'Prospect' || (player.rating >= 86 && role === 'Rotation'))) {
@@ -321,29 +325,25 @@ export const generatePlayerContractNegotiationResponse = async (
     // Evaluación económica
     const sportingDirector = buyingTeam.clubStaff?.sportingDirector;
     const directorWageHelp = sportingDirector && sportingDirector.power >= 75 ? 0.05 : 0;
-    const hasGoodBonus = signingBonus >= (expectedWage * 15) / 1000000;
-    if (wageRatio >= (1.02 - directorWageHelp) || (wageRatio >= (0.94 - directorWageHelp) && hasGoodBonus)) {
-        const acceptMessages = [
-            `Las condiciones contractuales satisfacen plenamente a ${player.name}. ¡Estamos listos para estampar la firma!`,
-            `Acuerdo total entre las partes. ${player.name} vestirá con orgullo la camiseta del ${buyingTeam.name}.`,
-            `Trato formal cerrado. El contrato por ${contractYears} año${contractYears > 1 ? 's' : ''} y ${formatWeeklyWage(wageOffer)}/sem queda sellado.`
-        ];
+    const hasGoodBonus = normBonus >= (expectedWage * 10);
+
+    if (wageRatio >= (1.0 - directorWageHelp) || (wageRatio >= (0.90 - directorWageHelp) && hasGoodBonus)) {
         return {
             decision: 'accepted',
-            message: acceptMessages[Math.floor(Math.random() * acceptMessages.length)]
+            message: `¡Trato hecho! Las condiciones contractuales (${formatWeeklyWage(normWage)} por ${contractYears} año${contractYears > 1 ? 's' : ''}) satisfacen plenamente a ${player.name}. ¡Listos para firmar!`
         };
-    } else if (wageRatio < 0.72) {
+    } else if (wageRatio < 0.70) {
         return {
             decision: 'rejected',
-            message: `La propuesta salarial de ${formatWeeklyWage(wageOffer)} semanales está muy por debajo de lo que merece ${player.name}. No podemos continuar las negociaciones.`
+            message: `La propuesta salarial de ${formatWeeklyWage(normWage)} semanales está muy por debajo de las pretensiones de ${player.name}. El representante da por rotas las negociaciones.`
         };
     } else {
-        const targetWage = Math.round((expectedWage * (1.03 + Math.random() * 0.07)) / 500) * 500;
+        const targetWage = Math.round((expectedWage * 1.05) / 500) * 500;
         const targetYears = contractYears < 2 ? 3 : contractYears;
-        const targetBonus = Math.round(((expectedWage * 8) / 1000000) * 10) / 10;
+        const targetBonus = Math.round(expectedWage * 8);
         return {
             decision: 'counter',
-            message: `Estamos cerca de un acuerdo. ${player.name} solicita ${formatWeeklyWage(targetWage)} y una prima de fichaje de ${formatCurrency(targetBonus * 1_000_000)} para comprometerse.`,
+            message: `Estamos cerca de un acuerdo. ${player.name} solicita ${formatWeeklyWage(targetWage)} y una prima de fichaje de ${formatCurrency(targetBonus)} para comprometerse formalmente.`,
             counterOffer: {
                 wage: targetWage,
                 contractYears: targetYears,
