@@ -1,6 +1,5 @@
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Shield } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { X, Shield } from 'lucide-react';
 import { CommunityPacksSection } from '../screens/settings/CommunityPacksSection';
 
 interface CommunityPacksModalProps {
@@ -9,59 +8,60 @@ interface CommunityPacksModalProps {
 }
 
 export const CommunityPacksModal: React.FC<CommunityPacksModalProps> = ({ isOpen, onClose }) => {
+    useEffect(() => {
+        if (!isOpen) return;
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') onClose();
+        };
+        window.addEventListener('keydown', onKey);
+        const prev = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        return () => {
+            window.removeEventListener('keydown', onKey);
+            document.body.style.overflow = prev;
+        };
+    }, [isOpen, onClose]);
+
     if (!isOpen) return null;
 
     return (
-        <AnimatePresence>
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-                {/* Backdrop */}
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    onClick={onClose}
-                    className="fixed inset-0 bg-black/80 backdrop-blur-md"
-                />
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 animate-fade-in" role="dialog" aria-modal="true">
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
 
-                {/* Modal Card */}
-                <motion.div
-                    initial={{ scale: 0.95, opacity: 0, y: 20 }}
-                    animate={{ scale: 1, opacity: 1, y: 0 }}
-                    exit={{ scale: 0.95, opacity: 0, y: 20 }}
-                    className="relative w-full max-w-5xl bg-slate-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden z-10 my-auto max-h-[90vh] flex flex-col"
-                >
-                    {/* Header bar */}
-                    <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-slate-950/60 sticky top-0 z-20">
-                        <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-xl bg-[var(--apex-gold)]/10 border border-[var(--apex-gold)]/30 flex items-center justify-center">
-                                <Shield className="w-4 h-4 text-[var(--apex-gold)]" />
-                            </div>
-                            <div>
-                                <h2 className="text-sm sm:text-base font-black text-white uppercase tracking-wider">
-                                    Gestor de Escudos y Packs Reales
-                                </h2>
-                                <p className="text-[10px] text-slate-400">
-                                    Importa logos de clubes, copas y caras de jugadores sin límites
-                                </p>
-                            </div>
+            <div className="relative w-full sm:max-w-5xl bg-[#0A0E17] border-t sm:border border-white/10 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden z-10 h-[92vh] sm:h-[88vh] flex flex-col">
+                <div className="sm:hidden flex justify-center pt-2.5">
+                    <span className="w-10 h-1 rounded-full bg-white/20" />
+                </div>
+
+                <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-white/5 bg-[#070A13]/95 shrink-0">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-xl bg-[var(--apex-gold)]/15 border border-[var(--apex-gold)]/30 flex items-center justify-center shrink-0">
+                            <Shield className="w-4 h-4 text-[var(--apex-gold)]" />
                         </div>
-                        <button
-                            onClick={onClose}
-                            className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition-colors border border-white/5"
-                            title="Cerrar"
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
+                        <div className="min-w-0">
+                            <span className="text-xs font-black text-white uppercase tracking-wider block truncate">
+                                Gestor de Packs Visuales
+                            </span>
+                            <span className="text-[11px] text-slate-400 block truncate">
+                                Escudos, ligas, rostros y trofeos
+                            </span>
+                        </div>
                     </div>
 
-                    {/* Scrollable Content */}
-                    <div className="p-6 overflow-y-auto flex-1 custom-scrollbar space-y-6">
-                        <CommunityPacksSection />
-                    </div>
-                </motion.div>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        aria-label="Cerrar"
+                        className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition-colors shrink-0"
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4">
+                    <CommunityPacksSection embedded />
+                </div>
             </div>
-        </AnimatePresence>
+        </div>
     );
 };

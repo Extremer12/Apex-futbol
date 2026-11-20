@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { TEAMS } from '../../constants';
 import { Team, PlayerProfile, LeagueId, CountryCode } from '../../types';
-import { TeamLogo } from '../../data/teams/helpers';
+import { TeamLogo, usePacksVersion } from '../../data/teams/helpers';
 import { formatCurrency } from '../../utils';
 import { resourceManager } from '../../services/resources';
 
@@ -11,6 +11,7 @@ interface TeamSelectionProps {
 }
 
 export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTeam }) => {
+    usePacksVersion();
     const [selectedCountry, setSelectedCountry] = useState<CountryCode | null>(null);
     const [selectedLeague, setSelectedLeague] = useState<LeagueId | null>(null);
     const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
@@ -209,7 +210,7 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                                 onClick={() => setSelectedCountry(c.id)}
                                 className="w-full apex-card p-4 flex items-center gap-4 transition-all duration-300 hover:border-[rgba(200,168,78,0.3)] active:scale-[0.98]"
                             >
-                                <img src={c.flagUrl} alt={c.name} className="w-11 h-7 object-cover rounded shadow-md" />
+                                <img src={resourceManager.countryFlag(c.id)} alt={c.name} className="w-11 h-7 object-cover rounded shadow-md" />
                                 <div className="flex-1 text-left">
                                     <div className="text-base font-extrabold text-white uppercase tracking-wide">{c.name}</div>
                                     <div className="text-[10px] font-medium" style={{ color: 'var(--apex-text-secondary)' }}>
@@ -232,7 +233,7 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                     <div className="apex-card p-4 flex items-center gap-3 mb-4">
                         <div className="text-[10px] font-bold tracking-[0.1em] uppercase" style={{ color: 'var(--apex-text-secondary)' }}>PAÍS SELECCIONADO</div>
                         <div className="flex items-center gap-2.5 ml-auto">
-                            <img src={COUNTRIES.find(c => c.id === selectedCountry)?.flagUrl} alt="" className="w-6 h-4 object-cover rounded shadow-xs" />
+                            <img src={resourceManager.countryFlag(selectedCountry)} alt="" className="w-6 h-4 object-cover rounded shadow-xs" />
                             <span className="text-sm font-extrabold text-white uppercase">{COUNTRIES.find(c => c.id === selectedCountry)?.name}</span>
                         </div>
                     </div>
@@ -247,7 +248,7 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                                 className="w-full apex-card p-5 flex items-center gap-4 transition-all duration-300 hover:border-[rgba(200,168,78,0.3)] active:scale-[0.98] animate-scale-in"
                                 style={{ animationDelay: `${i * 100}ms` }}
                             >
-                                <img src={resourceManager.leagueLogo(l.id, l.name) || l.logo} alt={l.name} className="w-12 h-12 object-contain drop-shadow-md" />
+                                <img src={resourceManager.leagueLogo(l.id, l.name)} alt={l.name} className="w-12 h-12 object-contain drop-shadow-md" />
                                 <div className="flex-1 text-left">
                                     <div className="text-base font-extrabold text-white">{l.name}</div>
                                     <div className="text-[10px]" style={{ color: 'var(--apex-text-secondary)' }}>{l.teams} Clubes • {l.div}</div>
@@ -267,11 +268,11 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
                     {/* Country + League summary */}
                     <div className="flex gap-3 mb-4">
                         <div className="flex-1 apex-card p-3 flex items-center gap-2.5">
-                            <img src={COUNTRIES.find(c => c.id === selectedCountry)?.flagUrl} alt="" className="w-5 h-3.5 object-cover rounded shadow-xs" />
+                            <img src={resourceManager.countryFlag(selectedCountry)} alt="" className="w-5 h-3.5 object-cover rounded shadow-xs" />
                             <span className="text-xs font-bold text-white uppercase truncate">{COUNTRIES.find(c => c.id === selectedCountry)?.name}</span>
                         </div>
                         <div className="flex-1 apex-card p-3 flex items-center gap-2.5">
-                            {currentLeague && <img src={resourceManager.leagueLogo(currentLeague.id, currentLeague.name) || currentLeague.logo} alt="" className="w-5 h-5 object-contain" />}
+                            {currentLeague && <img src={resourceManager.leagueLogo(currentLeague.id, currentLeague.name)} alt="" className="w-5 h-5 object-contain" />}
                             <span className="text-xs font-bold text-white truncate">{currentLeague?.name}</span>
                             <span className="text-[9px] ml-auto text-white/50">{currentLeague?.teams} Clubes</span>
                         </div>

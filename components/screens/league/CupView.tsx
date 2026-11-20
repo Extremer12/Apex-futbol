@@ -5,7 +5,7 @@ import { TournamentBracket } from '../../ui/TournamentBracket';
 import { EuropeanTable } from './EuropeanTable';
 import { CUP_LOGOS, CUP_THEMES } from './constants';
 import { customPacksService } from '../../../services/customPacks/packService';
-import { TeamLogo } from '../../../data/teams/helpers';
+import { TeamLogo, usePacksVersion } from '../../../data/teams/helpers';
 import { Trophy, Calendar, Table as TableIcon, Layers, Shield, ChevronRight } from 'lucide-react';
 
 interface CupViewProps {
@@ -19,9 +19,10 @@ export const CupView: React.FC<CupViewProps> = React.memo(({
 }) => {
     if (!cup) return null;
 
+    const packsVersion = usePacksVersion();
     const theme = CUP_THEMES[cup.id] || CUP_THEMES.fa_cup;
     const defaultLogo = CUP_LOGOS[cup.id] || '';
-    const logo = useMemo(() => customPacksService.resolveCompetitionLogo(cup.id, cup.name, defaultLogo) || '', [cup.id, cup.name, defaultLogo]);
+    const logo = useMemo(() => customPacksService.resolveCompetitionLogo(cup.id, cup.name, defaultLogo) || '', [cup.id, cup.name, defaultLogo, packsVersion]);
 
     const teamsMap = useMemo(() => {
         const map = new Map<number, typeof gameState.allTeams[0]>();

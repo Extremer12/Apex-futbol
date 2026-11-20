@@ -17,7 +17,6 @@ import {
     generateSudamericanaPlayoff, 
     drawSudamericanaOctavos 
 } from '../sudamericanaEngine';
-import { TOURNAMENT_LOGOS } from '../customPacks/argentineLogos';
 
 export interface CupProgressionResult {
     updatedCups: GameState['cups'];
@@ -247,7 +246,6 @@ export function handleCupProgression(
                         subtitle: '¡Comienzan las eliminatorias directas!',
                         metadata: { 
                             competition: 'Copa Libertadores',
-                            logoUrl: TOURNAMENT_LOGOS.COPA_LIBERTADORES,
                             accentColor: '#F59E0B', 
                             bgClass: 'from-amber-900 via-slate-950 to-slate-950' 
                         }
@@ -344,7 +342,6 @@ export function handleCupProgression(
                             subtitle: '¡Playoff de Octavos de Final!',
                             metadata: { 
                                 competition: 'Copa Sudamericana',
-                                logoUrl: TOURNAMENT_LOGOS.COPA_SUDAMERICANA,
                                 accentColor: '#D97706', 
                                 bgClass: 'from-amber-900 via-slate-950 to-slate-950' 
                             }
@@ -434,7 +431,6 @@ export function handleCupProgression(
                                     subtitle: '¡Octavos de Final!',
                                     metadata: { 
                                         competition: 'Copa Sudamericana',
-                                        logoUrl: TOURNAMENT_LOGOS.COPA_SUDAMERICANA,
                                         accentColor: '#D97706', 
                                         bgClass: 'from-amber-900 via-slate-950 to-slate-950' 
                                     }
@@ -489,7 +485,6 @@ export function handleCupProgression(
                     subtitle: '¡Comienzan las eliminatorias directas!',
                     metadata: { 
                         competition: 'Champions League',
-                        logoUrl: TOURNAMENT_LOGOS.CHAMPIONS_LEAGUE,
                         accentColor: '#3B82F6', 
                         bgClass: 'from-blue-900 via-slate-950 to-slate-950' 
                     }

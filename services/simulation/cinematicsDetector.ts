@@ -1,5 +1,4 @@
-import { GameState, Team, CinematicEvent, LeagueId, Match, LeagueTableRow, CupCompetition, CupGroup, CupRound } from '../../types';
-import { TOURNAMENT_LOGOS } from '../customPacks/argentineLogos';
+import { GameState, Match, Team, CinematicEvent, LeagueId, LeagueTableRow, CupCompetition, CupGroup, CupRound } from '../../types';
 
 function isTeamInCup(cup: CupCompetition | undefined | null, teamId: number): boolean {
     if (!cup) return false;
@@ -203,7 +202,6 @@ export function detectCinematicEvents(
             subtitle: 'La gloria eterna comienza. El máximo escenario del continente.',
             metadata: {
                 competition: 'Copa Libertadores',
-                logoUrl: TOURNAMENT_LOGOS.COPA_LIBERTADORES,
                 accentColor: '#F59E0B',
                 bgClass: 'from-amber-900 via-slate-950 to-slate-950'
             }
@@ -223,7 +221,6 @@ export function detectCinematicEvents(
             subtitle: 'La élite del fútbol europeo se da cita en la búsqueda de la Orejona.',
             metadata: {
                 competition: 'Champions League',
-                logoUrl: TOURNAMENT_LOGOS.CHAMPIONS_LEAGUE,
                 accentColor: '#6366F1',
                 bgClass: 'from-indigo-900 via-slate-950 to-slate-950'
             }
@@ -243,7 +240,6 @@ export function detectCinematicEvents(
             subtitle: 'El campeón de Europa frente al campeón de Sudamérica. La cumbre mundial.',
             metadata: {
                 competition: 'Copa Intercontinental',
-                logoUrl: TOURNAMENT_LOGOS.COPA_INTERCONTINENTAL,
                 accentColor: '#10B981',
                 bgClass: 'from-emerald-900 via-slate-950 to-slate-950'
             }

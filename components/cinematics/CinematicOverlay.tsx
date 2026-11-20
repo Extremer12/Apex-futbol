@@ -3,90 +3,61 @@ import { CinematicEvent } from '../../types';
 import { Confetti } from '../ui/Confetti';
 import { TrophyIcon, TrendingUpIcon, TrendingDownIcon } from '../icons';
 import { formatCurrency } from '../../utils';
-import { TeamLogo } from '../../data/teams/helpers';
-import { TOURNAMENT_LOGOS } from '../../services/customPacks/argentineLogos';
+import { TeamLogo, usePacksVersion } from '../../data/teams/helpers';
+import { resourceManager } from '../../services/resources/ResourceManager';
 
 interface CinematicOverlayProps {
     event: CinematicEvent;
     onContinue: () => void;
 }
 
-const resolveCompetitionLogos = (comp?: string, title?: string, logoUrl?: string) => {
+const resolveCompetitionLogos = (comp?: string, title?: string) => {
     const raw = `${comp || ''} ${title || ''}`.toLowerCase();
-    
+
     if (raw.includes('libertadores')) {
-        return {
-            primary: (logoUrl as string) || TOURNAMENT_LOGOS.COPA_LIBERTADORES,
-            fallback: TOURNAMENT_LOGOS.COPA_LIBERTADORES,
-            badge: 'CONMEBOL LIBERTADORES',
-            accent: '#F59E0B'
-        };
+        const logo = resourceManager.competitionLogo('COPA_LIBERTADORES', 'Copa Libertadores');
+        return { primary: logo, fallback: logo, badge: 'CONMEBOL LIBERTADORES', accent: '#F59E0B' };
     }
     if (raw.includes('sudamericana')) {
-        return {
-            primary: (logoUrl as string) || TOURNAMENT_LOGOS.COPA_SUDAMERICANA,
-            fallback: TOURNAMENT_LOGOS.COPA_SUDAMERICANA,
-            badge: 'CONMEBOL SUDAMERICANA',
-            accent: '#D97706'
-        };
+        const logo = resourceManager.competitionLogo('COPA_SUDAMERICANA', 'Copa Sudamericana');
+        return { primary: logo, fallback: logo, badge: 'CONMEBOL SUDAMERICANA', accent: '#D97706' };
     }
     if (raw.includes('champions')) {
-        return {
-            primary: (logoUrl as string) || TOURNAMENT_LOGOS.CHAMPIONS_LEAGUE,
-            fallback: TOURNAMENT_LOGOS.CHAMPIONS_LEAGUE,
-            badge: 'UEFA CHAMPIONS LEAGUE',
-            accent: '#3B82F6'
-        };
+        const logo = resourceManager.competitionLogo('CHAMPIONS_LEAGUE', 'Champions League');
+        return { primary: logo, fallback: logo, badge: 'UEFA CHAMPIONS LEAGUE', accent: '#3B82F6' };
     }
     if (raw.includes('europa league')) {
-        return {
-            primary: (logoUrl as string) || TOURNAMENT_LOGOS.EUROPA_LEAGUE,
-            fallback: TOURNAMENT_LOGOS.EUROPA_LEAGUE,
-            badge: 'UEFA EUROPA LEAGUE',
-            accent: '#F97316'
-        };
+        const logo = resourceManager.competitionLogo('EUROPA_LEAGUE', 'UEFA Europa League');
+        return { primary: logo, fallback: logo, badge: 'UEFA EUROPA LEAGUE', accent: '#F97316' };
     }
     if (raw.includes('intercontinental')) {
-        return {
-            primary: (logoUrl as string) || TOURNAMENT_LOGOS.COPA_INTERCONTINENTAL,
-            fallback: TOURNAMENT_LOGOS.COPA_INTERCONTINENTAL,
-            badge: 'FIFA INTERCONTINENTAL',
-            accent: '#10B981'
-        };
+        const logo = resourceManager.competitionLogo('COPA_INTERCONTINENTAL', 'Copa Intercontinental');
+        return { primary: logo, fallback: logo, badge: 'FIFA INTERCONTINENTAL', accent: '#10B981' };
     }
     if (raw.includes('apertura') || raw.includes('clausura') || raw.includes('liga profesional')) {
-        return {
-            primary: (logoUrl as string) || TOURNAMENT_LOGOS.LIGA_ARGENTINA,
-            fallback: TOURNAMENT_LOGOS.LIGA_ARGENTINA,
-            badge: 'LIGA PROFESIONAL DE FÚTBOL',
-            accent: '#0284C7'
-        };
+        const logo = resourceManager.competitionLogo('LIGA_ARGENTINA', 'Liga Argentina');
+        return { primary: logo, fallback: logo, badge: 'LIGA PROFESIONAL DE FÚTBOL', accent: '#0284C7' };
     }
     if (raw.includes('nacional') || raw.includes('reducido') || raw.includes('ascenso')) {
-        return {
-            primary: (logoUrl as string) || TOURNAMENT_LOGOS.PRIMERA_NACIONAL,
-            fallback: TOURNAMENT_LOGOS.PRIMERA_NACIONAL,
-            badge: 'PRIMERA NACIONAL',
-            accent: '#06B6D4'
-        };
+        const logo = resourceManager.competitionLogo('PRIMERA_NACIONAL', 'Primera Nacional');
+        return { primary: logo, fallback: logo, badge: 'PRIMERA NACIONAL', accent: '#06B6D4' };
     }
     if (raw.includes('copa argentina')) {
-        return {
-            primary: (logoUrl as string) || TOURNAMENT_LOGOS.LIGA_ARGENTINA,
-            fallback: TOURNAMENT_LOGOS.LIGA_ARGENTINA,
-            badge: 'COPA ARGENTINA',
-            accent: '#0284C7'
-        };
+        const logo = resourceManager.competitionLogo('COPA_ARGENTINA', 'Copa Argentina');
+        return { primary: logo, fallback: logo, badge: 'COPA ARGENTINA', accent: '#0284C7' };
     }
+    const cleanBadge = title ? title.replace(/[🏆⭐🌍★]/g, '').trim() : 'COMPETICIÓN OFICIAL';
+    const fallbackLogo = comp ? resourceManager.competitionLogo(comp, cleanBadge) : '';
     return {
-        primary: (logoUrl as string) || '',
-        fallback: '',
-        badge: title ? title.replace(/[🏆⭐🌍★]/g, '').trim() : 'COMPETICIÓN OFICIAL',
+        primary: fallbackLogo,
+        fallback: fallbackLogo,
+        badge: cleanBadge,
         accent: '#F59E0B'
     };
 };
 
 export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({ event, onContinue }) => {
+    usePacksVersion();
     const [visible, setVisible] = useState(false);
     const [logoLoaded, setLogoLoaded] = useState(false);
     const [compLogoSrc, setCompLogoSrc] = useState<string>('');
@@ -104,8 +75,7 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({ event, onCon
             case 'CUP_KICKOFF': {
                 const compInfo = resolveCompetitionLogos(
                     event.metadata?.competition as string,
-                    cleanTitle,
-                    event.metadata?.logoUrl as string
+                    cleanTitle
                 );
                 const accentColor = event.metadata?.accentColor || compInfo.accent || '#F59E0B';
                 const logoToRender = compLogoSrc || compInfo.primary;
@@ -187,8 +157,7 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({ event, onCon
             case 'GROUP_DRAW': {
                 const compInfo = resolveCompetitionLogos(
                     event.metadata?.competition as string,
-                    event.title,
-                    event.metadata?.logoUrl as string
+                    event.title
                 );
                 const accentColor = (event.metadata?.accentColor as string) || compInfo.accent || '#F59E0B';
                 const groups = (event.metadata?.groups as any[]) || [];

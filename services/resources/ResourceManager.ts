@@ -69,8 +69,9 @@ export class ResourceManager {
      * e.g. ResourceManager.playerFace(101, { name: 'B. Saka', position: 'DEL' })
      */
     public playerFace(playerId?: number | string, playerMeta?: { name?: string; position?: string; photo?: string }): string {
-        // If player already has a custom direct photo URL explicitly provided
-        if (playerMeta?.photo && (playerMeta.photo.startsWith('http://') || playerMeta.photo.startsWith('https://') || playerMeta.photo.startsWith('data:'))) {
+        // Data URIs (procedural or user-provided SVG/base64) are safe locally;
+        // external HTTP URLs in playerMeta.photo are routed through PackResolver so Base Mode stays compliant.
+        if (playerMeta?.photo && playerMeta.photo.startsWith('data:')) {
             return playerMeta.photo;
         }
 

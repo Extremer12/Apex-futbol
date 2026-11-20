@@ -5,9 +5,11 @@ import { ResourceFallback } from '../../services/resources/ResourceFallback';
 import { ResourceCache } from '../../services/resources/ResourceCache';
 import { PackManifestValidator } from '../../services/resources/PackManifest';
 import { PackResolver } from '../../services/resources/PackResolver';
-import { PackManager } from '../../services/resources/PackManager';
+import { PackManager, sanitizeSvgContent } from '../../services/resources/PackManager';
 import { ContributionService } from '../../services/resources/ContributionService';
 import { ModerationService } from '../../services/resources/ModerationService';
+import { PackCatalog } from '../../services/resources/PackCatalog';
+import { DefaultResourceProvider } from '../../services/resources/providers/DefaultResourceProvider';
 import { InstalledPack, PackManifest } from '../../services/resources/ResourceTypes';
 
 test('RESOURCE SYSTEM: ResourceFallback generates valid SVG data URIs', () => {
@@ -273,4 +275,87 @@ test('RESOURCE SYSTEM: Moderation Service enforces role security', () => {
     // Authorized review succeeds
     const reviewed = ModerationService.reviewContent('ADMIN', 'pack_1', 'approved');
     assert.equal(reviewed, true);
+});
+
+test('RESOURCE SYSTEM: Modular Catalog search, scoped bundles, batch install, and abort cancellation', async () => {
+    // 1. Smart search matches club names cleanly
+    const bocaResults = PackCatalog.getCatalog({ query: 'Boca Juniors' });
+    assert.equal(bocaResults.length, 1);
+    assert.equal(bocaResults[0].id, 'south-america-logos');
+    assert.equal(PackCatalog.findMatchReason(bocaResults[0], 'Boca'), 'Boca Juniors');
+
+    const realMadridResults = PackCatalog.getCatalog({ query: 'Real Madrid' });
+    assert.equal(realMadridResults.length, 1);
+    assert.equal(realMadridResults[0].id, 'europe-logos');
+
+    // 2. Scoped bundles isolate regions accurately
+    const saBoca = DefaultResourceProvider.resolveForBundle('south-america-logos', 'team-logo', 701, { name: 'Boca Juniors' });
+    assert.ok(saBoca && saBoca.url.includes('boca-juniors'));
+    const saArsenal = DefaultResourceProvider.resolveForBundle('south-america-logos', 'team-logo', 1, { name: 'Arsenal' });
+    assert.equal(saArsenal, null);
+    const euArsenal = DefaultResourceProvider.resolveForBundle('europe-logos', 'team-logo', 1, { name: 'Arsenal' });
+    assert.ok(euArsenal && euArsenal.url.includes('arsenal'));
+
+    // 3. Batch install works and respects AbortSignal cancellation
+    await PackManager.clearAllPacks();
+    const abortCtrl = new AbortController();
+    abortCtrl.abort();
+    await assert.rejects(async () => {
+        await PackManager.installAllCatalogPacks(PackCatalog.getCatalog(), { signal: abortCtrl.signal });
+    }, /cancelada/);
+
+    const batchRes = await PackManager.installAllCatalogPacks(PackCatalog.getCatalog());
+    assert.equal(batchRes.errors.length, 0);
+    assert.equal(batchRes.installed, PackCatalog.getCatalog().length);
+    assert.equal(PackManager.getInstalledPacks().length, PackCatalog.getCatalog().length);
+
+    // 4. Pausing a single modular pack stops resolving via that bundle in PackResolver while keeping others active
+    ResourceCache.clearMemory();
+    PackManager.setPackEnabled('south-america-logos', false);
+    const saPaused = PackResolver.resolve('team-logo', 701, PackManager.getInstalledPacks(), { name: 'Boca Juniors' });
+    assert.notEqual(saPaused.packId, 'south-america-logos');
+    const euActive = PackResolver.resolve('team-logo', 1, PackManager.getInstalledPacks(), { name: 'Arsenal' });
+    assert.equal(euActive.packId, 'europe-logos');
+    await PackManager.clearAllPacks();
+});
+
+test('RESOURCE SYSTEM: Country flag bundle scoping, ZIP SVG sanitization, and ZIP priority override', async () => {
+    const JSZip = (await import('jszip')).default;
+
+    // 1. Country flags resolve cleanly for both ISO codes and localized names
+    const engFlag = DefaultResourceProvider.resolveForBundle('flags-pack', 'flag', 'Inglaterra');
+    assert.ok(engFlag && engFlag.url.includes('flagcdn.com/gb-eng.svg'));
+    const scoFlag = DefaultResourceProvider.resolveCountryFlag('SCO');
+    assert.ok(scoFlag && scoFlag.url.includes('flagcdn.com/gb-sct.svg'));
+
+    // 2. Build an in-memory .ZIP pack with malicious SVG payload to test sanitizer & idb resolution
+    const zip = new JSZip();
+    const dirtySvg = '<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"><script>evil()</script><circle cx="10" cy="10" r="8"/></svg>';
+    zip.folder('teams')?.file('Boca Juniors.svg', dirtySvg);
+    zip.folder('leagues')?.file('PREMIER_LEAGUE.svg', dirtySvg);
+    const zipBytes = await zip.generateAsync({ type: 'uint8array' });
+
+    await PackManager.clearAllPacks();
+    // Install catalog bundle (priority 15) and local ZIP (priority 30)
+    await PackManager.installCatalogPack(PackCatalog.getItem('south-america-logos')!);
+    const localZipPack = await PackManager.installZipFile(zipBytes, { name: 'custom-shields.zip' });
+    assert.equal(localZipPack.assetCount, 2);
+    assert.equal(localZipPack.priority, 30);
+
+    // Highest priority ZIP overrides catalog bundle seamlessly
+    ResourceCache.clearMemory();
+    const customRes = PackResolver.resolve('team-logo', 701, PackManager.getInstalledPacks(), { name: 'Boca Juniors' });
+    assert.equal(customRes.packId, localZipPack.packId);
+
+    // Ensure league-logo lookup resolves asset imported under leagues/ folder
+    const customLeague = PackResolver.resolve('league-logo', 'PREMIER_LEAGUE', PackManager.getInstalledPacks(), { name: 'Premier League' });
+    assert.equal(customLeague.packId, localZipPack.packId);
+
+    // Check SVG sanitization strips script, foreignObject, and inline event handlers
+    const cleanSvg = sanitizeSvgContent(dirtySvg);
+    assert.equal(cleanSvg.includes('<script'), false);
+    assert.equal(cleanSvg.includes('onload='), false);
+    assert.ok(cleanSvg.includes('<circle'));
+
+    await PackManager.clearAllPacks();
 });

@@ -4,6 +4,7 @@ import { Settings, Shield, Volume2, VolumeX, Eye, Info, Trash2, ExternalLink } f
 import { PrivacyPolicyModal } from '../settings/PrivacyPolicyModal';
 import { clearAllData } from '../../services/db';
 import { deleteAllUserDataFromCloud } from '../../services/cloudSave';
+import { PackManager } from '../../services/resources/PackManager';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface StartSettingsModalProps {
@@ -61,6 +62,9 @@ export const StartSettingsModal: React.FC<StartSettingsModalProps> = ({ onClose,
                 await deleteAllUserDataFromCloud();
             }
             await clearAllData();
+            try {
+                await PackManager.clearAllPacks();
+            } catch (_) {}
             try {
                 localStorage.clear();
             } catch (_) {}
@@ -265,7 +269,7 @@ export const StartSettingsModal: React.FC<StartSettingsModalProps> = ({ onClose,
                                     <li>Más de 380 clubes y 6,400 futbolistas reales en 12 ligas</li>
                                     <li>Sincronización en la nube con Google Play & Supabase</li>
                                     <li>Salón de la Fama y Clasificación Global de Presidentes</li>
-                                    <li>Packs comunitarios y Modo Seguro para cumplimiento normativo</li>
+                                    <li>Packs de la comunidad modulares y personalización visual offline</li>
                                     <li>Simulación avanzada de partidos y economía de club realista</li>
                                 </ul>
                             </div>

@@ -3,7 +3,7 @@ import { GameState } from '../../../types';
 import { CompetitionItem } from './constants';
 import { customPacksService } from '../../../services/customPacks/packService';
 import { Trophy, History, Shield, Award, Calendar, ChevronRight, Star } from 'lucide-react';
-import { TeamLogo, GenericTeamShield, TEAM_LOGOS } from '../../../data/teams/helpers';
+import { TeamLogo, GenericTeamShield, usePacksVersion } from '../../../data/teams/helpers';
 import { getCompetitionHistoricalRecord } from '../../../data/historicalHonours';
 import { TrophyLaurelWatermark, PodiumRankBadge } from '../../ui/GameCardDecorations';
 
@@ -16,10 +16,14 @@ export const CompetitionHistoryView: React.FC<CompetitionHistoryViewProps> = ({
     competition,
     gameState
 }) => {
+    const packsVersion = usePacksVersion();
     const isCup = competition.type === 'CUP';
     const cupData = isCup && competition.cupKey ? (gameState.cups as any)[competition.cupKey] : null;
     const seasonHistory = gameState.seasonHistory || [];
-    const logo = customPacksService.resolveCompetitionLogo(competition.id, competition.name, competition.logo);
+    const logo = React.useMemo(
+        () => customPacksService.resolveCompetitionLogo(competition.id, competition.name, competition.logo),
+        [competition.id, competition.name, competition.logo, packsVersion]
+    );
     const historicalData = getCompetitionHistoricalRecord(competition.id);
 
     // Get historical cup champions from gameplay

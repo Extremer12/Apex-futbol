@@ -6,16 +6,18 @@ import {
     ConmebolClubRankingItem, 
     UefaClubRankingItem 
 } from '../../../data/clubRankings';
-import { 
-    Trophy, 
-    Globe, 
-    Search, 
-    Award, 
-    Shield, 
-    Info, 
+import {
+    Trophy,
+    Globe,
+    Search,
+    Award,
+    Shield,
+    Info,
     ChevronRight,
     Star
 } from 'lucide-react';
+import { TeamLogo, usePacksVersion } from '../../../data/teams/helpers';
+import { resourceManager } from '../../../services/resources/ResourceManager';
 
 interface ClubRankingsViewProps {
     gameState: GameState;
@@ -23,6 +25,7 @@ interface ClubRankingsViewProps {
 }
 
 export const ClubRankingsView: React.FC<ClubRankingsViewProps> = ({ gameState, initialTab = 'CONMEBOL' }) => {
+    usePacksVersion();
     const [rankingType, setRankingType] = useState<'CONMEBOL' | 'UEFA'>(() => {
         // If user manages European club, default to UEFA; if South American, CONMEBOL
         const isEuro = gameState.team.leagueId?.includes('PREMIER') || 
@@ -238,12 +241,13 @@ export const ClubRankingsView: React.FC<ClubRankingsViewProps> = ({ gameState, i
                                         <td className="px-4 py-3">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-8 h-8 rounded-lg bg-black/40 border border-white/10 p-1 flex items-center justify-center shrink-0">
-                                                    <img 
-                                                        src={item.logoUrl || '/sinlogo.png'} 
-                                                        alt="" 
-                                                        className="w-full h-full object-contain" 
-                                                        referrerPolicy="no-referrer"
-                                                        onError={(e) => { e.currentTarget.src = '/sinlogo.png'; }}
+                                                    <TeamLogo
+                                                        team={{
+                                                            id: item.teamId,
+                                                            name: item.teamName,
+                                                            logo: item.logoUrl !== '/sinlogo.png' ? item.logoUrl : undefined
+                                                        }}
+                                                        className="w-full h-full object-contain"
                                                     />
                                                 </div>
                                                 <div className="min-w-0">
@@ -260,9 +264,11 @@ export const ClubRankingsView: React.FC<ClubRankingsViewProps> = ({ gameState, i
                                         </td>
                                         <td className="px-4 py-3">
                                             <div className="flex items-center gap-2">
-                                                {item.flagUrl && (
-                                                    <img src={item.flagUrl} alt="" className="w-4 h-3 object-cover rounded-[2px]" />
-                                                )}
+                                                <img
+                                                    src={resourceManager.countryFlag(item.country)}
+                                                    alt=""
+                                                    className="w-4 h-3 object-cover rounded-[2px]"
+                                                />
                                                 <span className="text-xs text-slate-300 font-medium">{item.countryName}</span>
                                             </div>
                                         </td>
@@ -344,12 +350,13 @@ export const ClubRankingsView: React.FC<ClubRankingsViewProps> = ({ gameState, i
                                             {item.rank}
                                         </span>
                                         <div className="w-7 h-7 rounded-lg bg-black/40 border border-white/10 p-0.5 flex items-center justify-center shrink-0">
-                                            <img 
-                                                src={item.logoUrl || '/sinlogo.png'} 
-                                                alt="" 
-                                                className="w-full h-full object-contain" 
-                                                referrerPolicy="no-referrer"
-                                                onError={(e) => { e.currentTarget.src = '/sinlogo.png'; }}
+                                            <TeamLogo
+                                                team={{
+                                                    id: item.teamId,
+                                                    name: item.teamName,
+                                                    logo: item.logoUrl !== '/sinlogo.png' ? item.logoUrl : undefined
+                                                }}
+                                                className="w-full h-full object-contain"
                                             />
                                         </div>
                                         <div className="min-w-0">
@@ -362,9 +369,11 @@ export const ClubRankingsView: React.FC<ClubRankingsViewProps> = ({ gameState, i
                                                 )}
                                             </div>
                                             <div className="flex items-center gap-1 text-[10px] text-slate-400 mt-0.5">
-                                                {item.flagUrl && (
-                                                    <img src={item.flagUrl} alt="" className="w-3 h-2 object-cover rounded-[1px]" />
-                                                )}
+                                                <img
+                                                    src={resourceManager.countryFlag(item.country)}
+                                                    alt=""
+                                                    className="w-3 h-2 object-cover rounded-[1px]"
+                                                />
                                                 <span>{item.countryName}</span>
                                             </div>
                                         </div>

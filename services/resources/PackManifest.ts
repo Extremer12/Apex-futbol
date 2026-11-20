@@ -155,7 +155,7 @@ export class PackManifestValidator {
             isOfficial: Boolean(raw.isOfficial),
             gameVersionMin: raw.gameVersionMin || '1.0.0',
             gameVersionMax: raw.gameVersionMax,
-            assetCount: totalAssetCount || raw.assetCount || 0,
+            assetCount: (typeof raw.assetCount === 'number' && raw.assetCount > 0) ? raw.assetCount : totalAssetCount,
             sizeBytes: raw.sizeBytes || 0,
             checksum: raw.checksum,
             createdAt: raw.createdAt || new Date().toISOString(),
@@ -163,6 +163,7 @@ export class PackManifestValidator {
             license,
             status: raw.status || (raw.isOfficial ? 'approved' : 'pending'),
             baseUrl: raw.baseUrl ? raw.baseUrl.replace(/\/+$/, '') : undefined,
+            bundleKey: typeof raw.bundleKey === 'string' ? raw.bundleKey : undefined,
             assets: sanitizedAssets
         };
 

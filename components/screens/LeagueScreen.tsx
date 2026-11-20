@@ -5,7 +5,8 @@ import { LeagueTable } from './league/LeagueTable';
 import { CupView } from './league/CupView';
 import { ClubRankingsView } from './league/ClubRankingsView';
 import { customPacksService } from '../../services/customPacks/packService';
-import { TeamLogo } from '../../data/teams/helpers';
+import { resourceManager } from '../../services/resources/ResourceManager';
+import { TeamLogo, usePacksVersion } from '../../data/teams/helpers';
 import { BottomSheet, EmptyState } from './transfers/TransferUI';
 import { Search, X, SlidersHorizontal, ChevronRight, Globe, SearchX } from 'lucide-react';
 
@@ -82,6 +83,7 @@ const TYPE_FILTERS: { id: TypeFilter; label: string }[] = [
 ];
 
 export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
+    const packsVersion = usePacksVersion();
     const playerTeamLeague = gameState.team.leagueId;
 
     const nextWeek = gameState.currentWeek;
@@ -263,7 +265,7 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
     const selectedLogo = useMemo(() => {
         if (!selectedCompDef) return '/sinlogo.png';
         return customPacksService.resolveCompetitionLogo(selectedCompDef.id, selectedCompDef.name, selectedCompDef.logo) || '/sinlogo.png';
-    }, [selectedCompDef]);
+    }, [selectedCompDef, packsVersion]);
 
     const selectedAccent = selectedCompDef ? getCompAccent(selectedCompDef) : ACCENTS.amber;
 
@@ -356,8 +358,12 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-0.5">
-                                        {selectedCompDef.flagUrl && (
-                                            <img src={selectedCompDef.flagUrl} alt="" className="w-3.5 h-2.5 object-cover rounded-[2px]" />
+                                        {selectedCompDef.country && (
+                                            <img
+                                                src={resourceManager.countryFlag(selectedCompDef.country)}
+                                                alt=""
+                                                className="w-3.5 h-2.5 object-cover rounded-[2px]"
+                                            />
                                         )}
                                         <span className="font-semibold text-slate-300">
                                             {selectedCompDef.country || 'Internacional'}
@@ -579,13 +585,11 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                                                 >
                                                     <div className="px-3.5 py-2.5 bg-white/[0.02] border-b border-white/5 flex items-center justify-between">
                                                         <div className="flex items-center gap-2">
-                                                            {group.flagUrl && (
-                                                                <img
-                                                                    src={group.flagUrl}
-                                                                    alt={group.country}
-                                                                    className="w-5 h-3.5 object-cover rounded-[2px]"
-                                                                />
-                                                            )}
+                                                            <img
+                                                                src={resourceManager.countryFlag(group.country)}
+                                                                alt={group.country}
+                                                                className="w-5 h-3.5 object-cover rounded-[2px]"
+                                                            />
                                                             <span className="text-xs font-black text-white tracking-tight">
                                                                 {group.country}
                                                             </span>

@@ -5,14 +5,14 @@ import { useGameStore } from '../../state/gameStore';
 import { Modal } from './Modal';
 import { formatCurrency, formatWeeklyWage } from '../../utils';
 import { PlayerPhoto } from '../../data/teams/helpers';
-import { 
-    getPlayerAge, 
-    getPlayerPotential, 
-    getPlayerPotentialTier, 
-    getTierBadge, 
-    getPlayerReleaseClause 
+import {
+    getPlayerAge,
+    getPlayerPotential,
+    getPlayerPotentialTier,
+    getTierBadge,
+    getPlayerReleaseClause
 } from '../../utils/playerUtils';
-import { Shield, Sparkles, Star } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
 
 interface PlayerDetailModalProps {
     player: Player;
@@ -24,14 +24,14 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({ player, di
     const [hasTalked, setHasTalked] = useState(false);
     const [hasRenewed, setHasRenewed] = useState(false);
 
-    const MORALE_COLORS: Record<Morale, string> = { 
-        'Feliz': 'text-green-400', 
-        'Contento': 'text-green-300', 
-        'Normal': 'text-yellow-300', 
-        'Descontento': 'text-orange-400', 
-        'Enojado': 'text-red-500' 
+    const MORALE_COLORS: Record<Morale, string> = {
+        'Feliz': 'text-green-400',
+        'Contento': 'text-green-300',
+        'Normal': 'text-yellow-300',
+        'Descontento': 'text-orange-400',
+        'Enojado': 'text-red-500'
     };
-    
+
     const onClose = () => dispatch({ type: 'SET_VIEWING_PLAYER', payload: null });
     const onTransferList = () => dispatch({ type: 'TOGGLE_TRANSFER_LIST', payload: player });
 
@@ -68,8 +68,8 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({ player, di
 
     const roleName = player.preferredRole === 'Key' ? 'Jugador Clave'
         : player.preferredRole === 'FirstTeam' ? 'Titular Habitual'
-        : player.preferredRole === 'Rotation' ? 'Rotación'
-        : 'Joven Promesa';
+            : player.preferredRole === 'Rotation' ? 'Rotación'
+                : 'Joven Promesa';
 
     return (
         <Modal title={player.name} onClose={onClose}>
@@ -100,8 +100,8 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({ player, di
                     </div>
                     <div>
                         <p className="text-[10px] text-slate-400 uppercase font-bold">Potencial</p>
-                        <p className="text-2xl font-black text-amber-400 mt-1 flex items-center justify-center gap-0.5">
-                            {potential} <Sparkles className="w-3.5 h-3.5 inline" />
+                        <p className="text-2xl font-black text-amber-400 mt-1 flex items-center justify-center gap-1">
+                            {potential} <TrendingUp className="w-3.5 h-3.5 inline" />
                         </p>
                     </div>
                     <div>
@@ -117,26 +117,26 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({ player, di
                 {/* Contract & Status Details */}
                 <div className="text-xs space-y-2 bg-slate-800/40 p-4 rounded-xl border border-white/5">
                     <div className="flex justify-between">
-                        <span className="text-white/60">Rol en el Equipo:</span> 
+                        <span className="text-white/60">Rol en el Equipo:</span>
                         <span className="font-black text-white">{roleName}</span>
                     </div>
                     <div className="flex justify-between">
-                        <span className="text-white/60">Contrato:</span> 
+                        <span className="text-white/60">Contrato:</span>
                         <span className="font-bold text-white">{player.contractYears} año{player.contractYears > 1 ? 's' : ''} restantes</span>
                     </div>
                     <div className="flex justify-between">
-                        <span className="text-white/60">Cláusula de Rescisión:</span> 
+                        <span className="text-white/60">Cláusula de Rescisión:</span>
                         <span className="font-black text-[var(--apex-gold)]">{formatCurrency(releaseClause)}</span>
                     </div>
                     {player.isInjured && (
                         <div className="flex justify-between">
-                            <span className="text-white/60">Estado Físico:</span> 
+                            <span className="text-white/60">Estado Físico:</span>
                             <span className="font-black text-rose-400">Lesionado ({player.injuryWeeksRemaining} sem)</span>
                         </div>
                     )}
                     {player.isSuspended && (
                         <div className="flex justify-between">
-                            <span className="text-white/60">Disciplina:</span> 
+                            <span className="text-white/60">Disciplina:</span>
                             <span className="font-black text-rose-500">Suspendido ({player.suspensionWeeksRemaining} par)</span>
                         </div>
                     )}
@@ -165,19 +165,18 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({ player, di
                             <button
                                 disabled={!canRenew}
                                 onClick={handleRenewContract}
-                                className={`border font-bold py-2.5 px-3 rounded-xl transition-all text-xs flex items-center justify-center gap-1.5 shadow-sm ${
-                                    hasRenewed
-                                        ? 'bg-emerald-500/30 border-emerald-500/50 text-emerald-300 cursor-default'
-                                        : !canRenew
+                                className={`border font-bold py-2.5 px-3 rounded-xl transition-all text-xs flex items-center justify-center gap-1.5 shadow-sm ${hasRenewed
+                                    ? 'bg-emerald-500/30 border-emerald-500/50 text-emerald-300 cursor-default'
+                                    : !canRenew
                                         ? 'bg-slate-800/40 border-white/5 text-slate-500 cursor-not-allowed'
                                         : 'bg-emerald-600/20 border-emerald-500/40 hover:bg-emerald-600/30 text-emerald-300'
-                                }`}
+                                    }`}
                                 title={
-                                    hasRenewed 
-                                        ? 'Contrato renovado recientemente' 
-                                        : !canRenew 
-                                        ? 'El jugador tiene contrato a largo plazo (más de 3 años)' 
-                                        : 'Extender 2 años más de contrato con +15% de salario y asegurar felicidad'
+                                    hasRenewed
+                                        ? 'Contrato renovado recientemente'
+                                        : !canRenew
+                                            ? 'El jugador tiene contrato a largo plazo (más de 3 años)'
+                                            : 'Extender 2 años más de contrato con +15% de salario y asegurar felicidad'
                                 }
                             >
                                 <span>{hasRenewed ? '✓ Renovado' : '📝 Renovar (+2 años)'}</span>
@@ -186,32 +185,30 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({ player, di
                             <button
                                 disabled={!canTalk}
                                 onClick={handleMotivationalTalk}
-                                className={`border font-bold py-2.5 px-3 rounded-xl transition-all text-xs flex items-center justify-center gap-1.5 shadow-sm ${
-                                    hasTalked
-                                        ? 'bg-sky-500/30 border-sky-500/50 text-sky-300 cursor-default'
-                                        : !canTalk
+                                className={`border font-bold py-2.5 px-3 rounded-xl transition-all text-xs flex items-center justify-center gap-1.5 shadow-sm ${hasTalked
+                                    ? 'bg-sky-500/30 border-sky-500/50 text-sky-300 cursor-default'
+                                    : !canTalk
                                         ? 'bg-slate-800/40 border-white/5 text-slate-500 cursor-not-allowed'
                                         : 'bg-sky-600/20 border-sky-500/40 hover:bg-sky-600/30 text-sky-300'
-                                }`}
+                                    }`}
                                 title={
                                     hasTalked
                                         ? 'Charla mantenida esta semana'
                                         : !canTalk
-                                        ? 'La moral del jugador ya está en su nivel óptimo (Feliz)'
-                                        : 'Charla personal del presidente para levantar la moral'
+                                            ? 'La moral del jugador ya está en su nivel óptimo (Feliz)'
+                                            : 'Charla personal del presidente para levantar la moral'
                                 }
                             >
                                 <span>{hasTalked ? '✓ Charla Realizada' : '💬 Charla Motivacional'}</span>
                             </button>
                         </div>
 
-                        <button 
-                            onClick={onTransferList} 
-                            className={`w-full font-black py-2.5 px-4 rounded-xl transition-all text-xs uppercase tracking-wider shadow-lg ${
-                                player.isTransferListed 
-                                    ? 'bg-amber-500 hover:bg-amber-400 text-black shadow-amber-500/20' 
-                                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
-                            }`}
+                        <button
+                            onClick={onTransferList}
+                            className={`w-full font-black py-2.5 px-4 rounded-xl transition-all text-xs uppercase tracking-wider shadow-lg ${player.isTransferListed
+                                ? 'bg-amber-500 hover:bg-amber-400 text-black shadow-amber-500/20'
+                                : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+                                }`}
                         >
                             {player.isTransferListed ? 'Quitar de la Lista de Transferibles' : 'Declarar Transferible'}
                         </button>

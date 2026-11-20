@@ -5,6 +5,7 @@ import { normalizeKey, getTeamMatchKeys, getCompetitionMatchKeys, getPlayerMatch
 import { ARG_CLUB_LOGOS_BY_ID, ARG_CLUB_LOGOS_BY_NAME, ARG_COMPETITION_LOGOS } from './argentineLogos';
 import { PLAYER_PHOTOS_BY_ID, PLAYER_PHOTOS_BY_NAME } from './playerPhotos';
 import { resourceManager } from '../resources/ResourceManager';
+import { ResourceCache } from '../resources/ResourceCache';
 
 export type PackUpdateListener = () => void;
 
@@ -335,7 +336,7 @@ class CustomPacksService {
                 localStorage.removeItem('apex_community_packs_active');
             }
             this.setAllPacksActive(active);
-            resourceManager.clearAllCache().catch(() => {});
+            ResourceCache.clearMemory();
         } catch (e) {
             console.error('Failed to set community packs master state:', e);
         }
@@ -550,60 +551,42 @@ class CustomPacksService {
     }
 
     /**
-     * Download with automatic CORS fallback
+     * Download remote pack over direct HTTPS (no third-party proxy servers)
      */
     private async fetchBlobWithFallback(
         url: string,
         onDownloadProgress?: (mb: string, totalMb: string, pct: number) => void
     ): Promise<Blob> {
-        const candidateUrls = [
-            url,
-            `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
-            `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
-        ];
-
-        let lastError: Error | null = null;
-
-        for (let i = 0; i < candidateUrls.length; i++) {
-            const currentUrl = candidateUrls[i];
-            try {
-                const response = await fetch(currentUrl);
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-
-                const contentLength = +(response.headers.get('Content-Length') || 0);
-
-                if (response.body && contentLength > 0) {
-                    const reader = response.body.getReader();
-                    const chunks: Uint8Array[] = [];
-                    let receivedLength = 0;
-
-                    while (true) {
-                        const { done, value } = await reader.read();
-                        if (done) break;
-                        chunks.push(value);
-                        receivedLength += value.length;
-                        const pct = Math.min(45, Math.round((receivedLength / contentLength) * 45));
-                        const mb = (receivedLength / (1024 * 1024)).toFixed(1);
-                        const totalMb = (contentLength / (1024 * 1024)).toFixed(1);
-                        onDownloadProgress?.(mb, totalMb, pct);
-                    }
-
-                    return new Blob(chunks);
-                } else {
-                    return await response.blob();
-                }
-            } catch (err: unknown) {
-                const errorObj = err instanceof Error ? err : new Error(String(err));
-                console.warn(`Fetch candidate ${i + 1} (${currentUrl}) failed:`, errorObj);
-                lastError = errorObj;
-            }
+        const parsed = new URL(url);
+        if (parsed.protocol !== 'https:') {
+            throw new Error('Solo se permiten descargas directas mediante HTTPS.');
         }
 
-        throw new Error(
-            `No se pudo descargar automáticamente el archivo desde GitHub (${lastError?.message || 'CORS / Network Error'}). Puedes descargar el .zip desde tu navegador y cargarlo aquí abajo.`
-        );
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const contentLength = +(response.headers.get('Content-Length') || 0);
+        if (response.body && contentLength > 0) {
+            const reader = response.body.getReader();
+            const chunks: Uint8Array[] = [];
+            let receivedLength = 0;
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                chunks.push(value);
+                receivedLength += value.length;
+                const pct = Math.min(45, Math.round((receivedLength / contentLength) * 45));
+                const mb = (receivedLength / (1024 * 1024)).toFixed(1);
+                const totalMb = (contentLength / (1024 * 1024)).toFixed(1);
+                onDownloadProgress?.(mb, totalMb, pct);
+            }
+
+            return new Blob(chunks);
+        }
+        return await response.blob();
     }
 
     /**

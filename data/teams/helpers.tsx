@@ -34,6 +34,10 @@ function getPacksVersionSnapshot() {
   return packsVersionCounter;
 }
 
+export function usePacksVersion(): number {
+  return React.useSyncExternalStore(subscribeToPackChanges, getPacksVersionSnapshot, getPacksVersionSnapshot);
+}
+
 // Generic Team Shield Component (renders when no custom pack is installed)
 export const GenericTeamShield: React.FC<{
   name?: string;

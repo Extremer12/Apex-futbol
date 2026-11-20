@@ -1,6 +1,6 @@
-// IndexedDB storage for custom logo and asset packs
+// IndexedDB storage for custom legacy logo assets (separate DB name to avoid version conflicts with ApexPacksDB)
 
-const DB_NAME = 'ApexPacksDB';
+const DB_NAME = 'ApexCustomAssetsDB';
 const DB_VERSION = 1;
 const STORE_NAME = 'assets';
 

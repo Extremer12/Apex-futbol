@@ -32,6 +32,10 @@ export type PackCategory =
     | 'all-in-one'
     | 'misc';
 
+export type PackRegion = 'AMERICA' | 'EUROPA' | 'GLOBAL';
+
+export type PackAccentColor = 'emerald' | 'indigo' | 'amber' | 'sky' | 'orange' | 'purple' | 'cyan';
+
 // 3. User & Moderation Roles
 export type UserRole = 'USER' | 'CREATOR' | 'MODERATOR' | 'ADMIN';
 
@@ -84,6 +88,9 @@ export interface PackManifest {
     // Base URL for resolving relative assets (if hosted remotely)
     baseUrl?: string;
 
+    // Optional scoped resolver key for lightweight catalog bundles
+    bundleKey?: string;
+
     // Asset Mappings (Normalized ID -> Relative Path or CDN Path)
     assets: {
         players?: Record<string, string>; // "101" -> "players/101.webp"
@@ -123,14 +130,20 @@ export interface PackCatalogItem {
     author: PackAuthor;
     version: string;
     category: PackCategory;
+    region?: PackRegion;
+    accentColor?: PackAccentColor;
     description: string;
     tags: string[];
+    coverage?: string[];
+    searchTerms?: string[];
+    bundleKey?: string;
     assetCount: number;
     sizeBytes: number;
     sizeFormatted: string; // e.g. "14.2 MB"
     downloads: number;
     rating?: number;
     isOfficial: boolean;
+    isVerified?: boolean;
     isFeatured?: boolean;
     manifestUrl: string;
     downloadUrl?: string; // ZIP download URL

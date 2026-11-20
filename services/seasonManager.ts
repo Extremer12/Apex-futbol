@@ -12,7 +12,6 @@ import { evaluateAchievements } from './achievementService';
 import { initializeLibertadoresSeason } from './libertadoresEngine';
 import { initializeSudamericanaSeason } from './sudamericanaEngine';
 import { SOUTH_AMERICAN_EXTRA_TEAMS } from '../data/teams/southAmericanClubs';
-import { TOURNAMENT_LOGOS } from './customPacks/argentineLogos';
 import { resourceManager } from './resources/ResourceManager';
 import { processFullSeasonSquadProgression } from './squadProgressionService';
 
@@ -766,7 +765,6 @@ export function startNewSeason(currentState: GameState): GameState {
             subtitle: `Sorteo de Fase de Liga ${newSeasonYear}`,
             metadata: {
                 competition: 'champions_league',
-                logoUrl: TOURNAMENT_LOGOS.CHAMPIONS_LEAGUE,
                 accentColor: '#3b82f6',
                 bgClass: 'from-blue-950 via-slate-950 to-slate-950',
                 swissOpponents: playerOpponents
@@ -784,7 +782,6 @@ export function startNewSeason(currentState: GameState): GameState {
             subtitle: `Sorteo de Fase de Grupos`,
             metadata: {
                 competition: 'copa_libertadores',
-                logoUrl: TOURNAMENT_LOGOS.COPA_LIBERTADORES,
                 accentColor: '#facc15',
                 bgClass: 'from-amber-950/80 via-slate-950 to-slate-950',
                 groups: [{
@@ -814,7 +811,6 @@ export function startNewSeason(currentState: GameState): GameState {
             subtitle: `Sorteo de Fase de Grupos`,
             metadata: {
                 competition: 'copa_sudamericana',
-                logoUrl: TOURNAMENT_LOGOS.COPA_SUDAMERICANA,
                 accentColor: '#d97706',
                 bgClass: 'from-yellow-950/70 via-slate-950 to-slate-950',
                 groups: [{

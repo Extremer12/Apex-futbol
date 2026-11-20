@@ -1,934 +1,1345 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { 
-    Download, AlertCircle, CheckCircle2, RotateCcw, Shield, Layers, Check, 
-    Search, Star, Sparkles, Upload, ArrowUp, ArrowDown, Trash2, 
-    RefreshCw, X, HardDrive, UserCheck, Sliders, ExternalLink, Flag, Trophy, ShieldAlert
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import {
+    Search, X, SlidersHorizontal, ChevronRight, Download, Check,
+    Upload, FolderArchive, Link2, ArrowUp, ArrowDown, Trash2,
+    RotateCcw, AlertCircle, CheckCircle2, ArrowLeft, Layers, SearchX,
+    Flag, ChevronDown, ChevronUp, ArchiveRestore
 } from 'lucide-react';
-import { customPacksService } from '../../../services/customPacks/packService';
-import { resourceManager } from '../../../services/resources/ResourceManager';
 import { PackCatalog } from '../../../services/resources/PackCatalog';
 import { PackManager } from '../../../services/resources/PackManager';
-import { ContributionService } from '../../../services/resources/ContributionService';
-import { PackCatalogItem, InstalledPack, PackCategory, ResourceType } from '../../../services/resources/ResourceTypes';
-import { ResourceFallback } from '../../../services/resources/ResourceFallback';
+import { ResourceCache } from '../../../services/resources/ResourceCache';
+import { ModerationService } from '../../../services/resources/ModerationService';
+import { customPacksService } from '../../../services/customPacks/packService';
+import {
+    PackCatalogItem,
+    InstalledPack,
+    PackCategory,
+    PackRegion
+} from '../../../services/resources/ResourceTypes';
+import { BottomSheet, StatCell, EmptyState } from '../transfers/TransferUI';
+import { PackArtwork, PACK_ACCENTS, getPackAccent, getPackCategoryLabel } from '../packs/PackUI';
 
-type ActiveTab = 'catalog' | 'installed' | 'contribute';
+type ScreenTab = 'EXPLORE' | 'INSTALLED' | 'IMPORT';
+type CategoryFilter = 'all' | 'team-logos' | 'league-logos' | 'player-faces' | 'trophies' | 'flags';
+type RegionFilter = 'ALL' | PackRegion;
+type StatusFilter = 'ALL' | 'NOT_INSTALLED' | 'INSTALLED';
+type SortOption = 'featured' | 'assets' | 'lightest' | 'rating' | 'newest';
 
-const CATEGORY_TABS: { id: PackCategory | 'all'; label: string; icon: string }[] = [
-    { id: 'all', label: 'TODOS', icon: '🌐' },
-    { id: 'player-faces', label: 'ROSTROS', icon: '👤' },
-    { id: 'team-logos', label: 'ESCUDOS', icon: '🛡️' },
-    { id: 'league-logos', label: 'LIGAS', icon: '🏆' },
-    { id: 'trophies', label: 'COPAS', icon: '🥇' },
-    { id: 'flags', label: 'BANDERAS', icon: '🌎' },
-    { id: 'kits', label: 'CAMISETAS', icon: '👕' },
-    { id: 'stadiums', label: 'ESTADIOS', icon: '🏟️' },
+interface CommunityPacksSectionProps {
+    onBack?: () => void;
+    embedded?: boolean;
+}
+
+const CATEGORY_PILLS: { id: CategoryFilter; label: string }[] = [
+    { id: 'all', label: 'Todos' },
+    { id: 'team-logos', label: 'Escudos' },
+    { id: 'league-logos', label: 'Ligas y Copas' },
+    { id: 'player-faces', label: 'Rostros' },
+    { id: 'trophies', label: 'Trofeos' },
+    { id: 'flags', label: 'Banderas' },
 ];
 
-export const CommunityPacksSection: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<ActiveTab>('catalog');
-    const [selectedCategory, setSelectedCategory] = useState<PackCategory | 'all'>('all');
+const REGION_OPTIONS: { id: RegionFilter; label: string }[] = [
+    { id: 'ALL', label: 'Todas' },
+    { id: 'AMERICA', label: 'América' },
+    { id: 'EUROPA', label: 'Europa' },
+    { id: 'GLOBAL', label: 'Global' },
+];
+
+const STATUS_OPTIONS: { id: StatusFilter; label: string }[] = [
+    { id: 'ALL', label: 'Todos' },
+    { id: 'NOT_INSTALLED', label: 'Disponibles' },
+    { id: 'INSTALLED', label: 'Instalados' },
+];
+
+const SORT_OPTIONS: { id: SortOption; label: string }[] = [
+    { id: 'featured', label: 'Recomendados' },
+    { id: 'assets', label: 'Más recursos' },
+    { id: 'lightest', label: 'Más livianos' },
+    { id: 'rating', label: 'Mejor valorados' },
+    { id: 'newest', label: 'Más recientes' },
+];
+
+export const CommunityPacksSection: React.FC<CommunityPacksSectionProps> = ({ onBack, embedded }) => {
+    const [activeTab, setActiveTab] = useState<ScreenTab>('EXPLORE');
+
+    // Catalog filters
     const [searchQuery, setSearchQuery] = useState('');
-    const [sortBy, setSortBy] = useState<'featured' | 'downloads' | 'rating' | 'newest'>('featured');
-    
-    // Installed packs state
-    const [installedPacks, setInstalledPacks] = useState<InstalledPack[]>([]);
-    
-    // Download progress simulation & state
-    const [isDownloading, setIsDownloading] = useState(false);
-    const [downloadingPackId, setDownloadingPackId] = useState<string | null>(null);
-    const [downloadProgress, setDownloadProgress] = useState(0);
-    const [downloadStatusText, setDownloadStatusText] = useState('');
-    const [downloadCancelled, setDownloadCancelled] = useState(false);
+    const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
+    const [regionFilter, setRegionFilter] = useState<RegionFilter>('ALL');
+    const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
+    const [sortBy, setSortBy] = useState<SortOption>('featured');
+    const [filtersOpen, setFiltersOpen] = useState(false);
 
-    // Contribution modal / form state
-    const [contribType, setContribType] = useState<ResourceType>('player-face');
-    const [contribTargetLabel, setContribTargetLabel] = useState('');
-    const [contribTargetId, setContribTargetId] = useState('');
-    const [contribFile, setContribFile] = useState<File | null>(null);
-    const [contribLicenseAgreed, setContribLicenseAgreed] = useState(false);
-    const [contribSubmitting, setContribSubmitting] = useState(false);
+    // Installed state & storage footprint
+    const [installedPacks, setInstalledPacks] = useState<InstalledPack[]>(() => PackManager.getInstalledPacks());
+    const [storageStats, setStorageStats] = useState<{ assetCount: number; totalBytes: number }>({ assetCount: 0, totalBytes: 0 });
 
-    // Feedback notifications
-    const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-    const [confirmModal, setConfirmModal] = useState<{
+    // Download / Import progress with real AbortController cancellation
+    const abortControllerRef = useRef<AbortController | null>(null);
+    const [busyState, setBusyState] = useState<{
+        active: boolean;
+        label: string;
+        percent: number;
+        packId?: string;
+    }>({ active: false, label: '', percent: 0 });
+
+    // Modals / Sheets
+    const [detailPack, setDetailPack] = useState<PackCatalogItem | null>(null);
+    const [reportMode, setReportMode] = useState(false);
+    const [reportReason, setReportReason] = useState('Derechos de imagen / DMCA');
+    const [confirmAction, setConfirmAction] = useState<{
         title: string;
         message: string;
-        confirmText?: string;
-        confirmColor?: string;
-        onConfirm: () => void;
+        confirmLabel: string;
+        destructive?: boolean;
+        onConfirm: () => Promise<void> | void;
     } | null>(null);
 
-    // Master Community Safe Mode state
-    const [isCommunityActive, setIsCommunityActive] = useState(() => customPacksService.isCommunityPacksActive());
+    // Import tab state
+    const zipInputRef = useRef<HTMLInputElement | null>(null);
+    const [remoteUrl, setRemoteUrl] = useState('');
+    const [showFormatGuide, setShowFormatGuide] = useState(false);
 
-    // Reload packs from manager
-    const refreshPacks = () => {
+    // Feedback toast/banner
+    const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+    const refreshState = () => {
         setInstalledPacks(PackManager.getInstalledPacks());
-        setIsCommunityActive(customPacksService.isCommunityPacksActive());
+        ResourceCache.getStorageStats().then(setStorageStats).catch(() => {});
     };
 
     useEffect(() => {
-        refreshPacks();
-        const unsubManager = PackManager.subscribe(() => {
-            refreshPacks();
-        });
-        const unsubPacksService = customPacksService.subscribe(() => {
-            refreshPacks();
-        });
+        refreshState();
+        const unsub = PackManager.subscribe(() => refreshState());
         return () => {
-            unsubManager();
-            unsubPacksService();
+            unsub();
+            abortControllerRef.current?.abort();
         };
     }, []);
 
-    // Filtered Catalog
-    const catalogItems = useMemo(() => {
-        return PackCatalog.getCatalog({
-            category: selectedCategory,
+    // All catalog items & totals
+    const allCatalogItems = useMemo(() => PackCatalog.getCatalog(), []);
+    const catalogTotals = useMemo(() => PackCatalog.getTotals(), []);
+
+    const installedById = useMemo(
+        () => new Map<string, InstalledPack>(installedPacks.map(p => [p.packId, p])),
+        [installedPacks]
+    );
+
+    const enabledCount = useMemo(
+        () => installedPacks.filter(p => p.enabled).length,
+        [installedPacks]
+    );
+
+    const totalEnabledAssets = useMemo(
+        () => installedPacks.filter(p => p.enabled).reduce((sum, p) => sum + (p.assetCount || 0), 0),
+        [installedPacks]
+    );
+
+    // Remaining catalog packs for "Descargar todo"
+    const pendingCatalogPacks = useMemo(() => {
+        return allCatalogItems.filter(item => {
+            const inst = installedById.get(item.id);
+            return !inst || !inst.enabled || PackManager.hasUpdate(inst, item);
+        });
+    }, [allCatalogItems, installedById]);
+
+    const pendingBytesFormatted = useMemo(() => {
+        const bytes = pendingCatalogPacks.reduce((s, p) => s + p.sizeBytes, 0);
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    }, [pendingCatalogPacks]);
+
+    // Filtered catalog results + match hints
+    const filteredEntries = useMemo(() => {
+        const items = PackCatalog.getCatalog({
+            category: categoryFilter,
+            region: regionFilter,
             query: searchQuery,
-            sortBy: sortBy
+            sortBy,
         });
-    }, [selectedCategory, searchQuery, sortBy]);
 
-    // Check if an item is installed
-    const getInstalledPackInfo = (catalogId: string): InstalledPack | undefined => {
-        return installedPacks.find(p => p.packId === catalogId);
+        return items
+            .filter(item => {
+                const inst = installedById.get(item.id);
+                if (statusFilter === 'INSTALLED') return Boolean(inst);
+                if (statusFilter === 'NOT_INSTALLED') return !inst;
+                return true;
+            })
+            .map(item => ({
+                item,
+                matchHint: searchQuery.trim() ? PackCatalog.findMatchReason(item, searchQuery) : null,
+            }));
+    }, [categoryFilter, regionFilter, searchQuery, sortBy, statusFilter, installedById]);
+
+    const clubAndCompEntries = useMemo(
+        () => filteredEntries.filter(e => e.item.category === 'team-logos' || e.item.category === 'league-logos' || e.item.category === 'competition-logos'),
+        [filteredEntries]
+    );
+
+    const extraVisualEntries = useMemo(
+        () => filteredEntries.filter(e => e.item.category !== 'team-logos' && e.item.category !== 'league-logos' && e.item.category !== 'competition-logos'),
+        [filteredEntries]
+    );
+
+    const activeFilterCount =
+        (regionFilter !== 'ALL' ? 1 : 0) +
+        (statusFilter !== 'ALL' ? 1 : 0) +
+        (sortBy !== 'featured' ? 1 : 0);
+
+    const resetFilters = () => {
+        setSearchQuery('');
+        setCategoryFilter('all');
+        setRegionFilter('ALL');
+        setStatusFilter('ALL');
+        setSortBy('featured');
     };
 
-    // Trigger installation with progressive feedback
-    const handleInstallPack = async (item: PackCatalogItem) => {
-        setIsDownloading(true);
-        setDownloadingPackId(item.id);
-        setDownloadProgress(5);
-        setDownloadStatusText('Conectando con el servidor de contenido...');
-        setDownloadCancelled(false);
+    const startOperation = () => {
+        abortControllerRef.current?.abort();
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+        return controller;
+    };
+
+    const handleCancelOperation = () => {
+        abortControllerRef.current?.abort();
+        setBusyState({ active: false, label: '', percent: 0 });
+        setFeedback({ type: 'error', message: 'Operación cancelada.' });
+    };
+
+    const handleInstallSingle = async (item: PackCatalogItem) => {
+        if (busyState.active) return;
+        const controller = startOperation();
         setFeedback(null);
+        setBusyState({ active: true, label: `Activando ${item.name}…`, percent: 10, packId: item.id });
 
         try {
-            // Emulate progressive download steps for responsive UX
-            const steps = [
-                { pct: 25, text: `Descargando recursos (${item.sizeFormatted})...` },
-                { pct: 55, text: 'Verificando checksum y firma de seguridad...' },
-                { pct: 80, text: 'Optimizando índices locales y asignando IDs...' },
-                { pct: 95, text: 'Finalizando montaje en el ResourceManager...' }
-            ];
-
-            for (const step of steps) {
-                if (downloadCancelled) throw new Error('Descarga cancelada por el usuario.');
-                await new Promise(r => setTimeout(r, 220));
-                setDownloadProgress(step.pct);
-                setDownloadStatusText(step.text);
-            }
-
-            // Install in PackManager
-            await PackManager.installManifestPack({
-                schemaVersion: 1,
-                id: item.id,
-                name: item.name,
-                version: item.version,
-                category: item.category,
-                author: item.author,
-                description: item.description,
-                isOfficial: item.isOfficial,
-                assetCount: item.assetCount,
-                sizeBytes: item.sizeBytes,
-                assets: {}
-            }, item.isOfficial ? 30 : 10);
-
-            // Also synchronize customPacksService legacy flags if relevant
-            if (item.id === 'official-base-pack') {
-                customPacksService.setAllPacksActive(true);
-            } else if (item.id === 'argentina-faces-2026') {
-                customPacksService.setPlayerFacesPackActive(true);
-            }
-
-            setDownloadProgress(100);
-            setDownloadStatusText('¡Instalación completada!');
-            await new Promise(r => setTimeout(r, 200));
-
-            setFeedback({
-                type: 'success',
-                message: `El pack "${item.name}" (v${item.version}) se instaló y activó correctamente.`
-            });
-            refreshPacks();
-        } catch (err: any) {
-            setFeedback({
-                type: 'error',
-                message: err.message || 'Error al descargar el paquete.'
-            });
-        } finally {
-            setIsDownloading(false);
-            setDownloadingPackId(null);
-            setDownloadProgress(0);
-        }
-    };
-
-    // Toggle Enable / Disable
-    const handleToggleEnabled = (packId: string, currentEnabled: boolean) => {
-        PackManager.setPackEnabled(packId, !currentEnabled);
-        refreshPacks();
-        setFeedback({
-            type: 'success',
-            message: `Pack ${!currentEnabled ? 'activado' : 'desactivado'} con éxito.`
-        });
-    };
-
-    // Uninstall Pack
-    const handleUninstall = async (packId: string, packName: string) => {
-        setConfirmModal({
-            title: 'Desinstalar Pack Comunitario',
-            message: `¿Estás seguro de desinstalar "${packName}"? Los recursos visuales volverán a los genéricos.`,
-            confirmText: 'Desinstalar',
-            confirmColor: 'bg-red-600 hover:bg-red-500 text-white',
-            onConfirm: async () => {
-                try {
-                    await PackManager.uninstallPack(packId);
-                    refreshPacks();
-                    setFeedback({
-                        type: 'success',
-                        message: `Pack "${packName}" desinstalado.`
-                    });
-                } catch (err: any) {
-                    setFeedback({
-                        type: 'error',
-                        message: err.message || 'Error al desinstalar.'
-                    });
-                }
-            }
-        });
-    };
-
-    // Change Priority
-    const handleChangePriority = (packId: string, delta: number) => {
-        const pack = PackManager.getInstalledPack(packId);
-        if (!pack) return;
-        const newPriority = Math.max(1, Math.min(100, pack.priority + delta));
-        PackManager.setPackPriority(packId, newPriority);
-        refreshPacks();
-    };
-
-    // Submit user visual contribution
-    const handleSubmitContribution = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!contribFile) {
-            setFeedback({ type: 'error', message: 'Debes seleccionar un archivo de imagen (WebP, PNG, SVG).' });
-            return;
-        }
-        if (!contribTargetLabel.trim() || !contribTargetId.trim()) {
-            setFeedback({ type: 'error', message: 'Debes indicar el nombre y el ID del recurso.' });
-            return;
-        }
-        if (!contribLicenseAgreed) {
-            setFeedback({ type: 'error', message: 'Debes aceptar la declaración de derechos y licencia de uso.' });
-            return;
-        }
-
-        setContribSubmitting(true);
-        try {
-            await ContributionService.submitContribution({
-                userId: 'user_local',
-                userName: 'Usuario',
-                resourceType: contribType,
-                targetId: contribTargetId.trim(),
-                targetLabel: contribTargetLabel.trim(),
-                file: contribFile
-            });
-
-            setFeedback({
-                type: 'success',
-                message: `¡Contribución de "${contribTargetLabel}" enviada a revisión de moderación! No altera estadísticas del juego.`
-            });
-
-            // Reset form
-            setContribTargetLabel('');
-            setContribTargetId('');
-            setContribFile(null);
-            setContribLicenseAgreed(false);
-            setActiveTab('catalog');
-        } catch (err: any) {
-            setFeedback({
-                type: 'error',
-                message: err.message || 'Error al enviar la contribución.'
-            });
-        } finally {
-            setContribSubmitting(false);
-        }
-    };
-
-    // Toggle Master Community Safe Mode
-    const handleToggleCommunityMaster = () => {
-        const nextState = !isCommunityActive;
-        customPacksService.setCommunityPacksActive(nextState);
-        setIsCommunityActive(nextState);
-        refreshPacks();
-        setFeedback({
-            type: 'success',
-            message: nextState
-                ? '¡Packs Comunitarios Activados! Escudos de clubes y caras reales listos al 100%.'
-                : 'Modo Seguro activado para Google Play. El juego utiliza escudos vectoriales y siluetas genéricas.'
-        });
-    };
-
-    // Reset everything to generic fallback
-    const handleClearAll = async () => {
-        setConfirmModal({
-            title: 'Restablecer Recursos Comunitarios',
-            message: '¿Deseas desinstalar todos los packs comunitarios y restablecer el juego a base mínima genérica?',
-            confirmText: 'Restablecer Todo',
-            confirmColor: 'bg-red-600 hover:bg-red-500 text-white',
-            onConfirm: async () => {
-                for (const pack of installedPacks) {
-                    await PackManager.uninstallPack(pack.packId);
-                }
-                await customPacksService.clearAllPacks();
-                await resourceManager.clearAllCache();
-                refreshPacks();
-                setFeedback({
-                    type: 'success',
-                    message: 'Todos los recursos comunitarios fueron removidos. El juego funciona con placeholders procedurales.'
+            const existing = installedById.get(item.id);
+            if (existing && !existing.enabled && !PackManager.hasUpdate(existing, item)) {
+                PackManager.setPackEnabled(existing.packId, true);
+            } else {
+                await PackManager.installCatalogPack(item, {
+                    signal: controller.signal,
+                    onProgress: (pct, text) => {
+                        setBusyState({ active: true, label: text, percent: pct, packId: item.id });
+                    },
                 });
             }
+            setFeedback({ type: 'success', message: `${item.name} activado correctamente.` });
+            refreshState();
+        } catch (err: any) {
+            if (!controller.signal.aborted) {
+                setFeedback({ type: 'error', message: err?.message || 'Error al instalar el pack.' });
+            }
+        } finally {
+            setBusyState({ active: false, label: '', percent: 0 });
+        }
+    };
+
+    const handleDownloadAll = async () => {
+        if (busyState.active || pendingCatalogPacks.length === 0) return;
+        const controller = startOperation();
+        setFeedback(null);
+        setBusyState({ active: true, label: 'Preparando descarga completa…', percent: 5 });
+
+        try {
+            const result = await PackManager.installAllCatalogPacks(allCatalogItems, {
+                signal: controller.signal,
+                onProgress: (pct, currentName, done, total) => {
+                    const label = total > 0 ? `Instalando ${currentName} (${done + 1}/${total})…` : currentName;
+                    setBusyState({ active: true, label, percent: Math.max(8, pct) });
+                },
+            });
+
+            if (result.errors.length > 0) {
+                setFeedback({
+                    type: 'error',
+                    message: `Se activaron ${result.installed} packs con ${result.errors.length} aviso(s).`,
+                });
+            } else {
+                setFeedback({
+                    type: 'success',
+                    message: `Colección visual activada (${result.installed} packs instalados).`,
+                });
+            }
+            refreshState();
+        } catch (err: any) {
+            if (!controller.signal.aborted) {
+                setFeedback({ type: 'error', message: err?.message || 'No se pudo completar la instalación.' });
+            }
+        } finally {
+            setBusyState({ active: false, label: '', percent: 0 });
+        }
+    };
+
+    const handleToggleEnabled = (pack: InstalledPack) => {
+        const next = !pack.enabled;
+        PackManager.setPackEnabled(pack.packId, next);
+        setFeedback({
+            type: 'success',
+            message: `${pack.name} ${next ? 'activado' : 'pausado'}.`,
+        });
+        refreshState();
+    };
+
+    const handlePriorityStep = (pack: InstalledPack, delta: number) => {
+        const next = Math.max(1, Math.min(100, pack.priority + delta));
+        PackManager.setPackPriority(pack.packId, next);
+        refreshState();
+    };
+
+    const handleRequestUninstall = (pack: InstalledPack) => {
+        setConfirmAction({
+            title: 'Desinstalar pack',
+            message: `¿Quitar "${pack.name}"? Los gráficos cubiertos volverán a los escudos o siluetas vectoriales base.`,
+            confirmLabel: 'Desinstalar',
+            destructive: true,
+            onConfirm: async () => {
+                await PackManager.uninstallPack(pack.packId);
+                setDetailPack(null);
+                setFeedback({ type: 'success', message: `${pack.name} desinstalado.` });
+                refreshState();
+            },
         });
     };
 
-    return (
-        <div className="space-y-6 max-w-7xl mx-auto">
-            {/* Header & Sub-Navigation */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-3 border-b border-white/10">
-                <div className="space-y-1">
-                    <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-[var(--apex-gold)]/10 border border-[var(--apex-gold)]/20 flex items-center justify-center text-[var(--apex-gold)]">
-                            <Layers className="w-4 h-4" />
-                        </div>
-                        <h2 className="text-xl font-black text-white tracking-tight">
-                            Contenido de la Comunidad
-                        </h2>
-                    </div>
-                    <p className="text-xs text-slate-400">
-                        Descarga packs de escudos vectoriales, rostros HD, copas y banderas sin modificar los datos ni el gameplay.
-                    </p>
+    const handleRequestResetAll = () => {
+        setConfirmAction({
+            title: 'Restablecer a base vectorial',
+            message: 'Se desinstalarán todos los packs activos y se vaciará la caché local en IndexedDB. El juego seguirá funcionando con sus gráficos vectoriales base.',
+            confirmLabel: 'Restablecer todo',
+            destructive: true,
+            onConfirm: async () => {
+                await PackManager.clearAllPacks();
+                await customPacksService.clearAllPacks();
+                setFeedback({ type: 'success', message: 'Base vectorial restablecida.' });
+                refreshState();
+            },
+        });
+    };
+
+    const handleZipUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        e.target.value = '';
+        if (!file || busyState.active) return;
+
+        const controller = startOperation();
+        setFeedback(null);
+        setBusyState({ active: true, label: `Leyendo ${file.name}…`, percent: 8 });
+
+        try {
+            const installed = await PackManager.installZipFile(file, {
+                name: file.name,
+                signal: controller.signal,
+                onProgress: (pct, status) => setBusyState({ active: true, label: status, percent: pct }),
+            });
+            setFeedback({ type: 'success', message: `Pack "${installed.name}" importado (${installed.assetCount} recursos).` });
+            setActiveTab('INSTALLED');
+            refreshState();
+        } catch (err: any) {
+            if (!controller.signal.aborted) {
+                setFeedback({ type: 'error', message: err?.message || 'Error al leer el archivo .ZIP.' });
+            }
+        } finally {
+            setBusyState({ active: false, label: '', percent: 0 });
+        }
+    };
+
+    const handleUrlImport = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!remoteUrl.trim() || busyState.active) return;
+
+        const controller = startOperation();
+        setFeedback(null);
+        setBusyState({ active: true, label: 'Conectando con enlace HTTPS…', percent: 10 });
+
+        try {
+            const installed = await PackManager.installFromHttpsUrl(remoteUrl, {
+                signal: controller.signal,
+                onProgress: (pct, status) => setBusyState({ active: true, label: status, percent: pct }),
+            });
+            setRemoteUrl('');
+            setFeedback({ type: 'success', message: `Pack "${installed.name}" importado correctamente.` });
+            setActiveTab('INSTALLED');
+            refreshState();
+        } catch (err: any) {
+            if (!controller.signal.aborted) {
+                setFeedback({ type: 'error', message: err?.message || 'No se pudo importar desde la URL.' });
+            }
+        } finally {
+            setBusyState({ active: false, label: '', percent: 0 });
+        }
+    };
+
+    const handleExportBackup = async () => {
+        setFeedback(null);
+        try {
+            const blob = await PackManager.exportLocalAssetsZip();
+            if (!blob) {
+                setFeedback({ type: 'error', message: 'No hay imágenes locales guardadas en caché para exportar.' });
+                return;
+            }
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `apex-visual-pack-${new Date().toISOString().slice(0, 10)}.zip`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            setFeedback({ type: 'success', message: 'Respaldo .ZIP generado correctamente.' });
+        } catch (err: any) {
+            setFeedback({ type: 'error', message: err?.message || 'No se pudo exportar el respaldo.' });
+        }
+    };
+
+    const handleSubmitReport = () => {
+        if (!detailPack) return;
+        ModerationService.reportContent(detailPack.id, reportReason, 'user_local');
+        setReportMode(false);
+        setDetailPack(null);
+        setFeedback({ type: 'success', message: `Reporte registrado para "${detailPack.name}".` });
+    };
+
+    const renderCatalogGroup = (
+        title: string,
+        entries: { item: PackCatalogItem; matchHint: string | null }[]
+    ) => {
+        if (entries.length === 0) return null;
+        return (
+            <div className="apex-card overflow-hidden">
+                <div className="px-3.5 py-2.5 bg-white/[0.02] border-b border-white/5 flex items-center justify-between">
+                    <span className="text-xs font-black text-white tracking-tight">{title}</span>
+                    <span className="text-[10px] font-semibold text-slate-500">
+                        {entries.length} {entries.length === 1 ? 'pack' : 'packs'}
+                    </span>
                 </div>
 
-                {/* Main View Tabs */}
-                <div className="flex items-center gap-2 bg-slate-900/80 p-1.5 rounded-xl border border-white/10 self-start md:self-auto">
+                <ul className="divide-y divide-white/5">
+                    {entries.map(({ item, matchHint }) => {
+                        const accent = getPackAccent(item.accentColor, item.category);
+                        const inst = installedById.get(item.id);
+                        const isEnabled = Boolean(inst?.enabled);
+                        const hasUpdate = inst ? PackManager.hasUpdate(inst, item) : false;
+                        const isItemBusy = busyState.active && busyState.packId === item.id;
+
+                        return (
+                            <li key={item.id}>
+                                <div
+                                    onClick={() => {
+                                        setReportMode(false);
+                                        setDetailPack(item);
+                                    }}
+                                    role="button"
+                                    tabIndex={0}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            setReportMode(false);
+                                            setDetailPack(item);
+                                        }
+                                    }}
+                                    className={`relative w-full flex items-center gap-3 px-3.5 py-3 text-left transition-colors cursor-pointer ${
+                                        isEnabled ? 'bg-emerald-500/[0.04]' : 'hover:bg-white/[0.03] active:bg-white/[0.06]'
+                                    }`}
+                                >
+                                    <span className={`w-1 h-9 rounded-full shrink-0 ${accent.bar}`} />
+                                    <PackArtwork packId={item.id} category={item.category} accent={accent} />
+
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex items-center gap-1.5">
+                                            <p className="text-sm font-bold text-white truncate">{item.name}</p>
+                                            <span className={`hidden sm:inline-block px-2 py-0.5 rounded-md text-[10px] font-bold shrink-0 ${accent.badge}`}>
+                                                {getPackCategoryLabel(item.category)}
+                                            </span>
+                                        </div>
+
+                                        <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+                                            {matchHint ? (
+                                                <span className="text-[var(--apex-gold)] font-semibold">
+                                                    Incluye: {matchHint}
+                                                </span>
+                                            ) : (
+                                                <span>
+                                                    {item.assetCount.toLocaleString()} recursos · {item.sizeFormatted}
+                                                </span>
+                                            )}
+                                        </p>
+                                    </div>
+
+                                    {isItemBusy ? (
+                                        <span className="px-2.5 py-1.5 rounded-xl bg-[var(--apex-gold)]/15 text-[var(--apex-gold)] text-[11px] font-black shrink-0">
+                                            {busyState.percent}%
+                                        </span>
+                                    ) : hasUpdate ? (
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleInstallSingle(item);
+                                            }}
+                                            disabled={busyState.active}
+                                            className="h-8 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] font-black shrink-0 disabled:opacity-50"
+                                        >
+                                            Actualizar
+                                        </button>
+                                    ) : isEnabled ? (
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (inst) handleToggleEnabled(inst);
+                                            }}
+                                            className="h-8 px-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[11px] font-bold flex items-center gap-1 shrink-0 hover:bg-emerald-500/25"
+                                        >
+                                            <Check className="w-3.5 h-3.5" />
+                                            <span>Activo</span>
+                                        </button>
+                                    ) : inst ? (
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleToggleEnabled(inst);
+                                            }}
+                                            className="h-8 px-3 rounded-xl bg-white/10 hover:bg-white/15 text-slate-200 text-[11px] font-bold shrink-0"
+                                        >
+                                            Activar
+                                        </button>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleInstallSingle(item);
+                                            }}
+                                            disabled={busyState.active}
+                                            className="h-8 px-3 rounded-xl bg-white/10 hover:bg-[var(--apex-gold)] hover:text-slate-950 text-white text-[11px] font-bold flex items-center gap-1.5 shrink-0 transition-colors disabled:opacity-50"
+                                        >
+                                            <Download className="w-3.5 h-3.5" />
+                                            <span>Instalar</span>
+                                        </button>
+                                    )}
+
+                                    <ChevronRight className="w-4 h-4 text-slate-500 shrink-0 hidden sm:block" />
+                                </div>
+                            </li>
+                        );
+                    })}
+                </ul>
+            </div>
+        );
+    };
+
+    const detailInstalled = detailPack ? installedById.get(detailPack.id) : undefined;
+    const detailAccent = detailPack ? getPackAccent(detailPack.accentColor, detailPack.category) : PACK_ACCENTS.amber;
+
+    return (
+        <div className={`${embedded ? 'space-y-3 sm:space-y-4' : 'p-3 sm:p-5 md:p-6 space-y-3 sm:space-y-4 pb-24'} animate-fade-in max-w-5xl mx-auto w-full`}>
+            {/* 1. HEADER */}
+            <header className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                    {onBack && (
+                        <button
+                            type="button"
+                            onClick={onBack}
+                            aria-label="Volver"
+                            className="w-10 h-10 rounded-2xl bg-[#0D1220] border border-white/10 hover:border-[var(--apex-gold)]/50 flex items-center justify-center text-white shrink-0"
+                        >
+                            <ArrowLeft className="w-4 h-4 text-[var(--apex-gold)]" />
+                        </button>
+                    )}
+                    <div className="min-w-0">
+                        <h1 className="text-lg sm:text-xl font-black text-white tracking-tight truncate">
+                            Packs Visuales
+                        </h1>
+                        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-400 truncate">
+                            {enabledCount > 0
+                                ? `${enabledCount} ${enabledCount === 1 ? 'pack activo' : 'packs activos'} · ${totalEnabledAssets.toLocaleString()} recursos`
+                                : 'Base vectorial · Escudos y siluetas propias'}
+                        </span>
+                    </div>
+                </div>
+
+                <button
+                    type="button"
+                    onClick={() => setActiveTab(activeTab === 'INSTALLED' ? 'EXPLORE' : 'INSTALLED')}
+                    className="flex items-center gap-2.5 pl-2.5 pr-3 py-2 rounded-2xl bg-[#0D1220] border border-white/10 hover:border-[var(--apex-gold)]/40 text-left shrink-0"
+                >
+                    <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${enabledCount > 0 ? 'bg-emerald-400' : 'bg-slate-500'}`} />
+                    <div>
+                        <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block leading-none mb-1">
+                            {activeTab === 'INSTALLED' ? 'Explorar' : 'Activos'}
+                        </span>
+                        <span className="text-xs font-black text-white leading-none block">
+                            {enabledCount}/{allCatalogItems.length}
+                        </span>
+                    </div>
+                </button>
+            </header>
+
+            {/* 2. STICKY TABS */}
+            <nav className="sticky top-0 z-20 -mx-3 sm:mx-0 px-3 sm:px-0 py-1.5 bg-[var(--apex-darker,#070A13)]/95 backdrop-blur">
+                <div className="grid grid-cols-3 gap-1 p-1 bg-white/5 rounded-2xl">
                     <button
-                        onClick={() => setActiveTab('catalog')}
-                        className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                            activeTab === 'catalog'
-                                ? 'bg-[var(--apex-gold)] text-slate-950 shadow-md'
-                                : 'text-slate-400 hover:text-white'
+                        type="button"
+                        onClick={() => setActiveTab('EXPLORE')}
+                        className={`h-10 rounded-xl text-xs sm:text-sm font-bold transition-colors flex items-center justify-center ${
+                            activeTab === 'EXPLORE' ? 'bg-[var(--apex-gold)] text-slate-950 font-black' : 'text-slate-400 hover:text-white'
                         }`}
                     >
-                        Explorar Catálogo
+                        Explorar
                     </button>
                     <button
-                        onClick={() => setActiveTab('installed')}
-                        className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                            activeTab === 'installed'
-                                ? 'bg-[var(--apex-gold)] text-slate-950 shadow-md'
-                                : 'text-slate-400 hover:text-white'
+                        type="button"
+                        onClick={() => setActiveTab('INSTALLED')}
+                        className={`h-10 rounded-xl text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-1.5 ${
+                            activeTab === 'INSTALLED' ? 'bg-[var(--apex-gold)] text-slate-950 font-black' : 'text-slate-400 hover:text-white'
                         }`}
                     >
                         <span>Instalados</span>
                         {installedPacks.length > 0 && (
-                            <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-bold ${
-                                activeTab === 'installed' ? 'bg-slate-950 text-[var(--apex-gold)]' : 'bg-slate-800 text-slate-300'
+                            <span className={`min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-black flex items-center justify-center ${
+                                activeTab === 'INSTALLED' ? 'bg-slate-950 text-[var(--apex-gold)]' : 'bg-white/15 text-white'
                             }`}>
                                 {installedPacks.length}
                             </span>
                         )}
                     </button>
                     <button
-                        onClick={() => setActiveTab('contribute')}
-                        className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                            activeTab === 'contribute'
-                                ? 'bg-[var(--apex-gold)] text-slate-950 shadow-md'
-                                : 'text-slate-400 hover:text-white'
+                        type="button"
+                        onClick={() => setActiveTab('IMPORT')}
+                        className={`h-10 rounded-xl text-xs sm:text-sm font-bold transition-colors flex items-center justify-center ${
+                            activeTab === 'IMPORT' ? 'bg-[var(--apex-gold)] text-slate-950 font-black' : 'text-slate-400 hover:text-white'
                         }`}
                     >
-                        <Upload className="w-3.5 h-3.5" />
-                        <span>Contribuir</span>
+                        Importar
                     </button>
                 </div>
-            </div>
+            </nav>
 
-            {/* 1-CLICK MASTER TOGGLE: MODO COMUNIDAD / MODO SEGURO */}
-            <div className={`p-5 rounded-2xl border transition-all duration-300 shadow-xl ${
-                isCommunityActive
-                    ? 'bg-gradient-to-r from-amber-950/40 via-slate-900 to-slate-900 border-[var(--apex-gold)]/40 shadow-yellow-500/5'
-                    : 'bg-gradient-to-r from-slate-900 via-slate-900 to-sky-950/40 border-sky-500/30'
-            }`}>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="space-y-1.5">
-                        <div className="flex items-center gap-2">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${
-                                isCommunityActive
-                                    ? 'bg-[var(--apex-gold)]/20 text-[var(--apex-gold)] border-[var(--apex-gold)]/40'
-                                    : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
-                            }`}>
-                                {isCommunityActive ? '✨ Contenido Real Activo' : '🛡️ Modo Seguro (Play Store)'}
-                            </span>
-                        </div>
-                        <h3 className="text-base font-black text-white">
-                            Escudos de Clubes y Caras Reales (1 Clic)
-                        </h3>
-                        <p className="text-xs text-slate-400 max-w-xl">
-                            {isCommunityActive
-                                ? 'Los 382 escudos reales de clubes, torneos y fotos de futbolistas están activos en todo el juego.'
-                                : 'Por defecto el juego inicia en Modo Seguro con escudos vectoriales para cumplir las políticas de Google Play. Actívalo con 1 clic para disfrutar del contenido real.'}
-                        </p>
-                    </div>
-
-                    <button
-                        onClick={handleToggleCommunityMaster}
-                        className={`px-5 py-3 rounded-xl font-black text-xs uppercase tracking-wider transition-all shadow-lg flex items-center justify-center gap-2 shrink-0 cursor-pointer active:scale-98 ${
-                            isCommunityActive
-                                ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
-                                : 'bg-gradient-to-r from-[var(--apex-gold)] to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 shadow-yellow-500/20'
-                        }`}
-                    >
-                        {isCommunityActive ? (
-                            <>
-                                <RotateCcw className="w-4 h-4" />
-                                <span>Volver a Modo Seguro</span>
-                            </>
-                        ) : (
-                            <>
-                                <Sparkles className="w-4 h-4 text-slate-950" />
-                                <span>Activar Todo con 1 Clic</span>
-                            </>
-                        )}
-                    </button>
-                </div>
-            </div>
-
-            {/* Feedback Alert Toast */}
+            {/* INLINE FEEDBACK BANNER */}
             {feedback && (
-                <div className={`p-4 rounded-xl text-xs font-medium border flex items-center justify-between gap-3 animate-fade-in ${
-                    feedback.type === 'success' 
-                        ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300' 
-                        : 'bg-red-950/60 border-red-500/40 text-red-300'
+                <div className={`px-3.5 py-2.5 rounded-2xl border text-xs font-semibold flex items-center justify-between gap-2 animate-fade-in ${
+                    feedback.type === 'success'
+                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                        : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
                 }`}>
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2 min-w-0">
                         {feedback.type === 'success' ? (
-                            <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
                         ) : (
-                            <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+                            <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
                         )}
-                        <span>{feedback.message}</span>
+                        <span className="truncate">{feedback.message}</span>
                     </div>
-                    <button onClick={() => setFeedback(null)} className="text-slate-400 hover:text-white p-1">
+                    <button
+                        type="button"
+                        onClick={() => setFeedback(null)}
+                        aria-label="Cerrar aviso"
+                        className="w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:text-white shrink-0"
+                    >
                         <X className="w-3.5 h-3.5" />
                     </button>
                 </div>
             )}
 
-            {/* Modal de Descarga en Progreso */}
-            {isDownloading && (
-                <div className="p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-[var(--apex-gold)]/30 shadow-2xl space-y-3 animate-fade-in">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                            <div className="w-3 h-3 rounded-full bg-[var(--apex-gold)] animate-ping" />
-                            <span className="text-xs font-bold text-white uppercase tracking-wider">
-                                {downloadStatusText}
-                            </span>
+            {/* ACTIVE PROGRESS CARD (with real AbortController Cancel) */}
+            {busyState.active && (
+                <div className="apex-card relative overflow-hidden p-3.5 sm:p-4 bg-gradient-to-r from-amber-500/15 via-transparent to-transparent border-[var(--apex-gold)]/40">
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--apex-gold)]" />
+                    <div className="pl-2 space-y-2.5">
+                        <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs font-bold text-white truncate">{busyState.label}</span>
+                            <span className="text-xs font-black text-[var(--apex-gold)] shrink-0">{busyState.percent}%</span>
                         </div>
-                        <span className="text-xs font-black text-[var(--apex-gold)]">
-                            {downloadProgress}%
-                        </span>
-                    </div>
-
-                    <div className="w-full bg-slate-950/80 h-2.5 rounded-full overflow-hidden p-0.5 border border-white/5">
-                        <div 
-                            className="bg-gradient-to-r from-[var(--apex-gold)] to-emerald-400 h-full rounded-full transition-all duration-300 shadow-[0_0_12px_rgba(234,179,8,0.5)]"
-                            style={{ width: `${downloadProgress}%` }}
-                        />
-                    </div>
-
-                    <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
-                        <span>Los archivos se almacenan en la memoria local segura (IndexedDB).</span>
-                        <button
-                            onClick={() => setDownloadCancelled(true)}
-                            className="text-red-400 hover:text-red-300 font-semibold cursor-pointer underline"
-                        >
-                            Cancelar Descarga
-                        </button>
+                        <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+                            <div
+                                className="h-full rounded-full bg-[var(--apex-gold)] transition-all duration-200"
+                                style={{ width: `${busyState.percent}%` }}
+                            />
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] text-slate-400">
+                            <span>Almacenamiento offline en dispositivo</span>
+                            <button
+                                type="button"
+                                onClick={handleCancelOperation}
+                                className="text-rose-400 hover:text-rose-300 font-bold"
+                            >
+                                Cancelar
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
 
-            {/* TAB 1: EXPLORAR CATÁLOGO */}
-            {activeTab === 'catalog' && (
-                <div className="space-y-6">
-                    {/* Search & Category Filtering Bar */}
-                    <div className="space-y-3 bg-slate-900/60 p-4 rounded-2xl border border-white/[0.08] backdrop-blur-md">
-                        {/* Search input and sorting */}
-                        <div className="flex flex-col sm:flex-row items-center gap-3">
-                            <div className="relative flex-1 w-full">
-                                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                                <input
-                                    type="text"
-                                    placeholder="Buscar por equipo, jugador, autor, país..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2 bg-slate-950/60 border border-white/10 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[var(--apex-gold)]/50 transition-all"
-                                />
-                                {searchQuery && (
-                                    <button 
-                                        onClick={() => setSearchQuery('')}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
-                                    >
-                                        <X className="w-3.5 h-3.5" />
-                                    </button>
-                                )}
+            {/* TAB 1: EXPLORAR */}
+            {activeTab === 'EXPLORE' && (
+                <div className="space-y-3">
+                    {/* Hero Card: Descargar todo */}
+                    <div className={`apex-card relative overflow-hidden p-3.5 sm:p-4 bg-gradient-to-r ${
+                        pendingCatalogPacks.length === 0
+                            ? 'from-emerald-500/15 via-transparent to-transparent border-emerald-500/30'
+                            : 'from-amber-500/15 via-transparent to-transparent'
+                    }`}>
+                        <div className={`absolute left-0 top-0 bottom-0 w-1 ${
+                            pendingCatalogPacks.length === 0 ? 'bg-emerald-400' : 'bg-[var(--apex-gold)]'
+                        }`} />
+                        <div className="flex items-center justify-between gap-3 pl-1.5">
+                            <div className="min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <h2 className="text-sm sm:text-base font-black text-white tracking-tight">
+                                        {pendingCatalogPacks.length === 0 ? 'Colección visual completa' : 'Descargar colección completa'}
+                                    </h2>
+                                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                                        pendingCatalogPacks.length === 0
+                                            ? 'bg-emerald-500/15 text-emerald-300'
+                                            : 'bg-amber-500/15 text-amber-300'
+                                    }`}>
+                                        {pendingCatalogPacks.length === 0
+                                            ? 'Todo activo'
+                                            : `${pendingCatalogPacks.length} packs · ${pendingBytesFormatted}`}
+                                    </span>
+                                </div>
+                                <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+                                    {catalogTotals.packCount} packs comunitarios · {catalogTotals.totalAssets.toLocaleString()} escudos, ligas, rostros y trofeos
+                                </p>
                             </div>
 
-                            <div className="flex items-center gap-2 self-end sm:self-auto w-full sm:w-auto">
-                                <span className="text-[11px] text-slate-400 whitespace-nowrap">Ordenar por:</span>
-                                <select
-                                    value={sortBy}
-                                    onChange={(e) => setSortBy(e.target.value as any)}
-                                    className="px-3 py-2 bg-slate-950 border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-[var(--apex-gold)]/50"
-                                >
-                                    <option value="featured">Destacados</option>
-                                    <option value="downloads">Más Descargados</option>
-                                    <option value="rating">Mejor Calificación</option>
-                                    <option value="newest">Más Recientes</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        {/* Category Pills */}
-                        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-1 no-scrollbar">
-                            {CATEGORY_TABS.map(tab => (
+                            {pendingCatalogPacks.length > 0 ? (
                                 <button
-                                    key={tab.id}
-                                    onClick={() => setSelectedCategory(tab.id)}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
-                                        selectedCategory === tab.id
-                                            ? 'bg-slate-200 text-slate-950 shadow-sm'
-                                            : 'bg-slate-950/40 border border-white/5 text-slate-400 hover:text-white hover:bg-slate-800'
-                                    }`}
+                                    type="button"
+                                    onClick={handleDownloadAll}
+                                    disabled={busyState.active}
+                                    className="h-10 px-4 rounded-xl bg-[var(--apex-gold)] text-slate-950 text-xs font-black shrink-0 flex items-center gap-1.5 hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50"
                                 >
-                                    <span>{tab.icon}</span>
-                                    <span>{tab.label}</span>
+                                    <Download className="w-4 h-4" />
+                                    <span>Descargar todo</span>
                                 </button>
-                            ))}
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveTab('INSTALLED')}
+                                    className="h-9 px-3.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold shrink-0"
+                                >
+                                    Gestionar
+                                </button>
+                            )}
                         </div>
                     </div>
 
-                    {/* Catalog Grid */}
-                    {catalogItems.length === 0 ? (
-                        <div className="p-12 text-center rounded-2xl bg-slate-900/40 border border-white/5 space-y-2">
-                            <Layers className="w-8 h-8 text-slate-500 mx-auto" />
-                            <h4 className="text-sm font-bold text-white">No se encontraron packs en esta categoría</h4>
-                            <p className="text-xs text-slate-400">Intenta cambiar el término de búsqueda o categoría seleccionada.</p>
+                    {/* Search + Filter Button */}
+                    <div className="flex items-center gap-2">
+                        <div className="relative flex-1">
+                            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                            <input
+                                type="search"
+                                inputMode="search"
+                                placeholder="Pack, club, liga, país o jugador…"
+                                value={searchQuery}
+                                onChange={e => setSearchQuery(e.target.value)}
+                                className="w-full h-11 pl-10 pr-9 bg-[#0D1220] border border-white/10 rounded-2xl text-white text-sm placeholder-slate-500 focus:outline-none focus:border-[var(--apex-gold)]/60"
+                            />
+                            {searchQuery && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSearchQuery('')}
+                                    aria-label="Limpiar búsqueda"
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-white"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            )}
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={() => setFiltersOpen(true)}
+                            className={`relative h-11 px-3.5 rounded-2xl border flex items-center gap-2 text-sm font-bold shrink-0 ${
+                                activeFilterCount
+                                    ? 'bg-[var(--apex-gold)]/10 border-[var(--apex-gold)]/40 text-[var(--apex-gold)]'
+                                    : 'bg-[#0D1220] border-white/10 text-slate-300'
+                            }`}
+                        >
+                            <SlidersHorizontal className="w-4 h-4" />
+                            <span className="hidden sm:inline">Filtros</span>
+                            {activeFilterCount > 0 && (
+                                <span className="w-5 h-5 rounded-full bg-[var(--apex-gold)] text-black text-[10px] font-black flex items-center justify-center">
+                                    {activeFilterCount}
+                                </span>
+                            )}
+                        </button>
+                    </div>
+
+                    {/* Quick Category Pills */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar -mx-1 px-1">
+                        {CATEGORY_PILLS.map(pill => (
+                            <button
+                                key={pill.id}
+                                type="button"
+                                onClick={() => setCategoryFilter(pill.id)}
+                                className={`h-8 px-4 rounded-full text-xs font-bold whitespace-nowrap transition-colors shrink-0 ${
+                                    categoryFilter === pill.id
+                                        ? 'bg-white text-slate-950'
+                                        : 'bg-white/5 text-slate-400 hover:text-white'
+                                }`}
+                            >
+                                {pill.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Result Summary */}
+                    <div className="flex items-center justify-between px-1 text-[11px] text-slate-500 font-semibold">
+                        <span>{filteredEntries.length} packs disponibles</span>
+                        {(activeFilterCount > 0 || categoryFilter !== 'all' || searchQuery) ? (
+                            <button type="button" onClick={resetFilters} className="text-[var(--apex-gold)] font-bold">
+                                Limpiar filtros
+                            </button>
+                        ) : (
+                            <span>{SORT_OPTIONS.find(s => s.id === sortBy)?.label}</span>
+                        )}
+                    </div>
+
+                    {/* Catalog Groups */}
+                    {filteredEntries.length === 0 ? (
+                        <div className="apex-card">
+                            <EmptyState
+                                icon={<SearchX className="w-6 h-6" />}
+                                title="Sin resultados"
+                                text="Prueba buscando otro club, país, competición o categoría."
+                                action={
+                                    <button
+                                        type="button"
+                                        onClick={resetFilters}
+                                        className="px-4 py-2 rounded-xl bg-white/10 text-white text-xs font-bold"
+                                    >
+                                        Limpiar filtros
+                                    </button>
+                                }
+                            />
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {catalogItems.map((item) => {
-                                const installed = getInstalledPackInfo(item.id);
-                                const hasUpdate = installed && PackManager.hasUpdate(installed, item);
-
-                                return (
-                                    <div
-                                        key={item.id}
-                                        className={`rounded-2xl border p-5 transition-all duration-200 flex flex-col justify-between backdrop-blur-md relative overflow-hidden group ${
-                                            installed 
-                                                ? 'bg-[#0D1526]/90 border-emerald-500/30 shadow-lg shadow-emerald-950/20' 
-                                                : 'bg-slate-900/70 border-white/[0.08] hover:border-white/20'
-                                        }`}
-                                    >
-                                        <div className="space-y-3.5">
-                                            {/* Top badges: Official / Category / Rating */}
-                                            <div className="flex items-center justify-between gap-2">
-                                                <div className="flex items-center gap-1.5 flex-wrap">
-                                                    {item.isOfficial ? (
-                                                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-950 bg-gradient-to-r from-[var(--apex-gold)] to-amber-300 px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
-                                                            <Sparkles className="w-3 h-3" />
-                                                            <span>Oficial</span>
-                                                        </span>
-                                                    ) : (
-                                                        <span className="text-[10px] font-bold uppercase tracking-wider text-sky-400 bg-sky-500/10 border border-sky-500/20 px-2 py-0.5 rounded-full">
-                                                            Comunitario
-                                                        </span>
-                                                    )}
-
-                                                    <span className="text-[10px] text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-full border border-white/5">
-                                                        v{item.version}
-                                                    </span>
-                                                </div>
-
-                                                {item.rating && (
-                                                    <div className="flex items-center gap-1 text-[11px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
-                                                        <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                                                        <span>{item.rating}</span>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* Title & Description */}
-                                            <div className="space-y-1">
-                                                <h3 className="text-base font-bold text-white tracking-tight leading-snug">
-                                                    {item.name}
-                                                </h3>
-                                                <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
-                                                    {item.description}
-                                                </p>
-                                            </div>
-
-                                            {/* Creator Info */}
-                                            <div className="flex items-center justify-between text-[11px] pt-1 border-t border-white/5">
-                                                <div className="flex items-center gap-1.5 text-slate-300">
-                                                    <span className="text-slate-500">Autor:</span>
-                                                    <span className="font-semibold">{item.author.name}</span>
-                                                    {item.author.isVerified && (
-                                                        <UserCheck className="w-3.5 h-3.5 text-emerald-400" title="Creador Verificado" />
-                                                    )}
-                                                </div>
-
-                                                <div className="text-slate-400">
-                                                    <span>{item.downloads.toLocaleString()} descargas</span>
-                                                </div>
-                                            </div>
-
-                                            {/* Stats Pill (Recursos & Tamaño) */}
-                                            <div className="grid grid-cols-2 gap-2 p-2 rounded-xl bg-slate-950/60 border border-white/5 text-center">
-                                                <div>
-                                                    <span className="text-[10px] text-slate-500 uppercase font-semibold block">Recursos</span>
-                                                    <span className="text-xs font-bold text-white">{item.assetCount} items</span>
-                                                </div>
-                                                <div>
-                                                    <span className="text-[10px] text-slate-500 uppercase font-semibold block">Tamaño</span>
-                                                    <span className="text-xs font-bold text-white">{item.sizeFormatted}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Action Button */}
-                                        <div className="pt-4 mt-3 border-t border-white/10">
-                                            {hasUpdate ? (
-                                                <button
-                                                    onClick={() => handleInstallPack(item)}
-                                                    disabled={isDownloading}
-                                                    className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-amber-500/20 active:scale-95"
-                                                >
-                                                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                                                    <span>Actualizar a v{item.version}</span>
-                                                </button>
-                                            ) : installed ? (
-                                                <div className="flex items-center gap-2">
-                                                    <button
-                                                        onClick={() => handleToggleEnabled(installed.packId, installed.enabled)}
-                                                        className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                                                            installed.enabled
-                                                                ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/25'
-                                                                : 'bg-slate-800 border border-white/10 text-slate-400 hover:text-white'
-                                                        }`}
-                                                    >
-                                                        <Check className="w-3.5 h-3.5 text-emerald-400" />
-                                                        <span>{installed.enabled ? 'Instalado & Activo' : 'Desactivado'}</span>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleUninstall(installed.packId, item.name)}
-                                                        className="p-2 rounded-xl bg-slate-800/80 hover:bg-red-500/20 text-slate-400 hover:text-red-400 border border-white/5 transition-colors cursor-pointer"
-                                                        title="Desinstalar"
-                                                    >
-                                                        <Trash2 className="w-3.5 h-3.5" />
-                                                    </button>
-                                                </div>
-                                            ) : (
-                                                <button
-                                                    onClick={() => handleInstallPack(item)}
-                                                    disabled={isDownloading}
-                                                    className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-white/10 hover:bg-[var(--apex-gold)] hover:text-slate-950 text-white transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm active:scale-95 group-hover:border-transparent"
-                                                >
-                                                    <Download className="w-3.5 h-3.5" />
-                                                    <span>Instalar Pack</span>
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
+                            {renderCatalogGroup('Clubes y Competiciones', clubAndCompEntries)}
+                            {renderCatalogGroup('Rostros, Trofeos y Complementos', extraVisualEntries)}
                         </div>
                     )}
                 </div>
             )}
 
-            {/* TAB 2: MIS PACKS INSTALADOS & PRIORIDADES */}
-            {activeTab === 'installed' && (
-                <div className="space-y-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-slate-900/60 border border-white/10">
-                        <div>
-                            <h3 className="text-sm font-bold text-white">Prioridad de Recursos Combinables</h3>
-                            <p className="text-xs text-slate-400">
-                                Cuando dos packs contienen el mismo recurso (ej. mismo jugador o club), el pack con mayor prioridad tiene preferencia.
+            {/* TAB 2: INSTALADOS */}
+            {activeTab === 'INSTALLED' && (
+                <div className="space-y-3">
+                    {/* Storage & Reset Summary */}
+                    <div className="apex-card p-3.5 sm:p-4 flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                            <h2 className="text-sm font-black text-white">Orden y activación</h2>
+                            <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+                                {installedPacks.length === 0
+                                    ? 'Sin packs locales activos'
+                                    : `${enabledCount} de ${installedPacks.length} activos · ${(storageStats.totalBytes / (1024 * 1024)).toFixed(1)} MB en caché`}
                             </p>
                         </div>
 
                         {installedPacks.length > 0 && (
                             <button
-                                onClick={handleClearAll}
-                                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-500/10 border border-red-500/20 text-red-300 hover:bg-red-500/20 flex items-center gap-1.5 transition-colors self-start sm:self-auto cursor-pointer"
+                                type="button"
+                                onClick={handleRequestResetAll}
+                                className="h-9 px-3 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-300 hover:bg-rose-500/20 text-xs font-bold flex items-center gap-1.5 shrink-0"
                             >
                                 <RotateCcw className="w-3.5 h-3.5" />
-                                <span>Restablecer Todo</span>
+                                <span>Restablecer</span>
                             </button>
                         )}
                     </div>
 
                     {installedPacks.length === 0 ? (
-                        <div className="p-12 text-center rounded-2xl bg-slate-900/40 border border-white/5 space-y-3">
-                            <HardDrive className="w-8 h-8 text-slate-500 mx-auto" />
-                            <h4 className="text-sm font-bold text-white">No tienes packs instalados localmente</h4>
-                            <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                                El juego está funcionando en modo base mínima con escudos vectoriales y siluetas generadas sin dependencias de red.
-                            </p>
-                            <button
-                                onClick={() => setActiveTab('catalog')}
-                                className="mt-2 px-4 py-2 rounded-xl text-xs font-bold bg-[var(--apex-gold)] text-slate-950 cursor-pointer shadow-md"
-                            >
-                                Explorar Catálogo
-                            </button>
+                        <div className="apex-card">
+                            <EmptyState
+                                icon={<Layers className="w-6 h-6" />}
+                                title="Base vectorial activa"
+                                text="El juego está usando sus escudos y siluetas propias. Puedes instalar packs en Explorar o importar un .ZIP local."
+                                action={
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveTab('EXPLORE')}
+                                        className="px-4 py-2.5 rounded-xl bg-[var(--apex-gold)] text-slate-950 text-xs font-black"
+                                    >
+                                        Explorar packs
+                                    </button>
+                                }
+                            />
                         </div>
                     ) : (
-                        <div className="space-y-3">
-                            {installedPacks.map((pack, index) => (
-                                <div
-                                    key={pack.packId}
-                                    className={`p-4 rounded-2xl border transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
-                                        pack.enabled
-                                            ? 'bg-slate-900/80 border-white/10'
-                                            : 'bg-slate-950/40 border-white/5 opacity-70'
-                                    }`}
-                                >
-                                    <div className="space-y-1 max-w-md">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs font-bold text-white">
-                                                {pack.name}
-                                            </span>
-                                            <span className="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full border border-white/5">
-                                                v{pack.version}
-                                            </span>
-                                            {pack.isOfficial && (
-                                                <span className="text-[9px] font-black text-slate-950 bg-[var(--apex-gold)] px-1.5 py-0.2 rounded-full">
-                                                    ✓ Oficial
-                                                </span>
-                                            )}
-                                        </div>
-                                        <p className="text-[11px] text-slate-400">
-                                            {pack.assetCount} recursos • Instalado el {new Date(pack.installedAt).toLocaleDateString()}
-                                        </p>
-                                    </div>
+                        <ul className="apex-card divide-y divide-white/5 overflow-hidden">
+                            {installedPacks.map((pack, index) => {
+                                const catalogMeta = allCatalogItems.find(c => c.id === pack.packId);
+                                const accent = getPackAccent(catalogMeta?.accentColor, pack.category);
 
-                                    {/* Priority and Actions Controls */}
-                                    <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-                                        {/* Priority buttons */}
-                                        <div className="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1.5 rounded-xl border border-white/5">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase">Prioridad:</span>
-                                            <span className="text-xs font-black text-[var(--apex-gold)] px-1">{pack.priority}</span>
-                                            <div className="flex items-center gap-0.5">
-                                                <button
-                                                    onClick={() => handleChangePriority(pack.packId, 5)}
-                                                    className="p-1 hover:bg-slate-800 text-slate-300 rounded cursor-pointer"
-                                                    title="Aumentar prioridad"
-                                                >
-                                                    <ArrowUp className="w-3 h-3" />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleChangePriority(pack.packId, -5)}
-                                                    className="p-1 hover:bg-slate-800 text-slate-300 rounded cursor-pointer"
-                                                    title="Disminuir prioridad"
-                                                >
-                                                    <ArrowDown className="w-3 h-3" />
-                                                </button>
+                                return (
+                                    <li
+                                        key={pack.packId}
+                                        className={`px-3.5 py-3 flex items-center gap-3 transition-opacity ${
+                                            pack.enabled ? '' : 'opacity-65'
+                                        }`}
+                                    >
+                                        <span className={`w-1 h-9 rounded-full shrink-0 ${accent.bar}`} />
+                                        <PackArtwork packId={pack.packId} category={pack.category} accent={accent} size="sm" />
+
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex items-center gap-1.5">
+                                                <p className="text-sm font-bold text-white truncate">{pack.name}</p>
+                                                <span className="text-[10px] text-slate-500 font-semibold shrink-0">v{pack.version}</span>
                                             </div>
+                                            <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+                                                {pack.assetCount.toLocaleString()} recursos · Prioridad #{index + 1} ({pack.priority})
+                                            </p>
                                         </div>
 
-                                        {/* Enable/Disable Toggle */}
-                                        <button
-                                            onClick={() => handleToggleEnabled(pack.packId, pack.enabled)}
-                                            className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-                                                pack.enabled
-                                                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-                                                    : 'bg-slate-800 border-white/10 text-slate-400'
-                                            }`}
-                                        >
-                                            {pack.enabled ? 'Activo' : 'Desactivado'}
-                                        </button>
-
-                                        {/* Uninstall */}
-                                        <button
-                                            onClick={() => handleUninstall(pack.packId, pack.name)}
-                                            className="p-2 rounded-xl bg-slate-800/80 hover:bg-red-500/20 text-slate-400 hover:text-red-400 border border-white/5 transition-colors cursor-pointer"
-                                            title="Desinstalar pack"
-                                        >
-                                            <Trash2 className="w-3.5 h-3.5" />
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                                        <div className="flex items-center gap-1 shrink-0">
+                                            <button
+                                                type="button"
+                                                onClick={() => handlePriorityStep(pack, 5)}
+                                                aria-label="Subir prioridad"
+                                                title="Subir prioridad"
+                                                className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 flex items-center justify-center"
+                                            >
+                                                <ArrowUp className="w-3.5 h-3.5" />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => handlePriorityStep(pack, -5)}
+                                                aria-label="Bajar prioridad"
+                                                title="Bajar prioridad"
+                                                className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 flex items-center justify-center"
+                                            >
+                                                <ArrowDown className="w-3.5 h-3.5" />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleToggleEnabled(pack)}
+                                                className={`h-8 px-2.5 rounded-lg text-[11px] font-bold border transition-colors ${
+                                                    pack.enabled
+                                                        ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
+                                                        : 'bg-white/5 border-white/10 text-slate-400 hover:text-white'
+                                                }`}
+                                            >
+                                                {pack.enabled ? 'Activo' : 'Pausado'}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRequestUninstall(pack)}
+                                                aria-label="Desinstalar pack"
+                                                className="w-8 h-8 rounded-lg bg-white/5 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 flex items-center justify-center"
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
+                                    </li>
+                                );
+                            })}
+                        </ul>
                     )}
                 </div>
             )}
 
-            {/* TAB 3: CONTRIBUIR RECURSO DE LA COMUNIDAD */}
-            {activeTab === 'contribute' && (
-                <div className="max-w-2xl mx-auto space-y-6">
-                    <div className="p-5 rounded-2xl bg-slate-900/80 border border-white/10 space-y-2 backdrop-blur-md">
-                        <div className="flex items-center gap-2 text-[var(--apex-gold)]">
-                            <Upload className="w-4 h-4" />
-                            <h3 className="text-sm font-bold uppercase tracking-wider text-white">
-                                Portal de Contribución Comunitaria
-                            </h3>
+            {/* TAB 3: IMPORTAR */}
+            {activeTab === 'IMPORT' && (
+                <div className="space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {/* Local ZIP import */}
+                        <div className="apex-card p-4 space-y-3">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 flex items-center justify-center shrink-0">
+                                    <FolderArchive className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-black text-white">Archivo .ZIP local</h3>
+                                    <p className="text-[11px] text-slate-400">
+                                        Escudos, caras o copas desde tu dispositivo. Uso 100% offline.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <input
+                                ref={zipInputRef}
+                                type="file"
+                                accept=".zip"
+                                onChange={handleZipUpload}
+                                className="hidden"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => zipInputRef.current?.click()}
+                                disabled={busyState.active}
+                                className="w-full h-11 rounded-xl bg-[var(--apex-gold)] text-slate-950 text-xs font-black flex items-center justify-center gap-2 hover:brightness-110 transition-all disabled:opacity-50"
+                            >
+                                <Upload className="w-4 h-4" />
+                                <span>Seleccionar .ZIP</span>
+                            </button>
                         </div>
-                        <p className="text-xs text-slate-400 leading-relaxed">
-                            Sube recursos visuales (rostros, escudos, copas) para enriquecer el catálogo.
-                        </p>
-                        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300 flex items-start gap-2">
-                            <ShieldAlert className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                            <span>
-                                <strong>Regla de Integridad:</strong> Las contribuciones afectan <em>exclusivamente</em> al recurso visual. No es posible modificar estadísticas, ratings, posiciones, presupuestos ni IDs internos del juego.
-                            </span>
-                        </div>
+
+                        {/* Remote HTTPS URL import */}
+                        <form onSubmit={handleUrlImport} className="apex-card p-4 space-y-3">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-sky-500/15 border border-sky-500/30 text-sky-300 flex items-center justify-center shrink-0">
+                                    <Link2 className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-black text-white">Desde enlace HTTPS</h3>
+                                    <p className="text-[11px] text-slate-400">
+                                        Carga un archivo manifest.json o .zip compartido por la comunidad.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="url"
+                                    placeholder="https://.../manifest.json"
+                                    value={remoteUrl}
+                                    onChange={e => setRemoteUrl(e.target.value)}
+                                    required
+                                    className="flex-1 h-11 px-3.5 bg-[#0D1220] border border-white/10 rounded-xl text-white text-xs placeholder-slate-500 focus:outline-none focus:border-[var(--apex-gold)]/60"
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={busyState.active || !remoteUrl.trim()}
+                                    className="h-11 px-4 rounded-xl bg-white/10 hover:bg-[var(--apex-gold)] hover:text-slate-950 text-white text-xs font-bold transition-colors disabled:opacity-50 shrink-0"
+                                >
+                                    Cargar
+                                </button>
+                            </div>
+                        </form>
                     </div>
 
-                    <form onSubmit={handleSubmitContribution} className="p-6 rounded-2xl bg-slate-900/60 border border-white/10 space-y-4">
-                        {/* Tipo de recurso */}
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-slate-300">Tipo de Recurso</label>
-                            <select
-                                value={contribType}
-                                onChange={(e) => setContribType(e.target.value as ResourceType)}
-                                className="w-full px-3 py-2 bg-slate-950 border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-[var(--apex-gold)]/50"
-                            >
-                                <option value="player-face">👤 Rostro de Jugador</option>
-                                <option value="team-logo">🛡️ Escudo de Equipo</option>
-                                <option value="competition-logo">🏆 Logo de Competición / Liga</option>
-                                <option value="trophy">🥇 Trofeo / Copa 3D</option>
-                                <option value="flag">🌎 Bandera de País</option>
-                                <option value="kit">👕 Camiseta de Juego</option>
-                            </select>
+                    {/* Export local cache */}
+                    <div className="apex-card p-3.5 sm:p-4 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 text-slate-300 flex items-center justify-center shrink-0">
+                                <ArchiveRestore className="w-4 h-4" />
+                            </div>
+                            <div className="min-w-0">
+                                <p className="text-xs font-bold text-white truncate">Respaldar packs locales</p>
+                                <p className="text-[11px] text-slate-400 truncate">
+                                    {storageStats.assetCount > 0
+                                        ? `${storageStats.assetCount} imágenes locales listas para exportar`
+                                        : 'Importa un .ZIP para poder generar un respaldo'}
+                                </p>
+                            </div>
                         </div>
-
-                        {/* Nombre del jugador/equipo */}
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-slate-300">Nombre de la Entidad Representada</label>
-                            <input
-                                type="text"
-                                placeholder="Ej: Bukayo Saka / Arsenal FC / Copa Libertadores"
-                                value={contribTargetLabel}
-                                onChange={(e) => setContribTargetLabel(e.target.value)}
-                                required
-                                className="w-full px-3.5 py-2.5 bg-slate-950 border border-white/10 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[var(--apex-gold)]/50"
-                            />
-                        </div>
-
-                        {/* ID interno */}
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-slate-300">ID del Jugador o Equipo en el Juego</label>
-                            <input
-                                type="text"
-                                placeholder="Ej: 101 (para Bukayo Saka), 1 (Arsenal), champions_league..."
-                                value={contribTargetId}
-                                onChange={(e) => setContribTargetId(e.target.value)}
-                                required
-                                className="w-full px-3.5 py-2.5 bg-slate-950 border border-white/10 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[var(--apex-gold)]/50"
-                            />
-                            <p className="text-[10px] text-slate-500">
-                                Debe coincidir con el identificador del juego para que el ResourceManager pueda asociarlo.
-                            </p>
-                        </div>
-
-                        {/* Archivo de imagen */}
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-slate-300">Archivo de Imagen (WebP, PNG o SVG &lt; 2 MB)</label>
-                            <input
-                                type="file"
-                                accept=".webp,.png,.svg,.jpg,.jpeg"
-                                onChange={(e) => setContribFile(e.target.files?.[0] || null)}
-                                required
-                                className="w-full px-3 py-2 bg-slate-950 border border-white/10 rounded-xl text-xs text-slate-400 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-white hover:file:bg-slate-700"
-                            />
-                        </div>
-
-                        {/* Licencia y declaración */}
-                        <div className="pt-2">
-                            <label className="flex items-start gap-2.5 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={contribLicenseAgreed}
-                                    onChange={(e) => setContribLicenseAgreed(e.target.checked)}
-                                    className="mt-0.5 rounded border-white/10 bg-slate-950 text-[var(--apex-gold)] focus:ring-0"
-                                />
-                                <span className="text-[11px] text-slate-400 leading-snug">
-                                    Declaro tener los derechos o autorización sobre este recurso visual y acepto que sea revisado por el equipo de moderación comunitario antes de su distribución.
-                                </span>
-                            </label>
-                        </div>
-
                         <button
-                            type="submit"
-                            disabled={contribSubmitting}
-                            className="w-full py-3 rounded-xl text-xs font-black uppercase tracking-wider bg-gradient-to-r from-[var(--apex-gold)] to-amber-400 text-slate-950 hover:brightness-110 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-amber-500/20"
+                            type="button"
+                            onClick={handleExportBackup}
+                            disabled={storageStats.assetCount === 0}
+                            className="h-9 px-3.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold shrink-0 disabled:opacity-40"
                         >
-                            <Upload className="w-3.5 h-3.5" />
-                            <span>{contribSubmitting ? 'Enviando a Moderación...' : 'Enviar Contribución'}</span>
+                            Exportar .ZIP
                         </button>
-                    </form>
+                    </div>
+
+                    {/* Collapsible Folder Guide */}
+                    <div className="apex-card overflow-hidden">
+                        <button
+                            type="button"
+                            onClick={() => setShowFormatGuide(v => !v)}
+                            className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-white/[0.02]"
+                        >
+                            <span className="text-xs font-bold text-slate-300">Estructura de carpetas y seguridad</span>
+                            {showFormatGuide ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                        </button>
+                        {showFormatGuide && (
+                            <div className="px-4 pb-4 pt-1 space-y-2 border-t border-white/5 text-[11px] text-slate-400">
+                                <p>
+                                    Organiza las imágenes en carpetas: <code className="text-slate-200">teams/</code>,{' '}
+                                    <code className="text-slate-200">competitions/</code>,{' '}
+                                    <code className="text-slate-200">players/</code>,{' '}
+                                    <code className="text-slate-200">trophies/</code> o{' '}
+                                    <code className="text-slate-200">flags/</code> usando el nombre o ID del club/jugador (PNG, WebP, JPG o SVG).
+                                </p>
+                                <p>
+                                    Por seguridad, los packs solo contienen archivos gráficos estáticos (sin scripts ni alteración de estadísticas del juego) y se validan antes de guardarse en el dispositivo.
+                                </p>
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
 
-            {/* Disclaimer Legal & Licencias */}
-            <div className="p-4 rounded-2xl bg-slate-900/30 border border-white/5 space-y-1.5 backdrop-blur-md">
-                <div className="flex items-center gap-2">
-                    <Shield className="w-3.5 h-3.5 text-slate-400" />
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                        Derechos de Propiedad y Contenido Comunitario
-                    </span>
-                </div>
-                <p className="text-[10px] text-slate-500 leading-relaxed">
-                    Apex AI implementa un sistema declarativo desacoplado. Los packs son mantenidos de forma voluntaria por la comunidad. No se ejecutan scripts, código JavaScript ni WebAssembly dentro de los packs comunitarios. Los escudos y fotos corresponden a sus legítimos propietarios y se gestionan como personalizaciones locales del usuario.
-                </p>
-            </div>
+            {/* FILTERS BOTTOM SHEET */}
+            <BottomSheet
+                open={filtersOpen}
+                onClose={() => setFiltersOpen(false)}
+                title="Filtros"
+                footer={
+                    <div className="flex gap-2">
+                        <button
+                            type="button"
+                            onClick={resetFilters}
+                            className="flex-1 h-11 rounded-xl bg-white/5 text-slate-300 text-sm font-bold"
+                        >
+                            Restablecer
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setFiltersOpen(false)}
+                            className="flex-[2] h-11 rounded-xl bg-[var(--apex-gold)] text-slate-950 text-sm font-black"
+                        >
+                            Ver {filteredEntries.length} packs
+                        </button>
+                    </div>
+                }
+            >
+                <div className="space-y-5">
+                    <section>
+                        <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Región</h4>
+                        <div className="grid grid-cols-2 gap-2">
+                            {REGION_OPTIONS.map(r => (
+                                <button
+                                    key={r.id}
+                                    type="button"
+                                    onClick={() => setRegionFilter(r.id)}
+                                    className={`h-10 rounded-xl text-xs font-bold border ${
+                                        regionFilter === r.id
+                                            ? 'bg-[var(--apex-gold)]/15 border-[var(--apex-gold)]/50 text-[var(--apex-gold)]'
+                                            : 'bg-white/[0.03] border-white/5 text-slate-300'
+                                    }`}
+                                >
+                                    {r.label}
+                                </button>
+                            ))}
+                        </div>
+                    </section>
 
-            {/* In-App Confirmation Modal */}
-            {confirmModal && (
-                <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-                    <div className="bg-[#121926] border border-white/10 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
-                        <h3 className="text-base font-bold text-white flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-[var(--apex-gold)]" />
-                            {confirmModal.title}
-                        </h3>
-                        <p className="text-sm text-slate-300 leading-relaxed">
-                            {confirmModal.message}
-                        </p>
-                        <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
+                    <section>
+                        <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Estado</h4>
+                        <div className="grid grid-cols-3 gap-2">
+                            {STATUS_OPTIONS.map(st => (
+                                <button
+                                    key={st.id}
+                                    type="button"
+                                    onClick={() => setStatusFilter(st.id)}
+                                    className={`h-10 rounded-xl text-xs font-bold border ${
+                                        statusFilter === st.id
+                                            ? 'bg-[var(--apex-gold)]/15 border-[var(--apex-gold)]/50 text-[var(--apex-gold)]'
+                                            : 'bg-white/[0.03] border-white/5 text-slate-300'
+                                    }`}
+                                >
+                                    {st.label}
+                                </button>
+                            ))}
+                        </div>
+                    </section>
+
+                    <section>
+                        <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Ordenar por</h4>
+                        <div className="grid grid-cols-2 gap-2">
+                            {SORT_OPTIONS.map(so => (
+                                <button
+                                    key={so.id}
+                                    type="button"
+                                    onClick={() => setSortBy(so.id)}
+                                    className={`h-10 rounded-xl text-xs font-bold border ${
+                                        sortBy === so.id
+                                            ? 'bg-[var(--apex-gold)]/15 border-[var(--apex-gold)]/50 text-[var(--apex-gold)]'
+                                            : 'bg-white/[0.03] border-white/5 text-slate-300'
+                                    }`}
+                                >
+                                    {so.label}
+                                </button>
+                            ))}
+                        </div>
+                    </section>
+                </div>
+            </BottomSheet>
+
+            {/* PACK DETAIL BOTTOM SHEET */}
+            <BottomSheet
+                open={Boolean(detailPack)}
+                onClose={() => {
+                    setReportMode(false);
+                    setDetailPack(null);
+                }}
+                title={reportMode ? 'Reportar contenido' : detailPack?.name}
+                footer={
+                    detailPack && (
+                        reportMode ? (
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setReportMode(false)}
+                                    className="flex-1 h-11 rounded-xl bg-white/5 text-slate-300 text-sm font-bold"
+                                >
+                                    Volver
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleSubmitReport}
+                                    className="flex-[2] h-11 rounded-xl bg-rose-600 text-white text-sm font-black"
+                                >
+                                    Enviar reporte
+                                </button>
+                            </div>
+                        ) : detailInstalled ? (
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => handleRequestUninstall(detailInstalled)}
+                                    className="h-11 px-4 rounded-xl bg-rose-500/15 text-rose-300 text-sm font-bold"
+                                >
+                                    Desinstalar
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        handleToggleEnabled(detailInstalled);
+                                        setDetailPack(null);
+                                    }}
+                                    className="flex-1 h-11 rounded-xl bg-[var(--apex-gold)] text-slate-950 text-sm font-black"
+                                >
+                                    {detailInstalled.enabled ? 'Pausar pack' : 'Activar pack'}
+                                </button>
+                            </div>
+                        ) : (
                             <button
-                                onClick={() => setConfirmModal(null)}
-                                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/5 border border-white/10 transition-all cursor-pointer"
+                                type="button"
+                                onClick={async () => {
+                                    const target = detailPack;
+                                    setDetailPack(null);
+                                    await handleInstallSingle(target);
+                                }}
+                                disabled={busyState.active}
+                                className="w-full h-11 rounded-xl bg-[var(--apex-gold)] text-slate-950 text-sm font-black flex items-center justify-center gap-2 disabled:opacity-50"
+                            >
+                                <Download className="w-4 h-4" />
+                                <span>Instalar pack</span>
+                            </button>
+                        )
+                    )
+                }
+            >
+                {detailPack && (
+                    reportMode ? (
+                        <div className="space-y-3">
+                            <p className="text-xs text-slate-400">
+                                Indica el motivo del reporte sobre <strong className="text-white">{detailPack.name}</strong> para revisión:
+                            </p>
+                            <div className="space-y-2">
+                                {[
+                                    'Derechos de imagen / DMCA',
+                                    'Imagen incorrecta o dañada',
+                                    'Contenido inapropiado',
+                                ].map(reason => (
+                                    <button
+                                        key={reason}
+                                        type="button"
+                                        onClick={() => setReportReason(reason)}
+                                        className={`w-full h-10 px-3.5 rounded-xl text-left text-xs font-bold border ${
+                                            reportReason === reason
+                                                ? 'bg-[var(--apex-gold)]/15 border-[var(--apex-gold)]/50 text-[var(--apex-gold)]'
+                                                : 'bg-white/[0.03] border-white/5 text-slate-300'
+                                        }`}
+                                    >
+                                        {reason}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-3">
+                                <PackArtwork packId={detailPack.id} category={detailPack.category} accent={detailAccent} />
+                                <div className="min-w-0">
+                                    <span className={`inline-block px-2 py-0.5 rounded-md text-[10px] font-bold ${detailAccent.badge}`}>
+                                        {getPackCategoryLabel(detailPack.category)}
+                                    </span>
+                                    <p className="text-xs text-slate-400 mt-1">
+                                        Por <span className="text-white font-semibold">{detailPack.author.name}</span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <p className="text-xs text-slate-300 leading-relaxed">{detailPack.description}</p>
+
+                            <div className="grid grid-cols-2 gap-2">
+                                <StatCell label="Recursos" value={detailPack.assetCount.toLocaleString()} />
+                                <StatCell label="Tamaño" value={detailPack.sizeFormatted} />
+                                <StatCell
+                                    label="Región"
+                                    value={
+                                        detailPack.region === 'AMERICA' ? 'América' :
+                                        detailPack.region === 'EUROPA' ? 'Europa' : 'Global'
+                                    }
+                                />
+                                <StatCell label="Versión" value={`v${detailPack.version}`} />
+                            </div>
+
+                            {detailPack.coverage && detailPack.coverage.length > 0 && (
+                                <div>
+                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
+                                        Cobertura principal
+                                    </span>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {detailPack.coverage.map(cov => (
+                                            <span key={cov} className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/5 text-[11px] font-semibold text-slate-300">
+                                                {cov}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            <button
+                                type="button"
+                                onClick={() => setReportMode(true)}
+                                className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 hover:text-slate-300 pt-1"
+                            >
+                                <Flag className="w-3.5 h-3.5" />
+                                <span>Reportar problema o derechos</span>
+                            </button>
+                        </div>
+                    )
+                )}
+            </BottomSheet>
+
+            {/* CONFIRMATION BOTTOM SHEET */}
+            <BottomSheet
+                open={Boolean(confirmAction)}
+                onClose={() => setConfirmAction(null)}
+                title={confirmAction?.title}
+                footer={
+                    confirmAction && (
+                        <div className="flex gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setConfirmAction(null)}
+                                className="flex-1 h-11 rounded-xl bg-white/5 text-slate-300 text-sm font-bold"
                             >
                                 Cancelar
                             </button>
                             <button
-                                onClick={() => {
-                                    const cb = confirmModal.onConfirm;
-                                    setConfirmModal(null);
-                                    cb();
+                                type="button"
+                                onClick={async () => {
+                                    const cb = confirmAction.onConfirm;
+                                    setConfirmAction(null);
+                                    await cb();
                                 }}
-                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-lg ${
-                                    confirmModal.confirmColor || 'bg-[var(--apex-gold)] hover:brightness-110 text-black'
+                                className={`flex-1 h-11 rounded-xl text-sm font-black ${
+                                    confirmAction.destructive
+                                        ? 'bg-rose-600 text-white'
+                                        : 'bg-[var(--apex-gold)] text-slate-950'
                                 }`}
                             >
-                                {confirmModal.confirmText || 'Confirmar'}
+                                {confirmAction.confirmLabel}
                             </button>
                         </div>
-                    </div>
-                </div>
-            )}
+                    )
+                }
+            >
+                <p className="text-xs text-slate-300 leading-relaxed">{confirmAction?.message}</p>
+            </BottomSheet>
         </div>
     );
 };

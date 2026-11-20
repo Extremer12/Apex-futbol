@@ -16,8 +16,7 @@ import {
     Trophy, 
     Settings, 
     Award, 
-    ChevronRight,
-    ArrowLeft
+    ChevronRight
 } from 'lucide-react';
 
 interface StartScreenProps {
@@ -59,25 +58,8 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onNewGame, onLoadGameS
     if (currentView === 'PACKS') {
         return (
             <div className="min-h-screen bg-[#0A0E17] text-white flex flex-col animate-fade-in relative z-50">
-                {/* Clean Top Header */}
-                <header className="sticky top-0 z-30 bg-[#0A0E17]/95 backdrop-blur-xl border-b border-white/5 px-4 sm:px-6 py-3">
-                    <div className="max-w-6xl mx-auto flex items-center gap-3">
-                        <button
-                            onClick={() => setCurrentView('MENU')}
-                            className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-all active:scale-95 cursor-pointer"
-                            title="Volver al menú"
-                        >
-                            <ArrowLeft className="w-5 h-5 text-[var(--apex-gold)]" />
-                        </button>
-                        <h1 className="text-sm sm:text-base font-black text-white uppercase tracking-tight">
-                            Packs y Escudos Reales
-                        </h1>
-                    </div>
-                </header>
-
-                {/* Full-screen Content Container */}
-                <main className="flex-1 max-w-6xl mx-auto w-full p-4 sm:p-6 lg:p-8">
-                    <CommunityPacksSection />
+                <main className="flex-1 w-full">
+                    <CommunityPacksSection onBack={() => setCurrentView('MENU')} />
                 </main>
             </div>
         );

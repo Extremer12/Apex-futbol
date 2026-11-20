@@ -143,31 +143,44 @@ export class DefaultResourceProvider {
     }
 
     /**
-     * Resolve Country Flag
+     * Resolve Country Flag (supports ISO codes and country names)
      */
-    public static resolveCountryFlag(countryCode: string): ResourceResolution | null {
-        const code = countryCode.trim().toUpperCase();
+    public static resolveCountryFlag(countryCodeOrName: string): ResourceResolution | null {
+        const raw = (countryCodeOrName || '').trim();
+        if (!raw) return null;
+        const clean = raw
+            .toUpperCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '');
+
         const ISO_MAP: Record<string, string> = {
-            ARG: 'ar', AR: 'ar',
-            ENG: 'gb-eng', GBR: 'gb', UK: 'gb',
-            ESP: 'es', ES: 'es',
-            GER: 'de', DE: 'de',
-            ITA: 'it', IT: 'it',
-            FRA: 'fr', FR: 'fr',
-            BRA: 'br', BR: 'br',
-            PAR: 'py', PY: 'py',
-            MEX: 'mx', MX: 'mx',
-            CHI: 'cl', CL: 'cl',
-            COL: 'co', CO: 'co',
-            URU: 'uy', UY: 'uy',
+            ARG: 'ar', AR: 'ar', ARGENTINA: 'ar',
+            ENG: 'gb-eng', INGLATERRA: 'gb-eng', ENGLAND: 'gb-eng',
+            GBR: 'gb', UK: 'gb',
+            SCO: 'gb-sct', ESCOCIA: 'gb-sct', SCOTLAND: 'gb-sct',
+            ESP: 'es', ES: 'es', ESPANA: 'es', SPAIN: 'es',
+            GER: 'de', DE: 'de', ALEMANIA: 'de', GERMANY: 'de',
+            ITA: 'it', IT: 'it', ITALIA: 'it', ITALY: 'it',
+            FRA: 'fr', FR: 'fr', FRANCIA: 'fr', FRANCE: 'fr',
+            BRA: 'br', BR: 'br', BRASIL: 'br', BRAZIL: 'br',
+            PAR: 'py', PY: 'py', PARAGUAY: 'py',
+            MEX: 'mx', MX: 'mx', MEXICO: 'mx',
+            CHI: 'cl', CL: 'cl', CHILE: 'cl',
+            COL: 'co', CO: 'co', COLOMBIA: 'co',
+            URU: 'uy', UY: 'uy', URUGUAY: 'uy',
+            ECU: 'ec', EC: 'ec', ECUADOR: 'ec',
+            BOL: 'bo', BO: 'bo', BOLIVIA: 'bo',
+            PER: 'pe', PE: 'pe', PERU: 'pe',
+            VEN: 've', VE: 've', VENEZUELA: 've',
             USA: 'us', US: 'us',
-            POR: 'pt', PT: 'pt',
-            NED: 'nl', NL: 'nl'
+            POR: 'pt', PT: 'pt', PORTUGAL: 'pt',
+            NED: 'nl', NL: 'nl', 'PAISES BAJOS': 'nl', NETHERLANDS: 'nl', HOLANDA: 'nl',
+            AUT: 'at', AT: 'at', AUSTRIA: 'at',
+            BEL: 'be', BE: 'be', BELGICA: 'be',
         };
 
-        const iso = ISO_MAP[code];
+        const iso = ISO_MAP[clean];
         if (iso) {
-            // Using standard SVG flag CDN from flagcdn.com (established standard)
             return {
                 url: `https://flagcdn.com/${iso}.svg`,
                 source: 'builtin-cdn',
@@ -236,5 +249,95 @@ export class DefaultResourceProvider {
             };
         }
         return null;
+    }
+
+    /**
+     * Determine whether a team belongs to the American or European bundle.
+     */
+    public static isAmericanTeam(teamId: number | string, url?: string): boolean {
+        const num = Number(teamId);
+        if (!isNaN(num) && num > 0) {
+            if (
+                (num >= 700 && num <= 899) ||
+                (num >= 980 && num <= 999) ||
+                (num >= 1100 && num <= 1399) ||
+                (num >= 9100 && num <= 9199)
+            ) {
+                return true;
+            }
+            if ((num >= 1 && num <= 699) || (num >= 900 && num <= 979)) {
+                return false;
+            }
+        }
+        if (url) {
+            const lower = url.toLowerCase();
+            return (
+                lower.includes('argentina') ||
+                lower.includes('brazil') ||
+                lower.includes('paraguay') ||
+                lower.includes('mexico') ||
+                lower.includes('chile') ||
+                lower.includes('colombia')
+            );
+        }
+        return false;
+    }
+
+    /**
+     * Resolve resource scoped to a specific modular community bundleKey.
+     */
+    public static resolveForBundle(
+        bundleKey: string,
+        type: ResourceType,
+        identifier: string | number,
+        meta?: any
+    ): ResourceResolution | null {
+        switch (bundleKey) {
+            case 'south-america-logos': {
+                if (type !== 'team-logo') return null;
+                const res = this.resolveTeamLogo(identifier, meta);
+                if (!res) return null;
+                return this.isAmericanTeam(identifier, res.url) ? { ...res, packId: bundleKey } : null;
+            }
+            case 'europe-logos': {
+                if (type !== 'team-logo') return null;
+                const res = this.resolveTeamLogo(identifier, meta);
+                if (!res) return null;
+                return !this.isAmericanTeam(identifier, res.url) ? { ...res, packId: bundleKey } : null;
+            }
+            case 'competitions-logos': {
+                if (type !== 'competition-logo' && type !== 'league-logo') return null;
+                const res = this.resolveCompetitionLogo(String(identifier), meta?.name);
+                return res ? { ...res, packId: bundleKey } : null;
+            }
+            case 'player-faces-pack': {
+                if (type !== 'player-face') return null;
+                const res = this.resolvePlayerFace(identifier, meta);
+                return res ? { ...res, packId: bundleKey } : null;
+            }
+            case 'trophies-pack': {
+                if (type !== 'trophy') return null;
+                const res = this.resolveTrophy(String(identifier), meta?.name);
+                return res ? { ...res, packId: bundleKey } : null;
+            }
+            case 'flags-pack': {
+                if (type !== 'flag') return null;
+                const res = this.resolveCountryFlag(String(identifier));
+                return res ? { ...res, packId: bundleKey } : null;
+            }
+            case 'official-base-pack': {
+                switch (type) {
+                    case 'team-logo': return this.resolveTeamLogo(identifier, meta);
+                    case 'competition-logo':
+                    case 'league-logo': return this.resolveCompetitionLogo(String(identifier), meta?.name);
+                    case 'player-face': return this.resolvePlayerFace(identifier, meta);
+                    case 'flag': return this.resolveCountryFlag(String(identifier));
+                    case 'trophy': return this.resolveTrophy(String(identifier), meta?.name);
+                    default: return null;
+                }
+            }
+            default:
+                return null;
+        }
     }
 }

@@ -49,6 +49,28 @@ export class PackResolver {
         for (const pack of activePacks) {
             const assetRelativePath = this.getAssetFromManifest(pack, type, idStr, extraMeta);
             if (assetRelativePath) {
+                // Local IndexedDB-backed pack asset (imported ZIP)
+                if (pack.manifest.baseUrl?.startsWith('idb://')) {
+                    const blobKeyId = assetRelativePath.split('/').pop()?.replace(/\.[^.]+$/, '') || assetRelativePath;
+                    const altCompType: ResourceType | null =
+                        type === 'league-logo' ? 'competition-logo' :
+                            type === 'competition-logo' ? 'league-logo' : null;
+                    const blobUrl =
+                        ResourceCache.getPackBlobUrl(pack.packId, type, blobKeyId) ||
+                        ResourceCache.getPackBlobUrl(pack.packId, type, idStr) ||
+                        (altCompType ? ResourceCache.getPackBlobUrl(pack.packId, altCompType, blobKeyId) : undefined) ||
+                        (altCompType ? ResourceCache.getPackBlobUrl(pack.packId, altCompType, idStr) : undefined);
+                    if (blobUrl) {
+                        ResourceCache.setInMemory(cacheKey, blobUrl);
+                        return {
+                            url: blobUrl,
+                            source: 'installed-pack',
+                            packId: pack.packId,
+                            isFallback: false
+                        };
+                    }
+                }
+
                 // If it's already an absolute URL or data URI
                 if (assetRelativePath.startsWith('http://') || assetRelativePath.startsWith('https://') || assetRelativePath.startsWith('data:')) {
                     ResourceCache.setInMemory(cacheKey, assetRelativePath);
@@ -71,10 +93,22 @@ export class PackResolver {
                     isFallback: false
                 };
             }
+
+            // Scoped modular bundle resolution (Option 1 catalog packs)
+            const bundleKey = pack.manifest.bundleKey || pack.packId;
+            const bundledRes = DefaultResourceProvider.resolveForBundle(bundleKey, type, idStr, extraMeta);
+            if (bundledRes) {
+                ResourceCache.setInMemory(cacheKey, bundledRes.url);
+                return {
+                    ...bundledRes,
+                    source: 'installed-pack',
+                    packId: pack.packId,
+                };
+            }
         }
 
-        // 3. Query Default Built-in Community Provider (active only when community packs are enabled)
-        if (this.isCommunityActive()) {
+        // 3. Query Default Built-in Community Provider ONLY in non-browser tests or explicit legacy flag when no modular packs manage state
+        if (this.isCommunityActive(installedPacks)) {
             const defaultResolution = this.queryDefaultProvider(type, idStr, extraMeta);
             if (defaultResolution) {
                 ResourceCache.setInMemory(cacheKey, defaultResolution.url);
@@ -106,41 +140,59 @@ export class PackResolver {
         switch (type) {
             case 'player-face': {
                 if (!assets.players) return undefined;
-                // Direct ID
                 if (assets.players[identifier]) return assets.players[identifier];
-                // Slug by name
                 if (meta?.name) {
-                    const slug = meta.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
-                    if (assets.players[slug]) return assets.players[slug];
+                    const norm = meta.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+                    if (assets.players[norm]) return assets.players[norm];
+                    const parts = meta.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().split(/\s+/);
+                    const lastName = parts.length > 1 ? parts[parts.length - 1].replace(/[^a-z0-9]/g, '') : '';
+                    if (lastName && assets.players[lastName]) return assets.players[lastName];
                 }
                 return undefined;
             }
             case 'team-logo': {
                 if (!assets.teams) return undefined;
-                // Direct ID
                 if (assets.teams[identifier]) return assets.teams[identifier];
-                // Slug by name
                 if (meta?.name) {
-                    const slug = meta.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
-                    if (assets.teams[slug]) return assets.teams[slug];
+                    const rawSlug = meta.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+                    if (assets.teams[rawSlug]) return assets.teams[rawSlug];
+                    const stripped = meta.name
+                        .toLowerCase()
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '')
+                        .replace(/\b(club|atletico|deportivo|sporting|futbol|fc|cf|sc|afc|cd|ca|de|la|el|los|las|the)\b/gi, '')
+                        .replace(/[^a-z0-9]/g, '');
+                    if (stripped && assets.teams[stripped]) return assets.teams[stripped];
+                }
+                if (meta?.shortName) {
+                    const shortSlug = meta.shortName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+                    if (assets.teams[shortSlug]) return assets.teams[shortSlug];
                 }
                 return undefined;
             }
-            case 'league-logo': {
-                if (!assets.leagues) return undefined;
-                return assets.leagues[identifier] || assets.leagues[identifier.toLowerCase()];
-            }
+            case 'league-logo':
             case 'competition-logo': {
-                if (!assets.competitions) return undefined;
-                return assets.competitions[identifier] || assets.competitions[identifier.toLowerCase()];
+                const primary = type === 'league-logo' ? assets.leagues : assets.competitions;
+                const secondary = type === 'league-logo' ? assets.competitions : assets.leagues;
+                const idLower = identifier.toLowerCase();
+                const idSlug = idLower.replace(/[^a-z0-9]/g, '');
+                const cleanName = meta?.name ? meta.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '') : '';
+                for (const dict of [primary, secondary]) {
+                    if (!dict) continue;
+                    const hit = dict[identifier] || dict[idLower] || dict[idSlug] || (cleanName ? dict[cleanName] : undefined);
+                    if (hit) return hit;
+                }
+                return undefined;
             }
             case 'trophy': {
                 if (!assets.trophies) return undefined;
-                return assets.trophies[identifier] || assets.trophies[identifier.toLowerCase()];
+                const cleanName = meta?.name ? meta.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '') : '';
+                return assets.trophies[identifier] || assets.trophies[identifier.toLowerCase()] || (cleanName ? assets.trophies[cleanName] : undefined);
             }
             case 'flag': {
                 if (!assets.flags) return undefined;
-                return assets.flags[identifier.toUpperCase()] || assets.flags[identifier.toLowerCase()];
+                const cleanSlug = identifier.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+                return assets.flags[identifier.toUpperCase()] || assets.flags[identifier.toLowerCase()] || assets.flags[cleanSlug];
             }
             case 'kit': {
                 if (!assets.kits) return undefined;
@@ -160,10 +212,12 @@ export class PackResolver {
     }
 
     /**
-     * Check if community content is active (Safe Mode for App Store compliance)
+     * Check if community content is active (Base Mode vs Modular Community Packs).
+     * When modular packs are managed in the browser, per-pack enable state controls resolution.
      */
-    private static isCommunityActive(): boolean {
+    private static isCommunityActive(installedPacks: InstalledPack[] = []): boolean {
         if (typeof window === 'undefined') return true;
+        if (installedPacks.length > 0) return false;
         try {
             return localStorage.getItem('apex_community_packs_active') === 'true';
         } catch {

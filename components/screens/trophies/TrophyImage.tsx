@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { resourceManager } from '../../../services/resources/ResourceManager';
 import { ResourceFallback } from '../../../services/resources/ResourceFallback';
+import { usePacksVersion } from '../../../data/teams/helpers';
 
 interface TrophyImageProps {
     competitionId: string;
@@ -26,6 +27,7 @@ export const TrophyImage: React.FC<TrophyImageProps> = ({
     showPedestal = false,
     size = 'md'
 }) => {
+    const packsVersion = usePacksVersion();
     const fallbackSvg = React.useMemo(() => {
         return ResourceFallback.trophy(name || competitionId);
     }, [competitionId, name]);
@@ -37,7 +39,7 @@ export const TrophyImage: React.FC<TrophyImageProps> = ({
         } catch {
             return fallbackSvg;
         }
-    }, [competitionId, name, fallbackSvg]);
+    }, [competitionId, name, fallbackSvg, packsVersion]);
 
     const [imgSrc, setImgSrc] = useState<string>(initialUrl);
     const [hasError, setHasError] = useState<boolean>(false);
@@ -51,7 +53,7 @@ export const TrophyImage: React.FC<TrophyImageProps> = ({
             setImgSrc(fallbackSvg);
             setHasError(true);
         }
-    }, [competitionId, name, fallbackSvg]);
+    }, [competitionId, name, fallbackSvg, packsVersion]);
 
     const handleError = () => {
         if (!hasError) {

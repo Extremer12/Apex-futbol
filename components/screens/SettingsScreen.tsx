@@ -19,18 +19,23 @@ interface SettingsScreenProps {
 }
 
 import { translations } from '../../src/i18n/translations';
-import { CommunityPacksSection } from './settings/CommunityPacksSection';
+import { CommunityPacksModal } from '../ui/CommunityPacksModal';
+import { PackManager } from '../../services/resources/PackManager';
+import { usePacksVersion } from '../../data/teams/helpers';
+import { Layers, ChevronRight, Shield, ExternalLink } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { LeaderboardModal } from '../leaderboard/LeaderboardModal';
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onSaveGame, onQuitToMenu, currentSaveName, lastSaved, preferredCurrency, preferredLanguage, dispatch }) => {
     const t = translations[preferredLanguage || 'es'];
     const { user, profile, signInWithGoogle, signOut, isConfigured } = useAuth();
+    usePacksVersion();
     const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
     const [isQuitModalOpen, setIsQuitModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
     const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
+    const [isPacksModalOpen, setIsPacksModalOpen] = useState(false);
     const [deleteCloudToo, setDeleteCloudToo] = useState(true);
     const [isDeleting, setIsDeleting] = useState(false);
     const [matchSpeed, setMatchSpeed] = useState<'1' | '2' | '4'>(() => {
@@ -55,6 +60,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onSaveGame, onQu
                 await deleteAllUserDataFromCloud();
             }
             await clearAllData();
+            try {
+                await PackManager.clearAllPacks();
+            } catch (_) {}
             try {
                 localStorage.clear();
             } catch (_) {}
@@ -146,6 +154,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onSaveGame, onQu
             
             {isLeaderboardOpen && <LeaderboardModal onClose={() => setIsLeaderboardOpen(false)} />}
             {isPrivacyModalOpen && <PrivacyPolicyModal onClose={() => setIsPrivacyModalOpen(false)} />}
+            <CommunityPacksModal isOpen={isPacksModalOpen} onClose={() => setIsPacksModalOpen(false)} />
 
             <div className="flex items-center justify-between">
                 <h2 className="text-3xl font-bold text-sky-400">Ajustes y Sistema</h2>
@@ -418,13 +427,39 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onSaveGame, onQu
 
             {/* Community Logo & Asset Packs Section */}
             <div className="space-y-4">
-                <CommunityPacksSection />
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Packs Visuales</h3>
+                {(() => {
+                    const activePacksCount = PackManager.getInstalledPacks().filter(p => p.enabled).length;
+                    return (
+                        <button
+                            type="button"
+                            onClick={() => setIsPacksModalOpen(true)}
+                            className="w-full apex-card p-4 sm:p-5 flex items-center justify-between gap-3 hover:border-[var(--apex-gold)]/40 transition-colors text-left"
+                        >
+                            <div className="flex items-center gap-3 min-w-0">
+                                <div className="w-10 h-10 rounded-xl bg-[var(--apex-gold)]/15 border border-[var(--apex-gold)]/30 flex items-center justify-center shrink-0">
+                                    <Layers className="w-5 h-5 text-[var(--apex-gold)]" />
+                                </div>
+                                <div className="min-w-0">
+                                    <h4 className="text-sm font-black text-white truncate">Packs y Escudos Reales</h4>
+                                    <p className="text-xs text-slate-400 mt-0.5 truncate">
+                                        {activePacksCount > 0
+                                            ? `${activePacksCount} ${activePacksCount === 1 ? 'pack activo' : 'packs activos'} en juego`
+                                            : 'Base vectorial activa · Instala escudos, ligas y rostros'}
+                                    </p>
+                                </div>
+                            </div>
+                            <ChevronRight className="w-5 h-5 text-slate-400 shrink-0" />
+                        </button>
+                    );
+                })()}
             </div>
 
             {/* Legal & Privacy Section */}
             <div className="space-y-4">
                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                    <span>🛡️ Legal y Privacidad</span>
+                    <Shield className="w-4 h-4 text-sky-400" />
+                    <span>Legal y Privacidad</span>
                 </h3>
                 <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
@@ -444,10 +479,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onSaveGame, onQu
                             href="/privacy.html"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 rounded-lg text-xs font-bold transition-all"
+                            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 rounded-lg text-xs font-bold transition-all flex items-center justify-center"
                             title="Abrir en pestaña nueva"
                         >
-                            ↗
+                            <ExternalLink className="w-3.5 h-3.5" />
                         </a>
                     </div>
                 </div>

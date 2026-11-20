@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { LeagueTableRow, GameState } from '../../../types';
 import { TeamForm } from '../../ui/TeamForm';
 import { TrophyIcon } from '../../icons';
-import { TeamLogo } from '../../../data/teams/helpers';
+import { TeamLogo, usePacksVersion } from '../../../data/teams/helpers';
 import { LEAGUE_THEMES } from './constants';
 import { customPacksService } from '../../../services/customPacks/packService';
 import { Trophy, Shield, Flame, Activity } from 'lucide-react';
@@ -30,12 +30,13 @@ export const LeagueTable: React.FC<LeagueTableProps> = React.memo(({
 }) => {
     if (!table) return null;
 
+    const packsVersion = usePacksVersion();
     const [argView, setArgView] = useState<ArgViewMode>('ZONA_A');
     const isArgentina = leagueId === 'LIGA_ARGENTINA';
     const isPrimeraNacional = leagueId === 'PRIMERA_NACIONAL';
     const isZonalLeague = isArgentina || isPrimeraNacional;
     const theme = LEAGUE_THEMES[leagueId] || 'purple';
-    const logo = useMemo(() => customPacksService.resolveCompetitionLogo(leagueId, title, logoPath), [leagueId, title, logoPath]);
+    const logo = useMemo(() => customPacksService.resolveCompetitionLogo(leagueId, title, logoPath), [leagueId, title, logoPath, packsVersion]);
 
     const teamsMap = useMemo(() => {
         const map = new Map<number, typeof gameState.allTeams[0]>();

@@ -32,6 +32,8 @@ let dbInitPromise: Promise<IDBDatabase | null> | null = null;
 export class ResourceCache {
     // In-memory hot cache for instant synchronous component renders
     private static memoryCache: Map<string, string> = new Map();
+    // Hydrated IndexedDB blob object URLs keyed by `${packId}::${key}`
+    private static packBlobUrls: Map<string, string> = new Map();
     // Track allocated object URLs to prevent memory leaks
     private static objectUrls: Set<string> = new Set();
 
@@ -40,6 +42,99 @@ export class ResourceCache {
      */
     public static makeKey(type: ResourceType, identifier: string | number): string {
         return `${type}:${String(identifier).trim().toLowerCase()}`;
+    }
+
+    public static makeBlobKey(packId: string, type: ResourceType, identifier: string | number): string {
+        return `${packId}::${this.makeKey(type, identifier)}`;
+    }
+
+    public static getPackBlobUrl(packId: string, type: ResourceType, identifier: string | number): string | undefined {
+        return this.packBlobUrls.get(this.makeBlobKey(packId, type, identifier));
+    }
+
+    /**
+     * Hydrate memory cache from persistent IndexedDB records (non-blocking at startup)
+     */
+    public static async hydrateFromDB(): Promise<number> {
+        const db = await this.getDB();
+        if (!db) return 0;
+
+        return new Promise((resolve) => {
+            try {
+                const tx = db.transaction(STORES.ASSETS, 'readonly');
+                const store = tx.objectStore(STORES.ASSETS);
+                const req = store.getAll();
+                req.onsuccess = () => {
+                    const records = (req.result || []) as CachedAssetRecord[];
+                    let loaded = 0;
+                    for (const record of records) {
+                        const targetUrl = record.blob
+                            ? URL.createObjectURL(record.blob)
+                            : record.url;
+                        if (!targetUrl) continue;
+                        if (record.blob) this.objectUrls.add(targetUrl);
+
+                        if (record.packId) {
+                            this.packBlobUrls.set(this.makeBlobKey(record.packId, record.type, record.identifier), targetUrl);
+                        } else {
+                            this.memoryCache.set(record.key, targetUrl);
+                        }
+                        loaded++;
+                    }
+                    resolve(loaded);
+                };
+                req.onerror = () => resolve(0);
+            } catch {
+                resolve(0);
+            }
+        });
+    }
+
+    /**
+     * Estimate local IndexedDB storage usage across cached pack assets
+     */
+    public static async getStorageStats(): Promise<{ assetCount: number; totalBytes: number }> {
+        const db = await this.getDB();
+        if (!db) return { assetCount: 0, totalBytes: 0 };
+
+        return new Promise((resolve) => {
+            try {
+                const tx = db.transaction(STORES.ASSETS, 'readonly');
+                const store = tx.objectStore(STORES.ASSETS);
+                const req = store.getAll();
+                req.onsuccess = () => {
+                    const records = (req.result || []) as CachedAssetRecord[];
+                    let totalBytes = 0;
+                    for (const r of records) {
+                        totalBytes += r.blob ? r.blob.size : 0;
+                    }
+                    resolve({ assetCount: records.length, totalBytes });
+                };
+                req.onerror = () => resolve({ assetCount: 0, totalBytes: 0 });
+            } catch {
+                resolve({ assetCount: 0, totalBytes: 0 });
+            }
+        });
+    }
+
+    /**
+     * Get all stored asset blobs for ZIP export
+     */
+    public static async getAllStoredBlobs(): Promise<CachedAssetRecord[]> {
+        const db = await this.getDB();
+        if (!db) return [];
+
+        return new Promise((resolve) => {
+            try {
+                const tx = db.transaction(STORES.ASSETS, 'readonly');
+                const store = tx.objectStore(STORES.ASSETS);
+                const req = store.getAll();
+                req.onsuccess = () => resolve((req.result || []) as CachedAssetRecord[]);
+                req.onerror = () => resolve([]);
+            } catch {
+                resolve([]);
+            }
+        });
     }
 
     /**
@@ -197,12 +292,14 @@ export class ResourceCache {
      */
     public static async putAssetsBatch(records: CachedAssetRecord[]): Promise<void> {
         records.forEach(r => {
-            if (r.blob) {
-                const objUrl = URL.createObjectURL(r.blob);
-                this.objectUrls.add(objUrl);
-                this.memoryCache.set(r.key, objUrl);
-            } else if (r.url) {
-                this.memoryCache.set(r.key, r.url);
+            const resolved = r.blob ? URL.createObjectURL(r.blob) : r.url;
+            if (!resolved) return;
+            if (r.blob) this.objectUrls.add(resolved);
+
+            if (r.packId) {
+                this.packBlobUrls.set(this.makeBlobKey(r.packId, r.type, r.identifier), resolved);
+            } else {
+                this.memoryCache.set(r.key, resolved);
             }
         });
 
@@ -228,6 +325,14 @@ export class ResourceCache {
      * Clear all cached assets for a specific pack
      */
     public static async removePackAssets(packId: string): Promise<void> {
+        const prefix = `${packId}::`;
+        for (const key of Array.from(this.packBlobUrls.keys())) {
+            if (key.startsWith(prefix)) {
+                this.packBlobUrls.delete(key);
+            }
+        }
+        this.memoryCache.clear();
+
         const db = await this.getDB();
         if (!db) return;
 
@@ -254,15 +359,9 @@ export class ResourceCache {
     }
 
     /**
-     * Clear hot in-memory cache
+     * Clear hot in-memory resolution cache (keeps hydrated pack blobs intact)
      */
     public static clearMemory(): void {
-        this.objectUrls.forEach(url => {
-            if (url.startsWith('blob:')) {
-                try { URL.revokeObjectURL(url); } catch {}
-            }
-        });
-        this.objectUrls.clear();
         this.memoryCache.clear();
     }
 
@@ -270,7 +369,14 @@ export class ResourceCache {
      * Clear all memory and IndexedDB cached resources
      */
     public static async clearAll(): Promise<void> {
-        this.clearMemory();
+        this.objectUrls.forEach(url => {
+            if (url.startsWith('blob:')) {
+                try { URL.revokeObjectURL(url); } catch {}
+            }
+        });
+        this.objectUrls.clear();
+        this.packBlobUrls.clear();
+        this.memoryCache.clear();
 
         const db = await this.getDB();
         if (db) {

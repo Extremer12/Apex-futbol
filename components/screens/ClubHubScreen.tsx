@@ -48,11 +48,9 @@ export const ClubHubScreen: React.FC<ClubHubScreenProps> = ({ gameState, dispatc
         <div className="p-4 md:p-6 space-y-6 pb-24 animate-fade-in">
             {/* Header / Mandate Banner */}
             <div className="relative overflow-hidden apex-card p-6 md:p-8">
-                {team.logo && (
-                    <div className="absolute -right-6 -bottom-6 w-48 h-48 opacity-10 pointer-events-none">
-                        <img src={team.logo} alt="" className="w-full h-full object-contain filter grayscale" />
-                    </div>
-                )}
+                <div className="absolute -right-6 -bottom-6 w-48 h-48 opacity-10 pointer-events-none">
+                    <TeamLogo team={team} className="w-full h-full object-contain filter grayscale" />
+                </div>
                 <div className="relative z-10 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
                     <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-black/40 border border-white/10 p-2.5 flex items-center justify-center shrink-0 shadow-xl">
                         <TeamLogo team={team} className="w-full h-full object-contain drop-shadow-md" />
