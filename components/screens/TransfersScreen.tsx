@@ -196,110 +196,56 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
     const nextWindow = getNextTransferWindow(gameState.currentWeek);
 
     return (
-        <div className="p-3 sm:p-5 md:p-6 space-y-4 sm:space-y-5 pb-24 animate-fade-in select-none">
-            {/* 1. TOP PRESIDENTIAL BAR (Clean, Compact, Informative) */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-[#0B0F19] border border-white/10 p-3.5 sm:p-4 rounded-2xl shadow-xl">
-                {/* Title & Market Window Status */}
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-[var(--apex-gold)]/10 border border-[var(--apex-gold)]/30 flex items-center justify-center shrink-0">
-                        <Users className="w-5 h-5 text-[var(--apex-gold)]" />
-                    </div>
+        <div className="p-3 sm:p-5 md:p-6 space-y-3 sm:space-y-4 pb-24 animate-fade-in max-w-5xl mx-auto">
+            {/* 1. HEADER */}
+            <header className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                    <h1 className="text-lg sm:text-xl font-black text-white tracking-tight">Fichajes</h1>
+                    {marketOpen ? (
+                        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-400">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Mercado abierto
+                        </span>
+                    ) : (
+                        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-rose-400">
+                            <Clock className="w-3 h-3" /> Cerrado · abre {nextWindow}
+                        </span>
+                    )}
+                </div>
+                <button
+                    onClick={() => { setNewBudgetDraft(normBudget); setShowBudgetModal(true); }}
+                    className="flex items-center gap-2.5 pl-3 pr-2.5 py-2 rounded-2xl bg-[#0D1220] border border-white/10 hover:border-[var(--apex-gold)]/40 text-left"
+                    title="Ajustar presupuesto"
+                >
                     <div>
-                        <div className="flex items-center gap-2">
-                            <h1 className="text-base sm:text-lg font-black text-white uppercase tracking-tight">Mercado de Fichajes</h1>
-                            {marketOpen ? (
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                                    Ventana Abierta
-                                </span>
-                            ) : (
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500/15 text-rose-400 border border-rose-500/30">
-                                    <Clock className="w-3 h-3 text-rose-400" />
-                                    Cerrado (Abre: {nextWindow})
-                                </span>
+                        <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block leading-none mb-1">Presupuesto</span>
+                        <span className="text-sm font-black text-[var(--apex-gold)] leading-none">{formatTransferFee(normBudget)}</span>
+                    </div>
+                    <Sliders className="w-4 h-4 text-slate-500" />
+                </button>
+            </header>
+
+            {/* 2. TABS (sticky) */}
+            <nav className="sticky top-0 z-20 -mx-3 sm:mx-0 px-3 sm:px-0 py-1.5 bg-[var(--apex-darker,#070A13)]/95 backdrop-blur">
+                <div className="grid grid-cols-3 gap-1 p-1 bg-white/5 rounded-2xl">
+                    {([
+                        { id: 'MARKET', label: 'Mercado', badge: 0 },
+                        { id: 'MY_SQUAD', label: 'Plantilla', badge: myTeam.squad.filter(p => p.isTransferListed).length },
+                        { id: 'OFFERS', label: 'Ofertas', badge: incomingOffers.length },
+                    ] as const).map(t => (
+                        <button key={t.id} onClick={() => setActiveTab(t.id)}
+                            className={`relative h-10 rounded-xl text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-1.5 ${
+                                activeTab === t.id ? 'bg-[var(--apex-gold)] text-slate-950 font-black' : 'text-slate-400 hover:text-white'
+                            }`}>
+                            {t.label}
+                            {t.badge > 0 && (
+                                <span className={`min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-black flex items-center justify-center ${
+                                    activeTab === t.id ? 'bg-slate-950 text-[var(--apex-gold)]' : t.id === 'OFFERS' ? 'bg-rose-500 text-white' : 'bg-white/15 text-white'
+                                }`}>{t.badge}</span>
                             )}
-                        </div>
-                        <p className="text-[11px] text-slate-400 font-medium">Contrataciones, venta de futbolistas y gestión de contratos</p>
-                    </div>
+                        </button>
+                    ))}
                 </div>
-
-                {/* Financial Overview & Budget Reallocation */}
-                <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-5 bg-black/40 border border-white/10 px-3.5 py-2 rounded-xl text-xs">
-                    <div>
-                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Tesorería</span>
-                        <span className="text-xs sm:text-sm font-black text-emerald-400">{formatTransferFee(normBalance)}</span>
-                    </div>
-                    <div className="w-px h-5 bg-white/10" />
-                    <div>
-                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Presupuesto Fichajes</span>
-                        <div className="flex items-center gap-1.5">
-                            <span className="text-xs sm:text-sm font-black text-[var(--apex-gold)]">{formatTransferFee(normBudget)}</span>
-                            <button
-                                onClick={() => {
-                                    setNewBudgetDraft(normBudget);
-                                    setShowBudgetModal(true);
-                                }}
-                                className="p-1 rounded bg-white/5 hover:bg-white/15 text-slate-400 hover:text-[var(--apex-gold)] transition-colors cursor-pointer"
-                                title="Ajustar asignación de presupuesto"
-                            >
-                                <Sliders className="w-3 h-3" />
-                            </button>
-                        </div>
-                    </div>
-                    <div className="w-px h-5 bg-white/10" />
-                    <div>
-                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Masa Salarial</span>
-                        <span className="text-xs sm:text-sm font-black text-white">{formatWeeklyWage(finances.weeklyWages)}</span>
-                    </div>
-                </div>
-            </div>
-
-            {/* 2. SEGMENTED TABS */}
-            <div className="flex items-center gap-1.5 bg-black/40 p-1 rounded-xl border border-white/10 overflow-x-auto">
-                <button
-                    onClick={() => setActiveTab('MARKET')}
-                    className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                        activeTab === 'MARKET' 
-                            ? 'bg-[var(--apex-gold)] text-slate-950 shadow-md font-black' 
-                            : 'text-slate-400 hover:text-white'
-                    }`}
-                >
-                    <Users className="w-3.5 h-3.5" />
-                    <span>Explorar Mercado ({availablePlayers.length})</span>
-                </button>
-                <button
-                    onClick={() => setActiveTab('MY_SQUAD')}
-                    className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                        activeTab === 'MY_SQUAD' 
-                            ? 'bg-[var(--apex-gold)] text-slate-950 shadow-md font-black' 
-                            : 'text-slate-400 hover:text-white'
-                    }`}
-                >
-                    <Tag className="w-3.5 h-3.5" />
-                    <span>Vender / Mi Plantilla</span>
-                    {myTeam.squad.filter(p => p.isTransferListed).length > 0 && (
-                        <span className="w-4 h-4 rounded-full bg-amber-500 text-black text-[9px] font-black flex items-center justify-center">
-                            {myTeam.squad.filter(p => p.isTransferListed).length}
-                        </span>
-                    )}
-                </button>
-                <button
-                    onClick={() => setActiveTab('OFFERS')}
-                    className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 relative cursor-pointer ${
-                        activeTab === 'OFFERS' 
-                            ? 'bg-[var(--apex-gold)] text-slate-950 shadow-md font-black' 
-                            : 'text-slate-400 hover:text-white'
-                    }`}
-                >
-                    <Inbox className="w-3.5 h-3.5" />
-                    <span>Ofertas Recibidas</span>
-                    {incomingOffers.length > 0 && (
-                        <span className="w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center animate-pulse">
-                            {incomingOffers.length}
-                        </span>
-                    )}
-                </button>
-            </div>
+            </nav>
 
             {/* 3. ACTIVE TAB CONTENT */}
             {activeTab === 'MARKET' && (

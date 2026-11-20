@@ -1,5 +1,5 @@
 import { Team, LeagueId } from '../../types';
-import { createTeamLogo, TEAM_LOGOS } from './helpers';
+import { createTeamLogo, TEAM_LOGOS } from './squadHelpers';
 
 export const championshipTeams: Team[] = [
   {

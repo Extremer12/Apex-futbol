@@ -1,12 +1,9 @@
 import React from 'react';
 import { Offer, Team } from '../../../types';
 import { TeamLogo, PlayerPhoto } from '../../../data/teams/helpers';
-import { 
-    Inbox, 
-    CheckCircle2, 
-    XCircle 
-} from 'lucide-react';
-import { formatTransferFee } from '../../../utils';
+import { Inbox, Check, X } from 'lucide-react';
+import { formatTransferFee, normalizeMonetaryValue } from '../../../utils';
+import { EmptyState, positionLabel } from './TransferUI';
 
 interface TransfersOffersTabProps {
     incomingOffers: Offer[];
@@ -18,88 +15,68 @@ interface TransfersOffersTabProps {
 }
 
 export const TransfersOffersTab: React.FC<TransfersOffersTabProps> = ({
-    incomingOffers,
-    myTeam,
-    allTeams,
-    onAcceptOffer,
-    onRejectOffer,
-    onOpenCounterOffer,
+    incomingOffers, myTeam, allTeams, onAcceptOffer, onRejectOffer, onOpenCounterOffer,
 }) => {
     if (incomingOffers.length === 0) {
         return (
-            <div className="apex-card p-16 text-center flex flex-col items-center justify-center">
-                <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-4 text-white/30">
-                    <Inbox className="w-8 h-8" />
-                </div>
-                <h3 className="text-lg font-black text-white uppercase tracking-tight mb-1">Bandeja de Ofertas Vacía</h3>
-                <p className="text-white/40 text-xs max-w-sm">No has recibido propuestas de compra de otros clubes recientemente. Pon jugadores en la lista de transferibles para atraer interés.</p>
+            <div className="apex-card">
+                <EmptyState icon={<Inbox className="w-6 h-6" />} title="Sin ofertas por ahora"
+                    text="Pon jugadores en venta desde la pestaña Plantilla para atraer compradores." />
             </div>
         );
     }
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-3">
             {incomingOffers.map(offer => {
                 const player = myTeam.squad.find(p => p.id === offer.playerId);
-                const offeringTeam = allTeams.find(t => t.id === offer.offeringTeamId);
-                const isCountered = offer.counterOfferValue && offer.counterOfferValue > 0;
-                const displayValue = offer.counterOfferValue || offer.offerValue;
+                const buyer = allTeams.find(t => t.id === offer.offeringTeamId);
+                const amount = offer.counterOfferValue || offer.offerValue;
+                const pct = player ? Math.round((normalizeMonetaryValue(amount) / Math.max(1, normalizeMonetaryValue(player.value))) * 100) : 100;
+                const pctTone = pct >= 110 ? 'text-emerald-400 bg-emerald-500/10' : pct >= 90 ? 'text-amber-300 bg-amber-500/10' : 'text-rose-400 bg-rose-500/10';
 
                 return (
-                    <div key={offer.id} className="apex-card p-5 border-l-4 border-l-[var(--apex-gold)] space-y-4">
-                        <div className="flex items-start justify-between gap-4">
-                            <div className="flex items-center gap-3">
-                                {player && <PlayerPhoto player={player} className="w-12 h-12 rounded-xl border border-white/10" />}
-                                <div>
-                                    <span className="text-[9px] font-black text-[var(--apex-gold)] tracking-widest uppercase">Oferta Formal de Compra</span>
-                                    <h3 className="text-base font-black text-white leading-tight">{player?.name || 'Jugador'}</h3>
-                                    <p className="text-xs text-white/50">{player?.position} • Valor: {formatTransferFee(player?.value)}</p>
+                    <article key={offer.id} className="apex-card p-4 space-y-3">
+                        <div className="flex items-center gap-3">
+                            {player && <PlayerPhoto player={player} className="w-11 h-11 rounded-full shrink-0" />}
+                            <div className="min-w-0 flex-1">
+                                <p className="text-sm font-bold text-white truncate">{player?.name || 'Jugador'}</p>
+                                <div className="flex items-center gap-1.5 text-[11px] text-slate-400 min-w-0">
+                                    <span>{player ? positionLabel[player.position] : ''}</span>
+                                    <span>·</span>
+                                    <span>Oferta de</span>
+                                    {buyer && <span className="w-3.5 h-3.5 inline-flex shrink-0"><TeamLogo team={buyer} /></span>}
+                                    <span className="truncate font-semibold text-slate-300">{buyer?.shortName || buyer?.name}</span>
                                 </div>
                             </div>
+                        </div>
 
-                            <div className="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-xl border border-white/10">
-                                <div className="w-6 h-6">
-                                    <TeamLogo team={offeringTeam} />
-                                </div>
-                                <span className="text-xs font-black text-white">{offeringTeam?.name}</span>
+                        <div className="flex items-end justify-between px-3 py-2.5 rounded-xl bg-black/30">
+                            <div>
+                                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Ofrecen</span>
+                                <span className="text-xl font-black text-white">{formatTransferFee(amount)}</span>
+                            </div>
+                            <div className="text-right">
+                                <span className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-black ${pctTone}`}>{pct}% del valor</span>
+                                <span className="text-[10px] text-slate-500 block mt-0.5">Valor: {formatTransferFee(player?.value)}</span>
                             </div>
                         </div>
 
-                        <div className="bg-black/40 p-3 rounded-xl border border-white/5 space-y-1">
-                            <div className="flex justify-between items-center">
-                                <span className="text-xs text-white/60 font-bold">Monto Ofertado:</span>
-                                <span className="text-lg font-black text-emerald-400">{formatTransferFee(displayValue)}</span>
-                            </div>
-                            {isCountered && (
-                                <span className="text-[9px] font-black text-amber-400 uppercase tracking-widest block">
-                                    Contraoferta en curso
-                                </span>
-                            )}
-                            <p className="text-xs text-white/80 italic pt-1 border-t border-white/5">"{offer.message}"</p>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => onAcceptOffer(offer)}
-                                className="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/20 cursor-pointer"
-                            >
-                                <CheckCircle2 className="w-4 h-4" /> Aceptar Oferta
+                        <div className="grid grid-cols-[auto_1fr_1fr] gap-2">
+                            <button onClick={() => onRejectOffer(offer)} aria-label="Rechazar"
+                                className="h-11 w-11 rounded-xl bg-white/5 text-slate-400 hover:text-rose-400 flex items-center justify-center">
+                                <X className="w-5 h-5" />
                             </button>
-                            <button
-                                onClick={() => onOpenCounterOffer(offer)}
-                                className="px-4 py-2.5 rounded-xl bg-[var(--apex-gold)]/10 text-[var(--apex-gold)] hover:bg-[var(--apex-gold)] hover:text-black border border-[var(--apex-gold)]/30 font-black text-xs uppercase tracking-wider transition-all"
-                            >
-                                Contraofertar
+                            <button onClick={() => onOpenCounterOffer(offer)}
+                                className="h-11 rounded-xl bg-white/5 text-slate-200 text-xs font-bold">
+                                Pedir más
                             </button>
-                            <button
-                                onClick={() => onRejectOffer(offer)}
-                                className="p-2.5 rounded-xl bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/30 transition-all"
-                                title="Rechazar Oferta"
-                            >
-                                <XCircle className="w-5 h-5" />
+                            <button onClick={() => onAcceptOffer(offer)}
+                                className="h-11 rounded-xl bg-emerald-500 text-slate-950 text-xs font-black flex items-center justify-center gap-1.5">
+                                <Check className="w-4 h-4" /> Aceptar
                             </button>
                         </div>
-                    </div>
+                    </article>
                 );
             })}
         </div>

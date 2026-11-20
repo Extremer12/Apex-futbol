@@ -1,5 +1,5 @@
 import { Team, LeagueId } from '../../types';
-import { createGenericSquad } from './helpers';
+import { createGenericSquad } from './squadHelpers';
 
 const CDN_BASE = 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Categor%C3%ADa%20Primera%20A';
 

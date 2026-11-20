@@ -1,5 +1,5 @@
 import { Team, LeagueId } from '../../types';
-import { createGenericSquad } from './helpers';
+import { createGenericSquad } from './squadHelpers';
 
 export const ligue1Teams: Team[] = [
     {

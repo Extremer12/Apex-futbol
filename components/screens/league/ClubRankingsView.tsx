@@ -13,7 +13,6 @@ import {
     Award, 
     Shield, 
     Info, 
-    Sparkles, 
     ChevronRight,
     Star
 } from 'lucide-react';

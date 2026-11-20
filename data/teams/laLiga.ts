@@ -1,5 +1,5 @@
 import { Team, LeagueId } from '../../types';
-import { createTeamLogo, TEAM_LOGOS, createGenericSquad } from './helpers';
+import { createTeamLogo, TEAM_LOGOS, createGenericSquad } from './squadHelpers';
 
 export const laLigaTeams: Team[] = [
   {

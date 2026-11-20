@@ -238,11 +238,11 @@ export const LeagueTable: React.FC<LeagueTableProps> = React.memo(({
         
         let statusBadgeText = 'Por disputarse (Fecha 17 a 20)';
         if (currentChampName) {
-            statusBadgeText = `🏆 Campeón Apertura: ${currentChampName}`;
+            statusBadgeText = `Campeón Apertura: ${currentChampName}`;
         } else if (gameState.currentWeek >= 17 && gameState.currentWeek <= 20) {
             statusBadgeText = 'En Disputa (Fecha 17 a 20)';
         } else if (historyChampName) {
-            statusBadgeText = `🏆 Último Campeón: ${historyChampName}`;
+            statusBadgeText = `Último Campeón: ${historyChampName}`;
         }
 
         return (
@@ -287,11 +287,11 @@ export const LeagueTable: React.FC<LeagueTableProps> = React.memo(({
         
         let statusBadgeText = 'Por disputarse (Fecha 37 a 40)';
         if (currentChampName) {
-            statusBadgeText = `🏆 Campeón Clausura: ${currentChampName}`;
+            statusBadgeText = `Campeón Clausura: ${currentChampName}`;
         } else if (gameState.currentWeek >= 37 && gameState.currentWeek <= 40) {
             statusBadgeText = 'En Disputa (Fecha 37 a 40)';
         } else if (historyChampName) {
-            statusBadgeText = `🏆 Último Campeón: ${historyChampName}`;
+            statusBadgeText = `Último Campeón: ${historyChampName}`;
         }
 
         return (

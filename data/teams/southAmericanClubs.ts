@@ -1,5 +1,5 @@
 import { Team, LeagueId } from '../../types';
-import { createGenericSquad } from './helpers';
+import { createGenericSquad } from './squadHelpers';
 
 export interface ConmebolTeamMeta {
     country: 'ARG' | 'BRA' | 'BOL' | 'CHI' | 'COL' | 'ECU' | 'PAR' | 'PER' | 'URU' | 'VEN';

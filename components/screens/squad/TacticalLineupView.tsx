@@ -442,7 +442,7 @@ export const TacticalLineupView: React.FC<TacticalLineupViewProps> = React.memo(
     };
 
     return (
-        <div className="space-y-5 animate-fade-in">
+        <div className="space-y-3 sm:space-y-4">
             <TacticsControlsBar
                 coach={coach}
                 selectedFormation={selectedFormation}
@@ -455,25 +455,23 @@ export const TacticalLineupView: React.FC<TacticalLineupViewProps> = React.memo(
             />
 
             {selectedPlayerForSwap && (
-                <div className="bg-amber-500/15 border-2 border-amber-500/50 rounded-2xl p-3 px-4 flex items-center justify-between gap-3 text-amber-200 animate-pulse">
+                <div className="bg-[var(--apex-gold)]/10 border border-[var(--apex-gold)]/40 rounded-2xl px-4 py-3 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5 min-w-0">
-                        <ArrowLeftRight className="w-4 h-4 text-amber-400 shrink-0" />
-                        <div className="text-xs truncate">
-                            <span className="font-black uppercase tracking-wide">Modo Intercambio Activo: </span>
-                            <span>Selecciona otro futbolista del campo o del banquillo para intercambiar a </span>
-                            <strong className="text-white font-black underline">{selectedPlayerForSwap.name} ({selectedPlayerForSwap.position})</strong>
-                        </div>
+                        <ArrowLeftRight className="w-4 h-4 text-[var(--apex-gold)] shrink-0" />
+                        <p className="text-xs text-slate-200 truncate">
+                            Selecciona con quién intercambiar a <strong className="text-white font-black">{selectedPlayerForSwap.name}</strong>
+                        </p>
                     </div>
                     <button
                         onClick={() => setSelectedPlayerForSwap(null)}
-                        className="px-2.5 py-1 bg-amber-500/30 hover:bg-amber-500/50 text-white rounded-lg text-xs font-black uppercase tracking-wider shrink-0 transition-colors cursor-pointer"
+                        className="h-8 px-3 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold shrink-0"
                     >
                         Cancelar
                     </button>
                 </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
                 <PitchBoard
                     slots={slots}
                     starters={starters}

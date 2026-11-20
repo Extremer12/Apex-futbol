@@ -2,7 +2,7 @@ import React from 'react';
 import { GameState } from '../../../types';
 import { CompetitionItem } from './constants';
 import { customPacksService } from '../../../services/customPacks/packService';
-import { Trophy, History, Shield, Award, Calendar, ChevronRight, Star, Sparkles } from 'lucide-react';
+import { Trophy, History, Shield, Award, Calendar, ChevronRight, Star } from 'lucide-react';
 import { TeamLogo, GenericTeamShield, TEAM_LOGOS } from '../../../data/teams/helpers';
 import { getCompetitionHistoricalRecord } from '../../../data/historicalHonours';
 import { TrophyLaurelWatermark, PodiumRankBadge } from '../../ui/GameCardDecorations';
@@ -297,7 +297,7 @@ export const CompetitionHistoryView: React.FC<CompetitionHistoryViewProps> = ({
                             combinedCupHistory.length > 0 && (
                                 <div className="space-y-2">
                                     <div className="text-[10px] font-black uppercase text-[var(--apex-gold)] tracking-wider flex items-center gap-1.5">
-                                        <Sparkles className="w-3 h-3" />
+                                        <Trophy className="w-3 h-3" />
                                         <span>Ediciones en tu Partida</span>
                                     </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -325,7 +325,7 @@ export const CompetitionHistoryView: React.FC<CompetitionHistoryViewProps> = ({
                             leagueSeasonRecords.length > 0 && (
                                 <div className="space-y-2">
                                     <div className="text-[10px] font-black uppercase text-[var(--apex-gold)] tracking-wider flex items-center gap-1.5">
-                                        <Sparkles className="w-3 h-3" />
+                                        <Calendar className="w-3 h-3" />
                                         <span>Temporadas Archivadas en tu Partida</span>
                                     </div>
                                     {leagueSeasonRecords.map((rec, idx) => (
