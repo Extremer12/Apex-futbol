@@ -18,6 +18,8 @@ export interface PlayerStats {
   appearances: number;
   yellowCards: number;
   redCards: number;
+  cleanSheets?: number;
+  averageRating?: number;
 }
 
 export type SquadRole = 'Key' | 'FirstTeam' | 'Rotation' | 'Prospect';
@@ -125,6 +127,11 @@ export interface SquadPower {
   defense: number;   // Defense rating (e.g. 79)
 }
 
+export interface CustomLineup {
+  formation: string; // e.g. '4-3-3', '4-4-2', '4-2-3-1', '3-5-2', '5-3-2', '4-1-4-1', '3-4-3'
+  starterIds: number[]; // Ordered starter player IDs
+}
+
 export interface Team {
   id: number;
   name: string;
@@ -146,6 +153,7 @@ export interface Team {
   stadiumCapacity?: number;
   city?: string;
   squadPower?: SquadPower; // Dynamic squad power calculated from active players
+  customLineup?: CustomLineup; // User tactical lineup preference
 }
 
 export interface Coach {
@@ -333,8 +341,17 @@ export interface CupChampion {
   winnerName: string;
 }
 
+export interface CupAssister {
+  playerId: number;
+  playerName: string;
+  teamId: number;
+  teamName: string;
+  assists: number;
+}
+
 export interface CupStatistics {
   topScorers: CupScorer[];
+  topAssisters?: CupAssister[];
   championsHistory: CupChampion[];
 }
 
@@ -683,6 +700,23 @@ export interface CoachReport {
     promotions: Player[]; 
 }
 
+export type PresidentialMatchInstruction = 'ATTACK_SURGE' | 'LOCK_DOWN' | 'WIN_BONUS' | 'KEEP_TACTIC';
+
+export interface MatchLiveStats {
+    homePossession: number;
+    awayPossession: number;
+    homeShots: number;
+    awayShots: number;
+    homeShotsOnTarget: number;
+    awayShotsOnTarget: number;
+    homeFouls: number;
+    awayFouls: number;
+    stadiumAttendance?: number;
+    stadiumOccupancyPct?: number;
+    isDerby?: boolean;
+    derbyName?: string;
+}
+
 export interface PlayerMatchResult {
     homeTeamId?: number;
     awayTeamId?: number;
@@ -696,6 +730,7 @@ export interface PlayerMatchResult {
     scorers?: { playerId: number; playerName: string; minute: number }[];
     leg?: number;
     aggregateScore?: { home: number; away: number };
+    stats?: MatchLiveStats;
 }
 
 export interface PendingSimulationResults {

@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { GameState, MatchPhase, PendingSimulationResults } from '../types';
 import { GameAction } from '../state/reducer';
 import { simulationWorker } from '../services/simulationWorker';
-import { TriggeredEvent } from '../services/eventEngine';
+import { TriggeredEvent, eventEngine } from '../services/eventEngine';
 import { isSeasonCompleted } from '../services/seasonUtils';
 
 export function useSimulation(
@@ -84,9 +84,14 @@ export function useSimulation(
             setAppState('GAME_OVER');
         } else {
             setMatchPhase('PRE');
+            // Trigger balanced presidential dilemma event if conditions match
+            const triggeredEvt = eventEngine.triggerEvent(gameState);
+            if (triggeredEvt) {
+                setCurrentEvent(triggeredEvt);
+            }
         }
         setPendingResults(null);
-    }, [gameState, pendingResults, dispatch, setAppState]);
+    }, [gameState, pendingResults, dispatch, setAppState, setCurrentEvent]);
 
     return {
         matchPhase,

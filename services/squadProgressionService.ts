@@ -1,6 +1,8 @@
 import { Team, Player, SquadPower, LeagueId } from '../types';
 import { generateYouthPlayer, generatePlayerId } from './simulation';
-import { generateRandomName } from '../utils';
+import { generateRandomName, isTransferWindowOpen } from '../utils';
+
+export { isTransferWindowOpen };
 
 export interface NotableTransferRecord {
     playerName: string;
@@ -146,7 +148,7 @@ export function processPlayerAgingAndProgression(player: Player): {
         isSuspended: false,
         injuryWeeksRemaining: 0,
         suspensionWeeksRemaining: 0,
-        stats: { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 }
+        stats: player.stats ? { ...player.stats } : { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 }
     };
 
     return { updatedPlayer, retired };
@@ -206,7 +208,8 @@ export interface NotableTransferRecord {
  */
 export function simulateAITransferWindow(
     allTeams: Team[],
-    userTeamId: number
+    userTeamId: number,
+    transfersCount?: number
 ): {
     updatedTeams: Team[];
     notableTransfers: NotableTransferRecord[];
@@ -221,12 +224,14 @@ export function simulateAITransferWindow(
 
     if (aiTeams.length < 2) return { updatedTeams: teamsCopy, notableTransfers };
 
-    // Conduct 15-25 realistic transfers across AI clubs
-    const targetTransfers = 15 + Math.floor(Math.random() * 11);
+    // Conduct transfers across AI clubs (default 15-25 for full window, or custom count e.g. 3-5)
+    const targetTransfers = transfersCount !== undefined
+        ? transfersCount
+        : (15 + Math.floor(Math.random() * 11));
 
     for (let i = 0; i < targetTransfers; i++) {
-        // Pick an AI buyer that has budget
-        const potentialBuyers = aiTeams.filter(t => t.budget >= 3.0 && t.squad.length < 26);
+        // Pick an AI buyer that has budget (at least €3M)
+        const potentialBuyers = aiTeams.filter(t => (t.budget || 0) >= 3_000_000 && t.squad.length < 26);
         if (potentialBuyers.length === 0) break;
 
         const buyer = potentialBuyers[Math.floor(Math.random() * potentialBuyers.length)];
@@ -271,13 +276,13 @@ export function simulateAITransferWindow(
         const playerToBuy = candidates[0];
 
         // Transfer fee calculation: player value + premium
-        const fee = Math.round((playerToBuy.value * (1.1 + Math.random() * 0.3)) * 10) / 10;
+        const fee = Math.round(playerToBuy.value * (1.1 + Math.random() * 0.3));
 
         if (buyer.budget < fee) continue;
 
         // Execute transfer
-        buyer.budget = Math.max(0.5, Math.round((buyer.budget - fee) * 10) / 10);
-        seller.budget = Math.round((seller.budget + fee) * 10) / 10;
+        buyer.budget = Math.max(500_000, buyer.budget - fee);
+        seller.budget = seller.budget + fee;
 
         // Move player
         seller.squad = seller.squad.filter(p => p.id !== playerToBuy.id);
@@ -289,8 +294,12 @@ export function simulateAITransferWindow(
         };
         buyer.squad.push(playerInNewClub);
 
+        // Recalculate squad power for both clubs
+        buyer.squadPower = calculateSquadPower(buyer);
+        seller.squadPower = calculateSquadPower(seller);
+
         // Record if significant transfer
-        if (playerToBuy.rating >= 76 || fee >= 8.0) {
+        if (playerToBuy.rating >= 76 || fee >= 8_000_000) {
             notableTransfers.push({
                 playerName: playerToBuy.name,
                 fromTeam: seller.name,
@@ -303,6 +312,20 @@ export function simulateAITransferWindow(
     }
 
     return { updatedTeams: teamsCopy, notableTransfers };
+}
+
+/**
+ * Executes a weekly mini-round of 3-5 AI transfers during an open transfer window.
+ */
+export function simulateWeeklyAITransfers(
+    allTeams: Team[],
+    userTeamId: number,
+    count: number = 3 + Math.floor(Math.random() * 3)
+): {
+    updatedTeams: Team[];
+    notableTransfers: NotableTransferRecord[];
+} {
+    return simulateAITransferWindow(allTeams, userTeamId, count);
 }
 
 /**

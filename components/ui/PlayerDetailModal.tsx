@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Player, Morale } from '../../types';
 import { GameAction } from '../../state/reducer';
+import { useGameStore } from '../../state/gameStore';
 import { Modal } from './Modal';
 import { formatCurrency, formatWeeklyWage } from '../../utils';
 import { PlayerPhoto } from '../../data/teams/helpers';
@@ -19,6 +20,10 @@ interface PlayerDetailModalProps {
 }
 
 export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({ player, dispatch }) => {
+    const isUserPlayer = useGameStore(s => s.gameState?.team?.squad?.some(p => p.id === player.id) ?? false);
+    const [hasTalked, setHasTalked] = useState(false);
+    const [hasRenewed, setHasRenewed] = useState(false);
+
     const MORALE_COLORS: Record<Morale, string> = { 
         'Feliz': 'text-green-400', 
         'Contento': 'text-green-300', 
@@ -30,11 +35,36 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({ player, di
     const onClose = () => dispatch({ type: 'SET_VIEWING_PLAYER', payload: null });
     const onTransferList = () => dispatch({ type: 'TOGGLE_TRANSFER_LIST', payload: player });
 
+    const handleRenewContract = () => {
+        if (hasRenewed) return;
+        dispatch({
+            type: 'RENEW_PLAYER_CONTRACT',
+            payload: {
+                playerId: player.id,
+                contractYearsBonus: 2,
+                wageMultiplier: 1.15
+            }
+        });
+        setHasRenewed(true);
+    };
+
+    const handleMotivationalTalk = () => {
+        if (hasTalked || player.morale === 'Feliz') return;
+        dispatch({
+            type: 'TALK_TO_PLAYER',
+            payload: { playerId: player.id }
+        });
+        setHasTalked(true);
+    };
+
     const age = getPlayerAge(player);
     const potential = getPlayerPotential(player);
     const potTier = getPlayerPotentialTier(player);
     const tierBadge = getTierBadge(potTier);
     const releaseClause = getPlayerReleaseClause(player);
+
+    const canRenew = !hasRenewed && player.contractYears <= 3;
+    const canTalk = !hasTalked && player.morale !== 'Feliz';
 
     const roleName = player.preferredRole === 'Key' ? 'Jugador Clave'
         : player.preferredRole === 'FirstTeam' ? 'Titular Habitual'
@@ -128,19 +158,71 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({ player, di
                     </div>
                 </div>
 
-                {/* Transfer List Action Button */}
-                <div className="pt-2">
-                     <button 
-                        onClick={onTransferList} 
-                        className={`w-full font-black py-3 px-4 rounded-xl transition-all text-xs uppercase tracking-wider shadow-lg ${
-                            player.isTransferListed 
-                                ? 'bg-amber-500 hover:bg-amber-400 text-black shadow-amber-500/20' 
-                                : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/20'
-                        }`}
-                    >
-                        {player.isTransferListed ? 'Quitar de la Lista de Transferibles' : 'Declarar Transferible'}
-                    </button>
-                </div>
+                {/* Management Actions: Renewal, Motivation & Transfer List (Only for User's Own Players) */}
+                {isUserPlayer ? (
+                    <div className="pt-2 space-y-2">
+                        <div className="grid grid-cols-2 gap-2">
+                            <button
+                                disabled={!canRenew}
+                                onClick={handleRenewContract}
+                                className={`border font-bold py-2.5 px-3 rounded-xl transition-all text-xs flex items-center justify-center gap-1.5 shadow-sm ${
+                                    hasRenewed
+                                        ? 'bg-emerald-500/30 border-emerald-500/50 text-emerald-300 cursor-default'
+                                        : !canRenew
+                                        ? 'bg-slate-800/40 border-white/5 text-slate-500 cursor-not-allowed'
+                                        : 'bg-emerald-600/20 border-emerald-500/40 hover:bg-emerald-600/30 text-emerald-300'
+                                }`}
+                                title={
+                                    hasRenewed 
+                                        ? 'Contrato renovado recientemente' 
+                                        : !canRenew 
+                                        ? 'El jugador tiene contrato a largo plazo (más de 3 años)' 
+                                        : 'Extender 2 años más de contrato con +15% de salario y asegurar felicidad'
+                                }
+                            >
+                                <span>{hasRenewed ? '✓ Renovado' : '📝 Renovar (+2 años)'}</span>
+                            </button>
+
+                            <button
+                                disabled={!canTalk}
+                                onClick={handleMotivationalTalk}
+                                className={`border font-bold py-2.5 px-3 rounded-xl transition-all text-xs flex items-center justify-center gap-1.5 shadow-sm ${
+                                    hasTalked
+                                        ? 'bg-sky-500/30 border-sky-500/50 text-sky-300 cursor-default'
+                                        : !canTalk
+                                        ? 'bg-slate-800/40 border-white/5 text-slate-500 cursor-not-allowed'
+                                        : 'bg-sky-600/20 border-sky-500/40 hover:bg-sky-600/30 text-sky-300'
+                                }`}
+                                title={
+                                    hasTalked
+                                        ? 'Charla mantenida esta semana'
+                                        : !canTalk
+                                        ? 'La moral del jugador ya está en su nivel óptimo (Feliz)'
+                                        : 'Charla personal del presidente para levantar la moral'
+                                }
+                            >
+                                <span>{hasTalked ? '✓ Charla Realizada' : '💬 Charla Motivacional'}</span>
+                            </button>
+                        </div>
+
+                        <button 
+                            onClick={onTransferList} 
+                            className={`w-full font-black py-2.5 px-4 rounded-xl transition-all text-xs uppercase tracking-wider shadow-lg ${
+                                player.isTransferListed 
+                                    ? 'bg-amber-500 hover:bg-amber-400 text-black shadow-amber-500/20' 
+                                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+                            }`}
+                        >
+                            {player.isTransferListed ? 'Quitar de la Lista de Transferibles' : 'Declarar Transferible'}
+                        </button>
+                    </div>
+                ) : (
+                    <div className="pt-2 text-center py-2 bg-slate-800/30 border border-white/5 rounded-xl">
+                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                            🛡️ Jugador de otro club
+                        </span>
+                    </div>
+                )}
             </div>
         </Modal>
     );

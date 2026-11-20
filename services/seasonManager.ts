@@ -707,8 +707,8 @@ export function startNewSeason(currentState: GameState): GameState {
                 // Check if user team won any cup this season
                 const userCups = Object.values(currentState.cups || {});
                 achieved = userCups.some(c => {
-                    const lastWinner = c.statistics?.championsHistory?.slice(-1)[0];
-                    return lastWinner?.teamId === currentState.team.id;
+                    const winnerId = getCupWinnerId(c as CupCompetition);
+                    return winnerId === currentState.team.id;
                 });
             }
             

@@ -199,15 +199,33 @@ const computeDefaultStarters = (squad: Player[], formation: FormationKey): numbe
 export const TacticalLineupView: React.FC<TacticalLineupViewProps> = React.memo(({ gameState, dispatch }) => {
     const coach = gameState.team.coach;
     const defaultFormation: FormationKey = (coach?.preferredFormation as FormationKey) || '4-4-2';
+    const userLineup = gameState.team.customLineup;
+    const initialFormation: FormationKey = (userLineup?.formation as FormationKey) || defaultFormation;
 
-    const [selectedFormation, setSelectedFormation] = useState<FormationKey>(defaultFormation);
+    const [selectedFormation, setSelectedFormation] = useState<FormationKey>(initialFormation);
     const [pitchTheme, setPitchTheme] = useState<PitchTheme>('simple-svg');
     const [selectedPlayerForSwap, setSelectedPlayerForSwap] = useState<Player | null>(null);
 
     const [starterIds, setStarterIds] = useState<number[]>(() => {
-        return computeDefaultStarters(gameState.team.squad, defaultFormation);
+        const slotsNeeded = (FORMATION_SLOTS[initialFormation] || FORMATION_SLOTS['4-4-2']).length;
+        if (userLineup?.starterIds && userLineup.starterIds.length === slotsNeeded) {
+            return userLineup.starterIds;
+        }
+        return computeDefaultStarters(gameState.team.squad, initialFormation);
     });
-    const [hasCustomEdits, setHasCustomEdits] = useState<boolean>(false);
+    const [hasCustomEdits, setHasCustomEdits] = useState<boolean>(() => {
+        return !!(userLineup && (userLineup.formation !== defaultFormation || userLineup.starterIds.length > 0));
+    });
+
+    const persistLineup = (form: FormationKey, sIds: number[]) => {
+        dispatch({
+            type: 'SET_CUSTOM_LINEUP',
+            payload: {
+                formation: form,
+                starterIds: sIds
+            }
+        });
+    };
 
     // Drag & Drop State
     const [draggedPlayer, setDraggedPlayer] = useState<{ id: number; source: 'starter' | 'sub' | 'uncalled'; slotIndex?: number } | null>(null);
@@ -309,6 +327,7 @@ export const TacticalLineupView: React.FC<TacticalLineupViewProps> = React.memo(
     const executeSwap = (playerAId: number, playerBId: number) => {
         if (playerAId === playerBId) return;
 
+        let nextIds: number[] = [];
         setStarterIds(prevStarterIds => {
             const currentIds = [...prevStarterIds];
             const idxA = currentIds.indexOf(playerAId);
@@ -323,9 +342,13 @@ export const TacticalLineupView: React.FC<TacticalLineupViewProps> = React.memo(
                 currentIds[idxB] = playerAId;
             }
 
+            nextIds = currentIds;
             return currentIds;
         });
 
+        if (nextIds.length > 0) {
+            persistLineup(selectedFormation, nextIds);
+        }
         setHasCustomEdits(true);
         setSelectedPlayerForSwap(null);
     };
@@ -401,17 +424,21 @@ export const TacticalLineupView: React.FC<TacticalLineupViewProps> = React.memo(
     };
 
     const handleResetToCoachXI = () => {
+        const coachStarters = computeDefaultStarters(gameState.team.squad, defaultFormation);
         setSelectedPlayerForSwap(null);
         setSelectedFormation(defaultFormation);
-        setStarterIds(computeDefaultStarters(gameState.team.squad, defaultFormation));
+        setStarterIds(coachStarters);
         setHasCustomEdits(false);
+        persistLineup(defaultFormation, coachStarters);
     };
 
     const handleFormationChange = (newFormation: FormationKey) => {
+        const newStarters = computeDefaultStarters(gameState.team.squad, newFormation);
         setSelectedFormation(newFormation);
         setSelectedPlayerForSwap(null);
-        setStarterIds(computeDefaultStarters(gameState.team.squad, newFormation));
+        setStarterIds(newStarters);
         setHasCustomEdits(newFormation !== defaultFormation);
+        persistLineup(newFormation, newStarters);
     };
 
     return (

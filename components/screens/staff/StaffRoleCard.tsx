@@ -15,6 +15,7 @@ export interface StaffRoleCardProps {
     isVacant: boolean;
     onSelectMarket: () => void;
     onFire?: () => void;
+    extraAction?: React.ReactNode;
 }
 
 const ACCENT_MAP = {
@@ -46,6 +47,7 @@ export const StaffRoleCard: React.FC<StaffRoleCardProps> = React.memo(({
     isVacant,
     onSelectMarket,
     onFire,
+    extraAction,
 }) => {
     const powerColor = power >= 85 ? 'text-emerald-400' : power >= 70 ? 'text-sky-400' : power >= 55 ? 'text-amber-400' : 'text-rose-400';
 
@@ -113,6 +115,7 @@ export const StaffRoleCard: React.FC<StaffRoleCardProps> = React.memo(({
                 </div>
 
                 <div className="flex items-center gap-1.5">
+                    {extraAction}
                     {!isVacant && onFire && (
                         <button
                             onClick={onFire}

@@ -5,12 +5,22 @@ import { Modal } from './Modal';
 import { UsersIcon, SparklesIcon, TrendingUpIcon, AwardIcon } from '../icons';
 import { formatCurrencyShort } from '../../utils';
 
+import React, { useState } from 'react';
+import { Player, CoachRequest, CoachReport } from '../../types';
+import { GameAction } from '../../state/reducer';
+import { Modal } from './Modal';
+import { UsersIcon, SparklesIcon, TrendingUpIcon, AwardIcon } from '../icons';
+import { formatCurrencyShort } from '../../utils';
+
 interface CoachMeetingModalProps {
     isOpen: boolean;
     onClose: () => void;
     report: CoachReport;
     coachName: string;
     onApprovePromotion: (player: Player) => void;
+    dispatch?: React.Dispatch<GameAction>;
+    squadSize?: number;
+    balance?: number;
 }
 
 export const CoachMeetingModal: React.FC<CoachMeetingModalProps> = ({
@@ -18,8 +28,17 @@ export const CoachMeetingModal: React.FC<CoachMeetingModalProps> = ({
     onClose,
     report,
     coachName,
-    onApprovePromotion
+    onApprovePromotion,
+    dispatch,
+    squadSize = 25,
+    balance = 0
 }) => {
+    const [answeredRequests, setAnsweredRequests] = useState<Record<string, 'PROMISE' | 'DELEGATE'>>({});
+    const [bonusAwarded, setBonusAwarded] = useState(false);
+
+    const bonusCost = 10000 * squadSize;
+    const canAffordBonus = balance >= bonusCost;
+
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={`Reunión con ${coachName}`} maxWidth="max-w-2xl">
             <div className="space-y-6">
@@ -65,26 +84,82 @@ export const CoachMeetingModal: React.FC<CoachMeetingModalProps> = ({
                             <TrendingUpIcon className="w-3 h-3" /> Peticiones de Fichaje
                         </h4>
                         <div className="grid grid-cols-1 gap-3">
-                            {report.requests.map((req: CoachRequest) => (
-                                <div key={req.id} className="bg-slate-800/30 border border-slate-700 p-4 rounded-xl flex justify-between items-center">
-                                    <div>
-                                        <div className="flex items-center gap-2">
-                                            <span className={`px-2 py-0.5 rounded text-[10px] font-black ${req.priority === 'critical' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-                                                {req.priority === 'critical' ? 'CRÍTICO' : 'IMPORTANTE'}
-                                            </span>
-                                            <span className="text-white font-bold text-sm">Refuerzo en {req.position}</span>
+                            {report.requests.map((req: CoachRequest) => {
+                                const answer = answeredRequests[req.id];
+                                return (
+                                    <div key={req.id} className="bg-slate-800/30 border border-slate-700 p-4 rounded-xl flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <span className={`px-2 py-0.5 rounded text-[10px] font-black ${req.priority === 'critical' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                                                    {req.priority === 'critical' ? 'CRÍTICO' : 'IMPORTANTE'}
+                                                </span>
+                                                <span className="text-white font-bold text-sm">Refuerzo en {req.position}</span>
+                                            </div>
+                                            <p className="text-xs text-slate-400 mt-1">{req.reason} (Mín. {req.minRating} de media)</p>
                                         </div>
-                                        <p className="text-xs text-slate-500 mt-1">{req.reason} (Mín. {req.minRating} de media)</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <div className="text-[10px] font-bold text-slate-500 uppercase">Prioridad</div>
-                                        <div className={`text-xs font-black ${req.priority === 'critical' ? 'text-red-400' : 'text-yellow-400'}`}>
-                                            {req.priority === 'critical' ? 'ALTA' : 'MEDIA'}
+
+                                        <div className="shrink-0 flex items-center gap-2">
+                                            {answer ? (
+                                                <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/30">
+                                                    {answer === 'PROMISE' ? '🤝 Fichaje Prometido' : '🛡️ Confianza en Plantilla'}
+                                                </span>
+                                            ) : dispatch ? (
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => {
+                                                            dispatch({ type: 'RESPOND_COACH_REQUEST', payload: { requestId: req.id, decision: 'PROMISE' } });
+                                                            setAnsweredRequests(prev => ({ ...prev, [req.id]: 'PROMISE' }));
+                                                        }}
+                                                        className="px-2.5 py-1.5 text-xs font-bold bg-emerald-600/30 text-emerald-300 hover:bg-emerald-600/50 border border-emerald-500/40 rounded-lg transition-colors"
+                                                    >
+                                                        🤝 Prometer Fichaje
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            dispatch({ type: 'RESPOND_COACH_REQUEST', payload: { requestId: req.id, decision: 'DELEGATE' } });
+                                                            setAnsweredRequests(prev => ({ ...prev, [req.id]: 'DELEGATE' }));
+                                                        }}
+                                                        className="px-2.5 py-1.5 text-xs font-bold bg-slate-700/50 text-slate-300 hover:bg-slate-700 border border-slate-600 rounded-lg transition-colors"
+                                                    >
+                                                        🛡️ Confiar en Cantera
+                                                    </button>
+                                                </div>
+                                            ) : null}
                                         </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
+                    </div>
+                )}
+
+                {/* Team Bonus Section */}
+                {dispatch && (
+                    <div className="bg-gradient-to-r from-amber-950/20 to-slate-900 border border-amber-500/20 p-4 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <div>
+                            <div className="text-xs font-black text-amber-400 uppercase tracking-widest flex items-center gap-1.5">
+                                💼 Prima Extraordinaria al Plantel
+                            </div>
+                            <p className="text-xs text-slate-400 mt-0.5">
+                                Incentiva la moral del equipo y aumenta la satisfacción del cuerpo técnico antes de duelos cruciales ({formatCurrencyShort(bonusCost)} total).
+                            </p>
+                        </div>
+                        <button
+                            disabled={bonusAwarded || !canAffordBonus}
+                            onClick={() => {
+                                dispatch({ type: 'AWARD_TEAM_BONUS', payload: { bonusPerPlayer: 10000 } });
+                                setBonusAwarded(true);
+                            }}
+                            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap ${
+                                bonusAwarded
+                                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 cursor-default'
+                                    : !canAffordBonus
+                                    ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
+                                    : 'bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 shadow-lg shadow-amber-500/20'
+                            }`}
+                        >
+                            {bonusAwarded ? 'Prima Otorgada ✓' : !canAffordBonus ? 'Fondos Insuficientes' : `Ofrecer Prima (${formatCurrencyShort(bonusCost)})`}
+                        </button>
                     </div>
                 )}
 

@@ -111,7 +111,8 @@ export function handleTransferAction(state: GameState, action: TransferAction): 
 
             const negotiatedWage = wage || player.wage || 10000;
             const negotiatedYears = contractYears || 3;
-            const totalCashDeducted = fee + (signingBonus || 0);
+            const normalizedSigningBonus = normalizeMonetaryValue(signingBonus, 0);
+            const totalCashDeducted = fee + normalizedSigningBonus;
 
             const playerToAdd: Player = { 
                 ...player, 

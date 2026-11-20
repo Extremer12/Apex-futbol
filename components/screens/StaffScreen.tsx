@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { GameState, Coach, StaffMember, Scout, ClubStaff } from '../../types';
+import { GameState, Coach, StaffMember, Scout, ClubStaff, Player } from '../../types';
 import { GameAction } from '../../state/reducer';
 import { formatCurrencyShort } from '../../utils';
+import { generateCoachReport } from '../../services/gameLogic';
 import {
     getDoctorEffect,
     getFitnessEffect,
@@ -20,13 +21,15 @@ import {
     GraduationCap,
     HeartPulse,
     UserPlus,
-    UserMinus
+    UserMinus,
+    MessageSquare
 } from 'lucide-react';
 import { useToast } from '../common/ToastProvider';
 import { ModalFireState, DEFAULT_SCOUT_CANDIDATES } from './staff/staffUiTypes';
 import { StaffFireModal } from './staff/StaffModals';
 import { StaffRoleCard } from './staff/StaffRoleCard';
 import { StaffCandidateModal, MarketRoleType } from './staff/StaffCandidateModal';
+import { CoachMeetingModal } from '../ui/CoachMeetingModal';
 
 interface StaffScreenProps {
     gameState: GameState;
@@ -56,10 +59,18 @@ export const StaffScreen: React.FC<StaffScreenProps> = React.memo(({ gameState, 
 
     const [marketRole, setMarketRole] = useState<MarketRoleType | null>(null);
     const [fireModal, setFireModal] = useState<ModalFireState | null>(null);
+    const [isCoachMeetingOpen, setIsCoachMeetingOpen] = useState(false);
 
     const clubStaff: ClubStaff = gameState.clubStaff || team.clubStaff || {};
     const { doctor, fitnessCoach, sportingDirector, youthCoach } = clubStaff;
     const coach = team.coach;
+
+    const activeCoachReport = useMemo(() => gameState.coachReport || generateCoachReport(gameState), [gameState]);
+
+    const handleApprovePromotion = useCallback((player: Player) => {
+        dispatch({ type: 'PROMOTE_YOUTH', payload: player.id });
+        showToast(`${player.name} fue promovido al primer equipo.`, 'success');
+    }, [dispatch, showToast]);
 
     const doctorEffect = useMemo(() => getDoctorEffect(doctor), [doctor]);
     const fitnessEffect = useMemo(() => getFitnessEffect(fitnessCoach), [fitnessCoach]);
@@ -195,6 +206,16 @@ export const StaffScreen: React.FC<StaffScreenProps> = React.memo(({ gameState, 
                     isVacant={!coach}
                     onSelectMarket={() => setMarketRole('coach')}
                     onFire={coach ? () => setFireModal({ type: 'coach', name: coach.name, cost: coach.salary * 4 }) : undefined}
+                    extraAction={coach ? (
+                        <button
+                            onClick={() => setIsCoachMeetingOpen(true)}
+                            title="Reunión con el DT"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 transition-colors"
+                        >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            Reunión
+                        </button>
+                    ) : undefined}
                 />
 
                 <StaffRoleCard
@@ -343,6 +364,20 @@ export const StaffScreen: React.FC<StaffScreenProps> = React.memo(({ gameState, 
                 onClose={() => setFireModal(null)}
                 onConfirmFire={confirmFire}
             />
+
+            {/* Coach Meeting Modal */}
+            {coach && (
+                <CoachMeetingModal
+                    isOpen={isCoachMeetingOpen}
+                    onClose={() => setIsCoachMeetingOpen(false)}
+                    report={activeCoachReport}
+                    coachName={coach.name}
+                    onApprovePromotion={handleApprovePromotion}
+                    dispatch={dispatch}
+                    squadSize={team.squad.length}
+                    balance={finances.balance}
+                />
+            )}
         </div>
     );
 });

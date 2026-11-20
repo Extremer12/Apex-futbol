@@ -9,6 +9,8 @@ import { handleCupProgression } from '../services/simulation/cupProgressionHandl
 import { detectCinematicEvents } from '../services/simulation/cinematicsDetector';
 import { generateWeeklyNewsAndOffers } from '../services/simulation/simulationNewsHandler';
 import { generateCoachReport } from '../services/gameLogic';
+import { isTransferWindowOpen, simulateWeeklyAITransfers } from '../services/squadProgressionService';
+import { formatDate, formatCurrency } from '../utils';
 
 interface SimulationInput {
     type: 'SIMULATE_WEEK';
@@ -412,7 +414,8 @@ self.onmessage = async (e: MessageEvent<SimulationInput>) => {
                         events: result.events,
                         scorers: result.scorers,
                         leg: match.leg,
-                        aggregateScore: match.aggregateScore
+                        aggregateScore: match.aggregateScore,
+                        stats: result.stats
                     };
                 }
 
@@ -548,36 +551,98 @@ self.onmessage = async (e: MessageEvent<SimulationInput>) => {
                     const currentCup = updatedCups[cupId];
 
                     if (currentCup) {
-                        const assignGoals = (team: Team, goals: number) => {
-                            if (!team || goals <= 0) return;
-                            const squad = Array.isArray(team.squad) ? team.squad.filter(p => p && p.id !== undefined) : [];
-                            if (squad.length === 0) return;
+                        if (!currentCup.statistics) currentCup.statistics = { topScorers: [], topAssisters: [], championsHistory: [] };
+                        if (!Array.isArray(currentCup.statistics.topScorers)) currentCup.statistics.topScorers = [];
+                        if (!Array.isArray(currentCup.statistics.topAssisters)) currentCup.statistics.topAssisters = [];
 
-                            const pool = squad.filter(p => p.position === 'DEL' || p.position === 'CEN');
-                            const candidates = pool.length > 0 ? pool : squad;
+                        // Helper to register cup assist
+                        const recordCupAssist = (assisterPlayer: Player, team: Team) => {
+                            if (!currentCup.statistics) return;
+                            if (!currentCup.statistics.topAssisters) currentCup.statistics.topAssisters = [];
+                            const existing = currentCup.statistics.topAssisters.find((a: any) => a && a.playerId === assisterPlayer.id);
+                            if (existing) {
+                                existing.assists++;
+                            } else {
+                                currentCup.statistics.topAssisters.push({
+                                    playerId: assisterPlayer.id,
+                                    playerName: assisterPlayer.name,
+                                    teamId: team.id,
+                                    teamName: team.name,
+                                    assists: 1
+                                });
+                            }
+                        };
 
-                            for (let i = 0; i < goals; i++) {
-                                const scorer = candidates[Math.floor(Math.random() * candidates.length)] || candidates[0];
-                                if (!scorer || scorer.id === undefined) continue;
-                                if (!currentCup.statistics) currentCup.statistics = { topScorers: [], championsHistory: [] };
-                                if (!Array.isArray(currentCup.statistics.topScorers)) currentCup.statistics.topScorers = [];
-                                const existingScorer = currentCup.statistics.topScorers.find((s: any) => s && s.playerId === scorer.id);
+                        // 1. Record authentic scorers & assisters from the match engine
+                        if (result.scorers && result.scorers.length > 0) {
+                            result.scorers.forEach((sc: { playerId: number; playerName: string; minute: number }) => {
+                                const scoringTeam = homeTeam.squad.some(p => p.id === sc.playerId) ? homeTeam : awayTeam;
+                                const existingScorer = currentCup.statistics.topScorers.find((s: any) => s && s.playerId === sc.playerId);
                                 if (existingScorer) {
                                     existingScorer.goals++;
                                 } else {
                                     currentCup.statistics.topScorers.push({
-                                        playerId: scorer.id,
-                                        playerName: scorer.name || 'Goleador',
-                                        teamId: team.id,
-                                        teamName: team.name || '',
+                                        playerId: sc.playerId,
+                                        playerName: sc.playerName || 'Goleador',
+                                        teamId: scoringTeam.id,
+                                        teamName: scoringTeam.name || '',
                                         goals: 1
                                     });
                                 }
-                            }
-                        };
 
-                        assignGoals(homeTeam, result.homeScore);
-                        assignGoals(awayTeam, result.awayScore);
+                                // Look for assist in events or pick teammate
+                                const eventForGoal = (result.events || []).find((e: string) => e.includes(`${sc.minute}'`) && e.includes('⚽'));
+                                const assistMatch = eventForGoal?.match(/\(Asistencia de (.*?)\)/);
+                                if (assistMatch && assistMatch[1]) {
+                                    const assister = scoringTeam.squad.find(p => p.name === assistMatch[1]);
+                                    if (assister) recordCupAssist(assister, scoringTeam);
+                                } else if (Math.random() < 0.60) {
+                                    const teammates = scoringTeam.squad.filter(p => p.id !== sc.playerId && (p.position === 'CEN' || p.position === 'DEL'));
+                                    if (teammates.length > 0) {
+                                        const assister = teammates[Math.floor(Math.random() * teammates.length)];
+                                        recordCupAssist(assister, scoringTeam);
+                                    }
+                                }
+                            });
+                        } else if (result.homeScore > 0 || result.awayScore > 0) {
+                            // Fallback only if scorers array was empty
+                            const assignGoals = (team: Team, goals: number) => {
+                                if (!team || goals <= 0) return;
+                                const squad = Array.isArray(team.squad) ? team.squad.filter(p => p && p.id !== undefined) : [];
+                                if (squad.length === 0) return;
+
+                                const pool = squad.filter(p => p.position === 'DEL' || p.position === 'CEN');
+                                const candidates = pool.length > 0 ? pool : squad;
+
+                                for (let i = 0; i < goals; i++) {
+                                    const scorer = candidates[Math.floor(Math.random() * candidates.length)] || candidates[0];
+                                    if (!scorer || scorer.id === undefined) continue;
+                                    const existingScorer = currentCup.statistics.topScorers.find((s: any) => s && s.playerId === scorer.id);
+                                    if (existingScorer) {
+                                        existingScorer.goals++;
+                                    } else {
+                                        currentCup.statistics.topScorers.push({
+                                            playerId: scorer.id,
+                                            playerName: scorer.name || 'Goleador',
+                                            teamId: team.id,
+                                            teamName: team.name || '',
+                                            goals: 1
+                                        });
+                                    }
+
+                                    if (Math.random() < 0.60) {
+                                        const teammates = squad.filter(p => p.id !== scorer.id && (p.position === 'CEN' || p.position === 'DEL'));
+                                        if (teammates.length > 0) {
+                                            const assister = teammates[Math.floor(Math.random() * teammates.length)];
+                                            recordCupAssist(assister, team);
+                                        }
+                                    }
+                                }
+                            };
+
+                            assignGoals(homeTeam, result.homeScore);
+                            assignGoals(awayTeam, result.awayScore);
+                        }
                         
                         // European League Table & Swiss Fixtures Update
                         if (match.competition === 'Champions_League' || match.competition === 'Europa_League') {
@@ -740,6 +805,34 @@ self.onmessage = async (e: MessageEvent<SimulationInput>) => {
         const newDate = currentDate ? new Date(currentDate) : new Date();
         newDate.setDate(newDate.getDate() + 7);
 
+        // 0. Live Weekly AI Transfer Market (Runs on weekends during open windows)
+        if (!isMidweek && isTransferWindowOpen(simulatedWeek)) {
+            const transferResult = simulateWeeklyAITransfers(
+                updatedAllTeams,
+                effectivePlayerTeam.id,
+                3 + Math.floor(Math.random() * 3)
+            );
+
+            for (const team of transferResult.updatedTeams) {
+                const orig = teamMap.get(team.id);
+                if (orig && (orig.squad.length !== team.squad.length || orig.budget !== team.budget)) {
+                    modifiedTeamIds.add(team.id);
+                }
+            }
+            updatedAllTeams = transferResult.updatedTeams;
+
+            for (const transfer of transferResult.notableTransfers) {
+                newsToAdd.push({
+                    id: `ai_transfer_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+                    headline: `Fichaje: ${transfer.playerName} al ${transfer.toTeam}`,
+                    body: `${transfer.toTeam} acordó el traspaso de ${transfer.playerName} procedente de ${transfer.fromTeam} por ${formatCurrency(transfer.fee)}.`,
+                    date: formatDate(newDate),
+                    type: 'transfer',
+                    playerName: transfer.playerName
+                });
+            }
+        }
+
         // 1. Process Cup & Playoff Progression (Off-Main-Thread)
         const currentSchedule = newSchedule.length > 0 ? newSchedule : (schedule ? [...schedule] : []);
 
@@ -791,9 +884,10 @@ self.onmessage = async (e: MessageEvent<SimulationInput>) => {
             finalSchedule,
             updatedAllTeams,
             playerMatchResult,
-            newWeek,
+            simulatedWeek,
             newDate,
-            celebrationCinematics
+            celebrationCinematics,
+            isMidweek
         );
 
         // 4. Generate Coach Report (Off-Main-Thread)

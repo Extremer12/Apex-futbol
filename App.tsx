@@ -183,6 +183,7 @@ function AppLogic() {
         if (updates.fanApproval) dispatch({ type: 'SET_FAN_APPROVAL', payload: updates.fanApproval });
         if (updates.boardConfidence !== undefined) dispatch({ type: 'UPDATE_BOARD_CONFIDENCE', payload: updates.boardConfidence });
         if (updates.stadium) dispatch({ type: 'UPDATE_STADIUM', payload: updates.stadium });
+        if (updates.newYouthPlayer) dispatch({ type: 'ADD_YOUTH_PLAYER', payload: updates.newYouthPlayer });
 
         dispatch({ type: 'RECORD_TRIGGERED_EVENT', payload: currentEvent.event.id });
         showNotification(`Evento: ${currentEvent.event.title} - Decisión tomada`);

@@ -114,16 +114,29 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
         const stats: PlayerStats[] = [];
         leagueTeams.forEach(team => {
             (team.squad || []).forEach(player => {
-                if (player.stats && (player.stats.goals > 0 || player.stats.assists > 0 || player.stats.appearances > 0)) {
+                const appearances = player.stats?.appearances || 0;
+                const goals = player.stats?.goals || 0;
+                const assists = player.stats?.assists || 0;
+                const cleanSheets = player.stats?.cleanSheets || 0;
+
+                if (goals > 0 || assists > 0 || appearances > 0 || cleanSheets > 0) {
+                    const baseRating = (player.rating || 75) / 10;
+                    const performanceScore = appearances > 0 
+                        ? (goals * 0.45 + assists * 0.35 + cleanSheets * 0.30) / appearances 
+                        : 0;
+                    const averageRating = Number(Math.min(9.9, Math.max(5.5, baseRating * 0.7 + performanceScore * 1.5 + 2.0)).toFixed(2));
+
                     stats.push({
                         player,
                         team,
                         teamId: team.id,
                         teamName: team.name,
                         teamLogo: team.logo,
-                        goals: player.stats.goals || 0,
-                        assists: player.stats.assists || 0,
-                        matches: player.stats.appearances || 0
+                        goals,
+                        assists,
+                        matches: appearances,
+                        cleanSheets,
+                        averageRating
                     });
                 }
             });
@@ -174,12 +187,64 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
         return [];
     }, [isLeague, playerStats, selectedCompDef, gameState.cups, teamsById]);
 
-    // Top Assists (League)
+    // Top Assists (League or Cup)
     const topAssists = useMemo(() => {
+        if (isLeague) {
+            return [...playerStats]
+                .filter(s => s.assists > 0)
+                .sort((a, b) => b.assists - a.assists || b.player.rating - a.player.rating)
+                .slice(0, 15);
+        }
+
+        if (selectedCompDef.cupKey) {
+            const cup = (gameState.cups as any)[selectedCompDef.cupKey];
+            const cupAssisters = cup?.statistics?.topAssisters || [];
+            if (!Array.isArray(cupAssisters) || cupAssisters.length === 0) return [];
+
+            return [...cupAssisters]
+                .filter(ca => ca && ca.assists > 0)
+                .sort((a, b) => b.assists - a.assists)
+                .slice(0, 15)
+                .map(ca => {
+                    const team = teamsById.get(ca.teamId);
+                    const player = team?.squad.find(p => p.id === ca.playerId) || {
+                        id: ca.playerId,
+                        name: ca.playerName,
+                        position: 'CEN',
+                        rating: 75,
+                    } as Player;
+
+                    return {
+                        player,
+                        team: team || { id: ca.teamId, name: ca.teamName, logo: '' } as Team,
+                        teamId: ca.teamId,
+                        teamName: ca.teamName,
+                        teamLogo: team?.logo || '',
+                        goals: 0,
+                        assists: ca.assists,
+                        matches: 0
+                    };
+                });
+        }
+
+        return [];
+    }, [isLeague, playerStats, selectedCompDef, gameState.cups, teamsById]);
+
+    // Top Clean Sheets (Guante de Oro)
+    const topCleanSheets = useMemo(() => {
         if (!isLeague) return [];
         return [...playerStats]
-            .filter(s => s.assists > 0)
-            .sort((a, b) => b.assists - a.assists || b.player.rating - a.player.rating)
+            .filter(s => s.player.position === 'POR' && (s.cleanSheets || 0) > 0)
+            .sort((a, b) => (b.cleanSheets || 0) - (a.cleanSheets || 0) || b.player.rating - a.player.rating)
+            .slice(0, 15);
+    }, [isLeague, playerStats]);
+
+    // Top MVPs / Season Rating
+    const topMVPs = useMemo(() => {
+        if (!isLeague) return [];
+        return [...playerStats]
+            .filter(s => s.matches >= 2)
+            .sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0) || b.goals - a.goals || b.assists - a.assists)
             .slice(0, 15);
     }, [isLeague, playerStats]);
 
@@ -270,10 +335,12 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
                 cupInfo={cupInfo}
             />
 
-            {/* Tables: Top Scorers & Top Assists */}
+            {/* Tables: Top Scorers, Assists, Clean Sheets & MVP */}
             <StatsLeaderboards
                 topScorers={topScorers}
                 topAssists={topAssists}
+                topCleanSheets={topCleanSheets}
+                topMVPs={topMVPs}
                 isLeague={isLeague}
                 onSelectPlayer={handleSelectPlayer}
             />

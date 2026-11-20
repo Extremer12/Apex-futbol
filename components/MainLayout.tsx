@@ -131,6 +131,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                     gameState={gameState}
                     pendingResults={pendingResults}
                     onMatchComplete={onWeekComplete}
+                    dispatch={dispatch}
                 />
             )}
 

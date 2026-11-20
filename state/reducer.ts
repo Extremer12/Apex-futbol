@@ -16,6 +16,7 @@ export type GameAction =
     | { type: 'RESET_GAME' }
     | { type: 'ADVANCE_WEEK_SUCCESS'; payload: { newsItems: NewsItem[]; newSchedule: Match[]; newLeagueTables: Record<LeagueId, LeagueTableRow[]>; newAllTeams: Team[]; newConfidence: number; newOffers: Offer[]; newCups?: GameState['cups']; coachReport?: CoachReport; newScoutedPlayerIds?: Record<number, number>; cinematicEvents?: CinematicEvent[] } }
     | { type: 'PROMOTE_YOUTH'; payload: number }
+    | { type: 'ADD_YOUTH_PLAYER'; payload: Player }
     | { type: 'START_NEW_SEASON' }
     | { type: 'POP_CINEMATIC' }
     | { type: 'PUSH_CINEMATIC'; payload: CinematicEvent }
@@ -33,6 +34,11 @@ export type GameAction =
     | { type: 'TOGGLE_TRANSFER_LIST'; payload: Player }
     | { type: 'OFFER_PLAYER_TO_CLUBS'; payload: { playerId: number } }
     | { type: 'SET_VIEWING_PLAYER'; payload: Player | null }
+    | { type: 'SET_CUSTOM_LINEUP'; payload: { formation: string; starterIds: number[] } }
+    | { type: 'RENEW_PLAYER_CONTRACT'; payload: { playerId: number; contractYearsBonus: number; wageMultiplier: number } }
+    | { type: 'TALK_TO_PLAYER'; payload: { playerId: number } }
+    | { type: 'RESPOND_COACH_REQUEST'; payload: { requestId: string; decision: 'PROMISE' | 'DELEGATE' } }
+    | { type: 'AWARD_TEAM_BONUS'; payload: { bonusPerPlayer: number } }
     | { type: 'HIRE_COACH'; payload: { coachId: string } }
     | { type: 'FIRE_COACH' }
     | { type: 'HIRE_STAFF'; payload: { staffId: string } }
@@ -143,7 +149,13 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 // Squad actions
                 case 'PROMOTE_PLAYER':
                 case 'PROMOTE_YOUTH':
+                case 'ADD_YOUTH_PLAYER':
                 case 'SET_VIEWING_PLAYER':
+                case 'SET_CUSTOM_LINEUP':
+                case 'RENEW_PLAYER_CONTRACT':
+                case 'TALK_TO_PLAYER':
+                case 'RESPOND_COACH_REQUEST':
+                case 'AWARD_TEAM_BONUS':
                     return handleSquadAction(state, action);
 
                 // UI actions

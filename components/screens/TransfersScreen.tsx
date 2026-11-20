@@ -264,7 +264,8 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
 
     const handleFinalizeSigning = () => {
         if (!negotiatingPlayer || agreedFee === null) return;
-        const totalInitialOutlay = agreedFee + offeredBonus;
+        const rawBonus = normalizeMonetaryValue(offeredBonus, 0);
+        const totalInitialOutlay = agreedFee + rawBonus;
 
         if (totalInitialOutlay > normBalance) {
             showToast("El saldo total en tesorería del club no cubre el desembolso de la operación.", 'error');
@@ -279,7 +280,7 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
                 wage: offeredWage,
                 contractYears: offeredYears,
                 role: offeredRole,
-                signingBonus: offeredBonus
+                signingBonus: rawBonus
             }
         });
 

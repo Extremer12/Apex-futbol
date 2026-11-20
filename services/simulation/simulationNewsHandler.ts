@@ -18,23 +18,35 @@ export async function generateWeeklyNewsAndOffers(
     updatedSchedule: Match[],
     updatedAllTeams: Team[],
     playerMatchResult: PlayerMatchResult | null,
-    newWeek: number,
+    simulatedWeek: number,
     newDate: Date,
-    cinematicEvents: CinematicEvent[]
+    cinematicEvents: CinematicEvent[],
+    isMidweek: boolean = false
 ): Promise<WeeklyNewsAndOffersResult> {
     const newsToAdd: NewsItem[] = [];
 
-    // 1. Post-match news report for user match
-    const playerMatch = updatedSchedule.find(
-        m => m.week === newWeek && (m.homeTeamId === gameState.team.id || m.awayTeamId === gameState.team.id)
+    // 1. Post-match news report for user match (from playerMatchResult or updatedSchedule)
+    const playerScheduleMatch = updatedSchedule.find(
+        m => m.week === simulatedWeek && 
+             (m.isMidweek === undefined || !!m.isMidweek === isMidweek) && 
+             (m.homeTeamId === gameState.team.id || m.awayTeamId === gameState.team.id) &&
+             m.result
     );
 
-    if (playerMatch && playerMatch.result) {
-        const isHome = playerMatch.homeTeamId === gameState.team.id;
-        const opponentId = isHome ? playerMatch.awayTeamId : playerMatch.homeTeamId;
-        const opponent = gameState.allTeams.find(t => t.id === opponentId) || updatedAllTeams.find(t => t.id === opponentId)!;
-        const myScore = isHome ? playerMatch.result.homeScore : playerMatch.result.awayScore;
-        const oppScore = isHome ? playerMatch.result.awayScore : playerMatch.result.homeScore;
+    const hasUserMatch = !!(playerMatchResult || (playerScheduleMatch && playerScheduleMatch.result));
+
+    if (hasUserMatch) {
+        const homeTeamId = playerMatchResult?.homeTeamId ?? playerScheduleMatch?.homeTeamId ?? gameState.team.id;
+        const awayTeamId = playerMatchResult?.awayTeamId ?? playerScheduleMatch?.awayTeamId ?? 0;
+        const isHome = homeTeamId === gameState.team.id;
+        const opponentId = isHome ? awayTeamId : homeTeamId;
+        const opponent = updatedAllTeams.find(t => t.id === opponentId) || gameState.allTeams.find(t => t.id === opponentId);
+
+        const homeScore = playerMatchResult?.homeScore ?? playerScheduleMatch?.result?.homeScore ?? 0;
+        const awayScore = playerMatchResult?.awayScore ?? playerScheduleMatch?.result?.awayScore ?? 0;
+
+        const myScore = isHome ? homeScore : awayScore;
+        const oppScore = isHome ? awayScore : homeScore;
 
         const isThrashing = (myScore - oppScore) >= 3;
         const isBadLoss = (oppScore - myScore) >= 3;
@@ -42,30 +54,34 @@ export async function generateWeeklyNewsAndOffers(
 
         if (isThrashing || isBadLoss || isUpset) {
             const context = isUpset 
-                ? "Victoria histórica de un equipo pequeño contra un gigante." 
+                ? "Victoria histórica de un equipo modesto contra un grande." 
                 : isThrashing 
                     ? "Una goleada espectacular." 
                     : "Una derrota humillante.";
             const detail = `El ${gameState.team.name} quedó ${myScore}-${oppScore} contra el ${opponent?.name || 'Rival'}.`;
             const aiReport = await generateImportantNews(context, detail);
-            newsToAdd.push({ ...aiReport, id: `match_ai_${new Date().toISOString()}`, date: formatDate(newDate) });
+            newsToAdd.push({ ...aiReport, id: `match_ai_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`, date: formatDate(newDate) });
         } else {
             const matchReport = await generateMatchReport(
                 gameState.team.name, 
                 opponent?.name || 'Rival', 
-                playerMatch.result.homeScore, 
-                playerMatch.result.awayScore, 
+                homeScore, 
+                awayScore, 
                 isHome
             );
-            newsToAdd.push({ ...matchReport, id: `match_${new Date().toISOString()}`, date: formatDate(newDate) });
+            newsToAdd.push({ ...matchReport, id: `match_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`, date: formatDate(newDate) });
         }
     } else {
         const generalNews = await generateNews(gameState);
-        newsToAdd.push({ ...generalNews, id: `general_${new Date().toISOString()}`, date: formatDate(newDate) });
+        newsToAdd.push({ ...generalNews, id: `general_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`, date: formatDate(newDate) });
     }
 
     // 2. Player of the Week News
-    const matchesThisWeek = updatedSchedule.filter(m => m.week === newWeek);
+    const matchesThisWeek = updatedSchedule.filter(
+        m => m.week === simulatedWeek && 
+             (m.isMidweek === undefined || !!m.isMidweek === isMidweek) &&
+             m.result
+    );
     if (matchesThisWeek.length > 0 && Math.random() < 0.3) {
         const winningTeamsIds: number[] = [];
         matchesThisWeek.forEach(match => {

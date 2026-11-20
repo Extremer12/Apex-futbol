@@ -1,7 +1,9 @@
-import { Team, Match, LeagueTableRow, Morale, Player } from '../../types';
+import { Team, Match, LeagueTableRow, Morale, Player, MatchLiveStats } from '../../types';
 import { getTacticalMatchup } from '../coaching';
 import { getCoachEffect, getDoctorEffect, getFitnessEffect } from '../staffService';
 import { generateRandomName } from '../../utils';
+import { checkDerbyMatch } from './derbyRegistry';
+import { getTeamStadium } from '../../data/stadiums';
 
 export const FORMATION_CONFIG: Record<string, Record<Player['position'], number>> = {
     '4-3-3': { 'POR': 1, 'DEF': 4, 'CEN': 3, 'DEL': 3 },
@@ -9,6 +11,8 @@ export const FORMATION_CONFIG: Record<string, Record<Player['position'], number>
     '3-5-2': { 'POR': 1, 'DEF': 3, 'CEN': 5, 'DEL': 2 },
     '4-2-3-1': { 'POR': 1, 'DEF': 4, 'CEN': 5, 'DEL': 1 },
     '5-3-2': { 'POR': 1, 'DEF': 5, 'CEN': 3, 'DEL': 2 },
+    '4-1-4-1': { 'POR': 1, 'DEF': 4, 'CEN': 5, 'DEL': 1 },
+    '3-4-3': { 'POR': 1, 'DEF': 3, 'CEN': 4, 'DEL': 3 },
 };
 
 export const updateTeamMorale = (currentMorale: Morale, result: 'W' | 'D' | 'L'): Morale => {
@@ -58,8 +62,55 @@ export const generateYouthPlayer = (tier: Team['tier'] = 'Lower', youthCoachBonu
 };
 
 export const selectMatchSquad = (team: Team): { starters: Player[]; subs: Player[] } => {
+    // 1. Prioritize user custom lineup if set
+    if (team.customLineup?.starterIds && team.customLineup.starterIds.length > 0) {
+        const squadMap = new Map(team.squad.map(p => [p.id, p]));
+        const starters: Player[] = [];
+        const usedIds = new Set<number>();
+
+        // Add user chosen starters who are not injured or suspended
+        team.customLineup.starterIds.forEach(id => {
+            const p = squadMap.get(id);
+            if (p && !p.isInjured && !p.isSuspended && !usedIds.has(p.id)) {
+                starters.push(p);
+                usedIds.add(p.id);
+            }
+        });
+
+        // If any starter is missing/injured/suspended, fill from the rest of the squad by effective rating
+        if (starters.length < 11) {
+            const fillers = team.squad
+                .filter(p => !usedIds.has(p.id) && !p.isInjured && !p.isSuspended)
+                .sort((a, b) => (b.rating * ((b.condition ?? 100) / 100)) - (a.rating * ((a.condition ?? 100) / 100)));
+
+            for (const filler of fillers) {
+                if (starters.length >= 11) break;
+                starters.push(filler);
+                usedIds.add(filler.id);
+            }
+        }
+
+        // Ultimate fallback if squad is severely depleted
+        if (starters.length < 11) {
+            const remaining = team.squad.filter(p => !usedIds.has(p.id));
+            for (const r of remaining) {
+                if (starters.length >= 11) break;
+                starters.push(r);
+                usedIds.add(r.id);
+            }
+        }
+
+        const remainingPool = team.squad.filter(p => !usedIds.has(p.id) && !p.isInjured && !p.isSuspended);
+        const subs = remainingPool
+            .sort((a, b) => (b.rating * ((b.condition ?? 100) / 100)) - (a.rating * ((a.condition ?? 100) / 100)))
+            .slice(0, 3);
+
+        return { starters, subs };
+    }
+
+    // 2. Default Coach auto-selection
     const formation = team.coach?.preferredFormation || '4-4-2';
-    const config = FORMATION_CONFIG[formation];
+    const config = FORMATION_CONFIG[formation] || FORMATION_CONFIG['4-4-2'];
     
     // Filter available players (not injured, not suspended, condition > 30 to avoid automatic injury unless forced)
     let availablePlayers = team.squad.filter(p => !p.isInjured && !p.isSuspended);
@@ -184,7 +235,34 @@ export const simulateMatch = (
     const homeTacticalBonus = tacticalMatchup.homeAdvantage;
     const awayTacticalBonus = -tacticalMatchup.homeAdvantage;
 
-    const homeControl = homeStats.midfield * 1.25 + (Math.random() * 10) + homeTacticalBonus;
+    // Derby & Rivalry detection
+    const derbyInfo = checkDerbyMatch(homeTeam, awayTeam);
+    const isDerby = derbyInfo.isDerby;
+
+    // Stadium & Attendance Calculation
+    const defaultStadium = getTeamStadium(homeTeam);
+    const stadiumCapacity = homeTeam.stadiumCapacity || defaultStadium.capacity || 38000;
+    
+    // Occupancy calculation based on team tier, position & derby
+    let baseOccupancy = 0.72;
+    if (homeTableRow && homeTableRow.position <= 4) baseOccupancy = 0.90;
+    else if (homeTableRow && homeTableRow.position <= 10) baseOccupancy = 0.80;
+    if (isDerby) baseOccupancy = Math.min(1.0, baseOccupancy + 0.22);
+    if (isCupMatch) baseOccupancy = Math.min(1.0, baseOccupancy + 0.10);
+
+    const stadiumOccupancyPct = Math.min(100, Math.round(baseOccupancy * 100));
+    const attendance = Math.round(stadiumCapacity * (stadiumOccupancyPct / 100));
+
+    // Attendance & Derby Atmosphere Effects:
+    // High attendance (>85%) boosts home midfield control and creates pressure
+    const attendanceAtmosphereBonus = (stadiumOccupancyPct >= 85 ? 2.5 : 0) + (stadiumCapacity > 50000 ? 1.0 : 0);
+
+    // In derbies, raw quality gap narrows by 25% (underdogs step up with intense grit)
+    const rawQualityDiff = (homeStats.midfield - awayStats.midfield);
+    const effectiveQualityDiff = isDerby ? rawQualityDiff * 0.75 : rawQualityDiff;
+    const derbyHomeBonus = isDerby ? 1.5 : 0;
+
+    const homeControl = homeStats.midfield + effectiveQualityDiff * 0.25 + (Math.random() * 10) + homeTacticalBonus + attendanceAtmosphereBonus + derbyHomeBonus;
     const awayControl = awayStats.midfield + (Math.random() * 10) + awayTacticalBonus;
     const totalControl = homeControl + awayControl;
     const homePossession = homeControl / totalControl;
@@ -215,6 +293,20 @@ export const simulateMatch = (
     let awayScore = 0;
     const events: string[] = [];
     const scorers: { playerId: number, playerName: string, minute: number }[] = [];
+
+    let homeShotsOnTarget = 0;
+    let awayShotsOnTarget = 0;
+    let homeFouls = Math.floor((Math.random() * 5 + 4) * (isDerby ? derbyInfo.tensionFactor : 1.0));
+    let awayFouls = Math.floor((Math.random() * 5 + 4) * (isDerby ? derbyInfo.tensionFactor : 1.0));
+
+    if (isUserMatch) {
+        if (isDerby) {
+            events.push(`0' 🔥 ¡CLÁSICO! Se disputa ${derbyInfo.derbyName}. Tensión máxima en el campo.`);
+        }
+        if (stadiumOccupancyPct >= 88) {
+            events.push(`0' 🏟️ ¡Estadio repleto! ${attendance.toLocaleString()} espectadores empujan al ${homeTeam.name}.`);
+        }
+    }
 
     const homeAttackerRating = homeStats.attack;
     const awayAttackerRating = awayStats.attack;
@@ -285,6 +377,7 @@ export const simulateMatch = (
         const rand = Math.random();
         if (rand < homeConversionRate) {
             homeScore++;
+            homeShotsOnTarget++;
             const scorer = getScorer(homeSquad);
             const assister = getAssister(homeSquad, scorer);
             
@@ -303,12 +396,16 @@ export const simulateMatch = (
             }
         } else if (isUserMatch) {
             if (rand < 0.4) {
+                homeShotsOnTarget++;
                 events.push(`${minute}' 🧤 ¡Gran parada! El portero del ${awayTeam.name} evita el gol tras un disparo de ${getScorer(homeSquad).name}.`);
             } else if (rand < 0.5) {
+                awayFouls++;
                 events.push(`${minute}' 🟨 Tarjeta amarilla para un jugador de ${homeTeam.name} por falta táctica.`);
             } else {
                 events.push(`${minute}' 🏟️ Ocasión para el ${homeTeam.name}, pero el balón se va fuera.`);
             }
+        } else if (rand < 0.4) {
+            homeShotsOnTarget++;
         }
     }
 
@@ -318,6 +415,7 @@ export const simulateMatch = (
         const rand = Math.random();
         if (rand < awayConversionRate) {
             awayScore++;
+            awayShotsOnTarget++;
             const scorer = getScorer(awaySquad);
             const assister = getAssister(awaySquad, scorer);
             
@@ -336,12 +434,16 @@ export const simulateMatch = (
             }
         } else if (isUserMatch) {
             if (rand < 0.4) {
+                awayShotsOnTarget++;
                 events.push(`${minute}' 🧤 ¡Increíble reflejo! El portero del ${homeTeam.name} desvía el balón al córner.`);
             } else if (rand < 0.5) {
+                homeFouls++;
                 events.push(`${minute}' 🟨 Tarjeta amarilla para un jugador de ${awayTeam.name}.`);
             } else {
                 events.push(`${minute}' 🏟️ El ${awayTeam.name} presiona, pero el remate sale desviado.`);
             }
+        } else if (rand < 0.4) {
+            awayShotsOnTarget++;
         }
     }
 
@@ -448,7 +550,50 @@ export const simulateMatch = (
         }
     }
 
-    return { homeScore, awayScore, events, scorers, penalties: penaltiesResult };
+    // Award clean sheets to starting goalkeepers
+    if (awayScore === 0) {
+        const homeGk = homeSquad.starters.find(p => p.position === 'POR') || homeSquad.starters[0];
+        if (homeGk) {
+            homeGk.stats = homeGk.stats ? { ...homeGk.stats } : { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 };
+            homeGk.stats.cleanSheets = (homeGk.stats.cleanSheets || 0) + 1;
+        }
+    }
+    if (homeScore === 0) {
+        const awayGk = awaySquad.starters.find(p => p.position === 'POR') || awaySquad.starters[0];
+        if (awayGk) {
+            awayGk.stats = awayGk.stats ? { ...awayGk.stats } : { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 };
+            awayGk.stats.cleanSheets = (awayGk.stats.cleanSheets || 0) + 1;
+        }
+    }
+
+    const homePossessionPct = Math.round(homePossession * 100);
+    const awayPossessionPct = 100 - homePossessionPct;
+    const finalHomeShots = Math.max(homeScore, Math.max(homeShotsOnTarget, Math.round(homeChances)));
+    const finalAwayShots = Math.max(awayScore, Math.max(awayShotsOnTarget, Math.round(awayChances)));
+    const finalHomeTarget = Math.min(finalHomeShots, Math.max(homeScore, homeShotsOnTarget));
+    const finalAwayTarget = Math.min(finalAwayShots, Math.max(awayScore, awayShotsOnTarget));
+
+    return { 
+        homeScore, 
+        awayScore, 
+        events, 
+        scorers, 
+        penalties: penaltiesResult,
+        stats: {
+            homePossession: homePossessionPct,
+            awayPossession: awayPossessionPct,
+            homeShots: finalHomeShots,
+            awayShots: finalAwayShots,
+            homeShotsOnTarget: finalHomeTarget,
+            awayShotsOnTarget: finalAwayTarget,
+            homeFouls,
+            awayFouls,
+            stadiumAttendance: attendance,
+            stadiumOccupancyPct,
+            isDerby,
+            derbyName: derbyInfo.derbyName
+        }
+    };
 };
 
 /**
@@ -469,7 +614,10 @@ export const simulateMacroMatch = (
     events: string[];
     scorers: { playerId: number; playerName: string; minute: number }[];
     penalties?: { home: number; away: number };
+    stats: MatchLiveStats;
 } => {
+    const derbyInfo = checkDerbyMatch(homeTeam, awayTeam);
+
     // 1. Fast calculation of attacking & defensive power driven by real squad ratings
     const getQuickRatings = (team: Team) => {
         if (team.squadPower) {
@@ -530,18 +678,76 @@ export const simulateMacroMatch = (
 
     const scorers: { playerId: number; playerName: string; minute: number }[] = [];
 
+    // Award appearances and minutes to top 11 active squad members
+    const processMacroSquadParticipation = (team: Team, concededGoals: number) => {
+        if (!team.squad || team.squad.length === 0) return;
+        const starters = [...team.squad]
+            .sort((a, b) => (b.rating * ((b.condition ?? 100) / 100)) - (a.rating * ((a.condition ?? 100) / 100)))
+            .slice(0, 11);
+
+        starters.forEach(p => {
+            p.stats = p.stats ? { ...p.stats } : { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 };
+            p.stats.appearances += 1;
+            p.stats.minutes += 90;
+        });
+
+        if (concededGoals === 0) {
+            const gk = starters.find(p => p.position === 'POR') || team.squad.find(p => p.position === 'POR') || starters[0];
+            if (gk) {
+                gk.stats = gk.stats ? { ...gk.stats } : { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 };
+                gk.stats.cleanSheets = (gk.stats.cleanSheets || 0) + 1;
+            }
+        }
+    };
+
+    processMacroSquadParticipation(homeTeam, awayScore);
+    processMacroSquadParticipation(awayTeam, homeScore);
+
+    // Weighted goal and assist assignment based on player ratings
     const assignGoals = (team: Team, count: number) => {
         if (count <= 0 || !team.squad || team.squad.length === 0) return;
         const attackers = team.squad.filter(p => p.position === 'DEL' || p.position === 'CEN');
         const pool = attackers.length > 0 ? attackers : team.squad;
-        const topPool = pool.slice(0, Math.min(5, pool.length));
+
+        // Weight exponentially by rating: rating 85 gets ~3.5x weight of rating 70
+        const weights = pool.map(p => Math.pow(Math.max(45, p.rating) - 40, 2.5));
+        const totalWeight = weights.reduce((sum, w) => sum + w, 0);
 
         for (let i = 0; i < count; i++) {
             const minute = Math.floor(Math.random() * 90) + 1;
-            const scorer = topPool[Math.floor(Math.random() * topPool.length)] || pool[0];
+            let rand = Math.random() * totalWeight;
+            let scorer = pool[0];
+            for (let j = 0; j < pool.length; j++) {
+                rand -= weights[j];
+                if (rand <= 0) {
+                    scorer = pool[j];
+                    break;
+                }
+            }
+
             scorer.stats = scorer.stats ? { ...scorer.stats } : { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 };
             scorer.stats.goals++;
             scorers.push({ playerId: scorer.id, playerName: scorer.name, minute });
+
+            // Assign assist in ~65% of goals
+            if (Math.random() < 0.65 && pool.length > 1) {
+                const assisterCandidates = team.squad.filter(p => p.id !== scorer.id && (p.position === 'CEN' || p.position === 'DEL' || p.position === 'DEF'));
+                if (assisterCandidates.length > 0) {
+                    const assisterWeights = assisterCandidates.map(p => Math.pow(Math.max(45, p.rating) - 40, 2));
+                    const totalAssisterWeight = assisterWeights.reduce((s, w) => s + w, 0);
+                    let aRand = Math.random() * totalAssisterWeight;
+                    let assister = assisterCandidates[0];
+                    for (let k = 0; k < assisterCandidates.length; k++) {
+                        aRand -= assisterWeights[k];
+                        if (aRand <= 0) {
+                            assister = assisterCandidates[k];
+                            break;
+                        }
+                    }
+                    assister.stats = assister.stats ? { ...assister.stats } : { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 };
+                    assister.stats.assists++;
+                }
+            }
         }
     };
 
@@ -588,11 +794,27 @@ export const simulateMacroMatch = (
         }
     }
 
+    const macroPossession = Math.round(Math.max(25, Math.min(75, 50 + (homePowerDiff * 1.5))));
+    const macroHomeShots = Math.max(homeScore, Math.round(homeLambda * 3 + (Math.random() * 2)));
+    const macroAwayShots = Math.max(awayScore, Math.round(awayLambda * 3 + (Math.random() * 2)));
+
     return {
         homeScore,
         awayScore,
         events: [],
         scorers,
-        penalties: penaltiesResult
+        penalties: penaltiesResult,
+        stats: {
+            homePossession: macroPossession,
+            awayPossession: 100 - macroPossession,
+            homeShots: macroHomeShots,
+            awayShots: macroAwayShots,
+            homeShotsOnTarget: Math.max(homeScore, Math.round(macroHomeShots * 0.4)),
+            awayShotsOnTarget: Math.max(awayScore, Math.round(macroAwayShots * 0.4)),
+            homeFouls: Math.floor(Math.random() * 8) + 6,
+            awayFouls: Math.floor(Math.random() * 8) + 6,
+            isDerby: derbyInfo.isDerby,
+            derbyName: derbyInfo.derbyName
+        }
     };
 };

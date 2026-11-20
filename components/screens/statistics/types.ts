@@ -9,6 +9,8 @@ export interface PlayerStats {
     goals: number;
     assists: number;
     matches: number;
+    cleanSheets?: number;
+    averageRating?: number;
 }
 
 export interface TeamHighlights {

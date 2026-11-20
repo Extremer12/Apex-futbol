@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GameState, Team } from '../../types';
+import { GameState, Team, PlayerMatchResult, MatchLiveStats } from '../../types';
+import { GameAction } from '../../state/reducer';
 import { TeamLogo } from '../../data/teams/helpers';
 import { getTeamStadium } from '../../data/stadiums';
 
@@ -7,22 +8,10 @@ interface FullScreenMatchSimulationProps {
     gameState: GameState;
     pendingResults: {
         updatedSchedule?: any[];
-        playerMatchResult: {
-            homeTeamId?: number;
-            awayTeamId?: number;
-            competition?: string;
-            week?: number;
-            isMidweek?: boolean;
-            homeScore: number;
-            awayScore: number;
-            penalties?: { home: number; away: number };
-            events?: string[];
-            scorers?: { playerId: number; playerName: string; minute: number }[];
-            leg?: number;
-            aggregateScore?: { home: number; away: number };
-        } | null;
+        playerMatchResult: PlayerMatchResult | null;
     };
     onMatchComplete: () => void;
+    dispatch?: React.Dispatch<GameAction>;
 }
 
 interface ParsedEvent {
@@ -36,7 +25,8 @@ interface ParsedEvent {
 export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps> = ({
     gameState,
     pendingResults,
-    onMatchComplete
+    onMatchComplete,
+    dispatch
 }) => {
     const finalResult = pendingResults.playerMatchResult;
 
@@ -65,7 +55,7 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
     const [minute, setMinute] = useState(0);
     const [displayScore, setDisplayScore] = useState({ home: 0, away: 0 });
     const [isFinished, setIsFinished] = useState(false);
-    const [speedMultiplier] = useState<1 | 2 | 4>(() => {
+    const [speedMultiplier, setSpeedMultiplier] = useState<1 | 2 | 4>(() => {
         try {
             const saved = localStorage.getItem('apex_match_speed');
             if (saved === '2') return 2;
@@ -75,16 +65,52 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
             return 1;
         }
     });
+    const [presidentialMode, setPresidentialMode] = useState<boolean>(() => {
+        try {
+            return localStorage.getItem('apex_presidential_mode') !== 'false';
+        } catch (_) {
+            return true;
+        }
+    });
+
+    const speedMultiplierRef = useRef(speedMultiplier);
+    speedMultiplierRef.current = speedMultiplier;
+
+    const presidentialModeRef = useRef(presidentialMode);
+    presidentialModeRef.current = presidentialMode;
+
+    const currentMinuteRef = useRef(0);
+
+    const [activePromptMinute, setActivePromptMinute] = useState<number | null>(null);
+    const promptedMinutesRef = useRef<Set<number>>(new Set());
+
     const [activeTab, setActiveTab] = useState<'ticker' | 'stats'>('ticker');
     const [commentary, setCommentary] = useState<ParsedEvent[]>([]);
-    const [stats, setStats] = useState({
-        homePossession: 50,
-        awayPossession: 50,
+
+    const targetStats = React.useMemo<MatchLiveStats>(() => {
+        if (finalResult?.stats) return finalResult.stats;
+        return {
+            homePossession: 50,
+            awayPossession: 50,
+            homeShots: 10,
+            awayShots: 8,
+            homeShotsOnTarget: 4,
+            awayShotsOnTarget: 3,
+            homeFouls: 9,
+            awayFouls: 11
+        };
+    }, [finalResult?.stats]);
+
+    const [stats, setStats] = useState<MatchLiveStats>(() => ({
+        homePossession: targetStats.homePossession,
+        awayPossession: targetStats.awayPossession,
         homeShots: 0,
         awayShots: 0,
+        homeShotsOnTarget: 0,
+        awayShotsOnTarget: 0,
         homeFouls: 0,
         awayFouls: 0
-    });
+    }));
     const [momentum, setMomentum] = useState<number[]>([0]);
     const [isShaking, setIsShaking] = useState(false);
     const [goalPopup, setGoalPopup] = useState<{ team: string; text: string } | null>(null);
@@ -156,6 +182,60 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
 
     const goalTimeoutRef = useRef<any>(null);
 
+    const handleSetSpeed = (spd: 1 | 2 | 4) => {
+        speedMultiplierRef.current = spd;
+        setSpeedMultiplier(spd);
+        try {
+            localStorage.setItem('apex_match_speed', spd.toString());
+        } catch (_) {}
+    };
+
+    const handleTogglePresidential = () => {
+        setPresidentialMode(prev => {
+            const next = !prev;
+            presidentialModeRef.current = next;
+            try {
+                localStorage.setItem('apex_presidential_mode', next.toString());
+            } catch (_) {}
+            return next;
+        });
+    };
+
+    const handlePresidentialDecision = (type: 'ATTACK' | 'DEFEND' | 'BONUS' | 'PASS') => {
+        const atMin = activePromptMinute || 45;
+        setActivePromptMinute(null);
+        isPausedForGoalRef.current = false;
+
+        if (type === 'ATTACK') {
+            const text = `${atMin}' ⚡ ¡Indicación del Palco Presidencial! El equipo adelanta sus líneas y asfixia al rival con presión alta.`;
+            setCommentary(prev => [...prev, { minute: atMin, type: 'normal', text, isHome }]);
+            setMomentum(prev => [...prev, isHome ? 35 : -35]);
+            setStats(prev => ({
+                ...prev,
+                homeShots: isHome ? prev.homeShots + 2 : prev.homeShots,
+                awayShots: !isHome ? prev.awayShots + 2 : prev.awayShots
+            }));
+        } else if (type === 'DEFEND') {
+            const text = `${atMin}' 🛡️ ¡Orden táctica del Palco! Bloque bajo, repliegue disciplinado y enfriar el ritmo del juego.`;
+            setCommentary(prev => [...prev, { minute: atMin, type: 'normal', text, isHome }]);
+            setMomentum(prev => [...prev, isHome ? 15 : -15]);
+        } else if (type === 'BONUS') {
+            const text = `${atMin}' 💼 ¡Inyección anímica del Presidente! Se anuncia una prima económica especial por conseguir la victoria.`;
+            setCommentary(prev => [...prev, { minute: atMin, type: 'normal', text, isHome }]);
+            setMomentum(prev => [...prev, isHome ? 45 : -45]);
+            setStats(prev => ({
+                ...prev,
+                homePossession: isHome ? Math.min(85, prev.homePossession + 6) : Math.max(15, prev.homePossession - 6),
+                awayPossession: !isHome ? Math.min(85, prev.awayPossession + 6) : Math.max(15, prev.awayPossession - 6)
+            }));
+            if (dispatch) {
+                dispatch({ type: 'AWARD_TEAM_BONUS', payload: { bonusPerPlayer: 10000 } });
+            }
+        }
+
+        startSimulationLoopRef.current();
+    };
+
     // Fast-forward / Skip to end
     const handleSkipToEnd = () => {
         if (intervalRef.current) clearInterval(intervalRef.current);
@@ -165,8 +245,10 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
         setGoalPopup(null);
         if (!finalResult) return;
 
+        currentMinuteRef.current = totalMatchMinutes;
         setMinute(totalMatchMinutes);
         setDisplayScore({ home: finalResult.homeScore, away: finalResult.awayScore });
+        setStats(targetStats);
         setIsFinished(true);
 
         const allRemaining = allParsedEvents.filter(e => !processedEventsRef.current.has(e.text));
@@ -189,11 +271,11 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
             return;
         }
 
-        const duration = 10000 / speedMultiplier; // 10s default or 5s on 2x
         const interval = 50;
-        const totalSteps = duration / interval;
-        const minuteIncrement = totalMatchMinutes / totalSteps;
+        const totalBaseSteps = 10000 / interval; // 200 ticks for 10s base
+        const baseMinuteIncrement = totalMatchMinutes / totalBaseSteps;
         stepRef.current = 0;
+        currentMinuteRef.current = 0;
         isPausedForGoalRef.current = false;
 
         const startSimulationLoop = () => {
@@ -203,8 +285,32 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
                 if (isPausedForGoalRef.current) return;
 
                 stepRef.current++;
-                const currentMinute = Math.min(totalMatchMinutes, Math.floor(stepRef.current * minuteIncrement));
+                currentMinuteRef.current = Math.min(
+                    totalMatchMinutes,
+                    currentMinuteRef.current + (baseMinuteIncrement * (speedMultiplierRef.current || 1))
+                );
+                const currentMinute = Math.floor(currentMinuteRef.current);
                 setMinute(currentMinute);
+
+                // Presidential Palco interactive decision at 45' and 70'
+                if (presidentialModeRef.current && currentMinute >= 45 && !promptedMinutesRef.current.has(45)) {
+                    promptedMinutesRef.current.add(45);
+                    isPausedForGoalRef.current = true;
+                    clearInterval(intervalRef.current);
+                    currentMinuteRef.current = 45;
+                    setMinute(45);
+                    setActivePromptMinute(45);
+                    return;
+                }
+                if (presidentialModeRef.current && currentMinute >= 70 && !promptedMinutesRef.current.has(70)) {
+                    promptedMinutesRef.current.add(70);
+                    isPausedForGoalRef.current = true;
+                    clearInterval(intervalRef.current);
+                    currentMinuteRef.current = 70;
+                    setMinute(70);
+                    setActivePromptMinute(70);
+                    return;
+                }
 
                 // Process pending events up to current minute
                 const pendingEvents = allParsedEvents.filter(
@@ -220,8 +326,16 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
                         if (ev.type === 'goal' || ev.type === 'save') {
                             setStats(prev => ({
                                 ...prev,
-                                homeShots: ev.isHome ? prev.homeShots + 1 : prev.homeShots,
-                                awayShots: !ev.isHome ? prev.awayShots + 1 : prev.awayShots
+                                homeShots: ev.isHome ? Math.min(targetStats.homeShots, prev.homeShots + 1) : prev.homeShots,
+                                awayShots: !ev.isHome ? Math.min(targetStats.awayShots, prev.awayShots + 1) : prev.awayShots,
+                                homeShotsOnTarget: ev.isHome ? Math.min(targetStats.homeShotsOnTarget, prev.homeShotsOnTarget + 1) : prev.homeShotsOnTarget,
+                                awayShotsOnTarget: !ev.isHome ? Math.min(targetStats.awayShotsOnTarget, prev.awayShotsOnTarget + 1) : prev.awayShotsOnTarget
+                            }));
+                        } else if (ev.type === 'card') {
+                            setStats(prev => ({
+                                ...prev,
+                                homeFouls: ev.isHome ? Math.min(targetStats.homeFouls, prev.homeFouls + 1) : prev.homeFouls,
+                                awayFouls: !ev.isHome ? Math.min(targetStats.awayFouls, prev.awayFouls + 1) : prev.awayFouls
                             }));
                         }
 
@@ -231,6 +345,7 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
                             clearInterval(intervalRef.current);
 
                             // Pin the minute to the goal minute
+                            currentMinuteRef.current = ev.minute;
                             setMinute(ev.minute);
 
                             // Update score immediately with genuine goals up to this event's minute
@@ -249,7 +364,7 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
                                 text: ev.text.replace(/^\d+'\s*/, '')
                             });
 
-                            const celebrationDuration = Math.max(1200, 2000 / (speedMultiplier === 4 ? 2 : 1));
+                            const celebrationDuration = Math.max(1000, 1800 / (speedMultiplierRef.current === 4 ? 2 : 1));
                             goalTimeoutRef.current = setTimeout(() => {
                                 setIsShaking(false);
                                 setGoalPopup(null);
@@ -271,17 +386,30 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
                     });
                 }
 
-                // Dynamic possession & momentum fluctuations
+                // Dynamic possession & progressive stats toward targets
                 if (stepRef.current % 4 === 0) {
+                    const matchProgress = Math.min(1, currentMinute / totalMatchMinutes);
                     setStats(prev => {
                         const shift = (Math.random() * 4 - 2);
-                        const newHomePoss = Math.min(75, Math.max(25, prev.homePossession + shift));
+                        const currentTargetPoss = targetStats.homePossession;
+                        const newHomePoss = Math.min(85, Math.max(15, Math.round(currentTargetPoss + shift)));
+
+                        const expectedHomeShots = Math.max(prev.homeShots, Math.round(targetStats.homeShots * matchProgress));
+                        const expectedAwayShots = Math.max(prev.awayShots, Math.round(targetStats.awayShots * matchProgress));
+                        const expectedHomeTarget = Math.max(prev.homeShotsOnTarget, Math.round(targetStats.homeShotsOnTarget * matchProgress));
+                        const expectedAwayTarget = Math.max(prev.awayShotsOnTarget, Math.round(targetStats.awayShotsOnTarget * matchProgress));
+                        const expectedHomeFouls = Math.max(prev.homeFouls, Math.round(targetStats.homeFouls * matchProgress));
+                        const expectedAwayFouls = Math.max(prev.awayFouls, Math.round(targetStats.awayFouls * matchProgress));
+
                         return {
-                            ...prev,
                             homePossession: newHomePoss,
                             awayPossession: 100 - newHomePoss,
-                            homeFouls: prev.homeFouls + (Math.random() < 0.08 ? 1 : 0),
-                            awayFouls: prev.awayFouls + (Math.random() < 0.08 ? 1 : 0)
+                            homeShots: expectedHomeShots,
+                            awayShots: expectedAwayShots,
+                            homeShotsOnTarget: expectedHomeTarget,
+                            awayShotsOnTarget: expectedAwayTarget,
+                            homeFouls: expectedHomeFouls,
+                            awayFouls: expectedAwayFouls
                         };
                     });
 
@@ -293,10 +421,12 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
                 }
 
                 // Match finished
-                if (stepRef.current >= totalSteps) {
+                if (currentMinuteRef.current >= totalMatchMinutes) {
                     clearInterval(intervalRef.current);
+                    currentMinuteRef.current = totalMatchMinutes;
                     setMinute(totalMatchMinutes);
                     setDisplayScore({ home: finalResult.homeScore, away: finalResult.awayScore });
+                    setStats(targetStats);
                     setIsFinished(true);
 
                     setCommentary(prev => [
@@ -319,7 +449,7 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
             if (intervalRef.current) clearInterval(intervalRef.current);
             if (goalTimeoutRef.current) clearTimeout(goalTimeoutRef.current);
         };
-    }, [finalResult, speedMultiplier, allParsedEvents, totalMatchMinutes, homeTeam, awayTeam, onMatchComplete]);
+    }, [finalResult, targetStats, allParsedEvents, totalMatchMinutes, homeTeam, awayTeam, onMatchComplete]);
 
     // Outcome determination for player
     const playerWon = (isHome && displayScore.home > displayScore.away) || (!isHome && displayScore.away > displayScore.home);
@@ -347,6 +477,72 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
                 </div>
             )}
 
+            {/* Presidential Palco Interactive Modal at 45' and 70' */}
+            {activePromptMinute !== null && (
+                <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-lg animate-fade-in px-4">
+                    <div className="bg-slate-900/95 border-2 border-[var(--apex-gold)]/50 rounded-3xl p-6 sm:p-8 max-w-xl w-full shadow-[0_0_50px_rgba(234,179,8,0.25)] text-center space-y-5 animate-scale-in">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--apex-gold)]/10 border border-[var(--apex-gold)]/30 text-[var(--apex-gold)] text-xs font-black uppercase tracking-wider">
+                            <span>💼 Palco Presidencial</span>
+                            <span>•</span>
+                            <span>Minuto {activePromptMinute}' ({activePromptMinute === 45 ? 'Entretiempo' : 'Tramo Decisivo'})</span>
+                        </div>
+
+                        <div>
+                            <h2 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">
+                                Indicación al Vestuario
+                            </h2>
+                            <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-md mx-auto">
+                                Tienes la palabra para influir en el rumbo del partido. Elige una orden para el cuerpo técnico y el plantel:
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                            <button
+                                onClick={() => handlePresidentialDecision('ATTACK')}
+                                className="flex flex-col items-start p-4 rounded-2xl bg-gradient-to-br from-amber-500/10 to-orange-600/10 border border-amber-500/30 hover:border-amber-400 hover:bg-amber-500/20 text-left transition-all group shadow-md"
+                            >
+                                <div className="text-base sm:text-lg font-black text-amber-300 mb-1">⚡ Aumentar Presión</div>
+                                <div className="text-[11px] text-slate-300 leading-snug">
+                                    Adelantar líneas, presión alta en campo rival y buscar el arco con intensidad.
+                                </div>
+                            </button>
+
+                            <button
+                                onClick={() => handlePresidentialDecision('DEFEND')}
+                                className="flex flex-col items-start p-4 rounded-2xl bg-gradient-to-br from-sky-500/10 to-blue-600/10 border border-sky-500/30 hover:border-sky-400 hover:bg-sky-500/20 text-left transition-all group shadow-md"
+                            >
+                                <div className="text-base sm:text-lg font-black text-sky-300 mb-1">🛡️ Cerrar el Partido</div>
+                                <div className="text-[11px] text-slate-300 leading-snug">
+                                    Reorganizar en bloque bajo, controlar el reloj y anular las ocasiones del rival.
+                                </div>
+                            </button>
+
+                            <button
+                                onClick={() => handlePresidentialDecision('BONUS')}
+                                className="flex flex-col items-start p-4 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-green-600/10 border border-emerald-500/30 hover:border-emerald-400 hover:bg-emerald-500/20 text-left transition-all group shadow-md sm:col-span-2"
+                            >
+                                <div className="flex items-center justify-between w-full">
+                                    <span className="text-base sm:text-lg font-black text-emerald-300 mb-1">💼 Prima Extra por Victoria</span>
+                                    <span className="text-[10px] font-black uppercase text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/30">Inyección Anímica</span>
+                                </div>
+                                <div className="text-[11px] text-slate-300 leading-snug">
+                                    Ofrecer una prima económica al vestuario. Máximo impulso anímico y posesión para tus jugadores.
+                                </div>
+                            </button>
+                        </div>
+
+                        <div className="pt-2">
+                            <button
+                                onClick={() => handlePresidentialDecision('PASS')}
+                                className="text-xs font-bold text-slate-400 hover:text-white uppercase tracking-wider underline transition-colors"
+                            >
+                                Mantener indicación actual del DT (Continuar)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Background Atmosphere */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
                 <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] bg-gradient-to-b from-yellow-500/10 via-emerald-500/5 to-transparent blur-3xl rounded-full" />
@@ -354,28 +550,65 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
             </div>
 
             {/* 1. TOP BROADCAST BAR */}
-            <header className="relative z-10 flex items-center justify-between px-4 sm:px-8 py-3 border-b border-white/10 bg-slate-950/80 backdrop-blur-md">
-                <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-red-500/20 border border-red-500/40">
+            <header className="relative z-10 flex items-center justify-between px-3 sm:px-8 py-2.5 sm:py-3 border-b border-white/10 bg-slate-950/85 backdrop-blur-md">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                    <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 rounded-full bg-red-500/20 border border-red-500/40 shrink-0">
                         <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
                         <span className="text-[10px] font-black tracking-widest text-red-400 uppercase">
                             {isFinished ? 'FINALIZADO' : 'EN VIVO'}
                         </span>
                     </div>
-                    <div className="hidden sm:flex items-center gap-2 text-xs font-semibold text-slate-300">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-slate-300 truncate">
                         <span className="text-[var(--apex-gold)] font-bold">{competitionName}</span>
                         {finalResult?.leg && (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                                Partido de {finalResult.leg === 1 ? 'Ida' : 'Vuelta'}
+                            <span className="hidden xs:inline px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                                {finalResult.leg === 1 ? 'Ida' : 'Vuelta'}
                             </span>
                         )}
-                        <span className="text-slate-600">•</span>
-                        <span className="text-slate-400">{stadiumName}</span>
+                        <span className="text-slate-600 hidden sm:inline">•</span>
+                        <span className="text-slate-400 hidden sm:inline truncate max-w-[200px]">{stadiumName}</span>
                     </div>
                 </div>
 
-                {/* Match Complete Header Button */}
-                <div className="flex items-center gap-2">
+                {/* Matchday Controls & Fast Forward */}
+                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                    {/* Live Speed Controls */}
+                    {!isFinished && (
+                        <div className="flex items-center gap-0.5 sm:gap-1 bg-slate-900/90 border border-white/10 rounded-xl p-0.5 sm:p-1 shadow-sm">
+                            {([1, 2, 4] as const).map(spd => (
+                                <button
+                                    key={spd}
+                                    onClick={() => handleSetSpeed(spd)}
+                                    className={`px-2 sm:px-2.5 py-1 rounded-lg text-[10px] font-black font-mono transition-all ${
+                                        speedMultiplier === spd
+                                            ? 'bg-yellow-500 text-slate-950 shadow-sm shadow-yellow-500/30'
+                                            : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                    }`}
+                                    title={`Velocidad ${spd}x`}
+                                >
+                                    {spd}x
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Palco Mode Toggle */}
+                    {!isFinished && (
+                        <button
+                            onClick={handleTogglePresidential}
+                            className={`hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-[11px] font-bold transition-all ${
+                                presidentialMode
+                                    ? 'bg-[var(--apex-gold)]/10 border-[var(--apex-gold)]/30 text-[var(--apex-gold)]'
+                                    : 'bg-white/5 border-white/10 text-slate-400 hover:text-white'
+                            }`}
+                            title="Pausa interactiva al 45' y 70' para decisiones del presidente"
+                        >
+                            <span>💼 Palco:</span>
+                            <span className="font-black">{presidentialMode ? 'ON' : 'OFF'}</span>
+                        </button>
+                    )}
+
+                    {/* Match Complete Header Button */}
                     {isFinished && (
                         <button
                             onClick={onMatchComplete}
@@ -440,6 +673,20 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
                                     <span className="w-2 h-2 rounded-full bg-yellow-400 animate-ping" />
                                     <span>{minute === 45 ? 'Entretiempo' : `${minute}'`}</span>
                                 </div>
+                            )}
+                        </div>
+
+                        {/* Derby Badge & Stadium Attendance */}
+                        <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 mt-2">
+                            {targetStats?.isDerby && (
+                                <span className="px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-red-600/30 to-amber-600/30 text-amber-300 border border-amber-500/40 shadow-sm shadow-red-500/20 animate-pulse">
+                                    🔥 {targetStats.derbyName || 'Clásico Histórico'}
+                                </span>
+                            )}
+                            {targetStats?.stadiumAttendance && (
+                                <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-slate-400 bg-slate-900/80 border border-slate-800">
+                                    🏟️ {targetStats.stadiumAttendance.toLocaleString()} hinchas ({targetStats.stadiumOccupancyPct}% aforo)
+                                </span>
                             )}
                         </div>
 
@@ -569,12 +816,25 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
                             <div>
                                 <div className="flex justify-between text-xs font-semibold mb-1">
                                     <span className="font-mono text-white">{stats.homeShots}</span>
-                                    <span className="text-slate-500 text-[11px] uppercase">Tiros al Arco</span>
+                                    <span className="text-slate-500 text-[11px] uppercase">Tiros Totales</span>
                                     <span className="font-mono text-white">{stats.awayShots}</span>
                                 </div>
                                 <div className="h-1.5 bg-slate-900 rounded-full overflow-hidden flex">
                                     <div className="bg-sky-400 transition-all duration-300" style={{ width: `${(stats.homeShots / Math.max(1, stats.homeShots + stats.awayShots)) * 100}%` }} />
                                     <div className="bg-amber-400 transition-all duration-300" style={{ width: `${(stats.awayShots / Math.max(1, stats.homeShots + stats.awayShots)) * 100}%` }} />
+                                </div>
+                            </div>
+
+                            {/* Shots on Target */}
+                            <div>
+                                <div className="flex justify-between text-xs font-semibold mb-1">
+                                    <span className="font-mono text-white">{stats.homeShotsOnTarget}</span>
+                                    <span className="text-slate-500 text-[11px] uppercase">Tiros al Arco</span>
+                                    <span className="font-mono text-white">{stats.awayShotsOnTarget}</span>
+                                </div>
+                                <div className="h-1.5 bg-slate-900 rounded-full overflow-hidden flex">
+                                    <div className="bg-sky-400 transition-all duration-300" style={{ width: `${(stats.homeShotsOnTarget / Math.max(1, stats.homeShotsOnTarget + stats.awayShotsOnTarget)) * 100}%` }} />
+                                    <div className="bg-amber-400 transition-all duration-300" style={{ width: `${(stats.awayShotsOnTarget / Math.max(1, stats.homeShotsOnTarget + stats.awayShotsOnTarget)) * 100}%` }} />
                                 </div>
                             </div>
 
