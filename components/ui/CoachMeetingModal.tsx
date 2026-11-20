@@ -52,8 +52,8 @@ export const CoachMeetingModal: React.FC<CoachMeetingModalProps> = ({
                                 <span>{report.satisfaction}%</span>
                             </div>
                             <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
-                                <div 
-                                    className={`h-full bg-gradient-to-r ${report.satisfaction >= 70 ? 'from-green-500 to-emerald-500' : report.satisfaction >= 40 ? 'from-yellow-500 to-orange-500' : 'from-red-500 to-red-600'}`} 
+                                <div
+                                    className={`h-full bg-gradient-to-r ${report.satisfaction >= 70 ? 'from-green-500 to-emerald-500' : report.satisfaction >= 40 ? 'from-yellow-500 to-orange-500' : 'from-red-500 to-red-600'}`}
                                     style={{ width: `${report.satisfaction}%` }}
                                 />
                             </div>
@@ -144,13 +144,12 @@ export const CoachMeetingModal: React.FC<CoachMeetingModalProps> = ({
                                 dispatch({ type: 'AWARD_TEAM_BONUS', payload: { bonusPerPlayer: 10000 } });
                                 setBonusAwarded(true);
                             }}
-                            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap ${
-                                bonusAwarded
-                                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 cursor-default'
-                                    : !canAffordBonus
+                            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap ${bonusAwarded
+                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 cursor-default'
+                                : !canAffordBonus
                                     ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
                                     : 'bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 shadow-lg shadow-amber-500/20'
-                            }`}
+                                }`}
                         >
                             {bonusAwarded ? 'Prima Otorgada ✓' : !canAffordBonus ? 'Fondos Insuficientes' : `Ofrecer Prima (${formatCurrencyShort(bonusCost)})`}
                         </button>
