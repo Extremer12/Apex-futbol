@@ -170,9 +170,8 @@ export const LeagueTable: React.FC<LeagueTableProps> = React.memo(({
                                             const isPlayerMatch = home?.id === gameState.team.id || away?.id === gameState.team.id;
 
                                             return (
-                                                <div key={fIdx} className={`rounded-xl border p-2 text-xs flex flex-col gap-1.5 ${
-                                                    isPlayerMatch ? 'border-amber-400/60 bg-amber-500/10' : 'border-white/10 bg-slate-900/70'
-                                                }`}>
+                                                <div key={fIdx} className={`rounded-xl border p-2 text-xs flex flex-col gap-1.5 ${isPlayerMatch ? 'border-amber-400/60 bg-amber-500/10' : 'border-white/10 bg-slate-900/70'
+                                                    }`}>
                                                     <div className="flex items-center justify-between">
                                                         <div className="flex items-center gap-1.5 min-w-0 flex-1">
                                                             <div className="w-4 h-4 shrink-0 flex items-center justify-center">
@@ -236,7 +235,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = React.memo(({
         const apertura = gameState.cups.aperturaPlayoffs;
         const currentChampName = apertura?.winnerId ? getTeamById(apertura.winnerId)?.name : null;
         const historyChampName = apertura?.statistics?.championsHistory?.[0]?.winnerName;
-        
+
         let statusBadgeText = 'Por disputarse (Fecha 17 a 20)';
         if (currentChampName) {
             statusBadgeText = `Campeón Apertura: ${currentChampName}`;
@@ -285,7 +284,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = React.memo(({
         const clausura = gameState.cups.clausuraPlayoffs;
         const currentChampName = clausura?.winnerId ? getTeamById(clausura.winnerId)?.name : null;
         const historyChampName = clausura?.statistics?.championsHistory?.[0]?.winnerName;
-        
+
         let statusBadgeText = 'Por disputarse (Fecha 37 a 40)';
         if (currentChampName) {
             statusBadgeText = `Campeón Clausura: ${currentChampName}`;
@@ -336,11 +335,11 @@ export const LeagueTable: React.FC<LeagueTableProps> = React.memo(({
             <div className={`bg-gradient-to-r from-${theme}-600 via-${theme}-500 to-${theme}-600 px-4 sm:px-6 py-3.5 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3`}>
                 <div className="flex items-center gap-3 sm:gap-4">
                     <div className="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center shrink-0">
-                        <img 
-                            src={logo || '/sinlogo.png'} 
-                            alt={title} 
+                        <img
+                            src={logo || '/sinlogo.png'}
+                            alt={title}
                             onError={(e) => { (e.target as HTMLImageElement).src = '/sinlogo.png'; }}
-                            className="w-full h-full object-contain drop-shadow-xl" 
+                            className="w-full h-full object-contain drop-shadow-xl"
                         />
                     </div>
                     <div>
@@ -359,50 +358,44 @@ export const LeagueTable: React.FC<LeagueTableProps> = React.memo(({
                     <div className="flex items-center gap-1 bg-black/20 p-1 rounded-xl backdrop-blur-md self-start sm:self-auto overflow-x-auto max-w-full">
                         <button
                             onClick={() => setArgView('ZONA_A')}
-                            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
-                                argView === 'ZONA_A' ? 'bg-white text-slate-900 shadow-md' : 'text-white/80 hover:text-white hover:bg-white/10'
-                            }`}
+                            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${argView === 'ZONA_A' ? 'bg-white text-slate-900 shadow-md' : 'text-white/80 hover:text-white hover:bg-white/10'
+                                }`}
                         >
                             Zona A (15)
                         </button>
                         <button
                             onClick={() => setArgView('ZONA_B')}
-                            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
-                                argView === 'ZONA_B' ? 'bg-white text-slate-900 shadow-md' : 'text-white/80 hover:text-white hover:bg-white/10'
-                            }`}
+                            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${argView === 'ZONA_B' ? 'bg-white text-slate-900 shadow-md' : 'text-white/80 hover:text-white hover:bg-white/10'
+                                }`}
                         >
                             Zona B (15)
                         </button>
                         <button
                             onClick={() => setArgView('TABLA_ANUAL')}
-                            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
-                                argView === 'TABLA_ANUAL' ? 'bg-white text-slate-900 shadow-md' : 'text-white/80 hover:text-white hover:bg-white/10'
-                            }`}
+                            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${argView === 'TABLA_ANUAL' ? 'bg-white text-slate-900 shadow-md' : 'text-white/80 hover:text-white hover:bg-white/10'
+                                }`}
                         >
                             Tabla Anual
                         </button>
                         <button
                             onClick={() => setArgView('PROMEDIOS')}
-                            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
-                                argView === 'PROMEDIOS' ? 'bg-white text-slate-900 shadow-md' : 'text-white/80 hover:text-white hover:bg-white/10'
-                            }`}
+                            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${argView === 'PROMEDIOS' ? 'bg-white text-slate-900 shadow-md' : 'text-white/80 hover:text-white hover:bg-white/10'
+                                }`}
                         >
                             Promedios
                         </button>
                         <button
                             onClick={() => setArgView('PLAYOFFS_APERTURA')}
-                            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-                                argView === 'PLAYOFFS_APERTURA' ? 'bg-amber-400 text-slate-950 shadow-md font-black' : 'text-white/80 hover:text-white hover:bg-white/10'
-                            }`}
+                            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${argView === 'PLAYOFFS_APERTURA' ? 'bg-amber-400 text-slate-950 shadow-md font-black' : 'text-white/80 hover:text-white hover:bg-white/10'
+                                }`}
                         >
                             <Trophy className="w-3.5 h-3.5 text-amber-500" />
                             Playoffs Apertura
                         </button>
                         <button
                             onClick={() => setArgView('PLAYOFFS_CLAUSURA')}
-                            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-                                argView === 'PLAYOFFS_CLAUSURA' ? 'bg-cyan-400 text-slate-950 shadow-md font-black' : 'text-white/80 hover:text-white hover:bg-white/10'
-                            }`}
+                            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${argView === 'PLAYOFFS_CLAUSURA' ? 'bg-cyan-400 text-slate-950 shadow-md font-black' : 'text-white/80 hover:text-white hover:bg-white/10'
+                                }`}
                         >
                             <Trophy className="w-3.5 h-3.5 text-cyan-500" />
                             Playoffs Clausura
@@ -415,33 +408,29 @@ export const LeagueTable: React.FC<LeagueTableProps> = React.memo(({
                     <div className="flex items-center gap-1 bg-black/20 p-1 rounded-xl backdrop-blur-md self-start sm:self-auto overflow-x-auto max-w-full">
                         <button
                             onClick={() => setArgView('ZONA_A')}
-                            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
-                                argView === 'ZONA_A' ? 'bg-white text-slate-900 shadow-md' : 'text-white/80 hover:text-white hover:bg-white/10'
-                            }`}
+                            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${argView === 'ZONA_A' ? 'bg-white text-slate-900 shadow-md' : 'text-white/80 hover:text-white hover:bg-white/10'
+                                }`}
                         >
                             Zona A (18)
                         </button>
                         <button
                             onClick={() => setArgView('ZONA_B')}
-                            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
-                                argView === 'ZONA_B' ? 'bg-white text-slate-900 shadow-md' : 'text-white/80 hover:text-white hover:bg-white/10'
-                            }`}
+                            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${argView === 'ZONA_B' ? 'bg-white text-slate-900 shadow-md' : 'text-white/80 hover:text-white hover:bg-white/10'
+                                }`}
                         >
                             Zona B (18)
                         </button>
                         <button
                             onClick={() => setArgView('TABLA_GENERAL')}
-                            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
-                                argView === 'TABLA_GENERAL' ? 'bg-white text-slate-900 shadow-md' : 'text-white/80 hover:text-white hover:bg-white/10'
-                            }`}
+                            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${argView === 'TABLA_GENERAL' ? 'bg-white text-slate-900 shadow-md' : 'text-white/80 hover:text-white hover:bg-white/10'
+                                }`}
                         >
                             General
                         </button>
                         <button
                             onClick={() => setArgView('REDUCIDO')}
-                            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
-                                argView === 'REDUCIDO' ? 'bg-white text-slate-900 shadow-md' : 'text-white/80 hover:text-white hover:bg-white/10'
-                            }`}
+                            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${argView === 'REDUCIDO' ? 'bg-white text-slate-900 shadow-md' : 'text-white/80 hover:text-white hover:bg-white/10'
+                                }`}
                         >
                             Reducido y Final
                         </button>
@@ -544,8 +533,8 @@ export const LeagueTable: React.FC<LeagueTableProps> = React.memo(({
                                     }
                                 }
 
-                                const promedioVal = row.promedio 
-                                    ? row.promedio.toFixed(3) 
+                                const promedioVal = row.promedio
+                                    ? row.promedio.toFixed(3)
                                     : (row.played > 0 ? (row.points / row.played).toFixed(3) : '0.000');
 
                                 return (

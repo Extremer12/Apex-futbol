@@ -204,8 +204,8 @@ export const getDoctorEffect = (doctor?: StaffMember) => {
         description: power >= 85
             ? 'Cuerpo médico de élite. Reduce lesiones y acelera recuperaciones.'
             : power >= 70
-            ? 'Servicios médicos competentes con buena prevención.'
-            : 'Área médica precaria. Mayor riesgo de lesiones y bajas largas.'
+                ? 'Servicios médicos competentes con buena prevención.'
+                : 'Área médica precaria. Mayor riesgo de lesiones y bajas largas.'
     };
 };
 
@@ -220,8 +220,8 @@ export const getFitnessEffect = (fitnessCoach?: StaffMember) => {
         description: power >= 85
             ? 'Preparación física de primer nivel. Máxima resistencia y recuperación.'
             : power >= 70
-            ? 'Acondicionamiento equilibrado para competir cada semana.'
-            : 'Falta de intensidad física. El plantel sufre fatiga en tramos clave.'
+                ? 'Acondicionamiento equilibrado para competir cada semana.'
+                : 'Falta de intensidad física. El plantel sufre fatiga en tramos clave.'
     };
 };
 
@@ -235,8 +235,8 @@ export const getSportingDirectorEffect = (director?: StaffMember) => {
         description: power >= 85
             ? 'Director deportivo de peso internacional. Rebajas de hasta 15% en fichajes.'
             : power >= 70
-            ? 'Gestión técnica sólida con buena red de intermediarios.'
-            : 'Escasa influencia negociadora en el mercado.'
+                ? 'Gestión técnica sólida con buena red de intermediarios.'
+                : 'Escasa influencia negociadora en el mercado.'
     };
 };
 
@@ -249,8 +249,8 @@ export const getYouthCoachEffect = (youthCoach?: StaffMember) => {
         description: power >= 85
             ? 'Metodología formativa de élite. Produce juveniles con gran potencial.'
             : power >= 70
-            ? 'Cantera productiva con juveniles aptos para el primer equipo.'
-            : 'Fútbol base limitado. Graduados con menor proyección.'
+                ? 'Cantera productiva con juveniles aptos para el primer equipo.'
+                : 'Fútbol base limitado. Graduados con menor proyección.'
     };
 };
 
@@ -263,9 +263,9 @@ export const getCoachEffect = (coach?: Coach) => {
         description: !coach
             ? 'Sin DT titular. El equipo rinde por debajo de su potencial táctico.'
             : power >= 85
-            ? `DT de élite (${coach.style}). Aporta +${lineRatingBonus > 0 ? lineRatingBonus : 0} al nivel táctico.`
-            : power >= 70
-            ? `Entrenador respetado (${coach.style}). Esquema ordenado.`
-            : `DT de perfil bajo (${coach.style}). Menor impacto táctico.`
+                ? `DT de élite (${coach.style}). Aporta +${lineRatingBonus > 0 ? lineRatingBonus : 0} al nivel táctico.`
+                : power >= 70
+                    ? `Entrenador respetado (${coach.style}). Esquema ordenado.`
+                    : `DT de perfil bajo (${coach.style}). Menor impacto táctico.`
     };
 };

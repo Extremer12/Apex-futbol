@@ -52,11 +52,10 @@ export const StyleSelectionModal: React.FC<StyleSelectionModalProps> = React.mem
                             key={style.id}
                             type="button"
                             onClick={() => onSelectStyle(style.id)}
-                            className={`w-full p-3.5 rounded-2xl border text-left transition-colors flex items-start gap-3.5 cursor-pointer ${
-                                isSelected
-                                    ? 'bg-[var(--apex-gold)]/10 border-[var(--apex-gold)]'
-                                    : 'bg-white/[0.02] border-white/10 hover:border-white/25'
-                            }`}
+                            className={`w-full p-3.5 rounded-2xl border text-left transition-colors flex items-start gap-3.5 cursor-pointer ${isSelected
+                                ? 'bg-[var(--apex-gold)]/10 border-[var(--apex-gold)]'
+                                : 'bg-white/[0.02] border-white/10 hover:border-white/25'
+                                }`}
                         >
                             <div className={`p-2.5 rounded-xl border shrink-0 ${style.bg} ${style.color}`}>
                                 <Icon className="w-5 h-5" />

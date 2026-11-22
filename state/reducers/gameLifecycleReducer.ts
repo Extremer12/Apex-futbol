@@ -168,9 +168,9 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
             if (
                 !rehydratedState.fanApproval ||
                 (rehydratedState.fanApproval.factors.results === 0 &&
-                 rehydratedState.fanApproval.factors.transfers === 0 &&
-                 rehydratedState.fanApproval.factors.finances === 0 &&
-                 rehydratedState.fanApproval.factors.promises === 0)
+                    rehydratedState.fanApproval.factors.transfers === 0 &&
+                    rehydratedState.fanApproval.factors.finances === 0 &&
+                    rehydratedState.fanApproval.factors.promises === 0)
             ) {
                 rehydratedState.fanApproval = calculateFanApproval(rehydratedState);
             }
@@ -206,9 +206,9 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
 
             // Check if there was a home match in this specific turn (weekend vs midweek)
             const isMidweekTurn = state.currentTurn === 'midweek';
-            const currentMatch = state.schedule.find(m => 
-                m.week === state.currentWeek && 
-                Boolean(m.isMidweek) === isMidweekTurn && 
+            const currentMatch = state.schedule.find(m =>
+                m.week === state.currentWeek &&
+                Boolean(m.isMidweek) === isMidweekTurn &&
                 (m.homeTeamId === state.team.id || m.awayTeamId === state.team.id)
             );
             const wasHomeMatch = currentMatch?.homeTeamId === state.team.id;

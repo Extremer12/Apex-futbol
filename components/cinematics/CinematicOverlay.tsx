@@ -1,94 +1,312 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { CinematicEvent } from '../../types';
 import { Confetti } from '../ui/Confetti';
-import { TrophyIcon, TrendingUpIcon, TrendingDownIcon } from '../icons';
+import { ArrowRight, Award, Crown, Shield, Sparkles, TrendingDown, TrendingUp } from 'lucide-react';
 import { formatCurrency } from '../../utils';
 import { TeamLogo, usePacksVersion } from '../../data/teams/helpers';
 import { resourceManager } from '../../services/resources/ResourceManager';
+import { TrophyImage } from '../screens/trophies/TrophyImage';
+import { StatCell } from '../screens/transfers/TransferUI';
+import { playTrophyFanfare, playUiClick } from '../../services/soundService';
 
 interface CinematicOverlayProps {
     event: CinematicEvent;
     onContinue: () => void;
 }
 
-const resolveCompetitionLogos = (comp?: string, title?: string) => {
-    const raw = `${comp || ''} ${title || ''}`.toLowerCase();
+const resolveCompetitionLogos = (comp?: string, title?: string, compId?: string) => {
+    const raw = `${compId || ''} ${comp || ''} ${title || ''}`.toLowerCase();
 
     if (raw.includes('libertadores')) {
         const logo = resourceManager.competitionLogo('COPA_LIBERTADORES', 'Copa Libertadores');
-        return { primary: logo, fallback: logo, badge: 'CONMEBOL LIBERTADORES', accent: '#F59E0B' };
+        return { id: 'COPA_LIBERTADORES', primary: logo, fallback: logo, badge: 'CONMEBOL LIBERTADORES', accent: '#C8A84E' };
     }
     if (raw.includes('sudamericana')) {
         const logo = resourceManager.competitionLogo('COPA_SUDAMERICANA', 'Copa Sudamericana');
-        return { primary: logo, fallback: logo, badge: 'CONMEBOL SUDAMERICANA', accent: '#D97706' };
+        return { id: 'COPA_SUDAMERICANA', primary: logo, fallback: logo, badge: 'CONMEBOL SUDAMERICANA', accent: '#D97706' };
     }
     if (raw.includes('champions')) {
         const logo = resourceManager.competitionLogo('CHAMPIONS_LEAGUE', 'Champions League');
-        return { primary: logo, fallback: logo, badge: 'UEFA CHAMPIONS LEAGUE', accent: '#3B82F6' };
+        return { id: 'CHAMPIONS_LEAGUE', primary: logo, fallback: logo, badge: 'UEFA CHAMPIONS LEAGUE', accent: '#6366F1' };
     }
-    if (raw.includes('europa league')) {
+    if (raw.includes('europa league') || raw.includes('europa_league')) {
         const logo = resourceManager.competitionLogo('EUROPA_LEAGUE', 'UEFA Europa League');
-        return { primary: logo, fallback: logo, badge: 'UEFA EUROPA LEAGUE', accent: '#F97316' };
+        return { id: 'EUROPA_LEAGUE', primary: logo, fallback: logo, badge: 'UEFA EUROPA LEAGUE', accent: '#F97316' };
     }
     if (raw.includes('intercontinental')) {
         const logo = resourceManager.competitionLogo('COPA_INTERCONTINENTAL', 'Copa Intercontinental');
-        return { primary: logo, fallback: logo, badge: 'FIFA INTERCONTINENTAL', accent: '#10B981' };
+        return { id: 'COPA_INTERCONTINENTAL', primary: logo, fallback: logo, badge: 'FIFA INTERCONTINENTAL', accent: '#10B981' };
     }
-    if (raw.includes('apertura') || raw.includes('clausura') || raw.includes('liga profesional')) {
+    if (raw.includes('apertura') || raw.includes('clausura') || raw.includes('liga profesional') || raw.includes('liga_argentina')) {
         const logo = resourceManager.competitionLogo('LIGA_ARGENTINA', 'Liga Argentina');
-        return { primary: logo, fallback: logo, badge: 'LIGA PROFESIONAL DE FÚTBOL', accent: '#0284C7' };
+        return { id: 'LIGA_ARGENTINA', primary: logo, fallback: logo, badge: 'LIGA PROFESIONAL DE FÚTBOL', accent: '#0EA5E9' };
     }
     if (raw.includes('nacional') || raw.includes('reducido') || raw.includes('ascenso')) {
         const logo = resourceManager.competitionLogo('PRIMERA_NACIONAL', 'Primera Nacional');
-        return { primary: logo, fallback: logo, badge: 'PRIMERA NACIONAL', accent: '#06B6D4' };
+        return { id: 'PRIMERA_NACIONAL', primary: logo, fallback: logo, badge: 'PRIMERA NACIONAL', accent: '#06B6D4' };
     }
-    if (raw.includes('copa argentina')) {
+    if (raw.includes('copa argentina') || raw.includes('copa_argentina')) {
         const logo = resourceManager.competitionLogo('COPA_ARGENTINA', 'Copa Argentina');
-        return { primary: logo, fallback: logo, badge: 'COPA ARGENTINA', accent: '#0284C7' };
+        return { id: 'COPA_ARGENTINA', primary: logo, fallback: logo, badge: 'COPA ARGENTINA', accent: '#0284C7' };
     }
-    const cleanBadge = title ? title.replace(/[🏆⭐🌍★]/g, '').trim() : 'COMPETICIÓN OFICIAL';
-    const fallbackLogo = comp ? resourceManager.competitionLogo(comp, cleanBadge) : '';
+    if (raw.includes('premier')) {
+        const logo = resourceManager.leagueLogo('PREMIER_LEAGUE', 'Premier League');
+        return { id: 'PREMIER_LEAGUE', primary: logo, fallback: logo, badge: 'PREMIER LEAGUE', accent: '#A855F7' };
+    }
+    if (raw.includes('laliga') || raw.includes('la liga') || raw.includes('la_liga')) {
+        const logo = resourceManager.leagueLogo('LA_LIGA', 'LaLiga EA Sports');
+        return { id: 'LA_LIGA', primary: logo, fallback: logo, badge: 'LALIGA EA SPORTS', accent: '#F97316' };
+    }
+    if (raw.includes('serie a') || raw.includes('serie_a')) {
+        const logo = resourceManager.leagueLogo('SERIE_A', 'Serie A');
+        return { id: 'SERIE_A', primary: logo, fallback: logo, badge: 'SERIE A', accent: '#10B981' };
+    }
+    if (raw.includes('bundesliga')) {
+        const logo = resourceManager.leagueLogo('BUNDESLIGA', 'Bundesliga');
+        return { id: 'BUNDESLIGA', primary: logo, fallback: logo, badge: 'BUNDESLIGA', accent: '#EF4444' };
+    }
+    if (raw.includes('ligue 1') || raw.includes('ligue_1')) {
+        const logo = resourceManager.leagueLogo('LIGUE_1', 'Ligue 1');
+        return { id: 'LIGUE_1', primary: logo, fallback: logo, badge: 'LIGUE 1', accent: '#3B82F6' };
+    }
+    if (raw.includes('brasileir')) {
+        const logo = resourceManager.leagueLogo('BRASILEIRAO', 'Brasileirão');
+        return { id: 'BRASILEIRAO', primary: logo, fallback: logo, badge: 'BRASILEIRÃO SÉRIE A', accent: '#10B981' };
+    }
+
+    const cleanBadge = title ? title.replace(/[🏆⭐🌍★¡!]/g, '').trim() : 'COMPETICIÓN OFICIAL';
+    const fallbackId = compId || comp || cleanBadge;
+    const fallbackLogo = fallbackId ? resourceManager.competitionLogo(fallbackId, cleanBadge) : '';
     return {
+        id: fallbackId,
         primary: fallbackLogo,
         fallback: fallbackLogo,
         badge: cleanBadge,
-        accent: '#F59E0B'
+        accent: '#C8A84E'
     };
 };
 
 export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({ event, onContinue }) => {
     usePacksVersion();
+    const dialogRef = useRef<HTMLDialogElement>(null);
+    const titleId = useId();
+    const onContinueRef = useRef(onContinue);
+    onContinueRef.current = onContinue;
+    const closedRef = useRef(false);
+
     const [visible, setVisible] = useState(false);
-    const [logoLoaded, setLogoLoaded] = useState(false);
     const [compLogoSrc, setCompLogoSrc] = useState<string>('');
 
     useEffect(() => {
-        const t = setTimeout(() => setVisible(true), 100);
+        closedRef.current = false;
+        setVisible(false);
+        setCompLogoSrc('');
+        const dialog = dialogRef.current;
+        if (dialog && !dialog.open) {
+            dialog.showModal();
+        }
+        const t = setTimeout(() => setVisible(true), 60);
+
+        if (event.type === 'LEAGUE_WIN' || event.type === 'CUP_WIN' || event.type === 'PROMOTION') {
+            playTrophyFanfare();
+        }
+
         return () => clearTimeout(t);
+    }, [event.id, event.type]);
+
+    useEffect(() => {
+        const dialog = dialogRef.current;
+        if (!dialog) return;
+
+        const handleNativeClose = () => {
+            if (!closedRef.current) {
+                closedRef.current = true;
+                onContinueRef.current();
+            }
+        };
+
+        dialog.addEventListener('close', handleNativeClose);
+        return () => dialog.removeEventListener('close', handleNativeClose);
     }, []);
+
+    const handleContinue = () => {
+        if (closedRef.current) return;
+        playUiClick();
+        closedRef.current = true;
+        if (dialogRef.current?.open) {
+            dialogRef.current.close();
+        }
+        onContinueRef.current();
+    };
 
     const cleanTitle = (event.title || '').replace(/[🏆⭐🌍★]/g, '').trim();
     const cleanSubtitle = (event.subtitle || '').replace(/[🏆⭐🌍★]/g, '').trim();
 
+    const metaCompId = typeof event.metadata?.competitionId === 'string' ? event.metadata.competitionId : undefined;
+    const compInfo = resolveCompetitionLogos(
+        typeof event.metadata?.competition === 'string' ? event.metadata.competition : undefined,
+        cleanTitle,
+        metaCompId
+    );
+    const accentColor = (typeof event.metadata?.accentColor === 'string' && event.metadata.accentColor) || compInfo.accent || '#C8A84E';
+
+    const renderChampionCeremony = (isPromotionTitle = false) => {
+        const team = event.metadata?.team;
+        const compName = (typeof event.metadata?.competition === 'string' && event.metadata.competition) || cleanTitle;
+        const stats = event.metadata?.stats;
+        const seasonLabel = typeof event.metadata?.season === 'number' ? `Temporada ${event.metadata.season}` : 'Edición Oficial';
+        const presidentName = typeof event.metadata?.presidentName === 'string' ? event.metadata.presidentName : undefined;
+        const points = typeof event.metadata?.points === 'number' ? event.metadata.points : undefined;
+        const logoToRender = compLogoSrc || compInfo.primary;
+        const winRate = stats && stats.played > 0 ? Math.round((stats.won / stats.played) * 100) : null;
+
+        const headlineText = event.type === 'LEAGUE_WIN'
+            ? '¡CAMPEÓN DE LIGA!'
+            : isPromotionTitle
+                ? cleanTitle
+                : '¡CAMPEONES!';
+
+        const ceremonyTag = event.type === 'LEAGUE_WIN'
+            ? 'Título de Liga Oficial'
+            : isPromotionTitle
+                ? 'Ascenso y Título Oficial'
+                : 'Campeón Oficial de Copa';
+
+        return (
+            <div className="flex flex-col items-center justify-center relative z-10 w-full max-w-2xl mx-auto px-3 sm:px-5 text-center">
+                {/* Ambient Golden / Accent Spotlight */}
+                <div
+                    className="absolute -top-20 w-[340px] h-[340px] sm:w-[460px] sm:h-[460px] rounded-full blur-3xl opacity-25 pointer-events-none"
+                    style={{ background: `radial-gradient(circle, ${accentColor} 0%, rgba(200, 168, 78, 0.25) 45%, transparent 72%)` }}
+                />
+
+                {/* Ceremony Top Pill */}
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[var(--apex-gold)]/40 bg-[#101624]/90 shadow-lg mb-5">
+                    {logoToRender ? (
+                        <img
+                            src={logoToRender}
+                            alt={compName}
+                            className="w-4 h-4 object-contain shrink-0"
+                            onError={() => {
+                                if (compInfo.fallback && compLogoSrc !== compInfo.fallback) {
+                                    setCompLogoSrc(compInfo.fallback);
+                                }
+                            }}
+                        />
+                    ) : (
+                        <Crown className="w-3.5 h-3.5 text-[var(--apex-gold)] shrink-0" />
+                    )}
+                    <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.22em] text-[var(--apex-gold)]">
+                        {seasonLabel} · {ceremonyTag}
+                    </span>
+                </div>
+
+                {/* Dual Showcase: Club Crest + Official Trophy Pedestal */}
+                <div className="apex-trophy-spring flex items-end justify-center gap-5 sm:gap-8 mb-5">
+                    {team && (
+                        <div className="flex flex-col items-center gap-2">
+                            <div
+                                className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl p-3.5 bg-[#101624] border border-white/15 flex items-center justify-center shadow-2xl relative overflow-hidden"
+                                style={{ boxShadow: `0 12px 35px -8px ${accentColor}45` }}
+                            >
+                                <div
+                                    className="absolute top-0 inset-x-0 h-0.5"
+                                    style={{ background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)` }}
+                                />
+                                <TeamLogo team={team} className="w-full h-full object-contain drop-shadow-[0_6px_16px_rgba(0,0,0,0.75)]" />
+                            </div>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 max-w-[120px] truncate">
+                                {team.shortName || team.name}
+                            </span>
+                        </div>
+                    )}
+
+                    <div className="flex flex-col items-center">
+                        <div
+                            className="px-4 pt-3 pb-2 rounded-2xl bg-[#101624]/90 border border-[var(--apex-gold)]/35 shadow-2xl relative"
+                            style={{ boxShadow: '0 16px 40px -10px rgba(200, 168, 78, 0.35)' }}
+                        >
+                            <TrophyImage
+                                competitionId={compInfo.id || compName}
+                                name={compName}
+                                size="xl"
+                                showPedestal={true}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Editorial Championship Headline */}
+                <h1
+                    id={titleId}
+                    className="text-3xl sm:text-5xl md:text-6xl font-black uppercase tracking-tight leading-none text-gold-gradient drop-shadow-[0_6px_24px_rgba(0,0,0,0.85)]"
+                >
+                    {headlineText}
+                </h1>
+
+                <p className="text-base sm:text-xl font-black text-white uppercase tracking-wider mt-2.5">
+                    {compName}
+                </p>
+
+                <p className="text-xs sm:text-sm text-slate-300 mt-1.5 font-medium max-w-lg leading-relaxed">
+                    {cleanSubtitle}
+                </p>
+
+                {/* Campaign Telemetry Grid */}
+                {stats && (
+                    <div className="w-full mt-5 apex-card p-3.5 sm:p-4 border-[var(--apex-gold)]/25 shadow-2xl text-left">
+                        <div className="flex items-center justify-between gap-2 pb-2.5 mb-3 border-b border-white/10">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--apex-gold)] flex items-center gap-1.5">
+                                <Award className="w-3.5 h-3.5" />
+                                Campaña del Campeón
+                            </span>
+                            {winRate !== null && (
+                                <span className="text-[10px] font-bold text-emerald-400 tabular-nums">
+                                    {winRate}% victorias
+                                </span>
+                            )}
+                        </div>
+                        <div className={`grid gap-2 ${points !== undefined ? 'grid-cols-2 sm:grid-cols-5' : 'grid-cols-2 sm:grid-cols-4'}`}>
+                            {points !== undefined && (
+                                <StatCell label="Puntos" value={<span className="tabular-nums">{points}</span>} accent="text-[var(--apex-gold)]" />
+                            )}
+                            <StatCell label="Partidos" value={<span className="tabular-nums">{stats.played}</span>} />
+                            <StatCell label="Victorias" value={<span className="tabular-nums">{stats.won}</span>} accent="text-emerald-400" />
+                            <StatCell label="Goles Favor" value={<span className="tabular-nums">{stats.goalsFor}</span>} />
+                            <StatCell
+                                label="Dif. de Gol"
+                                value={<span className="tabular-nums">{stats.goalDifference > 0 ? `+${stats.goalDifference}` : stats.goalDifference}</span>}
+                                accent={stats.goalDifference >= 0 ? 'text-amber-300' : 'text-rose-400'}
+                            />
+                        </div>
+                    </div>
+                )}
+
+                {/* Presidential Attribution */}
+                {presidentName && (
+                    <div className="mt-3.5 inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-white/[0.03] border border-white/10 text-[11px] text-slate-400">
+                        <Shield className="w-3.5 h-3.5 text-[var(--apex-gold)]" />
+                        <span>Presidencia: <strong className="text-white font-bold">{presidentName}</strong></span>
+                    </div>
+                )}
+
+                <Confetti count={72} palette="gold" />
+            </div>
+        );
+    };
+
     const renderContent = () => {
         switch (event.type) {
             case 'CUP_KICKOFF': {
-                const compInfo = resolveCompetitionLogos(
-                    event.metadata?.competition as string,
-                    cleanTitle
-                );
-                const accentColor = event.metadata?.accentColor || compInfo.accent || '#F59E0B';
                 const logoToRender = compLogoSrc || compInfo.primary;
 
                 return (
                     <div className="flex flex-col items-center justify-center relative z-10 w-full max-w-2xl mx-auto px-4 text-center">
-                        {/* Atmospheric glow behind logo */}
                         <div
                             className="absolute -top-12 w-72 h-72 sm:w-96 sm:h-96 rounded-full blur-3xl opacity-30 pointer-events-none"
                             style={{ background: `radial-gradient(circle, ${accentColor} 0%, transparent 70%)` }}
                         />
 
-                        {/* Tournament Official Crest */}
                         <div
                             className={`relative w-28 h-28 sm:w-36 sm:h-36 mb-6 flex items-center justify-center transition-all duration-700 ${
                                 visible ? 'scale-100 opacity-100 translate-y-0' : 'scale-75 opacity-0 translate-y-6'
@@ -99,7 +317,6 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({ event, onCon
                                     src={logoToRender}
                                     alt={compInfo.badge}
                                     className="w-full h-full object-contain filter drop-shadow-[0_12px_28px_rgba(0,0,0,0.85)]"
-                                    onLoad={() => setLogoLoaded(true)}
                                     onError={() => {
                                         if (compInfo.fallback && compLogoSrc !== compInfo.fallback) {
                                             setCompLogoSrc(compInfo.fallback);
@@ -107,16 +324,10 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({ event, onCon
                                     }}
                                 />
                             ) : (
-                                <div
-                                    className="w-20 h-20 rounded-2xl flex items-center justify-center font-black text-2xl border"
-                                    style={{ borderColor: `${accentColor}40`, color: accentColor, background: `${accentColor}15` }}
-                                >
-                                    {compInfo.badge.slice(0, 3)}
-                                </div>
+                                <TrophyImage competitionId={compInfo.id} name={compInfo.badge} size="xl" showPedestal={true} />
                             )}
                         </div>
 
-                        {/* Competition Pill */}
                         <div
                             className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] border transition-all duration-700 delay-150 mb-3 ${
                                 visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
@@ -126,8 +337,8 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({ event, onCon
                             {compInfo.badge}
                         </div>
 
-                        {/* Title */}
                         <h1
+                            id={titleId}
                             className={`text-3xl sm:text-4xl md:text-5xl font-black text-white uppercase tracking-tight text-center drop-shadow-[0_4px_16px_rgba(0,0,0,0.9)] transition-all duration-700 delay-200 ${
                                 visible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
                             }`}
@@ -135,7 +346,6 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({ event, onCon
                             {cleanTitle}
                         </h1>
 
-                        {/* Divider */}
                         <div
                             className={`h-0.5 my-3 transition-all duration-700 delay-300 rounded-full ${
                                 visible ? 'w-48 opacity-100' : 'w-0 opacity-0'
@@ -143,7 +353,6 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({ event, onCon
                             style={{ background: `linear-gradient(to right, transparent, ${accentColor}, transparent)` }}
                         />
 
-                        {/* Subtitle */}
                         <p
                             className={`text-sm sm:text-base md:text-lg font-semibold text-center max-w-lg transition-all duration-700 delay-400 text-slate-300 ${
                                 visible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
@@ -155,33 +364,26 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({ event, onCon
                 );
             }
             case 'GROUP_DRAW': {
-                const compInfo = resolveCompetitionLogos(
-                    event.metadata?.competition as string,
-                    event.title
-                );
-                const accentColor = (event.metadata?.accentColor as string) || compInfo.accent || '#F59E0B';
                 const groups = (event.metadata?.groups as any[]) || [];
                 const swissOpponents = (event.metadata?.swissOpponents as any[]) || [];
                 const logoToRender = compLogoSrc || compInfo.primary;
 
                 return (
                     <div className="flex flex-col items-center justify-center relative z-10 w-full max-w-3xl mx-auto px-4">
-                        {/* Subtle ambient glow behind logo */}
                         <div
                             className="absolute -top-10 w-56 h-56 sm:w-72 sm:h-72 rounded-full blur-3xl opacity-25 pointer-events-none"
                             style={{ background: `radial-gradient(circle, ${accentColor} 0%, transparent 70%)` }}
                         />
 
-                        {/* Tournament Logo */}
                         <div
-                            className={`relative w-16 h-16 sm:w-20 sm:h-20 mb-1.5 flex items-center justify-center transition-all duration-700 transform ${
+                            className={`relative w-16 h-16 sm:w-20 sm:h-20 mb-2 flex items-center justify-center transition-all duration-700 ${
                                 visible ? 'scale-100 opacity-100 translate-y-0' : 'scale-75 opacity-0 translate-y-4'
                             }`}
                         >
                             {logoToRender ? (
                                 <img
                                     src={logoToRender}
-                                    alt={event.title}
+                                    alt={cleanTitle}
                                     className="w-full h-full object-contain filter drop-shadow-[0_8px_20px_rgba(0,0,0,0.85)]"
                                     onError={() => {
                                         if (compInfo.fallback && compLogoSrc !== compInfo.fallback) {
@@ -190,129 +392,81 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({ event, onCon
                                     }}
                                 />
                             ) : (
-                                <TrophyIcon className="w-16 h-16 text-amber-400 drop-shadow-[0_0_20px_rgba(245,158,11,0.5)]" />
+                                <TrophyImage competitionId={compInfo.id} name={cleanTitle} size="md" />
                             )}
                         </div>
 
-                        {/* Title & Subtitle Header */}
                         <div
-                            className={`text-center mb-2.5 sm:mb-3 transition-all duration-700 delay-150 ${
+                            className={`text-center mb-3 transition-all duration-700 delay-150 ${
                                 visible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
                             }`}
                         >
-                            <h1 className="text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tight text-white drop-shadow-md leading-none">
-                                {event.title}
+                            <h1 id={titleId} className="text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tight text-white leading-none">
+                                {cleanTitle}
                             </h1>
-                            <div className="flex items-center justify-center gap-2.5 mt-1">
-                                <div
-                                    className="h-px w-6 sm:w-10 rounded-full"
-                                    style={{ background: `linear-gradient(to right, transparent, ${accentColor})` }}
-                                />
-                                <p
-                                    className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em]"
-                                    style={{ color: accentColor }}
-                                >
-                                    {event.subtitle || 'Sorteo de Fase de Grupos'}
+                            <div className="flex items-center justify-center gap-2.5 mt-1.5">
+                                <div className="h-px w-6 sm:w-10 rounded-full" style={{ background: `linear-gradient(to right, transparent, ${accentColor})` }} />
+                                <p className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em]" style={{ color: accentColor }}>
+                                    {cleanSubtitle || 'Sorteo de Fase de Grupos'}
                                 </p>
-                                <div
-                                    className="h-px w-6 sm:w-10 rounded-full"
-                                    style={{ background: `linear-gradient(to left, transparent, ${accentColor})` }}
-                                />
+                                <div className="h-px w-6 sm:w-10 rounded-full" style={{ background: `linear-gradient(to left, transparent, ${accentColor})` }} />
                             </div>
                         </div>
 
-                        {/* Centered Group Draw Card */}
                         <div
                             className={`w-full transition-all duration-700 delay-300 ${
                                 visible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
                             }`}
                         >
                             {groups.length > 0 ? (
-                                <div
-                                    className={
-                                        groups.length === 1
-                                            ? 'flex justify-center w-full'
-                                            : 'grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-3xl mx-auto'
-                                    }
-                                >
+                                <div className={groups.length === 1 ? 'flex justify-center w-full' : 'grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-3xl mx-auto'}>
                                     {groups.map((group: any, idx: number) => (
                                         <div
                                             key={idx}
-                                            className="w-full max-w-md bg-slate-900/90 border rounded-2xl p-3.5 sm:p-4.5 backdrop-blur-xl shadow-2xl relative overflow-hidden"
+                                            className="w-full max-w-md apex-card p-4 shadow-2xl relative overflow-hidden"
                                             style={{ borderColor: `${accentColor}35` }}
                                         >
-                                            {/* Subtle top accent line */}
-                                            <div
-                                                className="absolute top-0 inset-x-0 h-0.5"
-                                                style={{ background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)` }}
-                                            />
-
-                                            {/* Group Card Header */}
+                                            <div className="absolute top-0 inset-x-0 h-0.5" style={{ background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)` }} />
                                             <div className="flex items-center justify-between mb-2.5 pb-2 border-b border-white/10">
                                                 <h3 className="text-base sm:text-lg font-black text-white uppercase tracking-wider flex items-center gap-2">
-                                                    <span
-                                                        className="w-1.5 h-5 rounded-full"
-                                                        style={{ backgroundColor: accentColor }}
-                                                    />
+                                                    <span className="w-1.5 h-5 rounded-full" style={{ backgroundColor: accentColor }} />
                                                     {group.name}
                                                 </h3>
-                                                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-slate-300">
+                                                <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-slate-300">
                                                     {group.teams.length} Clubes
                                                 </span>
                                             </div>
-
-                                            {/* Team List with Crests */}
-                                            <div className="space-y-1.5 sm:space-y-2">
+                                            <div className="space-y-1.5">
                                                 {group.teams.map((team: any, tIdx: number) => {
                                                     const isUser = Boolean(team.isPlayer);
                                                     return (
                                                         <div
                                                             key={tIdx}
-                                                            className={`flex items-center justify-between p-2 sm:p-2.5 rounded-xl transition-all duration-300 ${
+                                                            className={`flex items-center justify-between p-2 sm:p-2.5 rounded-xl transition-colors ${
                                                                 isUser
-                                                                    ? 'bg-amber-500/15 border border-amber-400/50 shadow-md shadow-amber-950/40 ring-1 ring-amber-400/30'
-                                                                    : 'bg-white/[0.03] hover:bg-white/[0.06] border border-white/5'
+                                                                    ? 'bg-[var(--apex-gold)]/15 border border-[var(--apex-gold)]/45'
+                                                                    : 'bg-white/[0.03] border border-white/5'
                                                             }`}
                                                         >
                                                             <div className="flex items-center gap-2.5 min-w-0">
-                                                                {/* Seed Badge */}
-                                                                <div
-                                                                    className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black shrink-0 ${
-                                                                        isUser
-                                                                            ? 'bg-amber-400 text-slate-950 shadow-sm'
-                                                                            : 'bg-white/10 text-slate-400 border border-white/10'
-                                                                    }`}
-                                                                >
+                                                                <div className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black shrink-0 ${
+                                                                    isUser ? 'bg-[var(--apex-gold)] text-slate-950' : 'bg-white/10 text-slate-400'
+                                                                }`}>
                                                                     {tIdx + 1}
                                                                 </div>
-
-                                                                {/* Club Logo / Crest */}
-                                                                <div className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center shrink-0">
-                                                                    <TeamLogo
-                                                                        team={team.team}
-                                                                        className="w-full h-full object-contain drop-shadow"
-                                                                    />
+                                                                <div className="w-7 h-7 flex items-center justify-center shrink-0">
+                                                                    <TeamLogo team={team.team} className="w-full h-full object-contain" />
                                                                 </div>
-
-                                                                {/* Club Name */}
-                                                                <span
-                                                                    className={`text-xs sm:text-sm font-bold truncate ${
-                                                                        isUser
-                                                                            ? 'text-amber-200 font-black tracking-wide'
-                                                                            : 'text-slate-100'
-                                                                    }`}
-                                                                >
+                                                                <span className={`text-xs sm:text-sm font-bold truncate ${isUser ? 'text-amber-200 font-black' : 'text-slate-100'}`}>
                                                                     {team.name}
                                                                 </span>
                                                             </div>
-
-                                                            {/* User Badge or Pot */}
                                                             {isUser ? (
-                                                                <span className="ml-2 px-2.5 py-0.5 rounded-md bg-amber-400/20 border border-amber-400/50 text-amber-300 text-[9px] font-black uppercase tracking-wider shrink-0 shadow-sm">
+                                                                <span className="ml-2 px-2 py-0.5 rounded-md bg-[var(--apex-gold)]/20 border border-[var(--apex-gold)]/40 text-[var(--apex-gold)] text-[9px] font-black uppercase tracking-wider shrink-0">
                                                                     TU CLUB
                                                                 </span>
                                                             ) : (
-                                                                <span className="ml-2 text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase shrink-0">
+                                                                <span className="ml-2 text-[10px] font-bold text-slate-500 uppercase shrink-0">
                                                                     Bombo {team.pot || tIdx + 1}
                                                                 </span>
                                                             )}
@@ -324,12 +478,8 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({ event, onCon
                                     ))}
                                 </div>
                             ) : swissOpponents.length > 0 ? (
-                                // Swiss Format View (Champions League)
-                                <div className="w-full max-w-xl mx-auto bg-slate-900/90 border border-blue-500/20 rounded-2xl p-4 sm:p-5 backdrop-blur-xl shadow-2xl relative overflow-hidden">
-                                    <div
-                                        className="absolute top-0 inset-x-0 h-0.5"
-                                        style={{ background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)` }}
-                                    />
+                                <div className="w-full max-w-xl mx-auto apex-card border-blue-500/25 p-4 sm:p-5 shadow-2xl relative overflow-hidden">
+                                    <div className="absolute top-0 inset-x-0 h-0.5" style={{ background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)` }} />
                                     <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/10">
                                         <h3 className="text-base sm:text-lg font-black text-white uppercase tracking-wider">
                                             Rivales de Fase de Liga
@@ -340,29 +490,19 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({ event, onCon
                                     </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                         {swissOpponents.map((opponent: any, idx: number) => (
-                                            <div
-                                                key={idx}
-                                                className="flex items-center justify-between p-2 bg-black/40 rounded-xl border border-white/5 hover:border-white/15 transition-all"
-                                            >
+                                            <div key={idx} className="flex items-center justify-between p-2 bg-black/40 rounded-xl border border-white/5">
                                                 <div className="flex items-center gap-2.5 min-w-0">
-                                                    <span className="text-[10px] font-black text-slate-500 w-3.5">{idx + 1}</span>
+                                                    <span className="text-[10px] font-black text-slate-500 w-3.5 tabular-nums">{idx + 1}</span>
                                                     <div className="w-6 h-6 flex items-center justify-center shrink-0">
-                                                        <TeamLogo
-                                                            team={opponent.team}
-                                                            className="w-full h-full object-contain drop-shadow"
-                                                        />
+                                                        <TeamLogo team={opponent.team} className="w-full h-full object-contain" />
                                                     </div>
-                                                    <span className="text-xs font-bold text-white uppercase italic truncate">
-                                                        {opponent.name}
-                                                    </span>
+                                                    <span className="text-xs font-bold text-white uppercase truncate">{opponent.name}</span>
                                                 </div>
-                                                <span
-                                                    className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded ${
-                                                        opponent.venue === 'home'
-                                                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                                                            : 'bg-white/10 text-slate-400 border border-white/10'
-                                                    }`}
-                                                >
+                                                <span className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                                                    opponent.venue === 'home'
+                                                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                                        : 'bg-white/10 text-slate-400 border border-white/10'
+                                                }`}>
                                                     {opponent.venue === 'home' ? 'Local' : 'Visita'}
                                                 </span>
                                             </div>
@@ -375,182 +515,119 @@ export const CinematicOverlay: React.FC<CinematicOverlayProps> = ({ event, onCon
                 );
             }
             case 'LEAGUE_WIN':
-            case 'CUP_WIN': {
-                const team = event.metadata?.team;
-                const compName = event.metadata?.competition || cleanTitle;
-                const stats = event.metadata?.stats;
-                const accentColor = event.metadata?.accentColor || '#F59E0B';
-
-                return (
-                    <div className="flex flex-col items-center justify-center relative z-10 w-full max-w-2xl mx-auto px-4">
-                        {/* Radial glow */}
-                        <div
-                            className="absolute w-[450px] h-[450px] rounded-full blur-3xl opacity-25 pointer-events-none"
-                            style={{ background: `radial-gradient(circle, ${accentColor} 0%, transparent 70%)` }}
-                        />
-
-                        {/* Top Badge */}
-                        <div className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-amber-400/40 bg-amber-500/15 backdrop-blur-md mb-6 animate-fade-in shadow-lg">
-                            <span className="text-amber-300 font-black text-xs uppercase tracking-[0.3em]">
-                                CAMPEÓN OFICIAL
-                            </span>
-                        </div>
-
-                        {/* Crest */}
-                        <div className="flex items-center justify-center gap-5 sm:gap-8 mb-6">
-                            {team && (
-                                <div className="relative group">
-                                    <div 
-                                        className="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl p-3 sm:p-4 bg-white/5 border border-white/15 flex items-center justify-center shadow-2xl backdrop-blur-md"
-                                        style={{ boxShadow: `0 0 35px ${accentColor}40` }}
-                                    >
-                                        <TeamLogo team={team} className="w-full h-full object-contain drop-shadow-[0_4px_16px_rgba(0,0,0,0.6)]" />
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="w-24 h-24 sm:w-32 sm:h-32 flex items-center justify-center drop-shadow-[0_0_50px_rgba(245,158,11,0.7)]">
-                                <TrophyIcon className="w-full h-full text-amber-400" />
-                            </div>
-                        </div>
-
-                        {/* Title & Subtitle */}
-                        <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white uppercase tracking-tight text-center drop-shadow-[0_4px_24px_rgba(0,0,0,0.8)]">
-                            ¡CAMPEONES!
-                        </h1>
-                        <p className="text-xl sm:text-2xl text-amber-300 mt-2 font-black text-center uppercase tracking-wider">
-                            {compName}
-                        </p>
-                        <p className="text-xs sm:text-sm text-slate-300 mt-1 font-medium text-center max-w-lg">
-                            {cleanSubtitle}
-                        </p>
-
-                        {/* Stats Dashboard */}
-                        {stats && (
-                            <div className="w-full mt-6 bg-[#0E1524]/90 border border-white/10 rounded-2xl p-4 sm:p-5 shadow-2xl backdrop-blur-md">
-                                <div className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-slate-400 mb-3 border-b border-white/10 pb-2 text-center">
-                                    Rendimiento y Estadísticas del Campeón
-                                </div>
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 text-center">
-                                    <div className="p-2.5 rounded-xl bg-white/5 border border-white/5">
-                                        <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Partidos</span>
-                                        <span className="text-lg sm:text-xl font-black text-white">{stats.played}</span>
-                                    </div>
-                                    <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                                        <span className="text-[9px] sm:text-[10px] font-bold text-emerald-400 uppercase tracking-wider block">Victorias</span>
-                                        <span className="text-lg sm:text-xl font-black text-emerald-300">{stats.won}</span>
-                                    </div>
-                                    <div className="p-2.5 rounded-xl bg-white/5 border border-white/5">
-                                        <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Goles a Favor</span>
-                                        <span className="text-lg sm:text-xl font-black text-white">{stats.goalsFor}</span>
-                                    </div>
-                                    <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                                        <span className="text-[9px] sm:text-[10px] font-bold text-amber-400 uppercase tracking-wider block">Diferencia de Gol</span>
-                                        <span className="text-lg sm:text-xl font-black text-amber-300">{stats.goalDifference > 0 ? `+${stats.goalDifference}` : stats.goalDifference}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        <Confetti count={180} />
-                    </div>
-                );
-            }
+            case 'CUP_WIN':
+                return renderChampionCeremony(false);
             case 'PROMOTION':
-                return (
-                    <div className="flex flex-col items-center justify-center animate-trophy-rise relative z-10">
-                        <div className="w-32 h-32 mb-8 bg-green-500/20 rounded-full flex items-center justify-center border-4 border-green-500 drop-shadow-[0_0_30px_rgba(34,197,94,0.6)]">
-                            <TrendingUpIcon className="w-16 h-16 text-green-400" />
+                return event.metadata?.team ? renderChampionCeremony(true) : (
+                    <div className="flex flex-col items-center justify-center apex-trophy-spring relative z-10 text-center px-4">
+                        <div className="w-24 h-24 mb-6 bg-emerald-500/15 rounded-2xl flex items-center justify-center border border-emerald-500/40 shadow-2xl">
+                            <TrendingUp className="w-12 h-12 text-emerald-400" />
                         </div>
-                        <h1 className="text-5xl font-black text-white uppercase tracking-tight text-center drop-shadow-2xl">
+                        <h1 id={titleId} className="text-4xl sm:text-5xl font-black text-white uppercase tracking-tight">
                             {cleanTitle}
                         </h1>
-                        <p className="text-xl text-green-300 mt-4 font-bold text-center uppercase tracking-widest">
+                        <p className="text-lg text-emerald-300 mt-3 font-bold uppercase tracking-widest max-w-lg">
                             {cleanSubtitle}
                         </p>
-                        <Confetti count={100} />
+                        <Confetti count={72} palette="gold" />
                     </div>
                 );
             case 'RELEGATION':
                 return (
-                    <div className="flex flex-col items-center justify-center animate-fade-in relative z-10">
-                        <div className="w-32 h-32 mb-8 bg-red-500/20 rounded-full flex items-center justify-center border-4 border-red-500 drop-shadow-[0_0_30px_rgba(239,68,68,0.6)]">
-                            <TrendingDownIcon className="w-16 h-16 text-red-400" />
+                    <div className="flex flex-col items-center justify-center relative z-10 text-center px-4 max-w-xl">
+                        <div className="w-24 h-24 mb-6 bg-rose-500/15 rounded-2xl flex items-center justify-center border border-rose-500/40 shadow-2xl">
+                            <TrendingDown className="w-12 h-12 text-rose-400" />
                         </div>
-                        <h1 className="text-5xl font-black text-white uppercase tracking-tight text-center drop-shadow-2xl">
+                        <h1 id={titleId} className="text-4xl sm:text-5xl font-black text-white uppercase tracking-tight">
                             {cleanTitle}
                         </h1>
-                        <p className="text-xl text-red-300 mt-4 font-bold text-center uppercase tracking-widest">
+                        <p className="text-base sm:text-lg text-rose-300 mt-3 font-bold uppercase tracking-wider">
                             {cleanSubtitle}
                         </p>
                     </div>
                 );
             case 'SEASON_SUMMARY':
                 return (
-                    <div className="flex flex-col items-center justify-center animate-scale-in relative z-10 max-w-2xl w-full">
-                        <h1 className="text-4xl font-black text-white uppercase tracking-tight text-center mb-2">
+                    <div className="flex flex-col items-center justify-center relative z-10 max-w-xl w-full px-4">
+                        <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--apex-gold)] mb-2">
+                            Cierre de Campaña
+                        </span>
+                        <h1 id={titleId} className="text-3xl sm:text-4xl font-black text-white uppercase tracking-tight text-center mb-1.5">
                             {cleanTitle}
                         </h1>
-                        <p className="text-sky-400 mb-8 font-bold uppercase tracking-widest">
+                        <p className="text-slate-400 mb-6 font-bold text-xs sm:text-sm uppercase tracking-wider text-center">
                             {cleanSubtitle}
                         </p>
-                        
-                        <div className="bg-slate-900/80 backdrop-blur-md border border-slate-700 p-8 rounded-3xl w-full shadow-2xl space-y-6">
-                            <div className="flex justify-between items-center border-b border-slate-700 pb-4">
-                                <span className="text-slate-400 uppercase font-bold text-sm">Posición Final</span>
-                                <span className="text-2xl font-black text-white">{event.metadata?.position}º</span>
+
+                        <div className="apex-card p-5 sm:p-6 w-full shadow-2xl space-y-3">
+                            <div className="grid grid-cols-2 gap-2.5">
+                                <StatCell label="Posición Final" value={`${event.metadata?.position}º`} accent="text-[var(--apex-gold)]" />
+                                <StatCell label="Balance Actual" value={event.metadata?.balance ? formatCurrency(Number(event.metadata.balance)) : '-'} accent="text-emerald-400" />
                             </div>
-                            <div className="flex justify-between items-center border-b border-slate-700 pb-4">
-                                <span className="text-slate-400 uppercase font-bold text-sm">Ascensos a 1ra</span>
-                                <span className="text-lg font-bold text-green-400 text-right">{event.metadata?.promoted?.join(', ') || '-'}</span>
+                            <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 flex justify-between items-center gap-3">
+                                <span className="text-xs font-bold text-slate-400 uppercase">Ascensos a 1ra</span>
+                                <span className="text-xs sm:text-sm font-black text-emerald-400 text-right">
+                                    {Array.isArray(event.metadata?.promoted) ? event.metadata.promoted.join(', ') : '-'}
+                                </span>
                             </div>
-                            <div className="flex justify-between items-center border-b border-slate-700 pb-4">
-                                <span className="text-slate-400 uppercase font-bold text-sm">Descensos a 2da</span>
-                                <span className="text-lg font-bold text-red-400 text-right">{event.metadata?.relegated?.join(', ') || '-'}</span>
-                            </div>
-                            <div className="flex justify-between items-center pt-2">
-                                <span className="text-slate-400 uppercase font-bold text-sm">Balance Actual</span>
-                                <span className="text-2xl font-black text-sky-400">{event.metadata?.balance ? formatCurrency(event.metadata.balance) : '-'}</span>
+                            <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 flex justify-between items-center gap-3">
+                                <span className="text-xs font-bold text-slate-400 uppercase">Descensos a 2da</span>
+                                <span className="text-xs sm:text-sm font-black text-rose-400 text-right">
+                                    {Array.isArray(event.metadata?.relegated) ? event.metadata.relegated.join(', ') : '-'}
+                                </span>
                             </div>
                         </div>
                     </div>
                 );
             default:
                 return (
-                    <div className="text-center">
-                        <h1 className="text-5xl font-black text-white uppercase">{cleanTitle}</h1>
-                        <p className="text-xl text-slate-300 mt-4">{cleanSubtitle}</p>
+                    <div className="text-center px-4">
+                        <h1 id={titleId} className="text-4xl sm:text-5xl font-black text-white uppercase">{cleanTitle}</h1>
+                        <p className="text-lg text-slate-300 mt-4">{cleanSubtitle}</p>
                     </div>
                 );
         }
     };
 
-    const accentColor = event.metadata?.accentColor || '#6366F1';
+    const isChampionCeremony = event.type === 'LEAGUE_WIN' || event.type === 'CUP_WIN' || (event.type === 'PROMOTION' && Boolean(event.metadata?.team));
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-slate-950 select-none">
-            {/* Ambient luxury backdrop without tacky lines */}
+        <dialog
+            ref={dialogRef}
+            {...({ closedby: 'closerequest' } as any)}
+            aria-labelledby={titleId}
+            className="apex-top-overlay overflow-y-auto select-none"
+        >
+            {/* Ambient Dark Luxury Stage */}
             <div
-                className="fixed inset-0 transition-opacity duration-1000 pointer-events-none"
+                className="fixed inset-0 pointer-events-none"
                 style={{
-                    background: `radial-gradient(ellipse 90% 70% at 50% 25%, ${accentColor}20 0%, rgba(15, 23, 42, 0.96) 65%, #020617 100%)`
+                    background: `radial-gradient(ellipse 85% 65% at 50% 22%, ${accentColor}22 0%, rgba(10, 14, 23, 0.97) 64%, #060A12 100%)`
                 }}
             />
-            {/* Soft vignette */}
-            <div className="fixed inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40 pointer-events-none" />
-            
-            {/* Main content - perfectly centered and symmetrical */}
-            <div className="relative z-10 w-full max-h-screen flex flex-col items-center justify-center p-3 sm:p-4 my-auto">
+            <div className="fixed inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/50 pointer-events-none" />
+
+            {/* Top architectural hairline */}
+            <div className="fixed top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[var(--apex-gold)]/50 to-transparent pointer-events-none" />
+
+            {/* Centered Stage */}
+            <div className="relative z-10 w-full min-h-[100dvh] flex flex-col items-center justify-center p-4 sm:p-6">
                 {renderContent()}
 
                 <button
-                    onClick={onContinue}
-                    className="mt-3 sm:mt-4 bg-white/10 hover:bg-white/20 border border-white/25 hover:border-white/45 text-white px-8 py-2.5 rounded-full font-black uppercase tracking-[0.2em] text-xs backdrop-blur-md transition-all hover:scale-105 active:scale-95 shadow-xl flex items-center gap-2 group"
+                    type="button"
+                    autoFocus
+                    onClick={handleContinue}
+                    className={`mt-6 px-7 py-3 rounded-xl font-black uppercase tracking-[0.16em] text-xs transition-transform active:scale-[0.98] shadow-xl flex items-center gap-2 group cursor-pointer ${
+                        isChampionCeremony
+                            ? 'bg-[var(--apex-gold)] hover:bg-[#d8b85e] text-slate-950 shadow-[0_8px_28px_rgba(200,168,78,0.28)]'
+                            : 'bg-white/10 hover:bg-white/15 border border-white/20 text-white'
+                    }`}
                 >
-                    <span>Continuar</span>
-                    <span className="text-xs transition-transform duration-300 group-hover:translate-x-1">→</span>
+                    <span>{isChampionCeremony ? 'Alzar Trofeo y Continuar' : 'Continuar'}</span>
+                    <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
                 </button>
             </div>
-        </div>
+        </dialog>
     );
 };

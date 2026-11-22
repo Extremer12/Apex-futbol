@@ -39,11 +39,11 @@ export const CupView: React.FC<CupViewProps> = React.memo(({
     const hasBracket = !!(cup.rounds && cup.rounds.length > 0);
 
     // Initial tab selection: if in knockout or finished with bracket, default to bracket; else table
-    const initialTab = (hasBracket && (cup.phase === 'knockout' || cup.phase === 'finished')) 
-        ? 'bracket' 
-        : hasTable 
-        ? 'table' 
-        : 'fixtures';
+    const initialTab = (hasBracket && (cup.phase === 'knockout' || cup.phase === 'finished'))
+        ? 'bracket'
+        : hasTable
+            ? 'table'
+            : 'fixtures';
 
     const [activeTab, setActiveTab] = useState<'bracket' | 'table' | 'fixtures'>(initialTab);
 
@@ -52,7 +52,7 @@ export const CupView: React.FC<CupViewProps> = React.memo(({
         if (!cup.swissTable) return [];
         const compName = cup.id === 'champions_league' ? 'Champions_League' : 'Europa_League';
         const playedInSchedule = gameState.schedule.filter(m => m.competition === compName && m.result !== undefined);
-        
+
         if (playedInSchedule.length > 0) {
             const rowMap = new Map<number, typeof cup.swissTable[0]>();
             cup.swissTable.forEach(r => {
@@ -127,9 +127,9 @@ export const CupView: React.FC<CupViewProps> = React.memo(({
 
     const syncFixtureWithSchedule = useCallback((fix: Match, defaultStage?: string): Match => {
         const played = gameState.schedule.find(s =>
-            ((fix.id && s.id && fix.id === s.id) ||
+        ((fix.id && s.id && fix.id === s.id) ||
             (s.homeTeamId === fix.homeTeamId && s.awayTeamId === fix.awayTeamId && isCompetitionMatch(s.competition) &&
-             (s.week === fix.week || (s.leg !== undefined && fix.leg !== undefined && s.leg === fix.leg))))
+                (s.week === fix.week || (s.leg !== undefined && fix.leg !== undefined && s.leg === fix.leg))))
         );
 
         if (played) {
@@ -272,8 +272,8 @@ export const CupView: React.FC<CupViewProps> = React.memo(({
     const currentRound = cup.rounds?.[cup.currentRoundIndex];
     const isFinished = !!cup.winnerId;
 
-    const currentStageTitle = currentRound 
-        ? resolveRoundTitle(currentRound.name, currentRound.fixtures?.length) 
+    const currentStageTitle = currentRound
+        ? resolveRoundTitle(currentRound.name, currentRound.fixtures?.length)
         : (cup.phase === 'swiss' ? 'Fase de Liga' : cup.phase === 'groups' ? 'Fase de Grupos' : 'Finalizada');
 
     return (
@@ -281,15 +281,15 @@ export const CupView: React.FC<CupViewProps> = React.memo(({
             {/* Header */}
             <div className="relative px-6 py-6 border-b border-white/5 overflow-hidden">
                 <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'repeating-linear-gradient(45deg, white 0, white 1px, transparent 0, transparent 50%)', backgroundSize: '20px 20px' }} />
-                
+
                 <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="flex items-center gap-5">
                         <div className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center shrink-0">
-                            <img 
-                                src={logo || '/sinlogo.png'} 
-                                alt={cup.name} 
+                            <img
+                                src={logo || '/sinlogo.png'}
+                                alt={cup.name}
                                 onError={(e) => { (e.target as HTMLImageElement).src = '/sinlogo.png'; }}
-                                className="w-full h-full object-contain drop-shadow-2xl" 
+                                className="w-full h-full object-contain drop-shadow-2xl"
                             />
                         </div>
                         <div>
@@ -309,11 +309,10 @@ export const CupView: React.FC<CupViewProps> = React.memo(({
                         {hasBracket && (
                             <button
                                 onClick={() => setActiveTab('bracket')}
-                                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
-                                    activeTab === 'bracket'
-                                        ? 'bg-amber-400 text-slate-950 shadow-md scale-[1.02]'
-                                        : 'text-slate-400 hover:text-white hover:bg-white/5'
-                                }`}
+                                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'bracket'
+                                    ? 'bg-amber-400 text-slate-950 shadow-md scale-[1.02]'
+                                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                    }`}
                             >
                                 <Trophy className="w-3.5 h-3.5" />
                                 <span>Cuadro Eliminatorio</span>
@@ -323,11 +322,10 @@ export const CupView: React.FC<CupViewProps> = React.memo(({
                         {hasTable && (
                             <button
                                 onClick={() => setActiveTab('table')}
-                                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
-                                    activeTab === 'table'
-                                        ? 'bg-amber-400 text-slate-950 shadow-md scale-[1.02]'
-                                        : 'text-slate-400 hover:text-white hover:bg-white/5'
-                                }`}
+                                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'table'
+                                    ? 'bg-amber-400 text-slate-950 shadow-md scale-[1.02]'
+                                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                    }`}
                             >
                                 <TableIcon className="w-3.5 h-3.5" />
                                 <span>{cup.type === 'swiss' ? 'Fase de Liga (36)' : 'Fase de Grupos'}</span>
@@ -336,11 +334,10 @@ export const CupView: React.FC<CupViewProps> = React.memo(({
 
                         <button
                             onClick={() => setActiveTab('fixtures')}
-                            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
-                                activeTab === 'fixtures'
-                                    ? 'bg-amber-400 text-slate-950 shadow-md scale-[1.02]'
-                                    : 'text-slate-400 hover:text-white hover:bg-white/5'
-                            }`}
+                            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'fixtures'
+                                ? 'bg-amber-400 text-slate-950 shadow-md scale-[1.02]'
+                                : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                }`}
                         >
                             <Calendar className="w-3.5 h-3.5" />
                             <span>Partidos y Resultados</span>
@@ -421,9 +418,8 @@ export const CupView: React.FC<CupViewProps> = React.memo(({
                                                             return (
                                                                 <tr key={rIdx} className={isPlayer ? 'bg-amber-500/15 font-semibold' : 'hover:bg-white/[0.02]'}>
                                                                     <td className="px-3 py-2 text-center relative font-bold">
-                                                                        <div className={`w-1 h-4 rounded-full absolute left-1.5 top-1/2 -translate-y-1/2 ${
-                                                                            isQualified ? 'bg-emerald-500' : isSudamericana ? 'bg-cyan-400' : 'bg-rose-500/40'
-                                                                        }`} />
+                                                                        <div className={`w-1 h-4 rounded-full absolute left-1.5 top-1/2 -translate-y-1/2 ${isQualified ? 'bg-emerald-500' : isSudamericana ? 'bg-cyan-400' : 'bg-rose-500/40'
+                                                                            }`} />
                                                                         <span className={isPlayer ? 'text-amber-300' : isQualified ? 'text-emerald-400' : 'text-slate-400'}>
                                                                             {rIdx + 1}
                                                                         </span>
@@ -444,9 +440,8 @@ export const CupView: React.FC<CupViewProps> = React.memo(({
                                                                         </div>
                                                                     </td>
                                                                     <td className="px-2 py-2 text-center text-slate-400">{row.played}</td>
-                                                                    <td className={`px-2 py-2 text-center font-bold ${
-                                                                        row.goalDifference > 0 ? 'text-emerald-400' : row.goalDifference < 0 ? 'text-rose-400' : 'text-slate-400'
-                                                                    }`}>
+                                                                    <td className={`px-2 py-2 text-center font-bold ${row.goalDifference > 0 ? 'text-emerald-400' : row.goalDifference < 0 ? 'text-rose-400' : 'text-slate-400'
+                                                                        }`}>
                                                                         {row.goalDifference > 0 ? `+${row.goalDifference}` : row.goalDifference}
                                                                     </td>
                                                                     <td className="px-3 py-2 text-center font-black text-white">{row.points}</td>
@@ -498,16 +493,14 @@ export const CupView: React.FC<CupViewProps> = React.memo(({
                                         <button
                                             key={stage.id}
                                             onClick={() => setSelectedStageId(stage.id)}
-                                            className={`px-3.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all shrink-0 flex items-center gap-1.5 ${
-                                                isSelected
-                                                    ? 'bg-amber-400 text-slate-950 shadow-md scale-[1.02]'
-                                                    : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/5'
-                                            }`}
+                                            className={`px-3.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all shrink-0 flex items-center gap-1.5 ${isSelected
+                                                ? 'bg-amber-400 text-slate-950 shadow-md scale-[1.02]'
+                                                : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/5'
+                                                }`}
                                         >
                                             <span>{roundNameMap[stage.name] || stage.name}</span>
-                                            <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-extrabold ${
-                                                isSelected ? 'bg-black/20 text-slate-950' : 'bg-white/10 text-slate-400'
-                                            }`}>
+                                            <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-extrabold ${isSelected ? 'bg-black/20 text-slate-950' : 'bg-white/10 text-slate-400'
+                                                }`}>
                                                 {completedCount}/{totalCount}
                                             </span>
                                         </button>
@@ -518,11 +511,10 @@ export const CupView: React.FC<CupViewProps> = React.memo(({
                             {/* User Club Filter Toggle */}
                             <button
                                 onClick={() => setOnlyUserClub(!onlyUserClub)}
-                                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-2 self-start sm:self-auto ${
-                                    onlyUserClub
-                                        ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40'
-                                        : 'bg-white/5 text-slate-400 border border-white/5 hover:text-white'
-                                }`}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-2 self-start sm:self-auto ${onlyUserClub
+                                    ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40'
+                                    : 'bg-white/5 text-slate-400 border border-white/5 hover:text-white'
+                                    }`}
                             >
                                 <span className="w-2 h-2 rounded-full bg-amber-400" />
                                 <span>Solo {gameState.team.name}</span>
@@ -549,11 +541,10 @@ export const CupView: React.FC<CupViewProps> = React.memo(({
                                         return (
                                             <div
                                                 key={mIdx}
-                                                className={`p-3.5 rounded-2xl border transition-all ${
-                                                    isUserMatch
-                                                        ? 'bg-amber-500/[0.08] border-amber-500/40 shadow-lg shadow-amber-500/5 ring-1 ring-amber-500/20'
-                                                        : 'bg-slate-900/60 border-white/10 hover:border-white/20'
-                                                }`}
+                                                className={`p-3.5 rounded-2xl border transition-all ${isUserMatch
+                                                    ? 'bg-amber-500/[0.08] border-amber-500/40 shadow-lg shadow-amber-500/5 ring-1 ring-amber-500/20'
+                                                    : 'bg-slate-900/60 border-white/10 hover:border-white/20'
+                                                    }`}
                                             >
                                                 {/* Match Header */}
                                                 <div className="flex items-center justify-between text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-2.5">
@@ -565,9 +556,8 @@ export const CupView: React.FC<CupViewProps> = React.memo(({
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold ${
-                                                        isPlayed ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-white/5 text-slate-400'
-                                                    }`}>
+                                                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold ${isPlayed ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-white/5 text-slate-400'
+                                                        }`}>
                                                         {isPlayed ? 'Finalizado' : 'Por Jugar'}
                                                     </span>
                                                 </div>
@@ -580,17 +570,15 @@ export const CupView: React.FC<CupViewProps> = React.memo(({
                                                             <div className="w-6 h-6 shrink-0 flex items-center justify-center">
                                                                 <TeamLogo team={home} className="w-full h-full object-contain" />
                                                             </div>
-                                                            <span className={`text-xs font-bold truncate ${
-                                                                isHomeUser ? 'text-amber-300 font-black' : 'text-slate-200'
-                                                            }`}>
+                                                            <span className={`text-xs font-bold truncate ${isHomeUser ? 'text-amber-300 font-black' : 'text-slate-200'
+                                                                }`}>
                                                                 {home?.name || 'Local'}
                                                             </span>
                                                         </div>
-                                                        <span className={`text-sm font-black w-7 text-center ${
-                                                            isPlayed && match.result && match.result.homeScore > match.result.awayScore
-                                                                ? 'text-white'
-                                                                : 'text-slate-400'
-                                                        }`}>
+                                                        <span className={`text-sm font-black w-7 text-center ${isPlayed && match.result && match.result.homeScore > match.result.awayScore
+                                                            ? 'text-white'
+                                                            : 'text-slate-400'
+                                                            }`}>
                                                             {homeScore}
                                                         </span>
                                                     </div>
@@ -601,17 +589,15 @@ export const CupView: React.FC<CupViewProps> = React.memo(({
                                                             <div className="w-6 h-6 shrink-0 flex items-center justify-center">
                                                                 <TeamLogo team={away} className="w-full h-full object-contain" />
                                                             </div>
-                                                            <span className={`text-xs font-bold truncate ${
-                                                                isAwayUser ? 'text-amber-300 font-black' : 'text-slate-200'
-                                                            }`}>
+                                                            <span className={`text-xs font-bold truncate ${isAwayUser ? 'text-amber-300 font-black' : 'text-slate-200'
+                                                                }`}>
                                                                 {away?.name || 'Visitante'}
                                                             </span>
                                                         </div>
-                                                        <span className={`text-sm font-black w-7 text-center ${
-                                                            isPlayed && match.result && match.result.awayScore > match.result.homeScore
-                                                                ? 'text-white'
-                                                                : 'text-slate-400'
-                                                        }`}>
+                                                        <span className={`text-sm font-black w-7 text-center ${isPlayed && match.result && match.result.awayScore > match.result.homeScore
+                                                            ? 'text-white'
+                                                            : 'text-slate-400'
+                                                            }`}>
                                                             {awayScore}
                                                         </span>
                                                     </div>

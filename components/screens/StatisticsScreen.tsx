@@ -4,7 +4,7 @@ import { ALL_COMPETITIONS, CompetitionItem } from './league/constants';
 import { customPacksService } from '../../services/customPacks/packService';
 import { usePacksVersion } from '../../data/teams/helpers';
 import { useGameStore } from '../../state/gameStore';
-import { selectUserTeam } from '../../state/selectors';
+import { getUserTeam } from '../../state/selectors';
 import { PlayerStats, TeamHighlights, CupInfo } from './statistics/types';
 import { CompSelectorBar } from './statistics/CompSelectorBar';
 import { TournamentOverviewCards } from './statistics/TournamentOverviewCards';
@@ -17,9 +17,9 @@ interface StatisticsScreenProps {
 export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ gameState }) => {
     const packsVersion = usePacksVersion();
     const dispatch = useGameStore(s => s.dispatch);
-    const userTeam = selectUserTeam(gameState);
+    const userTeam = getUserTeam(gameState);
 
-    const [selectedCompId, setSelectedCompId] = useState<string>(userTeam.leagueId || 'PREMIER_LEAGUE');
+    const [selectedCompId, setSelectedCompId] = useState<string>(userTeam?.leagueId || gameState?.team?.leagueId || 'PREMIER_LEAGUE');
     const [selectedRegion, setSelectedRegion] = useState<string>('ALL');
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [isSelectorOpen, setIsSelectorOpen] = useState<boolean>(false);
@@ -36,8 +36,8 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
 
     const isLeague = selectedCompDef.type === 'LEAGUE';
 
-    const userLeagueComp = ALL_COMPETITIONS.find(c => c.id === userTeam.leagueId);
-    const userCountry = userLeagueComp?.country || (userTeam as any).country || 'Argentina';
+    const userLeagueComp = ALL_COMPETITIONS.find(c => c.id === userTeam?.leagueId);
+    const userCountry = userLeagueComp?.country || (userTeam as any)?.country || 'Argentina';
     const userCupComp = ALL_COMPETITIONS.find(c => c.country === userCountry && c.type === 'CUP');
     const isEuropean = ['Inglaterra', 'España', 'Alemania', 'Italia', 'Francia'].includes(userCountry);
     const userContinentalComp = ALL_COMPETITIONS.find(c => c.id === (isEuropean ? 'CHAMPIONS_LEAGUE' : 'COPA_LIBERTADORES'));

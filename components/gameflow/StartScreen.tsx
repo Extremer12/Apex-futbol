@@ -9,13 +9,13 @@ import { supabase } from '../../services/supabase';
 import { UserBadge } from '../auth/UserBadge';
 import { LeaderboardModal } from '../leaderboard/LeaderboardModal';
 import { CommunityPacksSection } from '../screens/settings/CommunityPacksSection';
-import { 
-    Play, 
-    FolderOpen, 
-    ShieldCheck, 
-    Trophy, 
-    Settings, 
-    Award, 
+import {
+    Play,
+    FolderOpen,
+    ShieldCheck,
+    Trophy,
+    Settings,
+    Award,
     ChevronRight
 } from 'lucide-react';
 
@@ -70,9 +70,9 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onNewGame, onLoadGameS
         <div className="min-h-screen flex flex-col relative overflow-hidden bg-[#0A0E17]">
             {modal === 'achievements' && <AchievementsModal onClose={() => setModal(null)} />}
             {modal === 'about' && (
-                <StartSettingsModal 
-                    onClose={() => setModal(null)} 
-                    onOpenPacks={() => setCurrentView('PACKS')} 
+                <StartSettingsModal
+                    onClose={() => setModal(null)}
+                    onOpenPacks={() => setCurrentView('PACKS')}
                 />
             )}
             {modal === 'leaderboard' && <LeaderboardModal onClose={() => setModal(null)} />}
@@ -80,9 +80,9 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onNewGame, onLoadGameS
             {/* Background layers (COMPLETELY STATIC, NO MOVEMENT, PERFECT TOP CLARITY) */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
                 {/* Background Image positioned cleanly at top */}
-                <div 
+                <div
                     className="absolute inset-0"
-                    style={{ 
+                    style={{
                         backgroundImage: 'url("/bg-inicio.png")',
                         backgroundSize: 'min(100vw, 620px) auto',
                         backgroundPosition: 'top center',
@@ -90,7 +90,7 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onNewGame, onLoadGameS
                         filter: 'brightness(1.05) contrast(1.02)'
                     }}
                 />
-                
+
                 {/* Smooth bottom-only fade so top remains 100% visible and bright */}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0A0E17] from-30% via-[#0A0E17]/85 via-55% to-transparent" />
             </div>
@@ -110,8 +110,8 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onNewGame, onLoadGameS
                 {/* Menu Action Cards */}
                 <div className="px-5 pb-8 space-y-3">
                     {/* Nueva Partida - Solid Luxury Gold Background with Black Text */}
-                    <button 
-                        onClick={onNewGame} 
+                    <button
+                        onClick={onNewGame}
                         className="w-full p-4 rounded-2xl transition-all duration-200 shadow-xl hover:shadow-[0_0_25px_rgba(247,192,66,0.4)] hover:scale-[1.01] active:scale-[0.99] flex items-center justify-between group cursor-pointer"
                         style={{
                             background: 'linear-gradient(135deg, #FCE881 0%, #F5C84C 50%, #D4AF37 100%)',
@@ -163,8 +163,8 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onNewGame, onLoadGameS
                     </button>
 
                     {/* Packs y Logos Reales - Pantalla Completa */}
-                    <button 
-                        onClick={() => setCurrentView('PACKS')} 
+                    <button
+                        onClick={() => setCurrentView('PACKS')}
                         className="w-full p-4 rounded-2xl bg-[#121824] hover:bg-[#182132] border border-[var(--apex-gold)]/30 hover:border-[var(--apex-gold)] transition-all duration-200 shadow-lg flex items-center justify-between group cursor-pointer active:scale-[0.99]"
                     >
                         <div className="flex items-center gap-4">
@@ -187,8 +187,8 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onNewGame, onLoadGameS
                     </button>
 
                     {/* Salón de la Fama - Ranking */}
-                    <button 
-                        onClick={() => setModal('leaderboard')} 
+                    <button
+                        onClick={() => setModal('leaderboard')}
                         className="w-full p-4 rounded-2xl bg-[#121824] hover:bg-[#182132] border border-white/15 hover:border-amber-400/50 transition-all duration-200 shadow-lg flex items-center justify-between group cursor-pointer active:scale-[0.99]"
                     >
                         <div className="flex items-center gap-4">
@@ -209,15 +209,15 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onNewGame, onLoadGameS
 
                     {/* Quick Secondary Row (Ajustes + Logros) */}
                     <div className="grid grid-cols-2 gap-3 pt-1">
-                        <button 
-                            onClick={() => setModal('about')} 
+                        <button
+                            onClick={() => setModal('about')}
                             className="p-3 rounded-xl bg-[#121824] hover:bg-[#182132] border border-white/10 hover:border-white/30 transition-all duration-200 shadow-md flex items-center justify-center gap-2 group cursor-pointer active:scale-[0.98]"
                         >
                             <Settings className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" />
                             <span className="text-xs font-black uppercase tracking-wider text-slate-200 group-hover:text-white">Ajustes</span>
                         </button>
-                        <button 
-                            onClick={() => setModal('achievements')} 
+                        <button
+                            onClick={() => setModal('achievements')}
                             className="p-3 rounded-xl bg-[#121824] hover:bg-[#182132] border border-white/10 hover:border-purple-400/50 transition-all duration-200 shadow-md flex items-center justify-center gap-2 group cursor-pointer active:scale-[0.98]"
                         >
                             <Award className="w-4 h-4 text-purple-400" />

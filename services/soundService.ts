@@ -82,3 +82,10 @@ export function playAlertTone(): void {
     playTone(440, 0.1, 'sine', 0.06, 0);
     playTone(587.33, 0.16, 'sine', 0.06, 0.11);
 }
+
+export function playTrophyFanfare(): void {
+    playTone(523.25, 0.14, 'triangle', 0.065, 0);
+    playTone(659.25, 0.14, 'triangle', 0.065, 0.12);
+    playTone(783.99, 0.16, 'triangle', 0.075, 0.24);
+    playTone(1046.5, 0.42, 'sine', 0.08, 0.36);
+}

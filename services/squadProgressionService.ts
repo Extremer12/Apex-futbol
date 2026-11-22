@@ -246,14 +246,14 @@ export function simulateAITransferWindow(
 
         const targetPos: Player['position'] = posCounts.POR < 2 ? 'POR' :
             posCounts.DEL < 4 ? 'DEL' :
-            posCounts.DEF < 6 ? 'DEF' :
-            posCounts.CEN < 6 ? 'CEN' :
-            (['DEF', 'CEN', 'DEL'] as Player['position'][])[Math.floor(Math.random() * 3)];
+                posCounts.DEF < 6 ? 'DEF' :
+                    posCounts.CEN < 6 ? 'CEN' :
+                        (['DEF', 'CEN', 'DEL'] as Player['position'][])[Math.floor(Math.random() * 3)];
 
         // Pick a seller (excluding buyer and user) that has surplus or lower tier
-        const sellers = aiTeams.filter(t => 
-            t.id !== buyer.id && 
-            t.squad.length >= 21 && 
+        const sellers = aiTeams.filter(t =>
+            t.id !== buyer.id &&
+            t.squad.length >= 21 &&
             t.squad.some(p => p.position === targetPos && p.rating >= 68 && p.value <= buyer.budget * 0.85)
         );
 
@@ -262,9 +262,9 @@ export function simulateAITransferWindow(
         const seller = sellers[Math.floor(Math.random() * sellers.length)];
 
         // Candidate players in seller's squad
-        const candidates = seller.squad.filter(p => 
-            p.position === targetPos && 
-            p.rating >= 68 && 
+        const candidates = seller.squad.filter(p =>
+            p.position === targetPos &&
+            p.rating >= 68 &&
             p.value <= buyer.budget * 0.85 &&
             (p.age || 25) <= 30 // AI prefers signing players under 30
         );

@@ -33,11 +33,10 @@ export const TacticsControlsBar: React.FC<TacticsControlsBarProps> = React.memo(
                     <h2 className="text-sm font-black text-white truncate">
                         {coach?.name || 'Director Técnico'}
                     </h2>
-                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold shrink-0 ${
-                        isCoachScheme
-                            ? 'bg-emerald-500/10 text-emerald-400'
-                            : 'bg-amber-500/10 text-amber-300'
-                    }`}>
+                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold shrink-0 ${isCoachScheme
+                        ? 'bg-emerald-500/10 text-emerald-400'
+                        : 'bg-amber-500/10 text-amber-300'
+                        }`}>
                         {isCoachScheme ? 'Esquema del DT' : 'Personalizado'}
                     </span>
                 </div>

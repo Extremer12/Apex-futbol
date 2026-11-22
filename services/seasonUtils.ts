@@ -1,13 +1,22 @@
-import { CupCompetition, GameState, LeagueId, Team, Match } from '../types';
+import { CupCompetition, GameState, LeagueId, Team, Match, Player } from '../types';
 import { computeArgentineRelegation, computeArgentineInternationalQualification } from './argentinaRegulations';
 import { finalizeSeasonCompetitions, determineTwoLeggedTieWinner, determineCupWinner } from './simulation';
 
 export interface CompetitionChampionItem {
     name: string;
+    competitionId?: string;
     region: 'Internacional' | 'Argentina' | 'Inglaterra' | 'España' | 'Italia' | 'Alemania' | 'Francia' | 'Brasil' | 'Paraguay' | 'Chile' | 'Colombia' | 'México';
     category: 'Liga' | 'Copa' | 'Ascenso';
     team: Team | null;
+    runnerUp?: Team | null;
+    detailText?: string;
     statusBadge?: string;
+}
+
+export interface SeasonAwardLeader {
+    player: Player;
+    team: Team;
+    value: number;
 }
 
 export interface SeasonSummaryData {
@@ -15,11 +24,18 @@ export interface SeasonSummaryData {
     userTeam: Team;
     userPosition: number;
     userPoints: number;
+    userGoalDifference: number;
     leagueChampion: Team | null;
     aperturaChampion: Team | null;
     clausuraChampion: Team | null;
     cupWinners: { cupName: string; winnerTeam: Team | null }[];
     allChampions: CompetitionChampionItem[];
+    userTitlesWon: CompetitionChampionItem[];
+    seasonAwards: {
+        goldenBoot: SeasonAwardLeader | null;
+        leagueGoldenBoot: SeasonAwardLeader | null;
+        ballonDor: SeasonAwardLeader | null;
+    };
     relegatedTeams: Team[];
     promotedTeams: Team[];
     libertadoresQualified: Team[];
@@ -203,73 +219,95 @@ export const getSeasonSummaryData = (gameState: GameState): SeasonSummaryData =>
         return gameState.allTeams.find(t => t.id === id) || null;
     };
 
-    const getLeagueWinner = (leagueId: LeagueId): Team | null => {
-        const leagueTable = gameState.leagueTables[leagueId];
-        if (!leagueTable || leagueTable.length === 0) return null;
+    const getLeagueSummary = (leagueId: LeagueId): { team: Team | null; runnerUp: Team | null; detailText?: string } => {
+        const leagueTable = gameState.leagueTables?.[leagueId];
+        if (!leagueTable || leagueTable.length === 0) return { team: null, runnerUp: null };
         const sorted = [...leagueTable].sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference);
-        return findTeam(sorted[0]?.teamId);
+        const champRow = sorted[0];
+        const runnerRow = sorted[1];
+        const team = findTeam(champRow?.teamId);
+        const runnerUp = findTeam(runnerRow?.teamId);
+        const detailText = champRow ? `${champRow.points} pts${champRow.goalDifference !== undefined ? ` • DG ${champRow.goalDifference >= 0 ? `+${champRow.goalDifference}` : champRow.goalDifference}` : ''}` : undefined;
+        return { team, runnerUp, detailText };
     };
+
+    const getLeagueWinner = (leagueId: LeagueId): Team | null => getLeagueSummary(leagueId).team;
 
     // Champions
     const leagueChampion = userLeagueId !== 'CONMEBOL' ? getLeagueWinner(userLeagueId) : null;
 
-    const resolveCupChampion = (cup?: CupCompetition): Team | null => {
-        if (!cup) return null;
-        if (cup.winnerId) {
-            const t = findTeam(cup.winnerId);
-            if (t) return t;
-        }
-        // Check final match in completed rounds if winnerId wasn't set
+    const resolveCupSummary = (cup?: CupCompetition): { team: Team | null; runnerUp: Team | null; detailText?: string } => {
+        if (!cup) return { team: null, runnerUp: null };
+        let championTeam: Team | null = cup.winnerId ? findTeam(cup.winnerId) : null;
+        let runnerUp: Team | null = null;
+        let detailText: string | undefined;
+
         if (cup.rounds && cup.rounds.length > 0) {
             const lastRound = cup.rounds[cup.rounds.length - 1];
             if (lastRound.fixtures?.length === 1 && lastRound.fixtures[0].result) {
                 const finalMatch = lastRound.fixtures[0];
                 const hScore = finalMatch.result.homeScore;
                 const aScore = finalMatch.result.awayScore;
-                let champId = 0;
-                if (hScore > aScore) champId = finalMatch.homeTeamId;
-                else if (aScore > hScore) champId = finalMatch.awayTeamId;
-                else if (finalMatch.penalties) {
-                    champId = finalMatch.penalties.home > finalMatch.penalties.away ? finalMatch.homeTeamId : finalMatch.awayTeamId;
-                } else if (finalMatch.result.penalties) {
-                    champId = finalMatch.result.penalties.home > finalMatch.result.penalties.away ? finalMatch.homeTeamId : finalMatch.awayTeamId;
+                const pens = finalMatch.penalties || finalMatch.result.penalties;
+                let champId = cup.winnerId || 0;
+                if (!champId) {
+                    if (hScore > aScore) champId = finalMatch.homeTeamId;
+                    else if (aScore > hScore) champId = finalMatch.awayTeamId;
+                    else if (pens) {
+                        champId = pens.home > pens.away ? finalMatch.homeTeamId : finalMatch.awayTeamId;
+                    }
+                    if (champId) cup.winnerId = champId;
                 }
                 if (champId) {
-                    cup.winnerId = champId;
-                    const t = findTeam(champId);
-                    if (t) return t;
+                    championTeam = championTeam || findTeam(champId);
+                    const runnerId = champId === finalMatch.homeTeamId ? finalMatch.awayTeamId : finalMatch.homeTeamId;
+                    runnerUp = findTeam(runnerId);
+                    const champGoals = champId === finalMatch.homeTeamId ? hScore : aScore;
+                    const runnerGoals = champId === finalMatch.homeTeamId ? aScore : hScore;
+                    if (pens && hScore === aScore) {
+                        const champPens = champId === finalMatch.homeTeamId ? pens.home : pens.away;
+                        const runnerPens = champId === finalMatch.homeTeamId ? pens.away : pens.home;
+                        detailText = `Final ${champGoals}-${runnerGoals} (${champPens}-${runnerPens} pen.)`;
+                    } else {
+                        detailText = `Final ${champGoals}-${runnerGoals}`;
+                    }
                 }
             }
         }
-        // Fallback to championsHistory (e.g. after season transition or archiving)
-        const historyWinner = cup.statistics?.championsHistory?.[0];
-        if (historyWinner?.winnerId) {
-            const t = findTeam(historyWinner.winnerId);
-            if (t) return t;
+
+        if (!championTeam) {
+            const historyWinner = cup.statistics?.championsHistory?.[0];
+            if (historyWinner?.winnerId) {
+                championTeam = findTeam(historyWinner.winnerId);
+            } else if (historyWinner?.winnerName) {
+                championTeam = (gameState.allTeams || []).find(team => team.name.toLowerCase() === historyWinner.winnerName.toLowerCase()) || null;
+            }
         }
-        if (historyWinner?.winnerName) {
-            const t = gameState.allTeams.find(team => team.name.toLowerCase() === historyWinner.winnerName.toLowerCase());
-            if (t) return t;
-        }
-        return null;
+
+        return { team: championTeam, runnerUp, detailText };
     };
 
-    const aperturaChampion = resolveCupChampion(gameState.cups.aperturaPlayoffs);
-    const clausuraChampion = resolveCupChampion(gameState.cups.clausuraPlayoffs);
+    const resolveCupChampion = (cup?: CupCompetition): Team | null => resolveCupSummary(cup).team;
+
+    const aperturaSummary = resolveCupSummary(gameState.cups?.aperturaPlayoffs);
+    const clausuraSummary = resolveCupSummary(gameState.cups?.clausuraPlayoffs);
+    const aperturaChampion = aperturaSummary.team;
+    const clausuraChampion = clausuraSummary.team;
 
     // Cups
     const cupsToCheck: [string, CupCompetition | undefined][] = [
-        ['Copa Argentina', gameState.cups.copaArgentina],
-        ['Copa MX', gameState.cups.copaMx],
-        ['FA Cup', gameState.cups.faCup],
-        ['Carabao Cup', gameState.cups.carabaoCup],
-        ['Copa del Rey', gameState.cups.copaDelRey],
-        ['DFB-Pokal', gameState.cups.dfbPokal],
-        ['Coppa Italia', gameState.cups.coppaItalia],
-        ['Copa Libertadores', gameState.cups.copaLibertadores],
-        ['UEFA Champions League', gameState.cups.championsLeague],
-        ['UEFA Europa League', gameState.cups.europaLeague],
-        ['Copa Intercontinental', gameState.cups.copaIntercontinental],
+        ['Copa Argentina', gameState.cups?.copaArgentina],
+        ['Copa MX', gameState.cups?.copaMx],
+        ['FA Cup', gameState.cups?.faCup],
+        ['Carabao Cup', gameState.cups?.carabaoCup],
+        ['Copa del Rey', gameState.cups?.copaDelRey],
+        ['DFB-Pokal', gameState.cups?.dfbPokal],
+        ['Coppa Italia', gameState.cups?.coppaItalia],
+        ['Copa Libertadores', gameState.cups?.copaLibertadores],
+        ['Copa Sudamericana', gameState.cups?.copaSudamericana],
+        ['UEFA Champions League', gameState.cups?.championsLeague],
+        ['UEFA Europa League', gameState.cups?.europaLeague],
+        ['Copa Intercontinental', gameState.cups?.copaIntercontinental],
     ];
 
     const cupWinners: { cupName: string; winnerTeam: Team | null }[] = [];
@@ -280,282 +318,119 @@ export const getSeasonSummaryData = (gameState: GameState): SeasonSummaryData =>
         }
     });
 
+    const buildLeagueChamp = (
+        name: string,
+        region: CompetitionChampionItem['region'],
+        category: CompetitionChampionItem['category'],
+        leagueId: LeagueId,
+        statusBadge: string
+    ): CompetitionChampionItem => {
+        const res = getLeagueSummary(leagueId);
+        return {
+            name,
+            competitionId: leagueId,
+            region,
+            category,
+            team: res.team,
+            runnerUp: res.runnerUp,
+            detailText: res.detailText,
+            statusBadge
+        };
+    };
+
+    const buildCupChamp = (
+        name: string,
+        competitionId: string,
+        region: CompetitionChampionItem['region'],
+        category: CompetitionChampionItem['category'],
+        cup: CupCompetition | undefined,
+        statusBadge: string
+    ): CompetitionChampionItem => {
+        const res = resolveCupSummary(cup);
+        return {
+            name,
+            competitionId,
+            region,
+            category,
+            team: res.team,
+            runnerUp: res.runnerUp,
+            detailText: res.detailText,
+            statusBadge
+        };
+    };
+
+    const primerAscensoSummary = resolveCupSummary(gameState.cups?.nacionalPrimerAscenso);
+    const pnLeagueSummary = getLeagueSummary(LeagueId.PRIMERA_NACIONAL);
+
     const allChampions: CompetitionChampionItem[] = [
         // Internacionales
-        {
-            name: 'Copa Libertadores',
-            region: 'Internacional',
-            category: 'Copa',
-            team: resolveCupChampion(gameState.cups.copaLibertadores),
-            statusBadge: 'Gloria Eterna'
-        },
-        {
-            name: 'Copa Sudamericana',
-            region: 'Internacional',
-            category: 'Copa',
-            team: resolveCupChampion(gameState.cups.copaSudamericana),
-            statusBadge: 'La Gran Conquista'
-        },
-        {
-            name: 'UEFA Champions League',
-            region: 'Internacional',
-            category: 'Copa',
-            team: resolveCupChampion(gameState.cups.championsLeague),
-            statusBadge: 'Campeón Europeo'
-        },
-        {
-            name: 'UEFA Europa League',
-            region: 'Internacional',
-            category: 'Copa',
-            team: resolveCupChampion(gameState.cups.europaLeague),
-            statusBadge: 'Campeón'
-        },
-        {
-            name: 'Copa Intercontinental',
-            region: 'Internacional',
-            category: 'Copa',
-            team: resolveCupChampion(gameState.cups.copaIntercontinental),
-            statusBadge: 'Campeón Mundial'
-        },
+        buildCupChamp('Copa Libertadores', 'COPA_LIBERTADORES', 'Internacional', 'Copa', gameState.cups?.copaLibertadores, 'Gloria Eterna'),
+        buildCupChamp('Copa Sudamericana', 'COPA_SUDAMERICANA', 'Internacional', 'Copa', gameState.cups?.copaSudamericana, 'La Gran Conquista'),
+        buildCupChamp('UEFA Champions League', 'CHAMPIONS_LEAGUE', 'Internacional', 'Copa', gameState.cups?.championsLeague, 'Campeón Europeo'),
+        buildCupChamp('UEFA Europa League', 'EUROPA_LEAGUE', 'Internacional', 'Copa', gameState.cups?.europaLeague, 'Campeón'),
+        buildCupChamp('Copa Intercontinental', 'COPA_INTERCONTINENTAL', 'Internacional', 'Copa', gameState.cups?.copaIntercontinental, 'Campeón Mundial'),
 
         // Argentina
-        {
-            name: 'Torneo Apertura',
-            region: 'Argentina',
-            category: 'Liga',
-            team: aperturaChampion,
-            statusBadge: 'Campeón Apertura'
-        },
-        {
-            name: 'Torneo Clausura',
-            region: 'Argentina',
-            category: 'Liga',
-            team: clausuraChampion,
-            statusBadge: 'Campeón Clausura'
-        },
-        {
-            name: 'Copa Argentina',
-            region: 'Argentina',
-            category: 'Copa',
-            team: resolveCupChampion(gameState.cups.copaArgentina),
-            statusBadge: 'Campeón Copa'
-        },
-        {
-            name: 'Liga Argentina (Tabla Anual)',
-            region: 'Argentina',
-            category: 'Liga',
-            team: getLeagueWinner(LeagueId.LIGA_ARGENTINA),
-            statusBadge: '1º Tabla Anual'
-        },
+        buildCupChamp('Torneo Apertura', 'LIGA_ARGENTINA', 'Argentina', 'Liga', gameState.cups?.aperturaPlayoffs, 'Campeón Apertura'),
+        buildCupChamp('Torneo Clausura', 'LIGA_ARGENTINA', 'Argentina', 'Liga', gameState.cups?.clausuraPlayoffs, 'Campeón Clausura'),
+        buildCupChamp('Copa Argentina', 'COPA_ARGENTINA', 'Argentina', 'Copa', gameState.cups?.copaArgentina, 'Campeón Copa'),
+        buildLeagueChamp('Liga Argentina (Tabla Anual)', 'Argentina', 'Liga', LeagueId.LIGA_ARGENTINA, '1º Tabla Anual'),
         {
             name: 'Primera Nacional (1º Ascenso)',
+            competitionId: 'PRIMERA_NACIONAL',
             region: 'Argentina',
             category: 'Ascenso',
-            team: resolveCupChampion(gameState.cups.nacionalPrimerAscenso) || getLeagueWinner(LeagueId.PRIMERA_NACIONAL),
+            team: primerAscensoSummary.team || pnLeagueSummary.team,
+            runnerUp: primerAscensoSummary.runnerUp || pnLeagueSummary.runnerUp,
+            detailText: primerAscensoSummary.detailText || pnLeagueSummary.detailText,
             statusBadge: 'Campeón Ascenso'
         },
-        {
-            name: 'Primera Nacional (Reducido)',
-            region: 'Argentina',
-            category: 'Ascenso',
-            team: resolveCupChampion(gameState.cups.nacionalReducido),
-            statusBadge: '2º Ascenso'
-        },
+        buildCupChamp('Primera Nacional (Reducido)', 'PRIMERA_NACIONAL', 'Argentina', 'Ascenso', gameState.cups?.nacionalReducido, '2º Ascenso'),
 
         // Inglaterra
-        {
-            name: 'Premier League',
-            region: 'Inglaterra',
-            category: 'Liga',
-            team: getLeagueWinner(LeagueId.PREMIER_LEAGUE),
-            statusBadge: 'Campeón'
-        },
-        {
-            name: 'FA Cup',
-            region: 'Inglaterra',
-            category: 'Copa',
-            team: resolveCupChampion(gameState.cups.faCup),
-            statusBadge: 'Campeón'
-        },
-        {
-            name: 'Carabao Cup',
-            region: 'Inglaterra',
-            category: 'Copa',
-            team: resolveCupChampion(gameState.cups.carabaoCup),
-            statusBadge: 'Campeón'
-        },
-        {
-            name: 'Championship',
-            region: 'Inglaterra',
-            category: 'Liga',
-            team: getLeagueWinner(LeagueId.CHAMPIONSHIP),
-            statusBadge: 'Campeón'
-        },
+        buildLeagueChamp('Premier League', 'Inglaterra', 'Liga', LeagueId.PREMIER_LEAGUE, 'Campeón'),
+        buildCupChamp('FA Cup', 'FA_CUP', 'Inglaterra', 'Copa', gameState.cups?.faCup, 'Campeón'),
+        buildCupChamp('Carabao Cup', 'CARABAO_CUP', 'Inglaterra', 'Copa', gameState.cups?.carabaoCup, 'Campeón'),
+        buildLeagueChamp('Championship', 'Inglaterra', 'Liga', LeagueId.CHAMPIONSHIP, 'Campeón'),
 
         // España
-        {
-            name: 'LaLiga EA Sports',
-            region: 'España',
-            category: 'Liga',
-            team: getLeagueWinner(LeagueId.LA_LIGA),
-            statusBadge: 'Campeón'
-        },
-        {
-            name: 'Copa del Rey',
-            region: 'España',
-            category: 'Copa',
-            team: resolveCupChampion(gameState.cups.copaDelRey),
-            statusBadge: 'Campeón'
-        },
-        {
-            name: 'LaLiga Hypermotion',
-            region: 'España',
-            category: 'Liga',
-            team: getLeagueWinner(LeagueId.SEGUNDA_DIVISION_ESP),
-            statusBadge: 'Campeón'
-        },
+        buildLeagueChamp('LaLiga EA Sports', 'España', 'Liga', LeagueId.LA_LIGA, 'Campeón'),
+        buildCupChamp('Copa del Rey', 'COPA_DEL_REY', 'España', 'Copa', gameState.cups?.copaDelRey, 'Campeón'),
+        buildLeagueChamp('LaLiga Hypermotion', 'España', 'Liga', LeagueId.SEGUNDA_DIVISION_ESP, 'Campeón'),
 
         // Italia
-        {
-            name: 'Serie A',
-            region: 'Italia',
-            category: 'Liga',
-            team: getLeagueWinner(LeagueId.SERIE_A),
-            statusBadge: 'Scudetto'
-        },
-        {
-            name: 'Coppa Italia',
-            region: 'Italia',
-            category: 'Copa',
-            team: resolveCupChampion(gameState.cups.coppaItalia),
-            statusBadge: 'Campeón'
-        },
-        {
-            name: 'Serie B',
-            region: 'Italia',
-            category: 'Liga',
-            team: getLeagueWinner(LeagueId.SERIE_B_ITA),
-            statusBadge: 'Campeón'
-        },
+        buildLeagueChamp('Serie A', 'Italia', 'Liga', LeagueId.SERIE_A, 'Scudetto'),
+        buildCupChamp('Coppa Italia', 'COPPA_ITALIA', 'Italia', 'Copa', gameState.cups?.coppaItalia, 'Campeón'),
+        buildLeagueChamp('Serie B', 'Italia', 'Liga', LeagueId.SERIE_B_ITA, 'Campeón'),
 
         // Alemania
-        {
-            name: 'Bundesliga',
-            region: 'Alemania',
-            category: 'Liga',
-            team: getLeagueWinner(LeagueId.BUNDESLIGA),
-            statusBadge: 'Meisterschale'
-        },
-        {
-            name: 'DFB-Pokal',
-            region: 'Alemania',
-            category: 'Copa',
-            team: resolveCupChampion(gameState.cups.dfbPokal),
-            statusBadge: 'Campeón'
-        },
-        {
-            name: '2. Bundesliga',
-            region: 'Alemania',
-            category: 'Liga',
-            team: getLeagueWinner(LeagueId.ZWEITE_BUNDESLIGA),
-            statusBadge: 'Campeón'
-        },
+        buildLeagueChamp('Bundesliga', 'Alemania', 'Liga', LeagueId.BUNDESLIGA, 'Meisterschale'),
+        buildCupChamp('DFB-Pokal', 'DFB_POKAL', 'Alemania', 'Copa', gameState.cups?.dfbPokal, 'Campeón'),
+        buildLeagueChamp('2. Bundesliga', 'Alemania', 'Liga', LeagueId.ZWEITE_BUNDESLIGA, 'Campeón'),
 
         // Francia
-        {
-            name: 'Ligue 1',
-            region: 'Francia',
-            category: 'Liga',
-            team: getLeagueWinner(LeagueId.LIGUE_1),
-            statusBadge: 'Campeón'
-        },
-        {
-            name: 'Ligue 2',
-            region: 'Francia',
-            category: 'Liga',
-            team: getLeagueWinner(LeagueId.LIGUE_2),
-            statusBadge: 'Campeón'
-        },
+        buildLeagueChamp('Ligue 1', 'Francia', 'Liga', LeagueId.LIGUE_1, 'Campeón'),
+        buildLeagueChamp('Ligue 2', 'Francia', 'Liga', LeagueId.LIGUE_2, 'Campeón'),
 
         // Brasil
-        {
-            name: 'Brasileirão Série A',
-            region: 'Brasil',
-            category: 'Liga',
-            team: getLeagueWinner(LeagueId.BRASILEIRAO),
-            statusBadge: 'Campeão'
-        },
-        {
-            name: 'Brasileirão Série B',
-            region: 'Brasil',
-            category: 'Liga',
-            team: getLeagueWinner(LeagueId.SERIE_B_BR),
-            statusBadge: 'Campeão'
-        },
+        buildLeagueChamp('Brasileirão Série A', 'Brasil', 'Liga', LeagueId.BRASILEIRAO, 'Campeão'),
+        buildLeagueChamp('Brasileirão Série B', 'Brasil', 'Liga', LeagueId.SERIE_B_BR, 'Campeón'),
 
         // Paraguay
-        {
-            name: 'Copa de Primera',
-            region: 'Paraguay',
-            category: 'Liga',
-            team: getLeagueWinner(LeagueId.COPA_DE_PRIMERA),
-            statusBadge: 'Campeón'
-        },
+        buildLeagueChamp('Copa de Primera', 'Paraguay', 'Liga', LeagueId.COPA_DE_PRIMERA, 'Campeón'),
 
         // Chile
-        {
-            name: 'Primera División de Chile',
-            region: 'Chile',
-            category: 'Liga',
-            team: getLeagueWinner(LeagueId.PRIMERA_DIVISION_CHILE),
-            statusBadge: 'Campeón'
-        },
-        {
-            name: 'Primera B de Chile',
-            region: 'Chile',
-            category: 'Ascenso',
-            team: getLeagueWinner(LeagueId.PRIMERA_B_CHILE),
-            statusBadge: 'Campeón Ascenso'
-        },
+        buildLeagueChamp('Primera División de Chile', 'Chile', 'Liga', LeagueId.PRIMERA_DIVISION_CHILE, 'Campeón'),
+        buildLeagueChamp('Primera B de Chile', 'Chile', 'Ascenso', LeagueId.PRIMERA_B_CHILE, 'Campeón Ascenso'),
 
         // Colombia
-        {
-            name: 'Liga BetPlay (Primera A)',
-            region: 'Colombia',
-            category: 'Liga',
-            team: getLeagueWinner(LeagueId.PRIMERA_A_COLOMBIA),
-            statusBadge: 'Campeón'
-        },
-        {
-            name: 'Torneo BetPlay (Primera B)',
-            region: 'Colombia',
-            category: 'Ascenso',
-            team: getLeagueWinner(LeagueId.PRIMERA_B_COLOMBIA),
-            statusBadge: 'Campeón Ascenso'
-        },
+        buildLeagueChamp('Liga BetPlay (Primera A)', 'Colombia', 'Liga', LeagueId.PRIMERA_A_COLOMBIA, 'Campeón'),
+        buildLeagueChamp('Torneo BetPlay (Primera B)', 'Colombia', 'Ascenso', LeagueId.PRIMERA_B_COLOMBIA, 'Campeón Ascenso'),
 
         // México
-        {
-            name: 'Liga MX',
-            region: 'México',
-            category: 'Liga',
-            team: getLeagueWinner(LeagueId.LIGA_MX),
-            statusBadge: 'Campeón'
-        },
-        {
-            name: 'Liga de Expansión MX',
-            region: 'México',
-            category: 'Ascenso',
-            team: getLeagueWinner(LeagueId.LIGA_EXPANSION_MX),
-            statusBadge: 'Campeón Ascenso'
-        },
-        {
-            name: 'Copa MX',
-            region: 'México',
-            category: 'Copa',
-            team: resolveCupChampion((gameState.cups as any)?.copaMx),
-            statusBadge: 'Campeón Copa'
-        }
+        buildLeagueChamp('Liga MX', 'México', 'Liga', LeagueId.LIGA_MX, 'Campeón'),
+        buildLeagueChamp('Liga de Expansión MX', 'México', 'Ascenso', LeagueId.LIGA_EXPANSION_MX, 'Campeón Ascenso'),
+        buildCupChamp('Copa MX', 'COPA_MX', 'México', 'Copa', (gameState.cups as any)?.copaMx, 'Campeón Copa'),
     ];
 
     // Ascensos y Descensos calculation specifically for active context
@@ -619,16 +494,20 @@ export const getSeasonSummaryData = (gameState: GameState): SeasonSummaryData =>
     const sudamericanaQualified: Team[] = [];
     const championsLeagueQualified: Team[] = [];
 
-    const isSouthAmericanContext = [
+    const isSouthAmericanFirstDiv = [
         LeagueId.LIGA_ARGENTINA,
-        LeagueId.PRIMERA_NACIONAL,
         LeagueId.BRASILEIRAO,
-        LeagueId.SERIE_B_BR,
         LeagueId.COPA_DE_PRIMERA,
         LeagueId.PRIMERA_DIVISION_CHILE,
-        LeagueId.PRIMERA_B_CHILE,
         LeagueId.PRIMERA_A_COLOMBIA,
-        LeagueId.PRIMERA_B_COLOMBIA
+    ].includes(userLeagueId as LeagueId);
+
+    const isEuropeanFirstDiv = [
+        LeagueId.PREMIER_LEAGUE,
+        LeagueId.LA_LIGA,
+        LeagueId.BUNDESLIGA,
+        LeagueId.SERIE_A,
+        LeagueId.LIGUE_1,
     ].includes(userLeagueId as LeagueId);
 
     if (isArgentina) {
@@ -642,8 +521,7 @@ export const getSeasonSummaryData = (gameState: GameState): SeasonSummaryData =>
             const t = findTeam(entry.teamId);
             if (t && !sudamericanaQualified.some(q => q.id === t.id)) sudamericanaQualified.push(t);
         });
-    } else if (isSouthAmericanContext) {
-        // South American leagues: Top 4 -> Libertadores, next 4 -> Sudamericana
+    } else if (isSouthAmericanFirstDiv) {
         sortedTable.slice(0, 4).forEach(r => {
             const t = findTeam(r.teamId);
             if (t) libertadoresQualified.push(t);
@@ -652,12 +530,40 @@ export const getSeasonSummaryData = (gameState: GameState): SeasonSummaryData =>
             const t = findTeam(r.teamId);
             if (t) sudamericanaQualified.push(t);
         });
-    } else {
-        // European Top 4 -> Champions League
+    } else if (isEuropeanFirstDiv) {
         sortedTable.slice(0, 4).forEach(r => {
             const t = findTeam(r.teamId);
             if (t) championsLeagueQualified.push(t);
         });
+    }
+
+    // Titles won specifically by the user's club this season
+    const userTitlesWon = allChampions.filter(item => item.team?.id === gameState.team.id);
+
+    // Individual awards preview (before START_NEW_SEASON resets stats)
+    let goldenBoot: SeasonAwardLeader | null = null;
+    let leagueGoldenBoot: SeasonAwardLeader | null = null;
+    let ballonDor: SeasonAwardLeader | null = null;
+
+    for (const t of (gameState.allTeams || [])) {
+        for (const p of (t.squad || [])) {
+            const st = p.stats;
+            if (!st) continue;
+            if (st.goals > 0) {
+                if (!goldenBoot || st.goals > goldenBoot.value) {
+                    goldenBoot = { player: p, team: t, value: st.goals };
+                }
+                if (t.leagueId === userLeagueId && (!leagueGoldenBoot || st.goals > leagueGoldenBoot.value)) {
+                    leagueGoldenBoot = { player: p, team: t, value: st.goals };
+                }
+            }
+            if ((st.appearances || 0) > 0 || (st.goals || 0) > 0) {
+                const score = (st.goals || 0) * 2 + (st.assists || 0) + (p.rating / 10) + ((st.appearances || 0) / 2);
+                if (!ballonDor || score > ballonDor.value) {
+                    ballonDor = { player: p, team: t, value: Math.round(score * 10) / 10 };
+                }
+            }
+        }
     }
 
     return {
@@ -665,11 +571,18 @@ export const getSeasonSummaryData = (gameState: GameState): SeasonSummaryData =>
         userTeam: gameState.team,
         userPosition,
         userPoints: userRow?.points || 0,
+        userGoalDifference: userRow?.goalDifference || 0,
         leagueChampion,
         aperturaChampion,
         clausuraChampion,
         cupWinners,
         allChampions,
+        userTitlesWon,
+        seasonAwards: {
+            goldenBoot,
+            leagueGoldenBoot,
+            ballonDor,
+        },
         relegatedTeams,
         promotedTeams,
         libertadoresQualified,

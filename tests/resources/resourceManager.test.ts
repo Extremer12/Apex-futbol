@@ -257,7 +257,7 @@ test('RESOURCE SYSTEM: Moderation Service enforces role security', () => {
     // USER cannot moderate
     assert.equal(ModerationService.canPerform('USER', 'moderate'), false);
     assert.equal(ModerationService.canPerform('CREATOR', 'moderate'), false);
-    
+
     // MODERATOR and ADMIN can moderate
     assert.equal(ModerationService.canPerform('MODERATOR', 'moderate'), true);
     assert.equal(ModerationService.canPerform('ADMIN', 'moderate'), true);

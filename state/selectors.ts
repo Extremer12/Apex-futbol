@@ -4,18 +4,25 @@ import { GameStoreState } from './gameStore';
 /**
  * Selector canónico para obtener el equipo del usuario mánager,
  * garantizando que siempre provenga de la lista central sincronizada.
+ * Acepta tanto el estado de Zustand (GameStoreState) como un GameState directo.
  */
-export const selectUserTeam = (state: GameStoreState): Team => {
-    const userTeamId = state.gameState.team.id;
-    return state.gameState.allTeams.find(t => t.id === userTeamId) || state.gameState.team;
+export const selectUserTeam = (state: GameStoreState | GameState): Team => {
+    if (!state) return {} as Team;
+    const gs = ('gameState' in state && state.gameState) ? state.gameState : (state as GameState);
+    if (!gs || !gs.team) return {} as Team;
+    const userTeamId = gs.team.id;
+    return gs.allTeams?.find(t => t.id === userTeamId) || gs.team;
 };
 
 /**
  * Selector para obtener todos los equipos excepto el del mánager.
  */
-export const selectOpponentTeams = (state: GameStoreState): Team[] => {
-    const userTeamId = state.gameState.team.id;
-    return state.gameState.allTeams.filter(t => t.id !== userTeamId);
+export const selectOpponentTeams = (state: GameStoreState | GameState): Team[] => {
+    if (!state) return [];
+    const gs = ('gameState' in state && state.gameState) ? state.gameState : (state as GameState);
+    if (!gs || !gs.team || !gs.allTeams) return [];
+    const userTeamId = gs.team.id;
+    return gs.allTeams.filter(t => t.id !== userTeamId);
 };
 
 /**
@@ -24,10 +31,13 @@ export const selectOpponentTeams = (state: GameStoreState): Team[] => {
 let cachedAllTeamsRef: Team[] | null = null;
 let cachedTeamsMap: Map<number, Team> = new Map();
 
-export const selectTeamsMap = (state: GameStoreState): Map<number, Team> => {
-    if (state.gameState.allTeams !== cachedAllTeamsRef) {
-        cachedAllTeamsRef = state.gameState.allTeams;
-        cachedTeamsMap = new Map(state.gameState.allTeams.map(t => [t.id, t]));
+export const selectTeamsMap = (state: GameStoreState | GameState): Map<number, Team> => {
+    if (!state) return new Map();
+    const gs = ('gameState' in state && state.gameState) ? state.gameState : (state as GameState);
+    const allTeams = gs?.allTeams || [];
+    if (allTeams !== cachedAllTeamsRef) {
+        cachedAllTeamsRef = allTeams;
+        cachedTeamsMap = new Map(allTeams.map(t => [t.id, t]));
     }
     return cachedTeamsMap;
 };

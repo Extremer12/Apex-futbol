@@ -1,10 +1,10 @@
 import { GameState, NewsItem, Offer, Match, Team, PlayerMatchResult, CinematicEvent } from '../../types';
-import { 
-    generateNews, 
-    generateMatchReport, 
-    generateTransferOffer, 
-    generatePlayerOfTheWeekNews, 
-    generateImportantNews 
+import {
+    generateNews,
+    generateMatchReport,
+    generateTransferOffer,
+    generatePlayerOfTheWeekNews,
+    generateImportantNews
 } from '../gameLogic';
 import { formatDate, isTransferWindowOpen } from '../../utils';
 
@@ -27,10 +27,10 @@ export async function generateWeeklyNewsAndOffers(
 
     // 1. Post-match news report for user match (from playerMatchResult or updatedSchedule)
     const playerScheduleMatch = updatedSchedule.find(
-        m => m.week === simulatedWeek && 
-             (m.isMidweek === undefined || !!m.isMidweek === isMidweek) && 
-             (m.homeTeamId === gameState.team.id || m.awayTeamId === gameState.team.id) &&
-             m.result
+        m => m.week === simulatedWeek &&
+            (m.isMidweek === undefined || !!m.isMidweek === isMidweek) &&
+            (m.homeTeamId === gameState.team.id || m.awayTeamId === gameState.team.id) &&
+            m.result
     );
 
     const hasUserMatch = !!(playerMatchResult || (playerScheduleMatch && playerScheduleMatch.result));
@@ -53,20 +53,20 @@ export async function generateWeeklyNewsAndOffers(
         const isUpset = myScore > oppScore && gameState.team.tier === 'Lower' && opponent?.tier === 'Top';
 
         if (isThrashing || isBadLoss || isUpset) {
-            const context = isUpset 
-                ? "Victoria histórica de un equipo modesto contra un grande." 
-                : isThrashing 
-                    ? "Una goleada espectacular." 
+            const context = isUpset
+                ? "Victoria histórica de un equipo modesto contra un grande."
+                : isThrashing
+                    ? "Una goleada espectacular."
                     : "Una derrota humillante.";
             const detail = `El ${gameState.team.name} quedó ${myScore}-${oppScore} contra el ${opponent?.name || 'Rival'}.`;
             const aiReport = await generateImportantNews(context, detail);
             newsToAdd.push({ ...aiReport, id: `match_ai_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`, date: formatDate(newDate) });
         } else {
             const matchReport = await generateMatchReport(
-                gameState.team.name, 
-                opponent?.name || 'Rival', 
-                homeScore, 
-                awayScore, 
+                gameState.team.name,
+                opponent?.name || 'Rival',
+                homeScore,
+                awayScore,
                 isHome
             );
             newsToAdd.push({ ...matchReport, id: `match_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`, date: formatDate(newDate) });
@@ -78,9 +78,9 @@ export async function generateWeeklyNewsAndOffers(
 
     // 2. Player of the Week News
     const matchesThisWeek = updatedSchedule.filter(
-        m => m.week === simulatedWeek && 
-             (m.isMidweek === undefined || !!m.isMidweek === isMidweek) &&
-             m.result
+        m => m.week === simulatedWeek &&
+            (m.isMidweek === undefined || !!m.isMidweek === isMidweek) &&
+            m.result
     );
     if (matchesThisWeek.length > 0 && Math.random() < 0.3) {
         const winningTeamsIds: number[] = [];
@@ -130,8 +130,8 @@ export async function generateWeeklyNewsAndOffers(
         }
 
         // B) Ofertas espontáneas por promesas o figuras destacadas del club aunque no estén transferibles
-        const spontaneousTargets = gameState.team.squad.filter(p => 
-            !p.isTransferListed && 
+        const spontaneousTargets = gameState.team.squad.filter(p =>
+            !p.isTransferListed &&
             (p.rating >= 77 || (p.age !== undefined && p.age <= 22 && p.rating >= 72))
         );
         for (const player of spontaneousTargets) {
@@ -214,8 +214,8 @@ export async function generateWeeklyNewsAndOffers(
         let headline = '';
         let body = '';
 
-        const topScorerName = playerMatchResult.scorers && playerMatchResult.scorers.length > 0 
-            ? playerMatchResult.scorers[0].playerName 
+        const topScorerName = playerMatchResult.scorers && playerMatchResult.scorers.length > 0
+            ? playerMatchResult.scorers[0].playerName
             : null;
 
         if (userScore > oppScore) {
