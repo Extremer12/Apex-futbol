@@ -1,47 +1,113 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useId, useRef } from 'react';
 import { X } from 'lucide-react';
 
-/** Responsive sheet: bottom sheet on mobile, centered dialog on desktop. */
+const SHEET_SIZE_CLASS: Record<'md' | 'lg' | 'xl', string> = {
+    md: 'sm:max-w-md',
+    lg: 'sm:max-w-2xl',
+    xl: 'sm:max-w-4xl',
+};
+
+/** Responsive native top-layer dialog: bottom sheet on mobile, centered dialog on desktop. */
 export const BottomSheet: React.FC<{
     open: boolean;
     onClose: () => void;
     title?: string;
+    size?: 'md' | 'lg' | 'xl';
     children: React.ReactNode;
     footer?: React.ReactNode;
-}> = ({ open, onClose, title, children, footer }) => {
-    useEffect(() => {
-        if (!open) return;
-        const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-        window.addEventListener('keydown', onKey);
-        const prev = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
-        return () => {
-            window.removeEventListener('keydown', onKey);
-            document.body.style.overflow = prev;
-        };
-    }, [open, onClose]);
+}> = ({ open, onClose, title, size = 'md', children, footer }) => {
+    const dialogRef = useRef<HTMLDialogElement>(null);
+    const titleId = useId();
+    const onCloseRef = useRef(onClose);
+    onCloseRef.current = onClose;
 
-    if (!open) return null;
+    useEffect(() => {
+        const dialog = dialogRef.current;
+        if (!dialog) return;
+
+        if (open && !dialog.open) {
+            dialog.showModal();
+        } else if (!open && dialog.open) {
+            dialog.close();
+        }
+    }, [open]);
+
+    useEffect(() => {
+        const dialog = dialogRef.current;
+        if (!dialog) return;
+
+        const handleClose = () => {
+            onCloseRef.current();
+        };
+        dialog.addEventListener('close', handleClose);
+
+        // Fallback light-dismiss when native closedby attribute is unsupported
+        let cleanupFallback: (() => void) | undefined;
+        if (!('closedBy' in HTMLDialogElement.prototype)) {
+            let pressedOutside = false;
+            const isOutside = (e: PointerEvent) => {
+                const r = dialog.getBoundingClientRect();
+                return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom;
+            };
+            const onPointerDown = (e: PointerEvent) => {
+                pressedOutside = isOutside(e);
+            };
+            const onPointerUp = (e: PointerEvent) => {
+                if (pressedOutside && isOutside(e)) {
+                    dialog.close();
+                }
+                pressedOutside = false;
+            };
+            dialog.addEventListener('pointerdown', onPointerDown);
+            dialog.addEventListener('pointerup', onPointerUp);
+            cleanupFallback = () => {
+                dialog.removeEventListener('pointerdown', onPointerDown);
+                dialog.removeEventListener('pointerup', onPointerUp);
+            };
+        }
+
+        return () => {
+            dialog.removeEventListener('close', handleClose);
+            cleanupFallback?.();
+        };
+    }, []);
 
     return (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center animate-fade-in" role="dialog" aria-modal="true">
-            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative w-full sm:max-w-md bg-[#0D1220] border-t sm:border border-white/10 rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[88vh] flex flex-col">
-                <div className="sm:hidden flex justify-center pt-2.5">
-                    <span className="w-10 h-1 rounded-full bg-white/20" />
-                </div>
-                {title && (
-                    <div className="flex items-center justify-between px-5 pt-3 pb-3 border-b border-white/5">
-                        <h3 className="text-sm font-black text-white uppercase tracking-wider">{title}</h3>
-                        <button onClick={onClose} aria-label="Cerrar" className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400">
-                            <X className="w-4 h-4" />
-                        </button>
-                    </div>
-                )}
-                <div className="flex-1 overflow-y-auto px-5 py-4">{children}</div>
-                {footer && <div className="px-5 pb-5 pt-3 border-t border-white/5" style={{ paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom))' }}>{footer}</div>}
+        <dialog
+            ref={dialogRef}
+            {...({ closedby: 'any' } as any)}
+            aria-labelledby={title ? titleId : undefined}
+            aria-label={title ? undefined : 'Panel de detalle'}
+            className={`apex-sheet fixed inset-x-0 bottom-0 top-auto sm:inset-0 m-0 sm:m-auto w-full max-w-full ${SHEET_SIZE_CLASS[size]} border-t sm:border border-white/10 rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[88dvh] overflow-hidden animate-fade-in`}
+        >
+            <div className="sm:hidden flex justify-center pt-2.5 shrink-0">
+                <span className="w-10 h-1 rounded-full bg-white/20" />
             </div>
-        </div>
+            {title && (
+                <div className="flex items-center justify-between px-5 pt-3 pb-3 border-b border-white/5 shrink-0">
+                    <h3 id={titleId} className="text-sm font-black text-white uppercase tracking-wider truncate pr-2">
+                        {title}
+                    </h3>
+                    <button
+                        type="button"
+                        onClick={() => dialogRef.current?.close()}
+                        aria-label="Cerrar"
+                        className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white shrink-0 cursor-pointer"
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+            )}
+            <div className="flex-1 overflow-y-auto px-5 py-4">{children}</div>
+            {footer && (
+                <div
+                    className="px-5 pb-5 pt-3 border-t border-white/5 shrink-0"
+                    style={{ paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom))' }}
+                >
+                    {footer}
+                </div>
+            )}
+        </dialog>
     );
 };
 

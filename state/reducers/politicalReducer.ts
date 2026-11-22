@@ -1,5 +1,6 @@
-import { GameState, FanApproval } from '../../types';
+import { GameState } from '../../types';
 import { formatDate } from '../../utils';
+import { awardPresidentXp } from '../../services/presidentialProgression';
 import type { GameAction } from '../reducer';
 
 // Actions handled by this reducer
@@ -26,6 +27,7 @@ export function handlePoliticalAction(state: GameState, action: PoliticalAction)
                 // President won re-election
                 return {
                     ...state,
+                    playerProfile: awardPresidentXp(state.playerProfile, 150),
                     mandate: {
                         ...state.mandate,
                         currentYear: 1,
@@ -40,8 +42,8 @@ export function handlePoliticalAction(state: GameState, action: PoliticalAction)
                     },
                     newsFeed: [{
                         id: `election_won_${state.season}`,
-                        headline: '🎉 ¡Reelección Exitosa!',
-                        body: `Los socios han hablado y confían en tu gestión. Comenzarás tu mandato número ${state.mandate.totalMandates + 1} con ${newApproval}% de aprobación.`,
+                        headline: 'Reelección Presidencial Exitosa',
+                        body: `Los socios han hablado y confían en tu gestión. Comenzarás tu mandato número ${state.mandate.totalMandates + 1} con ${newApproval}% de aprobación (+150 XP).`,
                         date: formatDate(state.currentDate)
                     }, ...state.newsFeed].slice(0, 20)
                 };

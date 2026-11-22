@@ -3,10 +3,29 @@ import { Morale } from './types';
 // --- Helper Functions ---
 export const formatDate = (date: Date): string => date.toLocaleString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
 
-export let GLOBAL_CURRENCY: 'EUR' | 'USD' = 'EUR';
+const CURRENCY_STORAGE_KEY = 'apex_preferred_currency';
+
+const readStoredCurrency = (): 'EUR' | 'USD' => {
+    if (typeof window === 'undefined') return 'EUR';
+    try {
+        const stored = localStorage.getItem(CURRENCY_STORAGE_KEY);
+        return stored === 'USD' ? 'USD' : 'EUR';
+    } catch {
+        return 'EUR';
+    }
+};
+
+export let GLOBAL_CURRENCY: 'EUR' | 'USD' = readStoredCurrency();
 
 export const setGlobalCurrency = (currency: 'EUR' | 'USD') => {
     GLOBAL_CURRENCY = currency;
+    if (typeof window !== 'undefined') {
+        try {
+            localStorage.setItem(CURRENCY_STORAGE_KEY, currency);
+        } catch {
+            // ignore storage errors
+        }
+    }
 };
 
 export const formatCurrency = (amount: number | undefined | null): string => {

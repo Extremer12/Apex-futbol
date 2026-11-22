@@ -166,8 +166,8 @@ function AppLogic() {
         closeSaveModal();
     }, [performSaveGame, saveMode, closeSaveModal]);
 
-    const handleQuitToMenu = useCallback(() => {
-        if (window.confirm('¿Seguro que deseas salir al menú principal? Los progresos no guardados se perderán.')) {
+    const handleQuitToMenu = useCallback((skipConfirm: boolean = false) => {
+        if (skipConfirm || window.confirm('¿Seguro que deseas salir al menú principal? Los progresos no guardados se perderán.')) {
             resetGameData();
             resetSaveState();
             setAppState('START_SCREEN');
@@ -294,6 +294,7 @@ function AppLogic() {
                         onWeekComplete={onWeekComplete}
                         dispatch={dispatch}
                         onSaveGame={openSaveModal}
+                        onQuickSave={performQuickSave}
                         onQuitToMenu={handleQuitToMenu}
                         onNewGame={handleNewGame}
                         currentSaveName={currentSaveName}

@@ -93,9 +93,13 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
     packsVersion: 0,
 
     dispatch: (action: GameAction) => {
-        set(state => ({
-            gameState: gameReducer(state.gameState, action)
-        }));
+        set(state => {
+            const nextGameState = gameReducer(state.gameState, action);
+            return {
+                gameState: nextGameState,
+                playerProfile: nextGameState?.playerProfile ?? state.playerProfile
+            };
+        });
     },
 
     setAppState: (appState) => set({ appState }),

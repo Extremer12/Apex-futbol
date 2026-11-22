@@ -1,70 +1,157 @@
-
 import React from 'react';
-import { Modal } from '../ui/Modal';
-import { DashboardIcon, SquadIcon, TransfersIcon, LeagueIcon, FinancesIcon, SettingsIcon } from '../icons';
+import {
+    LayoutDashboard,
+    Users,
+    ArrowRightLeft,
+    Trophy,
+    Wallet,
+    Briefcase,
+    Landmark,
+    Layers,
+    Settings
+} from 'lucide-react';
+import { BottomSheet } from '../screens/transfers/TransferUI';
 
 export const PlaceholderModal: React.FC<{ title: string; onClose: () => void }> = ({ title, onClose }) => (
-    <Modal title={title} onClose={onClose}>
-        <div className="text-center p-4">
-            <h3 className="text-lg font-bold text-sky-400 mb-2">Próximamente</h3>
-            <p className="text-slate-300">Esta característica estará disponible en futuras actualizaciones. ¡Gracias por jugar a Apex AI!</p>
-        </div>
-    </Modal>
+    <BottomSheet
+        open
+        onClose={onClose}
+        title={title}
+        footer={
+            <button
+                type="button"
+                onClick={onClose}
+                className="w-full h-11 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs uppercase tracking-wider cursor-pointer"
+            >
+                Cerrar
+            </button>
+        }
+    >
+        <p className="text-xs text-slate-300 leading-relaxed">
+            Esta sección estará disponible en una próxima actualización. Gracias por liderar tu club en Apex AI.
+        </p>
+    </BottomSheet>
 );
 
 export const AboutModal: React.FC<{ onClose: () => void }> = ({ onClose }) => (
-     <Modal title="Acerca de Apex AI" onClose={onClose}>
-        <div className="space-y-4 text-slate-300 text-sm">
-            <p><strong>Apex AI</strong> es un simulador de gestión de fútbol en el que te pones en la piel del presidente de un club.</p>
-            <p>Tu misión es llevar a tu equipo a la gloria gestionando las finanzas, navegando por el mercado de fichajes y manteniendo alta la moral de la directiva y del equipo. Cada decisión cuenta.</p>
-            <p>El juego cuenta con sincronización en la nube mediante Supabase, tablas de clasificación mundiales y personalización completa de escudos y fotos.</p>
-             <p className="text-xs text-slate-500 pt-4 border-t border-slate-800">Apex AI Football President v1.0.0 Oficial • Cumple con las normativas de privacidad y protección de datos.</p>
+    <BottomSheet
+        open
+        onClose={onClose}
+        size="lg"
+        title="Acerca de Apex AI"
+        footer={
+            <button
+                type="button"
+                onClick={onClose}
+                className="w-full h-11 rounded-xl bg-[var(--apex-gold)] text-slate-950 font-black text-xs uppercase tracking-wider cursor-pointer"
+            >
+                Cerrar
+            </button>
+        }
+    >
+        <div className="space-y-3 text-xs text-slate-300 leading-relaxed">
+            <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                    <h4 className="text-sm font-black text-white">Apex AI Football President</h4>
+                    <span className="px-2.5 py-0.5 rounded-full bg-[var(--apex-gold)]/15 text-[var(--apex-gold)] border border-[var(--apex-gold)]/30 text-[10px] font-black">
+                        v1.0 Oficial
+                    </span>
+                </div>
+                <p className="text-slate-400">
+                    Simulador integral de presidencia futbolística offline-first. Toma decisiones financieras, dirige elecciones de socios, contrata cuerpos técnicos de élite y lleva a tu club a la gloria continental.
+                </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-1.5">
+                <h5 className="text-[11px] font-black uppercase tracking-wider text-white">Características</h5>
+                <ul className="space-y-1 text-slate-400">
+                    <li>· Ligas sudamericanas (Apertura/Clausura y Promedios) y élite europea con formato suizo</li>
+                    <li>· Motor de simulación fuera del hilo principal y autoguardado local en IndexedDB</li>
+                    <li>· Sistema modular de Packs Visuales comunitarios y respaldo opcional en la nube</li>
+                </ul>
+            </div>
         </div>
-    </Modal>
+    </BottomSheet>
 );
 
 export const HelpModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-    const Section: React.FC<{ icon: React.ReactNode; title: string; children: React.ReactNode }> = ({ icon, title, children }) => (
-        <div className="flex items-start gap-4">
-            <div className="text-sky-400 mt-1">{icon}</div>
-            <div>
-                <h4 className="font-bold text-white">{title}</h4>
-                <p className="text-slate-300">{children}</p>
-            </div>
-        </div>
-    );
-    
+    const sections = [
+        {
+            icon: <LayoutDashboard className="w-4 h-4 text-[var(--apex-gold)]" />,
+            title: 'Panel Principal',
+            desc: 'Tu centro de mando semanal: revisa el próximo rival, noticias del club, alertas de vestuario y avanza al siguiente turno.'
+        },
+        {
+            icon: <Users className="w-4 h-4 text-emerald-400" />,
+            title: 'Plantilla y Tácticas',
+            desc: 'Configura tu XI titular y formación, gestiona renovaciones de contrato, moral, fatiga y promueve joyas de la cantera.'
+        },
+        {
+            icon: <ArrowRightLeft className="w-4 h-4 text-sky-400" />,
+            title: 'Fichajes y Negociación',
+            desc: 'Busca refuerzos por posición o potencial, negocia traspasos con otros clubes y acuerda contratos con representantes.'
+        },
+        {
+            icon: <Wallet className="w-4 h-4 text-amber-400" />,
+            title: 'Finanzas, Estadio y Sponsors',
+            desc: 'Equilibra taquilla, salarios, préstamos bancarios, ampliaciones de aforo, zonas VIP y contratos de patrocinio.'
+        },
+        {
+            icon: <Briefcase className="w-4 h-4 text-violet-400" />,
+            title: 'Personal y Red de Ojeo',
+            desc: 'Contrata DT, Jefe Médico, Preparador Físico, Director Deportivo, Director de Cantera y hasta 3 ojeadores activos.'
+        },
+        {
+            icon: <Landmark className="w-4 h-4 text-rose-400" />,
+            title: 'Perfil, Mandato y Elecciones',
+            desc: 'Acumula XP presidencial, elige un estilo con bonos reales, cumple promesas electorales cada 4 años o postúlate a otros clubes.'
+        },
+        {
+            icon: <Trophy className="w-4 h-4 text-[var(--apex-gold)]" />,
+            title: 'Ligas, Copas y Vitrina',
+            desc: 'Sigue las tablas, goleadores, historial de campeones y trofeos conquistados durante tus mandatos.'
+        },
+        {
+            icon: <Layers className="w-4 h-4 text-sky-300" />,
+            title: 'Packs Visuales y Respaldos',
+            desc: 'Instala escudos, ligas o rostros comunitarios y exporta o respalda tus carreras desde Ajustes.'
+        },
+        {
+            icon: <Settings className="w-4 h-4 text-slate-300" />,
+            title: 'Objetivo Presidencial',
+            desc: 'Mantén la confianza de la Junta Directiva sobre 0% y el respaldo de los Socios para ganar la reelección.'
+        },
+    ];
+
     return (
-        <Modal title="Ayuda y Tutorial" onClose={onClose}>
-            <div className="space-y-5 text-sm">
-                 <div>
-                    <h3 className="text-lg font-bold text-sky-400 mb-3 border-b border-slate-800 pb-2">Tu Objetivo</h3>
-                    <p className="text-slate-300">Como presidente, tu principal objetivo es mantener la <strong>confianza de la junta directiva</strong> por encima de 0. Logra esto ganando partidos, manteniendo las finanzas saneadas y gestionando la plantilla de manera eficaz. Si la confianza llega a 0, ¡serás despedido!</p>
-                </div>
-                <div>
-                     <h3 className="text-lg font-bold text-sky-400 mb-3 border-b border-slate-800 pb-2">Navegación</h3>
-                    <div className="space-y-4">
-                        <Section icon={<DashboardIcon className="w-6 h-6" />} title="Panel">
-                            Es tu centro de operaciones. Aquí puedes ver el estado del club, leer las últimas noticias, revisar los partidos de la semana y avanzar en el tiempo.
-                        </Section>
-                         <Section icon={<SquadIcon className="w-6 h-6" />} title="Plantilla">
-                            Gestiona tu equipo. Revisa las estadísticas de tus jugadores, su moral y su valor. Puedes poner a jugadores en la lista de fichajes desde aquí.
-                        </Section>
-                         <Section icon={<TransfersIcon className="w-6 h-6" />} title="Fichajes">
-                            Busca y negocia la compra de nuevos jugadores para fortalecer tu equipo. ¡Usa tu presupuesto sabiamente!
-                        </Section>
-                         <Section icon={<LeagueIcon className="w-6 h-6" />} title="Liga">
-                            Consulta la clasificación, los resultados y la forma de todos los equipos del campeonato.
-                        </Section>
-                         <Section icon={<FinancesIcon className="w-6 h-6" />} title="Finanzas">
-                            Revisa el balance del club, el presupuesto para fichajes y el flujo de caja semanal. Una buena salud financiera es clave para el éxito a largo plazo.
-                        </Section>
-                         <Section icon={<SettingsIcon className="w-6 h-6" />} title="Ajustes">
-                            Guarda tu partida o sal al menú principal. ¡Recuerda guardar tu progreso!
-                        </Section>
+        <BottomSheet
+            open
+            onClose={onClose}
+            size="lg"
+            title="Guía del Presidente"
+            footer={
+                <button
+                    type="button"
+                    onClick={onClose}
+                    className="w-full h-11 rounded-xl bg-[var(--apex-gold)] text-slate-950 font-black text-xs uppercase tracking-wider cursor-pointer"
+                >
+                    Entendido
+                </button>
+            }
+        >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {sections.map(sec => (
+                    <div key={sec.title} className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 mt-0.5">
+                            {sec.icon}
+                        </div>
+                        <div className="min-w-0">
+                            <h4 className="font-black text-xs text-white">{sec.title}</h4>
+                            <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">{sec.desc}</p>
+                        </div>
                     </div>
-                </div>
+                ))}
             </div>
-        </Modal>
-    )
+        </BottomSheet>
+    );
 };

@@ -646,3 +646,155 @@ test('52. Career Save System: guarantees unique careerId, automatic save replace
     assert.deepEqual(toDeleteIds, ['save_1'], 'Obsolete earlier duplicate save_1 marked for deletion');
     assert.equal(careerMap.get('career_boca')?.id, 'save_2', 'Latest Boca save preserved');
 });
+
+test('54. Staff System: regional scout market, severance/weeklyWages sync, coach meeting idempotency & youth promotion', async () => {
+    const { initializeGame } = await import('../../services/gameFactory');
+    const { generateScoutMarket } = await import('../../services/staffService');
+    const { gameReducer } = await import('../../state/reducer');
+
+    const argTeam = TEAMS.find(t => t.leagueId === LeagueId.LIGA_ARGENTINA) || TEAMS[0];
+    const plTeam = TEAMS.find(t => t.leagueId === LeagueId.PREMIER_LEAGUE) || TEAMS[0];
+
+    const argScouts = generateScoutMarket('Top', LeagueId.LIGA_ARGENTINA);
+    const plScouts = generateScoutMarket('Top', LeagueId.PREMIER_LEAGUE);
+    assert.equal(argScouts.length, 6);
+    const avgArgSalary = argScouts.reduce((s, sc) => s + sc.salary, 0) / argScouts.length;
+    const avgPlSalary = plScouts.reduce((s, sc) => s + sc.salary, 0) / plScouts.length;
+    assert.ok(avgArgSalary < avgPlSalary * 0.5, 'South American scout market must scale down vs Premier League');
+
+    let state = initializeGame({
+        selectedTeam: plTeam,
+        playerProfile: { name: 'Presidente Test' }
+    });
+    assert.ok(Array.isArray(state.availableScouts) && state.availableScouts.length > 0, 'availableScouts initialized');
+
+    // Hire & fire doctor synchronizes weeklyWages and 2-week severance
+    const candidateDoctor = state.availableStaff!.find(s => s.role === 'doctor')!;
+    const oldDoctorSalary = state.clubStaff?.doctor?.salary ?? 0;
+    const beforeHireWages = state.finances.weeklyWages;
+    const beforeHireBalance = state.finances.balance;
+
+    state = gameReducer(state, { type: 'HIRE_STAFF', payload: { staffId: candidateDoctor.id } })!;
+    assert.equal(state.clubStaff?.doctor?.id, candidateDoctor.id);
+    assert.equal(state.finances.balance, beforeHireBalance - candidateDoctor.hiringFee);
+    assert.equal(state.finances.weeklyWages, Math.max(0, beforeHireWages + candidateDoctor.salary - oldDoctorSalary));
+
+    const preFireBalance = state.finances.balance;
+    const preFireWages = state.finances.weeklyWages;
+    state = gameReducer(state, { type: 'FIRE_STAFF', payload: { role: 'doctor' } })!;
+    assert.equal(state.clubStaff?.doctor, undefined);
+    assert.equal(state.finances.balance, preFireBalance - candidateDoctor.salary * 2);
+    assert.equal(state.finances.weeklyWages, Math.max(0, preFireWages - candidateDoctor.salary));
+
+    // Coach meeting request + bonus idempotency (prevents infinite reopen exploit)
+    state = {
+        ...state,
+        finances: { ...state.finances, balance: 50_000_000 },
+        coachReport: {
+            summary: 'Test',
+            satisfaction: 70,
+            tacticalUpdate: '4-3-3',
+            requests: [{ id: 'req_1', position: 'DEL', minRating: 75, reason: 'Falta gol', priority: 'important' }],
+            promotions: state.youthAcademy.slice(0, 1)
+        }
+    };
+    state = gameReducer(state, { type: 'RESPOND_COACH_REQUEST', payload: { requestId: 'req_1', decision: 'PROMISE' } })!;
+    const satAfterFirstResponse = state.team.coach!.satisfactionLevel;
+    state = gameReducer(state, { type: 'RESPOND_COACH_REQUEST', payload: { requestId: 'req_1', decision: 'PROMISE' } })!;
+    assert.equal(state.team.coach!.satisfactionLevel, satAfterFirstResponse, 'Repeated request response must be ignored');
+
+    state = gameReducer(state, { type: 'AWARD_TEAM_BONUS', payload: { bonusPerPlayer: 10000 } })!;
+    const balanceAfterBonus = state.finances.balance;
+    const satAfterBonus = state.team.coach!.satisfactionLevel;
+    state = gameReducer(state, { type: 'AWARD_TEAM_BONUS', payload: { bonusPerPlayer: 10000 } })!;
+    assert.equal(state.finances.balance, balanceAfterBonus, 'Second bonus in same week must be blocked');
+    assert.equal(state.team.coach!.satisfactionLevel, satAfterBonus);
+
+    // Promote youth via PROMOTE_YOUTH updates contract, morale, weeklyWages & coachReport
+    const youth = state.youthAcademy[0];
+    const wagesBeforePromo = state.finances.weeklyWages;
+    state = gameReducer(state, { type: 'PROMOTE_YOUTH', payload: youth.id })!;
+    const promoted = state.team.squad.find(p => p.id === youth.id);
+    assert.ok(promoted, 'Promoted player must be in squad');
+    assert.equal(promoted?.contractYears, 3);
+    assert.equal(promoted?.morale, 'Feliz');
+    assert.equal(state.finances.weeklyWages, wagesBeforePromo + promoted!.wage);
+    assert.equal(state.coachReport?.promotions.some(p => p.id === youth.id), false);
+
+    // Refresh market cooldown works once per week
+    const firstBatchId = state.availableCoaches[0].id;
+    state = gameReducer(state, { type: 'REFRESH_STAFF_MARKET' })!;
+    assert.equal(state.lastStaffMarketRefreshWeek, state.currentWeek);
+    assert.notEqual(state.availableCoaches[0].id, firstBatchId);
+    const secondBatchId = state.availableCoaches[0].id;
+    state = gameReducer(state, { type: 'REFRESH_STAFF_MARKET' })!;
+    assert.equal(state.availableCoaches[0].id, secondBatchId, 'Cannot refresh staff market twice in same week');
+});
+
+test('55. Presidential Profile: XP progression, style gameplay effects & club switching career stints', async () => {
+    const { initializeGame } = await import('../../services/gameFactory');
+    const { calculateFinancialBreakdown } = await import('../../services/economy');
+    const { getPresidentLevelInfo } = await import('../../services/presidentialProgression');
+    const { gameReducer } = await import('../../state/reducer');
+
+    const startTeam = TEAMS.find(t => t.leagueId === LeagueId.PREMIER_LEAGUE) || TEAMS[0];
+    const nextClub = TEAMS.find(t => t.id !== startTeam.id && t.leagueId === startTeam.leagueId) || TEAMS[1];
+
+    let state = initializeGame({
+        selectedTeam: startTeam,
+        playerProfile: { name: 'Presidente Pro', experience: 0, style: 'Equilibrado' }
+    });
+
+    // Style mechanical effects in financial breakdown
+    const eqBreakdown = calculateFinancialBreakdown(
+        state.team,
+        state.stadium,
+        state.sponsors,
+        5,
+        { bought: 0, sold: 0 },
+        false,
+        state.team.leagueId,
+        'standard',
+        [],
+        { youthInvestment: 'low', globalMarketing: true, winBonuses: 'none' },
+        [],
+        'Equilibrado'
+    );
+    const galBreakdown = calculateFinancialBreakdown(
+        state.team,
+        state.stadium,
+        state.sponsors,
+        5,
+        { bought: 0, sold: 0 },
+        false,
+        state.team.leagueId,
+        'standard',
+        [],
+        { youthInvestment: 'low', globalMarketing: true, winBonuses: 'none' },
+        [],
+        'Galáctico'
+    );
+    assert.ok(eqBreakdown.operationalExpenses < galBreakdown.operationalExpenses, 'Equilibrado must reduce operational expenses');
+    assert.ok((galBreakdown.merchandisingRevenue || 0) > (eqBreakdown.merchandisingRevenue || 0), 'Galáctico must boost merchandising revenue');
+
+    // XP progression via Canterano promotion and Re-election
+    state = gameReducer(state, { type: 'UPDATE_PLAYER_PROFILE', payload: { style: 'Canterano' } })!;
+    const xpBeforePromo = state.playerProfile?.experience || 0;
+    const prospect = state.youthAcademy[0];
+    state = gameReducer(state, { type: 'PROMOTE_YOUTH', payload: prospect.id })!;
+    assert.equal(state.playerProfile?.experience, xpBeforePromo + 30, 'Canterano grants +30 XP on youth promotion');
+
+    state = gameReducer(state, { type: 'ELECTION_RESULT', payload: { won: true, newApproval: 80 } })!;
+    assert.equal(state.playerProfile?.experience, xpBeforePromo + 30 + 150, 'Election win grants +150 XP');
+    const levelInfo = getPresidentLevelInfo(state.playerProfile?.experience || 0);
+    assert.ok(levelInfo.level >= 1 && levelInfo.progress >= 0);
+
+    // Switch club archives current stint & preserves president XP
+    const xpBeforeSwitch = state.playerProfile?.experience || 0;
+    state = gameReducer(state, { type: 'SWITCH_CLUB', payload: { clubId: nextClub.id } })!;
+    assert.equal(state.team.id, nextClub.id);
+    assert.equal(state.playerProfile?.experience, xpBeforeSwitch);
+    assert.equal(state.playerProfile?.careerStints?.length, 1);
+    assert.equal(state.playerProfile?.careerStints?.[0].clubId, startTeam.id);
+    assert.equal(state.playerProfile?.careerStints?.[0].status, 'RESIGNED');
+});

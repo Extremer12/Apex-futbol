@@ -343,3 +343,23 @@ body {
 .pt-safe {
   padding-top: max(0.5rem, env(safe-area-inset-top));
 }
+
+/* ---- Native Top-Layer BottomSheet Dialog ---- */
+dialog.apex-sheet {
+  padding: 0;
+  color: var(--apex-text);
+  background: #0D1220;
+  overscroll-behavior: contain;
+}
+
+dialog.apex-sheet[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+dialog.apex-sheet::backdrop {
+  background-color: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(4px);
+  overflow: hidden;
+  overscroll-behavior: contain;
+}

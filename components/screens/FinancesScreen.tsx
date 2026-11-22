@@ -61,9 +61,10 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = React.memo(({ gameS
             finances.ticketPolicy || 'standard',
             finances.activeLoans || [],
             finances.clubDirectives,
-            scouts
+            scouts,
+            gameState.playerProfile?.style
         );
-    }, [team, stadium, sponsors, playerPosition, wasHomeMatch, finances.ticketPolicy, finances.activeLoans, finances.clubDirectives, scouts]);
+    }, [team, stadium, sponsors, playerPosition, wasHomeMatch, finances.ticketPolicy, finances.activeLoans, finances.clubDirectives, scouts, gameState.playerProfile?.style]);
 
     const breakdownWithoutMatchday = useMemo(() => {
         return calculateFinancialBreakdown(
@@ -77,9 +78,10 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = React.memo(({ gameS
             finances.ticketPolicy || 'standard',
             finances.activeLoans || [],
             finances.clubDirectives,
-            scouts
+            scouts,
+            gameState.playerProfile?.style
         );
-    }, [team, stadium, sponsors, playerPosition, finances.ticketPolicy, finances.activeLoans, finances.clubDirectives, scouts]);
+    }, [team, stadium, sponsors, playerPosition, finances.ticketPolicy, finances.activeLoans, finances.clubDirectives, scouts, gameState.playerProfile?.style]);
 
     const netIncome = useMemo(() => getNetWeeklyIncome(breakdown), [breakdown]);
     const netIncomeWithoutMatchday = useMemo(() => getNetWeeklyIncome(breakdownWithoutMatchday), [breakdownWithoutMatchday]);

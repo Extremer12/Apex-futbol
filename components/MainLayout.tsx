@@ -40,7 +40,8 @@ interface MainLayoutProps {
     onWeekComplete: () => void;
     dispatch: React.Dispatch<GameAction>;
     onSaveGame: (mode: 'overwrite' | 'new') => void;
-    onQuitToMenu: () => void;
+    onQuickSave?: () => Promise<boolean>;
+    onQuitToMenu: (skipConfirm?: boolean) => void;
     onNewGame?: () => void;
     currentSaveName: string | null;
     lastSaved: Date | null;
@@ -60,6 +61,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
     onWeekComplete,
     dispatch,
     onSaveGame,
+    onQuickSave,
     onQuitToMenu,
     onNewGame,
     currentSaveName,
@@ -97,11 +99,14 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                 return <StaffScreen gameState={gameState} dispatch={dispatch} />;
             case Screen.Settings: return (
                 <SettingsScreen
+                    gameState={gameState}
                     onSaveGame={onSaveGame}
+                    onQuickSave={onQuickSave}
                     onQuitToMenu={onQuitToMenu}
                     currentSaveName={currentSaveName}
                     lastSaved={lastSaved}
                     preferredCurrency={gameState.preferredCurrency || 'EUR'}
+                    preferredLanguage={gameState.preferredLanguage || 'es'}
                     dispatch={dispatch}
                 />
             );

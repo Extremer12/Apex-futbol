@@ -3,6 +3,7 @@ import { GameState, Team, PlayerMatchResult, MatchLiveStats } from '../../types'
 import { GameAction } from '../../state/reducer';
 import { TeamLogo } from '../../data/teams/helpers';
 import { getTeamStadium } from '../../data/stadiums';
+import { playGoalChime, playWhistle } from '../../services/soundService';
 
 interface FullScreenMatchSimulationProps {
     gameState: GameState;
@@ -276,7 +277,8 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
                                 away: goalsUpToNow.filter(g => !g.isHome).length
                             });
 
-                            // Trigger celebration popup and shake
+                            // Trigger celebration popup, sound, and shake
+                            playGoalChime();
                             setIsShaking(true);
                             setGoalPopup({
                                 team: ev.teamName || (ev.isHome ? homeTeam.name : awayTeam.name),
@@ -347,6 +349,7 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
                     setDisplayScore({ home: finalResult.homeScore, away: finalResult.awayScore });
                     setStats(targetStats);
                     setIsFinished(true);
+                    playWhistle();
 
                     setCommentary(prev => [
                         ...prev,

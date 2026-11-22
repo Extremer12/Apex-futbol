@@ -7,6 +7,9 @@ import { GameState, Team, Player, NewsItem, EuropeanCompetition, EuropeanTableRo
 import { generateYouthPlayer, generateSeasonSchedule, generateCupDraw, createInitialLeagueTable, handlePromotionRelegation, generateSwissPhase, generateGroupPhase, createInitialEuropeanTable, sortArgentineZones, simulateMacroMatch, PROMOTION_RELEGATION_PAIRS, finalizeSeasonCompetitions } from './simulation';
 import { computeArgentineRelegation, computeArgentineInternationalQualification } from './argentinaRegulations';
 import { calculatePrizeMoney, generateSponsorMarket } from './economy';
+import { generateCoachMarket } from './coaching';
+import { generateStaffMarket, generateScoutMarket } from './staffService';
+import { awardPresidentXp, getPresidentialStyleModifiers } from './presidentialProgression';
 import { formatDate, formatCurrency } from '../utils';
 import { evaluateAchievements } from './achievementService';
 import { initializeLibertadoresSeason } from './libertadoresEngine';
@@ -52,12 +55,13 @@ export function startNewSeason(currentState: GameState): GameState {
         .map(p => ({ ...p, age: (p.age || 16) + 1 }))
         .filter(p => p.age !== undefined && p.age <= 19);
 
-    // Add new talent (potenciado por la calidad del Director de Cantera y la Inversión en Fuerzas Básicas)
+    // Add new talent (potenciado por la calidad del Director de Cantera, Inversión en Fuerzas Básicas y Estilo Canterano)
     const youthCoach = currentState.team.clubStaff?.youthCoach || updatedPlayerTeam.clubStaff?.youthCoach;
     const youthBonus = youthCoach ? Math.max(0, Math.min(12, Math.round(((youthCoach.power - 50) / 50) * 10))) : 0;
     const youthInvestment = currentState.finances?.clubDirectives?.youthInvestment;
     const directiveBonus = youthInvestment === 'high' ? 6 : youthInvestment === 'medium' ? 3 : 0;
-    const totalYouthBonus = youthBonus + directiveBonus;
+    const styleYouthBonus = getPresidentialStyleModifiers(currentState.playerProfile?.style).youthBonus;
+    const totalYouthBonus = youthBonus + directiveBonus + styleYouthBonus;
     const newProspectsCount = (youthInvestment === 'high' ? 4 : 3) + Math.floor(Math.random() * 2);
     for (let i = 0; i < newProspectsCount; i++) {
         updatedAcademy.push(generateYouthPlayer(updatedPlayerTeam.tier, totalYouthBonus));
@@ -588,6 +592,7 @@ export function startNewSeason(currentState: GameState): GameState {
 
     // Evaluate Electoral Promises
     let promisesDelta = 0;
+    let newlyFulfilledPromisesCount = 0;
     let promiseNewsBody = '';
     const updatedPromises = currentState.electoralPromises.map(promise => {
         if (promise.fulfilled) return promise; // Already fulfilled
@@ -636,6 +641,7 @@ export function startNewSeason(currentState: GameState): GameState {
         }
 
         if (newlyFulfilled) {
+            newlyFulfilledPromisesCount++;
             promisesDelta += promise.impact;
             promiseNewsBody += `✅ Promesa cumplida: ${promise.description} (+${promise.impact} aprobación)\\n`;
             return { ...promise, fulfilled: true };
@@ -956,9 +962,16 @@ export function startNewSeason(currentState: GameState): GameState {
         return existing;
     };
 
+    const userTrophiesThisSeason = trophiesToAward.filter(t => t.teamId === updatedPlayerTeam.id).length;
+    const seasonXpGain = 50 + (userTrophiesThisSeason * 120) + (newlyFulfilledPromisesCount * 45);
+    const updatedProfileWithXp = currentState.playerProfile
+        ? awardPresidentXp(currentState.playerProfile, seasonXpGain)
+        : undefined;
+
     // 8. Return updated state
     return {
         ...currentState,
+        playerProfile: updatedProfileWithXp || currentState.playerProfile,
         team: updatedPlayerTeamWithTrophies,
         allTeams: teamsAfterProRel,
         youthAcademy: updatedAcademy,
@@ -1123,6 +1136,11 @@ export function startNewSeason(currentState: GameState): GameState {
             };
         })(),
         availableSponsors: generateSponsorMarket(updatedPlayerTeam.tier, userLeagueId),
+        availableCoaches: generateCoachMarket(5, userLeagueId, updatedPlayerTeam.tier),
+        availableStaff: generateStaffMarket(updatedPlayerTeam.tier, userLeagueId),
+        availableScouts: generateScoutMarket(updatedPlayerTeam.tier, userLeagueId),
+        coachReport: undefined,
+        lastStaffMarketRefreshWeek: undefined,
         cinematicQueue: newCinematicQueue,
         achievements: updatedAchievements,
         seasonHistory: updatedSeasonHistory

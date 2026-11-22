@@ -1,9 +1,8 @@
-
-import React, { useState } from 'react';
+import React from 'react';
 import { Player, CoachRequest, CoachReport } from '../../types';
 import { GameAction } from '../../state/reducer';
-import { Modal } from './Modal';
-import { UsersIcon, TrendingUpIcon, AwardIcon } from '../icons';
+import { BottomSheet, StatCell } from '../screens/transfers/TransferUI';
+import { Users, TrendingUp, Award, Handshake, Shield, Gift, CheckCircle2 } from 'lucide-react';
 import { formatCurrencyShort } from '../../utils';
 
 interface CoachMeetingModalProps {
@@ -27,95 +26,125 @@ export const CoachMeetingModal: React.FC<CoachMeetingModalProps> = ({
     squadSize = 25,
     balance = 0
 }) => {
-    const [answeredRequests, setAnsweredRequests] = useState<Record<string, 'PROMISE' | 'DELEGATE'>>({});
-    const [bonusAwarded, setBonusAwarded] = useState(false);
+    const answeredRequests = report.answeredRequests || {};
+    const bonusAwarded = Boolean(report.bonusAwarded);
 
     const bonusCost = 10000 * squadSize;
     const canAffordBonus = balance >= bonusCost;
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={`Reunión con ${coachName}`} maxWidth="max-w-2xl">
-            <div className="space-y-6">
+        <BottomSheet
+            open={isOpen}
+            onClose={onClose}
+            size="lg"
+            title={`Reunión · ${coachName}`}
+            footer={
+                <button
+                    type="button"
+                    onClick={onClose}
+                    className="w-full h-11 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs uppercase tracking-wider cursor-pointer transition-colors"
+                >
+                    Finalizar Reunión
+                </button>
+            }
+        >
+            <div className="space-y-4">
                 {/* Coach Summary */}
-                <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="w-8 h-8 bg-sky-500/20 rounded-lg flex items-center justify-center">
-                            <UsersIcon className="w-5 h-5 text-sky-400" />
+                <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-400">
+                                <Users className="w-4 h-4" />
+                            </div>
+                            <h4 className="font-black text-white uppercase text-xs tracking-wider">Informe del Míster</h4>
                         </div>
-                        <h3 className="font-bold text-white uppercase text-sm tracking-wider">Informe del Míster</h3>
+                        <span className={`text-xs font-black px-2.5 py-1 rounded-lg border tabular-nums ${
+                            report.satisfaction >= 70
+                                ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                                : report.satisfaction >= 40
+                                ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                                : 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+                        }`}>
+                            {report.satisfaction}% satisfacción
+                        </span>
                     </div>
-                    <p className="text-slate-300 text-sm italic">"{report.summary}"</p>
-                    <div className="mt-4 flex items-center gap-4">
-                        <div className="flex-1">
-                            <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase mb-1">
-                                <span>Satisfacción del DT</span>
-                                <span>{report.satisfaction}%</span>
-                            </div>
-                            <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
-                                <div
-                                    className={`h-full bg-gradient-to-r ${report.satisfaction >= 70 ? 'from-green-500 to-emerald-500' : report.satisfaction >= 40 ? 'from-yellow-500 to-orange-500' : 'from-red-500 to-red-600'}`}
-                                    style={{ width: `${report.satisfaction}%` }}
-                                />
-                            </div>
-                        </div>
+
+                    <p className="text-slate-300 text-xs italic leading-relaxed">"{report.summary}"</p>
+
+                    <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                        <div
+                            className={`h-full rounded-full transition-all ${
+                                report.satisfaction >= 70
+                                    ? 'bg-emerald-500'
+                                    : report.satisfaction >= 40
+                                    ? 'bg-amber-500'
+                                    : 'bg-rose-500'
+                            }`}
+                            style={{ width: `${report.satisfaction}%` }}
+                        />
                     </div>
                 </div>
 
                 {/* Tactical Update */}
-                <div className="space-y-2">
-                    <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                        <AwardIcon className="w-3 h-3" /> Actualización Táctica
+                <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/10 space-y-1.5">
+                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <Award className="w-3.5 h-3.5 text-[var(--apex-gold)]" />
+                        Actualización Táctica
                     </h4>
-                    <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 text-sm text-slate-400">
-                        {report.tacticalUpdate}
-                    </div>
+                    <p className="text-xs text-slate-300 leading-relaxed">{report.tacticalUpdate}</p>
                 </div>
 
                 {/* Transfer Requests */}
                 {report.requests.length > 0 && (
-                    <div className="space-y-3">
-                        <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                            <TrendingUpIcon className="w-3 h-3" /> Peticiones de Fichaje
+                    <div className="space-y-2.5">
+                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <TrendingUp className="w-3.5 h-3.5 text-sky-400" />
+                            Peticiones de Fichaje
                         </h4>
-                        <div className="grid grid-cols-1 gap-3">
+                        <div className="space-y-2">
                             {report.requests.map((req: CoachRequest) => {
                                 const answer = answeredRequests[req.id];
                                 return (
-                                    <div key={req.id} className="bg-slate-800/30 border border-slate-700 p-4 rounded-xl flex flex-col sm:flex-row justify-between sm:items-center gap-3">
-                                        <div>
+                                    <div key={req.id} className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                                        <div className="min-w-0">
                                             <div className="flex items-center gap-2">
-                                                <span className={`px-2 py-0.5 rounded text-[10px] font-black ${req.priority === 'critical' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-                                                    {req.priority === 'critical' ? 'CRÍTICO' : 'IMPORTANTE'}
+                                                <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
+                                                    req.priority === 'critical'
+                                                        ? 'bg-rose-500/20 text-rose-400'
+                                                        : 'bg-amber-500/20 text-amber-400'
+                                                }`}>
+                                                    {req.priority === 'critical' ? 'Crítico' : 'Importante'}
                                                 </span>
-                                                <span className="text-white font-bold text-sm">Refuerzo en {req.position}</span>
+                                                <span className="text-white font-bold text-xs">Refuerzo en {req.position}</span>
                                             </div>
-                                            <p className="text-xs text-slate-400 mt-1">{req.reason} (Mín. {req.minRating} de media)</p>
+                                            <p className="text-[11px] text-slate-400 mt-1">
+                                                {req.reason} (Mín. {req.minRating} media)
+                                            </p>
                                         </div>
 
                                         <div className="shrink-0 flex items-center gap-2">
                                             {answer ? (
-                                                <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/30">
-                                                    {answer === 'PROMISE' ? '🤝 Fichaje Prometido' : '🛡️ Confianza en Plantilla'}
+                                                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/30">
+                                                    {answer === 'PROMISE' ? <Handshake className="w-3.5 h-3.5" /> : <Shield className="w-3.5 h-3.5" />}
+                                                    <span>{answer === 'PROMISE' ? 'Fichaje prometido' : 'Confianza en plantilla'}</span>
                                                 </span>
                                             ) : dispatch ? (
                                                 <div className="flex items-center gap-2">
                                                     <button
-                                                        onClick={() => {
-                                                            dispatch({ type: 'RESPOND_COACH_REQUEST', payload: { requestId: req.id, decision: 'PROMISE' } });
-                                                            setAnsweredRequests(prev => ({ ...prev, [req.id]: 'PROMISE' }));
-                                                        }}
-                                                        className="px-2.5 py-1.5 text-xs font-bold bg-emerald-600/30 text-emerald-300 hover:bg-emerald-600/50 border border-emerald-500/40 rounded-lg transition-colors"
+                                                        type="button"
+                                                        onClick={() => dispatch({ type: 'RESPOND_COACH_REQUEST', payload: { requestId: req.id, decision: 'PROMISE' } })}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30 rounded-xl transition-colors cursor-pointer"
                                                     >
-                                                        🤝 Prometer Fichaje
+                                                        <Handshake className="w-3.5 h-3.5" />
+                                                        <span>Prometer</span>
                                                     </button>
                                                     <button
-                                                        onClick={() => {
-                                                            dispatch({ type: 'RESPOND_COACH_REQUEST', payload: { requestId: req.id, decision: 'DELEGATE' } });
-                                                            setAnsweredRequests(prev => ({ ...prev, [req.id]: 'DELEGATE' }));
-                                                        }}
-                                                        className="px-2.5 py-1.5 text-xs font-bold bg-slate-700/50 text-slate-300 hover:bg-slate-700 border border-slate-600 rounded-lg transition-colors"
+                                                        type="button"
+                                                        onClick={() => dispatch({ type: 'RESPOND_COACH_REQUEST', payload: { requestId: req.id, decision: 'DELEGATE' } })}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold bg-white/5 text-slate-300 hover:bg-white/10 border border-white/10 rounded-xl transition-colors cursor-pointer"
                                                     >
-                                                        🛡️ Confiar en Cantera
+                                                        <Shield className="w-3.5 h-3.5" />
+                                                        <span>Cantera</span>
                                                     </button>
                                                 </div>
                                             ) : null}
@@ -129,78 +158,83 @@ export const CoachMeetingModal: React.FC<CoachMeetingModalProps> = ({
 
                 {/* Team Bonus Section */}
                 {dispatch && (
-                    <div className="bg-gradient-to-r from-amber-950/20 to-slate-900 border border-amber-500/20 p-4 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                        <div>
-                            <div className="text-xs font-black text-amber-400 uppercase tracking-widest flex items-center gap-1.5">
-                                💼 Prima Extraordinaria al Plantel
+                    <div className="p-4 rounded-2xl bg-[var(--apex-gold)]/5 border border-[var(--apex-gold)]/20 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <div className="min-w-0">
+                            <div className="text-xs font-black text-[var(--apex-gold)] uppercase tracking-wider flex items-center gap-1.5">
+                                <Gift className="w-4 h-4" />
+                                <span>Prima Extraordinaria al Plantel</span>
                             </div>
-                            <p className="text-xs text-slate-400 mt-0.5">
-                                Incentiva la moral del equipo y aumenta la satisfacción del cuerpo técnico antes de duelos cruciales ({formatCurrencyShort(bonusCost)} total).
+                            <p className="text-[11px] text-slate-400 mt-1">
+                                Eleva la moral del vestuario y suma +8% de respaldo del DT antes de partidos clave.
                             </p>
                         </div>
                         <button
+                            type="button"
                             disabled={bonusAwarded || !canAffordBonus}
-                            onClick={() => {
-                                dispatch({ type: 'AWARD_TEAM_BONUS', payload: { bonusPerPlayer: 10000 } });
-                                setBonusAwarded(true);
-                            }}
-                            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap ${bonusAwarded
-                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 cursor-default'
-                                : !canAffordBonus
-                                    ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
-                                    : 'bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 shadow-lg shadow-amber-500/20'
-                                }`}
+                            onClick={() => dispatch({ type: 'AWARD_TEAM_BONUS', payload: { bonusPerPlayer: 10000 } })}
+                            className={`shrink-0 h-10 px-4 rounded-xl text-xs font-black uppercase tracking-wider transition-colors inline-flex items-center gap-1.5 ${
+                                bonusAwarded
+                                    ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 cursor-default'
+                                    : !canAffordBonus
+                                    ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                                    : 'bg-[var(--apex-gold)] hover:brightness-110 text-slate-950 cursor-pointer'
+                            }`}
                         >
-                            {bonusAwarded ? 'Prima Otorgada ✓' : !canAffordBonus ? 'Fondos Insuficientes' : `Ofrecer Prima (${formatCurrencyShort(bonusCost)})`}
+                            {bonusAwarded ? (
+                                <>
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                    <span>Prima Otorgada</span>
+                                </>
+                            ) : !canAffordBonus ? (
+                                <span>Fondos insuficientes</span>
+                            ) : (
+                                <span>Ofrecer ({formatCurrencyShort(bonusCost)})</span>
+                            )}
                         </button>
                     </div>
                 )}
 
                 {/* Academy Promotions */}
                 {report.promotions.length > 0 && (
-                    <div className="space-y-3">
-                        <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                            <TrendingUpIcon className="w-3 h-3 text-yellow-400" /> Propuestas de la Cantera
+                    <div className="space-y-2.5">
+                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <TrendingUp className="w-3.5 h-3.5 text-[var(--apex-gold)]" />
+                            Propuestas de la Cantera
                         </h4>
-                        <div className="grid grid-cols-1 gap-3">
+                        <div className="space-y-2">
                             {report.promotions.map(player => (
-                                <div key={player.id} className="bg-gradient-to-r from-yellow-900/20 to-slate-800/40 border border-yellow-500/20 p-4 rounded-xl flex justify-between items-center group">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 bg-yellow-500/10 rounded-lg flex items-center justify-center font-black text-yellow-500">
-                                            {player.name.charAt(0)}
+                                <div key={player.id} className="p-3.5 rounded-2xl bg-white/[0.03] border border-[var(--apex-gold)]/20 flex justify-between items-center gap-3">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className="w-9 h-9 rounded-xl bg-[var(--apex-gold)]/15 border border-[var(--apex-gold)]/30 flex items-center justify-center font-black text-sm text-[var(--apex-gold)] shrink-0">
+                                            {player.rating}
                                         </div>
-                                        <div>
-                                            <div className="text-sm font-bold text-white">{player.name}</div>
-                                            <div className="flex gap-2 text-[10px]">
-                                                <span className="text-slate-400 uppercase font-bold">{player.position}</span>
-                                                <span className="text-yellow-500 uppercase font-black">Valoración: {player.rating}</span>
+                                        <div className="min-w-0">
+                                            <div className="text-xs font-bold text-white truncate">{player.name}</div>
+                                            <div className="text-[10px] text-slate-400 uppercase font-bold">
+                                                {player.position} · {player.age || 17} años
                                             </div>
                                         </div>
                                     </div>
                                     <button
+                                        type="button"
                                         onClick={() => onApprovePromotion(player)}
-                                        className="bg-yellow-600 hover:bg-yellow-500 text-white text-[10px] font-black px-4 py-2 rounded-lg transition-all shadow-lg shadow-yellow-600/20"
+                                        className="h-9 px-3.5 rounded-xl bg-[var(--apex-gold)] hover:brightness-110 text-slate-950 text-[11px] font-black uppercase tracking-wider shrink-0 cursor-pointer"
                                     >
-                                        APROBAR PROMOCIÓN
+                                        Promover
                                     </button>
                                 </div>
                             ))}
                         </div>
-                        <p className="text-[10px] text-slate-500 text-center uppercase font-bold tracking-tighter italic">
-                            * El DT recomienda subir a estos jugadores para el primer equipo.
-                        </p>
                     </div>
                 )}
 
-                <div className="pt-4 border-t border-slate-800">
-                    <button
-                        onClick={onClose}
-                        className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded-xl transition-colors text-sm uppercase tracking-widest"
-                    >
-                        Entendido, Míster
-                    </button>
-                </div>
+                {report.requests.length === 0 && report.promotions.length === 0 && (
+                    <div className="grid grid-cols-2 gap-2">
+                        <StatCell label="Esquema preferido" value="En ejecución" />
+                        <StatCell label="Cantera" value="Sin alertas" accent="text-emerald-400" />
+                    </div>
+                )}
             </div>
-        </Modal>
+        </BottomSheet>
     );
 };

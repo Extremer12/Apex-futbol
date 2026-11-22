@@ -15,7 +15,7 @@ import { getInitialAchievements } from './achievementService';
 import { calculateFanApproval } from './political';
 import { resourceManager } from './resources/ResourceManager';
 import { calculateSquadPower } from './squadProgressionService';
-import { generateInitialClubStaff, generateStaffMarket } from './staffService';
+import { generateInitialClubStaff, generateStaffMarket, generateScoutMarket } from './staffService';
 
 interface InitializeGameParams {
     selectedTeam: Team;
@@ -457,9 +457,10 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
                 statistics: { topScorers: [], championsHistory: [] }
             },
         },
-        availableCoaches: generateCoachMarket(5),
+        availableCoaches: generateCoachMarket(5, playerTeamCopy.leagueId, playerTeamCopy.tier),
         clubStaff: initialStaff,
         availableStaff: generateStaffMarket(playerTeamCopy.tier, playerTeamCopy.leagueId),
+        availableScouts: generateScoutMarket(playerTeamCopy.tier, playerTeamCopy.leagueId),
         stadium: generateStadium(playerTeamCopy),
         sponsors: [
             generateSponsor('shirt', playerTeamCopy.tier, playerTeamCopy.leagueId),

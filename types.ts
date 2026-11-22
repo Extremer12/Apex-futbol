@@ -624,6 +624,9 @@ export interface GameState {
   availableCoaches: Coach[]; // Market of available coaches
   clubStaff?: ClubStaff; // Active club staff (doctor, fitness coach, sporting director, youth coach)
   availableStaff?: StaffMember[]; // Market of available staff specialists
+  availableScouts?: Scout[]; // Market of available scouts scaled by region
+  lastStaffMarketRefreshWeek?: number;
+  coachReport?: CoachReport;
   // New Fields for Academy & Regens
   playerProfile?: PlayerProfile;
   youthAcademy: Player[];
@@ -697,7 +700,9 @@ export interface CoachReport {
     satisfaction: number;
     requests: CoachRequest[];
     tacticalUpdate: string;
-    promotions: Player[]; 
+    promotions: Player[];
+    answeredRequests?: Record<string, 'PROMISE' | 'DELEGATE'>;
+    bonusAwarded?: boolean;
 }
 
 export type PresidentialMatchInstruction = 'ATTACK_SURGE' | 'LOCK_DOWN' | 'WIN_BONUS' | 'KEEP_TACTIC';

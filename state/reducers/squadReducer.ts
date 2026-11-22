@@ -1,5 +1,6 @@
 import { GameState, Player, NewsItem } from '../../types';
 import { formatDate } from '../../utils';
+import { awardPresidentXp, getPresidentialStyleModifiers } from '../../services/presidentialProgression';
 import type { GameAction } from '../reducer';
 
 // Actions handled by this reducer
@@ -38,7 +39,7 @@ export function handleSquadAction(state: GameState, action: SquadAction): GameSt
             const promotedPlayer: Player = {
                 ...player,
                 contractYears: 3,
-                wage: 5000, // Entry level wage
+                wage: player.wage && player.wage > 0 ? player.wage : 5000,
                 morale: 'Feliz'
             };
             const newSquad = [...state.team.squad, promotedPlayer];
@@ -54,11 +55,28 @@ export function handleSquadAction(state: GameState, action: SquadAction): GameSt
                 date: formatDate(state.currentDate)
             };
 
+            const updatedCoachReport = state.coachReport
+                ? {
+                    ...state.coachReport,
+                    promotions: state.coachReport.promotions.filter(p => p.id !== player.id)
+                }
+                : undefined;
+
+            const styleMods = getPresidentialStyleModifiers(state.playerProfile?.style);
+            const xpReward = 15 + styleMods.youthPromotionXpBonus;
+            const approvalBoost = styleMods.id === 'Canterano' ? 2 : 0;
+
             return {
                 ...state,
                 team: newTeam,
                 allTeams: newAllTeams,
                 youthAcademy: newAcademy,
+                coachReport: updatedCoachReport,
+                playerProfile: awardPresidentXp(state.playerProfile, xpReward),
+                fanApproval: approvalBoost > 0 ? {
+                    ...state.fanApproval,
+                    rating: Math.min(100, (state.fanApproval?.rating || 60) + approvalBoost)
+                } : state.fanApproval,
                 finances: { ...state.finances, weeklyWages: newWages },
                 newsFeed: [newsItem, ...state.newsFeed].slice(0, 20)
             };
@@ -70,17 +88,52 @@ export function handleSquadAction(state: GameState, action: SquadAction): GameSt
 
             if (!playerToPromote) return state;
 
+            const promotedPlayer: Player = {
+                ...playerToPromote,
+                contractYears: 3,
+                wage: playerToPromote.wage && playerToPromote.wage > 0 ? playerToPromote.wage : 5000,
+                morale: 'Feliz'
+            };
+
             const updatedTeam = {
                 ...state.team,
-                squad: [...state.team.squad, playerToPromote]
+                squad: [...state.team.squad, promotedPlayer]
             };
             const updatedAllTeams = state.allTeams.map(t => t.id === updatedTeam.id ? updatedTeam : t);
+            const updatedCoachReport = state.coachReport
+                ? {
+                    ...state.coachReport,
+                    promotions: state.coachReport.promotions.filter(p => p.id !== playerId)
+                }
+                : undefined;
+
+            const newsItem: NewsItem = {
+                id: `promote_youth_${Date.now()}`,
+                headline: `Promoción de Cantera: ${promotedPlayer.name}`,
+                body: `A pedido del cuerpo técnico, ${promotedPlayer.name} (${promotedPlayer.position}, ${promotedPlayer.rating} OVR) firma contrato profesional y sube al primer equipo.`,
+                date: formatDate(state.currentDate)
+            };
+
+            const styleMods = getPresidentialStyleModifiers(state.playerProfile?.style);
+            const xpReward = 15 + styleMods.youthPromotionXpBonus;
+            const approvalBoost = styleMods.id === 'Canterano' ? 2 : 0;
 
             return {
                 ...state,
                 youthAcademy: state.youthAcademy.filter(p => p.id !== playerId),
                 team: updatedTeam,
-                allTeams: updatedAllTeams
+                allTeams: updatedAllTeams,
+                coachReport: updatedCoachReport,
+                playerProfile: awardPresidentXp(state.playerProfile, xpReward),
+                fanApproval: approvalBoost > 0 ? {
+                    ...state.fanApproval,
+                    rating: Math.min(100, (state.fanApproval?.rating || 60) + approvalBoost)
+                } : state.fanApproval,
+                finances: {
+                    ...state.finances,
+                    weeklyWages: state.finances.weeklyWages + promotedPlayer.wage
+                },
+                newsFeed: [newsItem, ...state.newsFeed].slice(0, 25)
             };
         }
 
@@ -152,45 +205,76 @@ export function handleSquadAction(state: GameState, action: SquadAction): GameSt
         }
 
         case 'RESPOND_COACH_REQUEST': {
-            const { decision } = action.payload;
+            const { requestId, decision } = action.payload;
             if (!state.team.coach) return state;
+            if (state.coachReport?.answeredRequests?.[requestId]) {
+                return state;
+            }
             const satisfactionDelta = decision === 'PROMISE' ? 6 : -2;
             const newSatisfaction = Math.max(0, Math.min(100, (state.team.coach.satisfactionLevel ?? 75) + satisfactionDelta));
             const updatedCoach = { ...state.team.coach, satisfactionLevel: newSatisfaction };
             const updatedTeam = { ...state.team, coach: updatedCoach };
             const updatedAllTeams = state.allTeams.map(t => t.id === updatedTeam.id ? updatedTeam : t);
 
-            return {
-                ...state,
-                team: updatedTeam,
-                allTeams: updatedAllTeams
-            };
-        }
-
-        case 'AWARD_TEAM_BONUS': {
-            const { bonusPerPlayer } = action.payload;
-            const totalCost = bonusPerPlayer * state.team.squad.length;
-            if (state.finances.balance < totalCost) {
-                return state;
-            }
-            const updatedSquad = state.team.squad.map(p => ({
-                ...p,
-                morale: (p.morale === 'Descontento' || p.morale === 'Enojado' ? 'Normal' : 'Feliz') as Player['morale']
-            }));
-            const updatedCoach = state.team.coach 
-                ? { ...state.team.coach, satisfactionLevel: Math.min(100, (state.team.coach.satisfactionLevel || 75) + 8) }
+            const updatedReport = state.coachReport
+                ? {
+                    ...state.coachReport,
+                    satisfaction: newSatisfaction,
+                    answeredRequests: {
+                        ...(state.coachReport.answeredRequests || {}),
+                        [requestId]: decision
+                    }
+                }
                 : undefined;
-            const updatedTeam = { ...state.team, squad: updatedSquad, coach: updatedCoach };
-            const updatedAllTeams = state.allTeams.map(t => t.id === updatedTeam.id ? updatedTeam : t);
 
             return {
                 ...state,
                 team: updatedTeam,
                 allTeams: updatedAllTeams,
+                coachReport: updatedReport
+            };
+        }
+
+        case 'AWARD_TEAM_BONUS': {
+            const { bonusPerPlayer } = action.payload;
+            if (state.coachReport?.bonusAwarded) {
+                return state;
+            }
+            const totalCost = bonusPerPlayer * state.team.squad.length;
+            if (state.finances.balance < totalCost) {
+                return state;
+            }
+            const newBalance = Math.max(0, state.finances.balance - totalCost);
+            const updatedSquad = state.team.squad.map(p => ({
+                ...p,
+                morale: (p.morale === 'Descontento' || p.morale === 'Enojado' ? 'Normal' : 'Feliz') as Player['morale']
+            }));
+            const newCoachSatisfaction = state.team.coach
+                ? Math.min(100, (state.team.coach.satisfactionLevel || 75) + 8)
+                : undefined;
+            const updatedCoach = state.team.coach
+                ? { ...state.team.coach, satisfactionLevel: newCoachSatisfaction! }
+                : undefined;
+            const updatedTeam = { ...state.team, squad: updatedSquad, coach: updatedCoach };
+            const updatedAllTeams = state.allTeams.map(t => t.id === updatedTeam.id ? updatedTeam : t);
+            const updatedReport = state.coachReport
+                ? {
+                    ...state.coachReport,
+                    satisfaction: newCoachSatisfaction ?? state.coachReport.satisfaction,
+                    bonusAwarded: true
+                }
+                : undefined;
+
+            return {
+                ...state,
+                team: updatedTeam,
+                allTeams: updatedAllTeams,
+                coachReport: updatedReport,
                 boardConfidence: Math.min(100, state.boardConfidence + 3),
                 finances: {
                     ...state.finances,
-                    balance: Math.max(0, state.finances.balance - totalCost)
+                    balance: newBalance,
+                    balanceHistory: [...state.finances.balanceHistory, newBalance]
                 }
             };
         }

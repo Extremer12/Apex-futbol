@@ -76,15 +76,16 @@ export function useGameSave(
     // Controlled Auto-Save triggered at week completion or milestone
     const performAutoSave = useCallback(async () => {
         if (!gameState || !playerProfile) return;
+        const effectiveProfile = gameState.playerProfile || playerProfile;
         try {
             setSaveState({ isSaving: true });
             const saveId = gameState.careerId || currentSaveId || `career_${gameState.team.id}_${Date.now()}`;
-            await saveAutoGame({ ...gameState, careerId: saveId }, playerProfile);
+            await saveAutoGame({ ...gameState, careerId: saveId, playerProfile: effectiveProfile }, effectiveProfile);
             setSaveState({ lastSaved: new Date() });
             // Opportunistic background cloud backup
             supabase.auth.getUser().then(({ data: { user } }) => {
                 if (user) {
-                    uploadSaveToCloud(saveId, currentSaveName || `${gameState.team.name} (Autoguardado)`, gameState, playerProfile).catch((err) => {
+                    uploadSaveToCloud(saveId, currentSaveName || `${gameState.team.name} (Autoguardado)`, gameState, effectiveProfile).catch((err) => {
                         console.warn("[Apex Cloud] Autosave cloud backup failed:", err);
                     });
                 }
@@ -101,10 +102,11 @@ export function useGameSave(
     // Quick-Save triggered by user shortcut or button
     const performQuickSave = useCallback(async () => {
         if (!gameState || !playerProfile) return false;
+        const effectiveProfile = gameState.playerProfile || playerProfile;
         try {
             setSaveState({ isSaving: true });
             const saveId = gameState.careerId || currentSaveId || `career_${gameState.team.id}_${Date.now()}`;
-            await saveQuickGame({ ...gameState, careerId: saveId }, playerProfile);
+            await saveQuickGame({ ...gameState, careerId: saveId, playerProfile: effectiveProfile }, effectiveProfile);
             setSaveState({ lastSaved: new Date() });
             showNotification(`⚡ Guardado rápido: ${gameState.team.name}`, 'success');
             return true;
@@ -191,6 +193,7 @@ export function useGameSave(
 
     const performSaveGame = useCallback(async (saveName: string, _saveMode?: 'new' | 'overwrite') => {
         if (!gameState || !playerProfile) return false;
+        const effectiveProfile = gameState.playerProfile || playerProfile;
 
         // Guaranteed single canonical ID per career: always replaces!
         const saveId = gameState.careerId || currentSaveId || `career_${gameState.team.id}_${Date.now()}`;
@@ -200,8 +203,8 @@ export function useGameSave(
             id: saveId,
             careerId: saveId,
             saveName: saveName,
-            playerProfile,
-            gameState: { ...gameState, careerId: saveId },
+            playerProfile: effectiveProfile,
+            gameState: { ...gameState, careerId: saveId, playerProfile: effectiveProfile },
             teamName: gameState.team.name,
             slotType: 'manual',
             lastSaved: now,
@@ -219,7 +222,7 @@ export function useGameSave(
             // Cloud sync in background
             supabase.auth.getUser().then(({ data: { user } }) => {
                 if (user) {
-                    uploadSaveToCloud(saveId, saveName, gameState, playerProfile)
+                    uploadSaveToCloud(saveId, saveName, gameState, effectiveProfile)
                         .then(() => {
                             showNotification("Partida guardada y sincronizada en la nube", 'success');
                         })

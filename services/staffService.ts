@@ -1,4 +1,4 @@
-import { StaffMember, StaffRole, ClubStaff, Coach, LeagueId } from '../types';
+import { StaffMember, StaffRole, ClubStaff, Coach, LeagueId, Scout } from '../types';
 
 const FIRST_NAMES = [
     'Alejandro', 'Mateo', 'Carlos', 'Guillermo', 'Lucas', 'Julian', 'Marco', 'Andrea', 'Hans', 'Jürgen',
@@ -9,6 +9,23 @@ const LAST_NAMES = [
     'Navarro', 'Benítez', 'Santoro', 'Mancini', 'Kaufmann', 'Dupont', 'Fischer', 'Albuquerque', 'Silva',
     'Herrera', 'Villalba', 'Fontana', 'Rossi', 'Méndez', 'Castillo', 'Bauer', 'Moreno', 'Lombardi', 'Pérez'
 ];
+
+const SCOUT_SPECIALTIES: Scout['specialty'][] = ['POR', 'DEF', 'CEN', 'DEL', 'Youth', undefined];
+
+export const getStaffRegionScale = (leagueId?: string): { regionScale: number; isSouthAm: boolean; isMex: boolean } => {
+    const isSouthAm = Boolean(leagueId && [
+        LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
+        LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
+        LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE,
+        LeagueId.PRIMERA_A_COLOMBIA, LeagueId.PRIMERA_B_COLOMBIA,
+        'LIGA_ARGENTINA', 'PRIMERA_NACIONAL', 'BRASILEIRAO', 'SERIE_B_BR', 'COPA_DE_PRIMERA', 'PRIMERA_A_COLOMBIA'
+    ].includes(leagueId as any));
+
+    const isMex = Boolean(leagueId && [LeagueId.LIGA_MX, LeagueId.LIGA_EXPANSION_MX, 'LIGA_MX'].includes(leagueId as any));
+    const regionScale = isSouthAm ? 0.22 : isMex ? 0.42 : 1.0;
+
+    return { regionScale, isSouthAm, isMex };
+};
 
 const DOCTOR_SPECIALTIES = [
     'Prevención de Roturas Fibrilares',
@@ -51,16 +68,7 @@ export const generateStaffMember = (
     tier: 'Top' | 'Mid' | 'Lower',
     leagueId?: string
 ): StaffMember => {
-    const isSouthAm = leagueId && [
-        LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
-        LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
-        LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE,
-        LeagueId.PRIMERA_A_COLOMBIA, LeagueId.PRIMERA_B_COLOMBIA,
-        'LIGA_ARGENTINA', 'PRIMERA_NACIONAL', 'BRASILEIRAO', 'SERIE_B_BR', 'COPA_DE_PRIMERA', 'PRIMERA_A_COLOMBIA'
-    ].includes(leagueId as any);
-
-    const isMex = leagueId && [LeagueId.LIGA_MX, LeagueId.LIGA_EXPANSION_MX, 'LIGA_MX'].includes(leagueId as any);
-    const regionScale = isSouthAm ? 0.22 : isMex ? 0.42 : 1.0;
+    const { regionScale, isSouthAm } = getStaffRegionScale(leagueId);
 
     let minPower = 52;
     let maxPower = 70;
@@ -100,6 +108,59 @@ export const generateStaffMember = (
         age: Math.floor(36 + Math.random() * 26),
         nationality: isSouthAm ? (Math.random() > 0.5 ? 'Argentina' : 'Brasil') : (Math.random() > 0.5 ? 'España' : 'Italia')
     };
+};
+
+export const generateScout = (
+    tier: 'Top' | 'Mid' | 'Lower',
+    leagueId?: string,
+    forcedSpecialty?: Scout['specialty']
+): Scout => {
+    const { regionScale, isSouthAm } = getStaffRegionScale(leagueId);
+
+    let minStat = 64;
+    let maxStat = 78;
+    let baseSalary = 6500;
+
+    if (tier === 'Top') {
+        minStat = 82;
+        maxStat = 96;
+        baseSalary = 21000;
+    } else if (tier === 'Mid') {
+        minStat = 72;
+        maxStat = 88;
+        baseSalary = 12500;
+    }
+
+    const efficiency = Math.floor(minStat + Math.random() * (maxStat - minStat + 1));
+    const accuracy = Math.floor(minStat + Math.random() * (maxStat - minStat + 1));
+    const avgQuality = (efficiency + accuracy) / 2;
+    const salary = Math.max(1500, Math.floor(baseSalary * (avgQuality / 80) * regionScale * (0.85 + Math.random() * 0.3)));
+    const hiringFee = Math.floor(salary * 4 + (avgQuality * (isSouthAm ? 350 : 1200)));
+
+    const firstName = FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)];
+    const lastName = LAST_NAMES[Math.floor(Math.random() * LAST_NAMES.length)];
+    const specialty = forcedSpecialty !== undefined
+        ? forcedSpecialty
+        : SCOUT_SPECIALTIES[Math.floor(Math.random() * SCOUT_SPECIALTIES.length)];
+
+    return {
+        id: `scout_${Date.now()}_${Math.random().toString(36).substr(2, 7)}`,
+        name: `${firstName} ${lastName}`,
+        efficiency,
+        accuracy,
+        specialty,
+        salary,
+        hiringFee
+    };
+};
+
+export const generateScoutMarket = (tier: 'Top' | 'Mid' | 'Lower', leagueId?: string): Scout[] => {
+    const specs: Scout['specialty'][] = ['DEL', 'CEN', 'DEF', 'Youth', 'POR', undefined];
+    return specs.map((spec, idx) => {
+        const candidateTier: 'Top' | 'Mid' | 'Lower' =
+            idx < 2 ? tier : idx < 4 ? (tier === 'Top' ? 'Mid' : 'Top') : (tier === 'Lower' ? 'Mid' : 'Lower');
+        return generateScout(candidateTier, leagueId, spec);
+    });
 };
 
 export const generateStaffMarket = (tier: 'Top' | 'Mid' | 'Lower', leagueId?: string): StaffMember[] => {

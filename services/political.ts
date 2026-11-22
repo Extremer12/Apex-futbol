@@ -1,4 +1,5 @@
 import { GameState, FanApproval, Team, LeagueId } from '../types';
+import { getPresidentialStyleModifiers } from './presidentialProgression';
 
 /**
  * Calculate the transfer factor for fan approval (-10 to +10).
@@ -22,7 +23,10 @@ const calculateTransferFactor = (gameState: GameState): number => {
 
     // Bonus: recently signed star players (rating >= 85, default 3-year contract = recent signing)
     const hasStarSignings = squad.some(p => p.rating >= 85 && p.contractYears === 3);
-    if (hasStarSignings) transfers = Math.min(10, transfers + 3);
+    if (hasStarSignings) {
+        const styleBonus = getPresidentialStyleModifiers(gameState.playerProfile?.style).starSigningApprovalBonus;
+        transfers = Math.min(10, transfers + 3 + styleBonus);
+    }
 
     // Penalty: squad too thin (less than 18 players)
     if (squad.length < 18) transfers = Math.max(-10, transfers - 3);

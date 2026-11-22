@@ -43,7 +43,10 @@ export type GameAction =
     | { type: 'FIRE_COACH' }
     | { type: 'HIRE_STAFF'; payload: { staffId: string } }
     | { type: 'FIRE_STAFF'; payload: { role: import('../types').StaffRole } }
+    | { type: 'HIRE_SCOUT'; payload: Scout }
     | { type: 'FIRE_SCOUT'; payload: { scoutId: string } }
+    | { type: 'REFRESH_STAFF_MARKET' }
+    | { type: 'SCOUT_PLAYER'; payload: { playerId: number } }
     | { type: 'ACCEPT_SPONSOR'; payload: { sponsorId: string; negotiatedIncome?: number; customSigningBonus?: number; fanImpact?: number } }
     | { type: 'TERMINATE_SPONSOR'; payload: { sponsorId: string; indemnityCost: number } }
     | { type: 'TAKE_LOAN'; payload: { loan: import('../types').BankLoan } }
@@ -60,11 +63,11 @@ export type GameAction =
     | { type: 'UPDATE_TEAM'; payload: Team }
     | { type: 'UPDATE_BOARD_CONFIDENCE'; payload: number }
     | { type: 'UPDATE_STADIUM'; payload: Stadium }
-    | { type: 'HIRE_SCOUT'; payload: Scout }
     | { type: 'SCOUT_PLAYER'; payload: { playerId: number } }
     | { type: 'SET_CURRENCY'; payload: 'EUR' | 'USD' }
     | { type: 'SET_LANGUAGE'; payload: 'en' | 'es' }
     | { type: 'UPDATE_PLAYER_PROFILE'; payload: Partial<PlayerProfile> }
+    | { type: 'SWITCH_CLUB'; payload: { clubId: number } }
     | { type: 'RECORD_TRIGGERED_EVENT'; payload: string };
 
 export const initialState: GameState | null = null;
@@ -78,6 +81,7 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
         case 'ADVANCE_WEEK_SUCCESS':
         case 'START_NEW_SEASON':
         case 'UPDATE_PLAYER_PROFILE':
+        case 'SWITCH_CLUB':
             return handleGameLifecycleAction(state, action);
 
         default: {
@@ -119,6 +123,7 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 case 'FIRE_STAFF':
                 case 'HIRE_SCOUT':
                 case 'FIRE_SCOUT':
+                case 'REFRESH_STAFF_MARKET':
                 case 'SCOUT_PLAYER':
                     return handleStaffAction(state, action);
 

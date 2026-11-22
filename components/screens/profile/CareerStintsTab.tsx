@@ -2,6 +2,7 @@ import React from 'react';
 import { Team, PresidentialStint } from '../../../types';
 import { TeamLogo } from '../../../data/teams/helpers';
 import { Building2 } from 'lucide-react';
+import { StatCell, EmptyState } from '../transfers/TransferUI';
 
 interface CareerStintsTabProps {
     team: Team;
@@ -15,6 +16,14 @@ interface CareerStintsTabProps {
     pastStints?: PresidentialStint[];
 }
 
+const STINT_STATUS_LABEL: Record<PresidentialStint['status'], { label: string; style: string }> = {
+    ACTIVE: { label: 'En ejercicio', style: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' },
+    REELECTED: { label: 'Reelegido', style: 'bg-[var(--apex-gold)]/15 text-[var(--apex-gold)] border-[var(--apex-gold)]/30' },
+    RESIGNED: { label: 'Fin de ciclo', style: 'bg-sky-500/15 text-sky-400 border-sky-500/30' },
+    DEFEATED: { label: 'No reelecto', style: 'bg-rose-500/15 text-rose-400 border-rose-500/30' },
+    SACKED: { label: 'Destituido', style: 'bg-rose-500/15 text-rose-400 border-rose-500/30' },
+};
+
 export const CareerStintsTab: React.FC<CareerStintsTabProps> = React.memo(({
     team,
     season,
@@ -25,66 +34,67 @@ export const CareerStintsTab: React.FC<CareerStintsTabProps> = React.memo(({
 }) => {
     return (
         <div className="space-y-4">
-            <div className="bg-[#0B0F19] rounded-2xl border border-white/10 p-5 shadow-lg space-y-4">
-                <div className="flex items-center gap-2">
-                    <Building2 className="w-5 h-5 text-amber-400" />
-                    <h3 className="text-sm font-black text-white uppercase tracking-wider">Historial de Clubes Presididos</h3>
+            <div className="apex-card p-4 sm:p-5 rounded-2xl space-y-4">
+                <div className="flex items-center gap-2 pb-2.5 border-b border-white/10">
+                    <Building2 className="w-4 h-4 text-[var(--apex-gold)]" />
+                    <h3 className="text-xs font-black text-white uppercase tracking-wider">Historial de Clubes Presididos</h3>
                 </div>
 
                 {/* Current Club Stint */}
-                <div className="p-4 rounded-xl border border-amber-500/40 bg-amber-500/5 space-y-3">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-black/40 p-1 flex items-center justify-center">
-                                <TeamLogo team={team} className="w-full h-full object-contain" />
-                            </div>
-                            <div>
-                                <div className="flex items-center gap-2">
-                                    <h4 className="text-base font-black text-white uppercase">{team.name}</h4>
-                                    <span className="bg-emerald-500/20 text-emerald-400 text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-emerald-500/40">
-                                        En Ejercicio
-                                    </span>
-                                </div>
-                                <span className="text-xs text-slate-400">
-                                    Desde Temp. 1 • Temporada actual: {season} (Mandato #{mandateTotal})
+                <div className="p-4 rounded-2xl border border-[var(--apex-gold)]/35 bg-[var(--apex-gold)]/5 space-y-3">
+                    <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-xl bg-black/40 border border-white/10 p-1.5 flex items-center justify-center shrink-0">
+                            <TeamLogo team={team} className="w-full h-full object-contain" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <h4 className="text-sm sm:text-base font-black text-white truncate">{team.name}</h4>
+                                <span className="bg-emerald-500/15 text-emerald-400 text-[10px] font-black uppercase px-2 py-0.5 rounded-full border border-emerald-500/30">
+                                    En ejercicio
                                 </span>
                             </div>
+                            <span className="text-[11px] text-slate-400 block mt-0.5">
+                                Temporada actual: {season} · Mandato #{mandateTotal}
+                            </span>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2 pt-2 border-t border-white/5 text-center">
-                        <div>
-                            <span className="text-[9px] text-slate-400 uppercase font-bold block">Efectividad</span>
-                            <span className="text-sm font-black text-emerald-400">{careerStats.winRate}%</span>
-                        </div>
-                        <div>
-                            <span className="text-[9px] text-slate-400 uppercase font-bold block">Títulos</span>
-                            <span className="text-sm font-black text-amber-400">{careerStats.trophiesCount}</span>
-                        </div>
-                        <div>
-                            <span className="text-[9px] text-slate-400 uppercase font-bold block">Socios</span>
-                            <span className="text-sm font-black text-white">{fanApprovalRating}%</span>
-                        </div>
+                    <div className="grid grid-cols-3 gap-2">
+                        <StatCell label="Efectividad" value={`${careerStats.winRate}%`} accent="text-emerald-400" />
+                        <StatCell label="Títulos" value={careerStats.trophiesCount} accent="text-[var(--apex-gold)]" />
+                        <StatCell label="Socios" value={`${fanApprovalRating}%`} />
                     </div>
                 </div>
 
                 {/* Past Stints */}
-                {pastStints && pastStints.length > 0 && (
-                    <div className="space-y-2">
-                        {pastStints.map((stint, idx) => (
-                            <div key={idx} className="p-3 rounded-xl border border-white/5 bg-white/[0.02] flex items-center justify-between">
-                                <div>
-                                    <h5 className="text-sm font-bold text-white">{stint.clubName}</h5>
-                                    <span className="text-[10px] text-slate-400">
-                                        Temp. {stint.startSeason} - {stint.endSeason || stint.startSeason} • {stint.mandatesCompleted} Mandatos • {stint.trophiesWon.length} Títulos
-                                    </span>
+                {pastStints && pastStints.length > 0 ? (
+                    <div className="space-y-2.5">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Etapas anteriores</span>
+                        {pastStints.map((stint, idx) => {
+                            const statusMeta = STINT_STATUS_LABEL[stint.status] || STINT_STATUS_LABEL.RESIGNED;
+                            return (
+                                <div key={`${stint.clubId}_${idx}`} className="p-3.5 rounded-2xl border border-white/10 bg-white/[0.02] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                                    <div className="min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <h5 className="text-sm font-black text-white truncate">{stint.clubName}</h5>
+                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${statusMeta.style}`}>
+                                                {statusMeta.label}
+                                            </span>
+                                        </div>
+                                        <span className="text-[11px] text-slate-400 block mt-0.5">
+                                            T.{stint.startSeason} – T.{stint.endSeason || stint.startSeason} · {stint.totalMatches} PJ ({stint.winPercentage}% ef.) · {stint.trophiesWon.length} títulos
+                                        </span>
+                                    </div>
                                 </div>
-                                <span className="text-[10px] font-bold text-slate-400 bg-white/5 px-2 py-1 rounded">
-                                    {stint.status}
-                                </span>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
+                ) : (
+                    <EmptyState
+                        icon={<Building2 className="w-6 h-6" />}
+                        title="Trayectoria en curso"
+                        text="Al asumir la presidencia de otra institución en la pestaña Elecciones, tus etapas anteriores quedarán archivadas aquí."
+                    />
                 )}
             </div>
         </div>

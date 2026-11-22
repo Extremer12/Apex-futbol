@@ -1,5 +1,6 @@
 import { Stadium, Sponsor, Team, FinancialBreakdown, LeagueId, SponsorSector, SponsorPrestige, TicketPolicy, BankLoan, ClubDirectives, Scout } from '../types';
 import { getTeamStadium } from '../data/stadiums';
+import { getPresidentialStyleModifiers } from './presidentialProgression';
 
 export type { FinancialBreakdown };
 
@@ -497,8 +498,10 @@ export const calculateFinancialBreakdown = (
     ticketPolicy: TicketPolicy = 'standard',
     activeLoans: BankLoan[] = [],
     clubDirectives?: ClubDirectives,
-    scouts: Scout[] = []
+    scouts: Scout[] = [],
+    presidentialStyle?: string
 ): FinancialBreakdown => {
+    const styleMods = getPresidentialStyleModifiers(presidentialStyle);
     const isSouthAm = [
         LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
         LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
@@ -524,7 +527,7 @@ export const calculateFinancialBreakdown = (
             ? team.squad.slice().sort((a, b) => b.rating - a.rating).slice(0, 5).reduce((s, p) => s + p.rating, 0) / Math.min(5, team.squad.length)
             : 70;
         const starBoost = Math.max(1, (top5SquadAvg - 65) / 10);
-        merchandisingRevenue = Math.floor((isSouthAm ? 20_000 : 75_000) * starBoost);
+        merchandisingRevenue = Math.floor((isSouthAm ? 20_000 : 75_000) * starBoost * styleMods.merchandisingMultiplier);
     }
 
     // Directiva de Cantera
@@ -551,7 +554,7 @@ export const calculateFinancialBreakdown = (
     const coachExpenses = (team.coach?.salary || 0) + staffSalaries + scoutsSalaries;
     const stadiumExpenses = stadium.maintenanceCost;
     const baseOps = team.tier === 'Top' ? 250000 : team.tier === 'Mid' ? 100000 : 40000;
-    const operationalExpenses = Math.floor(baseOps * regionScale);
+    const operationalExpenses = Math.floor(baseOps * regionScale * styleMods.operationalCostMultiplier);
     const transferExpenses = transfersThisWeek.bought;
 
     return {

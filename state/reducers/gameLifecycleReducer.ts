@@ -2,12 +2,20 @@
 import React from 'react';
 import { GameState, Team, PlayerProfile, NewsItem, Player, Match, LeagueTableRow, Offer, LeagueId, CupCompetition } from '../../types';
 import { generateRandomCoach, generateCoachMarket } from '../../services/coaching';
-import { generateStadium, generateSponsorMarket, calculateFinancialBreakdown, getNetWeeklyIncome, generateSponsor } from '../../services/economy';
+import { generateStadium, generateSponsorMarket, calculateFinancialBreakdown, getNetWeeklyIncome, generateSponsor, getBaseWeeklyIncome } from '../../services/economy';
 import { initializeGame } from '../../services/gameFactory';
-import { generateInitialClubStaff, generateStaffMarket } from '../../services/staffService';
+import { generateInitialClubStaff, generateStaffMarket, generateScoutMarket } from '../../services/staffService';
+import { generateYouthPlayer } from '../../services/simulation';
 import { startNewSeason } from '../../services/seasonManager';
 import { evaluateAchievements } from '../../services/achievementService';
 import { calculateFanApproval } from '../../services/political';
+import {
+    awardPresidentXp,
+    buildCurrentStintArchive,
+    calculateBaselinePresidentXp,
+    getPresidentialStyleModifiers
+} from '../../services/presidentialProgression';
+import { formatDate } from '../../utils';
 import type { GameAction } from '../reducer';
 
 // Actions handled by this reducer
@@ -18,6 +26,7 @@ type GameLifecycleAction = Extract<GameAction,
     | { type: 'ADVANCE_WEEK_SUCCESS' }
     | { type: 'START_NEW_SEASON' }
     | { type: 'UPDATE_PLAYER_PROFILE' }
+    | { type: 'SWITCH_CLUB' }
 >;
 
 export function handleGameLifecycleAction(state: GameState | null, action: GameLifecycleAction): GameState | null {
@@ -53,7 +62,8 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
             const boardConfidence = loadedState.boardConfidence !== undefined ? loadedState.boardConfidence : ((loadedState as any).chairmanConfidence || 50);
 
             // 2. Coach & Player Stats System Migration
-            const availableCoaches = loadedState.availableCoaches || generateCoachMarket(5);
+            const playerTeamRaw = loadedState.team;
+            const availableCoaches = loadedState.availableCoaches || generateCoachMarket(5, playerTeamRaw?.leagueId, playerTeamRaw?.tier);
             // Ensure all teams have a coach, trophyCabinet, and all players have stats/condition
             const allTeamsWithCoaches = loadedState.allTeams.map(t => ({
                 ...t,
@@ -72,6 +82,7 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
             // 2b. Club Staff Migration
             const clubStaff = loadedState.clubStaff || playerTeamWithCoach.clubStaff || generateInitialClubStaff(playerTeamWithCoach.tier, playerTeamWithCoach.leagueId);
             const availableStaff = loadedState.availableStaff || generateStaffMarket(playerTeamWithCoach.tier, playerTeamWithCoach.leagueId);
+            const availableScouts = loadedState.availableScouts || generateScoutMarket(playerTeamWithCoach.tier, playerTeamWithCoach.leagueId);
             playerTeamWithCoach.clubStaff = clubStaff;
 
             // 3. Economy System Migration
@@ -139,6 +150,7 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
                 availableCoaches,
                 clubStaff,
                 availableStaff,
+                availableScouts,
                 stadium,
                 sponsors,
                 availableSponsors,
@@ -161,6 +173,17 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
                  rehydratedState.fanApproval.factors.promises === 0)
             ) {
                 rehydratedState.fanApproval = calculateFanApproval(rehydratedState);
+            }
+
+            // Hydrate president XP retroactively for legacy saves with 0 / missing XP
+            if (rehydratedState.playerProfile && (rehydratedState.playerProfile.experience ?? 0) === 0) {
+                const baselineXp = calculateBaselinePresidentXp(rehydratedState);
+                if (baselineXp > 0) {
+                    rehydratedState.playerProfile = {
+                        ...rehydratedState.playerProfile,
+                        experience: baselineXp
+                    };
+                }
             }
 
             return rehydratedState;
@@ -190,6 +213,7 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
             );
             const wasHomeMatch = currentMatch?.homeTeamId === state.team.id;
 
+            const styleMods = getPresidentialStyleModifiers(state.playerProfile?.style);
             const breakdown = calculateFinancialBreakdown(
                 updatedPlayerTeam,
                 state.stadium,
@@ -201,8 +225,32 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
                 state.finances.ticketPolicy,
                 state.finances.activeLoans,
                 state.finances.clubDirectives,
-                state.scouts
+                state.scouts,
+                state.playerProfile?.style
             );
+
+            // Award match XP and apply presidential style confidence modifiers
+            const playedMatch = newSchedule.find(m =>
+                m.week === state.currentWeek &&
+                Boolean(m.isMidweek) === isMidweekTurn &&
+                (m.homeTeamId === state.team.id || m.awayTeamId === state.team.id)
+            );
+            let matchXpDelta = 0;
+            let adjustedConfidence = newConfidence;
+            if (playedMatch?.result) {
+                const isHome = playedMatch.homeTeamId === state.team.id;
+                const myScore = isHome ? playedMatch.result.homeScore : playedMatch.result.awayScore;
+                const oppScore = isHome ? playedMatch.result.awayScore : playedMatch.result.homeScore;
+                if (myScore > oppScore) {
+                    matchXpDelta = Math.round(15 * styleMods.xpWinMultiplier);
+                    adjustedConfidence = Math.min(100, adjustedConfidence + styleMods.winConfidenceBonus);
+                } else if (myScore === oppScore) {
+                    matchXpDelta = 5;
+                } else {
+                    matchXpDelta = 2;
+                    adjustedConfidence = Math.max(0, Math.min(100, adjustedConfidence + styleMods.lossConfidenceBuffer));
+                }
+            }
 
             // Update balance based on breakdown
             const netIncome = getNetWeeklyIncome(breakdown);
@@ -300,13 +348,17 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
                         satisfactionLevel: action.payload.coachReport.satisfaction
                     } : updatedPlayerTeam.coach
                 },
-                boardConfidence: newConfidence,
+                boardConfidence: adjustedConfidence,
+                playerProfile: matchXpDelta > 0
+                    ? awardPresidentXp(state.playerProfile, matchXpDelta)
+                    : state.playerProfile,
                 incomingOffers: [...state.incomingOffers, ...newOffers],
                 cups: newCups || state.cups,
                 finances: updatedFinances,
                 sponsors: updatedSponsors,
                 availableSponsors: updatedAvailableSponsors,
                 scoutedPlayerIds: newScoutedPlayerIds || state.scoutedPlayerIds,
+                coachReport: action.payload.coachReport || state.coachReport,
                 cinematicQueue: action.payload.cinematicEvents && action.payload.cinematicEvents.length > 0
                     ? [...state.cinematicQueue, ...action.payload.cinematicEvents]
                     : state.cinematicQueue,
@@ -346,6 +398,92 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
                     ...action.payload
                 }
             };
+        }
+
+        case 'SWITCH_CLUB': {
+            if (!state) return null;
+            const { clubId } = action.payload;
+            if (clubId === state.team.id) return state;
+
+            const targetClubBase = state.allTeams.find(t => t.id === clubId);
+            if (!targetClubBase) return state;
+
+            const archivedStint = buildCurrentStintArchive(state, 'RESIGNED');
+            const existingStints = state.playerProfile?.careerStints || [];
+            const updatedProfile: PlayerProfile = {
+                ...(state.playerProfile || { name: 'Presidente', experience: 0 }),
+                careerStints: [archivedStint, ...existingStints]
+            };
+
+            const newStaff = targetClubBase.clubStaff || generateInitialClubStaff(targetClubBase.tier, targetClubBase.leagueId);
+            const newCoach = targetClubBase.coach || generateRandomCoach(targetClubBase.tier, targetClubBase.leagueId);
+            const targetClub: Team = {
+                ...targetClubBase,
+                coach: newCoach,
+                clubStaff: newStaff
+            };
+
+            const syncedAllTeams = state.allTeams.map(t => {
+                if (t.id === state.team.id) return state.team;
+                if (t.id === targetClub.id) return targetClub;
+                return t;
+            });
+
+            const newStadium = generateStadium(targetClub);
+            const newSponsors = [
+                generateSponsor('shirt', targetClub.tier, targetClub.leagueId),
+                generateSponsor('kit', targetClub.tier, targetClub.leagueId)
+            ];
+            const totalWages = targetClub.squad.reduce((sum, p) => sum + p.wage, 0) + newCoach.salary;
+            const newWeeklyIncome = getBaseWeeklyIncome(targetClub.leagueId);
+
+            const nextState: GameState = {
+                ...state,
+                team: targetClub,
+                allTeams: syncedAllTeams,
+                clubStaff: newStaff,
+                availableCoaches: generateCoachMarket(5, targetClub.leagueId, targetClub.tier),
+                availableStaff: generateStaffMarket(targetClub.tier, targetClub.leagueId),
+                availableScouts: generateScoutMarket(targetClub.tier, targetClub.leagueId),
+                scouts: [],
+                stadium: newStadium,
+                sponsors: newSponsors,
+                availableSponsors: generateSponsorMarket(targetClub.tier, targetClub.leagueId),
+                youthAcademy: Array.from({ length: 4 }, () => generateYouthPlayer(targetClub.tier)),
+                finances: {
+                    balance: targetClub.budget,
+                    transferBudget: targetClub.transferBudget,
+                    weeklyIncome: newWeeklyIncome,
+                    weeklyWages: totalWages,
+                    balanceHistory: [targetClub.budget],
+                    ticketPolicy: 'standard',
+                    activeLoans: [],
+                    clubDirectives: state.finances.clubDirectives
+                },
+                boardConfidence: targetClub.tier === 'Top' ? 65 : targetClub.tier === 'Mid' ? 75 : 80,
+                mandate: {
+                    startYear: state.season,
+                    currentYear: 1,
+                    nextElectionSeason: state.season + 4,
+                    isElectionYear: false,
+                    totalMandates: 1
+                },
+                electoralPromises: [],
+                incomingOffers: [],
+                coachReport: undefined,
+                lastStaffMarketRefreshWeek: undefined,
+                playerProfile: updatedProfile,
+                newsFeed: [{
+                    id: `switch_club_${Date.now()}`,
+                    headline: `Nuevo Ciclo Presidencial en ${targetClub.name}`,
+                    body: `${updatedProfile.name} asume oficialmente la presidencia de ${targetClub.name} tras cerrar su etapa en ${state.team.name}.`,
+                    date: formatDate(state.currentDate),
+                    type: 'achievement' as const
+                }, ...state.newsFeed].slice(0, 25)
+            };
+
+            nextState.fanApproval = calculateFanApproval(nextState);
+            return nextState;
         }
 
         default:
