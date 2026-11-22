@@ -1,24 +1,10 @@
 import { CompetitionItem } from '../league/constants';
 
-export const COUNTRY_FLAGS: Record<string, string> = {
-    'Argentina': '🇦🇷',
-    'Brasil': '🇧🇷',
-    'Chile': '🇨🇱',
-    'Colombia': '🇨🇴',
-    'Paraguay': '🇵🇾',
-    'México': '🇲🇽',
-    'Inglaterra': '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
-    'España': '🇪🇸',
-    'Alemania': '🇩🇪',
-    'Italia': '🇮🇹',
-    'Francia': '🇫🇷',
-};
-
 export const REGION_TABS = [
     { id: 'ALL', label: 'Todos (32)' },
-    { id: 'SUDAMERICA', label: '🌎 Sudamérica y México' },
-    { id: 'EUROPA', label: '🌍 Europa' },
-    { id: 'INT', label: '🏆 Internacionales' },
+    { id: 'SUDAMERICA', label: 'América' },
+    { id: 'EUROPA', label: 'Europa' },
+    { id: 'INT', label: 'Internacionales' },
 ];
 
 export const getCompBadge = (c: CompetitionItem) => {

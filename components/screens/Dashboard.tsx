@@ -48,30 +48,38 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({
             .flatMap(t => t.squad);
     }, [propAllPlayers, gameState?.allTeams, gameState?.team?.leagueId, gameState?.team?.id]);
 
-    const handlePlayerClick = useCallback((playerName: string) => {
-        let player = allPlayers.find(p => p.name === playerName);
-        if (!player && gameState) {
+    const { leaguePlayersById, leaguePlayersByName, allPlayersByName } = useMemo(() => {
+        const byId = new Map<number, Player>();
+        const byName = new Map<string, Player>();
+        const allByName = new Map<string, Player>();
+        for (const p of allPlayers) {
+            byId.set(p.id, p);
+            byName.set(p.name.toLowerCase(), p);
+        }
+        if (gameState?.allTeams) {
             for (const t of gameState.allTeams) {
-                const found = t.squad.find(p => p.name === playerName);
-                if (found) {
-                    player = found;
-                    break;
+                for (const p of t.squad) {
+                    if (!allByName.has(p.name)) allByName.set(p.name, p);
                 }
             }
         }
+        return { leaguePlayersById: byId, leaguePlayersByName: byName, allPlayersByName: allByName };
+    }, [allPlayers, gameState?.allTeams]);
+
+    const handlePlayerClick = useCallback((playerName: string) => {
+        const player = leaguePlayersByName.get(playerName.toLowerCase()) || allPlayersByName.get(playerName);
         if (player) dispatch({ type: 'SET_VIEWING_PLAYER', payload: player });
-    }, [allPlayers, gameState, dispatch]);
+    }, [leaguePlayersByName, allPlayersByName, dispatch]);
 
     const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
 
     const findAssociatedPlayer = useCallback((item: NewsItem): Player | undefined => {
         if (item.playerId) {
-            const p = allPlayers.find(pl => pl.id === item.playerId);
+            const p = leaguePlayersById.get(item.playerId);
             if (p) return p;
         }
         if (item.playerName) {
-            const lower = item.playerName.toLowerCase();
-            const p = allPlayers.find(pl => pl.name.toLowerCase() === lower);
+            const p = leaguePlayersByName.get(item.playerName.toLowerCase());
             if (p) return p;
         }
         for (const p of allPlayers) {
@@ -80,7 +88,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({
             }
         }
         return undefined;
-    }, [allPlayers]);
+    }, [allPlayers, leaguePlayersById, leaguePlayersByName]);
 
     const visibleNews = useMemo(() => {
         return gameState.newsFeed.slice(0, 3).map(item => ({

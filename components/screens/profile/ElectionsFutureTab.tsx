@@ -61,12 +61,12 @@ export const ElectionsFutureTab: React.FC<ElectionsFutureTabProps> = React.memo(
                             style={{ width: `${fanApprovalRating}%` }}
                         />
                     </div>
-                    <p className="text-[11px] text-slate-400 italic">
+                    <p className="text-[11px] text-slate-400">
                         {fanApprovalRating >= 65
-                            ? '✓ Los socios avalan de forma contundente tu gestión. Tienes el camino allanado para renovar tu mandato.'
+                            ? 'Los socios avalan tu gestión. Tienes el camino allanado para renovar tu mandato.'
                             : fanApprovalRating >= 45
-                            ? '⚠ Elección reñida: la oposición presiona. Un título o buen cierre económico inclinará la balanza.'
-                            : '⛔ Situación crítica: corres serio peligro de perder las elecciones frente a la lista opositora.'}
+                            ? 'Elección reñida: la oposición presiona. Un título o buen cierre económico inclinará la balanza.'
+                            : 'Situación crítica: corres serio peligro de perder las elecciones frente a la lista opositora.'}
                     </p>
                 </div>
             </div>

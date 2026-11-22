@@ -1,6 +1,6 @@
 import { GameState, NewsItem } from '../../types';
 import { formatDate, formatCurrency } from '../../utils';
-import { generateSponsorMarket } from '../../services/economy';
+import { generateSponsorMarket, getStadiumExpansionCost } from '../../services/economy';
 import type { GameAction } from '../reducer';
 
 // Actions handled by this reducer
@@ -279,26 +279,28 @@ export function handleEconomyAction(state: GameState, action: EconomyAction): Ga
         }
 
         case 'EXPAND_STADIUM': {
-            if (!state.stadium.expansionCost || !state.stadium.expansionCapacity) return state;
-            if (state.finances.balance < state.stadium.expansionCost) return state;
+            if (state.stadium.capacity >= 120_000) return state;
+            const expansionCost = state.stadium.expansionCost ?? getStadiumExpansionCost(state.stadium.capacity, state.team.tier, state.team.leagueId);
+            const expansionCapacity = state.stadium.expansionCapacity ?? Math.min(120_000, Math.floor(state.stadium.capacity * 1.25));
+            if (state.finances.balance < expansionCost) return state;
 
             return {
                 ...state,
                 finances: {
                     ...state.finances,
-                    balance: state.finances.balance - state.stadium.expansionCost,
-                    balanceHistory: [...state.finances.balanceHistory, state.finances.balance - state.stadium.expansionCost]
+                    balance: state.finances.balance - expansionCost,
+                    balanceHistory: [...state.finances.balanceHistory, state.finances.balance - expansionCost]
                 },
                 stadium: {
                     ...state.stadium,
-                    capacity: state.stadium.expansionCapacity,
+                    capacity: expansionCapacity,
                     expansionCost: undefined,
                     expansionCapacity: undefined
                 },
                 newsFeed: [{
                     id: `stadium_expansion_${Date.now()}`,
                     headline: '🏟️ Estadio Ampliado',
-                    body: `Las obras de ampliación del ${state.stadium.name} han finalizado. La nueva capacidad es de ${state.stadium.expansionCapacity} espectadores.`,
+                    body: `Las obras de ampliación del ${state.stadium.name} han finalizado. La nueva capacidad es de ${expansionCapacity} espectadores.`,
                     date: formatDate(state.currentDate)
                 }, ...state.newsFeed].slice(0, 20)
             };

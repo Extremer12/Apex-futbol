@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Team, ElectoralPromise } from '../../types';
 import { TeamLogo } from '../../data/teams/helpers';
-import { Trophy, TrendingUp, Sparkles, Landmark, Coins, Check, ShieldCheck } from 'lucide-react';
+import { Trophy, TrendingUp, ArrowRightLeft, Landmark, Coins, Check, ShieldCheck } from 'lucide-react';
 
 interface PromiseSelectionProps {
     team: Team;
@@ -76,7 +76,7 @@ const getPromiseIcon = (type: string) => {
         case 'trophy':
             return <Trophy className="w-4 h-4 text-[var(--apex-gold)]" />;
         case 'transfer':
-            return <Sparkles className="w-4 h-4 text-sky-400" />;
+            return <ArrowRightLeft className="w-4 h-4 text-sky-400" />;
         case 'stadium':
             return <Landmark className="w-4 h-4 text-purple-400" />;
         case 'finances':

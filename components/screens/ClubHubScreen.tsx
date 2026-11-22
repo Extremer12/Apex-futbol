@@ -1,11 +1,12 @@
 import React, { useMemo } from 'react';
 import { GameState, Screen, ElectoralPromise } from '../../types';
 import { GameAction } from '../../state/reducer';
-import { formatCurrency, formatCurrencyShort } from '../../utils';
-import { TrophyIcon, UsersIcon, TrendingUpIcon } from '../icons';
+import { formatCurrencyShort } from '../../utils';
+import { Trophy, Users, TrendingUp, Building2, Coins, ChevronRight, CheckCircle2, ClipboardList } from 'lucide-react';
 import { TeamLogo } from '../../data/teams/helpers';
 import { useGameStore } from '../../state/gameStore';
 import { getClubHistoricalHonours } from '../../data/historicalHonours';
+import { EmptyState, StatCell } from './transfers/TransferUI';
 
 interface ClubHubScreenProps {
     gameState: GameState;
@@ -13,256 +14,222 @@ interface ClubHubScreenProps {
     onNavigate?: (screen: Screen) => void;
 }
 
-export const ClubHubScreen: React.FC<ClubHubScreenProps> = ({ gameState, dispatch, onNavigate }) => {
-    const { team, mandate, fanApproval, electoralPromises, boardConfidence, stadium, finances } = gameState;
+export const ClubHubScreen: React.FC<ClubHubScreenProps> = ({ gameState, onNavigate }) => {
+    const { team, mandate, fanApproval, electoralPromises, boardConfidence, stadium } = gameState;
     const setActiveScreen = useGameStore(s => s.setActiveScreen);
     const nav = onNavigate || setActiveScreen;
 
     const clubHonours = useMemo(() => getClubHistoricalHonours(team.name), [team.name]);
     const totalTitles = (clubHonours?.totalOfficialTitles || 0) + (team.trophyCabinet?.length || 0);
+    const weeklySponsorIncome = useMemo(() => gameState.sponsors.reduce((s, c) => s + c.weeklyIncome, 0), [gameState.sponsors]);
 
     const getPromiseTypeIcon = (type: ElectoralPromise['type']) => {
         switch (type) {
-            case 'league_position': return <TrophyIcon className="w-5 h-5 text-white/70" />;
-            case 'trophy': return <TrophyIcon className="w-5 h-5 text-[var(--apex-gold)]" />;
-            case 'stadium': return <div className="p-1 bg-white/10 rounded border border-white/5">🏟️</div>;
-            case 'transfer': return <UsersIcon className="w-5 h-5 text-white/70" />;
-            case 'finances': return <div className="p-1 bg-[var(--apex-gold)]/10 rounded border border-[var(--apex-gold)]/30 text-[var(--apex-gold)]">💰</div>;
-            default: return null;
+            case 'league_position': return <Trophy className="w-4 h-4 text-slate-300" />;
+            case 'trophy': return <Trophy className="w-4 h-4 text-[var(--apex-gold)]" />;
+            case 'stadium': return <Building2 className="w-4 h-4 text-sky-400" />;
+            case 'transfer': return <Users className="w-4 h-4 text-emerald-400" />;
+            case 'finances': return <Coins className="w-4 h-4 text-[var(--apex-gold)]" />;
+            default: return <ClipboardList className="w-4 h-4 text-slate-400" />;
         }
     };
 
-    const handleGoToStadium = () => {
-        nav(Screen.Stadium);
-    };
-
-    const handleGoToSponsorships = () => {
-        nav(Screen.Sponsorships);
-    };
-
-    const handleGoToTrophies = () => {
-        nav(Screen.Trophies);
-    };
-
     return (
-        <div className="p-4 md:p-6 space-y-6 pb-24 animate-fade-in">
-            {/* Header / Mandate Banner */}
-            <div className="relative overflow-hidden apex-card p-6 md:p-8">
-                <div className="absolute -right-6 -bottom-6 w-48 h-48 opacity-10 pointer-events-none">
-                    <TeamLogo team={team} className="w-full h-full object-contain filter grayscale" />
-                </div>
-                <div className="relative z-10 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-black/40 border border-white/10 p-2.5 flex items-center justify-center shrink-0 shadow-xl">
-                        <TeamLogo team={team} className="w-full h-full object-contain drop-shadow-md" />
+        <div className="p-3 sm:p-5 md:p-6 space-y-4 pb-24 animate-fade-in max-w-5xl mx-auto">
+            {/* 1. COMPACT CLUB HEADER */}
+            <header className="apex-card p-4 sm:p-5 rounded-2xl flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-black/40 border border-white/10 p-2 flex items-center justify-center shrink-0">
+                        <TeamLogo team={team} className="w-full h-full object-contain" />
                     </div>
-                    <div>
-                        <h2 className="text-[10px] font-black text-gold-gradient tracking-[0.3em] uppercase mb-1">Oficina Presidencial</h2>
-                        <h1 className="text-2xl sm:text-4xl font-black text-white uppercase italic tracking-tighter">{team.name}</h1>
-                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-2">
-                            <span className="bg-[var(--apex-gold)]/10 text-[var(--apex-gold)] px-2.5 py-1 rounded text-[10px] font-black border border-[var(--apex-gold)]/30 uppercase tracking-widest">
-                                MANDATO #{mandate.totalMandates}
+                    <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-[var(--apex-gold)]">
+                                Mandato #{mandate.totalMandates}
                             </span>
-                            <span className="flex items-center gap-1.5 text-xs font-bold text-white/70 uppercase tracking-widest">
-                                <span className="w-1.5 h-1.5 bg-[var(--apex-green)] rounded-full animate-pulse shadow-[0_0_10px_rgba(46,204,113,0.5)]"></span>
-                                Año {mandate.currentYear} de 4
+                            <span className="text-[10px] font-bold text-slate-400">
+                                Año {mandate.currentYear} de 4 · Elecciones T.{mandate.nextElectionSeason}
                             </span>
-                            <span className="text-white/20 hidden md:inline">|</span>
-                            <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest bg-black/40 px-2.5 py-1 rounded border border-white/5">Próxima Elección: T.{mandate.nextElectionSeason}</span>
+                        </div>
+                        <h1 className="text-lg sm:text-xl font-black text-white tracking-tight truncate mt-0.5">
+                            {team.name}
+                        </h1>
+                    </div>
+                </div>
+                <div className="px-3 py-2 rounded-2xl bg-[#0D1220] border border-white/10 text-right shrink-0 hidden sm:block">
+                    <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block leading-none mb-1">Directiva</span>
+                    <span className="text-sm font-black text-[var(--apex-gold)] leading-none tabular-nums">{boardConfidence}%</span>
+                </div>
+            </header>
+
+            {/* 2. QUICK MANAGEMENT CARDS */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <button
+                    onClick={() => nav(Screen.Stadium)}
+                    className="apex-card p-4 rounded-2xl text-left hover:border-[var(--apex-gold)]/40 transition-colors flex items-center justify-between gap-3 cursor-pointer group"
+                >
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[var(--apex-gold)] shrink-0">
+                            <Building2 className="w-5 h-5" />
+                        </div>
+                        <div className="min-w-0">
+                            <div className="text-xs font-black text-white uppercase tracking-wider">Estadio</div>
+                            <div className="text-[11px] text-slate-400 truncate">{stadium.capacity.toLocaleString()} asientos</div>
                         </div>
                     </div>
-                </div>
+                    <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-white shrink-0" />
+                </button>
+
+                <button
+                    onClick={() => nav(Screen.Sponsorships)}
+                    className="apex-card p-4 rounded-2xl text-left hover:border-emerald-500/40 transition-colors flex items-center justify-between gap-3 cursor-pointer group"
+                >
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-emerald-400 shrink-0">
+                            <TrendingUp className="w-5 h-5" />
+                        </div>
+                        <div className="min-w-0">
+                            <div className="text-xs font-black text-white uppercase tracking-wider">Patrocinios</div>
+                            <div className="text-[11px] text-emerald-400 font-bold truncate">+{formatCurrencyShort(weeklySponsorIncome)}/sem</div>
+                        </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-white shrink-0" />
+                </button>
+
+                <button
+                    onClick={() => nav(Screen.Trophies)}
+                    className="apex-card p-4 rounded-2xl text-left hover:border-[var(--apex-gold)]/40 transition-colors flex items-center justify-between gap-3 cursor-pointer group"
+                >
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[var(--apex-gold)] shrink-0">
+                            <Trophy className="w-5 h-5" />
+                        </div>
+                        <div className="min-w-0">
+                            <div className="text-xs font-black text-white uppercase tracking-wider">Vitrina</div>
+                            <div className="text-[11px] text-[var(--apex-gold)] font-bold truncate">{totalTitles} títulos oficiales</div>
+                        </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-white shrink-0" />
+                </button>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                {/* Left Column: Popularity & Board */}
-                <div className="lg:col-span-4 space-y-6">
-                    {/* Fan Approval Card */}
-                    <div className="apex-card p-6">
-                        <h2 className="text-sm font-black text-white mb-6 uppercase tracking-widest flex items-center gap-2">
-                            <UsersIcon className="w-4 h-4 text-[var(--apex-gold)]" /> Aprobación de la Hinchada
-                        </h2>
-                        
-                        <div className="flex flex-col items-center justify-center mb-8">
-                            <div className="relative w-32 h-32 flex items-center justify-center">
-                                <svg className="w-full h-full transform -rotate-90 filter drop-shadow-xl">
-                                    <circle
-                                        cx="64" cy="64" r="58"
-                                        stroke="currentColor" strokeWidth="6" fill="transparent"
-                                        className="text-black/50"
-                                    />
-                                    <circle
-                                        cx="64" cy="64" r="58"
-                                        stroke="currentColor" strokeWidth="6" strokeLinecap="round" fill="transparent"
-                                        strokeDasharray={364.4}
-                                        strokeDashoffset={364.4 - (364.4 * fanApproval.rating) / 100}
-                                        className={`${fanApproval.rating >= 70 ? 'text-[var(--apex-green)]' : fanApproval.rating >= 40 ? 'text-[var(--apex-gold)]' : 'text-[var(--apex-red)]'} transition-all duration-1000 ease-out`}
-                                    />
-                                </svg>
-                                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                    <span className="text-3xl font-black text-white tracking-tighter">{fanApproval.rating}%</span>
-                                    <span className={`text-[9px] font-black uppercase tracking-widest mt-0.5 ${fanApproval.trend === 'rising' ? 'text-[var(--apex-green)]' : fanApproval.trend === 'falling' ? 'text-[var(--apex-red)]' : 'text-white/50'}`}>
-                                        {fanApproval.trend === 'rising' ? '▲ SUBIENDO' : fanApproval.trend === 'falling' ? '▼ BAJANDO' : '● ESTABLE'}
-                                    </span>
-                                </div>
-                            </div>
+            {/* 3. APPROVAL & PROMISES */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                <div className="lg:col-span-5 space-y-4">
+                    {/* Fan Approval */}
+                    <div className="apex-card p-4 sm:p-5 rounded-2xl space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
+                                <Users className="w-4 h-4 text-[var(--apex-gold)]" />
+                                Aprobación de Socios
+                            </h2>
+                            <span className="text-lg font-black text-white tabular-nums">{fanApproval.rating}%</span>
                         </div>
 
-                        <div className="space-y-3">
-                            <h3 className="text-[10px] font-black text-white/40 uppercase tracking-widest border-b border-white/5 pb-2">Factores Clave</h3>
-                            <div className="grid grid-cols-1 gap-2">
-                                {[
-                                    { label: 'Resultados Deportivos', value: fanApproval.factors.results, icon: <TrophyIcon className="w-3.5 h-3.5" /> },
-                                    { label: 'Salud Financiera', value: fanApproval.factors.finances, icon: <span className="text-xs">💰</span> },
-                                    { label: 'Política de Fichajes', value: fanApproval.factors.transfers, icon: <UsersIcon className="w-3.5 h-3.5" /> },
-                                    { label: 'Promesas Cumplidas', value: fanApproval.factors.promises, icon: <TrendingUpIcon className="w-3.5 h-3.5" /> },
-                                ].map((factor, i) => (
-                                    <div key={i} className="flex justify-between items-center bg-black/20 p-3 rounded-lg border border-white/5">
-                                        <div className="flex items-center gap-2.5">
-                                            <div className="text-[var(--apex-gold)] opacity-70">{factor.icon}</div>
-                                            <span className="text-xs font-bold text-white/70 uppercase tracking-wider">{factor.label}</span>
-                                        </div>
-                                        <span className={`font-black text-sm ${factor.value > 0 ? 'text-[var(--apex-green)]' : factor.value < 0 ? 'text-[var(--apex-red)]' : 'text-white/30'}`}>
-                                            {factor.value > 0 ? '+' : ''}{factor.value}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
+                        <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
+                            <div
+                                className={`h-full rounded-full transition-all duration-500 ${
+                                    fanApproval.rating >= 70 ? 'bg-emerald-500' : fanApproval.rating >= 40 ? 'bg-[var(--apex-gold)]' : 'bg-rose-500'
+                                }`}
+                                style={{ width: `${fanApproval.rating}%` }}
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                            <StatCell
+                                label="Resultados"
+                                value={`${fanApproval.factors.results > 0 ? '+' : ''}${fanApproval.factors.results}`}
+                                accent={fanApproval.factors.results >= 0 ? 'text-emerald-400' : 'text-rose-400'}
+                            />
+                            <StatCell
+                                label="Finanzas"
+                                value={`${fanApproval.factors.finances > 0 ? '+' : ''}${fanApproval.factors.finances}`}
+                                accent={fanApproval.factors.finances >= 0 ? 'text-emerald-400' : 'text-rose-400'}
+                            />
+                            <StatCell
+                                label="Fichajes"
+                                value={`${fanApproval.factors.transfers > 0 ? '+' : ''}${fanApproval.factors.transfers}`}
+                                accent={fanApproval.factors.transfers >= 0 ? 'text-emerald-400' : 'text-rose-400'}
+                            />
+                            <StatCell
+                                label="Promesas"
+                                value={`${fanApproval.factors.promises > 0 ? '+' : ''}${fanApproval.factors.promises}`}
+                                accent={fanApproval.factors.promises >= 0 ? 'text-emerald-400' : 'text-rose-400'}
+                            />
                         </div>
                     </div>
 
                     {/* Board Confidence */}
-                    <div className="apex-card p-6 border-t-2 border-[var(--apex-gold)]">
-                        <h2 className="text-sm font-black text-white mb-4 uppercase tracking-widest flex items-center gap-2">
-                            <TrendingUpIcon className="w-4 h-4 text-[var(--apex-gold)]" /> Confianza de la Directiva
-                        </h2>
-                        <div className="flex justify-between items-end mb-2">
-                            <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest">Nivel de Confianza</span>
-                            <span className="text-2xl font-black text-white tracking-tighter">{boardConfidence}%</span>
+                    <div className="apex-card p-4 sm:p-5 rounded-2xl space-y-2.5 border-t-2 border-[var(--apex-gold)]">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
+                                <TrendingUp className="w-4 h-4 text-[var(--apex-gold)]" />
+                                Confianza Directiva
+                            </h2>
+                            <span className="text-base font-black text-white tabular-nums">{boardConfidence}%</span>
                         </div>
-                        <div className="h-1.5 bg-black/50 rounded-full overflow-hidden border border-white/5">
-                            <div 
-                                className={`h-full transition-all duration-1000 ${boardConfidence >= 70 ? 'bg-[var(--apex-green)]' : boardConfidence >= 40 ? 'bg-[var(--apex-gold)]' : 'bg-[var(--apex-red)]'}`}
+                        <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                            <div
+                                className={`h-full transition-all duration-500 ${boardConfidence >= 70 ? 'bg-emerald-500' : boardConfidence >= 40 ? 'bg-[var(--apex-gold)]' : 'bg-rose-500'}`}
                                 style={{ width: `${boardConfidence}%` }}
                             />
                         </div>
-                        <p className="text-[10px] font-bold text-white/50 mt-4 leading-relaxed uppercase tracking-widest">
-                            {boardConfidence >= 80 ? 'La directiva está encantada con tu visión y resultados.' : 
-                             boardConfidence >= 50 ? 'Tienes el respaldo de la directiva, pero se espera progreso constante.' : 
-                             'Tu posición está bajo escrutinio. Se requieren mejoras inmediatas.'}
+                        <p className="text-[11px] text-slate-400 leading-relaxed">
+                            {boardConfidence >= 80
+                                ? 'La directiva respalda plenamente tu proyecto deportivo y financiero.'
+                                : boardConfidence >= 50
+                                ? 'Respaldo estable, se espera progreso constante esta temporada.'
+                                : 'Situación delicada. Se requieren resultados inmediatos.'}
                         </p>
                     </div>
                 </div>
 
-                {/* Right Column: Promises & Facilities */}
-                <div className="lg:col-span-8 space-y-6">
-                    {/* Promises Card */}
-                    <div className="apex-card p-6">
-                        <h2 className="text-base font-black text-white mb-6 flex items-center gap-3 uppercase tracking-tight">
-                            <div className="p-1.5 bg-[var(--apex-gold)]/10 rounded border border-[var(--apex-gold)]/20">
-                                <TrophyIcon className="w-4 h-4 text-[var(--apex-gold)]" />
-                            </div>
+                {/* Electoral Promises */}
+                <div className="lg:col-span-7 apex-card p-4 sm:p-5 rounded-2xl space-y-3">
+                    <div className="flex items-center justify-between pb-2.5 border-b border-white/10">
+                        <h2 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
+                            <Trophy className="w-4 h-4 text-[var(--apex-gold)]" />
                             Promesas Electorales
                         </h2>
+                        <span className="text-[11px] font-bold text-slate-400">
+                            {electoralPromises.filter(p => p.fulfilled).length}/{electoralPromises.length} cumplidas
+                        </span>
+                    </div>
 
-                        {electoralPromises.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {electoralPromises.map(promise => (
-                                    <div key={promise.id} className={`relative group p-4 rounded-xl border transition-all duration-300 ${promise.fulfilled ? 'bg-[var(--apex-green)]/5 border-[var(--apex-green)]/30' : 'bg-black/30 border-white/5 hover:border-[var(--apex-gold)]/30'}`}>
-                                        <div className="flex justify-between items-start mb-4">
-                                            <div className="flex items-start gap-3">
-                                                <div className="mt-0.5 opacity-80">{getPromiseTypeIcon(promise.type)}</div>
-                                                <h3 className="font-bold text-sm text-white leading-tight">{promise.description}</h3>
-                                            </div>
-                                            {promise.fulfilled && (
-                                                <span className="bg-[var(--apex-green)] text-black text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest ml-2 flex-shrink-0 shadow-[0_0_10px_rgba(46,204,113,0.3)]">CUMPLIDA</span>
-                                            )}
+                    {electoralPromises.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            {electoralPromises.map(promise => (
+                                <div
+                                    key={promise.id}
+                                    className={`p-3.5 rounded-2xl border flex flex-col justify-between gap-2.5 ${
+                                        promise.fulfilled
+                                            ? 'bg-emerald-500/10 border-emerald-500/30'
+                                            : 'bg-white/[0.02] border-white/10'
+                                    }`}
+                                >
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div className="flex items-start gap-2.5 min-w-0">
+                                            <div className="mt-0.5 shrink-0">{getPromiseTypeIcon(promise.type)}</div>
+                                            <h3 className="font-bold text-xs text-white leading-snug">{promise.description}</h3>
                                         </div>
-                                        
-                                        <div className="flex justify-between items-center mt-auto">
-                                            <span className="text-[9px] font-bold text-white/50 uppercase tracking-widest">Impacto: <span className="text-[var(--apex-gold)] font-black">+{promise.impact}</span></span>
-                                            <span className="bg-white/5 text-white/40 px-2 py-1 rounded border border-white/5 text-[9px] font-black uppercase tracking-widest">T.{promise.deadline}</span>
-                                        </div>
-
-                                        {!promise.fulfilled && (
-                                            <div className="mt-3 h-1 w-full bg-black/50 rounded-full overflow-hidden border border-white/5">
-                                                <div className="h-full bg-[var(--apex-gold)]/50 w-1/3 animate-pulse"></div>
-                                            </div>
-                                        )}
+                                        {promise.fulfilled && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
                                     </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="bg-black/20 border border-dashed border-white/10 rounded-xl py-12 text-center">
-                                <p className="text-xs font-bold text-white/30 uppercase tracking-widest">No hay promesas activas para este mandato.</p>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Infrastructure Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        {/* Stadium Card */}
-                        <div className="apex-card p-5 hover:border-[var(--apex-gold)]/50 transition-all group cursor-pointer" onClick={handleGoToStadium}>
-                            <div className="flex justify-between items-start mb-4">
-                                <div className="p-2.5 bg-white/5 rounded-xl border border-white/10 text-white/50 group-hover:bg-[var(--apex-gold)]/10 group-hover:text-[var(--apex-gold)] group-hover:border-[var(--apex-gold)]/30 transition-all">
-                                    <span className="text-xl leading-none block">🏟️</span>
+                                    <div className="flex items-center justify-between text-[10px] pt-2 border-t border-white/5">
+                                        <span className="text-slate-400">
+                                            Impacto: <strong className="text-[var(--apex-gold)]">+{promise.impact}</strong>
+                                        </span>
+                                        <span className="text-slate-400 font-bold">Límite T.{promise.deadline}</span>
+                                    </div>
                                 </div>
-                                <div className="text-right">
-                                    <span className="text-[8px] text-white/40 uppercase font-black tracking-widest block mb-0.5">Capacidad</span>
-                                    <span className="text-sm font-black text-white">{stadium.capacity.toLocaleString()}</span>
-                                </div>
-                            </div>
-                            <h3 className="text-sm font-black text-white uppercase mb-1">Estadio</h3>
-                            <p className="text-[10px] text-white/50 font-bold mb-4 uppercase tracking-widest leading-relaxed">Mejorar instalaciones y ampliar.</p>
-                            <button 
-                                onClick={(e) => { e.stopPropagation(); handleGoToStadium(); }}
-                                className="w-full py-2 bg-black/40 border border-white/5 text-white/70 text-[9px] font-black rounded-lg group-hover:bg-[var(--apex-gold)] group-hover:text-black group-hover:border-[var(--apex-gold)] transition-all uppercase tracking-widest"
-                            >
-                                Gestionar
-                            </button>
+                            ))}
                         </div>
-
-                        {/* Sponsorships Card */}
-                        <div className="apex-card p-5 hover:border-[var(--apex-green)]/50 transition-all group cursor-pointer" onClick={handleGoToSponsorships}>
-                            <div className="flex justify-between items-start mb-4">
-                                <div className="p-2.5 bg-white/5 rounded-xl border border-white/10 text-white/50 group-hover:bg-[var(--apex-green)]/10 group-hover:text-[var(--apex-green)] group-hover:border-[var(--apex-green)]/30 transition-all">
-                                    <TrendingUpIcon className="w-5 h-5" />
-                                </div>
-                                <div className="text-right">
-                                    <span className="text-[8px] text-white/40 uppercase font-black tracking-widest block mb-0.5">Ing. Semanal</span>
-                                    <span className="text-sm font-black text-[var(--apex-green)]">+{formatCurrencyShort(gameState.sponsors.reduce((s, c) => s + c.weeklyIncome, 0))}</span>
-                                </div>
-                            </div>
-                            <h3 className="text-sm font-black text-white uppercase mb-1">Patrocinios</h3>
-                            <p className="text-[10px] text-white/50 font-bold mb-4 uppercase tracking-widest leading-relaxed">Negocia acuerdos y bonificaciones.</p>
-                            <button 
-                                onClick={(e) => { e.stopPropagation(); handleGoToSponsorships(); }}
-                                className="w-full py-2 bg-black/40 border border-white/5 text-white/70 text-[9px] font-black rounded-lg group-hover:bg-[var(--apex-green)] group-hover:text-black group-hover:border-[var(--apex-green)] transition-all uppercase tracking-widest"
-                            >
-                                Ver Contratos
-                            </button>
-                        </div>
-
-                        {/* Trophies Card */}
-                        <div className="apex-card p-5 hover:border-[var(--apex-gold)]/50 transition-all group cursor-pointer" onClick={handleGoToTrophies}>
-                            <div className="flex justify-between items-start mb-4">
-                                <div className="p-2.5 bg-white/5 rounded-xl border border-white/10 text-white/50 group-hover:bg-[var(--apex-gold)]/10 group-hover:text-[var(--apex-gold)] group-hover:border-[var(--apex-gold)]/30 transition-all">
-                                    <TrophyIcon className="w-5 h-5" />
-                                </div>
-                                <div className="text-right">
-                                    <span className="text-[8px] text-white/40 uppercase font-black tracking-widest block mb-0.5">Títulos</span>
-                                    <span className="text-sm font-black text-[var(--apex-gold)]">{totalTitles}</span>
-                                </div>
-                            </div>
-                            <h3 className="text-sm font-black text-white uppercase mb-1">Vitrina</h3>
-                            <p className="text-[10px] text-white/50 font-bold mb-4 uppercase tracking-widest leading-relaxed">Ver los títulos históricos del club.</p>
-                            <button 
-                                onClick={(e) => { e.stopPropagation(); handleGoToTrophies(); }}
-                                className="w-full py-2 bg-black/40 border border-white/5 text-white/70 text-[9px] font-black rounded-lg group-hover:bg-[var(--apex-gold)] group-hover:text-black group-hover:border-[var(--apex-gold)] transition-all uppercase tracking-widest"
-                            >
-                                Abrir Vitrina
-                            </button>
-                        </div>
-                    </div>
+                    ) : (
+                        <EmptyState
+                            icon={<ClipboardList className="w-6 h-6" />}
+                            title="Sin promesas activas"
+                            text="No hay compromisos electorales vigentes para este mandato."
+                        />
+                    )}
                 </div>
             </div>
         </div>

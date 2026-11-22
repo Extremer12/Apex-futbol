@@ -102,7 +102,7 @@ export const MandatePoliticalTab: React.FC<MandatePoliticalTabProps> = React.mem
                                         {year === 1 && 'Asunción'}
                                         {year === 2 && 'Gestión'}
                                         {year === 3 && 'Balance'}
-                                        {year === 4 && '🗳️ Elecciones'}
+                                        {year === 4 && 'Elecciones'}
                                     </span>
                                 </div>
                             );
@@ -139,7 +139,7 @@ export const MandatePoliticalTab: React.FC<MandatePoliticalTabProps> = React.mem
                             <span className={`font-black uppercase tracking-wider ${
                                 fanApproval.rating >= 60 ? 'text-emerald-400' : fanApproval.rating >= 45 ? 'text-amber-400' : 'text-rose-400'
                             }`}>
-                                {fanApproval.rating >= 60 ? '✓ Amplio Respaldo' : fanApproval.rating >= 45 ? '⚠ Comicios Reñidos' : '⛔ Descontento Social'}
+                                {fanApproval.rating >= 60 ? 'Amplio respaldo' : fanApproval.rating >= 45 ? 'Comicios reñidos' : 'Descontento social'}
                             </span>
                         </div>
                         <div className="w-full h-2 bg-slate-900 rounded-full overflow-hidden border border-white/5">

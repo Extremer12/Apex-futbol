@@ -16,7 +16,7 @@ import {
     Award,
     RotateCcw,
     Globe,
-    Sparkles,
+    Crown,
     ShieldCheck,
     TrendingUp,
     BarChart3
@@ -64,13 +64,13 @@ export const ElectionScreen: React.FC<ElectionScreenProps> = ({
 
     // Filter trophies won in current 4-year mandate
     const mandateStartSeason = mandate.startYear || (gameState.season - 4);
-    const trophiesInMandate = (team.trophies || []).filter(
+    const trophiesInMandate = (team.trophyCabinet || []).filter(
         t => t.season !== undefined && t.season >= mandateStartSeason
     );
 
     // Electoral promises calculation
     const promises = gameState.electoralPromises || [];
-    const fulfilledPromises = promises.filter(p => p.status === 'fulfilled').length;
+    const fulfilledPromises = promises.filter(p => p.fulfilled).length;
     const totalPromises = promises.length;
 
     // Calculate election projection (win probability & projected vote share)
@@ -166,7 +166,7 @@ export const ElectionScreen: React.FC<ElectionScreenProps> = ({
 
     // Submit presidential score on defeat
     const presidentialScore = calculatePresidentialScore(
-        (team.trophies || []).length,
+        (team.trophyCabinet || []).length,
         clubValue,
         fanApproval,
         boardConfidence,
@@ -182,7 +182,7 @@ export const ElectionScreen: React.FC<ElectionScreenProps> = ({
                 managerName,
                 teamName: team.name,
                 season: gameState.season,
-                trophiesCount: (team.trophies || []).length,
+                trophiesCount: (team.trophyCabinet || []).length,
                 clubValue,
                 fanApproval,
                 boardConfidence
@@ -211,7 +211,7 @@ export const ElectionScreen: React.FC<ElectionScreenProps> = ({
                     <div>
                         <div className="flex items-center gap-2">
                             <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-amber-400 flex items-center gap-1">
-                                <Sparkles className="w-3 h-3 text-amber-400" />
+                                <Vote className="w-3 h-3 text-amber-400" />
                                 Asamblea de Socios
                             </span>
                             <span className="text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full bg-amber-400/15 border border-amber-400/30 text-amber-300 font-extrabold uppercase tracking-wider">
@@ -538,7 +538,7 @@ export const ElectionScreen: React.FC<ElectionScreenProps> = ({
                                 onClick={handleConfirmNewMandate}
                                 className="w-full py-4 px-8 rounded-2xl bg-gradient-to-r from-emerald-500 via-emerald-400 to-amber-400 hover:from-emerald-400 hover:to-amber-300 text-slate-950 font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-emerald-500/25 hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer"
                             >
-                                <Sparkles className="w-5 h-5 text-slate-950" />
+                                <Crown className="w-5 h-5 text-slate-950" />
                                 <span>Comenzar Mandato #{mandate.totalMandates + 1} ({gameState.season})</span>
                             </button>
                         </motion.div>

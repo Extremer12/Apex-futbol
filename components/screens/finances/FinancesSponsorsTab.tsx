@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { Sponsor } from '../../../types';
-import { formatCurrency, formatCurrencyShort } from '../../../utils';
+import { formatCurrencyShort } from '../../../utils';
 import { SPONSOR_SLOTS, getSectorLabel } from './financesUiTypes';
-import { Handshake, FileText, RefreshCw, X, AlertTriangle, CheckCircle2, Sparkles } from 'lucide-react';
+import { Handshake, RefreshCw, ChevronRight } from 'lucide-react';
+import { EmptyState } from '../transfers/TransferUI';
 
 interface FinancesSponsorsTabProps {
     sponsors: Sponsor[];
@@ -11,6 +12,14 @@ interface FinancesSponsorsTabProps {
     onRequestTermination: (sponsor: Sponsor) => void;
     onRefreshMarket: () => void;
 }
+
+const SLOT_FILTERS: { key: Sponsor['type'] | 'all'; label: string }[] = [
+    { key: 'all', label: 'Todos' },
+    { key: 'shirt', label: 'Camiseta' },
+    { key: 'kit', label: 'Indumentaria' },
+    { key: 'stadium', label: 'Estadio' },
+    { key: 'training', label: 'Manga' },
+];
 
 export const FinancesSponsorsTab: React.FC<FinancesSponsorsTabProps> = React.memo(({
     sponsors,
@@ -27,19 +36,16 @@ export const FinancesSponsorsTab: React.FC<FinancesSponsorsTabProps> = React.mem
     }, [availableSponsors, selectedSlotFilter]);
 
     return (
-        <div className="space-y-8 animate-fade-in">
-            {/* The 4 Commercial Slots */}
-            <div>
-                <div className="mb-4">
-                    <h3 className="text-sm font-black uppercase tracking-wider text-[var(--apex-gold)]">
-                        Espacios Comerciales del Club ({sponsors.length}/4 Asignados)
+        <div className="space-y-5">
+            {/* 4 Active Commercial Slots */}
+            <section className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">
+                        Espacios del Club ({sponsors.length}/4 cubiertos)
                     </h3>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                        Cada espacio genera ingresos semanales fijos garantizados por contrato. Solo puede haber una marca por espacio.
-                    </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     {SPONSOR_SLOTS.map(slotMeta => {
                         const activeSponsor = sponsors.find(s => s.type === slotMeta.type);
                         const IconComponent = slotMeta.icon;
@@ -47,214 +53,152 @@ export const FinancesSponsorsTab: React.FC<FinancesSponsorsTabProps> = React.mem
                         return (
                             <div
                                 key={slotMeta.type}
-                                className={`apex-card p-5 relative overflow-hidden flex flex-col justify-between transition-all ${
-                                    activeSponsor ? 'border-t-2' : 'border-dashed border-white/15'
-                                }`}
-                                style={{ borderTopColor: activeSponsor ? (activeSponsor.brandColor || slotMeta.accentColor) : undefined }}
+                                className="apex-card p-3.5 rounded-2xl flex items-center justify-between gap-3 border-l-2"
+                                style={{ borderLeftColor: activeSponsor ? (activeSponsor.brandColor || slotMeta.accentColor) : 'rgba(255,255,255,0.1)' }}
                             >
-                                <div>
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <div className="p-2 rounded-xl bg-white/5 border border-white/10 text-white/70">
-                                            <IconComponent className="w-4 h-4" />
-                                        </div>
-                                        <div className="min-w-0">
-                                            <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 truncate">
-                                                {slotMeta.title}
-                                            </div>
-                                            <div className="text-[11px] text-slate-300 font-semibold truncate">
-                                                {slotMeta.subtitle}
-                                            </div>
-                                        </div>
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 text-slate-300">
+                                        <IconComponent className="w-4 h-4" />
                                     </div>
-
-                                    {activeSponsor ? (
-                                        <div className="space-y-3 my-2">
-                                            <div>
-                                                <div className="text-base font-black text-white truncate">
-                                                    {activeSponsor.name}
-                                                </div>
-                                                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--apex-gold)] bg-[var(--apex-gold)]/10 px-2 py-0.5 rounded border border-[var(--apex-gold)]/20 inline-block mt-1">
-                                                    {getSectorLabel(activeSponsor.sector)}
-                                                </span>
-                                            </div>
-
-                                            <div className="bg-slate-950/60 p-2.5 rounded-xl border border-white/5 space-y-1.5 text-xs">
-                                                <div className="flex justify-between items-center">
-                                                    <span className="text-slate-400">Ingreso:</span>
-                                                    <span className="font-bold text-emerald-400">{formatCurrencyShort(activeSponsor.weeklyIncome)}/sem</span>
-                                                </div>
-                                                <div className="flex justify-between items-center">
-                                                    <span className="text-slate-400">Vigencia:</span>
-                                                    <span className="font-bold text-white">{activeSponsor.duration} semanas</span>
-                                                </div>
-                                            </div>
-
-                                            {activeSponsor.clauses && activeSponsor.clauses.length > 0 && (
-                                                <div className="text-[11px] text-slate-400 bg-white/5 p-2 rounded-lg border border-white/5 leading-tight">
-                                                    <strong className="text-slate-200">Cláusula:</strong> {activeSponsor.clauses[0]}
-                                                </div>
-                                            )}
+                                    <div className="min-w-0">
+                                        <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 truncate">
+                                            {slotMeta.title}
                                         </div>
-                                    ) : (
-                                        <div className="py-6 text-center space-y-2">
-                                            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                                                Espacio Disponible
-                                            </div>
-                                            <button
-                                                onClick={() => setSelectedSlotFilter(slotMeta.type)}
-                                                className="px-3 py-1.5 bg-[var(--apex-gold)]/10 hover:bg-[var(--apex-gold)] text-[var(--apex-gold)] hover:text-black rounded-lg text-[11px] font-bold uppercase tracking-wider transition-colors border border-[var(--apex-gold)]/30 cursor-pointer"
-                                            >
-                                                Ver Ofertas
-                                            </button>
-                                        </div>
-                                    )}
+                                        {activeSponsor ? (
+                                            <>
+                                                <div className="text-sm font-black text-white truncate">{activeSponsor.name}</div>
+                                                <div className="text-[11px] text-emerald-400 font-bold">
+                                                    {formatCurrencyShort(activeSponsor.weeklyIncome)}/sem · {activeSponsor.duration} sem
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <div className="text-xs font-bold text-slate-500">Espacio disponible</div>
+                                        )}
+                                    </div>
                                 </div>
 
-                                {activeSponsor && (
+                                {activeSponsor ? (
                                     <button
                                         onClick={() => onRequestTermination(activeSponsor)}
-                                        className="mt-4 w-full py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                                        className="px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-[10px] font-black uppercase tracking-wider shrink-0 cursor-pointer"
                                     >
-                                        Rescindir Contrato
+                                        Rescindir
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={() => setSelectedSlotFilter(slotMeta.type)}
+                                        className="px-2.5 py-1.5 rounded-xl bg-[var(--apex-gold)]/10 hover:bg-[var(--apex-gold)]/20 text-[var(--apex-gold)] border border-[var(--apex-gold)]/30 text-[10px] font-black uppercase tracking-wider shrink-0 cursor-pointer"
+                                    >
+                                        Ver ofertas
                                     </button>
                                 )}
                             </div>
                         );
                     })}
                 </div>
-            </div>
+            </section>
 
-            {/* Available Brand Offers Market */}
-            <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                        <h3 className="text-sm font-black uppercase tracking-wider text-white flex items-center gap-2">
-                            <FileText className="w-4 h-4 text-[var(--apex-gold)]" />
-                            Mercado de Propuestas Comerciales
-                        </h3>
-                        <p className="text-xs text-slate-400 mt-0.5">
-                            Evalúa marcas interesadas y negocia condiciones salariales o bonos iniciales.
-                        </p>
-                    </div>
+            {/* Available Market Offers */}
+            <section className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">
+                        Propuestas Comerciales ({filteredOffers.length})
+                    </h3>
+                    <button
+                        onClick={onRefreshMarket}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 text-[11px] font-bold cursor-pointer"
+                    >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span>Renovar mercado</span>
+                    </button>
+                </div>
 
-                    <div className="flex items-center gap-2 flex-wrap">
-                        {/* Slot Filter Pills */}
-                        <div className="flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-white/10">
-                            {[
-                                { key: 'all', label: 'Todos' },
-                                { key: 'shirt', label: 'Camiseta' },
-                                { key: 'kit', label: 'Indumentaria' },
-                                { key: 'stadium', label: 'Estadio' },
-                                { key: 'training', label: 'Manga' },
-                            ].map(f => (
-                                <button
-                                    key={f.key}
-                                    onClick={() => setSelectedSlotFilter(f.key as any)}
-                                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer ${
-                                        selectedSlotFilter === f.key
-                                            ? 'bg-white text-slate-950 shadow-sm'
-                                            : 'text-slate-400 hover:text-white'
-                                    }`}
-                                >
-                                    {f.label}
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* Refresh Market Button */}
-                        <button
-                            onClick={onRefreshMarket}
-                            title="Buscar nuevas marcas interesadas en el club"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 text-xs font-bold transition-colors cursor-pointer"
-                        >
-                            <RefreshCw className="w-3.5 h-3.5" />
-                            <span>Renovar Mercado</span>
-                        </button>
-                    </div>
+                {/* Slot Filter Pills */}
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+                    {SLOT_FILTERS.map(f => {
+                        const active = selectedSlotFilter === f.key;
+                        return (
+                            <button
+                                key={f.key}
+                                onClick={() => setSelectedSlotFilter(f.key)}
+                                className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
+                                    active
+                                        ? 'bg-[var(--apex-gold)] text-slate-950 font-black'
+                                        : 'bg-white/5 text-slate-400 hover:text-white'
+                                }`}
+                            >
+                                {f.label}
+                            </button>
+                        );
+                    })}
                 </div>
 
                 {filteredOffers.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {filteredOffers.map(offer => (
-                            <div
-                                key={offer.id}
-                                className="apex-card p-5 flex flex-col justify-between hover:border-[var(--apex-gold)]/40 transition-all duration-300 relative group"
-                            >
-                                <div>
-                                    <div className="flex justify-between items-start mb-3">
-                                        <div>
-                                            <span className="text-[10px] font-black uppercase tracking-wider text-[var(--apex-gold)]">
-                                                {offer.type === 'shirt' ? 'Frontal Camiseta' : offer.type === 'kit' ? 'Proveedor Técnico' : offer.type === 'stadium' ? 'Naming Estadio' : 'Manga & Instalaciones'}
-                                            </span>
-                                            <div className="text-base font-black text-white group-hover:text-[var(--apex-gold)] transition-colors">
-                                                {offer.name}
-                                            </div>
-                                        </div>
-                                        <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded bg-white/10 text-slate-300 border border-white/10">
-                                            {offer.prestige || 'Continental'}
-                                        </span>
-                                    </div>
-
-                                    <p className="text-xs text-slate-400 mb-4 line-clamp-2 leading-relaxed">
-                                        {offer.description || 'Acuerdo de patrocinio oficial con exposición en medios e indumentaria.'}
-                                    </p>
-
-                                    <div className="space-y-2 mb-4 bg-slate-950/60 p-3 rounded-xl border border-white/5 text-xs">
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-slate-400 font-medium">Fijo Semanal:</span>
-                                            <span className="font-bold text-emerald-400 text-sm">{formatCurrency(offer.weeklyIncome)}/sem</span>
-                                        </div>
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-slate-400 font-medium">Bono de Bienvenida:</span>
-                                            <span className="font-bold text-white">{formatCurrency(offer.signingBonus || offer.weeklyIncome * 4)}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-slate-400 font-medium">Duración:</span>
-                                            <span className="font-bold text-white">{Math.floor((offer.duration || 52) / 52)} año(s) ({offer.duration || 52} sem)</span>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-1.5 mb-4">
-                                        {(offer.fanApprovalImpact || 0) !== 0 && (
-                                            <div className={`text-[11px] font-semibold px-2 py-1 rounded-lg flex items-center gap-1.5 ${
-                                                (offer.fanApprovalImpact || 0) > 0 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                                            }`}>
-                                                {(offer.fanApprovalImpact || 0) > 0 ? '+' : ''}{offer.fanApprovalImpact}% Aprobación Socios ({offer.sector === 'betting' ? 'Polémica apuestas' : 'Arraigo popular'})
-                                            </div>
-                                        )}
-
-                                        {offer.bonus && (
-                                            <div className="text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2 py-1 rounded-lg font-semibold">
-                                                Bono deportivo: +{formatCurrencyShort(offer.bonus.amount)} al cumplir objetivo ({offer.bonus.condition})
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
+                    <div className="space-y-2">
+                        {filteredOffers.map(offer => {
+                            const slotLabel =
+                                offer.type === 'shirt' ? 'Camiseta' :
+                                offer.type === 'kit' ? 'Indumentaria' :
+                                offer.type === 'stadium' ? 'Estadio' : 'Manga';
+                            return (
                                 <button
+                                    key={offer.id}
                                     onClick={() => onStartNegotiation(offer)}
-                                    className="w-full py-2.5 rounded-xl bg-[var(--apex-gold)] hover:bg-[var(--apex-gold-light)] text-slate-950 font-black text-xs uppercase tracking-wider transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-md"
+                                    className="w-full apex-card p-3.5 rounded-2xl flex items-center justify-between gap-3 text-left hover:border-[var(--apex-gold)]/40 transition-colors cursor-pointer group"
                                 >
-                                    <Handshake className="w-3.5 h-3.5" />
-                                    Negociar Contrato
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div
+                                            className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center font-black text-base shrink-0"
+                                            style={{ color: offer.brandColor || '#C8A84E' }}
+                                        >
+                                            {offer.name.charAt(0)}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm font-black text-white group-hover:text-[var(--apex-gold)] truncate">
+                                                    {offer.name}
+                                                </span>
+                                                <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-white/5 text-slate-400 shrink-0">
+                                                    {slotLabel}
+                                                </span>
+                                            </div>
+                                            <div className="text-[11px] text-slate-400 truncate mt-0.5">
+                                                {getSectorLabel(offer.sector)} · Bono {formatCurrencyShort(offer.signingBonus || offer.weeklyIncome * 4)} · {offer.duration || 52} sem
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        <div className="text-right">
+                                            <div className="text-sm font-black text-emerald-400 tabular-nums">
+                                                {formatCurrencyShort(offer.weeklyIncome)}
+                                            </div>
+                                            <div className="text-[9px] text-slate-500 font-bold uppercase">/sem</div>
+                                        </div>
+                                        <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-white" />
+                                    </div>
                                 </button>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 ) : (
-                    <div className="apex-card p-12 text-center border-dashed border-white/10 space-y-3">
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                            No hay ofertas comerciales disponibles en este momento para la categoría seleccionada.
-                        </p>
-                        <button
-                            onClick={onRefreshMarket}
-                            className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
-                        >
-                            Explorar Nuevas Marcas
-                        </button>
+                    <div className="apex-card rounded-2xl">
+                        <EmptyState
+                            icon={<Handshake className="w-6 h-6" />}
+                            title="Sin propuestas en esta categoría"
+                            text="Prueba otro filtro o renueva el mercado para recibir nuevas marcas interesadas."
+                            action={
+                                <button
+                                    onClick={onRefreshMarket}
+                                    className="px-4 py-2 rounded-xl bg-[var(--apex-gold)] text-slate-950 text-xs font-black uppercase tracking-wider cursor-pointer"
+                                >
+                                    Renovar mercado
+                                </button>
+                            }
+                        />
                     </div>
                 )}
-            </div>
+            </section>
         </div>
     );
 });

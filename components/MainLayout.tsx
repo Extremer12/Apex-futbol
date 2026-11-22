@@ -149,7 +149,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
 
             {/* Regular Layout - Hidden during Fullscreen Live Match Simulation */}
             {!isLiveMatch && (
-                <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto min-h-screen relative shadow-2xl transition-all duration-300" style={{ background: 'var(--apex-dark)' }}>
+                <div className="max-w-md md:max-w-3xl lg:max-w-5xl mx-auto min-h-screen relative shadow-2xl transition-all duration-300" style={{ background: 'var(--apex-dark)' }}>
                     {/* Sticky Banner when Election Screen is minimized/closed to review the club */}
                     {gameState.mandate?.isElectionYear && !isElectionOpen && (
                         <div className="sticky top-0 z-30 bg-gradient-to-r from-amber-600/30 via-slate-900/90 to-amber-600/30 border-b border-amber-500/30 px-4 py-2.5 flex items-center justify-between backdrop-blur-md shadow-lg">

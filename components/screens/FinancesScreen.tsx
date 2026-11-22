@@ -9,17 +9,8 @@ import {
     evaluateFinancialHealth,
     getStadiumExpansionCost
 } from '../../services/economy';
-import {
-    PieChart,
-    Handshake,
-    Sliders,
-    Landmark,
-    Building2,
-    ShieldCheck,
-    AlertTriangle
-} from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { useToast } from '../common/ToastProvider';
-import { TeamLogo } from '../../data/teams/helpers';
 import { TabKey } from './finances/financesUiTypes';
 import { FinancesOverviewTab } from './finances/FinancesOverviewTab';
 import { FinancesSponsorsTab } from './finances/FinancesSponsorsTab';
@@ -47,11 +38,9 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = React.memo(({ gameS
     const [terminatingSponsor, setTerminatingSponsor] = useState<Sponsor | null>(null);
     const [confirmModal, setConfirmModal] = useState<ConfirmModalState | null>(null);
 
-    // Current team league position
     const playerTable = leagueTables[team.leagueId] || [];
     const playerPosition = playerTable.find(row => row.teamId === team.id)?.position || 10;
 
-    // Check if next/current match is home
     const isMidweekTurn = gameState.currentTurn === 'midweek';
     const currentMatch = gameState.schedule?.find(m =>
         m.week === gameState.currentWeek &&
@@ -60,7 +49,6 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = React.memo(({ gameS
     );
     const wasHomeMatch = currentMatch?.homeTeamId === team.id;
 
-    // Financial Breakdowns: with actual fixture local status & baseline without matchday
     const breakdown = useMemo(() => {
         return calculateFinancialBreakdown(
             team,
@@ -96,7 +84,6 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = React.memo(({ gameS
     const netIncome = useMemo(() => getNetWeeklyIncome(breakdown), [breakdown]);
     const netIncomeWithoutMatchday = useMemo(() => getNetWeeklyIncome(breakdownWithoutMatchday), [breakdownWithoutMatchday]);
 
-    // Financial Health Evaluation (scaled by league region)
     const health = useMemo(() => {
         return evaluateFinancialHealth(
             finances,
@@ -106,23 +93,15 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = React.memo(({ gameS
         );
     }, [finances, netIncome, gameState.currentWeek, team.leagueId]);
 
-    // Available loans
-    const availableLoanOffers = useMemo(() => {
-        return getAvailableLoans(team, team.leagueId);
-    }, [team]);
+    const availableLoanOffers = useMemo(() => getAvailableLoans(team, team.leagueId), [team]);
+    const totalDebt = useMemo(() => (finances.activeLoans || []).reduce((sum, l) => sum + (l.remainingAmount || 0), 0), [finances.activeLoans]);
 
-    // Total debt
-    const totalDebt = useMemo(() => {
-        return (finances.activeLoans || []).reduce((sum, l) => sum + (l.remainingAmount || 0), 0);
-    }, [finances.activeLoans]);
-
-    // Handlers
     const handleSetTicketPolicy = useCallback((policy: TicketPolicy) => {
         dispatch({ type: 'SET_TICKET_POLICY', payload: { policy } });
         const labels: Record<TicketPolicy, string> = {
-            cheap: 'Precios Populares (+Aprobación socios, 95-100% aforo)',
-            standard: 'Tarifa Estándar (Equilibrado)',
-            premium: 'Pase Prémium (Mayor recaudación por butaca)'
+            cheap: 'Precios Populares',
+            standard: 'Tarifa Estándar',
+            premium: 'Pase Prémium'
         };
         showToast(`Política de entradas: ${labels[policy]}`, 'info');
     }, [dispatch, showToast]);
@@ -130,9 +109,9 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = React.memo(({ gameS
     const handleReallocateBudget = useCallback((amount: number, direction: 'to_transfers' | 'to_balance') => {
         dispatch({ type: 'REALLOCATE_BUDGET', payload: { amount, direction } });
         if (direction === 'to_transfers') {
-            showToast(`Inyectados ${formatCurrencyShort(amount)} al presupuesto de fichajes.`, 'success');
+            showToast(`Inyectados ${formatCurrencyShort(amount)} a fichajes.`, 'success');
         } else {
-            showToast(`Reintegrados ${formatCurrencyShort(amount)} a la tesorería del club.`, 'info');
+            showToast(`Reintegrados ${formatCurrencyShort(amount)} a tesorería.`, 'info');
         }
     }, [dispatch, showToast]);
 
@@ -143,20 +122,15 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = React.memo(({ gameS
 
     const handleRefreshMarket = useCallback(() => {
         dispatch({ type: 'REFRESH_SPONSOR_MARKET' });
-        showToast('Mercado de patrocinios renovado con nuevas marcas.', 'info');
+        showToast('Mercado de patrocinios renovado.', 'info');
     }, [dispatch, showToast]);
 
     const handleAcceptSponsor = useCallback((sponsorId: string, negotiatedIncome: number, customSigningBonus: number, fanImpact: number) => {
         dispatch({
             type: 'ACCEPT_SPONSOR',
-            payload: {
-                sponsorId,
-                negotiatedIncome,
-                customSigningBonus,
-                fanImpact
-            }
+            payload: { sponsorId, negotiatedIncome, customSigningBonus, fanImpact }
         });
-        showToast('Contrato de patrocinio rubricado exitosamente.', 'success');
+        showToast('Contrato de patrocinio firmado.', 'success');
     }, [dispatch, showToast]);
 
     const handleRejectSponsor = useCallback((sponsorId: string) => {
@@ -164,50 +138,47 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = React.memo(({ gameS
     }, [dispatch]);
 
     const handleConfirmTermination = useCallback((sponsor: Sponsor, indemnityCost: number) => {
-        dispatch({
-            type: 'TERMINATE_SPONSOR',
-            payload: { sponsorId: sponsor.id, indemnityCost }
-        });
-        showToast(`Contrato con ${sponsor.name} rescindido. Espacio liberado.`, 'info');
+        dispatch({ type: 'TERMINATE_SPONSOR', payload: { sponsorId: sponsor.id, indemnityCost } });
+        showToast(`Contrato con ${sponsor.name} rescindido.`, 'info');
         setTerminatingSponsor(null);
     }, [dispatch, showToast]);
 
     const handleTakeLoan = useCallback((loan: BankLoan) => {
         setConfirmModal({
-            title: 'Solicitud de Línea de Crédito',
-            message: `¿Solicitar préstamo "${loan.name}" por ${formatCurrency(loan.principal)}? Se amortizará a razón de ${formatCurrency(loan.weeklyPayment)}/sem durante ${loan.remainingWeeks} semanas.`,
+            title: 'Solicitar Crédito',
+            message: `¿Solicitar "${loan.name}" por ${formatCurrency(loan.principal)}? Cuota semanal de ${formatCurrency(loan.weeklyPayment)} durante ${loan.remainingWeeks} semanas.`,
             confirmText: 'Solicitar Fondos',
             onConfirm: () => {
                 dispatch({ type: 'TAKE_LOAN', payload: { loan } });
-                showToast(`Crédito aprobado: +${formatCurrencyShort(loan.principal)} ingresados en tesorería.`, 'success');
+                showToast(`Crédito aprobado: +${formatCurrencyShort(loan.principal)}`, 'success');
             }
         });
     }, [dispatch, showToast]);
 
     const handleRepayLoan = useCallback((loan: BankLoan) => {
         setConfirmModal({
-            title: 'Amortización Total de Deuda',
-            message: `¿Amortizar la totalidad del crédito "${loan.name}" abonando ${formatCurrency(loan.remainingAmount)}? Se suprimirá la cuota semanal de ${formatCurrency(loan.weeklyPayment)}/sem.`,
+            title: 'Liquidar Préstamo',
+            message: `¿Cancelar "${loan.name}" abonando ${formatCurrency(loan.remainingAmount)}? Se eliminará la cuota semanal de ${formatCurrency(loan.weeklyPayment)}.`,
             confirmText: 'Liquidar Deuda',
             confirmColor: 'bg-emerald-500 hover:bg-emerald-400 text-slate-950',
             onConfirm: () => {
                 dispatch({ type: 'REPAY_LOAN', payload: { loanId: loan.id } });
-                showToast(`Préstamo liquidado. Cuota semanal cancelada.`, 'success');
+                showToast('Préstamo liquidado.', 'success');
             }
         });
     }, [dispatch, showToast]);
 
     const handleExpandStadium = useCallback(() => {
         const cost = stadium.expansionCost || getStadiumExpansionCost(stadium.capacity, team.tier, team.leagueId);
-        const capacity = stadium.expansionCapacity || Math.floor(stadium.capacity * 1.25);
+        const capacity = stadium.expansionCapacity || Math.min(120_000, Math.floor(stadium.capacity * 1.25));
 
         setConfirmModal({
             title: 'Ampliación de Gradas',
-            message: `¿Iniciar obras de ampliación del estadio a ${capacity.toLocaleString()} espectadores por ${formatCurrency(cost)}?`,
-            confirmText: 'Comenzar Obras',
+            message: `¿Ampliar ${stadium.name} a ${capacity.toLocaleString()} espectadores por ${formatCurrency(cost)}?`,
+            confirmText: 'Iniciar Obras',
             onConfirm: () => {
                 dispatch({ type: 'EXPAND_STADIUM' });
-                showToast(`Obras en marcha en el ${stadium.name}. Capacidad aumentada.`, 'success');
+                showToast(`Capacidad ampliada a ${capacity.toLocaleString()} asientos.`, 'success');
             }
         });
     }, [dispatch, stadium, team.tier, team.leagueId, showToast]);
@@ -215,121 +186,83 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = React.memo(({ gameS
     const handleUpgradeFacility = useCallback((cost: number) => {
         const nextLevel = stadium.facilityLevel + 1;
         setConfirmModal({
-            title: 'Modernización de Palcos VIP',
-            message: `¿Modernizar instalaciones VIP y palcos al Nivel ${nextLevel} por ${formatCurrency(cost)}? (+12.5% ingresos de día de partido)`,
+            title: 'Modernizar Palcos VIP',
+            message: `¿Mejorar las zonas VIP al Nivel ${nextLevel} por ${formatCurrency(cost)}? (+12.5% ingresos de taquilla)`,
             confirmText: 'Aprobar Inversión',
             onConfirm: () => {
                 dispatch({ type: 'UPGRADE_FACILITY', payload: { cost } });
-                showToast(`¡Instalaciones VIP modernizadas al Nivel ${nextLevel}!`, 'success');
+                showToast(`Palcos VIP modernizados al Nivel ${nextLevel}.`, 'success');
             }
         });
     }, [dispatch, stadium.facilityLevel, showToast]);
 
+    const freeSponsorSlots = Math.max(0, 4 - sponsors.length);
+    const activeLoansCount = (finances.activeLoans || []).length;
+
     return (
-        <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 pb-28 animate-fade-in text-white">
-            {/* Header & Financial Status Banner */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-white/10 pb-5">
-                <div className="flex items-center gap-3.5">
-                    <div className="w-12 h-12 rounded-xl bg-slate-950/60 border border-white/10 p-2 flex items-center justify-center shrink-0 shadow-inner">
-                        <TeamLogo team={team} className="w-full h-full object-contain" />
-                    </div>
-                    <div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-[var(--apex-gold)] bg-[var(--apex-gold)]/10 px-2 py-0.5 rounded border border-[var(--apex-gold)]/20">
-                                Dirección Financiera
-                            </span>
-                            <span className="text-xs text-slate-400 font-semibold hidden sm:inline">
-                                {team.name}
-                            </span>
-                        </div>
-                        <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight mt-0.5">
-                            Gestión Económica & Presupuesto
-                        </h1>
-                    </div>
+        <div className="p-3 sm:p-5 md:p-6 space-y-3 sm:space-y-4 pb-24 animate-fade-in max-w-5xl mx-auto">
+            {/* 1. COMPACT HEADER (matching Squad & Transfers) */}
+            <header className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                    <h1 className="text-lg sm:text-xl font-black text-white tracking-tight">Finanzas</h1>
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-400 truncate">
+                        {team.name} · Solvencia {health.grade} · {health.fairPlayCompliant ? 'Fair Play OK' : 'En riesgo'}
+                    </span>
                 </div>
-
-                {/* Credit Rating & Fair Play Badges */}
-                <div className="flex items-center gap-3 flex-wrap">
-                    <div className="bg-slate-900/80 border border-white/10 px-3.5 py-2 rounded-xl flex items-center gap-3 shadow-sm">
-                        <div
-                            className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm"
-                            style={{ backgroundColor: `${health.color}20`, color: health.color, border: `1px solid ${health.color}40` }}
-                        >
-                            {health.grade}
-                        </div>
-                        <div>
-                            <div className="text-[9px] font-black uppercase tracking-wider text-slate-400">Calificación Solvencia</div>
-                            <div className="text-xs font-black" style={{ color: health.color }}>
-                                {health.label}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-slate-900/80 border border-white/10 px-3.5 py-2 rounded-xl flex items-center gap-2.5 shadow-sm">
-                        <ShieldCheck className={`w-4 h-4 ${health.fairPlayCompliant ? 'text-emerald-400' : 'text-rose-400'}`} />
-                        <div>
-                            <div className="text-[9px] font-black uppercase tracking-wider text-slate-400">Fair Play Financiero</div>
-                            <div className="text-xs font-bold text-slate-200">
-                                {health.fairPlayCompliant ? 'En Regla' : 'Bajo Advertencia'}
-                            </div>
-                        </div>
-                    </div>
+                <div className="px-3 py-2 rounded-2xl bg-[#0D1220] border border-white/10 text-right shrink-0">
+                    <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block leading-none mb-1">Tesorería</span>
+                    <span className={`text-sm font-black leading-none tabular-nums ${finances.balance >= 0 ? 'text-[var(--apex-gold)]' : 'text-rose-400'}`}>
+                        {formatCurrencyShort(finances.balance)}
+                    </span>
                 </div>
-            </div>
+            </header>
 
-            {/* Navigation Tabs */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none border-b border-white/5">
-                {[
-                    { key: 'overview', label: 'Resumen & Tesorería', icon: PieChart },
-                    { key: 'sponsors', label: 'Patrocinios & Marcas', icon: Handshake, badge: sponsors.length < 4 ? `${4 - sponsors.length} libres` : undefined },
-                    { key: 'strategy', label: 'Estrategia & Decisiones', icon: Sliders },
-                    { key: 'banking', label: 'Banca & Préstamos', icon: Landmark, badge: totalDebt > 0 ? formatCurrencyShort(totalDebt) : undefined },
-                    { key: 'stadium', label: 'Estadio & Obras', icon: Building2 },
-                ].map(tab => {
-                    const isActive = activeTab === tab.key;
-                    const IconComponent = tab.icon;
-                    return (
+            {/* 2. STICKY TABS */}
+            <nav className="sticky top-0 z-20 -mx-3 sm:mx-0 px-3 sm:px-0 py-1.5 bg-[var(--apex-darker,#070A13)]/95 backdrop-blur">
+                <div className="flex sm:grid sm:grid-cols-5 gap-1 p-1 bg-white/5 rounded-2xl overflow-x-auto no-scrollbar">
+                    {([
+                        { id: 'overview', label: 'Resumen', badge: 0 },
+                        { id: 'sponsors', label: 'Comercial', badge: freeSponsorSlots },
+                        { id: 'strategy', label: 'Estrategia', badge: 0 },
+                        { id: 'banking', label: 'Banca', badge: activeLoansCount },
+                        { id: 'stadium', label: 'Estadio', badge: 0 },
+                    ] as const).map(t => (
                         <button
-                            key={tab.key}
-                            onClick={() => setActiveTab(tab.key as TabKey)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs uppercase tracking-wider transition-colors shrink-0 cursor-pointer ${
-                                isActive
-                                    ? 'bg-[var(--apex-gold)] text-slate-950 shadow-md shadow-[var(--apex-gold)]/20'
-                                    : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 border border-white/5'
+                            key={t.id}
+                            onClick={() => setActiveTab(t.id)}
+                            className={`relative h-10 px-3 sm:px-2 rounded-xl text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer ${
+                                activeTab === t.id ? 'bg-[var(--apex-gold)] text-slate-950 font-black' : 'text-slate-400 hover:text-white'
                             }`}
                         >
-                            <IconComponent className="w-3.5 h-3.5" />
-                            <span>{tab.label}</span>
-                            {tab.badge && (
-                                <span className={`text-[9px] px-1.5 py-0.2 rounded-md font-bold uppercase tracking-wider ${
-                                    isActive ? 'bg-slate-950 text-[var(--apex-gold)]' : 'bg-[var(--apex-gold)]/20 text-[var(--apex-gold)]'
+                            <span>{t.label}</span>
+                            {t.badge > 0 && (
+                                <span className={`min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-black flex items-center justify-center ${
+                                    activeTab === t.id ? 'bg-slate-950 text-[var(--apex-gold)]' : 'bg-white/15 text-white'
                                 }`}>
-                                    {tab.badge}
+                                    {t.badge}
                                 </span>
                             )}
                         </button>
-                    );
-                })}
-            </div>
+                    ))}
+                </div>
+            </nav>
 
             {/* Negative Balance Alert */}
             {finances.balance < 0 && (
-                <div className="bg-rose-950/20 border-2 border-rose-500/50 rounded-2xl p-4 flex items-start gap-3.5 animate-pulse">
-                    <div className="w-9 h-9 rounded-xl bg-rose-500/20 flex items-center justify-center shrink-0 border border-rose-500/30 text-rose-400">
-                        <AlertTriangle className="w-5 h-5" />
-                    </div>
-                    <div>
-                        <p className="text-rose-400 font-bold uppercase tracking-wider text-xs">
-                            Alerta de Déficit Crítico ({formatCurrency(finances.balance)})
-                        </p>
-                        <p className="text-slate-300 text-xs leading-relaxed mt-0.5">
-                            La tesorería general está en números rojos. Los gastos semanales superan la liquidez del club. Se recomienda reasignar presupuesto de fichajes a tesorería o solicitar un crédito inmediato en la pestaña <strong>Banca</strong>.
-                        </p>
+                <div className="apex-card p-3.5 rounded-2xl border-rose-500/40 bg-rose-950/20 flex items-start gap-3">
+                    <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                    <div className="text-xs">
+                        <span className="font-black text-rose-400 uppercase tracking-wider block">
+                            Déficit Crítico ({formatCurrency(finances.balance)})
+                        </span>
+                        <span className="text-slate-300">
+                            Reasigna presupuesto de fichajes en Estrategia o solicita liquidez en Banca.
+                        </span>
                     </div>
                 </div>
             )}
 
-            {/* Tab Contents */}
+            {/* 3. TAB CONTENT */}
             {activeTab === 'overview' && (
                 <FinancesOverviewTab
                     balance={finances.balance}
@@ -337,7 +270,7 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = React.memo(({ gameS
                     netIncome={netIncome}
                     netIncomeWithoutMatchday={netIncomeWithoutMatchday}
                     totalDebt={totalDebt}
-                    activeLoansCount={(finances.activeLoans || []).length}
+                    activeLoansCount={activeLoansCount}
                     breakdown={breakdown}
                     health={health}
                     balanceHistory={finances.balanceHistory || []}
@@ -390,7 +323,7 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = React.memo(({ gameS
                 />
             )}
 
-            {/* Negotiation Modal */}
+            {/* Modals */}
             <SponsorNegotiationModal
                 sponsor={negotiatingSponsor}
                 onClose={() => setNegotiatingSponsor(null)}
@@ -398,7 +331,6 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = React.memo(({ gameS
                 onRejectOffer={handleRejectSponsor}
             />
 
-            {/* Termination Modal */}
             <SponsorTerminationModal
                 sponsor={terminatingSponsor}
                 balance={finances.balance}
@@ -406,7 +338,6 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = React.memo(({ gameS
                 onConfirm={handleConfirmTermination}
             />
 
-            {/* Confirm Actions Modal */}
             <FinanceConfirmModal
                 modalState={confirmModal}
                 onClose={() => setConfirmModal(null)}

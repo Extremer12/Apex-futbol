@@ -30,6 +30,7 @@ import { StaffFireModal } from './staff/StaffModals';
 import { StaffRoleCard } from './staff/StaffRoleCard';
 import { StaffCandidateModal, MarketRoleType } from './staff/StaffCandidateModal';
 import { CoachMeetingModal } from '../ui/CoachMeetingModal';
+import { StatCell } from './transfers/TransferUI';
 
 interface StaffScreenProps {
     gameState: GameState;
@@ -149,50 +150,37 @@ export const StaffScreen: React.FC<StaffScreenProps> = React.memo(({ gameState, 
     }, [fireModal, dispatch, showToast]);
 
     return (
-        <div className="space-y-6 pb-10 animate-fade-in">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div>
-                    <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
-                        <Users className="w-6 h-6 text-emerald-400" />
-                        Cuerpo Técnico & Personal
-                    </h1>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                        Organigrama deportivo del club. Cada especialista impacta directamente en partidos, lesiones, fichajes y cantera.
-                    </p>
+        <div className="p-3 sm:p-5 md:p-6 space-y-4 pb-24 animate-fade-in max-w-5xl mx-auto">
+            {/* Compact Header */}
+            <header className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                    <h1 className="text-lg sm:text-xl font-black text-white tracking-tight">Personal</h1>
+                    <span className="text-[11px] font-bold text-slate-400 truncate block">
+                        {team.name} · Organigrama deportivo y ojeo
+                    </span>
                 </div>
-            </div>
+                <div className="px-3 py-2 rounded-2xl bg-[#0D1220] border border-white/10 text-right shrink-0">
+                    <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block leading-none mb-1">Nivel Staff</span>
+                    <span className="text-sm font-black text-[var(--apex-gold)] leading-none tabular-nums">
+                        {staffAveragePower}/100
+                    </span>
+                </div>
+            </header>
 
             {/* 4 Compact KPIs */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-3.5">
-                    <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Nivel del Staff</div>
-                    <div className="text-xl font-black text-white mt-1">
-                        {staffAveragePower}<span className="text-xs font-normal text-slate-500">/100</span>
-                    </div>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-3.5">
-                    <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Masa Salarial</div>
-                    <div className="text-xl font-black text-white mt-1">
-                        {formatCurrencyShort(totalWeeklyStaffWages)}<span className="text-xs font-normal text-slate-500">/sem</span>
-                    </div>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-3.5">
-                    <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Enfermería</div>
-                    <div className={`text-xl font-black mt-1 ${injuredPlayers.length === 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
-                        {injuredPlayers.length === 0 ? '100% Sano' : `${injuredPlayers.length} bajas`}
-                    </div>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-3.5">
-                    <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Red de Ojeo</div>
-                    <div className="text-xl font-black text-sky-400 mt-1">
-                        {scouts.length}<span className="text-xs font-normal text-slate-500">/3 activos</span>
-                    </div>
-                </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <StatCell label="Nivel del Staff" value={`${staffAveragePower}/100`} accent="text-[var(--apex-gold)]" />
+                <StatCell label="Salarios/sem" value={formatCurrencyShort(totalWeeklyStaffWages)} />
+                <StatCell
+                    label="Enfermería"
+                    value={injuredPlayers.length === 0 ? '100% Sano' : `${injuredPlayers.length} bajas`}
+                    accent={injuredPlayers.length === 0 ? 'text-emerald-400' : 'text-amber-400'}
+                />
+                <StatCell label="Ojeadores" value={`${scouts.length}/3 activos`} accent="text-sky-400" />
             </div>
 
             {/* 5 Key Roles Organigram */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 <StaffRoleCard
                     roleTitle="Director Técnico"
                     roleSubtitle={coach ? `${STYLE_ES[coach.style] || coach.style} · ${coach.preferredFormation}` : 'Conducción táctica'}

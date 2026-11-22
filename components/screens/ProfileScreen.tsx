@@ -5,11 +5,11 @@ import {
     Landmark, 
     Trophy, 
     Building2, 
-    Vote, 
-    Shield, 
-    Sparkles, 
-    Star, 
-    Flame 
+    Vote,
+    Shield,
+    GraduationCap,
+    Star,
+    Flame
 } from 'lucide-react';
 import { calculateFanApproval } from '../../services/political';
 import { ProfileHeroCard } from './profile/ProfileHeroCard';
@@ -50,7 +50,7 @@ const PRESIDENTIAL_STYLES: PresidentialStyleItem[] = [
         id: 'Canterano',
         title: 'Formador de Cantera',
         desc: 'Fuerte inversión en divisiones juveniles e infraestructura para producir futuras joyas.',
-        icon: Sparkles,
+        icon: GraduationCap,
         color: 'text-emerald-400',
         bg: 'bg-emerald-500/10 border-emerald-500/30'
     },
@@ -202,7 +202,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = React.memo(({ gameSta
     };
 
     return (
-        <div className="p-4 md:p-6 space-y-6 pb-28 max-w-4xl mx-auto">
+        <div className="p-3 sm:p-5 md:p-6 space-y-3 sm:space-y-4 pb-24 max-w-5xl mx-auto animate-fade-in">
             <ProfileHeroCard
                 fullName={fullName}
                 firstName={firstName}
@@ -219,48 +219,50 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = React.memo(({ gameSta
                 onOpenStyleModal={() => setShowStyleModal(true)}
             />
 
-            {/* TAB NAVIGATION PILLS */}
-            <div className="flex items-center gap-1.5 p-1 bg-[#0A0E17] rounded-2xl border border-white/10 text-xs font-bold overflow-x-auto">
-                <button
-                    onClick={() => setActiveTab('MANDATE')}
-                    className={`flex-1 min-w-[120px] py-2.5 px-3 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                        activeTab === 'MANDATE' ? 'bg-amber-400 text-slate-950 font-black shadow-lg' : 'text-slate-400 hover:text-white'
-                    }`}
-                >
-                    <Landmark className="w-4 h-4" />
-                    <span>Mandato & Política</span>
-                </button>
-                <button
-                    onClick={() => setActiveTab('PALMARES')}
-                    className={`flex-1 min-w-[100px] py-2.5 px-3 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                        activeTab === 'PALMARES' ? 'bg-amber-400 text-slate-950 font-black shadow-lg' : 'text-slate-400 hover:text-white'
-                    }`}
-                >
-                    <Trophy className="w-4 h-4" />
-                    <span>Palmarés</span>
-                </button>
-                <button
-                    onClick={() => setActiveTab('STINTS')}
-                    className={`flex-1 min-w-[100px] py-2.5 px-3 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                        activeTab === 'STINTS' ? 'bg-amber-400 text-slate-950 font-black shadow-lg' : 'text-slate-400 hover:text-white'
-                    }`}
-                >
-                    <Building2 className="w-4 h-4" />
-                    <span>Clubes</span>
-                </button>
-                <button
-                    onClick={() => setActiveTab('ELECTIONS')}
-                    className={`flex-1 min-w-[120px] py-2.5 px-3 rounded-xl transition-all flex items-center justify-center gap-2 relative cursor-pointer ${
-                        activeTab === 'ELECTIONS' ? 'bg-amber-400 text-slate-950 font-black shadow-lg' : 'text-slate-400 hover:text-white'
-                    }`}
-                >
-                    <Vote className="w-4 h-4" />
-                    <span>Elecciones</span>
-                    {isElectionYear && (
-                        <span className="w-2 h-2 rounded-full bg-red-500 animate-ping absolute top-2 right-2" />
-                    )}
-                </button>
-            </div>
+            {/* STICKY TAB NAVIGATION */}
+            <nav className="sticky top-0 z-20 -mx-3 sm:mx-0 px-3 sm:px-0 py-1.5 bg-[var(--apex-darker,#070A13)]/95 backdrop-blur">
+                <div className="grid grid-cols-4 gap-1 p-1 bg-white/5 rounded-2xl">
+                    <button
+                        onClick={() => setActiveTab('MANDATE')}
+                        className={`h-10 px-2 rounded-xl text-[11px] sm:text-sm font-bold transition-colors flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                            activeTab === 'MANDATE' ? 'bg-[var(--apex-gold)] text-slate-950 font-black' : 'text-slate-400 hover:text-white'
+                        }`}
+                    >
+                        <Landmark className="w-3.5 h-3.5 hidden sm:inline" />
+                        <span>Mandato</span>
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('PALMARES')}
+                        className={`h-10 px-2 rounded-xl text-[11px] sm:text-sm font-bold transition-colors flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                            activeTab === 'PALMARES' ? 'bg-[var(--apex-gold)] text-slate-950 font-black' : 'text-slate-400 hover:text-white'
+                        }`}
+                    >
+                        <Trophy className="w-3.5 h-3.5 hidden sm:inline" />
+                        <span>Palmarés</span>
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('STINTS')}
+                        className={`h-10 px-2 rounded-xl text-[11px] sm:text-sm font-bold transition-colors flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                            activeTab === 'STINTS' ? 'bg-[var(--apex-gold)] text-slate-950 font-black' : 'text-slate-400 hover:text-white'
+                        }`}
+                    >
+                        <Building2 className="w-3.5 h-3.5 hidden sm:inline" />
+                        <span>Clubes</span>
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('ELECTIONS')}
+                        className={`relative h-10 px-2 rounded-xl text-[11px] sm:text-sm font-bold transition-colors flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                            activeTab === 'ELECTIONS' ? 'bg-[var(--apex-gold)] text-slate-950 font-black' : 'text-slate-400 hover:text-white'
+                        }`}
+                    >
+                        <Vote className="w-3.5 h-3.5 hidden sm:inline" />
+                        <span>Elecciones</span>
+                        {isElectionYear && (
+                            <span className="w-2 h-2 rounded-full bg-rose-500 absolute top-1.5 right-1.5" />
+                        )}
+                    </button>
+                </div>
+            </nav>
 
             {/* TAB CONTENT */}
             {activeTab === 'MANDATE' && (

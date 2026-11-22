@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
-import { GameState, Stadium, Screen } from '../../types';
+import React, { useState, useCallback } from 'react';
+import { GameState, Screen } from '../../types';
 import { GameAction } from '../../state/reducer';
-import { Building2Icon, TicketIcon, HammerIcon, TrendingUpIcon, SparklesIcon, ArrowLeft, Plus, Minus } from 'lucide-react';
-import { formatCurrencyShort } from '../../utils';
+import { ArrowLeft } from 'lucide-react';
+import { formatCurrency, formatCurrencyShort } from '../../utils';
+import { getStadiumExpansionCost } from '../../services/economy';
 import { useToast } from '../common/ToastProvider';
-import { Modal } from '../ui/Modal';
 import { useGameStore } from '../../state/gameStore';
+import { FinancesStadiumTab } from './finances/FinancesStadiumTab';
+import { FinanceConfirmModal, ConfirmModalState } from './finances/FinancesModals';
 
 interface StadiumScreenProps {
     gameState: GameState;
@@ -14,235 +16,78 @@ interface StadiumScreenProps {
 }
 
 export const StadiumScreen: React.FC<StadiumScreenProps> = ({ gameState, dispatch, onNavigate }) => {
-    const { stadium, finances } = gameState;
+    const { stadium, finances, team } = gameState;
     const { showToast } = useToast();
-    const [isExpanding, setIsExpanding] = useState(false);
     const setActiveScreen = useGameStore(s => s.setActiveScreen);
     const nav = onNavigate || setActiveScreen;
+    const [confirmModal, setConfirmModal] = useState<ConfirmModalState | null>(null);
 
-    const handleAdjustTicketPrice = (delta: number) => {
-        const currentPrice = stadium.ticketPrice || 40;
-        const newPrice = Math.max(10, Math.min(250, currentPrice + delta));
-        if (newPrice === currentPrice) return;
+    const handleExpandStadium = useCallback(() => {
+        const cost = stadium.expansionCost || getStadiumExpansionCost(stadium.capacity, team.tier, team.leagueId);
+        const capacity = stadium.expansionCapacity || Math.min(120_000, Math.floor(stadium.capacity * 1.25));
 
-        dispatch({
-            type: 'UPDATE_STADIUM',
-            payload: {
-                ...stadium,
-                ticketPrice: newPrice
+        setConfirmModal({
+            title: 'Ampliación de Gradas',
+            message: `¿Ampliar ${stadium.name} a ${capacity.toLocaleString()} espectadores por ${formatCurrency(cost)}?`,
+            confirmText: 'Iniciar Obras',
+            onConfirm: () => {
+                dispatch({ type: 'EXPAND_STADIUM' });
+                showToast(`Capacidad ampliada a ${capacity.toLocaleString()} asientos.`, 'success');
             }
         });
-        showToast(`Precio de entrada actualizado a ${formatCurrencyShort(newPrice)}`, 'info');
-    };
+    }, [dispatch, stadium, team.tier, team.leagueId, showToast]);
 
-    const handleUpgradeFacilities = () => {
-        const cost = stadium.facilityLevel * 5000000; // £5M per level
-        if (stadium.facilityLevel >= 5) {
-            showToast("Las instalaciones ya están al nivel máximo.", 'info');
-            return;
-        }
-        if (finances.balance < cost) {
-            showToast(`Necesitas ${formatCurrencyShort(cost)} para esta mejora.`, 'error');
-            return;
-        }
-
-        dispatch({ type: 'UPGRADE_FACILITY', payload: { cost } });
-        showToast("¡Instalaciones mejoradas con éxito!", 'success');
-    };
-
-    const handleStartExpansion = () => {
-        const cost = stadium.expansionCost || (stadium.capacity * 1000);
-        const newCapacity = stadium.expansionCapacity || Math.floor(stadium.capacity * 1.25);
-        if (finances.balance < cost) {
-            showToast(`Necesitas ${formatCurrencyShort(cost)} para la ampliación.`, 'error');
-            return;
-        }
-
-        if (!stadium.expansionCost || !stadium.expansionCapacity) {
-            dispatch({ 
-                type: 'UPDATE_STADIUM', 
-                payload: { 
-                    ...stadium, 
-                    expansionCost: cost,
-                    expansionCapacity: newCapacity
-                } 
-            });
-        }
-        dispatch({ type: 'EXPAND_STADIUM' });
-        showToast(`Ampliación completada. Nueva capacidad: ${newCapacity.toLocaleString()} asientos.`, 'success');
-        setIsExpanding(false);
-    };
+    const handleUpgradeFacility = useCallback((cost: number) => {
+        const nextLevel = stadium.facilityLevel + 1;
+        setConfirmModal({
+            title: 'Modernizar Palcos VIP',
+            message: `¿Mejorar las zonas VIP al Nivel ${nextLevel} por ${formatCurrency(cost)}? (+12.5% ingresos de taquilla)`,
+            confirmText: 'Aprobar Inversión',
+            onConfirm: () => {
+                dispatch({ type: 'UPGRADE_FACILITY', payload: { cost } });
+                showToast(`Palcos VIP modernizados al Nivel ${nextLevel}.`, 'success');
+            }
+        });
+    }, [dispatch, stadium.facilityLevel, showToast]);
 
     return (
-        <div className="p-4 md:p-6 space-y-6 pb-24 animate-fade-in">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-4">
-                <div className="flex items-center gap-3">
+        <div className="p-3 sm:p-5 md:p-6 space-y-4 pb-24 animate-fade-in max-w-5xl mx-auto">
+            <header className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
                     <button
                         onClick={() => nav(Screen.Club)}
-                        className="p-2 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white rounded-xl border border-white/10 transition-all flex items-center gap-2 group cursor-pointer"
+                        className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-slate-300 hover:text-white shrink-0 cursor-pointer"
                         title="Volver al Club"
                     >
-                        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-                        <span className="text-xs font-black uppercase tracking-wider hidden sm:inline">Club</span>
+                        <ArrowLeft className="w-4 h-4" />
                     </button>
-                    <div>
-                        <h2 className="text-[10px] font-black text-gold-gradient tracking-[0.3em] uppercase mb-0.5">Infraestructura</h2>
-                        <h1 className="text-2xl sm:text-3xl font-black text-white uppercase italic tracking-tighter">Estadio & Taquilla</h1>
+                    <div className="min-w-0">
+                        <h1 className="text-lg sm:text-xl font-black text-white tracking-tight truncate">Estadio e Infraestructura</h1>
+                        <span className="text-[11px] font-bold text-slate-400 truncate block">
+                            {stadium.name} · {stadium.capacity.toLocaleString()} asientos
+                        </span>
                     </div>
                 </div>
-            </div>
-
-            {/* Stadium Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="md:col-span-2 apex-card relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 group-hover:scale-110 transition-all duration-700 pointer-events-none">
-                        <Building2Icon className="w-64 h-64 text-[var(--apex-gold)] grayscale" />
-                    </div>
-                    
-                    <div className="relative z-10 p-6 space-y-8">
-                        <div>
-                            <h3 className="text-4xl lg:text-5xl font-black text-white uppercase tracking-tighter leading-none mb-1">{stadium.name}</h3>
-                            <p className="text-[var(--apex-gold)] font-black uppercase tracking-[0.2em] text-[10px]">
-                                Sede Oficial{stadium.city ? ` • ${stadium.city}` : ''}
-                            </p>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-black/40 p-4 rounded-xl border border-white/5">
-                                <div className="text-white/40 text-[9px] font-black uppercase tracking-widest mb-1">Capacidad Total</div>
-                                <div className="text-3xl font-black text-white">{stadium.capacity.toLocaleString()}</div>
-                            </div>
-                            <div className="bg-black/40 p-4 rounded-xl border border-white/5">
-                                <div className="flex items-center justify-between mb-1">
-                                    <div className="text-white/40 text-[9px] font-black uppercase tracking-widest">Precio Entrada</div>
-                                    <div className="flex items-center gap-1">
-                                        <button
-                                            type="button"
-                                            onClick={() => handleAdjustTicketPrice(-5)}
-                                            disabled={(stadium.ticketPrice || 40) <= 10}
-                                            className="w-6 h-6 rounded bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center text-xs font-black text-white transition-all cursor-pointer"
-                                            title="Reducir precio (-5€)"
-                                        >
-                                            <Minus className="w-3 h-3" />
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleAdjustTicketPrice(5)}
-                                            disabled={(stadium.ticketPrice || 40) >= 250}
-                                            className="w-6 h-6 rounded bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center text-xs font-black text-white transition-all cursor-pointer"
-                                            title="Aumentar precio (+5€)"
-                                        >
-                                            <Plus className="w-3 h-3" />
-                                        </button>
-                                    </div>
-                                </div>
-                                <div className="text-3xl font-black text-[var(--apex-green)]">{formatCurrencyShort(stadium.ticketPrice || 40)}</div>
-                            </div>
-                        </div>
-
-                        <div className="pt-2">
-                            <div className="flex justify-between items-center mb-2">
-                                <span className="text-[9px] font-black text-white/50 uppercase tracking-widest">Nivel de Instalaciones</span>
-                                <span className="text-[9px] font-black text-[var(--apex-gold)] uppercase tracking-widest">Nivel {stadium.facilityLevel}/5</span>
-                            </div>
-                            <div className="flex gap-1.5">
-                                {[1, 2, 3, 4, 5].map(lvl => (
-                                    <div key={lvl} className={`h-1.5 flex-1 rounded-full border ${lvl <= stadium.facilityLevel ? 'bg-[var(--apex-gold)] border-[var(--apex-gold)]/50 shadow-[0_0_10px_rgba(200,168,78,0.5)]' : 'bg-black/50 border-white/5'}`}></div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
+                <div className="px-3 py-2 rounded-2xl bg-[#0D1220] border border-white/10 text-right shrink-0">
+                    <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block leading-none mb-1">Tesorería</span>
+                    <span className={`text-sm font-black leading-none tabular-nums ${finances.balance >= 0 ? 'text-[var(--apex-gold)]' : 'text-rose-400'}`}>
+                        {formatCurrencyShort(finances.balance)}
+                    </span>
                 </div>
+            </header>
 
-                <div className="apex-card p-6 flex flex-col">
-                    <h4 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2 mb-6">
-                        <TrendingUpIcon className="w-4 h-4 text-[var(--apex-green)]" />
-                        Finanzas de Partido
-                    </h4>
-                    
-                    <div className="space-y-4 flex-1">
-                        <div className="flex justify-between items-center pb-3 border-b border-white/5">
-                            <span className="text-white/50 text-[10px] font-bold uppercase tracking-widest">Mantenimiento Semanal</span>
-                            <span className="text-[var(--apex-red)] font-black">-{formatCurrencyShort(stadium.maintenanceCost)}</span>
-                        </div>
-                        <div className="flex justify-between items-center pb-3 border-b border-white/5">
-                            <span className="text-white/50 text-[10px] font-bold uppercase tracking-widest">Ingresos VIP (Bonus)</span>
-                            <span className="text-[var(--apex-green)] font-black">+{Math.floor((stadium.facilityLevel - 1) * 12.5)}%</span>
-                        </div>
-                        <div className="pt-4 mt-auto">
-                            <div className="text-white/40 text-[9px] font-black uppercase tracking-[0.2em] mb-1">Ingreso Estimado a Lleno</div>
-                            <div className="text-3xl font-black text-white">
-                                {formatCurrencyShort(Math.floor(stadium.capacity * stadium.ticketPrice * (1 + (stadium.facilityLevel - 1) * 0.125)))}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <FinancesStadiumTab
+                stadium={stadium}
+                team={team}
+                balance={finances.balance}
+                onRequestExpand={handleExpandStadium}
+                onRequestUpgradeFacility={handleUpgradeFacility}
+            />
 
-            {/* Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <button 
-                    onClick={() => setIsExpanding(true)}
-                    className="group apex-card p-6 text-left relative overflow-hidden hover:border-[var(--apex-gold)]/50 transition-all duration-300"
-                >
-                    <div className="flex items-start gap-4 relative z-10">
-                        <div className="bg-white/5 p-3 rounded-xl border border-white/10 text-white/50 group-hover:bg-[var(--apex-gold)]/10 group-hover:text-[var(--apex-gold)] group-hover:border-[var(--apex-gold)]/30 transition-all">
-                            <HammerIcon className="w-6 h-6" />
-                        </div>
-                        <div className="flex-1">
-                            <div className="font-black text-white text-lg uppercase tracking-tight mb-1">Ampliar Gradas</div>
-                            <p className="text-white/50 text-[10px] font-bold uppercase tracking-widest leading-relaxed">Aumenta la capacidad para recibir más aficionados y generar más ingresos.</p>
-                            <div className="mt-4 flex justify-between items-center">
-                                <span className="text-[9px] text-white/30 uppercase font-black tracking-widest">Costo desde</span>
-                                <span className="font-black text-[var(--apex-gold)]">{formatCurrencyShort(stadium.capacity * 1000)}</span>
-                            </div>
-                        </div>
-                    </div>
-                </button>
-
-                <button 
-                    onClick={handleUpgradeFacilities}
-                    className="group apex-card p-6 text-left relative overflow-hidden hover:border-[var(--apex-green)]/50 transition-all duration-300"
-                >
-                    <div className="flex items-start gap-4 relative z-10">
-                        <div className="bg-white/5 p-3 rounded-xl border border-white/10 text-white/50 group-hover:bg-[var(--apex-green)]/10 group-hover:text-[var(--apex-green)] group-hover:border-[var(--apex-green)]/30 transition-all">
-                            <SparklesIcon className="w-6 h-6" />
-                        </div>
-                        <div className="flex-1">
-                            <div className="font-black text-white text-lg uppercase tracking-tight mb-1">Mejorar Instalaciones</div>
-                            <p className="text-white/50 text-[10px] font-bold uppercase tracking-widest leading-relaxed">Mejora las áreas VIP y servicios generales para aumentar el ingreso por entrada.</p>
-                            <div className="mt-4 flex justify-between items-center">
-                                <span className="text-[9px] text-white/30 uppercase font-black tracking-widest">Costo de Mejora</span>
-                                <span className="font-black text-[var(--apex-green)]">{formatCurrencyShort(stadium.facilityLevel * 5000000)}</span>
-                            </div>
-                        </div>
-                    </div>
-                </button>
-            </div>
-
-            {isExpanding && (
-                <Modal title="Confirmar Ampliación" onClose={() => setIsExpanding(false)}>
-                    <div className="space-y-6">
-                        <p className="text-white/70 text-sm leading-relaxed">¿Estás seguro de ampliar el estadio? Este proyecto aumentará la capacidad total un 25%.</p>
-                        
-                        <div className="bg-black/50 p-5 rounded-xl border border-white/5 space-y-4">
-                            <div className="flex justify-between items-center pb-3 border-b border-white/5">
-                                <span className="text-white/50 font-black uppercase text-[10px] tracking-widest">Costo del Proyecto</span>
-                                <span className="text-white font-black">{formatCurrencyShort(stadium.capacity * 1000)}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-white/50 font-black uppercase text-[10px] tracking-widest">Nueva Capacidad</span>
-                                <span className="text-[var(--apex-gold)] font-black text-lg">{Math.floor(stadium.capacity * 1.25).toLocaleString()}</span>
-                            </div>
-                        </div>
-                        
-                        <div className="flex gap-3 pt-2">
-                            <button onClick={() => setIsExpanding(false)} className="flex-1 py-3 bg-white/5 text-white/50 font-black rounded-lg hover:bg-white/10 transition-all text-xs uppercase tracking-widest border border-white/10">CANCELAR</button>
-                            <button onClick={handleStartExpansion} className="flex-1 py-3 apex-btn-gold text-xs !w-auto">INICIAR PROYECTO</button>
-                        </div>
-                    </div>
-                </Modal>
-            )}
+            <FinanceConfirmModal
+                modalState={confirmModal}
+                onClose={() => setConfirmModal(null)}
+            />
         </div>
     );
 };

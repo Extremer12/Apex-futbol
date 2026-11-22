@@ -2,6 +2,7 @@ import React, { useMemo, useState, useCallback } from 'react';
 import { GameState, Player, Team } from '../../types';
 import { ALL_COMPETITIONS, CompetitionItem } from './league/constants';
 import { customPacksService } from '../../services/customPacks/packService';
+import { usePacksVersion } from '../../data/teams/helpers';
 import { useGameStore } from '../../state/gameStore';
 import { selectUserTeam } from '../../state/selectors';
 import { PlayerStats, TeamHighlights, CupInfo } from './statistics/types';
@@ -14,6 +15,7 @@ interface StatisticsScreenProps {
 }
 
 export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ gameState }) => {
+    const packsVersion = usePacksVersion();
     const dispatch = useGameStore(s => s.dispatch);
     const userTeam = selectUserTeam(gameState);
 
@@ -22,20 +24,18 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [isSelectorOpen, setIsSelectorOpen] = useState<boolean>(false);
 
-    // Selected competition definition
     const selectedCompDef = useMemo(() => {
-        return ALL_COMPETITIONS.find(c => c.id === selectedCompId) || 
-               ALL_COMPETITIONS.find(c => c.id === 'PREMIER_LEAGUE') || 
+        return ALL_COMPETITIONS.find(c => c.id === selectedCompId) ||
+               ALL_COMPETITIONS.find(c => c.id === 'PREMIER_LEAGUE') ||
                ALL_COMPETITIONS[0];
     }, [selectedCompId]);
 
     const compLogo = useMemo(() => {
         return customPacksService.resolveCompetitionLogo(selectedCompDef.id, selectedCompDef.name, selectedCompDef.logo);
-    }, [selectedCompDef]);
+    }, [selectedCompDef, packsVersion]);
 
     const isLeague = selectedCompDef.type === 'LEAGUE';
 
-    // 1-Tap Quick Access Shortcuts for Manager's Club
     const userLeagueComp = ALL_COMPETITIONS.find(c => c.id === userTeam.leagueId);
     const userCountry = userLeagueComp?.country || (userTeam as any).country || 'Argentina';
     const userCupComp = ALL_COMPETITIONS.find(c => c.country === userCountry && c.type === 'CUP');
@@ -43,7 +43,6 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
     const userContinentalComp = ALL_COMPETITIONS.find(c => c.id === (isEuropean ? 'CHAMPIONS_LEAGUE' : 'COPA_LIBERTADORES'));
     const intercontinentalComp = ALL_COMPETITIONS.find(c => c.id === 'COPA_INTERCONTINENTAL');
 
-    // O(1) Index of Teams by ID
     const teamsById = useMemo(() => {
         const map = new Map<number, Team>();
         for (const t of gameState.allTeams) {
@@ -52,7 +51,6 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
         return map;
     }, [gameState.allTeams]);
 
-    // O(1) Index of lowercased Team Names grouped by League ID for fast search
     const teamNamesByLeague = useMemo(() => {
         const map = new Map<string, string[]>();
         for (const t of gameState.allTeams) {
@@ -68,15 +66,9 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
     }, [gameState.allTeams]);
 
     const quickShortcuts = useMemo(() => {
-        return [
-            userLeagueComp,
-            userCupComp,
-            userContinentalComp,
-            intercontinentalComp
-        ].filter(Boolean) as CompetitionItem[];
+        return [userLeagueComp, userCupComp, userContinentalComp, intercontinentalComp].filter(Boolean) as CompetitionItem[];
     }, [userLeagueComp, userCupComp, userContinentalComp, intercontinentalComp]);
 
-    // Competitions available for filtering (exclude rankings)
     const filteredCompetitions = useMemo(() => {
         let list = ALL_COMPETITIONS.filter(c => c.id !== 'CLUB_RANKINGS');
 
@@ -92,8 +84,8 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
 
         if (searchQuery.trim()) {
             const q = searchQuery.toLowerCase().trim();
-            list = list.filter(c => 
-                c.name.toLowerCase().includes(q) || 
+            list = list.filter(c =>
+                c.name.toLowerCase().includes(q) ||
                 (c.country && c.country.toLowerCase().includes(q)) ||
                 teamNamesByLeague.get(c.id)?.some(n => n.includes(q))
             );
@@ -102,13 +94,11 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
         return list;
     }, [selectedRegion, searchQuery, teamNamesByLeague]);
 
-    // Teams in the active league
     const leagueTeams = useMemo(() => {
         if (!isLeague) return [];
         return gameState.allTeams.filter(t => t.leagueId === selectedCompDef.id);
     }, [isLeague, gameState.allTeams, selectedCompDef.id]);
 
-    // League player stats
     const playerStats = useMemo(() => {
         if (!isLeague) return [];
         const stats: PlayerStats[] = [];
@@ -121,8 +111,8 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
 
                 if (goals > 0 || assists > 0 || appearances > 0 || cleanSheets > 0) {
                     const baseRating = (player.rating || 75) / 10;
-                    const performanceScore = appearances > 0 
-                        ? (goals * 0.45 + assists * 0.35 + cleanSheets * 0.30) / appearances 
+                    const performanceScore = appearances > 0
+                        ? (goals * 0.45 + assists * 0.35 + cleanSheets * 0.30) / appearances
                         : 0;
                     const averageRating = Number(Math.min(9.9, Math.max(5.5, baseRating * 0.7 + performanceScore * 1.5 + 2.0)).toFixed(2));
 
@@ -144,7 +134,6 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
         return stats;
     }, [isLeague, leagueTeams]);
 
-    // Top Scorers (League or Cup)
     const topScorers = useMemo(() => {
         if (isLeague) {
             return [...playerStats]
@@ -187,7 +176,6 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
         return [];
     }, [isLeague, playerStats, selectedCompDef, gameState.cups, teamsById]);
 
-    // Top Assists (League or Cup)
     const topAssists = useMemo(() => {
         if (isLeague) {
             return [...playerStats]
@@ -230,7 +218,6 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
         return [];
     }, [isLeague, playerStats, selectedCompDef, gameState.cups, teamsById]);
 
-    // Top Clean Sheets (Guante de Oro)
     const topCleanSheets = useMemo(() => {
         if (!isLeague) return [];
         return [...playerStats]
@@ -239,7 +226,6 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
             .slice(0, 15);
     }, [isLeague, playerStats]);
 
-    // Top MVPs / Season Rating
     const topMVPs = useMemo(() => {
         if (!isLeague) return [];
         return [...playerStats]
@@ -248,7 +234,6 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
             .slice(0, 15);
     }, [isLeague, playerStats]);
 
-    // Team Performance Highlights
     const teamHighlights = useMemo((): TeamHighlights | null => {
         if (!isLeague) return null;
         const currentTable = gameState.leagueTables[selectedCompDef.id] || [];
@@ -275,7 +260,6 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
         };
     }, [isLeague, selectedCompDef.id, gameState.leagueTables, teamsById]);
 
-    // Cup status info if applicable
     const cupInfo = useMemo((): CupInfo | null => {
         if (isLeague || !selectedCompDef.cupKey) return null;
         const cup = (gameState.cups as any)[selectedCompDef.cupKey];
@@ -311,8 +295,24 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
     }, []);
 
     return (
-        <div className="px-2 sm:px-4 md:px-6 py-2 sm:py-6 space-y-4 sm:space-y-6 max-w-7xl mx-auto pb-24 animate-fade-in w-full">
-            {/* Header & Controls: Active Competition + Shortcuts + Selector */}
+        <div className="p-3 sm:p-5 md:p-6 space-y-3 sm:space-y-4 pb-24 animate-fade-in max-w-5xl mx-auto">
+            {/* 1. COMPACT HEADER */}
+            <header className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                    <h1 className="text-lg sm:text-xl font-black text-white tracking-tight">Estadísticas</h1>
+                    <span className="text-[11px] font-bold text-slate-400 truncate block">
+                        Temporada {gameState.season} · {selectedCompDef.name}
+                    </span>
+                </div>
+                <div className="px-3 py-2 rounded-2xl bg-[#0D1220] border border-white/10 text-right shrink-0">
+                    <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block leading-none mb-1">Goleador</span>
+                    <span className="text-sm font-black text-[var(--apex-gold)] leading-none tabular-nums">
+                        {topScorers[0] ? `${topScorers[0].goals}G` : '0G'}
+                    </span>
+                </div>
+            </header>
+
+            {/* 2. COMPETITION SELECTOR & SHORTCUTS */}
             <CompSelectorBar
                 selectedCompDef={selectedCompDef}
                 compLogo={compLogo}
@@ -329,13 +329,13 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = React.memo(({ g
                 filteredCompetitions={filteredCompetitions}
             />
 
-            {/* Overview Metrics: Attack, Defense, Goals/Game, Cup Status */}
+            {/* 3. OVERVIEW METRICS */}
             <TournamentOverviewCards
                 teamHighlights={teamHighlights}
                 cupInfo={cupInfo}
             />
 
-            {/* Tables: Top Scorers, Assists, Clean Sheets & MVP */}
+            {/* 4. LEADERBOARDS */}
             <StatsLeaderboards
                 topScorers={topScorers}
                 topAssists={topAssists}

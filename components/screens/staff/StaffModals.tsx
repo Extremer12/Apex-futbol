@@ -5,7 +5,6 @@ import {
     X, 
     UserPlus, 
     AlertTriangle, 
-    Sparkles, 
     Stethoscope, 
     Dumbbell, 
     Award, 
@@ -182,8 +181,9 @@ export const StaffFireModal: React.FC<StaffFireModalProps> = React.memo(({
                                 </div>
                             </div>
 
-                            <div className="p-3.5 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-300">
-                                ⚠️ El puesto quedará <strong>vacante</strong> hasta que contrates a un nuevo profesional, perdiendo los beneficios de su especialidad y rating.
+                            <div className="p-3.5 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-300 flex items-start gap-2">
+                                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                                <span>El puesto quedará <strong>vacante</strong> hasta que contrates a un nuevo profesional, perdiendo los beneficios de su especialidad y rating.</span>
                             </div>
                         </div>
 
@@ -234,8 +234,8 @@ export const StaffImpactGuideModal: React.FC<StaffImpactGuideModalProps> = React
                     >
                         <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-5">
                             <div className="flex items-center gap-3">
-                                <Sparkles className="w-5 h-5 text-[var(--apex-gold)]" />
-                                <h3 className="text-xl font-black uppercase italic tracking-tight text-white">
+                                <Award className="w-5 h-5 text-[var(--apex-gold)]" />
+                                <h3 className="text-xl font-black uppercase tracking-tight text-white">
                                     Sistema de Poder & Fórmulas del Staff
                                 </h3>
                             </div>

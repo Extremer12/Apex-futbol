@@ -1,8 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { GameState, Screen } from '../../types';
-import { TrophyIcon } from '../icons';
-import { Trophy, History, Shield, Award, ArrowLeft } from 'lucide-react';
-import { TeamLogo } from '../../data/teams/helpers';
+import { ArrowLeft } from 'lucide-react';
 import { getClubHistoricalHonours } from '../../data/historicalHonours';
 import { useGameStore } from '../../state/gameStore';
 import { TrophyTabType } from './trophies/trophiesUiTypes';
@@ -26,83 +24,66 @@ export const TrophyRoomScreen: React.FC<TrophyRoomScreenProps> = ({ gameState, o
     const trophies = team.trophyCabinet || [];
     const clubHonours = useMemo(() => getClubHistoricalHonours(team.name), [team.name]);
     const totalHonoursCount = (clubHonours ? clubHonours.totalOfficialTitles : 0) + trophies.length;
-
     const unlockedAchievementsCount = useMemo(() => achievements.filter(a => a.isUnlocked).length, [achievements]);
-    const totalAchievementsCount = achievements.length || 15;
 
     return (
-        <div className="p-4 md:p-6 space-y-5 h-full flex flex-col pb-24 animate-fade-in max-w-7xl mx-auto">
-            {/* Header: Symmetrical, Clean, Modern and Professional */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-4">
-                <div className="flex items-center gap-3.5">
+        <div className="p-3 sm:p-5 md:p-6 space-y-3 sm:space-y-4 pb-24 animate-fade-in max-w-5xl mx-auto">
+            {/* 1. COMPACT HEADER */}
+            <header className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
                     <button
                         onClick={() => nav(Screen.Club)}
-                        className="p-2.5 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white rounded-xl border border-white/10 transition-all flex items-center gap-2 group cursor-pointer shrink-0"
+                        className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-slate-300 hover:text-white shrink-0 cursor-pointer"
                         title="Volver al Club"
                     >
-                        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-                        <span className="text-xs font-black uppercase tracking-wider hidden sm:inline">Club</span>
+                        <ArrowLeft className="w-4 h-4" />
                     </button>
-                    <div className="w-12 h-12 rounded-xl bg-black/60 p-2 border border-white/10 flex items-center justify-center shrink-0 shadow-inner">
-                        <TeamLogo team={team} />
-                    </div>
-                    <div>
-                        <h1 className="text-2xl sm:text-3xl font-black text-white uppercase italic tracking-tight flex items-center gap-2.5">
-                            <TrophyIcon className="w-7 h-7 text-[var(--apex-gold)]" />
-                            <span>Historial y Palmarés</span>
-                        </h1>
-                        <p className="text-xs text-slate-400 mt-0.5">
-                            {team.name} • {totalHonoursCount} Títulos Oficiales Históricos • {seasonHistory.length} Temporadas archivadas
-                        </p>
+                    <div className="min-w-0">
+                        <h1 className="text-lg sm:text-xl font-black text-white tracking-tight truncate">Historial y Palmarés</h1>
+                        <span className="text-[11px] font-bold text-slate-400 truncate block">
+                            {team.name} · {seasonHistory.length} temporadas archivadas
+                        </span>
                     </div>
                 </div>
 
-                {/* Symmetrical Navigation Tabs */}
-                <div className="flex bg-black/50 p-1 rounded-xl border border-white/10 overflow-x-auto no-scrollbar">
-                    <button
-                        onClick={() => setActiveTab('TROPHIES')}
-                        className={`px-3.5 py-1.5 text-[10px] tracking-wider font-black rounded-lg transition-all whitespace-nowrap cursor-pointer ${
-                            activeTab === 'TROPHIES'
-                                ? 'bg-[var(--apex-gold)] text-black shadow-lg shadow-yellow-500/20'
-                                : 'text-white/50 hover:text-white'
-                        }`}
-                    >
-                        VITRINA ({totalHonoursCount})
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('HISTORY')}
-                        className={`px-3.5 py-1.5 text-[10px] tracking-wider font-black rounded-lg transition-all whitespace-nowrap cursor-pointer ${
-                            activeTab === 'HISTORY'
-                                ? 'bg-[var(--apex-gold)] text-black shadow-lg shadow-yellow-500/20'
-                                : 'text-white/50 hover:text-white'
-                        }`}
-                    >
-                        TEMPORADAS ({seasonHistory.length})
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('COMPETITIONS')}
-                        className={`px-3.5 py-1.5 text-[10px] tracking-wider font-black rounded-lg transition-all whitespace-nowrap cursor-pointer ${
-                            activeTab === 'COMPETITIONS'
-                                ? 'bg-[var(--apex-gold)] text-black shadow-lg shadow-yellow-500/20'
-                                : 'text-white/50 hover:text-white'
-                        }`}
-                    >
-                        POR TORNEO
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('ACHIEVEMENTS')}
-                        className={`px-3.5 py-1.5 text-[10px] tracking-wider font-black rounded-lg transition-all whitespace-nowrap cursor-pointer ${
-                            activeTab === 'ACHIEVEMENTS'
-                                ? 'bg-[var(--apex-gold)] text-black shadow-lg shadow-yellow-500/20'
-                                : 'text-white/50 hover:text-white'
-                        }`}
-                    >
-                        LOGROS ({unlockedAchievementsCount}/{totalAchievementsCount})
-                    </button>
+                <div className="px-3 py-2 rounded-2xl bg-[#0D1220] border border-white/10 text-right shrink-0">
+                    <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block leading-none mb-1">Títulos</span>
+                    <span className="text-sm font-black text-[var(--apex-gold)] leading-none tabular-nums">
+                        {totalHonoursCount}
+                    </span>
                 </div>
-            </div>
+            </header>
 
-            {/* Main Content View Switcher */}
+            {/* 2. STICKY TABS */}
+            <nav className="sticky top-0 z-20 -mx-3 sm:mx-0 px-3 sm:px-0 py-1.5 bg-[var(--apex-darker,#070A13)]/95 backdrop-blur">
+                <div className="grid grid-cols-4 gap-1 p-1 bg-white/5 rounded-2xl">
+                    {([
+                        { id: 'TROPHIES', label: 'Vitrina', badge: totalHonoursCount },
+                        { id: 'HISTORY', label: 'Historial', badge: seasonHistory.length },
+                        { id: 'COMPETITIONS', label: 'Palmarés', badge: 0 },
+                        { id: 'ACHIEVEMENTS', label: 'Logros', badge: unlockedAchievementsCount },
+                    ] as const).map(t => (
+                        <button
+                            key={t.id}
+                            onClick={() => setActiveTab(t.id)}
+                            className={`relative h-10 px-2 rounded-xl text-[11px] sm:text-sm font-bold transition-colors flex items-center justify-center gap-1 whitespace-nowrap cursor-pointer ${
+                                activeTab === t.id ? 'bg-[var(--apex-gold)] text-slate-950 font-black' : 'text-slate-400 hover:text-white'
+                            }`}
+                        >
+                            <span>{t.label}</span>
+                            {t.badge > 0 && (
+                                <span className={`min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-black hidden sm:flex items-center justify-center ${
+                                    activeTab === t.id ? 'bg-slate-950 text-[var(--apex-gold)]' : 'bg-white/15 text-white'
+                                }`}>
+                                    {t.badge}
+                                </span>
+                            )}
+                        </button>
+                    ))}
+                </div>
+            </nav>
+
+            {/* 3. TAB CONTENT */}
             {activeTab === 'TROPHIES' && <TrophyCabinetTab gameState={gameState} />}
             {activeTab === 'HISTORY' && <SeasonHistoryTab gameState={gameState} />}
             {activeTab === 'COMPETITIONS' && <CompetitionPalmaresTab gameState={gameState} />}

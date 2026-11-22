@@ -15,7 +15,7 @@ export const Header: React.FC<HeaderProps> = ({ gameState, onNavigate }) => {
         <header 
             className="sticky top-0 z-30 pt-safe backdrop-blur-2xl bg-[#0A0E17]/80 border-b border-white/[0.06] transition-all"
         >
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 py-2.5">
                 <div className="flex justify-between items-center">
                     {/* Team Info - Direct & Clean, without nested container boxes */}
                     <div className="flex items-center gap-3">

@@ -20,7 +20,6 @@ import {
     Cloud, 
     HardDrive, 
     Calendar,
-    Sparkles,
     Download,
     Upload,
     RotateCw,
@@ -418,7 +417,7 @@ export const LoadGameScreen: React.FC<LoadGameScreenProps> = ({ onLoadGame, onBa
                                                 onClick={() => onLoadGame(save.slotId, true)} 
                                                 className="px-4 py-2.5 bg-[var(--apex-gold)] hover:bg-yellow-400 text-slate-950 font-black rounded-xl transition-all text-xs uppercase tracking-wider shadow-lg shadow-yellow-500/20 active:scale-95 flex items-center gap-1.5 cursor-pointer"
                                             >
-                                                <Sparkles className="w-3.5 h-3.5 fill-current" />
+                                                <Download className="w-3.5 h-3.5" />
                                                 <span>Descargar</span>
                                             </button>
                                             <button 

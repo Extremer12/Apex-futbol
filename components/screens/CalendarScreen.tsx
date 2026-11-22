@@ -1,12 +1,68 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { GameState, Match, Team, LeagueId } from '../../types';
-import { CalendarIcon } from '../icons';
 import { TeamLogo } from '../../data/teams/helpers';
-import { ALL_COMPETITIONS } from './league/constants';
+import { ALL_COMPETITIONS, CompetitionItem } from './league/constants';
 import { getMatchKickoffTime } from '../../services/seasonUtils';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
+import { BottomSheet, EmptyState } from './transfers/TransferUI';
 
 interface CalendarScreenProps {
     gameState: GameState;
+}
+
+const COMP_LOOKUP = new Map<string, CompetitionItem>();
+for (const c of ALL_COMPETITIONS) {
+    COMP_LOOKUP.set(c.id, c);
+    COMP_LOOKUP.set(c.name.toLowerCase(), c);
+}
+
+const SOUTH_AMERICA_LEAGUES = new Set<string>([
+    LeagueId.LIGA_ARGENTINA,
+    LeagueId.PRIMERA_NACIONAL,
+    LeagueId.BRASILEIRAO,
+    LeagueId.SERIE_B_BR,
+    LeagueId.COPA_DE_PRIMERA,
+    LeagueId.LIGA_MX,
+    LeagueId.LIGA_EXPANSION_MX,
+    LeagueId.PRIMERA_DIVISION_CHILE,
+    LeagueId.PRIMERA_B_CHILE,
+    LeagueId.PRIMERA_A_COLOMBIA,
+    LeagueId.PRIMERA_B_COLOMBIA
+]);
+
+const EUROPEAN_MONTHS = ['Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio'];
+const SOUTH_AMERICAN_MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+function getCompetitionDetails(compName?: string, isCupMatch?: boolean, isMidweek?: boolean) {
+    const comp = compName || '';
+    const found = COMP_LOOKUP.get(comp) || COMP_LOOKUP.get(comp.toLowerCase().replace(/_/g, ' '));
+
+    let label = found?.name || comp.replace(/_/g, ' ');
+    let isInt = false;
+    let isDomesticCup = false;
+
+    if (comp.includes('Champions') || comp.includes('Europa') || comp.includes('Libertadores') || comp.includes('Sudamericana') || comp.includes('Intercontinental')) {
+        isInt = true;
+    } else if (isCupMatch || comp.includes('Cup') || comp.includes('Copa') || comp.includes('Pokal') || comp.includes('Playoffs') || comp.includes('Reducido')) {
+        isDomesticCup = true;
+    }
+
+    if (comp.includes('Torneo_Apertura') || comp.includes('Torneo Apertura')) label = 'Torneo Apertura';
+    else if (comp.includes('Torneo_Clausura') || comp.includes('Torneo Clausura')) label = 'Torneo Clausura';
+    else if (comp.includes('FA_Cup') || comp.includes('FA Cup')) label = 'FA Cup';
+    else if (comp.includes('Carabao_Cup') || comp.includes('Carabao Cup')) label = 'Carabao Cup';
+    else if (comp.includes('Copa_Argentina') || comp.includes('Copa Argentina')) label = 'Copa Argentina';
+    else if (comp.includes('Copa_del_Rey') || comp.includes('Copa del Rey')) label = 'Copa del Rey';
+    else if (comp.includes('DFB_Pokal') || comp.includes('DFB Pokal')) label = 'DFB-Pokal';
+    else if (comp.includes('Coppa_Italia') || comp.includes('Coppa Italia')) label = 'Coppa Italia';
+
+    return {
+        label,
+        isInt,
+        isDomesticCup,
+        isLeague: !isInt && !isDomesticCup,
+        turnName: isMidweek ? 'Entre semana' : 'Fin de semana'
+    };
 }
 
 export const CalendarScreen: React.FC<CalendarScreenProps> = ({ gameState }) => {
@@ -16,177 +72,97 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ gameState }) => 
     const [selectedDetailMatch, setSelectedDetailMatch] = useState<Match | null>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
 
-    // Sync selectedWeek with currentWeek
     useEffect(() => {
         setSelectedWeek(Math.max(1, gameState.currentWeek));
     }, [gameState.currentWeek]);
 
-    // Memoized Map for O(1) team lookups across match renders
     const teamMap = useMemo(() => {
         const map = new Map<number, Team>();
         if (gameState.allTeams) {
-            for (let i = 0; i < gameState.allTeams.length; i++) {
-                map.set(gameState.allTeams[i].id, gameState.allTeams[i]);
-            }
+            for (const t of gameState.allTeams) map.set(t.id, t);
         }
         return map;
     }, [gameState.allTeams]);
 
-    const getTeamById = (id: number): Team | undefined => teamMap.get(id);
-
-    const isSouthAmerica = [
-        LeagueId.LIGA_ARGENTINA,
-        LeagueId.PRIMERA_NACIONAL,
-        LeagueId.BRASILEIRAO,
-        LeagueId.SERIE_B_BR,
-        LeagueId.COPA_DE_PRIMERA,
-        LeagueId.LIGA_MX,
-        LeagueId.LIGA_EXPANSION_MX,
-        LeagueId.PRIMERA_DIVISION_CHILE,
-        LeagueId.PRIMERA_B_CHILE,
-        LeagueId.PRIMERA_A_COLOMBIA,
-        LeagueId.PRIMERA_B_COLOMBIA
-    ].includes(gameState.team.leagueId);
+    const isSouthAmerica = SOUTH_AMERICA_LEAGUES.has(gameState.team.leagueId);
 
     const getMonthName = (week: number) => {
-        const europeanMonths = ['Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio'];
-        const southAmericanMonths = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-        const months = isSouthAmerica ? southAmericanMonths : europeanMonths;
+        const months = isSouthAmerica ? SOUTH_AMERICAN_MONTHS : EUROPEAN_MONTHS;
         const index = Math.min(Math.floor((week - 1) / 4), months.length - 1);
         return months[Math.max(0, index)] || months[months.length - 1];
     };
 
     const maxWeek = useMemo(() => {
-        const weeksInSchedule = gameState.schedule.map(m => m.week);
-        return weeksInSchedule.length > 0 ? Math.max(...weeksInSchedule, 1) : 38;
+        let max = 1;
+        for (const m of gameState.schedule) {
+            if (m.week > max) max = m.week;
+        }
+        return gameState.schedule.length > 0 ? max : 38;
     }, [gameState.schedule]);
 
     const weeks = useMemo(() => Array.from({ length: maxWeek }, (_, i) => i + 1), [maxWeek]);
 
-    // Format competition display name and type
-    const getCompetitionDetails = (compName?: string, isCupMatch?: boolean, isMidweek?: boolean) => {
-        const comp = compName || '';
-        const found = ALL_COMPETITIONS.find(c => c.id === comp || c.name.toLowerCase() === comp.toLowerCase().replace(/_/g, ' '));
-        
-        let label = found?.name || comp.replace(/_/g, ' ');
-        let isInt = false;
-        let isDomesticCup = false;
-
-        if (comp.includes('Champions') || comp.includes('Europa') || comp.includes('Libertadores') || comp.includes('Sudamericana') || comp.includes('Intercontinental')) {
-            isInt = true;
-        } else if (isCupMatch || comp.includes('Cup') || comp.includes('Copa') || comp.includes('Pokal') || comp.includes('Playoffs') || comp.includes('Reducido')) {
-            isDomesticCup = true;
-        }
-
-        if (comp.includes('Torneo_Apertura') || comp.includes('Torneo Apertura')) {
-            label = 'Torneo Apertura';
-        } else if (comp.includes('Torneo_Clausura') || comp.includes('Torneo Clausura')) {
-            label = 'Torneo Clausura';
-        } else if (comp.includes('FA_Cup') || comp.includes('FA Cup')) {
-            label = 'FA Cup';
-        } else if (comp.includes('Carabao_Cup') || comp.includes('Carabao Cup')) {
-            label = 'Carabao Cup';
-        } else if (comp.includes('Copa_Argentina') || comp.includes('Copa Argentina')) {
-            label = 'Copa Argentina';
-        } else if (comp.includes('Copa_del_Rey') || comp.includes('Copa del Rey')) {
-            label = 'Copa del Rey';
-        } else if (comp.includes('DFB_Pokal') || comp.includes('DFB Pokal')) {
-            label = 'DFB-Pokal';
-        } else if (comp.includes('Coppa_Italia') || comp.includes('Coppa Italia')) {
-            label = 'Coppa Italia';
-        }
-
-        return {
-            label,
-            isInt,
-            isDomesticCup,
-            isLeague: !isInt && !isDomesticCup,
-            turnName: isMidweek ? 'Entre Semana' : 'Fin de Semana'
-        };
-    };
-
-    // User club matches sorted chronologically
     const myClubMatches = useMemo(() => {
         return gameState.schedule
             .filter(m => m.homeTeamId === gameState.team.id || m.awayTeamId === gameState.team.id)
-            .sort((a, b) => {
-                if (a.week !== b.week) return a.week - b.week;
-                return (a.isMidweek ? 1 : 0) - (b.isMidweek ? 1 : 0);
-            });
+            .sort((a, b) => a.week !== b.week ? a.week - b.week : (a.isMidweek ? 1 : 0) - (b.isMidweek ? 1 : 0));
     }, [gameState.schedule, gameState.team.id]);
 
-    // Filtered matches for My Club view
     const filteredMyClubMatches = useMemo(() => {
         return myClubMatches.filter(m => {
+            if (filter === 'ALL') return true;
             const compDetails = getCompetitionDetails(m.competition, m.isCupMatch, m.isMidweek);
             if (filter === 'LEAGUE') return compDetails.isLeague;
+            if (filter === 'DOMESTIC_CUP') return compDetails.isDomesticCup;
+            return compDetails.isInt;
+        });
+    }, [myClubMatches, filter]);
+
+    const weekMatches = useMemo(() => {
+        const matches = gameState.schedule.filter(m => {
+            if (m.week !== selectedWeek) return false;
+            const home = teamMap.get(m.homeTeamId);
+            const away = teamMap.get(m.awayTeamId);
+            if (!home || !away) return false;
+
+            const isPlayerInvolved = m.homeTeamId === gameState.team.id || m.awayTeamId === gameState.team.id;
+            const compDetails = getCompetitionDetails(m.competition, m.isCupMatch, m.isMidweek);
+
+            if (!isPlayerInvolved && !(!m.isCupMatch && home.leagueId === gameState.team.leagueId) && !compDetails.isDomesticCup && !compDetails.isInt) {
+                return false;
+            }
+
+            if (filter === 'LEAGUE') return !m.isCupMatch;
             if (filter === 'DOMESTIC_CUP') return compDetails.isDomesticCup;
             if (filter === 'INT_CUP') return compDetails.isInt;
             return true;
         });
-    }, [myClubMatches, filter]);
 
-    // Matches for the selected week (All Matches view)
-    const weekMatches = useMemo(() => {
-        let matches = gameState.schedule.filter(m => m.week === selectedWeek);
+        return {
+            weekendMatches: matches.filter(m => !m.isMidweek),
+            midweekMatches: matches.filter(m => !!m.isMidweek)
+        };
+    }, [gameState.schedule, selectedWeek, gameState.team.id, gameState.team.leagueId, filter, teamMap]);
 
-        matches = matches.filter(m => {
-            const home = getTeamById(m.homeTeamId);
-            const away = getTeamById(m.awayTeamId);
-            if (!home || !away) return false;
-
-            const isPlayerTeamInvolved = m.homeTeamId === gameState.team.id || m.awayTeamId === gameState.team.id;
-            if (isPlayerTeamInvolved) return true;
-
-            if (!m.isCupMatch && home.leagueId === gameState.team.leagueId) return true;
-
-            const compDetails = getCompetitionDetails(m.competition, m.isCupMatch, m.isMidweek);
-            if (compDetails.isDomesticCup || compDetails.isInt) return true;
-
-            return false;
-        });
-
-        if (filter === 'LEAGUE') {
-            matches = matches.filter(m => !m.isCupMatch);
-        } else if (filter === 'DOMESTIC_CUP') {
-            matches = matches.filter(m => getCompetitionDetails(m.competition, m.isCupMatch, m.isMidweek).isDomesticCup);
-        } else if (filter === 'INT_CUP') {
-            matches = matches.filter(m => getCompetitionDetails(m.competition, m.isCupMatch, m.isMidweek).isInt);
-        }
-
-        const weekendMatches = matches.filter(m => !m.isMidweek);
-        const midweekMatches = matches.filter(m => !!m.isMidweek);
-
-        return { weekendMatches, midweekMatches };
-    }, [gameState.schedule, selectedWeek, gameState.team.id, gameState.team.leagueId, filter]);
-
-    // Group My Club matches by Month
     const matchesGroupedByMonth = useMemo(() => {
         const groups: { month: string; matches: Match[] }[] = [];
         let currentMonth = '';
         let currentGroup: Match[] = [];
 
-        filteredMyClubMatches.forEach(m => {
+        for (const m of filteredMyClubMatches) {
             const month = getMonthName(m.week);
             if (month !== currentMonth) {
-                if (currentGroup.length > 0) {
-                    groups.push({ month: currentMonth, matches: currentGroup });
-                }
+                if (currentGroup.length > 0) groups.push({ month: currentMonth, matches: currentGroup });
                 currentMonth = month;
                 currentGroup = [m];
             } else {
                 currentGroup.push(m);
             }
-        });
-
-        if (currentGroup.length > 0) {
-            groups.push({ month: currentMonth, matches: currentGroup });
         }
-
+        if (currentGroup.length > 0) groups.push({ month: currentMonth, matches: currentGroup });
         return groups;
-    }, [filteredMyClubMatches]);
+    }, [filteredMyClubMatches, isSouthAmerica]);
 
-    // Auto-scroll to selected week button in horizontal carousel
     useEffect(() => {
         const activeBtn = document.getElementById(`week-btn-${selectedWeek}`);
         if (activeBtn && scrollRef.current) {
@@ -195,345 +171,277 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ gameState }) => 
                 behavior: 'smooth'
             });
         }
-    }, [selectedWeek]);
+    }, [selectedWeek, viewMode]);
+
+    const nextWeek = gameState.currentWeek;
+    const isMidweekTurn = gameState.currentTurn === 'midweek';
 
     return (
-        <div className="p-4 md:p-6 space-y-5 h-full flex flex-col pb-24 animate-fade-in max-w-7xl mx-auto">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-4">
-                <div>
-                    <h1 className="text-2xl sm:text-3xl font-black text-white uppercase italic tracking-tight flex items-center gap-2.5">
-                        <CalendarIcon className="w-7 h-7 text-[var(--apex-gold)]" />
-                        <span>Calendario</span>
-                    </h1>
-                    <p className="text-xs text-slate-400 mt-1">
-                        Semana {gameState.currentWeek} • Turno {gameState.currentTurn === 'midweek' ? 'Entre Semana (Copa)' : 'Fin de Semana (Liga)'}
-                    </p>
+        <div className="p-3 sm:p-5 md:p-6 space-y-3 sm:space-y-4 pb-24 animate-fade-in max-w-5xl mx-auto">
+            {/* 1. COMPACT HEADER */}
+            <header className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                    <h1 className="text-lg sm:text-xl font-black text-white tracking-tight">Calendario</h1>
+                    <span className="text-[11px] font-bold text-slate-400 truncate block">
+                        Semana {gameState.currentWeek} · {gameState.currentTurn === 'midweek' ? 'Entre semana (Copa)' : 'Fin de semana (Liga)'}
+                    </span>
+                </div>
+                <div className="px-3 py-2 rounded-2xl bg-[#0D1220] border border-white/10 text-right shrink-0">
+                    <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block leading-none mb-1">Partidos</span>
+                    <span className="text-sm font-black text-[var(--apex-gold)] leading-none tabular-nums">
+                        {myClubMatches.length}
+                    </span>
+                </div>
+            </header>
+
+            {/* 2. STICKY TABS */}
+            <nav className="sticky top-0 z-20 -mx-3 sm:mx-0 px-3 sm:px-0 py-1.5 bg-[var(--apex-darker,#070A13)]/95 backdrop-blur space-y-2">
+                <div className="grid grid-cols-2 gap-1 p-1 bg-white/5 rounded-2xl">
+                    <button
+                        onClick={() => setViewMode('MY_CLUB')}
+                        className={`h-10 rounded-xl text-xs sm:text-sm font-bold transition-colors cursor-pointer ${
+                            viewMode === 'MY_CLUB' ? 'bg-[var(--apex-gold)] text-slate-950 font-black' : 'text-slate-400 hover:text-white'
+                        }`}
+                    >
+                        Mi Club
+                    </button>
+                    <button
+                        onClick={() => setViewMode('ALL_MATCHES')}
+                        className={`h-10 rounded-xl text-xs sm:text-sm font-bold transition-colors cursor-pointer ${
+                            viewMode === 'ALL_MATCHES' ? 'bg-[var(--apex-gold)] text-slate-950 font-black' : 'text-slate-400 hover:text-white'
+                        }`}
+                    >
+                        Fecha por Fecha
+                    </button>
                 </div>
 
-                {/* View Mode & Competition Filter */}
-                <div className="flex flex-wrap items-center gap-2">
-                    <div className="flex bg-black/50 p-1 rounded-xl border border-white/10">
+                {/* Competition Filter Pills */}
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+                    {([
+                        { id: 'ALL', label: 'Todos' },
+                        { id: 'LEAGUE', label: 'Liga' },
+                        { id: 'DOMESTIC_CUP', label: 'Copa Nacional' },
+                        { id: 'INT_CUP', label: 'Internacional' },
+                    ] as const).map(f => (
                         <button
-                            onClick={() => setViewMode('MY_CLUB')}
-                            className={`px-3.5 py-1.5 text-[10px] tracking-wider font-black rounded-lg transition-all ${
-                                viewMode === 'MY_CLUB'
-                                    ? 'bg-[var(--apex-gold)] text-black shadow-lg shadow-yellow-500/20'
-                                    : 'text-white/50 hover:text-white'
+                            key={f.id}
+                            onClick={() => setFilter(f.id)}
+                            className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
+                                filter === f.id
+                                    ? 'bg-white text-slate-950 font-black'
+                                    : 'bg-white/5 text-slate-400 hover:text-white'
                             }`}
                         >
-                            MI CLUB
+                            {f.label}
                         </button>
-                        <button
-                            onClick={() => setViewMode('ALL_MATCHES')}
-                            className={`px-3.5 py-1.5 text-[10px] tracking-wider font-black rounded-lg transition-all ${
-                                viewMode === 'ALL_MATCHES'
-                                    ? 'bg-[var(--apex-gold)] text-black shadow-lg shadow-yellow-500/20'
-                                    : 'text-white/50 hover:text-white'
-                            }`}
-                        >
-                            FECHA POR FECHA
-                        </button>
-                    </div>
-
-                    <div className="flex bg-black/50 p-1 rounded-xl border border-white/10 overflow-x-auto no-scrollbar">
-                        <button
-                            onClick={() => setFilter('ALL')}
-                            className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all ${
-                                filter === 'ALL' ? 'bg-white/15 text-white font-black' : 'text-white/40 hover:text-white'
-                            }`}
-                        >
-                            TODOS
-                        </button>
-                        <button
-                            onClick={() => setFilter('LEAGUE')}
-                            className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all ${
-                                filter === 'LEAGUE' ? 'bg-white/15 text-white font-black' : 'text-white/40 hover:text-white'
-                            }`}
-                        >
-                            LIGA
-                        </button>
-                        <button
-                            onClick={() => setFilter('DOMESTIC_CUP')}
-                            className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all ${
-                                filter === 'DOMESTIC_CUP' ? 'bg-white/15 text-white font-black' : 'text-white/40 hover:text-white'
-                            }`}
-                        >
-                            COPA NACIONAL
-                        </button>
-                        <button
-                            onClick={() => setFilter('INT_CUP')}
-                            className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all ${
-                                filter === 'INT_CUP' ? 'bg-white/15 text-white font-black' : 'text-white/40 hover:text-white'
-                            }`}
-                        >
-                            INTERNACIONAL
-                        </button>
-                    </div>
+                    ))}
                 </div>
-            </div>
+            </nav>
 
-            {/* ========================================================================= */}
-            {/* VIEW 1: MY CLUB TIMELINE / ROADMAP                                        */}
-            {/* ========================================================================= */}
+            {/* VIEW 1: MY CLUB */}
             {viewMode === 'MY_CLUB' ? (
-                <div className="space-y-6 flex-1 overflow-y-auto custom-scrollbar pr-1">
+                <div className="space-y-5">
                     {matchesGroupedByMonth.length === 0 ? (
-                        <div className="apex-card p-12 flex flex-col items-center justify-center text-center text-white/40">
-                            <CalendarIcon className="w-10 h-10 mb-3 opacity-30" />
-                            <p className="text-xs font-bold uppercase tracking-wider">No se encontraron partidos para este filtro</p>
+                        <div className="apex-card rounded-2xl">
+                            <EmptyState
+                                icon={<CalendarIcon className="w-6 h-6" />}
+                                title="Sin partidos para este filtro"
+                                text="Prueba seleccionando otra competición o 'Todos'."
+                            />
                         </div>
                     ) : (
                         matchesGroupedByMonth.map((group, gIdx) => (
-                            <div key={gIdx} className="space-y-3">
-                                {/* Month Divider Header */}
+                            <section key={gIdx} className="space-y-2.5">
                                 <div className="flex items-center gap-3">
-                                    <div className="h-px bg-white/10 flex-1" />
-                                    <span className="px-3 py-1 rounded-lg bg-white/5 text-slate-300 text-xs font-black uppercase tracking-wider border border-white/10">
-                                        {group.month}
-                                    </span>
+                                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">{group.month}</span>
                                     <div className="h-px bg-white/10 flex-1" />
                                 </div>
 
-                                {/* Matches Grid for Month */}
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                                     {group.matches.map((match, mIdx) => {
                                         const isHome = match.homeTeamId === gameState.team.id;
                                         const opponentId = isHome ? match.awayTeamId : match.homeTeamId;
-                                        const opponent = getTeamById(opponentId);
+                                        const opponent = teamMap.get(opponentId);
                                         const compDetails = getCompetitionDetails(match.competition, match.isCupMatch, match.isMidweek);
                                         const isPlayed = match.result !== undefined;
-
-                                        const nextWeek = gameState.currentWeek;
-                                        const isMidweekTurn = gameState.currentTurn === 'midweek';
                                         const isCurrentMatch = !isPlayed && match.week === nextWeek && !!match.isMidweek === isMidweekTurn;
 
                                         return (
                                             <div
                                                 key={mIdx}
                                                 onClick={() => isPlayed && setSelectedDetailMatch(match)}
-                                                className={`p-3.5 rounded-xl border transition-all duration-200 flex flex-col justify-between gap-2.5 ${
-                                                    isPlayed ? 'cursor-pointer hover:border-white/25 hover:bg-slate-900/90' : ''
-                                                } ${
-                                                    isCurrentMatch
-                                                        ? 'bg-slate-900 border-[var(--apex-gold)] shadow-lg shadow-yellow-500/10'
-                                                        : isPlayed
-                                                        ? 'bg-slate-900/60 border-white/10'
-                                                        : 'bg-slate-950/40 border-white/5 opacity-80'
-                                                }`}
+                                                className={`apex-card p-3.5 rounded-2xl flex flex-col justify-between gap-2.5 transition-colors ${
+                                                    isPlayed ? 'cursor-pointer hover:border-white/25' : ''
+                                                } ${isCurrentMatch ? 'border-[var(--apex-gold)] bg-[var(--apex-gold)]/[0.04]' : ''}`}
                                             >
-                                                {/* Top Row: Symmetrical Header Badges */}
                                                 <div className="flex items-center justify-between gap-2 text-[10px]">
-                                                    <div className="flex items-center gap-2 truncate">
-                                                        <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider truncate max-w-[140px] ${
+                                                    <div className="flex items-center gap-2 min-w-0">
+                                                        <span className={`px-2 py-0.5 rounded-md font-black uppercase tracking-wider truncate max-w-[130px] border ${
                                                             compDetails.isInt
-                                                                ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                                                                ? 'bg-purple-500/15 text-purple-300 border-purple-500/30'
                                                                 : compDetails.isDomesticCup
-                                                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                                                                : 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
+                                                                ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                                                                : 'bg-sky-500/15 text-sky-300 border-sky-500/30'
                                                         }`}>
                                                             {compDetails.label}
                                                         </span>
-                                                        <span className="font-semibold text-slate-400 truncate">
-                                                            Fecha {match.week} • {compDetails.turnName}
+                                                        <span className="text-slate-400 font-semibold truncate">
+                                                            F{match.week} · {compDetails.turnName}
                                                         </span>
                                                     </div>
 
-                                                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                                                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
-                                                            isHome 
-                                                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                                                                : 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
+                                                    <div className="flex items-center gap-1.5 shrink-0">
+                                                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase ${
+                                                            isHome ? 'bg-emerald-500/10 text-emerald-400' : 'bg-indigo-500/10 text-indigo-400'
                                                         }`}>
-                                                            {isHome ? 'LOCAL' : 'VISITANTE'}
+                                                            {isHome ? 'LOC' : 'VIS'}
                                                         </span>
-
                                                         {isCurrentMatch && (
-                                                            <span className="px-2 py-0.5 rounded bg-[var(--apex-gold)] text-black text-[9px] font-black uppercase tracking-wider">
-                                                                PRÓXIMO
+                                                            <span className="px-2 py-0.5 rounded bg-[var(--apex-gold)] text-slate-950 text-[9px] font-black uppercase">
+                                                                Próximo
                                                             </span>
                                                         )}
                                                     </div>
                                                 </div>
 
-                                                {/* Middle Row: Symmetrical Teams & Score */}
-                                                <div className="flex items-center justify-between gap-2 py-1">
-                                                    {/* My Club */}
+                                                <div className="flex items-center justify-between gap-2 py-0.5">
                                                     <div className="flex-1 flex items-center justify-end gap-2 min-w-0">
-                                                        <span className="text-xs sm:text-sm font-bold text-white truncate text-right">
-                                                            {gameState.team.name}
-                                                        </span>
-                                                        <div className="w-8 h-8 flex-shrink-0 bg-black/60 p-1 rounded-lg border border-white/10 flex items-center justify-center">
-                                                            <TeamLogo team={gameState.team} />
+                                                        <span className="text-xs font-black text-white truncate text-right">{gameState.team.name}</span>
+                                                        <div className="w-7 h-7 shrink-0 flex items-center justify-center">
+                                                            <TeamLogo team={gameState.team} className="w-full h-full object-contain" />
                                                         </div>
                                                     </div>
 
-                                                    {/* Score / VS */}
-                                                    <div className="w-16 flex-shrink-0 flex flex-col items-center justify-center">
+                                                    <div className="w-16 shrink-0 flex flex-col items-center justify-center">
                                                         {isPlayed ? (
-                                                            <div className="flex flex-col items-center">
-                                                                <span className="px-2 py-0.5 rounded bg-black/80 border border-white/15 text-center font-black text-xs sm:text-sm text-white whitespace-nowrap font-mono">
+                                                            <>
+                                                                <span className="px-2 py-0.5 rounded-lg bg-black/60 border border-white/10 font-black text-xs text-white tabular-nums">
                                                                     {isHome ? match.result!.homeScore : match.result!.awayScore} - {isHome ? match.result!.awayScore : match.result!.homeScore}
                                                                 </span>
                                                                 {match.penalties && (
-                                                                    <span className="text-[8px] font-bold text-amber-400 mt-0.5 whitespace-nowrap">
+                                                                    <span className="text-[8px] font-bold text-amber-400 mt-0.5">
                                                                         ({isHome ? match.penalties.home : match.penalties.away}-{isHome ? match.penalties.away : match.penalties.home} p.)
                                                                     </span>
                                                                 )}
-                                                            </div>
+                                                            </>
                                                         ) : (
-                                                            <span className="text-[9px] font-bold text-slate-500 bg-white/5 px-2 py-0.5 rounded border border-white/10 uppercase whitespace-nowrap">
-                                                                VS
+                                                            <span className="text-[10px] font-bold text-slate-400 bg-white/5 px-2 py-0.5 rounded-lg tabular-nums">
+                                                                {getMatchKickoffTime(match)}
                                                             </span>
                                                         )}
                                                     </div>
 
-                                                    {/* Opponent */}
                                                     <div className="flex-1 flex items-center justify-start gap-2 min-w-0">
-                                                        <div className="w-8 h-8 flex-shrink-0 bg-black/60 p-1 rounded-lg border border-white/10 flex items-center justify-center">
-                                                            <TeamLogo team={opponent} />
+                                                        <div className="w-7 h-7 shrink-0 flex items-center justify-center">
+                                                            <TeamLogo team={opponent} className="w-full h-full object-contain" />
                                                         </div>
-                                                        <span className="text-xs sm:text-sm font-bold text-slate-300 truncate text-left">
-                                                            {opponent?.name || 'Rival por definir'}
+                                                        <span className="text-xs font-bold text-slate-300 truncate text-left">
+                                                            {opponent?.name || 'Por definir'}
                                                         </span>
                                                     </div>
                                                 </div>
 
-                                                {/* Bottom Row: State & Details */}
-                                                <div className="flex items-center justify-between text-[10px] text-slate-400 border-t border-white/5 pt-1.5">
-                                                    <span>
-                                                        {isPlayed ? 'Finalizado' : 'Pendiente'}
-                                                    </span>
-
-                                                    {isPlayed && (
-                                                        <span className="text-[9px] text-[var(--apex-gold)] font-bold hover:underline">
-                                                            Ver Ficha de Partido
-                                                        </span>
-                                                    )}
-                                                </div>
+                                                {isPlayed && (
+                                                    <div className="flex items-center justify-between text-[10px] text-slate-500 border-t border-white/5 pt-1.5">
+                                                        <span>Finalizado</span>
+                                                        <span className="text-[var(--apex-gold)] font-bold">Ver ficha</span>
+                                                    </div>
+                                                )}
                                             </div>
                                         );
                                     })}
                                 </div>
-                            </div>
+                            </section>
                         ))
                     )}
                 </div>
             ) : (
-                /* ========================================================================= */
-                /* VIEW 2: MATCHDAY BY MATCHDAY                                              */
-                /* ========================================================================= */
-                <div className="space-y-4 flex-1 flex flex-col">
-                    {/* Week Navigation Selector */}
-                    <div className="flex items-center justify-between apex-card p-3">
-                        <button 
+                /* VIEW 2: MATCHDAY BY MATCHDAY */
+                <div className="space-y-3">
+                    {/* Week Selector */}
+                    <div className="apex-card p-3 rounded-2xl flex items-center justify-between gap-2">
+                        <button
                             onClick={() => setSelectedWeek(prev => Math.max(1, prev - 1))}
                             disabled={selectedWeek === 1}
-                            className="p-2.5 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 disabled:opacity-20 disabled:cursor-not-allowed text-white/60 hover:text-white transition-all"
+                            className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 disabled:opacity-30 flex items-center justify-center text-white cursor-pointer"
                         >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
+                            <ChevronLeft className="w-4 h-4" />
                         </button>
 
                         <div className="flex items-center gap-2">
-                            <select 
+                            <select
                                 value={selectedWeek}
-                                onChange={(e) => setSelectedWeek(parseInt(e.target.value))}
-                                className="bg-black/80 text-white font-black text-sm sm:text-base px-3 py-1 rounded-lg border border-white/15 focus:border-[var(--apex-gold)] focus:outline-none cursor-pointer uppercase tracking-wider appearance-none text-center min-w-[140px]"
+                                onChange={(e) => setSelectedWeek(parseInt(e.target.value, 10))}
+                                className="bg-[#0D1220] text-white font-black text-xs sm:text-sm px-3 py-1.5 rounded-xl border border-white/10 focus:border-[var(--apex-gold)] focus:outline-none cursor-pointer"
                             >
                                 {weeks.map(w => (
-                                    <option key={w} value={w}>Jornada {w} • {getMonthName(w)}</option>
+                                    <option key={w} value={w}>Jornada {w} · {getMonthName(w)}</option>
                                 ))}
                             </select>
 
                             {selectedWeek !== gameState.currentWeek && (
                                 <button
                                     onClick={() => setSelectedWeek(Math.max(1, gameState.currentWeek))}
-                                    className="px-2.5 py-1 rounded-lg bg-[var(--apex-gold)]/10 text-[var(--apex-gold)] hover:bg-[var(--apex-gold)] hover:text-black border border-[var(--apex-gold)]/30 text-[10px] font-black uppercase tracking-wider transition-all"
+                                    className="px-2.5 py-1.5 rounded-xl bg-[var(--apex-gold)]/15 text-[var(--apex-gold)] border border-[var(--apex-gold)]/30 text-[10px] font-black uppercase cursor-pointer"
                                 >
-                                    Fecha Actual
+                                    Hoy
                                 </button>
                             )}
                         </div>
 
-                        <button 
+                        <button
                             onClick={() => setSelectedWeek(prev => Math.min(maxWeek, prev + 1))}
                             disabled={selectedWeek === maxWeek}
-                            className="p-2.5 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 disabled:opacity-20 disabled:cursor-not-allowed text-white/60 hover:text-white transition-all"
+                            className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 disabled:opacity-30 flex items-center justify-center text-white cursor-pointer"
                         >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
+                            <ChevronRight className="w-4 h-4" />
                         </button>
                     </div>
 
-                    {/* Horizontal Week Carousel */}
-                    <div className="relative group px-1">
-                        <div 
-                            ref={scrollRef}
-                            className="flex gap-2 overflow-x-auto pb-2 pt-1 no-scrollbar scroll-smooth"
-                        >
-                            {weeks.map(week => (
-                                <button
-                                    key={week}
-                                    id={`week-btn-${week}`}
-                                    onClick={() => setSelectedWeek(week)}
-                                    className={`flex-shrink-0 w-10 h-10 flex flex-col items-center justify-center rounded-xl border transition-all ${
-                                        selectedWeek === week 
-                                        ? 'bg-[var(--apex-gold)] border-[var(--apex-gold)] text-black font-black scale-105 shadow-md' 
+                    {/* Horizontal Week Strip */}
+                    <div ref={scrollRef} className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar scroll-smooth">
+                        {weeks.map(week => (
+                            <button
+                                key={week}
+                                id={`week-btn-${week}`}
+                                onClick={() => setSelectedWeek(week)}
+                                className={`shrink-0 w-9 h-9 flex flex-col items-center justify-center rounded-xl border text-xs font-bold transition-colors cursor-pointer ${
+                                    selectedWeek === week
+                                        ? 'bg-[var(--apex-gold)] border-[var(--apex-gold)] text-slate-950 font-black'
                                         : week === gameState.currentWeek
-                                        ? 'bg-black/60 border-[var(--apex-gold)]/50 text-[var(--apex-gold)] font-bold'
-                                        : 'bg-black/30 border-white/5 text-white/40 hover:border-white/20 hover:text-white'
-                                    }`}
-                                >
-                                    <span className="text-xs font-bold leading-none">{week}</span>
-                                    {week === gameState.currentWeek && (
-                                        <span className="w-1 h-1 rounded-full bg-[var(--apex-gold)] mt-0.5" />
-                                    )}
-                                </button>
-                            ))}
-                        </div>
+                                        ? 'bg-white/5 border-[var(--apex-gold)]/50 text-[var(--apex-gold)]'
+                                        : 'bg-white/[0.02] border-white/5 text-slate-400 hover:text-white'
+                                }`}
+                            >
+                                <span>{week}</span>
+                            </button>
+                        ))}
                     </div>
 
-                    {/* Symmetrical 2-Column Grid: Weekend vs Midweek */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 overflow-y-auto custom-scrollbar">
-                        {/* Column 1: Weekend Matches (League) */}
-                        <div className="apex-card flex flex-col overflow-hidden">
-                            <div className="bg-slate-900/90 px-4 py-2.5 border-b border-white/10 flex items-center justify-between">
-                                <h3 className="font-bold text-white text-xs uppercase tracking-wider flex items-center gap-2">
-                                    <span className="w-1.5 h-3 bg-sky-400 rounded-sm" />
-                                    Fin de Semana (Liga)
-                                </h3>
-                                <span className="text-[10px] text-slate-400 font-semibold">
-                                    {weekMatches.weekendMatches.length} partidos
-                                </span>
+                    {/* Weekend vs Midweek */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                        <div className="apex-card rounded-2xl overflow-hidden flex flex-col">
+                            <div className="px-4 py-2.5 border-b border-white/10 bg-white/[0.02] flex items-center justify-between">
+                                <h3 className="font-black text-white text-xs uppercase tracking-wider">Fin de Semana (Liga)</h3>
+                                <span className="text-[10px] text-slate-400 font-bold">{weekMatches.weekendMatches.length}</span>
                             </div>
-
-                            <div className="flex-1 overflow-y-auto divide-y divide-white/5 custom-scrollbar p-2">
+                            <div className="divide-y divide-white/5 p-2">
                                 {weekMatches.weekendMatches.length === 0 ? (
-                                    <div className="p-6 text-center text-slate-500 text-xs">
-                                        Sin partidos de liga programados en esta fecha
-                                    </div>
+                                    <p className="p-6 text-center text-slate-500 text-xs">Sin partidos de liga en esta jornada.</p>
                                 ) : (
                                     weekMatches.weekendMatches.map((m, idx) => renderCleanMatchRow(m, idx, gameState, setSelectedDetailMatch, teamMap))
                                 )}
                             </div>
                         </div>
 
-                        {/* Column 2: Midweek Matches (Cups & International) */}
-                        <div className="apex-card flex flex-col overflow-hidden">
-                            <div className="bg-slate-900/90 px-4 py-2.5 border-b border-white/10 flex items-center justify-between">
-                                <h3 className="font-bold text-white text-xs uppercase tracking-wider flex items-center gap-2">
-                                    <span className="w-1.5 h-3 bg-amber-400 rounded-sm" />
-                                    Entre Semana (Copas y Torneos)
-                                </h3>
-                                <span className="text-[10px] text-slate-400 font-semibold">
-                                    {weekMatches.midweekMatches.length} partidos
-                                </span>
+                        <div className="apex-card rounded-2xl overflow-hidden flex flex-col">
+                            <div className="px-4 py-2.5 border-b border-white/10 bg-white/[0.02] flex items-center justify-between">
+                                <h3 className="font-black text-white text-xs uppercase tracking-wider">Entre Semana (Copas)</h3>
+                                <span className="text-[10px] text-slate-400 font-bold">{weekMatches.midweekMatches.length}</span>
                             </div>
-
-                            <div className="flex-1 overflow-y-auto divide-y divide-white/5 custom-scrollbar p-2">
+                            <div className="divide-y divide-white/5 p-2">
                                 {weekMatches.midweekMatches.length === 0 ? (
-                                    <div className="p-6 text-center text-slate-500 text-xs">
-                                        Sin partidos de copa en esta fecha
-                                    </div>
+                                    <p className="p-6 text-center text-slate-500 text-xs">Sin partidos de copa en esta jornada.</p>
                                 ) : (
                                     weekMatches.midweekMatches.map((m, idx) => renderCleanMatchRow(m, idx, gameState, setSelectedDetailMatch, teamMap))
                                 )}
@@ -543,123 +451,95 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ gameState }) => 
                 </div>
             )}
 
-            {/* Match Detail Modal */}
-            {selectedDetailMatch && selectedDetailMatch.result && (
-                <div 
-                    className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in"
-                    onClick={() => setSelectedDetailMatch(null)}
-                >
-                    <div 
-                        className="bg-slate-900 border border-white/15 rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl relative"
-                        onClick={e => e.stopPropagation()}
+            {/* Match Detail BottomSheet */}
+            <BottomSheet
+                open={!!(selectedDetailMatch && selectedDetailMatch.result)}
+                onClose={() => setSelectedDetailMatch(null)}
+                title={selectedDetailMatch ? getCompetitionDetails(selectedDetailMatch.competition, selectedDetailMatch.isCupMatch, selectedDetailMatch.isMidweek).label : undefined}
+                footer={
+                    <button
+                        onClick={() => setSelectedDetailMatch(null)}
+                        className="w-full h-11 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs uppercase tracking-wider cursor-pointer"
                     >
-                        {/* Modal Header */}
-                        <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
-                            <div>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-[var(--apex-gold)]">
-                                    {getCompetitionDetails(selectedDetailMatch.competition, selectedDetailMatch.isCupMatch, selectedDetailMatch.isMidweek).label}
-                                </span>
-                                <h3 className="text-base font-black text-white uppercase">Ficha del Encuentro</h3>
-                            </div>
-                            <button
-                                onClick={() => setSelectedDetailMatch(null)}
-                                className="text-slate-400 hover:text-white p-1 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
-                            >
-                                ✕
-                            </button>
-                        </div>
-
-                        {/* Scoreboard */}
-                        {(() => {
-                            const home = getTeamById(selectedDetailMatch.homeTeamId);
-                            const away = getTeamById(selectedDetailMatch.awayTeamId);
-                            return (
-                                <div className="p-3.5 rounded-xl bg-black/50 border border-white/10 flex items-center justify-between gap-2">
-                                    <div className="flex-1 flex flex-col items-center text-center min-w-0">
-                                        <div className="w-10 h-10 bg-black/60 p-1.5 rounded-xl border border-white/10 mb-1.5 flex items-center justify-center flex-shrink-0">
-                                            <TeamLogo team={home} />
-                                        </div>
-                                        <span className="text-xs font-bold text-white truncate max-w-full">{home?.name}</span>
+                        Cerrar
+                    </button>
+                }
+            >
+                {selectedDetailMatch && selectedDetailMatch.result && (() => {
+                    const home = teamMap.get(selectedDetailMatch.homeTeamId);
+                    const away = teamMap.get(selectedDetailMatch.awayTeamId);
+                    return (
+                        <div className="space-y-4">
+                            <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-between gap-2">
+                                <div className="flex-1 flex flex-col items-center text-center min-w-0">
+                                    <div className="w-10 h-10 mb-1.5 flex items-center justify-center">
+                                        <TeamLogo team={home} className="w-full h-full object-contain" />
                                     </div>
+                                    <span className="text-xs font-black text-white truncate max-w-full">{home?.name}</span>
+                                </div>
 
-                                    <div className="w-20 flex-shrink-0 flex flex-col items-center justify-center">
-                                        <span className="text-xl font-black text-white whitespace-nowrap font-mono">
-                                            {selectedDetailMatch.result?.homeScore} - {selectedDetailMatch.result?.awayScore}
+                                <div className="w-20 shrink-0 flex flex-col items-center justify-center">
+                                    <span className="text-xl font-black text-white tabular-nums">
+                                        {selectedDetailMatch.result.homeScore} - {selectedDetailMatch.result.awayScore}
+                                    </span>
+                                    {selectedDetailMatch.penalties && (
+                                        <span className="text-[9px] font-bold text-amber-400 mt-0.5">
+                                            Pen: {selectedDetailMatch.penalties.home}-{selectedDetailMatch.penalties.away}
                                         </span>
-                                        {selectedDetailMatch.penalties && (
-                                            <span className="text-[8px] font-bold text-amber-400 uppercase mt-0.5 whitespace-nowrap">
-                                                Pen: {selectedDetailMatch.penalties.home}-{selectedDetailMatch.penalties.away}
-                                            </span>
-                                        )}
-                                    </div>
+                                    )}
+                                </div>
 
-                                    <div className="flex-1 flex flex-col items-center text-center min-w-0">
-                                        <div className="w-10 h-10 bg-black/60 p-1.5 rounded-xl border border-white/10 mb-1.5 flex items-center justify-center flex-shrink-0">
-                                            <TeamLogo team={away} />
-                                        </div>
-                                        <span className="text-xs font-bold text-white truncate max-w-full">{away?.name}</span>
+                                <div className="flex-1 flex flex-col items-center text-center min-w-0">
+                                    <div className="w-10 h-10 mb-1.5 flex items-center justify-center">
+                                        <TeamLogo team={away} className="w-full h-full object-contain" />
                                     </div>
+                                    <span className="text-xs font-black text-white truncate max-w-full">{away?.name}</span>
                                 </div>
-                            );
-                        })()}
+                            </div>
 
-                        {/* Scorers / Events List */}
-                        <div className="space-y-2 max-h-56 overflow-y-auto custom-scrollbar">
-                            <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Goleadores</h4>
-                            {selectedDetailMatch.result.scorers && selectedDetailMatch.result.scorers.length > 0 ? (
-                                <div className="space-y-1">
-                                    {selectedDetailMatch.result.scorers.map((scorer, sIdx) => (
-                                        <div key={sIdx} className="p-2 rounded-lg bg-white/5 border border-white/5 flex items-center justify-between text-xs">
-                                            <span className="font-semibold text-white">
-                                                {scorer.playerName}
-                                            </span>
-                                            <span className="text-slate-400 font-mono text-[11px] font-bold">{scorer.minute}'</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="p-2.5 rounded-lg bg-white/5 text-center text-slate-500 text-xs">
-                                    Sin goles anotados
-                                </div>
-                            )}
+                            <div className="space-y-2">
+                                <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Goleadores</h4>
+                                {selectedDetailMatch.result.scorers && selectedDetailMatch.result.scorers.length > 0 ? (
+                                    <div className="space-y-1">
+                                        {selectedDetailMatch.result.scorers.map((scorer, sIdx) => (
+                                            <div key={sIdx} className="px-3 py-2 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between text-xs">
+                                                <span className="font-bold text-white">{scorer.playerName}</span>
+                                                <span className="text-slate-400 font-bold tabular-nums">{scorer.minute}'</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-xs text-slate-500">Sin goles anotados.</p>
+                                )}
+                            </div>
 
                             {selectedDetailMatch.result.events && selectedDetailMatch.result.events.length > 0 && (
-                                <div className="pt-2 space-y-1">
-                                    <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Incidencias</h4>
+                                <div className="space-y-1.5">
+                                    <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Incidencias</h4>
                                     {selectedDetailMatch.result.events.map((evt, eIdx) => (
-                                        <p key={eIdx} className="text-[11px] text-slate-300 leading-relaxed bg-white/[0.02] p-1.5 rounded">
+                                        <p key={eIdx} className="text-[11px] text-slate-300 leading-relaxed bg-white/[0.02] p-2 rounded-xl border border-white/5">
                                             {evt}
                                         </p>
                                     ))}
                                 </div>
                             )}
                         </div>
-
-                        <div className="pt-1">
-                            <button
-                                onClick={() => setSelectedDetailMatch(null)}
-                                className="w-full py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs uppercase tracking-wider transition-colors"
-                            >
-                                Cerrar
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+                    );
+                })()}
+            </BottomSheet>
         </div>
     );
 };
 
-// Helper row renderer with strictly consistent column widths
 function renderCleanMatchRow(
-    match: Match, 
-    idx: number, 
-    gameState: GameState, 
+    match: Match,
+    idx: number,
+    gameState: GameState,
     onSelectMatch: (m: Match) => void,
-    teamMap?: Map<number, Team>
+    teamMap: Map<number, Team>
 ) {
-    const home = teamMap?.get(match.homeTeamId) ?? gameState.allTeams.find(t => t.id === match.homeTeamId);
-    const away = teamMap?.get(match.awayTeamId) ?? gameState.allTeams.find(t => t.id === match.awayTeamId);
+    const home = teamMap.get(match.homeTeamId);
+    const away = teamMap.get(match.awayTeamId);
     const isPlayerMatch = match.homeTeamId === gameState.team.id || match.awayTeamId === gameState.team.id;
     const isPlayed = match.result !== undefined;
 
@@ -667,50 +547,39 @@ function renderCleanMatchRow(
         <div
             key={idx}
             onClick={() => isPlayed && onSelectMatch(match)}
-            className={`p-2.5 rounded-xl transition-all flex items-center justify-between gap-2 ${
+            className={`p-2.5 rounded-xl transition-colors flex items-center justify-between gap-2 ${
                 isPlayed ? 'cursor-pointer hover:bg-white/5' : ''
-            } ${
-                isPlayerMatch 
-                    ? 'bg-[var(--apex-gold)]/10 border border-[var(--apex-gold)]/30' 
-                    : 'hover:bg-white/[0.02]'
-            }`}
+            } ${isPlayerMatch ? 'bg-[var(--apex-gold)]/10 border border-[var(--apex-gold)]/30' : ''}`}
         >
-            {/* Home Team (Fixed Column) */}
             <div className="flex-1 flex items-center justify-end gap-2 min-w-0">
                 <span className={`text-xs truncate text-right ${
-                    isPlayerMatch && match.homeTeamId === gameState.team.id
-                        ? 'font-black text-[var(--apex-gold)]'
-                        : 'font-semibold text-slate-300'
+                    isPlayerMatch && match.homeTeamId === gameState.team.id ? 'font-black text-[var(--apex-gold)]' : 'font-semibold text-slate-300'
                 }`}>
                     {home?.name}
                 </span>
-                <div className="w-6 h-6 flex-shrink-0 bg-black/60 p-1 rounded-md border border-white/10 flex items-center justify-center">
-                    <TeamLogo team={home} />
+                <div className="w-6 h-6 shrink-0 flex items-center justify-center">
+                    <TeamLogo team={home} className="w-full h-full object-contain" />
                 </div>
             </div>
 
-            {/* Score / Kickoff Time */}
-            <div className="w-14 flex flex-col items-center justify-center flex-shrink-0">
+            <div className="w-14 flex items-center justify-center shrink-0">
                 {isPlayed ? (
-                    <span className="px-2 py-0.5 rounded bg-black/70 border border-white/10 font-bold text-xs text-white">
+                    <span className="px-2 py-0.5 rounded-lg bg-black/60 border border-white/10 font-black text-xs text-white tabular-nums">
                         {match.result!.homeScore} - {match.result!.awayScore}
                     </span>
                 ) : (
-                    <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/5 text-[10px] font-bold text-slate-400 font-mono">
+                    <span className="px-1.5 py-0.5 rounded-lg bg-white/5 text-[10px] font-bold text-slate-400 tabular-nums">
                         {getMatchKickoffTime(match)}
                     </span>
                 )}
             </div>
 
-            {/* Away Team (Fixed Column) */}
             <div className="flex-1 flex items-center justify-start gap-2 min-w-0">
-                <div className="w-6 h-6 flex-shrink-0 bg-black/60 p-1 rounded-md border border-white/10 flex items-center justify-center">
-                    <TeamLogo team={away} />
+                <div className="w-6 h-6 shrink-0 flex items-center justify-center">
+                    <TeamLogo team={away} className="w-full h-full object-contain" />
                 </div>
                 <span className={`text-xs truncate text-left ${
-                    isPlayerMatch && match.awayTeamId === gameState.team.id
-                        ? 'font-black text-[var(--apex-gold)]'
-                        : 'font-semibold text-slate-300'
+                    isPlayerMatch && match.awayTeamId === gameState.team.id ? 'font-black text-[var(--apex-gold)]' : 'font-semibold text-slate-300'
                 }`}>
                     {away?.name}
                 </span>

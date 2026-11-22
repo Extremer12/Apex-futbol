@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Player, CoachRequest, CoachReport } from '../../types';
 import { GameAction } from '../../state/reducer';
 import { Modal } from './Modal';
-import { UsersIcon, SparklesIcon, TrendingUpIcon, AwardIcon } from '../icons';
+import { UsersIcon, TrendingUpIcon, AwardIcon } from '../icons';
 import { formatCurrencyShort } from '../../utils';
 
 interface CoachMeetingModalProps {
@@ -160,7 +160,7 @@ export const CoachMeetingModal: React.FC<CoachMeetingModalProps> = ({
                 {report.promotions.length > 0 && (
                     <div className="space-y-3">
                         <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                            <SparklesIcon className="w-3 h-3 text-yellow-400" /> Propuestas de la Cantera
+                            <TrendingUpIcon className="w-3 h-3 text-yellow-400" /> Propuestas de la Cantera
                         </h4>
                         <div className="grid grid-cols-1 gap-3">
                             {report.promotions.map(player => (
