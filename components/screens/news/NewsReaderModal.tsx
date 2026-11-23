@@ -65,16 +65,21 @@ export const NewsReaderModal: React.FC<NewsReaderModalProps> = ({
     onCloseRef.current = onClose;
     const closedRef = useRef(false);
 
+    const initialNormArticle = useMemo(
+        () => normalizeNewsItem(initialArticle, userTeam),
+        [initialArticle, userTeam]
+    );
+
     const normalizedFeed: NormalizedNewsItem[] = useMemo(() => {
         const list = (newsFeed || []).map(n => normalizeNewsItem(n, userTeam));
-        if (!list.some(n => n.id === initialArticle.id)) {
-            list.unshift(normalizeNewsItem(initialArticle, userTeam));
+        if (!list.some(n => n.id === initialNormArticle.id)) {
+            list.unshift(initialNormArticle);
         }
         return list;
-    }, [newsFeed, initialArticle, userTeam]);
+    }, [newsFeed, initialNormArticle, userTeam]);
 
     const [activeFilter, setActiveFilter] = useState<NewsFilterTab>('ALL');
-    const [activeId, setActiveId] = useState<string>(initialArticle.id);
+    const [activeId, setActiveId] = useState<string>(initialNormArticle.id);
 
     const filteredFeed = useMemo(() => {
         const list = normalizedFeed.filter(n => matchesFilter(n.type, activeFilter));
@@ -101,19 +106,18 @@ export const NewsReaderModal: React.FC<NewsReaderModalProps> = ({
     useEffect(() => {
         closedRef.current = false;
         const dialog = dialogRef.current;
-        if (dialog && !dialog.open) {
-            dialog.showModal();
-        }
-        return () => {
-            if (dialog?.open) {
-                dialog.close();
-            }
-        };
-    }, []);
-
-    useEffect(() => {
-        const dialog = dialogRef.current;
         if (!dialog) return;
+
+        if (!dialog.open) {
+            try {
+                dialog.showModal();
+            } catch {
+                dialog.setAttribute('open', '');
+            }
+        }
+
+        const originalOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
 
         const handleNativeClose = () => {
             if (!closedRef.current) {
@@ -121,8 +125,18 @@ export const NewsReaderModal: React.FC<NewsReaderModalProps> = ({
                 onCloseRef.current();
             }
         };
+
         dialog.addEventListener('close', handleNativeClose);
-        return () => dialog.removeEventListener('close', handleNativeClose);
+
+        return () => {
+            document.body.style.overflow = originalOverflow;
+            closedRef.current = true;
+            dialog.removeEventListener('close', handleNativeClose);
+            // CRITICAL: Do NOT call dialog.close() in cleanup.
+            // React unmounts the DOM node cleanly; calling dialog.close() during
+            // React 18 StrictMode double-mount simulation dispatches a native 'close'
+            // event that triggers onClose(), causing instant self-closure on open.
+        };
     }, []);
 
     useEffect(() => {
@@ -143,10 +157,21 @@ export const NewsReaderModal: React.FC<NewsReaderModalProps> = ({
         if (closedRef.current) return;
         playUiClick();
         closedRef.current = true;
-        if (dialogRef.current?.open) {
-            dialogRef.current.close();
+        const dialog = dialogRef.current;
+        if (dialog?.open) {
+            try {
+                dialog.close();
+            } catch {
+                // ignore
+            }
         }
         onCloseRef.current();
+    };
+
+    const handleDialogClick = (e: React.MouseEvent<HTMLDialogElement>) => {
+        if (e.target === dialogRef.current) {
+            handleClose();
+        }
     };
 
     const selectArticle = (id: string) => {
@@ -172,7 +197,8 @@ export const NewsReaderModal: React.FC<NewsReaderModalProps> = ({
         <dialog
             ref={dialogRef}
             aria-labelledby={titleId}
-            className="apex-top-overlay overflow-y-auto select-none"
+            onClick={handleDialogClick}
+            className="apex-top-overlay fixed inset-0 z-50 overflow-y-auto select-none"
         >
             {/* Dynamic Top Category Accent Line */}
             <div

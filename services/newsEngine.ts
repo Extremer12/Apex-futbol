@@ -139,9 +139,11 @@ export function normalizeNewsItem(item: NewsItem, team?: Team): NormalizedNewsIt
 
     const words = `${headline} ${body}`.trim().split(/\s+/).length;
     const readMinutes = Math.max(1, Math.ceil(words / 160));
+    const id = item.id || `news-${headline.slice(0, 16).replace(/\W+/g, '')}-${item.date || '0'}`;
 
     return {
         ...item,
+        id,
         headline,
         subheadline,
         body,
@@ -152,6 +154,7 @@ export function normalizeNewsItem(item: NewsItem, team?: Team): NormalizedNewsIt
 }
 
 export interface NormalizedNewsItem extends NewsItem {
+    id: string;
     type: NewsCategory;
     subheadline: string;
     sourceName: string;

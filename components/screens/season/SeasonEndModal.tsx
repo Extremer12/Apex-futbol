@@ -171,6 +171,7 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
     const titleId = useId();
     const onCloseRef = useRef(onClose);
     onCloseRef.current = onClose;
+    const closedRef = useRef(false);
 
     const summary = useMemo(() => getSeasonSummaryData(gameState), [gameState]);
 
@@ -181,25 +182,30 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
     const [scoreSubmitted, setScoreSubmitted] = useState(false);
 
     useEffect(() => {
-        const dialog = dialogRef.current;
-        if (dialog && !dialog.open) {
-            dialog.showModal();
-        }
-        return () => {
-            if (dialog?.open) {
-                dialog.close();
-            }
-        };
-    }, []);
-
-    useEffect(() => {
+        closedRef.current = false;
         const dialog = dialogRef.current;
         if (!dialog) return;
+
+        if (!dialog.open) {
+            try {
+                dialog.showModal();
+            } catch {
+                dialog.setAttribute('open', '');
+            }
+        }
+
         const handleClose = () => {
-            onCloseRef.current();
+            if (!closedRef.current) {
+                closedRef.current = true;
+                onCloseRef.current();
+            }
         };
+
         dialog.addEventListener('close', handleClose);
-        return () => dialog.removeEventListener('close', handleClose);
+        return () => {
+            closedRef.current = true;
+            dialog.removeEventListener('close', handleClose);
+        };
     }, []);
 
     const trophiesCount = (gameState.team.trophyCabinet || []).length;

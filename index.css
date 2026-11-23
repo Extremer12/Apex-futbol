@@ -364,8 +364,11 @@ dialog.apex-sheet::backdrop {
   overscroll-behavior: contain;
 }
 
-/* ---- Native Top-Layer Fullscreen Overlays (Title Celebration & Season Summary) ---- */
+/* ---- Native Top-Layer Fullscreen Overlays (Apex Press, Title Celebration & Season Summary) ---- */
 dialog.apex-top-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
   padding: 0;
   margin: 0;
   border: none;
@@ -376,43 +379,31 @@ dialog.apex-top-overlay {
   color: var(--apex-text);
   background: #060A12;
   overscroll-behavior: contain;
-  opacity: 0;
-  transition-property: opacity, display, overlay;
-  transition-duration: 0.28s;
-  transition-timing-function: ease-out;
-  transition-behavior: allow-discrete;
 }
 
 dialog.apex-top-overlay[open] {
   display: flex;
   flex-direction: column;
   opacity: 1;
+  animation: apex-modal-fade-in 0.22s ease-out;
 }
 
-@starting-style {
-  dialog.apex-top-overlay[open] {
+@keyframes apex-modal-fade-in {
+  from {
     opacity: 0;
+    transform: scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
 dialog.apex-top-overlay::backdrop {
-  background-color: rgba(2, 6, 23, 0);
+  background-color: rgba(2, 6, 23, 0.92);
+  backdrop-filter: blur(8px);
   overflow: hidden;
   overscroll-behavior: contain;
-  transition-property: background-color, display, overlay;
-  transition-duration: 0.28s;
-  transition-timing-function: ease-out;
-  transition-behavior: allow-discrete;
-}
-
-dialog.apex-top-overlay[open]::backdrop {
-  background-color: rgba(2, 6, 23, 0.92);
-}
-
-@starting-style {
-  dialog.apex-top-overlay[open]::backdrop {
-    background-color: rgba(2, 6, 23, 0);
-  }
 }
 
 /* Physics-based spring entrance for championship showcase */
