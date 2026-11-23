@@ -34,9 +34,9 @@ export function handleTransferAction(state: GameState, action: TransferAction): 
             const { offerId, counterAmount } = action.payload;
             return {
                 ...state,
-                incomingOffers: state.incomingOffers.map(o => 
-                    o.id === offerId 
-                        ? { ...o, counterOfferValue: counterAmount, status: 'negotiating' } 
+                incomingOffers: state.incomingOffers.map(o =>
+                    o.id === offerId
+                        ? { ...o, counterOfferValue: counterAmount, status: 'negotiating' }
                         : o
                 )
             };
@@ -114,13 +114,13 @@ export function handleTransferAction(state: GameState, action: TransferAction): 
             const normalizedSigningBonus = normalizeMonetaryValue(signingBonus, 0);
             const totalCashDeducted = fee + normalizedSigningBonus;
 
-            const playerToAdd: Player = { 
-                ...player, 
-                morale: 'Contento', 
-                contractYears: negotiatedYears, 
+            const playerToAdd: Player = {
+                ...player,
+                morale: 'Contento',
+                contractYears: negotiatedYears,
                 wage: negotiatedWage,
                 preferredRole: role || player.preferredRole || 'FirstTeam',
-                isTransferListed: false 
+                isTransferListed: false
             };
             const currentTransferBudget = normalizeMonetaryValue(state.finances.transferBudget);
             const currentBalance = normalizeMonetaryValue(state.finances.balance);
@@ -155,11 +155,11 @@ export function handleTransferAction(state: GameState, action: TransferAction): 
                 ...state,
                 team: updatedPlayerTeam,
                 allTeams: updatedAllTeams,
-                finances: { 
-                    ...state.finances, 
-                    balance: newBalance, 
-                    transferBudget: newTransferBudget, 
-                    weeklyWages: newWages 
+                finances: {
+                    ...state.finances,
+                    balance: newBalance,
+                    transferBudget: newTransferBudget,
+                    weeklyWages: newWages
                 },
                 newsFeed: [newsItem, ...state.newsFeed].slice(0, 20)
             };
@@ -202,7 +202,7 @@ export function handleTransferAction(state: GameState, action: TransferAction): 
             // Buscar 1 o 2 clubes compradores potenciales
             const pVal = normalizeMonetaryValue(player.value);
             const otherTeams = state.allTeams.filter(t => t.id !== state.team.id);
-            
+
             // Preferir clubes con presupuesto o de nivel deportivo acorde
             let candidates = otherTeams.filter(t => {
                 const b = normalizeMonetaryValue(t.transferBudget);
@@ -235,12 +235,13 @@ export function handleTransferAction(state: GameState, action: TransferAction): 
 
             const newsItem: NewsItem = {
                 id: `news_offer_${Date.now()}`,
-                headline: `💼 ${player.name} ofrecido en el mercado`,
+                headline: `${player.name} ofrecido en el mercado`,
                 body: `La directiva de ${state.team.name} ha ofrecido formalmente a ${player.name}. ${buyers.map(b => b.name).join(' y ')} han enviado ofertas preliminares a la bandeja del club.`,
                 date: formatDate(state.currentDate),
                 type: 'transfer',
                 playerId: player.id,
-                playerName: player.name
+                playerName: player.name,
+                playerPhoto: player.photo
             };
 
             return {

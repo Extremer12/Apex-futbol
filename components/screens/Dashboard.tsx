@@ -1,15 +1,16 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { GameState, Player, MatchPhase, NewsItem } from '../../types';
+import { GameState, Player, Team, MatchPhase, NewsItem } from '../../types';
 import { GameAction } from '../../state/reducer';
-import { LinkedText } from '../ui/LinkedText';
 import { formatCurrencyShort } from '../../utils';
 import { CircularProgress } from './dashboard/CircularProgress';
 import { FinanceCard } from './dashboard/FinanceCard';
 import { LeagueTableMini } from './dashboard/LeagueTableMini';
 import { StadiumRevenueCard } from './dashboard/StadiumRevenueCard';
 import { HeroSection, PendingSimulationResults } from './dashboard/HeroSection';
+import { DashboardNewsCard } from './dashboard/DashboardNewsCard';
+import { NewsReaderModal } from './news/NewsReaderModal';
 import { PlayerAvatar } from '../ui/PlayerAvatar';
-import { X, Newspaper, Compass } from 'lucide-react';
+import { Compass } from 'lucide-react';
 import { resourceManager } from '../../services/resources/ResourceManager';
 
 export const getPlayerImage = (name: string) => resourceManager.playerFace(undefined, { name });
@@ -48,22 +49,37 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({
             .flatMap(t => t.squad);
     }, [propAllPlayers, gameState?.allTeams, gameState?.team?.leagueId, gameState?.team?.id]);
 
-    const { leaguePlayersById, leaguePlayersByName, allPlayersByName } = useMemo(() => {
+    const { leaguePlayersById, leaguePlayersByName, allPlayersById, allPlayersByName, allPlayersByNameLower, teamsById } = useMemo(() => {
         const byId = new Map<number, Player>();
         const byName = new Map<string, Player>();
+        const allById = new Map<number, Player>();
         const allByName = new Map<string, Player>();
+        const allByNameLower = new Map<string, Player>();
+        const tMap = new Map<number, Team>();
+
         for (const p of allPlayers) {
             byId.set(p.id, p);
             byName.set(p.name.toLowerCase(), p);
         }
         if (gameState?.allTeams) {
             for (const t of gameState.allTeams) {
+                tMap.set(t.id, t);
                 for (const p of t.squad) {
+                    allById.set(p.id, p);
                     if (!allByName.has(p.name)) allByName.set(p.name, p);
+                    const lower = p.name.toLowerCase();
+                    if (!allByNameLower.has(lower)) allByNameLower.set(lower, p);
                 }
             }
         }
-        return { leaguePlayersById: byId, leaguePlayersByName: byName, allPlayersByName: allByName };
+        return {
+            leaguePlayersById: byId,
+            leaguePlayersByName: byName,
+            allPlayersById: allById,
+            allPlayersByName: allByName,
+            allPlayersByNameLower: allByNameLower,
+            teamsById: tMap,
+        };
     }, [allPlayers, gameState?.allTeams]);
 
     const handlePlayerClick = useCallback((playerName: string) => {
@@ -75,27 +91,20 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({
 
     const findAssociatedPlayer = useCallback((item: NewsItem): Player | undefined => {
         if (item.playerId) {
-            const p = leaguePlayersById.get(item.playerId);
+            const p = leaguePlayersById.get(item.playerId) || allPlayersById.get(item.playerId);
             if (p) return p;
         }
         if (item.playerName) {
-            const p = leaguePlayersByName.get(item.playerName.toLowerCase());
+            const p = leaguePlayersByName.get(item.playerName.toLowerCase()) || allPlayersByNameLower.get(item.playerName.toLowerCase());
             if (p) return p;
         }
-        for (const p of allPlayers) {
+        for (const p of (gameState.team?.squad || [])) {
             if (p.name.length > 3 && (item.headline.includes(p.name) || item.body.includes(p.name))) {
                 return p;
             }
         }
         return undefined;
-    }, [allPlayers, leaguePlayersById, leaguePlayersByName]);
-
-    const visibleNews = useMemo(() => {
-        return gameState.newsFeed.slice(0, 3).map(item => ({
-            item,
-            assocPlayer: findAssociatedPlayer(item)
-        }));
-    }, [gameState.newsFeed, findAssociatedPlayer]);
+    }, [gameState.team?.squad, leaguePlayersById, allPlayersById, leaguePlayersByName, allPlayersByNameLower]);
 
     const marketTargets = useMemo(() => {
         const playerTeamId = gameState.team.id;
@@ -185,49 +194,14 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({
 
             {/* Row 4: News & Scouting Targets */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5">
-                {/* News Feed */}
-                <div className="lg:col-span-7 apex-card overflow-hidden flex flex-col">
-                    <div className="px-4 py-3 border-b border-white/5 bg-black/20 flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                            <Newspaper className="w-3.5 h-3.5 text-[var(--apex-gold)]" />
-                            <span className="text-[10px] font-bold tracking-wider text-slate-300 uppercase">Noticias del Club</span>
-                        </div>
-                        <span className="text-[10px] text-slate-500 font-semibold">{gameState.newsFeed.length} notas</span>
-                    </div>
-                    <div className="divide-y divide-white/5 flex-1">
-                        {visibleNews.map(({ item, assocPlayer }) => (
-                            <div 
-                                key={item.id} 
-                                onClick={() => setSelectedNews(item)}
-                                className="flex items-start gap-3 p-3.5 hover:bg-white/[0.02] transition-colors cursor-pointer group"
-                            >
-                                {(assocPlayer || item.playerPhoto) && (
-                                    <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-white/10 bg-slate-900 mt-0.5">
-                                        <PlayerAvatar 
-                                            player={assocPlayer || { name: item.playerName || '', photo: item.playerPhoto }}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    </div>
-                                )}
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <span className="text-[9px] font-bold uppercase text-[var(--apex-gold)]">
-                                            {item.type === 'transfer' ? 'Mercado' : item.type === 'match' ? 'Partido' : 'Club'}
-                                        </span>
-                                        <span className="text-slate-600 text-[9px]">•</span>
-                                        <span className="text-[9px] font-medium text-slate-500">{item.date || 'Reciente'}</span>
-                                    </div>
-                                    <h4 className="text-xs sm:text-sm font-bold text-white group-hover:text-[var(--apex-gold)] transition-colors line-clamp-1 mb-0.5">
-                                        {item.headline}
-                                    </h4>
-                                    <p className="text-[11px] text-slate-400 line-clamp-1">
-                                        {item.body.replace(/\\n/g, ' ')}
-                                    </p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                {/* Digital News Hub Widget */}
+                <DashboardNewsCard
+                    newsFeed={gameState.newsFeed}
+                    userTeam={gameState.team}
+                    teamsById={teamsById}
+                    findAssociatedPlayer={findAssociatedPlayer}
+                    onOpenArticle={setSelectedNews}
+                />
 
                 {/* Market Radar */}
                 <div className="lg:col-span-5 apex-card overflow-hidden flex flex-col">
@@ -274,93 +248,18 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({
                 </div>
             </div>
 
-            {/* News Detail Modal */}
+            {/* Full-Screen Digital Press Reader */}
             {selectedNews && (
-                <div 
-                    className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
-                    onClick={() => setSelectedNews(null)}
-                >
-                    <div 
-                        className="relative w-full max-w-lg bg-[#101624] border border-white/15 rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between bg-black/20">
-                            <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-bold uppercase text-[var(--apex-gold)]">
-                                    {selectedNews.type === 'transfer' ? 'Mercado de Pases' : selectedNews.type === 'match' ? 'Crónica del Partido' : 'Comunicado Oficial'}
-                                </span>
-                                <span className="text-slate-600">•</span>
-                                <span className="text-[10px] font-medium text-slate-400">
-                                    {selectedNews.date || 'Hoy'}
-                                </span>
-                            </div>
-                            <button 
-                                onClick={() => setSelectedNews(null)}
-                                className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-colors cursor-pointer"
-                            >
-                                <X className="w-4 h-4" />
-                            </button>
-                        </div>
-
-                        <div className="p-5 sm:p-6 overflow-y-auto space-y-4">
-                            {(() => {
-                                const assocPlayer = findAssociatedPlayer(selectedNews);
-                                if (!assocPlayer) return null;
-                                return (
-                                    <div className="p-3 bg-black/30 border border-white/10 rounded-xl flex items-center justify-between gap-3">
-                                        <div className="flex items-center gap-3">
-                                            <PlayerAvatar player={assocPlayer} className="w-10 h-10" />
-                                            <div>
-                                                <div className="flex items-center gap-1.5">
-                                                    <span className="text-xs font-bold text-white">{assocPlayer.name}</span>
-                                                    <span className="text-[10px] font-black px-1.5 py-0.5 bg-[var(--apex-gold)]/15 text-[var(--apex-gold)] rounded">
-                                                        {assocPlayer.rating}
-                                                    </span>
-                                                </div>
-                                                <div className="text-[10px] text-slate-400">
-                                                    {assocPlayer.position} • {formatCurrencyShort(assocPlayer.value)}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <button
-                                            onClick={() => {
-                                                setSelectedNews(null);
-                                                handlePlayerClick(assocPlayer.name);
-                                            }}
-                                            className="px-3 py-1.5 rounded-lg bg-[var(--apex-gold)] text-black text-[10px] font-bold uppercase hover:brightness-110 transition-all shrink-0 cursor-pointer"
-                                        >
-                                            Ver Ficha
-                                        </button>
-                                    </div>
-                                );
-                            })()}
-
-                            <h3 className="text-base sm:text-lg font-black text-white leading-snug">
-                                {selectedNews.headline}
-                            </h3>
-
-                            <div className="text-slate-300 text-xs sm:text-sm leading-relaxed whitespace-pre-line break-words">
-                                <LinkedText 
-                                    text={selectedNews.body.replace(/\\n/g, '\n')} 
-                                    players={allPlayers} 
-                                    onPlayerClick={(name) => {
-                                        setSelectedNews(null);
-                                        handlePlayerClick(name);
-                                    }} 
-                                />
-                            </div>
-                        </div>
-
-                        <div className="px-5 py-3 border-t border-white/10 bg-black/20 flex justify-end">
-                            <button
-                                onClick={() => setSelectedNews(null)}
-                                className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold transition-colors cursor-pointer"
-                            >
-                                Cerrar
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <NewsReaderModal
+                    initialArticle={selectedNews}
+                    newsFeed={gameState.newsFeed}
+                    userTeam={gameState.team}
+                    allPlayers={allPlayers}
+                    teamsById={teamsById}
+                    findAssociatedPlayer={findAssociatedPlayer}
+                    onPlayerClick={handlePlayerClick}
+                    onClose={() => setSelectedNews(null)}
+                />
             )}
         </div>
     );

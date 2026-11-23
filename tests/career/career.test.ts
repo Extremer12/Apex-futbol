@@ -798,3 +798,61 @@ test('55. Presidential Profile: XP progression, style gameplay effects & club sw
     assert.equal(state.playerProfile?.careerStints?.[0].clubId, startTeam.id);
     assert.equal(state.playerProfile?.careerStints?.[0].status, 'RESIGNED');
 });
+
+test('56. Digital News Hub: single enriched post-match chronicle (no duplicates), contextual news & legacy normalization', async () => {
+    const { initializeGame } = await import('../../services/gameFactory');
+    const { generateWeeklyNewsAndOffers } = await import('../../services/simulation/simulationNewsHandler');
+    const { buildContextualClubNews, normalizeNewsItem } = await import('../../services/newsEngine');
+
+    const startTeam = TEAMS[0];
+    const opponent = TEAMS.find(t => t.leagueId === startTeam.leagueId && t.id !== startTeam.id)!;
+    const state = initializeGame({
+        selectedTeam: startTeam,
+        playerProfile: { name: 'Ana Press', age: 40, nationality: 'Argentina', experience: 0, style: 'Equilibrado' }
+    });
+
+    // 1. Initial news items include rich editorial metadata
+    assert.ok(state.newsFeed.length >= 4);
+    assert.ok(state.newsFeed[0].subheadline, 'Initial news should carry subheadline');
+    assert.ok(state.newsFeed[0].sourceName, 'Initial news should carry media outlet sourceName');
+
+    // 2. Post-match news generation creates exactly ONE match chronicle (no duplicate match_news_)
+    const matchRes = {
+        homeTeamId: startTeam.id,
+        awayTeamId: opponent.id,
+        homeScore: 4,
+        awayScore: 0,
+        scorers: [{ playerId: startTeam.squad[0].id, playerName: startTeam.squad[0].name, minute: 12 }]
+    };
+    const { newsToAdd } = await generateWeeklyNewsAndOffers(
+        state,
+        state.schedule,
+        state.allTeams,
+        matchRes,
+        1,
+        new Date('2026-02-01T12:00:00'),
+        [],
+        false
+    );
+    const matchStories = newsToAdd.filter(n => n.id.startsWith('match_'));
+    assert.equal(matchStories.length, 1, 'Must generate a single unified match chronicle per match');
+    assert.equal(matchStories[0].type, 'match');
+    assert.ok(matchStories[0].matchMeta, 'Match chronicle must include structured matchMeta');
+    assert.equal(matchStories[0].matchMeta?.homeScore, 4);
+    assert.equal(matchStories[0].isBreaking, true, 'Thrashing 4-0 must be marked breaking');
+
+    // 3. Contextual news reads state & avoids repeating recent headlines
+    const ctx1 = buildContextualClubNews(state);
+    assert.ok(ctx1.subheadline && ctx1.sourceName);
+
+    // 4. Legacy emoji-prefixed item normalizes cleanly without emojis
+    const normalized = normalizeNewsItem({
+        id: 'legacy_1',
+        headline: '💼 Fichaje cerrado',
+        body: 'Traspaso completado en el mercado de verano.',
+        date: '10/01/2026'
+    }, startTeam);
+    assert.equal(normalized.headline, 'Fichaje cerrado');
+    assert.equal(normalized.type, 'transfer');
+    assert.ok(normalized.readMinutes >= 1);
+});

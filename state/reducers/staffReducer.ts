@@ -65,7 +65,9 @@ export function handleStaffAction(state: GameState, action: StaffAction): GameSt
                     id: `hire_coach_${Date.now()}`,
                     headline: 'Nuevo Director Técnico',
                     body: `El club ha contratado a ${coachToHire.name} (Poder: ${coachToHire.prestige}). Su estilo táctico ${coachToHire.style} promete potenciar el rendimiento del equipo.`,
-                    date: formatDate(state.currentDate)
+                    date: formatDate(state.currentDate),
+                    type: 'institutional' as const,
+                    sourceName: 'Comunicado Oficial'
                 }, ...state.newsFeed].slice(0, 25)
             };
         }
@@ -94,7 +96,9 @@ export function handleStaffAction(state: GameState, action: StaffAction): GameSt
                     id: `fire_coach_${Date.now()}`,
                     headline: 'Salida del Director Técnico',
                     body: `El club ha rescindido el contrato de ${coach.name}. La junta directiva asume interinamente la conducción a la espera de un nuevo estratega.`,
-                    date: formatDate(state.currentDate)
+                    date: formatDate(state.currentDate),
+                    type: 'warning' as const,
+                    sourceName: 'Comunicado Oficial'
                 }, ...state.newsFeed].slice(0, 25)
             };
         }
@@ -136,7 +140,9 @@ export function handleStaffAction(state: GameState, action: StaffAction): GameSt
                     id: `hire_staff_${Date.now()}`,
                     headline: `Nuevo ${roleLabel} Contratado`,
                     body: `${candidate.name} (Poder: ${candidate.power}) se incorpora como ${roleLabel}. Especialidad: ${candidate.specialty || 'Generalista'}.`,
-                    date: formatDate(state.currentDate)
+                    date: formatDate(state.currentDate),
+                    type: 'institutional' as const,
+                    sourceName: 'Comunicado Oficial'
                 }, ...state.newsFeed].slice(0, 25)
             };
         }

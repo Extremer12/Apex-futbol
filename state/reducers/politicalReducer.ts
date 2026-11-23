@@ -44,8 +44,10 @@ export function handlePoliticalAction(state: GameState, action: PoliticalAction)
                         id: `election_won_${state.season}`,
                         headline: 'Reelección Presidencial Exitosa',
                         body: `Los socios han hablado y confían en tu gestión. Comenzarás tu mandato número ${state.mandate.totalMandates + 1} con ${newApproval}% de aprobación (+150 XP).`,
-                        date: formatDate(state.currentDate)
-                    }, ...state.newsFeed].slice(0, 20)
+                        date: formatDate(state.currentDate),
+                        type: 'achievement' as const,
+                        sourceName: 'Comunicado Oficial'
+                    }, ...state.newsFeed].slice(0, 25)
                 };
             } else {
                 // President lost election - this should trigger game over in UI
@@ -79,10 +81,12 @@ export function handlePoliticalAction(state: GameState, action: PoliticalAction)
                 },
                 newsFeed: delta !== 0 ? [{
                     id: `approval_${Date.now()}`,
-                    headline: delta > 0 ? '📈 Aprobación en Alza' : '📉 Aprobación Baja',
+                    headline: delta > 0 ? 'Aprobación Social en Alza' : 'Aprobación Social en Baja',
                     body: `${reason}. Tu aprobación ${delta > 0 ? 'sube' : 'baja'} a ${newRating}%.`,
-                    date: formatDate(state.currentDate)
-                }, ...state.newsFeed].slice(0, 20) : state.newsFeed
+                    date: formatDate(state.currentDate),
+                    type: delta > 0 ? ('institutional' as const) : ('warning' as const),
+                    sourceName: 'Comunicado Oficial'
+                }, ...state.newsFeed].slice(0, 25) : state.newsFeed
             };
         }
 

@@ -276,9 +276,11 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
                         if (newWeeks <= 0 || newRemAmt <= 0) {
                             financialNews.push({
                                 id: `loan_finished_${Date.now()}_${loan.id}`,
-                                headline: '✅ Préstamo Amortizado',
+                                headline: 'Préstamo Amortizado por Completo',
                                 body: `El club ha finalizado la devolución completa del préstamo bancario "${loan.name}". Se suprime la cuota semanal de tesorería.`,
-                                date: new Date(state.currentDate).toLocaleDateString()
+                                date: formatDate(state.currentDate),
+                                type: 'achievement',
+                                sourceName: 'Comunicado Oficial'
                             });
                         } else {
                             remainingLoans.push({
@@ -298,9 +300,11 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
                     if (newDur <= 0) {
                         financialNews.push({
                             id: `sponsor_expired_${Date.now()}_${sp.id}`,
-                            headline: '📋 Contrato Comercial Expirado',
+                            headline: 'Contrato Comercial Expirado',
                             body: `Ha finalizado el vínculo contractual con el patrocinador ${sp.name}. El espacio comercial queda libre para evaluar nuevas propuestas.`,
-                            date: new Date(state.currentDate).toLocaleDateString()
+                            date: formatDate(state.currentDate),
+                            type: 'warning',
+                            sourceName: 'Comunicado Oficial'
                         });
                         // Generate replacement offer for that slot
                         const newOffer = generateSponsor(sp.type, updatedPlayerTeam.tier, playerLeagueId);

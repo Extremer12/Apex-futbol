@@ -253,15 +253,39 @@ export interface PlayerProfile {
   careerLosses?: number;
 }
 
+export type NewsCategory = 'standard' | 'match' | 'transfer' | 'achievement' | 'warning' | 'institutional';
+
+export interface NewsMatchMeta {
+  homeTeamId: number;
+  awayTeamId: number;
+  homeTeamName: string;
+  awayTeamName: string;
+  homeScore: number;
+  awayScore: number;
+  competition?: string;
+  scorers?: { playerName: string; minute: number }[];
+  isUserWin?: boolean;
+  isUserDraw?: boolean;
+  isUserLoss?: boolean;
+}
+
 export interface NewsItem {
   id: string;
   headline: string;
+  subheadline?: string;
   body: string;
+  quote?: string;
+  quoteAuthor?: string;
   date: string;
-  type?: 'standard' | 'transfer' | 'achievement' | 'warning';
+  type?: NewsCategory;
+  sourceName?: string;
+  tags?: string[];
+  isBreaking?: boolean;
   playerId?: number;
   playerName?: string;
   playerPhoto?: string;
+  teamId?: number;
+  matchMeta?: NewsMatchMeta;
   image?: string;
 }
 

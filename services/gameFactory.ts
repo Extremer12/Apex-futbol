@@ -16,6 +16,7 @@ import { calculateFanApproval } from './political';
 import { resourceManager } from './resources/ResourceManager';
 import { calculateSquadPower } from './squadProgressionService';
 import { generateInitialClubStaff, generateStaffMarket, generateScoutMarket } from './staffService';
+import { getRegionalMediaSource } from './newsEngine';
 
 interface InitializeGameParams {
     selectedTeam: Team;
@@ -81,34 +82,57 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
     const starPlayer = [...playerTeamCopy.squad].sort((a, b) => b.rating - a.rating)[0];
     const initialStadium = generateStadium(playerTeamCopy);
 
+    const presidentName = playerProfile?.name || 'su nuevo presidente';
     const initialNews: NewsItem[] = [
         {
             id: `init-news-1-${Date.now()}`,
-            headline: `${playerTeamCopy.name} inicia una nueva era con ${playerProfile?.name || 'su nuevo presidente'}`,
-            body: `La afición y la directiva de ${playerTeamCopy.name} dan la bienvenida al nuevo proyecto. Máxima ilusión de cara a los retos de la presente temporada.`,
+            headline: `${playerTeamCopy.name} inicia una nueva era bajo la presidencia de ${presidentName}`,
+            subheadline: 'La nueva conducción asume oficialmente el mando deportivo e institucional del club.',
+            body: `La afición y la junta directiva de ${playerTeamCopy.name} dan la bienvenida al nuevo proyecto institucional encabezado por ${presidentName}.\n\nSe abre una etapa con máxima exigencia competitiva en la liga y foco en la estabilidad financiera del club.`,
+            quote: `"Venimos a trabajar con seriedad, ambición deportiva y respeto por la historia de ${playerTeamCopy.name}."`,
+            quoteAuthor: presidentName,
             date: formatDate(now),
-            type: 'standard'
+            type: 'institutional',
+            sourceName: 'Comunicado Oficial',
+            isBreaking: true,
+            tags: ['Nuevo Mandato', playerTeamCopy.shortName || playerTeamCopy.name],
+            teamId: playerTeamCopy.id
         },
         {
             id: `init-news-2-${Date.now()}`,
-            headline: `El ${initialStadium.name} se prepara para el estreno liguero`,
-            body: `Con una capacidad para ${initialStadium.capacity.toLocaleString()} espectadores, las gradas esperan un gran aforo en el debut oficial de la campaña.`,
+            headline: `El ${initialStadium.name} se prepara para el estreno oficial`,
+            subheadline: `Expectativa alta en las gradas con aforo habilitado para ${initialStadium.capacity.toLocaleString()} espectadores.`,
+            body: `El estadio de ${playerTeamCopy.name} ultima los preparativos logísticos y comerciales para recibir a la hinchada en el debut oficial de la temporada.\n\nLa directiva confía en lograr una fuerte recaudación desde las primeras jornadas.`,
             date: formatDate(now),
-            type: 'standard'
+            type: 'institutional',
+            sourceName: getRegionalMediaSource(playerTeamCopy.leagueId, 'standard', 1),
+            tags: ['Estadio', 'Taquilla'],
+            teamId: playerTeamCopy.id
         },
         {
             id: `init-news-3-${Date.now()}`,
-            headline: `${starPlayer ? starPlayer.name : 'La plantilla'} asume el liderazgo en ${playerTeamCopy.name}`,
-            body: `Las miradas se posan sobre ${starPlayer ? starPlayer.name : 'las figuras del equipo'} para marcar diferencias en el terreno de juego desde la primera fecha.`,
+            headline: `${starPlayer ? starPlayer.name : 'La plantilla'} asume el liderazgo futbolístico en ${playerTeamCopy.name}`,
+            subheadline: `El referente del plantel (${starPlayer ? `${starPlayer.rating} OVR` : 'titular'}) concentra las miradas antes del debut.`,
+            body: `Las expectativas deportivas recaen sobre ${starPlayer ? starPlayer.name : 'las figuras del equipo'} para marcar diferencias desde la fecha inaugural.\n\nEl cuerpo técnico destaca la predisposición del vestuario durante la pretemporada.`,
             date: formatDate(now),
-            type: 'standard'
+            type: 'achievement',
+            sourceName: getRegionalMediaSource(playerTeamCopy.leagueId, 'achievement', 2),
+            tags: ['Plantel', 'Figura'],
+            teamId: playerTeamCopy.id,
+            playerId: starPlayer?.id,
+            playerName: starPlayer?.name,
+            playerPhoto: starPlayer?.photo
         },
         {
             id: `init-news-4-${Date.now()}`,
-            headline: 'La Cantera y la Dirección Deportiva afinan los últimos detalles',
-            body: `Se han incorporado jóvenes promesas al filial y se monitorea el mercado de fichajes para reforzar las posiciones clave.`,
+            headline: 'La Cantera y el Ojeo afinan el radar de mercado',
+            subheadline: 'Juveniles promovidos al radar del primer equipo y seguimiento de oportunidades.',
+            body: `Se han incorporado jóvenes promesas a las divisiones inferiores y el departamento de scouting ya monitorea posibles refuerzos estratégicos en caso de abrirse vacantes en el plantel.`,
             date: formatDate(now),
-            type: 'standard'
+            type: 'transfer',
+            sourceName: getRegionalMediaSource(playerTeamCopy.leagueId, 'transfer', 3),
+            tags: ['Cantera', 'Scouting'],
+            teamId: playerTeamCopy.id
         },
     ];
 

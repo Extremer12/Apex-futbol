@@ -1,11 +1,12 @@
 import { GameState, NewsItem, Offer, Match, Team, PlayerMatchResult, CinematicEvent } from '../../types';
+import { generateTransferOffer } from '../gameLogic';
 import {
-    generateNews,
-    generateMatchReport,
-    generateTransferOffer,
-    generatePlayerOfTheWeekNews,
-    generateImportantNews
-} from '../gameLogic';
+    buildContextualClubNews,
+    buildPlayerOfTheWeekNews,
+    buildPostMatchNews,
+    cleanHeadlineText,
+    getRegionalMediaSource
+} from '../newsEngine';
 import { formatDate, isTransferWindowOpen } from '../../utils';
 
 export interface WeeklyNewsAndOffersResult {
@@ -25,7 +26,7 @@ export async function generateWeeklyNewsAndOffers(
 ): Promise<WeeklyNewsAndOffersResult> {
     const newsToAdd: NewsItem[] = [];
 
-    // 1. Post-match news report for user match (from playerMatchResult or updatedSchedule)
+    // 1. Single unified post-match news report for user's match (eliminates duplicate match stories)
     const playerScheduleMatch = updatedSchedule.find(
         m => m.week === simulatedWeek &&
             (m.isMidweek === undefined || !!m.isMidweek === isMidweek) &&
@@ -44,36 +45,31 @@ export async function generateWeeklyNewsAndOffers(
 
         const homeScore = playerMatchResult?.homeScore ?? playerScheduleMatch?.result?.homeScore ?? 0;
         const awayScore = playerMatchResult?.awayScore ?? playerScheduleMatch?.result?.awayScore ?? 0;
+        const scorers = playerMatchResult?.scorers ?? playerScheduleMatch?.result?.scorers ?? [];
+        const competition = playerScheduleMatch?.competition;
 
-        const myScore = isHome ? homeScore : awayScore;
-        const oppScore = isHome ? awayScore : homeScore;
+        const leagueTable = gameState.team.leagueId !== 'CONMEBOL' ? (gameState.leagueTables?.[gameState.team.leagueId] || []) : [];
+        const sorted = [...leagueTable].sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference);
+        const posIdx = sorted.findIndex(r => r.teamId === gameState.team.id);
+        const leaguePosition = posIdx >= 0 ? posIdx + 1 : undefined;
+        const leaguePoints = posIdx >= 0 ? sorted[posIdx].points : undefined;
 
-        const isThrashing = (myScore - oppScore) >= 3;
-        const isBadLoss = (oppScore - myScore) >= 3;
-        const isUpset = myScore > oppScore && gameState.team.tier === 'Lower' && opponent?.tier === 'Top';
-
-        if (isThrashing || isBadLoss || isUpset) {
-            const context = isUpset
-                ? "Victoria histórica de un equipo modesto contra un grande."
-                : isThrashing
-                    ? "Una goleada espectacular."
-                    : "Una derrota humillante.";
-            const detail = `El ${gameState.team.name} quedó ${myScore}-${oppScore} contra el ${opponent?.name || 'Rival'}.`;
-            const aiReport = await generateImportantNews(context, detail);
-            newsToAdd.push({ ...aiReport, id: `match_ai_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`, date: formatDate(newDate) });
-        } else {
-            const matchReport = await generateMatchReport(
-                gameState.team.name,
-                opponent?.name || 'Rival',
-                homeScore,
-                awayScore,
-                isHome
-            );
-            newsToAdd.push({ ...matchReport, id: `match_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`, date: formatDate(newDate) });
-        }
+        const matchChronicle = buildPostMatchNews({
+            userTeam: gameState.team,
+            opponent,
+            homeTeamId,
+            awayTeamId,
+            homeScore,
+            awayScore,
+            competition,
+            scorers,
+            date: newDate,
+            leaguePosition,
+            leaguePoints,
+        });
+        newsToAdd.push(matchChronicle);
     } else {
-        const generalNews = await generateNews(gameState);
-        newsToAdd.push({ ...generalNews, id: `general_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`, date: formatDate(newDate) });
+        newsToAdd.push(buildContextualClubNews(gameState, newDate));
     }
 
     // 2. Player of the Week News
@@ -82,7 +78,7 @@ export async function generateWeeklyNewsAndOffers(
             (m.isMidweek === undefined || !!m.isMidweek === isMidweek) &&
             m.result
     );
-    if (matchesThisWeek.length > 0 && Math.random() < 0.3) {
+    if (matchesThisWeek.length > 0 && Math.random() < 0.35) {
         const winningTeamsIds: number[] = [];
         matchesThisWeek.forEach(match => {
             if (!match.result) return;
@@ -93,7 +89,7 @@ export async function generateWeeklyNewsAndOffers(
         const candidatePlayers = updatedAllTeams
             .filter(t => winningTeamsIds.includes(t.id))
             .flatMap(t => t.squad.map(p => ({ player: p, team: t })))
-            .filter(({ player }) => player.rating > 84);
+            .filter(({ player }) => player.rating > 83);
 
         if (candidatePlayers.length > 0) {
             const { player, team } = candidatePlayers[Math.floor(Math.random() * candidatePlayers.length)];
@@ -101,9 +97,8 @@ export async function generateWeeklyNewsAndOffers(
             if (match && match.result) {
                 const opponent = updatedAllTeams.find(t => t.id === (match.homeTeamId === team.id ? match.awayTeamId : match.homeTeamId));
                 if (opponent) {
-                    const resultString = `${team.name} ${match.result.homeScore} - ${match.result.awayScore} ${opponent.name}`;
-                    const potwNewsData = await generatePlayerOfTheWeekNews(player, team.name, opponent.name, resultString);
-                    newsToAdd.push({ ...potwNewsData, id: `potw_${new Date().toISOString()}`, date: formatDate(newDate) });
+                    const resultString = `${team.name} ${match.result.homeScore}-${match.result.awayScore} ${opponent.name}`;
+                    newsToAdd.push(buildPlayerOfTheWeekNews(player, team, opponent.name, resultString, newDate));
                 }
             }
         }
@@ -114,7 +109,6 @@ export async function generateWeeklyNewsAndOffers(
     if (isTransferWindowOpen(gameState.currentWeek)) {
         const potentialBuyers = gameState.allTeams.filter(t => t.id !== gameState.team.id);
 
-        // A) Jugadores formalmente declarados transferibles (alta probabilidad de oferta)
         const transferListedPlayers = gameState.team.squad.filter(p => p.isTransferListed);
         for (const player of transferListedPlayers) {
             if (Math.random() < 0.75) {
@@ -129,13 +123,11 @@ export async function generateWeeklyNewsAndOffers(
             }
         }
 
-        // B) Ofertas espontáneas por promesas o figuras destacadas del club aunque no estén transferibles
         const spontaneousTargets = gameState.team.squad.filter(p =>
             !p.isTransferListed &&
             (p.rating >= 77 || (p.age !== undefined && p.age <= 22 && p.rating >= 72))
         );
         for (const player of spontaneousTargets) {
-            // ~30% de probabilidad de interés internacional/externo por partido de mercado
             if (Math.random() < 0.30 && generatedOffers.length < 5) {
                 const offer = await generateTransferOffer(player, gameState.team, potentialBuyers);
                 if (offer) {
@@ -155,91 +147,71 @@ export async function generateWeeklyNewsAndOffers(
     const prevMonth = prevDate.getMonth();
 
     if (prevMonth !== currMonth) {
-        if (currMonth === 0) { // Enero
+        const marketSource = getRegionalMediaSource(gameState.team.leagueId, 'transfer', currMonth);
+        if (currMonth === 0) {
             newsToAdd.push({
                 id: `market_open_jan_${Date.now()}`,
-                headline: '💼 Mercado Abierto: Enero',
-                body: 'Se abre la ventana de traspasos de invierno. Los clubes buscan refuerzos de última hora.',
+                headline: 'Mercado de Invierno Abierto: arranca la ventana de pases',
+                subheadline: 'Los clubes ya pueden inscribir refuerzos y negociar cesiones o ventas.',
+                body: 'Se abre oficialmente la ventana de traspasos de enero. Los directores deportivos y ojeadores intensifican las gestiones para potenciar los planteles de cara al tramo decisivo.',
                 date: formatDate(newDate),
-                type: 'standard'
+                type: 'transfer',
+                sourceName: marketSource,
+                tags: ['Mercado', 'Ventana Abierta'],
+                isBreaking: true
             });
-        } else if (currMonth === 1) { // Febrero
+        } else if (currMonth === 1) {
             newsToAdd.push({
                 id: `market_close_feb_${Date.now()}`,
-                headline: '🚫 Mercado Cerrado',
-                body: 'Finaliza el periodo de fichajes de invierno. Las plantillas quedan cerradas hasta verano.',
+                headline: 'Cierre de Mercado: finaliza el periodo invernal',
+                subheadline: 'Las plantillas quedan cerradas hasta la apertura de mitad de año.',
+                body: 'Concluye la ventana de fichajes de invierno. Los clubes deberán afrontar la competencia oficial con los futbolistas actualmente inscriptos en sus plantillas.',
                 date: formatDate(newDate),
-                type: 'standard'
+                type: 'transfer',
+                sourceName: marketSource,
+                tags: ['Mercado', 'Cierre']
             });
-        } else if (currMonth === 6) { // Julio
+        } else if (currMonth === 6) {
             newsToAdd.push({
                 id: `market_open_jul_${Date.now()}`,
-                headline: '☀️ Mercado de Verano Abierto',
-                body: 'Comienza el periodo de fichajes estival. Se esperan grandes movimientos en las ligas europeas.',
+                headline: 'Mercado de Verano Abierto: luz verde a las negociaciones',
+                subheadline: 'Comienza el periodo estival de transferencias en el fútbol internacional.',
+                body: 'Se inaugura oficialmente la ventana de fichajes de mitad de año. Se esperan movimientos estratégicos, renovaciones y grandes operaciones entre ligas.',
                 date: formatDate(newDate),
-                type: 'standard'
+                type: 'transfer',
+                sourceName: marketSource,
+                tags: ['Mercado', 'Ventana Abierta'],
+                isBreaking: true
             });
-        } else if (currMonth === 8) { // Septiembre
+        } else if (currMonth === 8) {
             newsToAdd.push({
                 id: `market_close_sep_${Date.now()}`,
-                headline: '⏳ Deadline Day Finalizado',
-                body: 'El mercado de verano ha cerrado. Se acabó el tiempo para las negociaciones.',
+                headline: 'Deadline Day Finalizado: se cierra el mercado estival',
+                subheadline: 'No se admitirán nuevas transferencias hasta la próxima ventana oficial.',
+                body: 'El libro de pases ha cerrado sus puertas. A partir de hoy el foco vuelve íntegramente a la competencia en el terreno de juego.',
                 date: formatDate(newDate),
-                type: 'standard'
+                type: 'transfer',
+                sourceName: marketSource,
+                tags: ['Mercado', 'Deadline Day']
             });
         }
     }
 
     // 5. Cinematic Headline News
     if (cinematicEvents.length > 0) {
-        newsToAdd.push({
-            id: `cup_start_news_${simulatedWeek}`,
-            headline: cinematicEvents[0].title,
-            body: cinematicEvents[0].subtitle,
-            date: formatDate(newDate),
-            type: 'standard'
-        });
-    }
-
-    // 6. Dynamic Result Headlines for User's Team
-    if (playerMatchResult) {
-        const isHome = playerMatchResult.homeTeamId === gameState.team.id;
-        const opponentId = isHome ? playerMatchResult.awayTeamId : playerMatchResult.homeTeamId;
-        const opponent = updatedAllTeams.find(t => t.id === opponentId) || gameState.allTeams.find(t => t.id === opponentId);
-        const playerTeam = gameState.team;
-        const opponentName = opponent?.name || 'Rival';
-        const userScore = isHome ? playerMatchResult.homeScore : playerMatchResult.awayScore;
-        const oppScore = isHome ? playerMatchResult.awayScore : playerMatchResult.homeScore;
-
-        let headline = '';
-        let body = '';
-
-        const topScorerName = playerMatchResult.scorers && playerMatchResult.scorers.length > 0
-            ? playerMatchResult.scorers[0].playerName
-            : null;
-
-        if (userScore > oppScore) {
-            if (userScore - oppScore >= 3) {
-                headline = `🔥 Goleada contundente del ${playerTeam.name} (${userScore}-${oppScore})`;
-                body = `Exhibición total de ${playerTeam.name} frente a ${opponentName}. ${topScorerName ? `${topScorerName} brilló con luz propia` : 'El equipo brilló en todas sus líneas'} en una jornada memorable.`;
-            } else {
-                headline = `✅ ${playerTeam.name} suma tres puntos de oro ante ${opponentName} (${userScore}-${oppScore})`;
-                body = `Gran triunfo trabajado de ${playerTeam.name} para mantener la ilusión de la afición. ${topScorerName ? `Destacada actuación de ${topScorerName}.` : ''}`;
-            }
-        } else if (userScore === oppScore) {
-            headline = `🤝 Empate ${userScore}-${oppScore} entre ${playerTeam.name} y ${opponentName}`;
-            body = `Partido intenso y dividido en el que ambos equipos se repartieron los puntos tras 90 minutos de máxima disputa.`;
-        } else {
-            headline = `❌ ${playerTeam.name} tropieza ${userScore}-${oppScore} ante ${opponentName}`;
-            body = `${playerTeam.name} no logró imponer su juego frente a ${opponentName} y buscará reencontrarse con la victoria en la siguiente jornada.`;
-        }
-
+        const primaryEvent = cinematicEvents[0];
+        const isTitleOrPromo = primaryEvent.type === 'LEAGUE_WIN' || primaryEvent.type === 'CUP_WIN' || primaryEvent.type === 'PROMOTION';
         newsToAdd.unshift({
-            id: `match_news_${Date.now()}_${simulatedWeek}`,
-            headline,
-            body,
+            id: `cup_event_news_${simulatedWeek}_${Date.now()}`,
+            headline: cleanHeadlineText(primaryEvent.title),
+            subheadline: primaryEvent.subtitle,
+            body: `${primaryEvent.subtitle}\n\nUn momento trascendental para la historia institucional de ${gameState.team.name} y sus socios.`,
             date: formatDate(newDate),
-            type: 'standard'
+            type: isTitleOrPromo ? 'achievement' : primaryEvent.type === 'RELEGATION' ? 'warning' : 'institutional',
+            sourceName: isTitleOrPromo ? 'Apex Global Wire' : 'Comunicado Oficial',
+            isBreaking: true,
+            tags: [typeof primaryEvent.metadata?.competition === 'string' ? primaryEvent.metadata.competition : 'Oficial'],
+            teamId: gameState.team.id
         });
     }
 

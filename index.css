@@ -466,3 +466,101 @@ dialog.apex-top-overlay[open]::backdrop {
     display: none;
   }
 }
+
+/* ---- Digital Press Platform Animations & Scrollable Tabs ---- */
+@property --fade-start {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --fade-end {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+.apex-tabs-scroller {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: inline proximity;
+  scroll-padding-inline: 2rem;
+  --fade-size: 2rem;
+  scrollbar-width: none;
+}
+
+.apex-tabs-scroller::-webkit-scrollbar {
+  display: none;
+}
+
+.apex-tabs-scroller > [role="tab"] {
+  flex: none;
+  scroll-snap-align: start;
+  position: relative;
+}
+
+.apex-tabs-scroller > [role="tab"][aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  inset: auto 0.5rem 0;
+  border-block-end: 2px solid var(--apex-gold);
+  border-radius: 999px;
+}
+
+@supports (animation-timeline: scroll(self inline)) {
+  .apex-tabs-scroller {
+    mask:
+      linear-gradient(black, black) no-clip subtract,
+      linear-gradient(to right, black, transparent) 0 0 / var(--fade-start) 100% no-repeat no-clip,
+      linear-gradient(to right, transparent, black) 100% 0 / var(--fade-end) 100% no-repeat no-clip;
+    animation: apex-reveal-fade-start linear both, apex-hide-fade-end linear both;
+    animation-timeline: scroll(self inline);
+    animation-range: 0 var(--fade-size), calc(100% - var(--fade-size)) 100%;
+  }
+}
+
+@keyframes apex-reveal-fade-start {
+  to {
+    --fade-start: var(--fade-size);
+  }
+}
+
+@keyframes apex-hide-fade-end {
+  from {
+    --fade-end: var(--fade-size);
+  }
+}
+
+@keyframes apex-news-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.apex-news-enter {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .apex-news-enter {
+    animation: apex-news-enter 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+.apex-press-card {
+  transition: transform 160ms ease-out, border-color 180ms ease-out, background-color 180ms ease-out, box-shadow 180ms ease-out;
+}
+
+.apex-press-card:active {
+  transform: scale(0.99);
+}
+
+.apex-press-card:focus-visible {
+  outline: 2px solid var(--apex-gold);
+  outline-offset: 2px;
+}

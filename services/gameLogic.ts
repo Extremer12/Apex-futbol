@@ -1,6 +1,7 @@
 import { GameState, Player, PlayerProfile, Team, CoachReport, CoachRequest, SquadRole, ContractNegotiationResult, LeagueId } from '../types';
 import { formatCurrency, formatWeeklyWage, normalizeMonetaryValue } from '../utils';
 import { getExpectedWage } from '../utils/playerUtils';
+import { buildContextualClubNews } from './newsEngine';
 
 // --- INTERFACES ---
 
@@ -102,10 +103,10 @@ const NEGOTIATION_COUNTER_MESSAGES = [
 
 // --- FUNCTIONS ---
 
-// Genera noticias con plantilla (gratis/rápido)
+// Genera noticias contextuales inteligentes con plantilla enriquecida (gratis/rápido)
 export const generateNews = async (gameState: GameState): Promise<NewsResponse> => {
-    const template = GENERAL_NEWS_TEMPLATES[Math.floor(Math.random() * GENERAL_NEWS_TEMPLATES.length)];
-    return template(gameState.team.name);
+    const item = buildContextualClubNews(gameState);
+    return { headline: item.headline, body: item.body };
 };
 
 // Genera reporte de partido normal con plantilla (gratis/rápido)

@@ -50,9 +50,14 @@ export function handleSquadAction(state: GameState, action: SquadAction): GameSt
 
             const newsItem: NewsItem = {
                 id: `promote_${Date.now()}`,
-                headline: `Nueva Estrella: ${player.name}`,
+                headline: `Nueva Promesa: ${player.name} asciende al primer equipo`,
                 body: `El canterano ${player.name} (Edad: ${player.age || 16}) ha sido promovido al primer equipo. La afición está ilusionada con su potencial.`,
-                date: formatDate(state.currentDate)
+                date: formatDate(state.currentDate),
+                type: 'achievement',
+                sourceName: 'Comunicado Oficial',
+                playerId: promotedPlayer.id,
+                playerName: promotedPlayer.name,
+                playerPhoto: promotedPlayer.photo
             };
 
             const updatedCoachReport = state.coachReport
@@ -111,7 +116,12 @@ export function handleSquadAction(state: GameState, action: SquadAction): GameSt
                 id: `promote_youth_${Date.now()}`,
                 headline: `Promoción de Cantera: ${promotedPlayer.name}`,
                 body: `A pedido del cuerpo técnico, ${promotedPlayer.name} (${promotedPlayer.position}, ${promotedPlayer.rating} OVR) firma contrato profesional y sube al primer equipo.`,
-                date: formatDate(state.currentDate)
+                date: formatDate(state.currentDate),
+                type: 'achievement',
+                sourceName: 'Comunicado Oficial',
+                playerId: promotedPlayer.id,
+                playerName: promotedPlayer.name,
+                playerPhoto: promotedPlayer.photo
             };
 
             const styleMods = getPresidentialStyleModifiers(state.playerProfile?.style);
@@ -164,8 +174,8 @@ export function handleSquadAction(state: GameState, action: SquadAction): GameSt
             });
             const updatedTeam = { ...state.team, squad: updatedSquad };
             const updatedAllTeams = state.allTeams.map(t => t.id === updatedTeam.id ? updatedTeam : t);
-            const updatedViewing = state.viewingPlayer?.id === playerId 
-                ? updatedSquad.find(p => p.id === playerId) || null 
+            const updatedViewing = state.viewingPlayer?.id === playerId
+                ? updatedSquad.find(p => p.id === playerId) || null
                 : state.viewingPlayer;
 
             return {
@@ -192,8 +202,8 @@ export function handleSquadAction(state: GameState, action: SquadAction): GameSt
             });
             const updatedTeam = { ...state.team, squad: updatedSquad };
             const updatedAllTeams = state.allTeams.map(t => t.id === updatedTeam.id ? updatedTeam : t);
-            const updatedViewing = state.viewingPlayer?.id === playerId 
-                ? updatedSquad.find(p => p.id === playerId) || null 
+            const updatedViewing = state.viewingPlayer?.id === playerId
+                ? updatedSquad.find(p => p.id === playerId) || null
                 : state.viewingPlayer;
 
             return {

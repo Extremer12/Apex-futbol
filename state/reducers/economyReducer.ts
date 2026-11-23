@@ -50,9 +50,11 @@ export function handleEconomyAction(state: GameState, action: EconomyAction): Ga
 
             const newsItem: NewsItem = {
                 id: `sponsor_${Date.now()}`,
-                headline: '🤝 Nuevo Acuerdo de Patrocinio',
+                headline: 'Nuevo Acuerdo de Patrocinio',
                 body: `${sponsor.name} ha firmado como patrocinador ${sponsorTypeLabel}. Ingreso: ${formatCurrency(sponsor.weeklyIncome)}/semana con un bono de firma de ${formatCurrency(signingBonus)}.`,
-                date: formatDate(state.currentDate)
+                date: formatDate(state.currentDate),
+                type: 'institutional',
+                sourceName: 'Comunicado Oficial'
             };
 
             // Impact on fan approval if specified
@@ -99,9 +101,11 @@ export function handleEconomyAction(state: GameState, action: EconomyAction): Ga
 
             const newsItem: NewsItem = {
                 id: `terminate_sponsor_${Date.now()}`,
-                headline: '⚠️ Rescisión Comercial Anticipada',
+                headline: 'Rescisión Comercial Anticipada',
                 body: `El club ha acordado la rescisión anticipada del contrato con ${targetSponsor.name} abonando una indemnización compensatoria de ${formatCurrency(indemnityCost)}. El espacio queda libre para nuevas ofertas.`,
-                date: formatDate(state.currentDate)
+                date: formatDate(state.currentDate),
+                type: 'warning',
+                sourceName: 'Comunicado Oficial'
             };
 
             return {
@@ -123,9 +127,11 @@ export function handleEconomyAction(state: GameState, action: EconomyAction): Ga
 
             const newsItem: NewsItem = {
                 id: `loan_taken_${Date.now()}`,
-                headline: '🏦 Línea de Crédito Otorgada',
+                headline: 'Línea de Crédito Otorgada',
                 body: `La entidad bancaria ha aprobado el préstamo "${loan.name}" por ${formatCurrency(loan.principal)}. Se amortizará a razón de ${formatCurrency(loan.weeklyPayment)}/semana durante ${loan.remainingWeeks} semanas.`,
-                date: formatDate(state.currentDate)
+                date: formatDate(state.currentDate),
+                type: 'institutional',
+                sourceName: 'Comunicado Oficial'
             };
 
             return {
@@ -153,9 +159,11 @@ export function handleEconomyAction(state: GameState, action: EconomyAction): Ga
 
             const newsItem: NewsItem = {
                 id: `loan_repaid_${Date.now()}`,
-                headline: '✅ Deuda Bancaria Cancelada',
+                headline: 'Deuda Bancaria Cancelada',
                 body: `El club ha amortizado anticipadamente la totalidad del préstamo "${targetLoan.name}" (${formatCurrency(targetLoan.remainingAmount)}). Se suprime la cuota semanal de amortización.`,
-                date: formatDate(state.currentDate)
+                date: formatDate(state.currentDate),
+                type: 'achievement',
+                sourceName: 'Comunicado Oficial'
             };
 
             return {
@@ -242,9 +250,11 @@ export function handleEconomyAction(state: GameState, action: EconomyAction): Ga
 
             const newsItem: NewsItem = {
                 id: `stadium_facility_${Date.now()}`,
-                headline: '🏗️ Instalaciones VIP Modernizadas',
+                headline: 'Instalaciones VIP Modernizadas',
                 body: `Las zonas de hospitalidad y palcos VIP de ${state.stadium.name} han alcanzado el Nivel ${nextLevel}. Los ingresos comerciales por día de partido aumentan un 12.5%.`,
-                date: formatDate(state.currentDate)
+                date: formatDate(state.currentDate),
+                type: 'institutional',
+                sourceName: 'Comunicado Oficial'
             };
 
             return {
@@ -299,10 +309,12 @@ export function handleEconomyAction(state: GameState, action: EconomyAction): Ga
                 },
                 newsFeed: [{
                     id: `stadium_expansion_${Date.now()}`,
-                    headline: '🏟️ Estadio Ampliado',
-                    body: `Las obras de ampliación del ${state.stadium.name} han finalizado. La nueva capacidad es de ${expansionCapacity} espectadores.`,
-                    date: formatDate(state.currentDate)
-                }, ...state.newsFeed].slice(0, 20)
+                    headline: 'Estadio Ampliado',
+                    body: `Las obras de ampliación del ${state.stadium.name} han finalizado. La nueva capacidad es de ${expansionCapacity.toLocaleString()} espectadores.`,
+                    date: formatDate(state.currentDate),
+                    type: 'achievement' as const,
+                    sourceName: 'Comunicado Oficial'
+                }, ...state.newsFeed].slice(0, 25)
             };
         }
 
