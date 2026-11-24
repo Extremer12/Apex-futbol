@@ -24,6 +24,7 @@ export interface PlayerStats {
 
 export type SquadRole = 'Key' | 'FirstTeam' | 'Rotation' | 'Prospect';
 export type PotentialTier = 'Wonderkid' | 'Star' | 'Solid' | 'Veteran';
+export type GameMode = 'REALISTIC' | 'FREE';
 
 export interface Player {
   id: number;
@@ -39,10 +40,13 @@ export interface Player {
   morale: Morale;
   contractYears: number; // years remaining
   isTransferListed?: boolean;
+  isUntouchable?: boolean;
+  isAcademyProduct?: boolean;
+  nationality?: PlayerNationality;
   age?: number; // Added for Regens system
   photo?: string; // Optional player face photo URL
 
-  
+
   // FASE 6: Stats & Realismo
   stats?: PlayerStats;
   condition?: number; // 0-100 (Energía/Fatiga)
@@ -95,6 +99,10 @@ export enum LeagueId {
 }
 
 export type CountryCode = 'ENG' | 'ESP' | 'GER' | 'ITA' | 'FRA' | 'ARG' | 'BRA' | 'PAR' | 'MEX' | 'CHI' | 'COL';
+
+export type PlayerNationality =
+  | CountryCode
+  | 'URU' | 'PER' | 'ECU' | 'POR' | 'NED' | 'BEL' | 'CRO' | 'USA' | 'JPN' | 'OTHER';
 
 export const LEAGUE_COUNTRY: Record<LeagueId, CountryCode> = {
   [LeagueId.PREMIER_LEAGUE]: 'ENG',
@@ -165,12 +173,12 @@ export interface Coach {
   prestige: number; // 1-100, affects signing cost and team morale
   salary: number; // Weekly salary
   signingBonus: number; // Cost to hire
-  
+
   // Tactical Profile
   preferredFormation: '4-3-3' | '4-4-2' | '3-5-2' | '4-2-3-1' | '5-3-2';
   youthDevelopment: number; // 1-100 (affects academy usage)
   riskTolerance: number; // 1-100 (affects rotations)
-  
+
   // DT AI & Satisfaction
   satisfactionLevel: number; // 1-100
   requestedSignings: CoachRequest[];
@@ -247,6 +255,7 @@ export interface PlayerProfile {
   preferredStyle?: string;
   satisfaction?: number;
   difficulty?: string;
+  gameMode?: GameMode;
   careerStints?: PresidentialStint[];
   careerWins?: number;
   careerDraws?: number;
@@ -300,9 +309,9 @@ export interface Match {
   week: number;
   homeTeamId: number;
   awayTeamId: number;
-  result?: { 
-    homeScore: number; 
-    awayScore: number; 
+  result?: {
+    homeScore: number;
+    awayScore: number;
     events?: string[];
     scorers?: MatchScorer[];
     penalties?: { home: number; away: number; };
@@ -342,6 +351,8 @@ export interface Offer {
   message: string;
   status?: 'pending' | 'negotiating' | 'accepted' | 'rejected';
   counterOfferValue?: number;
+  createdWeek?: number;
+  expiresWeek?: number;
 }
 
 export interface CupRound {
@@ -661,6 +672,7 @@ export interface GameState {
   cinematicQueue: CinematicEvent[];
   preferredCurrency: 'EUR' | 'USD';
   preferredLanguage: 'en' | 'es'; // Added for Phase 7: i18n
+  gameMode?: GameMode;
   achievements?: Achievement[];
   seasonHistory?: SeasonHistoryRecord[];
   triggeredEventIds?: string[];
@@ -720,58 +732,58 @@ export enum Screen {
 export type MatchPhase = 'PRE' | 'LIVE' | 'POST';
 
 export interface CoachReport {
-    summary: string;
-    satisfaction: number;
-    requests: CoachRequest[];
-    tacticalUpdate: string;
-    promotions: Player[];
-    answeredRequests?: Record<string, 'PROMISE' | 'DELEGATE'>;
-    bonusAwarded?: boolean;
+  summary: string;
+  satisfaction: number;
+  requests: CoachRequest[];
+  tacticalUpdate: string;
+  promotions: Player[];
+  answeredRequests?: Record<string, 'PROMISE' | 'DELEGATE'>;
+  bonusAwarded?: boolean;
 }
 
 export type PresidentialMatchInstruction = 'ATTACK_SURGE' | 'LOCK_DOWN' | 'WIN_BONUS' | 'KEEP_TACTIC';
 
 export interface MatchLiveStats {
-    homePossession: number;
-    awayPossession: number;
-    homeShots: number;
-    awayShots: number;
-    homeShotsOnTarget: number;
-    awayShotsOnTarget: number;
-    homeFouls: number;
-    awayFouls: number;
-    stadiumAttendance?: number;
-    stadiumOccupancyPct?: number;
-    isDerby?: boolean;
-    derbyName?: string;
+  homePossession: number;
+  awayPossession: number;
+  homeShots: number;
+  awayShots: number;
+  homeShotsOnTarget: number;
+  awayShotsOnTarget: number;
+  homeFouls: number;
+  awayFouls: number;
+  stadiumAttendance?: number;
+  stadiumOccupancyPct?: number;
+  isDerby?: boolean;
+  derbyName?: string;
 }
 
 export interface PlayerMatchResult {
-    homeTeamId?: number;
-    awayTeamId?: number;
-    competition?: string;
-    week?: number;
-    isMidweek?: boolean;
-    homeScore: number; 
-    awayScore: number; 
-    penalties?: { home: number; away: number }; 
-    events?: string[];
-    scorers?: { playerId: number; playerName: string; minute: number }[];
-    leg?: number;
-    aggregateScore?: { home: number; away: number };
-    stats?: MatchLiveStats;
+  homeTeamId?: number;
+  awayTeamId?: number;
+  competition?: string;
+  week?: number;
+  isMidweek?: boolean;
+  homeScore: number;
+  awayScore: number;
+  penalties?: { home: number; away: number };
+  events?: string[];
+  scorers?: { playerId: number; playerName: string; minute: number }[];
+  leg?: number;
+  aggregateScore?: { home: number; away: number };
+  stats?: MatchLiveStats;
 }
 
 export interface PendingSimulationResults {
-    newsToAdd: NewsItem[];
-    updatedSchedule: Match[];
-    updatedLeagueTables: Record<LeagueId, LeagueTableRow[]>;
-    updatedAllTeams: Team[];
-    confidenceChange: number;
-    newOffers: Offer[];
-    playerMatchResult: PlayerMatchResult | null;
-    updatedCups: GameState['cups'];
-    updatedScoutedPlayerIds?: Record<number, number>;
-    coachReport?: CoachReport;
-    cinematicEvents?: CinematicEvent[];
+  newsToAdd: NewsItem[];
+  updatedSchedule: Match[];
+  updatedLeagueTables: Record<LeagueId, LeagueTableRow[]>;
+  updatedAllTeams: Team[];
+  confidenceChange: number;
+  newOffers: Offer[];
+  playerMatchResult: PlayerMatchResult | null;
+  updatedCups: GameState['cups'];
+  updatedScoutedPlayerIds?: Record<number, number>;
+  coachReport?: CoachReport;
+  cinematicEvents?: CinematicEvent[];
 }

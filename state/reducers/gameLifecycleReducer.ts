@@ -15,7 +15,9 @@ import {
     calculateBaselinePresidentXp,
     getPresidentialStyleModifiers
 } from '../../services/presidentialProgression';
-import { formatDate } from '../../utils';
+import { formatDate, isTransferWindowOpen } from '../../utils';
+import { ensureSquadNationalities, getLeagueCountryCode } from '../../services/nationalityService';
+import { sanitizeIncomingOffers } from '../../services/squadRules';
 import type { GameAction } from '../reducer';
 
 // Actions handled by this reducer
@@ -64,20 +66,27 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
             // 2. Coach & Player Stats System Migration
             const playerTeamRaw = loadedState.team;
             const availableCoaches = loadedState.availableCoaches || generateCoachMarket(5, playerTeamRaw?.leagueId, playerTeamRaw?.tier);
-            // Ensure all teams have a coach, trophyCabinet, and all players have stats/condition
+            // Ensure all teams have a coach, trophyCabinet, and all players have stats/condition/nationality
             const allTeamsWithCoaches = loadedState.allTeams.map(t => ({
                 ...t,
                 coach: t.coach || generateRandomCoach(t.tier),
                 trophyCabinet: t.trophyCabinet || [],
-                squad: t.squad.map(p => ({
-                    ...p,
-                    stats: p.stats || { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 },
-                    condition: p.condition ?? 100,
-                    isInjured: p.isInjured || false,
-                    isSuspended: p.isSuspended || false
-                }))
+                squad: ensureSquadNationalities(
+                    t.squad.map(p => ({
+                        ...p,
+                        stats: p.stats || { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 },
+                        condition: p.condition ?? 100,
+                        isInjured: p.isInjured || false,
+                        isSuspended: p.isSuspended || false
+                    })),
+                    t.leagueId
+                )
             }));
             const playerTeamWithCoach = allTeamsWithCoaches.find(t => t.id === loadedState.team.id)!;
+            const migratedReserve = ensureSquadNationalities(
+                loadedState.youthAcademy || [],
+                playerTeamWithCoach.leagueId
+            );
 
             // 2b. Club Staff Migration
             const clubStaff = loadedState.clubStaff || playerTeamWithCoach.clubStaff || generateInitialClubStaff(playerTeamWithCoach.tier, playerTeamWithCoach.leagueId);
@@ -160,6 +169,8 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
                 cinematicQueue,
                 preferredCurrency: loadedState.preferredCurrency || 'EUR',
                 preferredLanguage,
+                gameMode: loadedState.gameMode || loadedState.playerProfile?.gameMode || 'REALISTIC',
+                youthAcademy: migratedReserve,
                 playerProfile: loadedState.playerProfile || undefined,
                 careerId: loadedState.careerId || (loadedState as any).id || `career_${playerTeamWithCoach.id}_legacy`,
             };
@@ -356,7 +367,12 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
                 playerProfile: matchXpDelta > 0
                     ? awardPresidentXp(state.playerProfile, matchXpDelta)
                     : state.playerProfile,
-                incomingOffers: [...state.incomingOffers, ...newOffers],
+                incomingOffers: sanitizeIncomingOffers(
+                    [...state.incomingOffers, ...newOffers],
+                    [...updatedPlayerTeam.squad, ...(state.youthAcademy || [])],
+                    nextWeek,
+                    isTransferWindowOpen(nextWeek)
+                ),
                 cups: newCups || state.cups,
                 finances: updatedFinances,
                 sponsors: updatedSponsors,
@@ -453,7 +469,10 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
                 stadium: newStadium,
                 sponsors: newSponsors,
                 availableSponsors: generateSponsorMarket(targetClub.tier, targetClub.leagueId),
-                youthAcademy: Array.from({ length: 4 }, () => generateYouthPlayer(targetClub.tier)),
+                youthAcademy: Array.from(
+                    { length: 4 },
+                    () => generateYouthPlayer(targetClub.tier, 0, getLeagueCountryCode(targetClub.leagueId))
+                ),
                 finances: {
                     balance: targetClub.budget,
                     transferBudget: targetClub.transferBudget,

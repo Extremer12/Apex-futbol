@@ -29,10 +29,15 @@ export type GameAction =
     | { type: 'REJECT_OFFER'; payload: { offerId: string } }
     | { type: 'COUNTER_OFFER'; payload: { offerId: string; counterAmount: number } }
     | { type: 'UPDATE_OFFER'; payload: Offer }
-    | { type: 'SIGN_PLAYER'; payload: { player: Player; fee: number; wage?: number; contractYears?: number; role?: import('../types').SquadRole; signingBonus?: number } }
+    | { type: 'SIGN_PLAYER'; payload: { player: Player; fee: number; wage?: number; contractYears?: number; role?: import('../types').SquadRole; signingBonus?: number; forceReserve?: boolean } }
     | { type: 'PROMOTE_PLAYER'; payload: Player }
+    | { type: 'DEMOTE_TO_RESERVE'; payload: number }
+    | { type: 'RELEASE_RESERVE_PLAYER'; payload: number }
     | { type: 'TOGGLE_TRANSFER_LIST'; payload: Player }
+    | { type: 'TOGGLE_UNTOUCHABLE'; payload: Player }
     | { type: 'OFFER_PLAYER_TO_CLUBS'; payload: { playerId: number } }
+    | { type: 'REJECT_PLAYER_OFFERS'; payload: { playerId: number } }
+    | { type: 'CLEAR_LOW_OFFERS' }
     | { type: 'SET_VIEWING_PLAYER'; payload: Player | null }
     | { type: 'SET_CUSTOM_LINEUP'; payload: { formation: string; starterIds: number[] } }
     | { type: 'RENEW_PLAYER_CONTRACT'; payload: { playerId: number; contractYearsBonus: number; wageMultiplier: number } }
@@ -109,10 +114,13 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 case 'ADD_OFFER':
                 case 'ACCEPT_OFFER':
                 case 'REJECT_OFFER':
+                case 'REJECT_PLAYER_OFFERS':
+                case 'CLEAR_LOW_OFFERS':
                 case 'COUNTER_OFFER':
                 case 'UPDATE_OFFER':
                 case 'SIGN_PLAYER':
                 case 'TOGGLE_TRANSFER_LIST':
+                case 'TOGGLE_UNTOUCHABLE':
                 case 'OFFER_PLAYER_TO_CLUBS':
                     return handleTransferAction(state, action);
 
@@ -154,6 +162,8 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 // Squad actions
                 case 'PROMOTE_PLAYER':
                 case 'PROMOTE_YOUTH':
+                case 'DEMOTE_TO_RESERVE':
+                case 'RELEASE_RESERVE_PLAYER':
                 case 'ADD_YOUTH_PLAYER':
                 case 'SET_VIEWING_PLAYER':
                 case 'SET_CUSTOM_LINEUP':

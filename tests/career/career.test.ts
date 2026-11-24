@@ -856,3 +856,103 @@ test('56. Digital News Hub: single enriched post-match chronicle (no duplicates)
     assert.equal(normalized.type, 'transfer');
     assert.ok(normalized.readMinutes >= 1);
 });
+
+test('57. Squad 31+15 Reserve, Foreign Quota, 1:1 National Regens, Offer Hygiene & Game Modes', async () => {
+    const { initializeGame } = await import('../../services/gameFactory');
+    const { gameReducer } = await import('../../state/reducer');
+    const {
+        MAX_FIRST_TEAM_SIZE,
+        MAX_RESERVE_SIZE,
+        MAX_FOREIGN_PLAYERS_REALISTIC,
+        canRegisterInFirstTeam,
+        countForeignPlayers,
+        sanitizeIncomingOffers,
+        canSubmitToLeaderboard
+    } = await import('../../services/squadRules');
+    const { processFullSeasonSquadProgression } = await import('../../services/squadProgressionService');
+
+    const argTeam = TEAMS.find(t => t.leagueId === LeagueId.LIGA_ARGENTINA) || TEAMS[0];
+    let state = initializeGame({
+        selectedTeam: argTeam,
+        playerProfile: { name: 'Presidente Realista', age: 40, nationality: 'Argentina', gameMode: 'REALISTIC' }
+    });
+
+    // 1. Initial squad has valid nationalities & respects Realistic foreign cap
+    assert.ok(state.team.squad.every(p => Boolean(p.nationality)), 'All players must have assigned nationality');
+    assert.ok(countForeignPlayers(state.team.squad, state.team.leagueId) <= MAX_FOREIGN_PLAYERS_REALISTIC);
+    assert.equal(state.gameMode, 'REALISTIC');
+
+    // 2. Demote to Reserve and Promote back
+    const firstPlayer = state.team.squad[state.team.squad.length - 1];
+    const initialSquadCount = state.team.squad.length;
+    const initialReserveCount = state.youthAcademy.length;
+
+    state = gameReducer(state, { type: 'DEMOTE_TO_RESERVE', payload: firstPlayer.id })!;
+    assert.equal(state.team.squad.length, initialSquadCount - 1);
+    assert.equal(state.youthAcademy.length, initialReserveCount + 1);
+
+    state = gameReducer(state, { type: 'PROMOTE_PLAYER', payload: firstPlayer })!;
+    assert.equal(state.team.squad.length, initialSquadCount);
+    assert.equal(state.youthAcademy.length, initialReserveCount);
+
+    // 3. Full First Team (31) + Full Reserve (15) blocks signing & youth intake
+    const paddedSquad = Array.from({ length: MAX_FIRST_TEAM_SIZE }, (_, idx) => ({
+        ...state.team.squad[0],
+        id: 900000 + idx,
+        nationality: 'ARG' as const
+    }));
+    const paddedReserve = Array.from({ length: MAX_RESERVE_SIZE }, (_, idx) => ({
+        ...state.youthAcademy[0],
+        id: 950000 + idx,
+        nationality: 'ARG' as const
+    }));
+    const fullCheck = canRegisterInFirstTeam(
+        paddedSquad,
+        paddedReserve,
+        { ...paddedSquad[0], id: 999999, nationality: 'ARG' },
+        state.team.leagueId,
+        'REALISTIC'
+    );
+    assert.equal(fullCheck.allowed, false);
+    assert.equal(fullCheck.target, 'BLOCKED');
+
+    // 4. Foreign Quota check in REALISTIC vs FREE mode
+    const foreignSquad = paddedSquad.slice(0, 20).map((p, i) => ({
+        ...p,
+        nationality: (i < MAX_FOREIGN_PLAYERS_REALISTIC ? 'BRA' : 'ARG') as any
+    }));
+    const incomingForeign = { ...paddedSquad[0], id: 888888, nationality: 'URU' as const };
+    const realisticForeignCheck = canRegisterInFirstTeam(foreignSquad, paddedReserve, incomingForeign, state.team.leagueId, 'REALISTIC');
+    assert.equal(realisticForeignCheck.allowed, false, 'Realistic mode must block 7th foreign player when reserve is full');
+
+    const freeForeignCheck = canRegisterInFirstTeam(foreignSquad, paddedReserve, incomingForeign, state.team.leagueId, 'FREE');
+    assert.equal(freeForeignCheck.allowed, true, 'Free mode must allow unlimited foreign players');
+
+    // 5. Offer Hygiene: deduplicate clubs, cap at 3 per player, clear on untouchable & sale
+    const pTarget = state.team.squad[0];
+    const noisyOffers = [
+        { id: 'o1', playerId: pTarget.id, offeringTeamId: 10, offerValue: 1_000_000, message: '1' },
+        { id: 'o2', playerId: pTarget.id, offeringTeamId: 10, offerValue: 1_500_000, message: 'dup club' },
+        { id: 'o3', playerId: pTarget.id, offeringTeamId: 11, offerValue: 2_000_000, message: '2' },
+        { id: 'o4', playerId: pTarget.id, offeringTeamId: 12, offerValue: 2_500_000, message: '3' },
+        { id: 'o5', playerId: pTarget.id, offeringTeamId: 13, offerValue: 3_000_000, message: '4' },
+    ];
+    const cleaned = sanitizeIncomingOffers(noisyOffers, [pTarget], 1, true);
+    assert.equal(cleaned.length, 3, 'Offers must cap at 3 per player and deduplicate buyer clubs');
+    assert.equal(cleaned[0].offerValue, 3_000_000, 'Highest offer must stay first');
+
+    state = { ...state, incomingOffers: cleaned };
+    state = gameReducer(state, { type: 'ACCEPT_OFFER', payload: { offerId: cleaned[0].id } })!;
+    assert.equal(state.incomingOffers.some(o => o.playerId === pTarget.id), false, 'All offers for sold player must be cleared');
+
+    // 6. 1:1 Closed-Loop Aging & National Rebirth
+    const agingReserve = [{ ...state.youthAcademy[0], age: 17, rating: 64, potential: 88, nationality: 'ARG' as const }];
+    const progRes = processFullSeasonSquadProgression(state.allTeams, state.team.id, agingReserve);
+    assert.ok(progRes.updatedUserReserve.length >= 1);
+    assert.equal(progRes.updatedUserReserve[0].age, 18, 'Reserve players must age each season');
+    assert.ok(progRes.updatedUserReserve[0].rating >= 64, 'Young reserve players should grow towards potential');
+
+    // 7. Free Mode must not submit points to Global Leaderboard
+    assert.equal(canSubmitToLeaderboard('FREE'), false, 'FREE mode must never post scores to global ranking');
+    assert.equal(canSubmitToLeaderboard('REALISTIC'), true, 'REALISTIC mode must allow global ranking points');
+});

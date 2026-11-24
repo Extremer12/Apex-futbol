@@ -1,7 +1,8 @@
-import { Team, Match, LeagueTableRow, Morale, Player, MatchLiveStats } from '../../types';
+import { Team, Match, LeagueTableRow, Morale, Player, MatchLiveStats, PlayerNationality } from '../../types';
 import { getTacticalMatchup } from '../coaching';
 import { getCoachEffect, getDoctorEffect, getFitnessEffect } from '../staffService';
 import { generateRandomName } from '../../utils';
+import { generateNameByNationality } from '../nationalityService';
 import { checkDerbyMatch } from './derbyRegistry';
 import { getTeamStadium } from '../../data/stadiums';
 
@@ -31,7 +32,11 @@ export const generatePlayerId = (): number => {
     return lastPlayerId * 1000 + Math.floor(Math.random() * 1000);
 };
 
-export const generateYouthPlayer = (tier: Team['tier'] = 'Lower', youthCoachBonus: number = 0): Player => {
+export const generateYouthPlayer = (
+    tier: Team['tier'] = 'Lower',
+    youthCoachBonus: number = 0,
+    nationality?: PlayerNationality
+): Player => {
     const positions: Player['position'][] = ['POR', 'DEF', 'CEN', 'DEL'];
     const position = positions[Math.floor(Math.random() * positions.length)];
 
@@ -41,18 +46,23 @@ export const generateYouthPlayer = (tier: Team['tier'] = 'Lower', youthCoachBonu
 
     const bonus = Math.max(0, Math.min(15, youthCoachBonus));
     const rating = Math.min(88, Math.max(45, baseRating + bonus + Math.floor(Math.random() * 13) - 5));
+    const potential = Math.min(94, Math.max(rating + 6, rating + 8 + Math.floor(Math.random() * 10)));
     const value = Math.round((rating * rating * rating) / 8000) / 10;
+    const resolvedNat: PlayerNationality = nationality || 'ARG';
 
     return {
         id: generatePlayerId(),
-        name: generateRandomName(),
+        name: nationality ? generateNameByNationality(resolvedNat) : generateRandomName(),
         position,
         rating,
+        potential,
         value: Math.max(0.1, value),
         wage: Math.round(value * 1000) + 500,
         morale: 'Contento',
         contractYears: 3,
-        age: 15 + Math.floor(Math.random() * 3),
+        age: 16 + Math.floor(Math.random() * 3),
+        nationality: resolvedNat,
+        isAcademyProduct: true,
         isTransferListed: false,
         stats: { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 },
         condition: 100,

@@ -1,4 +1,4 @@
-import { GameState, Player, PlayerProfile, Team, CoachReport, CoachRequest, SquadRole, ContractNegotiationResult, LeagueId } from '../types';
+import { GameState, Player, PlayerProfile, Team, CoachReport, CoachRequest, SquadRole, ContractNegotiationResult, LeagueId, GameMode } from '../types';
 import { formatCurrency, formatWeeklyWage, normalizeMonetaryValue } from '../utils';
 import { getExpectedWage } from '../utils/playerUtils';
 import { buildContextualClubNews } from './newsEngine';
@@ -216,8 +216,17 @@ export const getEstimatedClubDemand = (player: Player, buyingTeam: Team): number
     return Math.round((value * demandMultiplier) / 100_000) * 100_000;
 };
 
-export const generateTransferNegotiationResponse = async (player: Player, offer: number, buyingTeam: Team, sellingTeam: Team, attempts: number = 0): Promise<NegotiationResponse> => {
-    // 0. Prestigio Continental: Estrellas de élite europea (rating >= 83) rechazan fichar por ligas sudamericanas
+export const generateTransferNegotiationResponse = async (
+    player: Player,
+    offer: number,
+    buyingTeam: Team,
+    sellingTeam: Team,
+    attempts: number = 0,
+    gameMode: GameMode = 'REALISTIC'
+): Promise<NegotiationResponse> => {
+    const isFreeMode = gameMode === 'FREE';
+
+    // 0. Prestigio Continental (solo en Modo Realista)
     const isEuropeanEliteLeague = [
         LeagueId.PREMIER_LEAGUE, LeagueId.LA_LIGA, LeagueId.BUNDESLIGA, LeagueId.SERIE_A, LeagueId.LIGUE_1,
         'PREMIER_LEAGUE', 'LA_LIGA', 'BUNDESLIGA', 'SERIE_A', 'LIGUE_1'
@@ -231,21 +240,21 @@ export const generateTransferNegotiationResponse = async (player: Player, offer:
         'LIGA_ARGENTINA', 'PRIMERA_NACIONAL', 'BRASILEIRAO', 'SERIE_B_BR', 'COPA_DE_PRIMERA', 'PRIMERA_A_COLOMBIA'
     ].includes(buyingTeam.leagueId as any);
 
-    if (isEuropeanEliteLeague && isSouthAmericanBuyer && player.rating >= 83) {
+    if (!isFreeMode && isEuropeanEliteLeague && isSouthAmericanBuyer && player.rating >= 83) {
         return {
             decision: 'rejected',
             message: `El representante de ${player.name} nos ha comunicado que el jugador compite en la élite europea (UEFA Champions League) y no contempla marcharse a Sudamérica en esta etapa de su carrera.`
         };
     }
 
-    // 1. Validar Interés del Jugador (Estrellas rechazan divisiones inferiores)
-    if (player.rating >= 80 && buyingTeam.tier === 'Lower') {
+    // 1. Validar Interés del Jugador (Estrellas rechazan divisiones inferiores en Modo Realista)
+    if (!isFreeMode && player.rating >= 80 && buyingTeam.tier === 'Lower') {
         return {
             decision: 'rejected',
             message: `El agente de ${player.name} nos ha comunicado que el jugador no tiene intención de jugar en vuestra categoría en este momento de su carrera.`
         };
     }
-    if (player.rating >= 86 && buyingTeam.tier === 'Mid') {
+    if (!isFreeMode && player.rating >= 86 && buyingTeam.tier === 'Mid') {
         return {
             decision: 'rejected',
             message: `Agradecemos el interés, pero ${player.name} busca competir al más alto nivel y no considera un traspaso a vuestro proyecto deportivo.`
@@ -292,9 +301,12 @@ export const generatePlayerContractNegotiationResponse = async (
     contractYears: number,
     role: SquadRole,
     signingBonus: number,
-    buyingTeam: Team
+    buyingTeam: Team,
+    gameMode: GameMode = 'REALISTIC'
 ): Promise<ContractNegotiationResult> => {
-    // 0. Prestigio Continental: Estrellas de élite europea (rating >= 83) rechazan contratos en ligas sudamericanas
+    const isFreeMode = gameMode === 'FREE';
+
+    // 0. Prestigio Continental (solo en Modo Realista)
     const isSouthAmericanBuyer = [
         LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
         LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
@@ -303,7 +315,7 @@ export const generatePlayerContractNegotiationResponse = async (
         'LIGA_ARGENTINA', 'PRIMERA_NACIONAL', 'BRASILEIRAO', 'SERIE_B_BR', 'COPA_DE_PRIMERA', 'PRIMERA_A_COLOMBIA'
     ].includes(buyingTeam.leagueId as any);
 
-    if (isSouthAmericanBuyer && player.rating >= 83) {
+    if (!isFreeMode && isSouthAmericanBuyer && player.rating >= 83) {
         return {
             decision: 'rejected',
             message: `Mi cliente (${player.name}) desea continuar disputando las mejores competiciones de Europa (Champions League). No aceptará un contrato fuera del continente europeo.`

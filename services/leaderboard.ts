@@ -1,3 +1,5 @@
+import { GameMode } from '../types';
+import { canSubmitToLeaderboard } from './squadRules';
 import { supabase } from './supabase';
 
 export interface LeaderboardEntry {
@@ -43,7 +45,11 @@ export async function submitPresidentialScore(data: {
     clubValue: number;
     fanApproval: number;
     boardConfidence: number;
-}): Promise<void> {
+    gameMode?: GameMode;
+}): Promise<boolean> {
+    if (!canSubmitToLeaderboard(data.gameMode)) {
+        return false;
+    }
     const { data: { user } } = await supabase.auth.getUser();
 
     const score = calculatePresidentialScore(
@@ -68,7 +74,9 @@ export async function submitPresidentialScore(data: {
 
     if (error) {
         console.error('Error submitting score to leaderboard:', error);
+        return false;
     }
+    return true;
 }
 
 export async function getGlobalLeaderboard(limit = 50): Promise<LeaderboardEntry[]> {

@@ -3,25 +3,28 @@ import { GameState, Player, SquadRole, Offer, Team } from '../../types';
 import { GameAction } from '../../state/reducer';
 import { useGameStore } from '../../state/gameStore';
 import { generateCounterOfferDecision } from '../../services/gameLogic';
-import { 
-    formatCurrency, 
-    formatWeeklyWage, 
-    formatTransferFee, 
-    normalizeMonetaryValue, 
-    isTransferWindowOpen, 
-    getNextTransferWindow 
+import {
+    formatCurrency,
+    formatWeeklyWage,
+    formatTransferFee,
+    normalizeMonetaryValue,
+    isTransferWindowOpen,
+    getNextTransferWindow
 } from '../../utils';
-import { 
-    Clock, 
-    Users, 
-    Inbox, 
-    Tag, 
-    Sliders, 
-    X, 
-    Wallet,
-    ArrowUpRight
+import {
+    Clock,
+    Sliders,
+    X
 } from 'lucide-react';
 import { useToast } from '../common/ToastProvider';
+import {
+    MAX_FIRST_TEAM_SIZE,
+    MAX_FOREIGN_PLAYERS_REALISTIC,
+    MAX_RESERVE_SIZE,
+    canRegisterInFirstTeam,
+    countForeignPlayers,
+    isRealisticMode
+} from '../../services/squadRules';
 
 import { TransfersMarketTab, CategoryFilter, SortOption } from './transfers/TransfersMarketTab';
 import { TransfersOffersTab } from './transfers/TransfersOffersTab';
@@ -36,9 +39,9 @@ interface TransfersScreenProps {
 
 type MarketTab = 'MARKET' | 'MY_SQUAD' | 'OFFERS';
 
-export const TransfersScreen: React.FC<TransfersScreenProps> = ({ 
-    gameState: propGameState, 
-    dispatch: propDispatch 
+export const TransfersScreen: React.FC<TransfersScreenProps> = ({
+    gameState: propGameState,
+    dispatch: propDispatch
 }) => {
     const storeGameState = useGameStore(s => s.gameState);
     const storeDispatch = useGameStore(s => s.dispatch);
@@ -87,7 +90,10 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
 
     // Fast indexed computation of available players and player-to-team map
     const { availablePlayers, playerTeamMap } = useMemo(() => {
-        const mySquadIds = new Set(myTeam.squad.map(mp => mp.id));
+        const mySquadIds = new Set([
+            ...myTeam.squad.map(mp => mp.id),
+            ...(gameState.youthAcademy || []).map(rp => rp.id)
+        ]);
         const playersList: Player[] = [];
         const pTeamMap = new Map<number, Team>();
 
@@ -101,10 +107,31 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
             }
         }
         return { availablePlayers: playersList, playerTeamMap: pTeamMap };
-    }, [allTeams, myTeam.id, myTeam.squad]);
+    }, [allTeams, myTeam.id, myTeam.squad, gameState.youthAcademy]);
+
+    const reservePlayers = gameState.youthAcademy || [];
+    const realistic = isRealisticMode(gameState.gameMode);
+    const foreignCount = useMemo(
+        () => countForeignPlayers(myTeam.squad, myTeam.leagueId),
+        [myTeam.squad, myTeam.leagueId]
+    );
 
     // Start Negotiation
     const startNegotiation = (player: Player) => {
+        const regCheck = canRegisterInFirstTeam(
+            myTeam.squad,
+            reservePlayers,
+            player,
+            myTeam.leagueId,
+            gameState.gameMode
+        );
+        if (!regCheck.allowed) {
+            showToast(regCheck.reason || 'Sin cupos disponibles. Vende o libera jugadores.', 'warning');
+            return;
+        }
+        if (regCheck.reason) {
+            showToast(regCheck.reason, 'info');
+        }
         const normValue = normalizeMonetaryValue(player.value, 1_000_000);
         setNegotiatingPlayer({ ...player, value: normValue });
     };
@@ -125,6 +152,18 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
             return;
         }
 
+        const regCheck = canRegisterInFirstTeam(
+            myTeam.squad,
+            reservePlayers,
+            payload.player,
+            myTeam.leagueId,
+            gameState.gameMode
+        );
+        if (!regCheck.allowed) {
+            showToast(regCheck.reason || 'Sin cupos disponibles en Primer Equipo ni Reserva.', 'error');
+            return;
+        }
+
         dispatch({
             type: 'SIGN_PLAYER',
             payload: {
@@ -133,17 +172,23 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
                 wage: payload.wage,
                 contractYears: payload.contractYears,
                 role: payload.role,
-                signingBonus: payload.signingBonus
+                signingBonus: payload.signingBonus,
+                forceReserve: regCheck.target === 'RESERVE'
             }
         });
 
-        showToast(`¡${payload.player.name} ha firmado oficialmente con el club!`, 'success');
+        showToast(
+            regCheck.target === 'RESERVE'
+                ? `¡${payload.player.name} ha firmado! Asignado a la Reserva por cupo de Primer Equipo.`
+                : `¡${payload.player.name} ha firmado oficialmente con el club!`,
+            'success'
+        );
         setNegotiatingPlayer(null);
     };
 
     // Incoming Offers Handlers
     const handleAcceptIncomingOffer = (offer: Offer) => {
-        const player = myTeam.squad.find(p => p.id === offer.playerId);
+        const player = myTeam.squad.find(p => p.id === offer.playerId) || reservePlayers.find(p => p.id === offer.playerId);
         const offeringTeam = teamsById.get(offer.offeringTeamId);
         dispatch({ type: 'ACCEPT_OFFER', payload: { offerId: offer.id } });
         showToast(`Traspaso de ${player?.name || 'Jugador'} al ${offeringTeam?.name || 'club rival'} cerrado por ${formatCurrency(offer.counterOfferValue || offer.offerValue)}.`, 'success');
@@ -154,8 +199,24 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
         showToast("Oferta de traspaso rechazada.", 'info');
     };
 
+    const handleRejectPlayerOffers = (playerId: number) => {
+        dispatch({ type: 'REJECT_PLAYER_OFFERS', payload: { playerId } });
+        showToast("Todas las ofertas por el jugador fueron rechazadas.", 'info');
+    };
+
+    const handleClearLowOffers = () => {
+        dispatch({ type: 'CLEAR_LOW_OFFERS' });
+        showToast("Ofertas por debajo del valor de mercado descartadas.", 'info');
+    };
+
+    const handleToggleUntouchable = (player: Player) => {
+        dispatch({ type: 'TOGGLE_UNTOUCHABLE', payload: player });
+        showToast(`${player.name} marcado como intransferible.`, 'info');
+    };
+
     const handleOpenCounterOffer = (offer: Offer) => {
-        const player = myTeam.squad.find(p => p.id === offer.playerId)!;
+        const player = myTeam.squad.find(p => p.id === offer.playerId) || reservePlayers.find(p => p.id === offer.playerId);
+        if (!player) return;
         const buyer = teamsById.get(offer.offeringTeamId) || allTeams[0];
         setCounterOfferModal({ offer, player, buyer });
         const initialOffer = normalizeMonetaryValue(offer.offerValue);
@@ -201,15 +262,33 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
             <header className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
                     <h1 className="text-lg sm:text-xl font-black text-white tracking-tight">Fichajes</h1>
-                    {marketOpen ? (
-                        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-400">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Mercado abierto
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] font-bold mt-0.5">
+                        {marketOpen ? (
+                            <span className="inline-flex items-center gap-1.5 text-emerald-400">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Mercado abierto
+                            </span>
+                        ) : (
+                            <span className="inline-flex items-center gap-1.5 text-rose-400">
+                                <Clock className="w-3 h-3" /> Cerrado · abre {nextWindow}
+                            </span>
+                        )}
+                        <span className="text-slate-600">·</span>
+                        <span className={myTeam.squad.length >= MAX_FIRST_TEAM_SIZE ? 'text-amber-400' : 'text-slate-400'}>
+                            1º Eq. {myTeam.squad.length}/{MAX_FIRST_TEAM_SIZE}
                         </span>
-                    ) : (
-                        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-rose-400">
-                            <Clock className="w-3 h-3" /> Cerrado · abre {nextWindow}
+                        <span className="text-slate-600">·</span>
+                        <span className={reservePlayers.length >= MAX_RESERVE_SIZE ? 'text-amber-400' : 'text-slate-400'}>
+                            Res. {reservePlayers.length}/{MAX_RESERVE_SIZE}
                         </span>
-                    )}
+                        {realistic && (
+                            <>
+                                <span className="text-slate-600">·</span>
+                                <span className={foreignCount >= MAX_FOREIGN_PLAYERS_REALISTIC ? 'text-amber-400' : 'text-slate-400'}>
+                                    Ext. {foreignCount}/{MAX_FOREIGN_PLAYERS_REALISTIC}
+                                </span>
+                            </>
+                        )}
+                    </div>
                 </div>
                 <button
                     onClick={() => { setNewBudgetDraft(normBudget); setShowBudgetModal(true); }}
@@ -233,14 +312,12 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
                         { id: 'OFFERS', label: 'Ofertas', badge: incomingOffers.length },
                     ] as const).map(t => (
                         <button key={t.id} onClick={() => setActiveTab(t.id)}
-                            className={`relative h-10 rounded-xl text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-1.5 ${
-                                activeTab === t.id ? 'bg-[var(--apex-gold)] text-slate-950 font-black' : 'text-slate-400 hover:text-white'
-                            }`}>
+                            className={`relative h-10 rounded-xl text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-1.5 ${activeTab === t.id ? 'bg-[var(--apex-gold)] text-slate-950 font-black' : 'text-slate-400 hover:text-white'
+                                }`}>
                             {t.label}
                             {t.badge > 0 && (
-                                <span className={`min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-black flex items-center justify-center ${
-                                    activeTab === t.id ? 'bg-slate-950 text-[var(--apex-gold)]' : t.id === 'OFFERS' ? 'bg-rose-500 text-white' : 'bg-white/15 text-white'
-                                }`}>{t.badge}</span>
+                                <span className={`min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-black flex items-center justify-center ${activeTab === t.id ? 'bg-slate-950 text-[var(--apex-gold)]' : t.id === 'OFFERS' ? 'bg-rose-500 text-white' : 'bg-white/15 text-white'
+                                    }`}>{t.badge}</span>
                             )}
                         </button>
                     ))}
@@ -249,7 +326,7 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
 
             {/* 3. ACTIVE TAB CONTENT */}
             {activeTab === 'MARKET' && (
-                <TransfersMarketTab 
+                <TransfersMarketTab
                     gameState={gameState}
                     dispatch={dispatch}
                     marketOpen={marketOpen}
@@ -272,7 +349,7 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
             )}
 
             {activeTab === 'MY_SQUAD' && (
-                <TransfersSquadTab 
+                <TransfersSquadTab
                     gameState={gameState}
                     dispatch={dispatch}
                     myTeam={myTeam}
@@ -281,22 +358,27 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
             )}
 
             {activeTab === 'OFFERS' && (
-                <TransfersOffersTab 
+                <TransfersOffersTab
                     incomingOffers={incomingOffers}
                     myTeam={myTeam}
+                    reservePlayers={reservePlayers}
                     allTeams={allTeams}
                     onAcceptOffer={handleAcceptIncomingOffer}
                     onRejectOffer={handleRejectIncomingOffer}
+                    onRejectPlayerOffers={handleRejectPlayerOffers}
+                    onClearLowOffers={handleClearLowOffers}
+                    onToggleUntouchable={handleToggleUntouchable}
                     onOpenCounterOffer={handleOpenCounterOffer}
                 />
             )}
 
             {/* 4. CLEAN PRESIDENTIAL NEGOTIATION MODAL */}
             {negotiatingPlayer && (
-                <TransferNegotiationModal 
+                <TransferNegotiationModal
                     negotiatingPlayer={negotiatingPlayer}
                     sellingTeam={playerTeamMap.get(negotiatingPlayer.id) || allTeams.find(t => t.squad.some(p => p.id === negotiatingPlayer.id))}
                     myTeam={myTeam}
+                    gameMode={gameState.gameMode}
                     transferBudget={normBudget}
                     clubBalance={normBalance}
                     onFinalizeSigning={handleFinalizeSigning}
@@ -306,7 +388,7 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
 
             {/* 5. COUNTER-OFFER MODAL */}
             {counterOfferModal && (
-                <CounterOfferModal 
+                <CounterOfferModal
                     data={counterOfferModal}
                     counterValue={counterValue}
                     setCounterValue={setCounterValue}

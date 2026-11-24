@@ -219,8 +219,11 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
         [trophiesCount, clubVal, fanApp, boardConf, seasonsCount]
     );
 
-    // Auto-submit score to global leaderboard if user is authenticated
+    const isFreeMode = gameState.gameMode === 'FREE';
+
+    // Auto-submit score to global leaderboard only in Realistic (Ranked) mode
     useEffect(() => {
+        if (isFreeMode) return;
         let isMounted = true;
         const autoSubmit = async () => {
             try {
@@ -235,6 +238,7 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
                         clubValue: clubVal,
                         fanApproval: fanApp,
                         boardConfidence: boardConf,
+                        gameMode: gameState.gameMode,
                     });
                     if (isMounted) setScoreSubmitted(true);
                 }
@@ -249,7 +253,7 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
     }, []);
 
     const handleSubmitLeaderboard = async () => {
-        if (isSubmittingScore || scoreSubmitted) return;
+        if (isFreeMode || isSubmittingScore || scoreSubmitted) return;
         setIsSubmittingScore(true);
         try {
             await submitPresidentialScore({
@@ -260,6 +264,7 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
                 clubValue: clubVal,
                 fanApproval: fanApp,
                 boardConfidence: boardConf,
+                gameMode: gameState.gameMode,
             });
             setScoreSubmitted(true);
             playUiClick();
@@ -451,6 +456,11 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
                                 <StatCell label="Score Apex" value={<span className="tabular-nums">{presidentialScore.toLocaleString()}</span>} accent="text-amber-300" />
                             </div>
 
+                            {isFreeMode ? (
+                                <span className="h-9 px-4 rounded-xl border border-sky-500/30 bg-sky-500/10 text-sky-300 text-[11px] font-black uppercase tracking-wider flex items-center justify-center">
+                                    Modo Libre · Sin Ranking Global
+                                </span>
+                            ) : (
                             <button
                                 type="button"
                                 onClick={handleSubmitLeaderboard}
@@ -478,6 +488,7 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
                                     </>
                                 )}
                             </button>
+                            )}
                         </div>
                     </div>
                 </section>

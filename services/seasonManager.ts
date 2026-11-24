@@ -17,6 +17,8 @@ import { initializeSudamericanaSeason } from './sudamericanaEngine';
 import { SOUTH_AMERICAN_EXTRA_TEAMS } from '../data/teams/southAmericanClubs';
 import { resourceManager } from './resources/ResourceManager';
 import { processFullSeasonSquadProgression } from './squadProgressionService';
+import { getLeagueCountryCode } from './nationalityService';
+import { MAX_FIRST_TEAM_SIZE, MAX_RESERVE_SIZE } from './squadRules';
 
 /**
  * Processes the transition to a new season
@@ -40,31 +42,37 @@ export function startNewSeason(currentState: GameState): GameState {
         ? new Date(`${newSeasonYear}-01-15T12:00:00`) 
         : new Date(`${newSeasonYear}-08-10T12:00:00`);
 
-    // 1. Process Aging, Progressive Decline, Retirements, Regens, and AI Transfers
-    const { 
-        updatedTeams: processedTeams, 
-        retiredLegends, 
-        notableTransfers, 
-        regensCount 
-    } = processFullSeasonSquadProgression(currentState.allTeams, currentState.team.id);
+    // 1. Process Aging, Progressive Decline, Retirements, Regens, and AI Transfers (including User Reserve/Academy)
+    const {
+        updatedTeams: processedTeams,
+        updatedUserReserve,
+        retiredLegends,
+        notableTransfers,
+        regensCount
+    } = processFullSeasonSquadProgression(currentState.allTeams, currentState.team.id, currentState.youthAcademy || []);
 
     const updatedPlayerTeam = processedTeams.find(t => t.id === currentState.team.id)!;
+    const homeCountry = getLeagueCountryCode(updatedPlayerTeam.leagueId);
 
-    // 2. Refresh Player Academy
-    let updatedAcademy: Player[] = currentState.youthAcademy
-        .map(p => ({ ...p, age: (p.age || 16) + 1 }))
-        .filter(p => p.age !== undefined && p.age <= 19);
+    // 2. Refresh Player Reserve & Academy (keep developed players + add domestic prospects up to MAX_RESERVE_SIZE)
+    let updatedAcademy: Player[] = updatedUserReserve.slice(0, MAX_RESERVE_SIZE);
+    let youthBlockedByFullRoster = false;
 
-    // Add new talent (potenciado por la calidad del Director de Cantera, Inversión en Fuerzas Básicas y Estilo Canterano)
     const youthCoach = currentState.team.clubStaff?.youthCoach || updatedPlayerTeam.clubStaff?.youthCoach;
     const youthBonus = youthCoach ? Math.max(0, Math.min(12, Math.round(((youthCoach.power - 50) / 50) * 10))) : 0;
     const youthInvestment = currentState.finances?.clubDirectives?.youthInvestment;
     const directiveBonus = youthInvestment === 'high' ? 6 : youthInvestment === 'medium' ? 3 : 0;
     const styleYouthBonus = getPresidentialStyleModifiers(currentState.playerProfile?.style).youthBonus;
     const totalYouthBonus = youthBonus + directiveBonus + styleYouthBonus;
-    const newProspectsCount = (youthInvestment === 'high' ? 4 : 3) + Math.floor(Math.random() * 2);
-    for (let i = 0; i < newProspectsCount; i++) {
-        updatedAcademy.push(generateYouthPlayer(updatedPlayerTeam.tier, totalYouthBonus));
+    const desiredProspects = (youthInvestment === 'high' ? 4 : 3) + Math.floor(Math.random() * 2);
+
+    if (updatedPlayerTeam.squad.length >= MAX_FIRST_TEAM_SIZE && updatedAcademy.length >= MAX_RESERVE_SIZE) {
+        youthBlockedByFullRoster = true;
+    } else {
+        for (let i = 0; i < desiredProspects; i++) {
+            if (updatedAcademy.length >= MAX_RESERVE_SIZE) break;
+            updatedAcademy.push(generateYouthPlayer(updatedPlayerTeam.tier, totalYouthBonus, homeCountry));
+        }
     }
 
     // 2.5 Process Trophies
@@ -968,6 +976,18 @@ export function startNewSeason(currentState: GameState): GameState {
         ? awardPresidentXp(currentState.playerProfile, seasonXpGain)
         : undefined;
 
+    if (youthBlockedByFullRoster) {
+        finalNewsFeed.unshift({
+            id: `academy_full_${newSeasonYear}`,
+            headline: 'Cupo de Plantel y Reserva Completo',
+            subheadline: 'No pudieron incorporarse nuevos juveniles por falta de vacantes.',
+            body: `Tu Primer Equipo (${MAX_FIRST_TEAM_SIZE}/${MAX_FIRST_TEAM_SIZE}) y tu Reserva (${MAX_RESERVE_SIZE}/${MAX_RESERVE_SIZE}) están al máximo de capacidad. Vende o libera futbolistas para hacer lugar a futuras promesas.`,
+            date: formatDate(newDate),
+            type: 'warning',
+            sourceName: 'Dirección Deportiva'
+        });
+    }
+
     // 8. Return updated state
     return {
         ...currentState,
@@ -975,6 +995,7 @@ export function startNewSeason(currentState: GameState): GameState {
         team: updatedPlayerTeamWithTrophies,
         allTeams: teamsAfterProRel,
         youthAcademy: updatedAcademy,
+        incomingOffers: [],
         season: newSeasonYear,
         currentDate: newDate,
         currentWeek: 0,

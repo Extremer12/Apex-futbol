@@ -60,7 +60,8 @@ function AppLogic() {
 
     // Contexts
     const { notification, showNotification, hideNotification } = useNotification();
-    const { viewingPlayer, isSaveModalOpen, saveMode, openSaveModal, closeSaveModal } = useModal();
+    const { viewingPlayer: modalViewingPlayer, isSaveModalOpen, saveMode, openSaveModal, closeSaveModal } = useModal();
+    const viewingPlayer = gameState?.viewingPlayer || modalViewingPlayer;
 
     // Simulation & Save hooks
     const { 

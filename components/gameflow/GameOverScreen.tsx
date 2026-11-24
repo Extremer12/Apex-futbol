@@ -49,8 +49,10 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({
         season
     );
 
+    const isFreeMode = (gameState?.gameMode || playerProfile?.gameMode) === 'FREE';
+
     const handleLeaderboardSubmit = async () => {
-        if (isSubmitting || submitted) return;
+        if (isFreeMode || isSubmitting || submitted) return;
         setIsSubmitting(true);
         setErrorMsg(null);
         try {
@@ -61,7 +63,8 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({
                 trophiesCount,
                 clubValue,
                 fanApproval,
-                boardConfidence
+                boardConfidence,
+                gameMode: gameState?.gameMode || playerProfile?.gameMode
             });
             setSubmitted(true);
         } catch (err) {
@@ -167,6 +170,11 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({
                         </p>
                     </div>
 
+                    {isFreeMode ? (
+                        <span className="px-4 py-2.5 rounded-xl bg-sky-500/15 border border-sky-500/35 text-sky-300 text-xs font-black uppercase">
+                            Modo Libre · Sin Ranking Global
+                        </span>
+                    ) : (
                     <button
                         onClick={handleLeaderboardSubmit}
                         disabled={isSubmitting || submitted}
@@ -193,6 +201,7 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({
                             </>
                         )}
                     </button>
+                    )}
                 </div>
 
                 {errorMsg && (

@@ -17,6 +17,7 @@ import { resourceManager } from './resources/ResourceManager';
 import { calculateSquadPower } from './squadProgressionService';
 import { generateInitialClubStaff, generateStaffMarket, generateScoutMarket } from './staffService';
 import { getRegionalMediaSource } from './newsEngine';
+import { ensureSquadNationalities, getLeagueCountryCode } from './nationalityService';
 
 interface InitializeGameParams {
     selectedTeam: Team;
@@ -44,15 +45,11 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
 
     const now = isSouthAmerica ? new Date('2026-01-15T12:00:00') : new Date('2026-08-10T12:00:00');
 
-    // Clone teams, assign authentic stadiums, ages and coaches
+    // Clone teams, assign authentic stadiums, ages, nationalities and coaches
     const allTeamsCopy = TEAMS.map(t => {
         const s = generateStadium(t);
-        const teamObj: Team = {
-            ...t,
-            stadiumName: s.name,
-            stadiumCapacity: s.capacity,
-            city: s.city,
-            squad: t.squad.map(player => ({
+        const preparedSquad = ensureSquadNationalities(
+            t.squad.map(player => ({
                 ...player,
                 age: player.age !== undefined && player.age > 0 ? player.age : Math.floor(19 + Math.random() * 12),
                 stats: { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 },
@@ -60,6 +57,14 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
                 isInjured: false,
                 isSuspended: false
             })),
+            t.leagueId
+        );
+        const teamObj: Team = {
+            ...t,
+            stadiumName: s.name,
+            stadiumCapacity: s.capacity,
+            city: s.city,
+            squad: preparedSquad,
             coach: t.coach ? { ...t.coach } : generateRandomCoach(t.tier)
         };
         teamObj.squadPower = calculateSquadPower(teamObj);
@@ -67,11 +72,12 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
     });
 
     const playerTeamCopy = allTeamsCopy.find(t => t.id === selectedTeam.id)!;
+    const homeCountry = getLeagueCountryCode(playerTeamCopy.leagueId);
 
-    // Create initial youth academy
+    // Create initial youth academy / reserve matching club's nation
     const initialYouthAcademy: Player[] = Array.from(
         { length: 4 },
-        () => generateYouthPlayer(playerTeamCopy.tier)
+        () => generateYouthPlayer(playerTeamCopy.tier, 0, homeCountry)
     );
 
     // Calculate initial finances
@@ -496,6 +502,7 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
         cinematicQueue: [],  // No international draws in season 1
         preferredCurrency: 'EUR',
         preferredLanguage: 'es',
+        gameMode: playerProfile?.gameMode || 'REALISTIC',
         achievements: getInitialAchievements(),
         seasonHistory: [],
         playerProfile: playerProfile || undefined,

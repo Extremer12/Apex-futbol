@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Player, Team, SquadRole } from '../../../types';
+import { Player, Team, SquadRole, GameMode } from '../../../types';
 import { 
     X, 
     Check, 
@@ -32,6 +32,7 @@ interface TransferNegotiationModalProps {
     negotiatingPlayer: Player;
     sellingTeam?: Team;
     myTeam: Team;
+    gameMode?: GameMode;
     transferBudget: number;
     clubBalance: number;
     onFinalizeSigning: (payload: {
@@ -56,6 +57,7 @@ export const TransferNegotiationModal: React.FC<TransferNegotiationModalProps> =
     negotiatingPlayer,
     sellingTeam,
     myTeam,
+    gameMode = 'REALISTIC' as GameMode,
     transferBudget,
     clubBalance,
     onFinalizeSigning,
@@ -117,7 +119,8 @@ export const TransferNegotiationModal: React.FC<TransferNegotiationModalProps> =
             offerFee,
             myTeam,
             sellingTeam,
-            newAttempts
+            newAttempts,
+            gameMode
         );
 
         setIsClubEvaluating(false);
@@ -160,7 +163,8 @@ export const TransferNegotiationModal: React.FC<TransferNegotiationModalProps> =
             offeredYears,
             offeredRole,
             offeredBonus,
-            myTeam
+            myTeam,
+            gameMode
         );
 
         setIsAgentEvaluating(false);

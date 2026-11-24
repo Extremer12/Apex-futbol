@@ -173,8 +173,10 @@ export const ElectionScreen: React.FC<ElectionScreenProps> = ({
         gameState.season
     );
 
+    const isFreeMode = gameState.gameMode === 'FREE';
+
     const handleSubmitLeaderboard = async () => {
-        if (isSubmittingScore || scoreSubmitted) return;
+        if (isFreeMode || isSubmittingScore || scoreSubmitted) return;
         setIsSubmittingScore(true);
         setScoreError(null);
         try {
@@ -185,7 +187,8 @@ export const ElectionScreen: React.FC<ElectionScreenProps> = ({
                 trophiesCount: (team.trophyCabinet || []).length,
                 clubValue,
                 fanApproval,
-                boardConfidence
+                boardConfidence,
+                gameMode: gameState.gameMode
             });
             setScoreSubmitted(true);
         } catch (err) {
@@ -587,6 +590,11 @@ export const ElectionScreen: React.FC<ElectionScreenProps> = ({
                                         <span className="text-2xl font-black text-amber-400">{presidentialScore.toLocaleString()} PTS</span>
                                     </div>
 
+                                    {isFreeMode ? (
+                                        <span className="px-3 py-2 rounded-xl bg-sky-500/15 border border-sky-500/35 text-sky-300 text-[11px] font-black uppercase">
+                                            Modo Libre · Sin Ranking
+                                        </span>
+                                    ) : (
                                     <button
                                         onClick={handleSubmitLeaderboard}
                                         disabled={isSubmittingScore || scoreSubmitted}
@@ -610,6 +618,7 @@ export const ElectionScreen: React.FC<ElectionScreenProps> = ({
                                             </>
                                         )}
                                     </button>
+                                    )}
                                 </div>
 
                                 {scoreError && (

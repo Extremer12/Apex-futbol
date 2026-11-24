@@ -1,6 +1,14 @@
-import { Team, Player, SquadPower, LeagueId } from '../types';
+import { Team, Player, SquadPower, CountryCode, PlayerNationality } from '../types';
 import { generateYouthPlayer, generatePlayerId } from './simulation';
-import { generateRandomName, isTransferWindowOpen } from '../utils';
+import { isTransferWindowOpen } from '../utils';
+import {
+    ensureSquadNationalities,
+    generateNameByNationality,
+    getLeagueCountryCode,
+    getRegenDestinationCountries,
+    resolvePlayerNationality
+} from './nationalityService';
+import { MAX_FIRST_TEAM_SIZE, MAX_RESERVE_SIZE } from './squadRules';
 
 export { isTransferWindowOpen };
 
@@ -155,19 +163,27 @@ export function processPlayerAgingAndProgression(player: Player): {
 }
 
 /**
- * Creates a "Regen" for a retiring veteran or star.
- * Returns a young player (17-19) with a realistic initial media and high ceiling, carrying on the torch!
+ * Creates a 1:1 "Regen" for a retiring veteran or star.
+ * Preserves position and nationality so the global ecosystem renews in a closed loop
+ * and places youth talent in clubs matching their national football culture.
  */
-export function generateRegenPlayer(retiredPlayer: Player, teamTier: Team['tier'] = 'Mid'): Player {
+export function generateRegenPlayer(
+    retiredPlayer: Player,
+    teamTier: Team['tier'] = 'Mid',
+    fallbackNationality: PlayerNationality = 'ARG'
+): Player {
     const positions: Player['position'][] = ['POR', 'DEF', 'CEN', 'DEL'];
-    // Preserve retired player's position if valid, else pick random
-    const position = positions.includes(retiredPlayer.position) ? retiredPlayer.position : positions[Math.floor(Math.random() * positions.length)];
+    const position = positions.includes(retiredPlayer.position)
+        ? retiredPlayer.position
+        : positions[Math.floor(Math.random() * positions.length)];
 
-    // Initial rating is modest (62-72), so they must be developed
-    const baseInitial = teamTier === 'Top' ? 68 : teamTier === 'Mid' ? 64 : 60;
-    const rating = Math.max(55, Math.min(74, baseInitial + Math.floor(Math.random() * 9) - 4));
+    const nationality: PlayerNationality = retiredPlayer.nationality || fallbackNationality;
 
-    // Potential is proportional to the retired player's legacy (up to 88-92 for superstars)
+    // Initial rating is modest (60-73), so they must develop over seasons
+    const baseInitial = teamTier === 'Top' ? 67 : teamTier === 'Mid' ? 63 : 59;
+    const rating = Math.max(55, Math.min(73, baseInitial + Math.floor(Math.random() * 9) - 4));
+
+    // Potential is proportional to the retired player's legacy (up to 88-94 for superstars)
     const retiredLegacy = retiredPlayer.potential || (retiredPlayer.rating + 10);
     const potential = Math.max(rating + 8, Math.min(94, Math.round(retiredLegacy * 0.95 + (Math.random() * 6 - 3))));
 
@@ -176,7 +192,7 @@ export function generateRegenPlayer(retiredPlayer: Player, teamTier: Team['tier'
 
     return {
         id: generatePlayerId(),
-        name: generateRandomName(),
+        name: generateNameByNationality(nationality),
         position,
         rating,
         potential,
@@ -185,6 +201,8 @@ export function generateRegenPlayer(retiredPlayer: Player, teamTier: Team['tier'
         morale: 'Contento',
         contractYears: 3 + Math.floor(Math.random() * 2), // 3-4 years
         age,
+        nationality,
+        isAcademyProduct: true,
         isTransferListed: false,
         condition: 100,
         isInjured: false,
@@ -330,77 +348,144 @@ export function simulateWeeklyAITransfers(
 
 /**
  * Master multi-season progression handler.
- * Executed at season end to refresh player ages, process retirements, spawn regens, execute AI transfers, and recalculate squad powers.
+ * Executed at season end to refresh player ages across both first teams and user reserve,
+ * process retirements, spawn 1:1 national regens into clubs matching their nationality
+ * (closed-loop population without bloat), execute AI transfers, and recalculate squad powers.
  */
 export function processFullSeasonSquadProgression(
     allTeams: Team[],
-    userTeamId: number
+    userTeamId: number,
+    userReserve: Player[] = []
 ): {
     updatedTeams: Team[];
-    retiredLegends: { name: string; formerClub: string; teamName: string; rating: number; age: number }[];
+    updatedUserReserve: Player[];
+    retiredLegends: { name: string; formerClub: string; teamName: string; rating: number; age: number; nationality?: PlayerNationality }[];
     notableTransfers: NotableTransferRecord[];
     regensCount: number;
 } {
-    const retiredLegends: { name: string; formerClub: string; teamName: string; rating: number; age: number }[] = [];
+    const retiredLegends: { name: string; formerClub: string; teamName: string; rating: number; age: number; nationality?: PlayerNationality }[] = [];
+    const regensPool: { regen: Player; sourceTeamId: number }[] = [];
     let regensCount = 0;
 
-    // 1. Process aging, decline, retirements and regens for every team
+    // 1. Process aging, growth, decline and retirements across ALL teams
     const teamsAfterAging = allTeams.map(team => {
-        const isUserTeam = team.id === userTeamId;
+        const homeCountry = getLeagueCountryCode(team.leagueId);
+        const squadWithNats = ensureSquadNationalities(team.squad, team.leagueId);
         const remainingSquad: Player[] = [];
-        const regensForTeam: Player[] = [];
 
-        team.squad.forEach(player => {
+        for (const player of squadWithNats) {
             const { updatedPlayer, retired } = processPlayerAgingAndProgression(player);
-
             if (retired) {
-                // If notable veteran, record for news
+                const nat = resolvePlayerNationality(player, team.leagueId);
                 if (player.rating >= 76) {
                     retiredLegends.push({
                         name: player.name,
                         formerClub: team.name,
                         teamName: team.name,
                         rating: player.rating,
-                        age: player.age || 36
+                        age: player.age || 36,
+                        nationality: nat
                     });
                 }
-
-                // Star or veteran regens: rebirth talent into the squad!
-                if (player.rating >= 73 || Math.random() < 0.6) {
-                    const regen = generateRegenPlayer(player, team.tier);
-                    regensForTeam.push(regen);
-                    regensCount++;
-                }
+                // 1:1 Closed-loop Rebirth: every retiring player births 1 youth regen of matching nationality
+                const regen = generateRegenPlayer({ ...player, nationality: nat }, team.tier, homeCountry);
+                regensPool.push({ regen, sourceTeamId: team.id });
+                regensCount++;
             } else {
                 remainingSquad.push(updatedPlayer);
             }
-        });
-
-        // Combine remaining squad with generated regens
-        let squad = [...remainingSquad, ...regensForTeam];
-
-        // Ensure minimum squad size of 20 players (and maximum 26)
-        const youthCoach = team.clubStaff?.youthCoach;
-        const youthBonus = youthCoach ? Math.max(0, Math.min(12, Math.round(((youthCoach.power - 50) / 50) * 10))) : 0;
-        while (squad.length < 20) {
-            squad.push(generateYouthPlayer(team.tier, youthBonus));
-        }
-        if (squad.length > 26 && !isUserTeam) {
-            // AI trims lowest rated fringe players
-            squad.sort((a, b) => b.rating - a.rating);
-            squad = squad.slice(0, 26);
         }
 
         return {
             ...team,
-            squad
+            squad: remainingSquad
         };
     });
 
-    // 2. Simulate AI-to-AI transfer market
+    // 1b. Also age and develop players in User's Reserve/Cantera
+    const userTeamRef = teamsAfterAging.find(t => t.id === userTeamId);
+    const userHomeCountry = getLeagueCountryCode(userTeamRef?.leagueId);
+    const updatedUserReserve: Player[] = [];
+
+    for (const rPlayer of ensureSquadNationalities(userReserve, userTeamRef?.leagueId)) {
+        const { updatedPlayer, retired } = processPlayerAgingAndProgression(rPlayer);
+        if (retired) {
+            const nat = resolvePlayerNationality(rPlayer, userTeamRef?.leagueId);
+            const regen = generateRegenPlayer({ ...rPlayer, nationality: nat }, userTeamRef?.tier || 'Mid', userHomeCountry);
+            regensPool.push({ regen, sourceTeamId: userTeamId });
+            regensCount++;
+        } else {
+            updatedUserReserve.push(updatedPlayer);
+        }
+    }
+
+    // 2. Route 1:1 Regens to clubs matching their nationality without overflowing any squad
+    const teamsByCountry = new Map<CountryCode, Team[]>();
+    for (const team of teamsAfterAging) {
+        const c = getLeagueCountryCode(team.leagueId);
+        const list = teamsByCountry.get(c) || [];
+        list.push(team);
+        teamsByCountry.set(c, list);
+    }
+
+    for (const { regen, sourceTeamId } of regensPool) {
+        const nat = regen.nationality || 'ARG';
+        const candidateCountries = getRegenDestinationCountries(nat);
+
+        // If user's club is from the regen's country and Reserve has room, prioritize routing some domestic regens to user academy
+        const userInCountry = candidateCountries.includes(userHomeCountry);
+        const userFirstTeamFull = (userTeamRef?.squad.length || 0) >= MAX_FIRST_TEAM_SIZE;
+        const userReserveHasRoom = updatedUserReserve.length < MAX_RESERVE_SIZE;
+
+        if (userInCountry && userReserveHasRoom && !(userFirstTeamFull && !userReserveHasRoom)) {
+            const isFromUserClub = sourceTeamId === userTeamId;
+            if (isFromUserClub || Math.random() < 0.20) {
+                updatedUserReserve.push(regen);
+                continue;
+            }
+        }
+
+        // Gather AI clubs matching the nationality country (prefer clubs below 28 players, max 31)
+        let matchingClubs: Team[] = [];
+        for (const c of candidateCountries) {
+            const cTeams = teamsByCountry.get(c) || [];
+            matchingClubs.push(...cTeams.filter(t => t.id !== userTeamId && t.squad.length < MAX_FIRST_TEAM_SIZE));
+        }
+
+        if (matchingClubs.length === 0) {
+            matchingClubs = teamsAfterAging.filter(t => t.id !== userTeamId && t.squad.length < MAX_FIRST_TEAM_SIZE);
+        }
+
+        if (matchingClubs.length > 0) {
+            // Sort by smallest squad first to keep league squads naturally balanced
+            matchingClubs.sort((a, b) => a.squad.length - b.squad.length);
+            const topBucketSize = Math.min(matchingClubs.length, 6);
+            const destClub = matchingClubs[Math.floor(Math.random() * topBucketSize)];
+            destClub.squad.push(regen);
+        }
+    }
+
+    // 3. Safety floor for AI clubs only (minimum 18 players so every club can field an XI)
+    for (const team of teamsAfterAging) {
+        const isUserTeam = team.id === userTeamId;
+        const homeCountry = getLeagueCountryCode(team.leagueId);
+        if (!isUserTeam) {
+            const youthCoach = team.clubStaff?.youthCoach;
+            const youthBonus = youthCoach ? Math.max(0, Math.min(12, Math.round(((youthCoach.power - 50) / 50) * 10))) : 0;
+            while (team.squad.length < 18) {
+                team.squad.push(generateYouthPlayer(team.tier, youthBonus, homeCountry));
+            }
+            if (team.squad.length > MAX_FIRST_TEAM_SIZE) {
+                team.squad.sort((a, b) => b.rating - a.rating);
+                team.squad = team.squad.slice(0, MAX_FIRST_TEAM_SIZE);
+            }
+        }
+    }
+
+    // 4. Simulate AI-to-AI transfer market
     const { updatedTeams: teamsAfterTransfers, notableTransfers } = simulateAITransferWindow(teamsAfterAging, userTeamId);
 
-    // 3. Recalculate dynamic squad power for every club
+    // 5. Recalculate dynamic squad power for every club
     const finalTeams = teamsAfterTransfers.map(team => ({
         ...team,
         squadPower: calculateSquadPower(team)
@@ -408,6 +493,7 @@ export function processFullSeasonSquadProgression(
 
     return {
         updatedTeams: finalTeams,
+        updatedUserReserve,
         retiredLegends,
         notableTransfers,
         regensCount

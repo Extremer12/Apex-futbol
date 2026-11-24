@@ -8,6 +8,7 @@ import {
     getRegionalMediaSource
 } from '../newsEngine';
 import { formatDate, isTransferWindowOpen } from '../../utils';
+import { MAX_OFFERS_PER_PLAYER, OFFER_EXPIRY_WEEKS } from '../squadRules';
 
 export interface WeeklyNewsAndOffersResult {
     newsToAdd: NewsItem[];
@@ -104,36 +105,67 @@ export async function generateWeeklyNewsAndOffers(
         }
     }
 
-    // 3. AI Transfer Offers for Listed Players & Spontaneous Inquiries
+    // 3. AI Transfer Offers for Listed Players & Spontaneous Inquiries (Regulated to prevent spam)
     const generatedOffers: Offer[] = [];
     if (isTransferWindowOpen(gameState.currentWeek)) {
         const potentialBuyers = gameState.allTeams.filter(t => t.id !== gameState.team.id);
+        const existingOffers = gameState.incomingOffers || [];
+        const allUserPlayers = [...gameState.team.squad, ...(gameState.youthAcademy || [])];
 
-        const transferListedPlayers = gameState.team.squad.filter(p => p.isTransferListed);
+        const countAndClubCheck = (playerId: number) => {
+            const activeForPlayer = existingOffers.filter(o => o.playerId === playerId);
+            const newForPlayer = generatedOffers.filter(o => o.playerId === playerId);
+            const combined = [...activeForPlayer, ...newForPlayer];
+            const usedClubs = new Set(combined.map(o => o.offeringTeamId));
+            return { total: combined.length, usedClubs };
+        };
+
+        // Listed players get priority (capped at 3 active offers total per player)
+        const transferListedPlayers = allUserPlayers.filter(p => p.isTransferListed && !p.isUntouchable);
         for (const player of transferListedPlayers) {
-            if (Math.random() < 0.75) {
-                const offer = await generateTransferOffer(player, gameState.team, potentialBuyers);
+            const { total, usedClubs } = countAndClubCheck(player.id);
+            if (total >= MAX_OFFERS_PER_PLAYER) continue;
+
+            if (Math.random() < 0.65) {
+                const eligibleBuyers = potentialBuyers.filter(b => !usedClubs.has(b.id));
+                const offer = await generateTransferOffer(player, gameState.team, eligibleBuyers);
                 if (offer) {
                     generatedOffers.push({
                         id: `offer_${Date.now()}_${Math.random().toString(36).substring(2, 6)}_${player.id}`,
                         playerId: player.id,
+                        createdWeek: simulatedWeek,
+                        expiresWeek: simulatedWeek + OFFER_EXPIRY_WEEKS,
                         ...offer
                     });
                 }
             }
         }
 
-        const spontaneousTargets = gameState.team.squad.filter(p =>
+        // Spontaneous inquiries: max 2 per turn across non-untouchable players, skipping players already at cap
+        const spontaneousTargets = allUserPlayers.filter(p =>
             !p.isTransferListed &&
+            !p.isUntouchable &&
             (p.rating >= 77 || (p.age !== undefined && p.age <= 22 && p.rating >= 72))
         );
-        for (const player of spontaneousTargets) {
-            if (Math.random() < 0.30 && generatedOffers.length < 5) {
-                const offer = await generateTransferOffer(player, gameState.team, potentialBuyers);
+        // Shuffle to avoid repeatedly bidding on the first player in the array
+        const shuffledTargets = [...spontaneousTargets].sort(() => 0.5 - Math.random());
+        let spontaneousThisTurn = 0;
+
+        for (const player of shuffledTargets) {
+            if (spontaneousThisTurn >= 2) break;
+            const { total, usedClubs } = countAndClubCheck(player.id);
+            if (total >= MAX_OFFERS_PER_PLAYER) continue;
+
+            if (Math.random() < 0.22) {
+                const eligibleBuyers = potentialBuyers.filter(b => !usedClubs.has(b.id));
+                const offer = await generateTransferOffer(player, gameState.team, eligibleBuyers);
                 if (offer) {
+                    spontaneousThisTurn++;
                     generatedOffers.push({
                         id: `offer_${Date.now()}_${Math.random().toString(36).substring(2, 6)}_${player.id}`,
                         playerId: player.id,
+                        createdWeek: simulatedWeek,
+                        expiresWeek: simulatedWeek + OFFER_EXPIRY_WEEKS,
                         ...offer
                     });
                 }

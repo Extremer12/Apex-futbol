@@ -4,6 +4,7 @@
 import { GameState, Player } from '../types';
 import { getMoraleValue, getMoraleLabel } from './morale';
 import { generateYouthPlayer } from './simulation';
+import { getLeagueCountryCode } from './nationalityService';
 import eventsData from '../data/events.json';
 
 export interface GameEvent {
@@ -152,7 +153,7 @@ class EventEngine {
             ...(gameState.triggeredEventIds || [])
         ]);
 
-        const candidates = this.events.filter(event => 
+        const candidates = this.events.filter(event =>
             !previouslyTriggered.has(event.id) && this.checkConditions(event, gameState)
         );
 
@@ -265,7 +266,11 @@ class EventEngine {
 
         // Youth academy prospect event
         if (effects.addYouthPlayer) {
-            updates.newYouthPlayer = generateYouthPlayer(gameState.team.tier);
+            updates.newYouthPlayer = generateYouthPlayer(
+                gameState.team.tier,
+                0,
+                getLeagueCountryCode(gameState.team.leagueId)
+            );
         }
 
         return updates;

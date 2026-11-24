@@ -4,6 +4,8 @@ import { GameAction } from '../../../state/reducer';
 import { TeamLogo, PlayerPhoto } from '../../../data/teams/helpers';
 import { formatWeeklyWage, formatTransferFee, normalizeMonetaryValue } from '../../../utils';
 import { getPlayerAge, getPlayerPotential, getPlayerPotentialTier, getExpectedWage } from '../../../utils/playerUtils';
+import { getCountryMeta, resolvePlayerNationality } from '../../../services/nationalityService';
+import { canRegisterInFirstTeam, isForeignPlayer, isRealisticMode } from '../../../services/squadRules';
 import { Search, X, SlidersHorizontal, Eye, Lock, ChevronRight, SearchX } from 'lucide-react';
 import { useToast } from '../../common/ToastProvider';
 import { BottomSheet, OvrBadge, StatCell, EmptyState, positionLabel } from './TransferUI';
@@ -210,13 +212,24 @@ export const TransfersMarketTab: React.FC<TransfersMarketTabProps> = React.memo(
                 <ul className="apex-card divide-y divide-white/5 overflow-hidden">
                     {visible.map(player => {
                         const team = playerTeamMap.get(player.id);
+                        const nat = resolvePlayerNationality(player, team?.leagueId);
+                        const meta = getCountryMeta(nat);
+                        const foreign = isForeignPlayer({ ...player, nationality: nat }, myTeam.leagueId);
                         return (
                             <li key={player.id}>
                                 <button onClick={() => setSelected(player)}
-                                    className="w-full flex items-center gap-3 px-3 sm:px-4 py-3 text-left hover:bg-white/[0.03] active:bg-white/[0.06] transition-colors">
+                                    className="w-full flex items-center gap-3 px-3 sm:px-4 py-3 text-left hover:bg-white/[0.03] active:bg-white/[0.06] transition-colors cursor-pointer">
                                     <PlayerPhoto player={player} className="w-11 h-11 rounded-full shrink-0" />
                                     <div className="min-w-0 flex-1">
-                                        <p className="text-sm font-bold text-white truncate">{player.name}</p>
+                                        <div className="flex items-center gap-1.5">
+                                            <p className="text-sm font-bold text-white truncate">{player.name}</p>
+                                            <span title={meta.name}>{meta.flag}</span>
+                                            {foreign && isRealisticMode(gameState.gameMode) && (
+                                                <span className="px-1 py-0.2 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[8px] font-black uppercase">
+                                                    EXT
+                                                </span>
+                                            )}
+                                        </div>
                                         <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-0.5 min-w-0">
                                             <span className="font-bold text-slate-300">{positionLabel[player.position]}</span>
                                             <span>·</span>
@@ -292,27 +305,64 @@ export const TransfersMarketTab: React.FC<TransfersMarketTabProps> = React.memo(
 
             {/* PLAYER ACTION SHEET */}
             <BottomSheet open={!!selected} onClose={() => setSelected(null)}
-                footer={selected && (
-                    marketOpen ? (
-                        <button onClick={() => { const p = selected; setSelected(null); onStartNegotiation(p); }}
-                            className="w-full h-12 rounded-xl bg-[var(--apex-gold)] text-slate-950 text-sm font-black uppercase tracking-wider">
-                            Iniciar negociación
-                        </button>
-                    ) : (
-                        <div className="w-full h-12 rounded-xl bg-white/5 text-slate-400 text-sm font-bold flex items-center justify-center gap-2">
-                            <Lock className="w-4 h-4" /> Mercado cerrado
+                footer={selected && (() => {
+                    if (!marketOpen) {
+                        return (
+                            <div className="w-full h-12 rounded-xl bg-white/5 text-slate-400 text-sm font-bold flex items-center justify-center gap-2">
+                                <Lock className="w-4 h-4" /> Mercado cerrado
+                            </div>
+                        );
+                    }
+                    const regCheck = canRegisterInFirstTeam(
+                        myTeam.squad,
+                        gameState.youthAcademy || [],
+                        selected,
+                        myTeam.leagueId,
+                        gameState.gameMode
+                    );
+                    if (!regCheck.allowed) {
+                        return (
+                            <div className="space-y-1.5 text-center">
+                                <p className="text-[11px] text-rose-300 font-semibold">{regCheck.reason}</p>
+                                <div className="w-full h-11 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-black uppercase flex items-center justify-center gap-2">
+                                    <Lock className="w-4 h-4" /> Sin cupos disponibles
+                                </div>
+                            </div>
+                        );
+                    }
+                    return (
+                        <div className="space-y-1.5">
+                            {regCheck.reason && (
+                                <p className="text-[11px] text-amber-300 font-semibold text-center">{regCheck.reason}</p>
+                            )}
+                            <button onClick={() => { const p = selected; setSelected(null); onStartNegotiation(p); }}
+                                className="w-full h-12 rounded-xl bg-[var(--apex-gold)] text-slate-950 text-sm font-black uppercase tracking-wider cursor-pointer">
+                                Iniciar negociación
+                            </button>
                         </div>
-                    )
-                )}>
-                {selected && (
+                    );
+                })()}>
+                {selected && (() => {
+                    const nat = resolvePlayerNationality(selected, selectedTeam?.leagueId);
+                    const meta = getCountryMeta(nat);
+                    const foreign = isForeignPlayer({ ...selected, nationality: nat }, myTeam.leagueId);
+                    return (
                     <div className="space-y-4">
                         <div className="flex items-center gap-3">
                             <PlayerPhoto player={selected} className="w-16 h-16 rounded-2xl shrink-0" />
                             <div className="min-w-0 flex-1">
-                                <h3 className="text-lg font-black text-white truncate">{selected.name}</h3>
+                                <div className="flex items-center gap-1.5">
+                                    <h3 className="text-lg font-black text-white truncate">{selected.name}</h3>
+                                    <span title={meta.name}>{meta.flag}</span>
+                                    {foreign && isRealisticMode(gameState.gameMode) && (
+                                        <span className="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[9px] font-black uppercase">
+                                            Cupo Ext.
+                                        </span>
+                                    )}
+                                </div>
                                 <div className="flex items-center gap-1.5 text-xs text-slate-400">
                                     {selectedTeam && <span className="w-4 h-4 inline-flex"><TeamLogo team={selectedTeam} /></span>}
-                                    <span className="truncate">{selectedTeam?.name || 'Agente libre'}</span>
+                                    <span className="truncate">{selectedTeam?.name || 'Agente libre'} · {meta.name}</span>
                                 </div>
                             </div>
                             <OvrBadge value={ovrText(selected)} muted={scoutLevel(selected) < 100} />
@@ -331,17 +381,18 @@ export const TransfersMarketTab: React.FC<TransfersMarketTabProps> = React.memo(
                             <button
                                 disabled={scoutLevel(selected) >= 100}
                                 onClick={() => { dispatch({ type: 'SCOUT_PLAYER', payload: { playerId: selected.id } }); showToast(`Ojeador asignado a ${selected.name}`, 'info'); }}
-                                className="h-11 rounded-xl bg-white/5 text-slate-200 text-xs font-bold flex items-center justify-center gap-2 disabled:opacity-40">
+                                className="h-11 rounded-xl bg-white/5 text-slate-200 text-xs font-bold flex items-center justify-center gap-2 disabled:opacity-40 cursor-pointer">
                                 <Eye className="w-4 h-4" /> {scoutLevel(selected) >= 100 ? 'Ojeado' : 'Enviar ojeador'}
                             </button>
                             <button
                                 onClick={() => { dispatch({ type: 'SET_VIEWING_PLAYER', payload: selected }); setSelected(null); }}
-                                className="h-11 rounded-xl bg-white/5 text-slate-200 text-xs font-bold flex items-center justify-center gap-1">
+                                className="h-11 rounded-xl bg-white/5 text-slate-200 text-xs font-bold flex items-center justify-center gap-1 cursor-pointer">
                                 Ficha completa <ChevronRight className="w-4 h-4" />
                             </button>
                         </div>
                     </div>
-                )}
+                    );
+                })()}
             </BottomSheet>
         </div>
     );
