@@ -18,6 +18,7 @@ import {
 import { formatDate, isTransferWindowOpen } from '../../utils';
 import { ensureSquadNationalities, getLeagueCountryCode } from '../../services/nationalityService';
 import { sanitizeIncomingOffers } from '../../services/squadRules';
+import { TEAMS } from '../../constants';
 import type { GameAction } from '../reducer';
 
 // Actions handled by this reducer
@@ -66,7 +67,16 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
             // 2. Coach & Player Stats System Migration
             const playerTeamRaw = loadedState.team;
             const availableCoaches = loadedState.availableCoaches || generateCoachMarket(5, playerTeamRaw?.leagueId, playerTeamRaw?.tier);
-            // Ensure all teams have a coach, trophyCabinet, and all players have stats/condition/nationality
+            const seasonOffset = Math.max(0, (loadedState.season || 2026) - 2026);
+            const originalById = new Map<number, { player: Player; leagueId: LeagueId | 'CONMEBOL'; isGeneric: boolean }>();
+            for (const baseTeam of TEAMS) {
+                const isGen = baseTeam.squad.length > 0 && (baseTeam.squad[0].id === baseTeam.id * 100 || baseTeam.squad[0].id === baseTeam.id);
+                for (const bp of baseTeam.squad) {
+                    originalById.set(bp.id, { player: bp, leagueId: baseTeam.leagueId, isGeneric: isGen });
+                }
+            }
+
+            // Ensure all teams have a coach, trophyCabinet, and all players have stats/condition/real 2026 nationality & age
             const allTeamsWithCoaches = loadedState.allTeams.map(t => ({
                 ...t,
                 coach: t.coach || generateRandomCoach(t.tier),
@@ -79,13 +89,15 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
                         isInjured: p.isInjured || false,
                         isSuspended: p.isSuspended || false
                     })),
-                    t.leagueId
+                    t.leagueId,
+                    { originalById, seasonOffset }
                 )
             }));
             const playerTeamWithCoach = allTeamsWithCoaches.find(t => t.id === loadedState.team.id)!;
             const migratedReserve = ensureSquadNationalities(
                 loadedState.youthAcademy || [],
-                playerTeamWithCoach.leagueId
+                playerTeamWithCoach.leagueId,
+                { originalById, seasonOffset }
             );
 
             // 2b. Club Staff Migration

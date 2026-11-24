@@ -5,7 +5,7 @@ import { TeamLogo, PlayerPhoto } from '../../../data/teams/helpers';
 import { formatWeeklyWage, formatTransferFee, normalizeMonetaryValue } from '../../../utils';
 import { getPlayerAge, getPlayerPotential, getPlayerPotentialTier, getExpectedWage } from '../../../utils/playerUtils';
 import { getCountryMeta, resolvePlayerNationality } from '../../../services/nationalityService';
-import { canRegisterInFirstTeam, isForeignPlayer, isRealisticMode } from '../../../services/squadRules';
+import { canRegisterInFirstTeam } from '../../../services/squadRules';
 import { Search, X, SlidersHorizontal, Eye, Lock, ChevronRight, SearchX } from 'lucide-react';
 import { useToast } from '../../common/ToastProvider';
 import { BottomSheet, OvrBadge, StatCell, EmptyState, positionLabel } from './TransferUI';
@@ -214,7 +214,6 @@ export const TransfersMarketTab: React.FC<TransfersMarketTabProps> = React.memo(
                         const team = playerTeamMap.get(player.id);
                         const nat = resolvePlayerNationality(player, team?.leagueId);
                         const meta = getCountryMeta(nat);
-                        const foreign = isForeignPlayer({ ...player, nationality: nat }, myTeam.leagueId);
                         return (
                             <li key={player.id}>
                                 <button onClick={() => setSelected(player)}
@@ -223,12 +222,7 @@ export const TransfersMarketTab: React.FC<TransfersMarketTabProps> = React.memo(
                                     <div className="min-w-0 flex-1">
                                         <div className="flex items-center gap-1.5">
                                             <p className="text-sm font-bold text-white truncate">{player.name}</p>
-                                            <span title={meta.name}>{meta.flag}</span>
-                                            {foreign && isRealisticMode(gameState.gameMode) && (
-                                                <span className="px-1 py-0.2 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[8px] font-black uppercase">
-                                                    EXT
-                                                </span>
-                                            )}
+                                            <span title={meta.name} className="shrink-0">{meta.flag}</span>
                                         </div>
                                         <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-0.5 min-w-0">
                                             <span className="font-bold text-slate-300">{positionLabel[player.position]}</span>
@@ -345,7 +339,6 @@ export const TransfersMarketTab: React.FC<TransfersMarketTabProps> = React.memo(
                 {selected && (() => {
                     const nat = resolvePlayerNationality(selected, selectedTeam?.leagueId);
                     const meta = getCountryMeta(nat);
-                    const foreign = isForeignPlayer({ ...selected, nationality: nat }, myTeam.leagueId);
                     return (
                     <div className="space-y-4">
                         <div className="flex items-center gap-3">
@@ -354,11 +347,6 @@ export const TransfersMarketTab: React.FC<TransfersMarketTabProps> = React.memo(
                                 <div className="flex items-center gap-1.5">
                                     <h3 className="text-lg font-black text-white truncate">{selected.name}</h3>
                                     <span title={meta.name}>{meta.flag}</span>
-                                    {foreign && isRealisticMode(gameState.gameMode) && (
-                                        <span className="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[9px] font-black uppercase">
-                                            Cupo Ext.
-                                        </span>
-                                    )}
                                 </div>
                                 <div className="flex items-center gap-1.5 text-xs text-slate-400">
                                     {selectedTeam && <span className="w-4 h-4 inline-flex"><TeamLogo team={selectedTeam} /></span>}

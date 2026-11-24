@@ -12,7 +12,6 @@ import {
     ArrowUpRight,
     ArrowDownLeft,
     Trash2,
-    Globe,
     ShieldAlert,
     Lock
 } from 'lucide-react';
@@ -23,13 +22,9 @@ import { calculateSquadPower } from '../../services/squadProgressionService';
 import { getCountryMeta, resolvePlayerNationality } from '../../services/nationalityService';
 import {
     MAX_FIRST_TEAM_SIZE,
-    MAX_FOREIGN_PLAYERS_REALISTIC,
     MAX_RESERVE_SIZE,
     canMoveToReserve,
-    canPromoteToFirstTeam,
-    countForeignPlayers,
-    isForeignPlayer,
-    isRealisticMode
+    canPromoteToFirstTeam
 } from '../../services/squadRules';
 import { TacticalLineupView } from './squad/TacticalLineupView';
 import { BottomSheet, OvrBadge, StatCell, EmptyState, positionLabel } from './transfers/TransferUI';
@@ -99,12 +94,6 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
     const squadFull = squad.length >= MAX_FIRST_TEAM_SIZE;
     const reserveFull = reserve.length >= MAX_RESERVE_SIZE;
     const bothFull = squadFull && reserveFull;
-
-    const realistic = isRealisticMode(gameState.gameMode);
-    const foreignCount = useMemo(
-        () => countForeignPlayers(squad, gameState.team.leagueId),
-        [squad, gameState.team.leagueId]
-    );
 
     const squadPower = useMemo(
         () => gameState.team.squadPower || calculateSquadPower(gameState.team),
@@ -205,71 +194,30 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
     const renderNationalityPill = (player: Player) => {
         const nat = resolvePlayerNationality(player, gameState.team.leagueId);
         const meta = getCountryMeta(nat);
-        const foreign = isForeignPlayer({ ...player, nationality: nat }, gameState.team.leagueId);
         return (
-            <span className="inline-flex items-center gap-1" title={`${meta.name}${foreign ? ' (Extranjero)' : ''}`}>
+            <span className="inline-flex items-center shrink-0" title={meta.name}>
                 <span>{meta.flag}</span>
-                {foreign && realistic && (
-                    <span className="px-1 py-0.2 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[8px] font-black uppercase">
-                        EXT
-                    </span>
-                )}
             </span>
         );
     };
 
     return (
         <div className="p-3 sm:p-5 md:p-6 space-y-3 sm:space-y-4 pb-24 animate-fade-in max-w-5xl mx-auto">
-            {/* 1. HEADER */}
+            {/* 1. CLEAN HEADER */}
             <header className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                        <h1 className="text-lg sm:text-xl font-black text-white tracking-tight">Plantilla</h1>
-                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border ${
-                            realistic
-                                ? 'bg-[var(--apex-gold)]/10 border-[var(--apex-gold)]/35 text-[var(--apex-gold)]'
-                                : 'bg-sky-500/10 border-sky-500/30 text-sky-300'
-                        }`}>
-                            {realistic ? 'Realista' : 'Modo Libre'}
-                        </span>
-                    </div>
-                    <span className="inline-flex flex-wrap items-center gap-1.5 text-[11px] font-bold text-slate-400 mt-0.5">
+                    <h1 className="text-lg sm:text-xl font-black text-white tracking-tight">Plantilla</h1>
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-400 mt-0.5 truncate">
                         <span>{gameState.team.coach?.name || 'Director Técnico'}</span>
                         <span>·</span>
                         <span>{activeFormation}</span>
-                        <span>·</span>
-                        <span className={squadFull ? 'text-amber-400 font-black' : ''}>
-                            1º Eq. {squad.length}/{MAX_FIRST_TEAM_SIZE}
-                        </span>
-                        <span>·</span>
-                        <span className={reserveFull ? 'text-amber-400 font-black' : ''}>
-                            Res. {reserve.length}/{MAX_RESERVE_SIZE}
-                        </span>
                     </span>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
-                    {realistic && (
-                        <div className={`px-2.5 py-2 rounded-2xl border text-right ${
-                            foreignCount >= MAX_FOREIGN_PLAYERS_REALISTIC
-                                ? 'bg-amber-500/10 border-amber-500/35'
-                                : 'bg-[#0D1220] border-white/10'
-                        }`}>
-                            <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider flex items-center justify-end gap-1 leading-none mb-1">
-                                <Globe className="w-2.5 h-2.5" /> Extranjeros
-                            </span>
-                            <span className={`text-sm font-black leading-none ${
-                                foreignCount >= MAX_FOREIGN_PLAYERS_REALISTIC ? 'text-amber-400' : 'text-white'
-                            }`}>
-                                {foreignCount}/{MAX_FOREIGN_PLAYERS_REALISTIC}
-                            </span>
-                        </div>
-                    )}
-                    <div className="flex items-center gap-2.5 px-3 py-2 rounded-2xl bg-[#0D1220] border border-white/10 text-right">
-                        <div>
-                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block leading-none mb-1">Media</span>
-                            <span className="text-sm font-black text-[var(--apex-gold)] leading-none">{squadPower.overall}</span>
-                        </div>
+                <div className="flex items-center gap-2.5 px-3 py-2 rounded-2xl bg-[#0D1220] border border-white/10 text-right shrink-0">
+                    <div>
+                        <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block leading-none mb-1">Media</span>
+                        <span className="text-sm font-black text-[var(--apex-gold)] leading-none">{squadPower.overall}</span>
                     </div>
                 </div>
             </header>
@@ -287,9 +235,9 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
             <nav className="sticky top-0 z-20 -mx-3 sm:mx-0 px-3 sm:px-0 py-1.5 bg-[var(--apex-darker,#070A13)]/95 backdrop-blur">
                 <div className="grid grid-cols-3 gap-1 p-1 bg-white/5 rounded-2xl">
                     {([
-                        { id: 'FIRST_TEAM', label: 'Primer Equipo', badge: squad.length },
-                        { id: 'TACTICS', label: 'Táctica', badge: 0 },
-                        { id: 'ACADEMY', label: 'Reserva', badge: reserve.length },
+                        { id: 'FIRST_TEAM', label: 'Primer Equipo', countLabel: `${squad.length}/${MAX_FIRST_TEAM_SIZE}`, warn: squadFull },
+                        { id: 'TACTICS', label: 'Táctica', countLabel: '', warn: false },
+                        { id: 'ACADEMY', label: 'Reserva', countLabel: `${reserve.length}/${MAX_RESERVE_SIZE}`, warn: reserveFull },
                     ] as const).map(t => (
                         <button
                             key={t.id}
@@ -298,12 +246,16 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
                                 activeTab === t.id ? 'bg-[var(--apex-gold)] text-slate-950 font-black' : 'text-slate-400 hover:text-white'
                             }`}
                         >
-                            {t.label}
-                            {t.badge > 0 && (
-                                <span className={`min-w-[18px] h-[18px] px-1.5 rounded-full text-[10px] font-black flex items-center justify-center ${
-                                    activeTab === t.id ? 'bg-slate-950 text-[var(--apex-gold)]' : 'bg-white/15 text-white'
+                            <span className="truncate">{t.label}</span>
+                            {t.countLabel && (
+                                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none ${
+                                    activeTab === t.id
+                                        ? 'bg-slate-950 text-[var(--apex-gold)]'
+                                        : t.warn
+                                            ? 'bg-amber-500/20 text-amber-300'
+                                            : 'bg-white/10 text-slate-300'
                                 }`}>
-                                    {t.badge}
+                                    {t.countLabel}
                                 </span>
                             )}
                         </button>
@@ -371,7 +323,7 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
 
                     {/* Summary Strip */}
                     <div className="flex items-center justify-between px-1 text-[11px] text-slate-500 font-semibold">
-                        <span>{sortedSquad.length} de {MAX_FIRST_TEAM_SIZE} cupos · {SORTS.find(s => s.id === sortOption)?.label}</span>
+                        <span>{sortedSquad.length} jugadores · {SORTS.find(s => s.id === sortOption)?.label}</span>
                         <span>ATA {squadPower.attack} · MED {squadPower.midfield} · DEF {squadPower.defense}</span>
                     </div>
 
@@ -406,26 +358,23 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
                                                 <div className="flex items-center gap-1.5">
                                                     <p className="text-sm font-bold text-white truncate">{player.name}</p>
                                                     {renderNationalityPill(player)}
-                                                    {player.isUntouchable && (
-                                                        <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-indigo-500/15 text-indigo-300 shrink-0 inline-flex items-center gap-0.5">
-                                                            <Lock className="w-2.5 h-2.5" /> Blindado
-                                                        </span>
-                                                    )}
-                                                    {player.isInjured && (
+                                                    {player.isInjured ? (
                                                         <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-rose-500/15 text-rose-400 shrink-0">
                                                             Lesión {player.injuryWeeksRemaining}s
                                                         </span>
-                                                    )}
-                                                    {player.isSuspended && !player.isInjured && (
+                                                    ) : player.isSuspended ? (
                                                         <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-rose-500/15 text-rose-400 shrink-0">
                                                             Sanción {player.suspensionWeeksRemaining}p
                                                         </span>
-                                                    )}
-                                                    {player.isTransferListed && !player.isInjured && !player.isSuspended && (
+                                                    ) : player.isTransferListed ? (
                                                         <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-amber-500/15 text-amber-400 shrink-0">
                                                             En venta
                                                         </span>
-                                                    )}
+                                                    ) : player.isUntouchable ? (
+                                                        <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-indigo-500/15 text-indigo-300 shrink-0 inline-flex items-center gap-0.5">
+                                                            <Lock className="w-2.5 h-2.5" /> Blindado
+                                                        </span>
+                                                    ) : null}
                                                 </div>
                                                 <p className="text-[11px] text-slate-400 mt-0.5">
                                                     <span className="font-bold text-slate-300">{positionLabel[player.position]}</span> · {age} años · {player.contractYears}a contrato

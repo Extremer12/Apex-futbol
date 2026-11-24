@@ -173,10 +173,10 @@ export const ElectionScreen: React.FC<ElectionScreenProps> = ({
         gameState.season
     );
 
-    const isFreeMode = gameState.gameMode === 'FREE';
+    const isFreeMode = false;
 
     const handleSubmitLeaderboard = async () => {
-        if (isFreeMode || isSubmittingScore || scoreSubmitted) return;
+        if (isSubmittingScore || scoreSubmitted) return;
         setIsSubmittingScore(true);
         setScoreError(null);
         try {

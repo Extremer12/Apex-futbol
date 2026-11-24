@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { GameMode, PlayerProfile } from '../../types';
-import { User, Calendar, Globe, ChevronDown, Camera, Shield, Sparkles } from 'lucide-react';
+import { User, Calendar, Globe, ChevronDown, Camera } from 'lucide-react';
 
 interface ProfileCreationProps {
     onProfileCreate: (profile: PlayerProfile) => void;
@@ -38,7 +38,7 @@ export const ProfileCreation: React.FC<ProfileCreationProps> = ({ onProfileCreat
     const [lastName, setLastName] = useState('');
     const [age, setAge] = useState<number | string>(38);
     const [nationality, setNationality] = useState('Argentina');
-    const [gameMode, setGameMode] = useState<GameMode>('REALISTIC');
+    const gameMode: GameMode = 'REALISTIC';
     const [photo, setPhoto] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -285,60 +285,6 @@ export const ProfileCreation: React.FC<ProfileCreationProps> = ({ onProfileCreat
                                             </select>
                                             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-slate-400" />
                                         </div>
-                                    </div>
-                                </div>
-
-                                {/* Game Mode Selector */}
-                                <div>
-                                    <label className="block text-[10px] font-bold tracking-[0.15em] uppercase mb-1.5 text-white">
-                                        Modo de Carrera
-                                    </label>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                                        <button
-                                            type="button"
-                                            onClick={() => setGameMode('REALISTIC')}
-                                            className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                                                gameMode === 'REALISTIC'
-                                                    ? 'bg-[var(--apex-gold)]/12 border-[var(--apex-gold)] shadow-[0_0_16px_rgba(200,168,78,0.18)]'
-                                                    : 'bg-white/[0.02] border-white/10 hover:border-white/25'
-                                            }`}
-                                        >
-                                            <div className="flex items-center justify-between gap-2 mb-1">
-                                                <span className="text-xs font-black text-white flex items-center gap-1.5">
-                                                    <Shield className="w-3.5 h-3.5 text-[var(--apex-gold)]" />
-                                                    Modo Realista
-                                                </span>
-                                                <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[9px] font-black uppercase">
-                                                    Ranked
-                                                </span>
-                                            </div>
-                                            <p className="text-[10px] text-slate-300 leading-snug">
-                                                Cupo máx. 6 extranjeros, prestigio real y puntuación oficial para el Ranking Mundial.
-                                            </p>
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            onClick={() => setGameMode('FREE')}
-                                            className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                                                gameMode === 'FREE'
-                                                    ? 'bg-sky-500/12 border-sky-400 shadow-[0_0_16px_rgba(56,189,248,0.18)]'
-                                                    : 'bg-white/[0.02] border-white/10 hover:border-white/25'
-                                            }`}
-                                        >
-                                            <div className="flex items-center justify-between gap-2 mb-1">
-                                                <span className="text-xs font-black text-white flex items-center gap-1.5">
-                                                    <Sparkles className="w-3.5 h-3.5 text-sky-400" />
-                                                    Modo Libre
-                                                </span>
-                                                <span className="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 text-[9px] font-black uppercase">
-                                                    Sandbox
-                                                </span>
-                                            </div>
-                                            <p className="text-[10px] text-slate-300 leading-snug">
-                                                Sin cupo de extranjeros ni trabas de prestigio. Recreativo (no puntúa en Ranking).
-                                            </p>
-                                        </button>
                                     </div>
                                 </div>
                             </div>

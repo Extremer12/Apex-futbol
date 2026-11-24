@@ -102,7 +102,14 @@ export type CountryCode = 'ENG' | 'ESP' | 'GER' | 'ITA' | 'FRA' | 'ARG' | 'BRA' 
 
 export type PlayerNationality =
   | CountryCode
-  | 'URU' | 'PER' | 'ECU' | 'POR' | 'NED' | 'BEL' | 'CRO' | 'USA' | 'JPN' | 'OTHER';
+  | 'URU' | 'PER' | 'ECU' | 'VEN' | 'BOL'
+  | 'POR' | 'NED' | 'BEL' | 'CRO' | 'NOR' | 'DEN' | 'SWE' | 'POL' | 'SUI' | 'AUT'
+  | 'SVN' | 'SRB' | 'TUR' | 'UKR' | 'SCO' | 'WAL' | 'IRL' | 'NIR' | 'CZE' | 'SVK'
+  | 'HUN' | 'GEO' | 'GRE' | 'RUS' | 'ISL' | 'FIN' | 'ALB' | 'KOS' | 'BIH' | 'MKD' | 'ROU' | 'ARM'
+  | 'EGY' | 'MAR' | 'SEN' | 'NGA' | 'CIV' | 'GHA' | 'CMR' | 'ALG' | 'MLI' | 'GUI' | 'COD' | 'ZIM' | 'ANG' | 'BFA' | 'TUN' | 'GAB' | 'TOG'
+  | 'USA' | 'CAN' | 'JAM' | 'CRC' | 'PAN'
+  | 'JPN' | 'KOR' | 'IRN' | 'AUS' | 'NZL' | 'ISR'
+  | 'OTHER';
 
 export const LEAGUE_COUNTRY: Record<LeagueId, CountryCode> = {
   [LeagueId.PREMIER_LEAGUE]: 'ENG',

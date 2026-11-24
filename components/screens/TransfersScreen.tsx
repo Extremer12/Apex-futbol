@@ -18,12 +18,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '../common/ToastProvider';
 import {
-    MAX_FIRST_TEAM_SIZE,
-    MAX_FOREIGN_PLAYERS_REALISTIC,
-    MAX_RESERVE_SIZE,
-    canRegisterInFirstTeam,
-    countForeignPlayers,
-    isRealisticMode
+    canRegisterInFirstTeam
 } from '../../services/squadRules';
 
 import { TransfersMarketTab, CategoryFilter, SortOption } from './transfers/TransfersMarketTab';
@@ -110,11 +105,6 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
     }, [allTeams, myTeam.id, myTeam.squad, gameState.youthAcademy]);
 
     const reservePlayers = gameState.youthAcademy || [];
-    const realistic = isRealisticMode(gameState.gameMode);
-    const foreignCount = useMemo(
-        () => countForeignPlayers(myTeam.squad, myTeam.leagueId),
-        [myTeam.squad, myTeam.leagueId]
-    );
 
     // Start Negotiation
     const startNegotiation = (player: Player) => {
@@ -209,6 +199,11 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
         showToast("Ofertas por debajo del valor de mercado descartadas.", 'info');
     };
 
+    const handleRejectSpontaneousOffers = () => {
+        dispatch({ type: 'REJECT_SPONTANEOUS_OFFERS' });
+        showToast("Sondeos por jugadores no transferibles descartados.", 'info');
+    };
+
     const handleToggleUntouchable = (player: Player) => {
         dispatch({ type: 'TOGGLE_UNTOUCHABLE', payload: player });
         showToast(`${player.name} marcado como intransferible.`, 'info');
@@ -258,37 +253,19 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
 
     return (
         <div className="p-3 sm:p-5 md:p-6 space-y-3 sm:space-y-4 pb-24 animate-fade-in max-w-5xl mx-auto">
-            {/* 1. HEADER */}
+            {/* 1. CLEAN HEADER */}
             <header className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
                     <h1 className="text-lg sm:text-xl font-black text-white tracking-tight">Fichajes</h1>
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] font-bold mt-0.5">
-                        {marketOpen ? (
-                            <span className="inline-flex items-center gap-1.5 text-emerald-400">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Mercado abierto
-                            </span>
-                        ) : (
-                            <span className="inline-flex items-center gap-1.5 text-rose-400">
-                                <Clock className="w-3 h-3" /> Cerrado · abre {nextWindow}
-                            </span>
-                        )}
-                        <span className="text-slate-600">·</span>
-                        <span className={myTeam.squad.length >= MAX_FIRST_TEAM_SIZE ? 'text-amber-400' : 'text-slate-400'}>
-                            1º Eq. {myTeam.squad.length}/{MAX_FIRST_TEAM_SIZE}
+                    {marketOpen ? (
+                        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-400 mt-0.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Mercado abierto
                         </span>
-                        <span className="text-slate-600">·</span>
-                        <span className={reservePlayers.length >= MAX_RESERVE_SIZE ? 'text-amber-400' : 'text-slate-400'}>
-                            Res. {reservePlayers.length}/{MAX_RESERVE_SIZE}
+                    ) : (
+                        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-rose-400 mt-0.5">
+                            <Clock className="w-3 h-3" /> Cerrado · abre {nextWindow}
                         </span>
-                        {realistic && (
-                            <>
-                                <span className="text-slate-600">·</span>
-                                <span className={foreignCount >= MAX_FOREIGN_PLAYERS_REALISTIC ? 'text-amber-400' : 'text-slate-400'}>
-                                    Ext. {foreignCount}/{MAX_FOREIGN_PLAYERS_REALISTIC}
-                                </span>
-                            </>
-                        )}
-                    </div>
+                    )}
                 </div>
                 <button
                     onClick={() => { setNewBudgetDraft(normBudget); setShowBudgetModal(true); }}
@@ -367,6 +344,7 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
                     onRejectOffer={handleRejectIncomingOffer}
                     onRejectPlayerOffers={handleRejectPlayerOffers}
                     onClearLowOffers={handleClearLowOffers}
+                    onRejectSpontaneousOffers={handleRejectSpontaneousOffers}
                     onToggleUntouchable={handleToggleUntouchable}
                     onOpenCounterOffer={handleOpenCounterOffer}
                 />

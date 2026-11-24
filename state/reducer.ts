@@ -38,6 +38,7 @@ export type GameAction =
     | { type: 'OFFER_PLAYER_TO_CLUBS'; payload: { playerId: number } }
     | { type: 'REJECT_PLAYER_OFFERS'; payload: { playerId: number } }
     | { type: 'CLEAR_LOW_OFFERS' }
+    | { type: 'REJECT_SPONTANEOUS_OFFERS' }
     | { type: 'SET_VIEWING_PLAYER'; payload: Player | null }
     | { type: 'SET_CUSTOM_LINEUP'; payload: { formation: string; starterIds: number[] } }
     | { type: 'RENEW_PLAYER_CONTRACT'; payload: { playerId: number; contractYearsBonus: number; wageMultiplier: number } }
@@ -116,6 +117,7 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 case 'REJECT_OFFER':
                 case 'REJECT_PLAYER_OFFERS':
                 case 'CLEAR_LOW_OFFERS':
+                case 'REJECT_SPONTANEOUS_OFFERS':
                 case 'COUNTER_OFFER':
                 case 'UPDATE_OFFER':
                 case 'SIGN_PLAYER':

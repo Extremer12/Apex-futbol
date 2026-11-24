@@ -49,10 +49,10 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({
         season
     );
 
-    const isFreeMode = (gameState?.gameMode || playerProfile?.gameMode) === 'FREE';
+    const isFreeMode = false;
 
     const handleLeaderboardSubmit = async () => {
-        if (isFreeMode || isSubmitting || submitted) return;
+        if (isSubmitting || submitted) return;
         setIsSubmitting(true);
         setErrorMsg(null);
         try {

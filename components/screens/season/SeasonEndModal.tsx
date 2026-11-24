@@ -219,11 +219,10 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
         [trophiesCount, clubVal, fanApp, boardConf, seasonsCount]
     );
 
-    const isFreeMode = gameState.gameMode === 'FREE';
+    const isFreeMode = false;
 
-    // Auto-submit score to global leaderboard only in Realistic (Ranked) mode
+    // Auto-submit score to global leaderboard
     useEffect(() => {
-        if (isFreeMode) return;
         let isMounted = true;
         const autoSubmit = async () => {
             try {

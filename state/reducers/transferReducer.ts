@@ -16,6 +16,7 @@ type TransferAction = Extract<GameAction,
     | { type: 'REJECT_OFFER' }
     | { type: 'REJECT_PLAYER_OFFERS' }
     | { type: 'CLEAR_LOW_OFFERS' }
+    | { type: 'REJECT_SPONTANEOUS_OFFERS' }
     | { type: 'COUNTER_OFFER' }
     | { type: 'UPDATE_OFFER' }
     | { type: 'SIGN_PLAYER' }
@@ -170,6 +171,18 @@ export function handleTransferAction(state: GameState, action: TransferAction): 
                     const val = Math.max(1, normalizeMonetaryValue(p.value));
                     return amount >= val;
                 })
+            };
+        }
+
+        case 'REJECT_SPONTANEOUS_OFFERS': {
+            const listedIds = new Set(
+                [...state.team.squad, ...(state.youthAcademy || [])]
+                    .filter(p => p.isTransferListed)
+                    .map(p => p.id)
+            );
+            return {
+                ...state,
+                incomingOffers: state.incomingOffers.filter(o => listedIds.has(o.playerId))
             };
         }
 

@@ -8,7 +8,7 @@ import {
     getRegionalMediaSource
 } from '../newsEngine';
 import { formatDate, isTransferWindowOpen } from '../../utils';
-import { MAX_OFFERS_PER_PLAYER, OFFER_EXPIRY_WEEKS } from '../squadRules';
+import { MAX_OFFERS_PER_PLAYER, MAX_TOTAL_ACTIVE_OFFERS, OFFER_EXPIRY_WEEKS } from '../squadRules';
 
 export interface WeeklyNewsAndOffersResult {
     newsToAdd: NewsItem[];
@@ -105,13 +105,14 @@ export async function generateWeeklyNewsAndOffers(
         }
     }
 
-    // 3. AI Transfer Offers for Listed Players & Spontaneous Inquiries (Regulated to prevent spam)
+    // 3. AI Transfer Offers for Listed Players & Spontaneous Inquiries (Once per week, regulated to avoid spam)
     const generatedOffers: Offer[] = [];
-    if (isTransferWindowOpen(gameState.currentWeek)) {
+    if (!isMidweek && isTransferWindowOpen(gameState.currentWeek)) {
         const potentialBuyers = gameState.allTeams.filter(t => t.id !== gameState.team.id);
         const existingOffers = gameState.incomingOffers || [];
         const allUserPlayers = [...gameState.team.squad, ...(gameState.youthAcademy || [])];
 
+        const totalActiveAfterNew = () => existingOffers.length + generatedOffers.length;
         const countAndClubCheck = (playerId: number) => {
             const activeForPlayer = existingOffers.filter(o => o.playerId === playerId);
             const newForPlayer = generatedOffers.filter(o => o.playerId === playerId);
@@ -120,16 +121,21 @@ export async function generateWeeklyNewsAndOffers(
             return { total: combined.length, usedClubs };
         };
 
-        // Listed players get priority (capped at 3 active offers total per player)
+        // Listed players get priority (max 2 new offers per week, capped at MAX_TOTAL_ACTIVE_OFFERS globally)
         const transferListedPlayers = allUserPlayers.filter(p => p.isTransferListed && !p.isUntouchable);
-        for (const player of transferListedPlayers) {
+        const shuffledListed = [...transferListedPlayers].sort(() => 0.5 - Math.random());
+        let listedGeneratedThisWeek = 0;
+
+        for (const player of shuffledListed) {
+            if (listedGeneratedThisWeek >= 2 || totalActiveAfterNew() >= MAX_TOTAL_ACTIVE_OFFERS) break;
             const { total, usedClubs } = countAndClubCheck(player.id);
             if (total >= MAX_OFFERS_PER_PLAYER) continue;
 
-            if (Math.random() < 0.65) {
+            if (Math.random() < 0.50) {
                 const eligibleBuyers = potentialBuyers.filter(b => !usedClubs.has(b.id));
                 const offer = await generateTransferOffer(player, gameState.team, eligibleBuyers);
                 if (offer) {
+                    listedGeneratedThisWeek++;
                     generatedOffers.push({
                         id: `offer_${Date.now()}_${Math.random().toString(36).substring(2, 6)}_${player.id}`,
                         playerId: player.id,
@@ -141,26 +147,22 @@ export async function generateWeeklyNewsAndOffers(
             }
         }
 
-        // Spontaneous inquiries: max 2 per turn across non-untouchable players, skipping players already at cap
-        const spontaneousTargets = allUserPlayers.filter(p =>
-            !p.isTransferListed &&
-            !p.isUntouchable &&
-            (p.rating >= 77 || (p.age !== undefined && p.age <= 22 && p.rating >= 72))
-        );
-        // Shuffle to avoid repeatedly bidding on the first player in the array
-        const shuffledTargets = [...spontaneousTargets].sort(() => 0.5 - Math.random());
-        let spontaneousThisTurn = 0;
+        // Spontaneous inquiries: max 1 per week (18% probability) and only if inbox still has room
+        if (totalActiveAfterNew() < MAX_TOTAL_ACTIVE_OFFERS && Math.random() < 0.18) {
+            const spontaneousTargets = allUserPlayers.filter(p =>
+                !p.isTransferListed &&
+                !p.isUntouchable &&
+                (p.rating >= 78 || (p.age !== undefined && p.age <= 22 && p.rating >= 74))
+            );
+            const shuffledTargets = [...spontaneousTargets].sort(() => 0.5 - Math.random());
 
-        for (const player of shuffledTargets) {
-            if (spontaneousThisTurn >= 2) break;
-            const { total, usedClubs } = countAndClubCheck(player.id);
-            if (total >= MAX_OFFERS_PER_PLAYER) continue;
+            for (const player of shuffledTargets) {
+                const { total, usedClubs } = countAndClubCheck(player.id);
+                if (total >= MAX_OFFERS_PER_PLAYER) continue;
 
-            if (Math.random() < 0.22) {
                 const eligibleBuyers = potentialBuyers.filter(b => !usedClubs.has(b.id));
                 const offer = await generateTransferOffer(player, gameState.team, eligibleBuyers);
                 if (offer) {
-                    spontaneousThisTurn++;
                     generatedOffers.push({
                         id: `offer_${Date.now()}_${Math.random().toString(36).substring(2, 6)}_${player.id}`,
                         playerId: player.id,
@@ -168,6 +170,7 @@ export async function generateWeeklyNewsAndOffers(
                         expiresWeek: simulatedWeek + OFFER_EXPIRY_WEEKS,
                         ...offer
                     });
+                    break;
                 }
             }
         }

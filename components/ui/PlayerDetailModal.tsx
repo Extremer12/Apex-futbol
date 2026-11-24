@@ -15,9 +15,7 @@ import {
 import { getCountryMeta, resolvePlayerNationality } from '../../services/nationalityService';
 import {
     canMoveToReserve,
-    canPromoteToFirstTeam,
-    isForeignPlayer,
-    isRealisticMode
+    canPromoteToFirstTeam
 } from '../../services/squadRules';
 import { useToast } from '../common/ToastProvider';
 import {
@@ -147,7 +145,6 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({ player, di
 
     const nationalityCode = resolvePlayerNationality(player, ownerTeam?.leagueId || userTeam?.leagueId);
     const countryMeta = getCountryMeta(nationalityCode);
-    const isForeignToUser = userTeam ? isForeignPlayer({ ...player, nationality: nationalityCode }, userTeam.leagueId) : false;
 
     const canRenew = !hasRenewed && player.contractYears <= 3;
     const canTalk = !hasTalked && player.morale !== 'Feliz';
@@ -156,8 +153,6 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({ player, di
         : player.preferredRole === 'FirstTeam' ? 'Titular Habitual'
             : player.preferredRole === 'Rotation' ? 'Rotación'
                 : 'Joven Promesa';
-
-    const realistic = isRealisticMode(gameState?.gameMode);
 
     return (
         <Modal title="Ficha del Futbolista" onClose={onClose} maxWidth="max-w-lg">
@@ -180,15 +175,6 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({ player, di
                                 <span>{countryMeta.flag}</span>
                                 <span>{countryMeta.name}</span>
                             </span>
-                            {isUserPlayer && isForeignToUser && (
-                                <span className={`px-1.5 py-0.5 rounded text-[10px] font-black uppercase border ${
-                                    realistic
-                                        ? 'bg-amber-500/15 text-amber-300 border-amber-500/35'
-                                        : 'bg-white/5 text-slate-400 border-white/10'
-                                }`}>
-                                    Extranjero
-                                </span>
-                            )}
                             {player.isAcademyProduct && (
                                 <span className="px-1.5 py-0.5 rounded text-[10px] font-black uppercase bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
                                     Cantera

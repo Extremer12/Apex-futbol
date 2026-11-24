@@ -4,16 +4,16 @@ import { getLeagueCountryCode, resolvePlayerNationality } from './nationalitySer
 export const MAX_FIRST_TEAM_SIZE = 31;
 export const MIN_FIRST_TEAM_SIZE = 16;
 export const MAX_RESERVE_SIZE = 15;
-export const MAX_FOREIGN_PLAYERS_REALISTIC = 6;
 export const MAX_OFFERS_PER_PLAYER = 3;
+export const MAX_TOTAL_ACTIVE_OFFERS = 5;
 export const OFFER_EXPIRY_WEEKS = 3;
 
-export function isRealisticMode(gameMode?: GameMode): boolean {
-    return gameMode !== 'FREE';
+export function isRealisticMode(_gameMode?: GameMode): boolean {
+    return true;
 }
 
-export function canSubmitToLeaderboard(gameMode?: GameMode): boolean {
-    return isRealisticMode(gameMode);
+export function canSubmitToLeaderboard(_gameMode?: GameMode): boolean {
+    return true;
 }
 
 export function isForeignPlayer(player: Player, leagueId?: LeagueId | 'CONMEBOL'): boolean {
@@ -35,9 +35,9 @@ export interface SquadValidationResult {
 export function canRegisterInFirstTeam(
     firstTeam: Player[],
     reserve: Player[],
-    incomingPlayer: Player,
-    leagueId: LeagueId | 'CONMEBOL',
-    gameMode?: GameMode
+    _incomingPlayer: Player,
+    _leagueId?: LeagueId | 'CONMEBOL',
+    _gameMode?: GameMode
 ): SquadValidationResult {
     const firstTeamFull = firstTeam.length >= MAX_FIRST_TEAM_SIZE;
     const reserveFull = reserve.length >= MAX_RESERVE_SIZE;
@@ -58,48 +58,20 @@ export function canRegisterInFirstTeam(
         };
     }
 
-    if (isRealisticMode(gameMode) && isForeignPlayer(incomingPlayer, leagueId)) {
-        const currentForeign = countForeignPlayers(firstTeam, leagueId);
-        if (currentForeign >= MAX_FOREIGN_PLAYERS_REALISTIC) {
-            if (!reserveFull) {
-                return {
-                    allowed: true,
-                    target: 'RESERVE',
-                    reason: `Cupo de extranjeros en Primer Equipo completo (${currentForeign}/${MAX_FOREIGN_PLAYERS_REALISTIC}). Se inscribirá en Reserva hasta liberar un cupo.`
-                };
-            }
-            return {
-                allowed: false,
-                target: 'BLOCKED',
-                reason: `Cupo de extranjeros completo (${currentForeign}/${MAX_FOREIGN_PLAYERS_REALISTIC}) en Modo Realista y Reserva llena (${MAX_RESERVE_SIZE}/${MAX_RESERVE_SIZE}).`
-            };
-        }
-    }
-
     return { allowed: true, target: 'FIRST_TEAM' };
 }
 
 export function canPromoteToFirstTeam(
     firstTeam: Player[],
-    player: Player,
-    leagueId: LeagueId | 'CONMEBOL',
-    gameMode?: GameMode
+    _player?: Player,
+    _leagueId?: LeagueId | 'CONMEBOL',
+    _gameMode?: GameMode
 ): { allowed: boolean; reason?: string } {
     if (firstTeam.length >= MAX_FIRST_TEAM_SIZE) {
         return {
             allowed: false,
             reason: `Primer Equipo lleno (${firstTeam.length}/${MAX_FIRST_TEAM_SIZE}). Vende o baja un jugador a Reserva primero.`
         };
-    }
-
-    if (isRealisticMode(gameMode) && isForeignPlayer(player, leagueId)) {
-        const currentForeign = countForeignPlayers(firstTeam, leagueId);
-        if (currentForeign >= MAX_FOREIGN_PLAYERS_REALISTIC) {
-            return {
-                allowed: false,
-                reason: `Cupo de extranjeros completo (${currentForeign}/${MAX_FOREIGN_PLAYERS_REALISTIC}) en Modo Realista. Vende o baja a Reserva a un extranjero.`
-            };
-        }
     }
 
     return { allowed: true };

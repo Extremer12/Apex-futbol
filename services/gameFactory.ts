@@ -48,16 +48,17 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
     // Clone teams, assign authentic stadiums, ages, nationalities and coaches
     const allTeamsCopy = TEAMS.map(t => {
         const s = generateStadium(t);
+        const isGenericClub = t.squad.length > 0 && (t.squad[0].id === t.id * 100 || t.squad[0].id === t.id);
         const preparedSquad = ensureSquadNationalities(
             t.squad.map(player => ({
                 ...player,
-                age: player.age !== undefined && player.age > 0 ? player.age : Math.floor(19 + Math.random() * 12),
                 stats: { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 },
                 condition: 100,
                 isInjured: false,
                 isSuspended: false
             })),
-            t.leagueId
+            t.leagueId,
+            { isGenericClub, seasonOffset: 0 }
         );
         const teamObj: Team = {
             ...t,
