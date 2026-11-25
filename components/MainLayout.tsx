@@ -4,6 +4,7 @@ import { FullScreenMatchSimulation } from './gameflow/FullScreenMatchSimulation'
 import { GameAction } from '../state/reducer';
 import { Header } from './ui/Header';
 import { BottomNav } from './ui/BottomNav';
+import { ScreenBackdrop } from './ui/ScreenBackdrop';
 import { Vote } from 'lucide-react';
 
 // Core home screen kept static for zero-latency initial load
@@ -128,8 +129,18 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
 
     const isLiveMatch = matchPhase === 'LIVE' && !!pendingResults?.playerMatchResult;
 
+    // Club identity color drives ambient glows; very dark/unknown colors fall back to brand blue.
+    const clubColor = React.useMemo(() => {
+        const hex = (gameState.team.primaryColor || '').replace('#', '');
+        if (!/^[0-9a-fA-F]{6}$/.test(hex)) return '#3D7BFF';
+        const r = parseInt(hex.slice(0, 2), 16), g = parseInt(hex.slice(2, 4), 16), b = parseInt(hex.slice(4, 6), 16);
+        const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+        return luminance < 0.12 ? '#3D7BFF' : `#${hex}`;
+    }, [gameState.team.primaryColor]);
+
     return (
-        <div className="min-h-screen font-sans relative" style={{ background: 'var(--apex-darker)', color: 'var(--apex-text)' }}>
+        <div className="min-h-screen font-sans relative" style={{ background: 'var(--apex-darker)', color: 'var(--apex-text)', ['--club-color' as any]: clubColor }}>
+            {!isLiveMatch && <ScreenBackdrop screen={activeScreen} />}
             {/* Fullscreen Match Simulation Overlay */}
             {isLiveMatch && pendingResults && (
                 <FullScreenMatchSimulation
@@ -154,7 +165,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
 
             {/* Regular Layout - Hidden during Fullscreen Live Match Simulation */}
             {!isLiveMatch && (
-                <div className="max-w-md md:max-w-3xl lg:max-w-5xl mx-auto min-h-screen relative shadow-2xl transition-all duration-300" style={{ background: 'var(--apex-dark)' }}>
+                <div className="max-w-md md:max-w-3xl lg:max-w-5xl mx-auto min-h-screen relative z-10 transition-all duration-300">
                     {/* Sticky Banner when Election Screen is minimized/closed to review the club */}
                     {gameState.mandate?.isElectionYear && !isElectionOpen && (
                         <div className="sticky top-0 z-30 bg-gradient-to-r from-amber-600/30 via-slate-900/90 to-amber-600/30 border-b border-amber-500/30 px-4 py-2.5 flex items-center justify-between backdrop-blur-md shadow-lg">
@@ -176,11 +187,16 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                     )}
                     <Header gameState={gameState} onNavigate={setActiveScreen} />
                     <main className="pb-24 overflow-x-hidden min-h-[calc(100vh-140px)]">
-                        <div className="animate-fade-in">
+                        <motion.div
+                            key={activeScreen}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.25, ease: 'easeOut' }}
+                        >
                             <React.Suspense fallback={<div className="flex items-center justify-center py-20"><LoadingSpinner /></div>}>
                                 {renderContent()}
                             </React.Suspense>
-                        </div>
+                        </motion.div>
                     </main>
                     <BottomNav
                         activeScreen={activeScreen}

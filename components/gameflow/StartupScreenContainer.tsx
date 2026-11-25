@@ -6,7 +6,7 @@ export const StartupScreenContainer: React.FC<{children: React.ReactNode}> = ({ 
         <div 
             className="absolute inset-0 z-0 bg-cover bg-center"
             style={{ 
-                backgroundImage: 'url("/bg-inicio.png")',
+                backgroundImage: 'url("/assets/bg/home.webp")',
                 filter: 'brightness(1.0) saturate(1.1)'
             }}
         />

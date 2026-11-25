@@ -6,6 +6,7 @@ import { Trophy, TrendingUp, TrendingDown, ArrowUpRight } from 'lucide-react';
 import { TeamLogo } from '../../../data/teams/helpers';
 import { isSeasonCompleted, getSeasonSummaryData, getMatchKickoffTime } from '../../../services/seasonUtils';
 import { getTeamStadium } from '../../../data/stadiums';
+import { HERO_BANNERS } from '../../ui/ScreenBackdrop';
 
 function isTeamEliminatedFromCup(cup: any, teamId: number): boolean {
     if (!cup) return false;
@@ -69,7 +70,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     if (isSeasonEnd) {
         const summary = getSeasonSummaryData(gameState);
         return (
-            <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#0c1322] via-[#090d16] to-[#060910] border border-amber-500/30 p-5 sm:p-7 shadow-2xl space-y-5 select-none">
+            <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#0c1322]/95 via-[#090d16]/95 to-[#060910]/95 border border-amber-500/30 p-5 sm:p-7 shadow-2xl space-y-5 select-none bg-cover bg-center" style={{ backgroundImage: `linear-gradient(180deg, rgba(6,9,18,0.72), rgba(6,9,18,0.95)), url("${HERO_BANNERS.trophies}")` }}>
                 {/* Ambient Golden Glows */}
                 <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
                 <div className="absolute bottom-0 left-0 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none -ml-20 -mb-20" />
@@ -477,65 +478,65 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     else playButtonText = `⚽ Jugar Fecha ${nextMatch.week}`;
 
     return (
-        <div className="apex-card p-5 sm:p-6 flex flex-col justify-between h-full">
+        <div className="apex-hero p-5 sm:p-6 flex flex-col justify-between h-full" style={{ backgroundImage: `url("${stageInfo.isPlayoffOrCup ? HERO_BANNERS.tournaments : HERO_BANNERS.nextMatch}")` }}>
             {/* Top Bar: Match Label & Competition */}
-            <div className="flex justify-between items-center pb-3 border-b border-white/5 mb-4">
+            <div className="flex justify-between items-center mb-4 gap-2">
                 <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[var(--apex-gold)]" />
-                    <span className="text-[10px] font-bold tracking-wider text-slate-300 uppercase">
+                    <span className="apex-live-dot" />
+                    <span className="font-display text-sm font-bold italic tracking-wide text-white uppercase">
                         Próximo Partido
                     </span>
                 </div>
-                <span className="text-[10px] font-bold text-[var(--apex-gold)] uppercase bg-[var(--apex-gold)]/10 px-2.5 py-0.5 rounded-md border border-[var(--apex-gold)]/20">
+                <span className={`${stageInfo.isPlayoffOrCup ? 'apex-chip apex-chip-premium' : 'apex-chip'} truncate max-w-[60%]`}>
                     {stageInfo.competition} • {stageInfo.isPlayoffOrCup ? stageInfo.stage : `Fecha ${nextMatch.week}`}
                 </span>
             </div>
 
-            {/* Clean Matchup Row */}
+            {/* Matchup Row */}
             <div className="grid grid-cols-11 items-center my-2 w-full">
                 {/* Home Team */}
                 <div className="col-span-5 flex flex-col items-center text-center px-1">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center mb-2">
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center mb-2 drop-shadow-[0_8px_18px_rgba(0,0,0,0.7)]">
                         {homeTeamObj && <TeamLogo team={homeTeamObj} className="w-full h-full object-contain" />}
                     </div>
-                    <span className="text-xs sm:text-sm font-black text-white truncate w-full" title={homeTeamObj?.name}>
+                    <span className="font-display text-lg sm:text-xl font-extrabold uppercase text-white truncate w-full leading-tight" title={homeTeamObj?.name}>
                         {homeTeamObj?.shortName || homeTeamObj?.name || 'Local'}
                     </span>
-                    <span className="text-[9px] font-semibold text-slate-400 mt-0.5">
-                        {homeTeamObj?.id === gameState.team.id ? 'Local (Tu Club)' : 'Local'}
+                    <span className={`text-[9px] font-bold uppercase tracking-wider mt-0.5 ${homeTeamObj?.id === gameState.team.id ? 'text-[var(--apex-brand)]' : 'text-slate-400'}`}>
+                        {homeTeamObj?.id === gameState.team.id ? 'Local · Tu Club' : 'Local'}
                     </span>
                 </div>
 
                 {/* VS Badge */}
                 <div className="col-span-1 flex flex-col items-center justify-center">
-                    <span className="text-xs font-black text-slate-500 bg-black/40 px-2 py-1 rounded-lg border border-white/5">
+                    <span className="font-display text-2xl font-extrabold italic text-brand-gradient">
                         VS
                     </span>
                 </div>
 
                 {/* Away Team */}
                 <div className="col-span-5 flex flex-col items-center text-center px-1">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center mb-2">
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center mb-2 drop-shadow-[0_8px_18px_rgba(0,0,0,0.7)]">
                         {awayTeamObj && <TeamLogo team={awayTeamObj} className="w-full h-full object-contain" />}
                     </div>
-                    <span className="text-xs sm:text-sm font-black text-white truncate w-full" title={awayTeamObj?.name}>
+                    <span className="font-display text-lg sm:text-xl font-extrabold uppercase text-white truncate w-full leading-tight" title={awayTeamObj?.name}>
                         {awayTeamObj?.shortName || awayTeamObj?.name || 'Visitante'}
                     </span>
-                    <span className="text-[9px] font-semibold text-slate-400 mt-0.5">
-                        {awayTeamObj?.id === gameState.team.id ? 'Visitante (Tu Club)' : 'Visitante'}
+                    <span className={`text-[9px] font-bold uppercase tracking-wider mt-0.5 ${awayTeamObj?.id === gameState.team.id ? 'text-[var(--apex-brand)]' : 'text-slate-400'}`}>
+                        {awayTeamObj?.id === gameState.team.id ? 'Visitante · Tu Club' : 'Visitante'}
                     </span>
                 </div>
             </div>
 
             {/* Venue & Time */}
-            <div className="text-center text-[10px] font-medium text-slate-400 my-3">
+            <div className="text-center text-[10px] font-semibold uppercase tracking-wider text-slate-300/80 my-3">
                 {isHome ? (gameState.stadium?.name || gameState.team.stadiumName || getTeamStadium(gameState.team).name) : (opponent?.stadiumName || getTeamStadium(opponent).name)} • {getMatchKickoffTime(nextMatch)}
             </div>
 
             <button 
                 onClick={onPlayMatch}
                 disabled={isSimulating}
-                className={`w-full py-3.5 bg-[var(--apex-gold)] hover:bg-yellow-400 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition-colors flex items-center justify-center gap-2 ${isSimulating ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
+                className={`apex-btn-gold apex-shine w-full py-3.5 text-xs ${isSimulating ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
             >
                 {isSimulating ? (
                     <>

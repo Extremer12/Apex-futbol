@@ -13,20 +13,22 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ gameState, onNavigate }) => {
     return (
         <header 
-            className="sticky top-0 z-30 pt-safe backdrop-blur-2xl bg-[#0A0E17]/80 border-b border-white/[0.06] transition-all"
+            className="sticky top-0 z-30 pt-safe backdrop-blur-xl bg-[#060A16]/70 transition-all"
         >
+            {/* Club-color accent line */}
+            <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, var(--club-color), var(--apex-brand), transparent)', opacity: 0.7 }} />
             <div className="max-w-5xl mx-auto px-4 sm:px-6 py-2.5">
                 <div className="flex justify-between items-center">
-                    {/* Team Info - Direct & Clean, without nested container boxes */}
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 shrink-0 flex items-center justify-center">
+                    {/* Team Info */}
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl" style={{ background: 'radial-gradient(closest-side, color-mix(in srgb, var(--club-color) 35%, transparent), transparent)' }}>
                             <TeamLogo team={gameState.team} className="w-9 h-9 object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]" />
                         </div>
-                        <div>
-                            <h1 className="text-sm sm:text-base font-black tracking-tight text-white uppercase leading-none mb-1 truncate max-w-[150px] sm:max-w-xs">
+                        <div className="min-w-0">
+                            <h1 className="font-display text-lg sm:text-xl font-extrabold tracking-wide text-white uppercase leading-none mb-0.5 truncate max-w-[150px] sm:max-w-xs">
                                 {gameState.team.name}
                             </h1>
-                            <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/40">
+                            <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-[var(--apex-text-secondary)]">
                                 Temporada {gameState.season} • Sem {gameState.currentWeek}
                             </p>
                         </div>
@@ -37,17 +39,17 @@ export const Header: React.FC<HeaderProps> = ({ gameState, onNavigate }) => {
 
                         {/* Date */}
                         <div className="hidden md:flex flex-col items-end">
-                            <span className="text-[8px] font-bold uppercase tracking-[0.15em] text-white/30">Fecha</span>
+                            <span className="text-[8px] font-bold uppercase tracking-[0.15em] text-white/40">Fecha</span>
                             <span className="text-[11px] font-extrabold text-white/90">{formatDate(gameState.currentDate)}</span>
                         </div>
 
                         {/* Balance */}
-                        <div className="flex flex-col items-end">
-                            <span className="text-[8px] font-bold uppercase tracking-[0.15em] text-[var(--apex-gold)]/60">Saldo</span>
+                        <div className="flex flex-col items-end px-2.5 py-1 rounded-lg border border-[var(--apex-gold)]/20 bg-[var(--apex-gold)]/[0.07]">
+                            <span className="text-[8px] font-bold uppercase tracking-[0.15em] text-[var(--apex-gold)]/70">Saldo</span>
                             <AnimatedNumber
                                 value={gameState.finances.balance}
                                 formatter={(n) => formatCurrencyShort(n)}
-                                className="text-xs sm:text-sm font-black text-[var(--apex-gold)] drop-shadow-sm"
+                                className="font-display tabular text-base sm:text-lg font-extrabold leading-none text-premium-gradient"
                             />
                         </div>
 

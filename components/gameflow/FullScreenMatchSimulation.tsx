@@ -4,6 +4,8 @@ import { GameAction } from '../../state/reducer';
 import { TeamLogo } from '../../data/teams/helpers';
 import { getTeamStadium } from '../../data/stadiums';
 import { playGoalChime, playWhistle } from '../../services/soundService';
+import { motion } from 'framer-motion';
+import { FastForward, ChevronRight, Shield } from 'lucide-react';
 
 interface FullScreenMatchSimulationProps {
     gameState: GameState;
@@ -17,42 +19,113 @@ interface FullScreenMatchSimulationProps {
 
 interface ParsedEvent {
     minute: number;
-    type: 'goal' | 'save' | 'card' | 'whistle' | 'normal';
-    text: string;
+    type: 'goal' | 'save' | 'yellow_card' | 'red_card' | 'whistle' | 'normal';
+    rawText: string;
+    cleanText: string;
+    scorerName?: string;
     teamName?: string;
     isHome?: boolean;
+}
+
+function formatCompetitionName(raw?: string, isMidweek?: boolean): string {
+    if (!raw) return isMidweek ? 'Copa Nacional' : 'Liga';
+    const map: Record<string, string> = {
+        Torneo_Apertura: 'Torneo Apertura',
+        Torneo_Clausura: 'Torneo Clausura',
+        Playoffs_Apertura: 'Playoffs Apertura',
+        Playoffs_Clausura: 'Playoffs Clausura',
+        nacional_primer_ascenso: 'Final 1º Ascenso',
+        nacional_reducido: 'Playoff Reducido',
+    };
+    if (map[raw]) return map[raw];
+    return raw.replace(/_/g, ' ');
+}
+
+function parseHexRgb(hex?: string): [number, number, number] | null {
+    const clean = (hex || '').replace('#', '').trim();
+    if (!/^[0-9a-fA-F]{6}$/.test(clean)) return null;
+    return [
+        parseInt(clean.slice(0, 2), 16),
+        parseInt(clean.slice(2, 4), 16),
+        parseInt(clean.slice(4, 6), 16),
+    ];
+}
+
+function ensureVisibleAccent(hex: string | undefined, fallback: string): string {
+    const rgb = parseHexRgb(hex);
+    if (!rgb) return fallback;
+    const lum = (0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]) / 255;
+    return lum < 0.15 ? fallback : `#${(hex || '').replace('#', '')}`;
+}
+
+function resolveMatchColors(home: Team, away: Team): { homeColor: string; awayColor: string } {
+    const homeColor = ensureVisibleAccent(home.primaryColor, '#2DD4FF');
+    let awayColor = ensureVisibleAccent(away.primaryColor, '#FFC940');
+
+    const hRgb = parseHexRgb(homeColor);
+    const aRgb = parseHexRgb(awayColor);
+    if (hRgb && aRgb) {
+        const dist = Math.hypot(hRgb[0] - aRgb[0], hRgb[1] - aRgb[1], hRgb[2] - aRgb[2]);
+        if (dist < 95) {
+            const alt = ensureVisibleAccent(away.secondaryColor, '#FFC940');
+            const altRgb = parseHexRgb(alt);
+            const altDist = altRgb ? Math.hypot(hRgb[0] - altRgb[0], hRgb[1] - altRgb[1], hRgb[2] - altRgb[2]) : 0;
+            awayColor = altDist >= 95 ? alt : '#FFC940';
+        }
+    }
+    return { homeColor, awayColor };
+}
+
+function sanitizeCommentaryText(raw: string): string {
+    return raw
+        // Strip leading minute prefix (e.g. "24' ")
+        .replace(/^\s*\d+'\s*/, '')
+        // Strip raw emojis, broken replacement glyphs and variation selectors
+        .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{FFFD}▯⚽🧤🟨🟥🏟️⏱️🔥]+/gu, '')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+}
+
+function extractScorerFromText(cleanText: string): string | undefined {
+    // Matches patterns like "GOOOOL de Boca Juniors! A. Romero anota..." or "¡GOL! A. Romero..."
+    const afterBang = cleanText.match(/!\s*([A-ZÁÉÍÓÚÑ][A-Za-zÁÉÍÓÚÑáéíóúñ.\s'-]{1,28}?)\s+(?:anota|marca|convierte|define|cabecea|empata|amplía|descuenta|pone)/);
+    if (afterBang?.[1]) return afterBang[1].trim();
+    return undefined;
 }
 
 export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps> = ({
     gameState,
     pendingResults,
     onMatchComplete,
-    dispatch
 }) => {
     const finalResult = pendingResults.playerMatchResult;
 
-    // 1. Resolve match and teams with absolute certainty
-    const homeTeam: Team = (finalResult?.homeTeamId ? gameState.allTeams.find(t => t.id === finalResult.homeTeamId) : null)
-        || gameState.team;
+    const homeTeam: Team =
+        (finalResult?.homeTeamId ? gameState.allTeams.find((t) => t.id === finalResult.homeTeamId) : null) ||
+        gameState.team;
 
-    const awayTeam: Team = (finalResult?.awayTeamId ? gameState.allTeams.find(t => t.id === finalResult.awayTeamId) : null)
-        || gameState.allTeams.find(t => t.id !== homeTeam.id)
-        || gameState.team;
+    const awayTeam: Team =
+        (finalResult?.awayTeamId ? gameState.allTeams.find((t) => t.id === finalResult.awayTeamId) : null) ||
+        gameState.allTeams.find((t) => t.id !== homeTeam.id) ||
+        gameState.team;
 
     const isHome = homeTeam.id === gameState.team.id;
-    const competitionName = finalResult?.competition || (gameState.currentTurn === 'midweek' ? 'Copa Nacional' : 'Liga');
-    const stadiumName = isHome 
-        ? (gameState.stadium?.name || gameState.team.stadiumName || getTeamStadium(gameState.team).name) 
-        : (homeTeam.stadiumName || getTeamStadium(homeTeam).name);
+    const competitionName = formatCompetitionName(finalResult?.competition, gameState.currentTurn === 'midweek');
+    const stadiumName = isHome
+        ? gameState.stadium?.name || gameState.team.stadiumName || getTeamStadium(gameState.team).name
+        : homeTeam.stadiumName || getTeamStadium(homeTeam).name;
 
-    // Check if match had extra time (events after 90')
-    const hasExtraTime = (finalResult?.events || []).some(e => {
+    const { homeColor, awayColor } = React.useMemo(
+        () => resolveMatchColors(homeTeam, awayTeam),
+        [homeTeam, awayTeam]
+    );
+
+    const hasExtraTime = (finalResult?.events || []).some((e) => {
         const m = e.match(/^(\d+)'/);
         return m ? parseInt(m[1], 10) > 90 : false;
     });
     const totalMatchMinutes = hasExtraTime ? 120 : 90;
 
-    // 2. State
     const [minute, setMinute] = useState(0);
     const [displayScore, setDisplayScore] = useState({ home: 0, away: 0 });
     const [isFinished, setIsFinished] = useState(false);
@@ -62,7 +135,7 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
             if (saved === '2') return 2;
             if (saved === '4') return 4;
             return 1;
-        } catch (_) {
+        } catch {
             return 1;
         }
     });
@@ -70,7 +143,6 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
     speedMultiplierRef.current = speedMultiplier;
 
     const currentMinuteRef = useRef(0);
-
     const [activeTab, setActiveTab] = useState<'ticker' | 'stats'>('ticker');
     const [commentary, setCommentary] = useState<ParsedEvent[]>([]);
 
@@ -84,7 +156,7 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
             homeShotsOnTarget: 4,
             awayShotsOnTarget: 3,
             homeFouls: 9,
-            awayFouls: 11
+            awayFouls: 11,
         };
     }, [finalResult?.stats]);
 
@@ -96,87 +168,105 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
         homeShotsOnTarget: 0,
         awayShotsOnTarget: 0,
         homeFouls: 0,
-        awayFouls: 0
+        awayFouls: 0,
     }));
     const [momentum, setMomentum] = useState<number[]>([0]);
     const [isShaking, setIsShaking] = useState(false);
-    const [goalPopup, setGoalPopup] = useState<{ team: string; text: string } | null>(null);
+    const [goalPopup, setGoalPopup] = useState<{
+        team: Team;
+        color: string;
+        minute: number;
+        scorer?: string;
+        text: string;
+    } | null>(null);
 
     const isPausedForGoalRef = useRef(false);
     const stepRef = useRef(0);
-
-    const commentaryEndRef = useRef<HTMLDivElement>(null);
+    const tickerContainerRef = useRef<HTMLDivElement>(null);
     const processedEventsRef = useRef<Set<string>>(new Set());
     const intervalRef = useRef<any>(null);
+    const goalTimeoutRef = useRef<any>(null);
 
-    // Auto-scroll commentary
+    // Smoothly scroll only inside the ticker list container (never jerking the page viewport)
     useEffect(() => {
-        if (commentaryEndRef.current) {
-            commentaryEndRef.current.scrollIntoView({ behavior: 'smooth' });
-        }
+        const el = tickerContainerRef.current;
+        if (!el) return;
+        el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
     }, [commentary]);
 
-    // Parse events into structured format with strict goal detection
-    const parseEvent = (e: string): ParsedEvent => {
-        const minMatch = e.match(/^(\d+)'/);
-        const min = minMatch ? parseInt(minMatch[1], 10) : 0;
+    const parseEvent = React.useCallback(
+        (e: string): ParsedEvent => {
+            const minMatch = e.match(/^(\d+)'/);
+            const min = minMatch ? parseInt(minMatch[1], 10) : 0;
+            const lower = e.toLowerCase();
 
-        // ONLY events with ⚽ are genuine goals (avoid false positives like 'evita el gol')
-        const isGoal = e.includes('⚽');
-        const isSave = e.includes('🧤') || e.toLowerCase().includes('parada') || e.toLowerCase().includes('atajada');
-        const isCard = e.includes('🟨') || e.includes('🟥') || e.toLowerCase().includes('tarjeta') || e.toLowerCase().includes('expulsión');
-        const isWhistle = e.includes('⏱️') || e.toLowerCase().includes('final');
+            const isGoal = e.includes('⚽');
+            const isRedCard = e.includes('🟥') || lower.includes('tarjeta roja') || lower.includes('expulsión') || lower.includes('expulsado');
+            const isYellowCard = !isRedCard && (e.includes('🟨') || lower.includes('tarjeta amarilla') || lower.includes('amonestado'));
+            const isSave = !isGoal && (e.includes('🧤') || lower.includes('parada') || lower.includes('atajada') || lower.includes('reflejo'));
+            const isWhistle = e.includes('⏱️') || lower.includes('final del partido');
 
-        let type: ParsedEvent['type'] = 'normal';
-        if (isGoal) type = 'goal';
-        else if (isSave) type = 'save';
-        else if (isCard) type = 'card';
-        else if (isWhistle) type = 'whistle';
+            let type: ParsedEvent['type'] = 'normal';
+            if (isGoal) type = 'goal';
+            else if (isRedCard) type = 'red_card';
+            else if (isYellowCard) type = 'yellow_card';
+            else if (isSave) type = 'save';
+            else if (isWhistle) type = 'whistle';
 
-        let isHomeAction = false;
-        if (isGoal) {
-            if (e.includes(`GOOOOL de ${homeTeam.name}`) || e.includes(`¡GOL EN PRÓRROGA! ${homeTeam.name}`) || e.includes(`¡GOL DE ${homeTeam.name}`)) {
-                isHomeAction = true;
-            } else if (e.includes(`GOOOOL de ${awayTeam.name}`) || e.includes(`¡GOL EN PRÓRROGA! ${awayTeam.name}`) || e.includes(`¡GOL DE ${awayTeam.name}`)) {
-                isHomeAction = false;
-            } else if (e.includes(homeTeam.name) && !e.includes(awayTeam.name)) {
-                isHomeAction = true;
-            } else if (e.includes(awayTeam.name) && !e.includes(homeTeam.name)) {
-                isHomeAction = false;
+            let isHomeAction = false;
+            if (isGoal) {
+                if (
+                    e.includes(`GOOOOL de ${homeTeam.name}`) ||
+                    e.includes(`¡GOL EN PRÓRROGA! ${homeTeam.name}`) ||
+                    e.includes(`¡GOL DE ${homeTeam.name}`)
+                ) {
+                    isHomeAction = true;
+                } else if (
+                    e.includes(`GOOOOL de ${awayTeam.name}`) ||
+                    e.includes(`¡GOL EN PRÓRROGA! ${awayTeam.name}`) ||
+                    e.includes(`¡GOL DE ${awayTeam.name}`)
+                ) {
+                    isHomeAction = false;
+                } else if (e.includes(homeTeam.name) && !e.includes(awayTeam.name)) {
+                    isHomeAction = true;
+                } else if (e.includes(awayTeam.name) && !e.includes(homeTeam.name)) {
+                    isHomeAction = false;
+                } else {
+                    isHomeAction = homeTeam.squad.some((p) => e.includes(p.name));
+                }
             } else {
-                const hasHomePlayer = homeTeam.squad.some(p => e.includes(p.name));
-                isHomeAction = hasHomePlayer;
+                isHomeAction = e.includes(homeTeam.name);
             }
-        } else {
-            isHomeAction = e.includes(homeTeam.name);
-        }
 
-        return {
-            minute: min,
-            type,
-            text: e,
-            teamName: isHomeAction ? homeTeam.name : awayTeam.name,
-            isHome: isHomeAction
-        };
-    };
+            const cleanText = sanitizeCommentaryText(e);
+            const matchedScorer = finalResult?.scorers?.find((s) => s.minute === min)?.playerName || (isGoal ? extractScorerFromText(cleanText) : undefined);
 
-    // Pre-parsed events
+            return {
+                minute: min,
+                type,
+                rawText: e,
+                cleanText,
+                scorerName: matchedScorer,
+                teamName: isHomeAction ? homeTeam.name : awayTeam.name,
+                isHome: isHomeAction,
+            };
+        },
+        [homeTeam, awayTeam, finalResult?.scorers]
+    );
+
     const allParsedEvents = React.useMemo(() => {
         if (!finalResult?.events) return [];
         return finalResult.events.map(parseEvent);
-    }, [finalResult?.events, homeTeam.name, awayTeam.name]);
-
-    const goalTimeoutRef = useRef<any>(null);
+    }, [finalResult?.events, parseEvent]);
 
     const handleSetSpeed = (spd: 1 | 2 | 4) => {
         speedMultiplierRef.current = spd;
         setSpeedMultiplier(spd);
         try {
             localStorage.setItem('apex_match_speed', spd.toString());
-        } catch (_) {}
+        } catch {}
     };
 
-    // Fast-forward / Skip to end
     const handleSkipToEnd = () => {
         if (intervalRef.current) clearInterval(intervalRef.current);
         if (goalTimeoutRef.current) clearTimeout(goalTimeoutRef.current);
@@ -191,20 +281,21 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
         setStats(targetStats);
         setIsFinished(true);
 
-        const allRemaining = allParsedEvents.filter(e => !processedEventsRef.current.has(e.text));
-        setCommentary(prev => [
+        const allRemaining = allParsedEvents.filter((e) => !processedEventsRef.current.has(e.rawText));
+        allRemaining.forEach((e) => processedEventsRef.current.add(e.rawText));
+        setCommentary((prev) => [
             ...prev,
             ...allRemaining,
             {
                 minute: totalMatchMinutes,
                 type: 'whistle',
-                text: `¡FINAL DEL PARTIDO! ${homeTeam.name} ${finalResult.homeScore} - ${finalResult.awayScore} ${awayTeam.name}`,
-                isHome: false
-            }
+                rawText: '__FT__',
+                cleanText: `Final del partido · ${homeTeam.name} ${finalResult.homeScore} - ${finalResult.awayScore} ${awayTeam.name}`,
+                isHome: false,
+            },
         ]);
     };
 
-    // Main Simulation Loop with Goal Celebration Banners
     useEffect(() => {
         if (!finalResult) {
             onMatchComplete();
@@ -212,7 +303,7 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
         }
 
         const interval = 50;
-        const totalBaseSteps = 10000 / interval; // 200 ticks for 10s base
+        const totalBaseSteps = 10000 / interval;
         const baseMinuteIncrement = totalMatchMinutes / totalBaseSteps;
         stepRef.current = 0;
         currentMinuteRef.current = 0;
@@ -227,65 +318,67 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
                 stepRef.current++;
                 currentMinuteRef.current = Math.min(
                     totalMatchMinutes,
-                    currentMinuteRef.current + (baseMinuteIncrement * (speedMultiplierRef.current || 1))
+                    currentMinuteRef.current + baseMinuteIncrement * (speedMultiplierRef.current || 1)
                 );
                 const currentMinute = Math.floor(currentMinuteRef.current);
                 setMinute(currentMinute);
 
-                // Process pending events up to current minute
                 const pendingEvents = allParsedEvents.filter(
-                    ev => ev.minute <= currentMinute && !processedEventsRef.current.has(ev.text)
+                    (ev) => ev.minute <= currentMinute && !processedEventsRef.current.has(ev.rawText)
                 );
 
                 if (pendingEvents.length > 0) {
                     for (let i = 0; i < pendingEvents.length; i++) {
                         const ev = pendingEvents[i];
-                        processedEventsRef.current.add(ev.text);
-                        setCommentary(prev => [...prev, ev]);
+                        processedEventsRef.current.add(ev.rawText);
+                        setCommentary((prev) => [...prev, ev]);
 
                         if (ev.type === 'goal' || ev.type === 'save') {
-                            setStats(prev => ({
+                            setStats((prev) => ({
                                 ...prev,
                                 homeShots: ev.isHome ? Math.min(targetStats.homeShots, prev.homeShots + 1) : prev.homeShots,
                                 awayShots: !ev.isHome ? Math.min(targetStats.awayShots, prev.awayShots + 1) : prev.awayShots,
-                                homeShotsOnTarget: ev.isHome ? Math.min(targetStats.homeShotsOnTarget, prev.homeShotsOnTarget + 1) : prev.homeShotsOnTarget,
-                                awayShotsOnTarget: !ev.isHome ? Math.min(targetStats.awayShotsOnTarget, prev.awayShotsOnTarget + 1) : prev.awayShotsOnTarget
+                                homeShotsOnTarget: ev.isHome
+                                    ? Math.min(targetStats.homeShotsOnTarget, prev.homeShotsOnTarget + 1)
+                                    : prev.homeShotsOnTarget,
+                                awayShotsOnTarget: !ev.isHome
+                                    ? Math.min(targetStats.awayShotsOnTarget, prev.awayShotsOnTarget + 1)
+                                    : prev.awayShotsOnTarget,
                             }));
-                        } else if (ev.type === 'card') {
-                            setStats(prev => ({
+                        } else if (ev.type === 'yellow_card' || ev.type === 'red_card') {
+                            setStats((prev) => ({
                                 ...prev,
                                 homeFouls: ev.isHome ? Math.min(targetStats.homeFouls, prev.homeFouls + 1) : prev.homeFouls,
-                                awayFouls: !ev.isHome ? Math.min(targetStats.awayFouls, prev.awayFouls + 1) : prev.awayFouls
+                                awayFouls: !ev.isHome ? Math.min(targetStats.awayFouls, prev.awayFouls + 1) : prev.awayFouls,
                             }));
                         }
 
-                        // If a goal happens, pause briefly for broadcast celebration banner
                         if (ev.type === 'goal') {
                             isPausedForGoalRef.current = true;
                             clearInterval(intervalRef.current);
 
-                            // Pin the minute to the goal minute
                             currentMinuteRef.current = ev.minute;
                             setMinute(ev.minute);
 
-                            // Update score immediately with genuine goals up to this event's minute
                             const goalsUpToNow = allParsedEvents.filter(
-                                g => g.type === 'goal' && processedEventsRef.current.has(g.text)
+                                (g) => g.type === 'goal' && processedEventsRef.current.has(g.rawText)
                             );
                             setDisplayScore({
-                                home: goalsUpToNow.filter(g => g.isHome).length,
-                                away: goalsUpToNow.filter(g => !g.isHome).length
+                                home: goalsUpToNow.filter((g) => g.isHome).length,
+                                away: goalsUpToNow.filter((g) => !g.isHome).length,
                             });
 
-                            // Trigger celebration popup, sound, and shake
                             playGoalChime();
                             setIsShaking(true);
                             setGoalPopup({
-                                team: ev.teamName || (ev.isHome ? homeTeam.name : awayTeam.name),
-                                text: ev.text.replace(/^\d+'\s*/, '')
+                                team: ev.isHome ? homeTeam : awayTeam,
+                                color: ev.isHome ? homeColor : awayColor,
+                                minute: ev.minute,
+                                scorer: ev.scorerName,
+                                text: ev.cleanText,
                             });
 
-                            const celebrationDuration = Math.max(1000, 1800 / (speedMultiplierRef.current === 4 ? 2 : 1));
+                            const celebrationDuration = Math.max(1000, 1750 / (speedMultiplierRef.current === 4 ? 2 : 1));
                             goalTimeoutRef.current = setTimeout(() => {
                                 setIsShaking(false);
                                 setGoalPopup(null);
@@ -293,55 +386,51 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
                                 startSimulationLoop();
                             }, celebrationDuration);
 
-                            return; // Stop processing further events in this tick
+                            return;
                         }
                     }
 
-                    // Update score for non-goal events tick
                     const goalsSoFar = allParsedEvents.filter(
-                        ev => ev.type === 'goal' && processedEventsRef.current.has(ev.text)
+                        (ev) => ev.type === 'goal' && processedEventsRef.current.has(ev.rawText)
                     );
                     setDisplayScore({
-                        home: goalsSoFar.filter(g => g.isHome).length,
-                        away: goalsSoFar.filter(g => !g.isHome).length
+                        home: goalsSoFar.filter((g) => g.isHome).length,
+                        away: goalsSoFar.filter((g) => !g.isHome).length,
                     });
                 }
 
-                // Dynamic possession & progressive stats toward targets
                 if (stepRef.current % 4 === 0) {
                     const matchProgress = Math.min(1, currentMinute / totalMatchMinutes);
-                    setStats(prev => {
-                        const shift = (Math.random() * 4 - 2);
+                    setStats((prev) => {
+                        const shift = Math.random() * 4 - 2;
                         const currentTargetPoss = targetStats.homePossession;
                         const newHomePoss = Math.min(85, Math.max(15, Math.round(currentTargetPoss + shift)));
-
-                        const expectedHomeShots = Math.max(prev.homeShots, Math.round(targetStats.homeShots * matchProgress));
-                        const expectedAwayShots = Math.max(prev.awayShots, Math.round(targetStats.awayShots * matchProgress));
-                        const expectedHomeTarget = Math.max(prev.homeShotsOnTarget, Math.round(targetStats.homeShotsOnTarget * matchProgress));
-                        const expectedAwayTarget = Math.max(prev.awayShotsOnTarget, Math.round(targetStats.awayShotsOnTarget * matchProgress));
-                        const expectedHomeFouls = Math.max(prev.homeFouls, Math.round(targetStats.homeFouls * matchProgress));
-                        const expectedAwayFouls = Math.max(prev.awayFouls, Math.round(targetStats.awayFouls * matchProgress));
 
                         return {
                             homePossession: newHomePoss,
                             awayPossession: 100 - newHomePoss,
-                            homeShots: expectedHomeShots,
-                            awayShots: expectedAwayShots,
-                            homeShotsOnTarget: expectedHomeTarget,
-                            awayShotsOnTarget: expectedAwayTarget,
-                            homeFouls: expectedHomeFouls,
-                            awayFouls: expectedAwayFouls
+                            homeShots: Math.max(prev.homeShots, Math.round(targetStats.homeShots * matchProgress)),
+                            awayShots: Math.max(prev.awayShots, Math.round(targetStats.awayShots * matchProgress)),
+                            homeShotsOnTarget: Math.max(
+                                prev.homeShotsOnTarget,
+                                Math.round(targetStats.homeShotsOnTarget * matchProgress)
+                            ),
+                            awayShotsOnTarget: Math.max(
+                                prev.awayShotsOnTarget,
+                                Math.round(targetStats.awayShotsOnTarget * matchProgress)
+                            ),
+                            homeFouls: Math.max(prev.homeFouls, Math.round(targetStats.homeFouls * matchProgress)),
+                            awayFouls: Math.max(prev.awayFouls, Math.round(targetStats.awayFouls * matchProgress)),
                         };
                     });
 
-                    setMomentum(prev => {
+                    setMomentum((prev) => {
                         const last = prev[prev.length - 1] || 0;
-                        const change = (Math.random() * 20 - 10);
-                        return [...prev.slice(-25), Math.max(-50, Math.min(50, last + change))];
+                        const change = Math.random() * 20 - 10;
+                        return [...prev.slice(-24), Math.max(-50, Math.min(50, last + change))];
                     });
                 }
 
-                // Match finished
                 if (currentMinuteRef.current >= totalMatchMinutes) {
                     clearInterval(intervalRef.current);
                     currentMinuteRef.current = totalMatchMinutes;
@@ -351,14 +440,15 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
                     setIsFinished(true);
                     playWhistle();
 
-                    setCommentary(prev => [
+                    setCommentary((prev) => [
                         ...prev,
                         {
                             minute: totalMatchMinutes,
                             type: 'whistle',
-                            text: `¡FINAL DEL PARTIDO! ${homeTeam.name} ${finalResult.homeScore} - ${finalResult.awayScore} ${awayTeam.name}`,
-                            isHome: false
-                        }
+                            rawText: '__FT__',
+                            cleanText: `Final del partido · ${homeTeam.name} ${finalResult.homeScore} - ${finalResult.awayScore} ${awayTeam.name}`,
+                            isHome: false,
+                        },
                     ]);
                 }
             }, interval);
@@ -370,340 +460,614 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
             if (intervalRef.current) clearInterval(intervalRef.current);
             if (goalTimeoutRef.current) clearTimeout(goalTimeoutRef.current);
         };
-    }, [finalResult, targetStats, allParsedEvents, totalMatchMinutes, homeTeam, awayTeam, onMatchComplete]);
+    }, [finalResult, targetStats, allParsedEvents, totalMatchMinutes, homeTeam, awayTeam, homeColor, awayColor, onMatchComplete]);
 
-    // Outcome determination for player
-    const playerWon = (isHome && displayScore.home > displayScore.away) || (!isHome && displayScore.away > displayScore.home);
+    const playerWon =
+        (isHome && displayScore.home > displayScore.away) || (!isHome && displayScore.away > displayScore.home);
     const isDraw = displayScore.home === displayScore.away;
 
+    // Live goals scored up to current clock for scoreboard summary & timeline pins
+    const liveGoals = commentary.filter((e) => e.type === 'goal');
+    const homeGoals = liveGoals.filter((e) => e.isHome);
+    const awayGoals = liveGoals.filter((e) => !e.isHome);
+    const timelineEvents = commentary.filter(
+        (e) => e.type === 'goal' || e.type === 'yellow_card' || e.type === 'red_card'
+    );
+    const progressPct = Math.min(100, Math.max(0, (minute / totalMatchMinutes) * 100));
+
     return (
-        <div className={`fixed inset-0 z-50 flex flex-col bg-[#06090e] text-slate-100 overflow-hidden select-none ${isShaking ? 'animate-screen-shake' : ''}`}>
-            {/* Goal Explosion Banner */}
+        <div
+            className={`fixed inset-0 z-50 flex flex-col bg-[#04060E] text-white overflow-hidden select-none ${
+                isShaking ? 'animate-screen-shake' : ''
+            }`}
+        >
+            {/* Broadcast Goal Overlay */}
             {goalPopup && (
-                <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/75 backdrop-blur-md animate-fade-in pointer-events-none px-4">
-                    <div className="text-center space-y-3 transform animate-scale-in">
-                        <div className="text-xs font-black tracking-[0.4em] uppercase text-yellow-400 bg-yellow-500/20 px-4 py-1.5 rounded-full inline-block border border-yellow-500/30">
-                            Apex Matchday Live
+                <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#03050C]/85 backdrop-blur-md animate-fade-in pointer-events-none px-5">
+                    <div
+                        aria-hidden
+                        className="absolute w-96 h-96 rounded-full blur-3xl opacity-45"
+                        style={{
+                            background: `radial-gradient(circle, ${goalPopup.color}, rgba(255,201,64,0.35), transparent 70%)`,
+                        }}
+                    />
+                    <div className="relative text-center space-y-3 animate-scale-in max-w-md">
+                        <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto flex items-center justify-center drop-shadow-[0_12px_28px_rgba(0,0,0,0.85)]">
+                            <TeamLogo team={goalPopup.team} className="w-full h-full object-contain" />
                         </div>
-                        <h1 className="text-6xl sm:text-8xl md:text-9xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-500 drop-shadow-[0_0_40px_rgba(234,179,8,0.7)]">
-                            ¡GOOOOOL!
-                        </h1>
-                        <p className="text-xl sm:text-3xl font-black text-white uppercase tracking-wider drop-shadow-md">
-                            {goalPopup.team}
+                        <p className="text-[10px] font-extrabold tracking-[0.38em] uppercase text-[var(--apex-gold)]">
+                            Minuto {goalPopup.minute}&apos; · Gol Oficial
                         </p>
-                        <p className="text-sm text-slate-300 max-w-md mx-auto line-clamp-2">
+                        <h1 className="font-display text-6xl sm:text-8xl font-extrabold italic uppercase tracking-wide text-premium-gradient leading-none drop-shadow-[0_6px_30px_rgba(255,201,64,0.45)]">
+                            ¡Gooool!
+                        </h1>
+                        <p className="font-display text-2xl sm:text-3xl font-extrabold uppercase tracking-wide text-white">
+                            {goalPopup.team.name}
+                        </p>
+                        {goalPopup.scorer && (
+                            <p className="text-sm font-extrabold text-[var(--apex-gold-light)] uppercase tracking-wider">
+                                {goalPopup.scorer}
+                            </p>
+                        )}
+                        <p className="text-xs text-[var(--apex-text-secondary)] max-w-sm mx-auto leading-relaxed">
                             {goalPopup.text}
                         </p>
                     </div>
                 </div>
             )}
 
-            {/* Background Atmosphere */}
-            <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] bg-gradient-to-b from-yellow-500/10 via-emerald-500/5 to-transparent blur-3xl rounded-full" />
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900/40 via-[#070b13] to-[#040609]" />
+            {/* Stadium Pitch Backdrop + Dual Team Ambient Lights */}
+            <div aria-hidden className="fixed inset-0 pointer-events-none overflow-hidden">
+                <div
+                    className="absolute inset-0 bg-cover bg-top opacity-55"
+                    style={{ backgroundImage: 'url("/assets/bg/match.webp")' }}
+                />
+                <div
+                    className="absolute inset-0"
+                    style={{
+                        background:
+                            'linear-gradient(180deg, rgba(4,6,14,0.55) 0%, rgba(4,6,14,0.80) 32%, rgba(4,6,14,0.96) 65%, #04060E 100%)',
+                    }}
+                />
+                <div
+                    className="absolute -top-28 left-0 w-1/2 h-80 rounded-full blur-3xl opacity-30"
+                    style={{ background: `radial-gradient(closest-side, ${homeColor}, transparent)` }}
+                />
+                <div
+                    className="absolute -top-28 right-0 w-1/2 h-80 rounded-full blur-3xl opacity-30"
+                    style={{ background: `radial-gradient(closest-side, ${awayColor}, transparent)` }}
+                />
+                <div className="apex-grain" />
             </div>
 
-            {/* 1. TOP BROADCAST BAR */}
-            <header className="relative z-10 flex items-center justify-between px-3 sm:px-8 py-2.5 sm:py-3 border-b border-white/10 bg-slate-950/85 backdrop-blur-md">
-                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                    <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 rounded-full bg-red-500/20 border border-red-500/40 shrink-0">
-                        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                        <span className="text-[10px] font-black tracking-widest text-red-400 uppercase">
-                            {isFinished ? 'FINALIZADO' : 'EN VIVO'}
-                        </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs font-semibold text-slate-300 truncate">
-                        <span className="text-[var(--apex-gold)] font-bold">{competitionName}</span>
-                        {finalResult?.leg && (
-                            <span className="hidden xs:inline px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                                {finalResult.leg === 1 ? 'Ida' : 'Vuelta'}
-                            </span>
-                        )}
-                        <span className="text-slate-600 hidden sm:inline">•</span>
-                        <span className="text-slate-400 hidden sm:inline truncate max-w-[200px]">{stadiumName}</span>
-                    </div>
-                </div>
-
-                {/* Matchday Controls & Fast Forward */}
-                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                    {/* Live Speed Controls */}
-                    {!isFinished && (
-                        <div className="flex items-center gap-0.5 sm:gap-1 bg-slate-900/90 border border-white/10 rounded-xl p-0.5 sm:p-1 shadow-sm">
-                            {([1, 2, 4] as const).map(spd => (
-                                <button
-                                    key={spd}
-                                    onClick={() => handleSetSpeed(spd)}
-                                    className={`px-2 sm:px-2.5 py-1 rounded-lg text-[10px] font-black font-mono transition-all ${
-                                        speedMultiplier === spd
-                                            ? 'bg-yellow-500 text-slate-950 shadow-sm shadow-yellow-500/30'
-                                            : 'text-slate-400 hover:text-white hover:bg-white/5'
-                                    }`}
-                                    title={`Velocidad ${spd}x`}
-                                >
-                                    {spd}x
-                                </button>
-                            ))}
-                        </div>
-                    )}
-
-                    {/* Match Complete Header Button */}
-                    {isFinished && (
-                        <button
-                            onClick={onMatchComplete}
-                            className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-gradient-to-r from-yellow-500 to-amber-600 text-slate-950 font-black text-xs uppercase tracking-wider hover:brightness-110 shadow-lg shadow-yellow-500/20 transition-all animate-pulse"
+            {/* 1. TOP BROADCAST HEADER */}
+            <header className="relative z-10 pt-safe border-b border-white/[0.07] bg-[#050814]/75 backdrop-blur-xl">
+                <div className="max-w-5xl mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                        <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest border shrink-0 ${
+                                isFinished
+                                    ? 'bg-white/10 border-white/20 text-white'
+                                    : 'bg-[var(--apex-red)]/15 border-[var(--apex-red)]/40 text-[#FF8CA8]'
+                            }`}
                         >
-                            <span>Continuar</span>
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-                            </svg>
-                        </button>
+                            {!isFinished && <span className="w-1.5 h-1.5 rounded-full bg-[var(--apex-red)] animate-pulse" />}
+                            <span>{isFinished ? 'Finalizado' : minute === 45 ? 'Entretiempo' : 'En Vivo'}</span>
+                        </span>
+
+                        <div className="flex items-center gap-2 min-w-0 truncate">
+                            <span className="font-display text-sm sm:text-base font-extrabold uppercase tracking-wide text-[var(--apex-gold)] truncate">
+                                {competitionName}
+                            </span>
+                            {finalResult?.leg && (
+                                <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-[var(--apex-brand)]/15 text-[#9BEFFF] border border-[var(--apex-brand)]/30 shrink-0">
+                                    {finalResult.leg === 1 ? 'Ida' : 'Vuelta'}
+                                </span>
+                            )}
+                            <span className="text-white/20 hidden sm:inline">•</span>
+                            <span className="text-xs text-[var(--apex-text-secondary)] hidden sm:inline truncate">
+                                {stadiumName}
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Speed Selector */}
+                    {!isFinished && (
+                        <div className="flex items-center gap-1 bg-[#0A1022] border border-white/10 rounded-xl p-1 shrink-0">
+                            {([1, 2, 4] as const).map((spd) => {
+                                const active = speedMultiplier === spd;
+                                return (
+                                    <button
+                                        key={spd}
+                                        type="button"
+                                        onClick={() => handleSetSpeed(spd)}
+                                        className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold tabular transition-all cursor-pointer ${
+                                            active
+                                                ? 'bg-[var(--apex-gold)] text-[#1A1204] shadow-[0_0_12px_rgba(255,201,64,0.4)]'
+                                                : 'text-[var(--apex-text-secondary)] hover:text-white'
+                                        }`}
+                                        title={`Velocidad ${spd}x`}
+                                    >
+                                        {spd}x
+                                    </button>
+                                );
+                            })}
+                        </div>
                     )}
                 </div>
             </header>
 
-            {/* 2. THE SCOREBOARD BANNER (HERO) */}
-            <section className="relative z-10 px-3 sm:px-8 py-5 sm:py-7 border-b border-white/5 bg-gradient-to-b from-slate-900/70 via-slate-900/40 to-transparent">
-                <div className="max-w-5xl mx-auto grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-6 w-full">
-                    {/* Home Team */}
-                    <div className="min-w-0 w-full flex flex-col items-center sm:items-end text-center sm:text-right overflow-hidden">
-                        <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 shrink-0 flex items-center justify-center mb-1.5 sm:mb-2.5 drop-shadow-[0_4px_20px_rgba(0,0,0,0.7)]">
-                            <TeamLogo team={homeTeam} />
-                        </div>
-                        <h2 className="text-sm sm:text-xl md:text-2xl font-black tracking-tight text-white truncate max-w-full">
-                            {homeTeam.name}
-                        </h2>
-                        <div className="text-[10px] sm:text-xs text-slate-400 font-semibold mt-0.5 hidden sm:block truncate max-w-full">
-                            {homeTeam.coach?.style || 'Equilibrado'} • {homeTeam.coach?.preferredFormation || '4-3-3'}
-                        </div>
-                        {homeTeam.id === gameState.team.id && (
-                            <span className="mt-1 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-[var(--apex-gold)]/10 text-[var(--apex-gold)] border border-[var(--apex-gold)]/30 shrink-0">
-                                Tu Club
-                            </span>
-                        )}
-                    </div>
-
-                    {/* Score Center Panel */}
-                    <div className="flex flex-col items-center shrink-0 px-2 sm:px-4">
-                        <div className="flex items-center gap-2 sm:gap-4 px-3 sm:px-7 py-2 sm:py-3.5 rounded-2xl bg-slate-950/90 border-2 border-slate-800/80 shadow-2xl backdrop-blur-xl">
-                            <span className={`text-3xl sm:text-6xl font-mono font-black tracking-tight text-white ${isFinished ? 'text-yellow-400' : ''}`}>
-                                {displayScore.home}
-                            </span>
-                            <span className="text-slate-600 text-xl sm:text-3xl font-light">-</span>
-                            <span className={`text-3xl sm:text-6xl font-mono font-black tracking-tight text-white ${isFinished ? 'text-yellow-400' : ''}`}>
-                                {displayScore.away}
-                            </span>
-                        </div>
-
-                        {/* Minute / Status Badge */}
-                        <div className="mt-2.5">
-                            {isFinished ? (
-                                <div className={`px-3 py-1 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest shadow-lg ${
-                                    playerWon
-                                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-emerald-500/20'
-                                        : isDraw
-                                        ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/40 shadow-yellow-500/20'
-                                        : 'bg-red-500/20 text-red-300 border border-red-500/40 shadow-red-500/20'
-                                }`}>
-                                    {playerWon ? '¡Victoria!' : isDraw ? 'Empate' : 'Derrota'} • {totalMatchMinutes}' Final
-                                </div>
+            {/* 2. TV SCOREBUG HERO */}
+            <section className="relative z-10 px-4 sm:px-6 pt-4 pb-3 border-b border-white/[0.07]">
+                <div className="max-w-3xl mx-auto space-y-3">
+                    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-6">
+                        {/* Home Team */}
+                        <div className="min-w-0 flex flex-col items-center sm:items-end text-center sm:text-right">
+                            <div
+                                className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl p-2 flex items-center justify-center mb-1.5"
+                                style={{
+                                    background: `radial-gradient(closest-side, color-mix(in srgb, ${homeColor} 32%, transparent), transparent)`,
+                                }}
+                            >
+                                <TeamLogo
+                                    team={homeTeam}
+                                    className="w-full h-full object-contain drop-shadow-[0_6px_16px_rgba(0,0,0,0.8)]"
+                                />
+                            </div>
+                            <h2 className="font-display text-lg sm:text-2xl font-extrabold uppercase tracking-wide text-white truncate max-w-full leading-tight">
+                                {homeTeam.name}
+                            </h2>
+                            {homeTeam.id === gameState.team.id ? (
+                                <span className="mt-1 px-2 py-0.5 rounded-full text-[8px] font-extrabold uppercase tracking-widest bg-[var(--apex-gold)]/15 text-[var(--apex-gold-light)] border border-[var(--apex-gold)]/35">
+                                    Tu Club
+                                </span>
                             ) : (
-                                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300">
-                                    <span className="w-2 h-2 rounded-full bg-yellow-400 animate-ping" />
-                                    <span>{minute === 45 ? 'Entretiempo' : `${minute}'`}</span>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Derby Badge & Stadium Attendance */}
-                        <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 mt-2">
-                            {targetStats?.isDerby && (
-                                <span className="px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-red-600/30 to-amber-600/30 text-amber-300 border border-amber-500/40 shadow-sm shadow-red-500/20 animate-pulse">
-                                    🔥 {targetStats.derbyName || 'Clásico Histórico'}
-                                </span>
-                            )}
-                            {targetStats?.stadiumAttendance && (
-                                <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-slate-400 bg-slate-900/80 border border-slate-800">
-                                    🏟️ {targetStats.stadiumAttendance.toLocaleString()} hinchas ({targetStats.stadiumOccupancyPct}% aforo)
+                                <span className="mt-1 text-[10px] font-bold uppercase tracking-wider text-[var(--apex-text-muted)]">
+                                    Local
                                 </span>
                             )}
                         </div>
 
-                        {finalResult?.aggregateScore && (
-                            <div className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-cyan-300 bg-cyan-950/60 px-3 py-1 rounded-full border border-cyan-500/30 mt-1.5 animate-fade-in">
-                                Marcador Global: {finalResult.aggregateScore.home} - {finalResult.aggregateScore.away}
-                            </div>
-                        )}
+                        {/* Center Score Housing */}
+                        <div className="flex flex-col items-center shrink-0">
+                            <div
+                                className="relative flex items-center gap-3 sm:gap-5 px-4 sm:px-7 py-2 sm:py-3 rounded-2xl overflow-hidden"
+                                style={{
+                                    background: 'linear-gradient(180deg, rgba(16, 24, 48, 0.92), rgba(7, 11, 22, 0.96))',
+                                    border: '1px solid rgba(140, 180, 255, 0.18)',
+                                    boxShadow: '0 16px 36px -12px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.08)',
+                                }}
+                            >
+                                {/* Left & Right Team Color Bars */}
+                                <span
+                                    aria-hidden
+                                    className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full"
+                                    style={{ background: homeColor, boxShadow: `0 0 10px ${homeColor}` }}
+                                />
+                                <span
+                                    aria-hidden
+                                    className="absolute right-0 top-2 bottom-2 w-1 rounded-l-full"
+                                    style={{ background: awayColor, boxShadow: `0 0 10px ${awayColor}` }}
+                                />
 
-                        {isFinished && finalResult?.penalties && (
-                            <div className="text-[10px] sm:text-xs font-bold text-yellow-400 mt-1 animate-fade-in">
-                                Penales: {finalResult.penalties.home} - {finalResult.penalties.away}
+                                <span
+                                    className={`font-display tabular text-4xl sm:text-6xl font-extrabold leading-none ${
+                                        isFinished && displayScore.home > displayScore.away
+                                            ? 'text-[var(--apex-gold-light)]'
+                                            : 'text-white'
+                                    }`}
+                                >
+                                    {displayScore.home}
+                                </span>
+                                <span className="font-display text-xl sm:text-3xl font-bold text-white/30">:</span>
+                                <span
+                                    className={`font-display tabular text-4xl sm:text-6xl font-extrabold leading-none ${
+                                        isFinished && displayScore.away > displayScore.home
+                                            ? 'text-[var(--apex-gold-light)]'
+                                            : 'text-white'
+                                    }`}
+                                >
+                                    {displayScore.away}
+                                </span>
                             </div>
-                        )}
+
+                            {/* Live Clock / Final Outcome Pill */}
+                            <div className="mt-2">
+                                {isFinished ? (
+                                    <span
+                                        className={`inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-widest border ${
+                                            playerWon
+                                                ? 'bg-[var(--apex-green)]/15 text-[var(--apex-green-light)] border-[var(--apex-green)]/40'
+                                                : isDraw
+                                                ? 'bg-[var(--apex-gold)]/15 text-[var(--apex-gold-light)] border-[var(--apex-gold)]/40'
+                                                : 'bg-[var(--apex-red)]/15 text-[#FF8CA8] border-[var(--apex-red)]/40'
+                                        }`}
+                                    >
+                                        {playerWon ? '¡Victoria!' : isDraw ? 'Empate' : 'Derrota'} · {totalMatchMinutes}&apos;
+                                    </span>
+                                ) : (
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#0D1428] border border-[var(--apex-brand)]/35 text-xs font-display tabular font-extrabold text-[#9BEFFF]">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--apex-brand)] animate-ping" />
+                                        <span>{minute === 45 ? 'ET' : `${minute}'`}</span>
+                                    </span>
+                                )}
+                            </div>
+
+                            {finalResult?.aggregateScore && (
+                                <span className="mt-1 text-[10px] font-extrabold uppercase tracking-wider text-[#9BEFFF]">
+                                    Global: {finalResult.aggregateScore.home} - {finalResult.aggregateScore.away}
+                                </span>
+                            )}
+                            {isFinished && finalResult?.penalties && (
+                                <span className="mt-0.5 text-[10px] font-extrabold uppercase tracking-wider text-[var(--apex-gold)]">
+                                    Penales: {finalResult.penalties.home} - {finalResult.penalties.away}
+                                </span>
+                            )}
+                        </div>
+
+                        {/* Away Team */}
+                        <div className="min-w-0 flex flex-col items-center sm:items-start text-center sm:text-left">
+                            <div
+                                className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl p-2 flex items-center justify-center mb-1.5"
+                                style={{
+                                    background: `radial-gradient(closest-side, color-mix(in srgb, ${awayColor} 32%, transparent), transparent)`,
+                                }}
+                            >
+                                <TeamLogo
+                                    team={awayTeam}
+                                    className="w-full h-full object-contain drop-shadow-[0_6px_16px_rgba(0,0,0,0.8)]"
+                                />
+                            </div>
+                            <h2 className="font-display text-lg sm:text-2xl font-extrabold uppercase tracking-wide text-white truncate max-w-full leading-tight">
+                                {awayTeam.name}
+                            </h2>
+                            {awayTeam.id === gameState.team.id ? (
+                                <span className="mt-1 px-2 py-0.5 rounded-full text-[8px] font-extrabold uppercase tracking-widest bg-[var(--apex-gold)]/15 text-[var(--apex-gold-light)] border border-[var(--apex-gold)]/35">
+                                    Tu Club
+                                </span>
+                            ) : (
+                                <span className="mt-1 text-[10px] font-bold uppercase tracking-wider text-[var(--apex-text-muted)]">
+                                    Visitante
+                                </span>
+                            )}
+                        </div>
                     </div>
 
-                    {/* Away Team */}
-                    <div className="min-w-0 w-full flex flex-col items-center sm:items-start text-center sm:text-left overflow-hidden">
-                        <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 shrink-0 flex items-center justify-center mb-1.5 sm:mb-2.5 drop-shadow-[0_4px_20px_rgba(0,0,0,0.7)]">
-                            <TeamLogo team={awayTeam} />
+                    {/* Live Goal Scorers Summary under Scoreboard */}
+                    {liveGoals.length > 0 && (
+                        <div className="grid grid-cols-2 gap-4 pt-1.5 border-t border-white/[0.06] text-[11px]">
+                            <div className="flex flex-wrap items-center justify-center sm:justify-end gap-x-2.5 gap-y-0.5 text-right">
+                                {homeGoals.map((g, i) => (
+                                    <span key={i} className="text-slate-300 font-semibold">
+                                        {g.scorerName || 'Gol'}{' '}
+                                        <strong className="text-[var(--apex-gold)] tabular">{g.minute}&apos;</strong>
+                                    </span>
+                                ))}
+                            </div>
+                            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-2.5 gap-y-0.5 text-left">
+                                {awayGoals.map((g, i) => (
+                                    <span key={i} className="text-slate-300 font-semibold">
+                                        {g.scorerName || 'Gol'}{' '}
+                                        <strong className="text-[var(--apex-gold)] tabular">{g.minute}&apos;</strong>
+                                    </span>
+                                ))}
+                            </div>
                         </div>
-                        <h2 className="text-sm sm:text-xl md:text-2xl font-black tracking-tight text-white truncate max-w-full">
-                            {awayTeam.name}
-                        </h2>
-                        <div className="text-[10px] sm:text-xs text-slate-400 font-semibold mt-0.5 hidden sm:block truncate max-w-full">
-                            {awayTeam.coach?.style || 'Equilibrado'} • {awayTeam.coach?.preferredFormation || '4-3-3'}
+                    )}
+
+                    {/* Match Timeline Progress Bar (0' — 45' — 90') */}
+                    <div className="pt-1">
+                        <div className="relative h-1.5 rounded-full bg-white/[0.07] overflow-visible">
+                            {/* Half-time marker */}
+                            <span
+                                aria-hidden
+                                className="absolute top-0 bottom-0 w-px bg-white/20"
+                                style={{ left: `${(45 / totalMatchMinutes) * 100}%` }}
+                            />
+                            {/* Active progress fill */}
+                            <div
+                                className="h-full rounded-full transition-all duration-150"
+                                style={{
+                                    width: `${progressPct}%`,
+                                    background: 'linear-gradient(90deg, var(--apex-brand), var(--apex-gold))',
+                                }}
+                            />
+                            {/* Event pins */}
+                            {timelineEvents.map((ev, i) => {
+                                const leftPct = Math.min(99, Math.max(1, (ev.minute / totalMatchMinutes) * 100));
+                                const pinColor =
+                                    ev.type === 'goal'
+                                        ? '#FFC940'
+                                        : ev.type === 'red_card'
+                                        ? '#FF3D6E'
+                                        : '#FACC15';
+                                return (
+                                    <span
+                                        key={i}
+                                        title={`${ev.minute}'`}
+                                        className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2 h-2 rounded-full border border-[#04060E]"
+                                        style={{ left: `${leftPct}%`, background: pinColor }}
+                                    />
+                                );
+                            })}
                         </div>
-                        {awayTeam.id === gameState.team.id && (
-                            <span className="mt-1 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-[var(--apex-gold)]/10 text-[var(--apex-gold)] border border-[var(--apex-gold)]/30 shrink-0">
-                                Tu Club
-                            </span>
-                        )}
                     </div>
                 </div>
             </section>
 
             {/* 3. MAIN BODY (Commentary Ticker & Live Stats) */}
-            <main className="relative z-10 flex-1 flex flex-col max-w-5xl w-full mx-auto p-4 sm:p-6 overflow-hidden">
-                {/* Mobile Tab Bar */}
-                <div className="flex md:hidden items-center justify-center gap-2 mb-3">
-                    <button
-                        onClick={() => setActiveTab('ticker')}
-                        className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${activeTab === 'ticker' ? 'bg-slate-800 text-white border border-slate-700' : 'text-slate-400'}`}
-                    >
-                        Minuto a Minuto ({commentary.length})
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('stats')}
-                        className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${activeTab === 'stats' ? 'bg-slate-800 text-white border border-slate-700' : 'text-slate-400'}`}
-                    >
-                        Estadísticas
-                    </button>
+            <main className="relative z-10 flex-1 flex flex-col max-w-5xl w-full mx-auto px-4 sm:px-6 py-3 overflow-hidden min-h-0">
+                {/* Mobile Sliding Tab Switcher */}
+                <div
+                    className="grid md:hidden grid-cols-2 p-1 rounded-2xl border border-white/10 bg-[#080D1B]/90 backdrop-blur-md mb-3 shrink-0"
+                    role="tablist"
+                >
+                    {[
+                        { id: 'ticker' as const, label: `Minuto a Minuto (${commentary.length})` },
+                        { id: 'stats' as const, label: 'Estadísticas' },
+                    ].map((t) => {
+                        const active = activeTab === t.id;
+                        return (
+                            <button
+                                key={t.id}
+                                type="button"
+                                role="tab"
+                                aria-selected={active}
+                                onClick={() => setActiveTab(t.id)}
+                                className="relative py-2 px-3 rounded-xl text-xs font-extrabold uppercase tracking-wider cursor-pointer transition-colors"
+                            >
+                                {active && (
+                                    <motion.div
+                                        layoutId="matchSimTab"
+                                        transition={{ type: 'spring', damping: 26, stiffness: 320 }}
+                                        className="absolute inset-0 rounded-xl"
+                                        style={{
+                                            background:
+                                                'linear-gradient(180deg, rgba(45,212,255,0.20), rgba(61,123,255,0.08))',
+                                            border: '1px solid rgba(45,212,255,0.40)',
+                                        }}
+                                    />
+                                )}
+                                <span
+                                    className="relative z-10"
+                                    style={{ color: active ? '#FFFFFF' : 'var(--apex-text-muted)' }}
+                                >
+                                    {t.label}
+                                </span>
+                            </button>
+                        );
+                    })}
                 </div>
 
-                <div className="flex-1 grid grid-cols-1 md:grid-cols-12 gap-6 min-h-0">
+                <div className="flex-1 grid grid-cols-1 md:grid-cols-12 gap-4 min-h-0">
                     {/* Commentary Column */}
-                    <div className={`md:col-span-7 flex flex-col bg-slate-950/60 border border-slate-800/80 rounded-2xl overflow-hidden shadow-xl ${activeTab !== 'ticker' ? 'hidden md:flex' : 'flex'}`}>
-                        <div className="px-4 py-3 border-b border-slate-800 bg-slate-900/50 flex items-center justify-between">
-                            <span className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-yellow-400" />
-                                Relato del Partido
+                    <div
+                        className={`md:col-span-7 apex-card flex flex-col overflow-hidden min-h-0 ${
+                            activeTab !== 'ticker' ? 'hidden md:flex' : 'flex'
+                        }`}
+                    >
+                        <div className="px-4 py-2.5 border-b border-white/[0.07] bg-black/25 flex items-center justify-between shrink-0">
+                            <span className="font-display text-sm font-extrabold uppercase tracking-wider text-white flex items-center gap-2">
+                                <span className="apex-live-dot" />
+                                Relato en Directo
                             </span>
-                            <span className="text-[11px] text-slate-500">{commentary.length} eventos</span>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--apex-text-muted)] tabular">
+                                {commentary.length} acciones
+                            </span>
                         </div>
 
-                        <div className="flex-1 p-4 overflow-y-auto space-y-3.5 scroll-smooth">
+                        <div
+                            ref={tickerContainerRef}
+                            className="flex-1 p-3.5 sm:p-4 overflow-y-auto space-y-2.5"
+                        >
                             {commentary.length === 0 ? (
-                                <div className="h-full flex flex-col items-center justify-center text-slate-500 py-12">
-                                    <div className="w-10 h-10 border-2 border-slate-800 border-t-yellow-400 rounded-full animate-spin mb-3" />
-                                    <p className="text-xs font-bold uppercase tracking-wider">Esperando el pitido inicial...</p>
-                                    <p className="text-[10px] text-slate-600 mt-1">Los equipos ultiman detalles en el túnel</p>
+                                <div className="h-full flex flex-col items-center justify-center text-[var(--apex-text-muted)] py-12">
+                                    <div className="w-8 h-8 border-2 border-white/10 border-t-[var(--apex-brand)] rounded-full animate-spin mb-3" />
+                                    <p className="text-xs font-extrabold uppercase tracking-widest text-white/80">
+                                        Equipos en el campo
+                                    </p>
+                                    <p className="text-[11px] text-[var(--apex-text-muted)] mt-0.5">
+                                        Aguardando el pitido inicial…
+                                    </p>
                                 </div>
                             ) : (
-                                commentary.map((evt, idx) => (
-                                    <div
-                                        key={idx}
-                                        className={`flex items-start gap-3 p-3 rounded-xl border transition-all animate-fade-in ${
-                                            evt.type === 'goal'
-                                                ? 'bg-yellow-500/10 border-yellow-500/40 text-yellow-200 shadow-md shadow-yellow-500/5'
-                                                : evt.type === 'whistle'
-                                                ? 'bg-slate-800/90 border-white/20 text-white font-bold'
-                                                : evt.type === 'card'
-                                                ? 'bg-amber-950/20 border-amber-500/30 text-amber-200'
-                                                : evt.type === 'save'
-                                                ? 'bg-sky-950/20 border-sky-500/30 text-sky-200'
-                                                : 'bg-slate-900/50 border-slate-800/60 text-slate-300'
-                                        }`}
-                                    >
-                                        <div className="px-2 py-0.5 rounded text-[11px] font-black font-mono bg-black/40 shrink-0">
-                                            {evt.minute}'
+                                commentary.map((evt, idx) => {
+                                    const evtTeam = evt.isHome ? homeTeam : awayTeam;
+                                    const evtColor = evt.isHome ? homeColor : awayColor;
+
+                                    if (evt.type === 'goal') {
+                                        return (
+                                            <div
+                                                key={idx}
+                                                className="relative overflow-hidden rounded-xl p-3.5 border border-[var(--apex-gold)]/45 animate-fade-in"
+                                                style={{
+                                                    background: `radial-gradient(120% 100% at 0% 0%, color-mix(in srgb, ${evtColor} 24%, transparent), transparent 65%), linear-gradient(165deg, rgba(255, 201, 64, 0.14), rgba(10, 15, 30, 0.95))`,
+                                                }}
+                                            >
+                                                <div className="flex items-center justify-between gap-2 mb-1.5">
+                                                    <div className="flex items-center gap-2 min-w-0">
+                                                        <div className="w-5 h-5 shrink-0 flex items-center justify-center">
+                                                            <TeamLogo team={evtTeam} className="w-full h-full object-contain" />
+                                                        </div>
+                                                        <span className="font-display text-sm font-extrabold italic uppercase tracking-wider text-[var(--apex-gold-light)]">
+                                                            ¡Gol de {evtTeam.name}!
+                                                        </span>
+                                                    </div>
+                                                    <span className="px-2 py-0.5 rounded-md bg-[var(--apex-gold)] text-[#1A1204] font-display tabular text-xs font-extrabold shrink-0">
+                                                        {evt.minute}&apos;
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs font-semibold text-white leading-relaxed">
+                                                    {evt.cleanText}
+                                                </p>
+                                            </div>
+                                        );
+                                    }
+
+                                    if (evt.type === 'whistle') {
+                                        return (
+                                            <div
+                                                key={idx}
+                                                className="py-2.5 px-4 rounded-xl bg-white/[0.06] border border-white/15 text-center animate-fade-in"
+                                            >
+                                                <span className="font-display text-sm font-extrabold uppercase tracking-wider text-[var(--apex-gold-light)]">
+                                                    {evt.cleanText}
+                                                </span>
+                                            </div>
+                                        );
+                                    }
+
+                                    const isYellow = evt.type === 'yellow_card';
+                                    const isRed = evt.type === 'red_card';
+                                    const isSave = evt.type === 'save';
+
+                                    return (
+                                        <div
+                                            key={idx}
+                                            className={`flex items-start gap-3 px-3 py-2.5 rounded-xl border transition-colors animate-fade-in ${
+                                                isRed
+                                                    ? 'bg-[var(--apex-red)]/10 border-[var(--apex-red)]/35'
+                                                    : isYellow
+                                                    ? 'bg-[var(--apex-gold)]/[0.07] border-[var(--apex-gold)]/25'
+                                                    : isSave
+                                                    ? 'bg-[var(--apex-brand)]/[0.07] border-[var(--apex-brand)]/25'
+                                                    : 'bg-white/[0.025] border-white/[0.06]'
+                                            }`}
+                                        >
+                                            {/* Clean Single Minute Badge */}
+                                            <span className="font-display tabular text-sm font-extrabold text-[var(--apex-text-secondary)] w-8 shrink-0 pt-0.5">
+                                                {evt.minute}&apos;
+                                            </span>
+
+                                            {/* Custom Graphic Indicator (No Emojis / No Broken Glyphs) */}
+                                            <div className="pt-1 shrink-0">
+                                                {isYellow ? (
+                                                    <span
+                                                        aria-label="Tarjeta amarilla"
+                                                        className="block w-3 h-4 rounded-[2px] bg-[#FACC15] shadow-[0_0_8px_rgba(250,204,21,0.55)]"
+                                                    />
+                                                ) : isRed ? (
+                                                    <span
+                                                        aria-label="Tarjeta roja"
+                                                        className="block w-3 h-4 rounded-[2px] bg-[#FF3D6E] shadow-[0_0_8px_rgba(255,61,110,0.65)]"
+                                                    />
+                                                ) : isSave ? (
+                                                    <Shield className="w-3.5 h-3.5 text-[var(--apex-brand)]" />
+                                                ) : (
+                                                    <span
+                                                        className="block w-1.5 h-1.5 rounded-full mt-1"
+                                                        style={{ background: evtColor }}
+                                                    />
+                                                )}
+                                            </div>
+
+                                            <p className="flex-1 text-xs text-slate-200 leading-relaxed">
+                                                {evt.cleanText}
+                                            </p>
                                         </div>
-                                        <div className="flex-1 text-xs leading-relaxed">
-                                            <div>{evt.text}</div>
-                                        </div>
-                                    </div>
-                                ))
+                                    );
+                                })
                             )}
-                            <div ref={commentaryEndRef} />
                         </div>
                     </div>
 
                     {/* Stats & Momentum Column */}
-                    <div className={`md:col-span-5 flex flex-col gap-4 overflow-y-auto ${activeTab !== 'stats' ? 'hidden md:flex' : 'flex'}`}>
-                        {/* Possession Box */}
-                        <div className="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-4 shadow-xl">
-                            <div className="flex justify-between items-center text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                    <div
+                        className={`md:col-span-5 flex flex-col gap-3.5 overflow-y-auto min-h-0 ${
+                            activeTab !== 'stats' ? 'hidden md:flex' : 'flex'
+                        }`}
+                    >
+                        {/* Team Color Legend & Possession */}
+                        <div className="apex-card p-4 space-y-2.5">
+                            <div className="flex items-center justify-between text-[10px] font-extrabold uppercase tracking-wider text-[var(--apex-text-secondary)]">
+                                <span className="flex items-center gap-1.5 truncate">
+                                    <span className="w-2 h-2 rounded-full" style={{ background: homeColor }} />
+                                    <span className="truncate">{homeTeam.shortName || homeTeam.name}</span>
+                                </span>
                                 <span>Posesión</span>
-                                <span className="font-mono text-slate-300">{Math.round(stats.homePossession)}% - {Math.round(stats.awayPossession)}%</span>
+                                <span className="flex items-center gap-1.5 truncate">
+                                    <span className="truncate">{awayTeam.shortName || awayTeam.name}</span>
+                                    <span className="w-2 h-2 rounded-full" style={{ background: awayColor }} />
+                                </span>
                             </div>
-                            <div className="relative h-3 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
+
+                            <div className="flex items-baseline justify-between">
+                                <span className="font-display tabular text-2xl font-extrabold text-white">
+                                    {Math.round(stats.homePossession)}%
+                                </span>
+                                <span className="font-display tabular text-2xl font-extrabold text-white">
+                                    {Math.round(stats.awayPossession)}%
+                                </span>
+                            </div>
+
+                            <div className="h-2.5 bg-black/40 rounded-full overflow-hidden flex p-0.5 gap-1 border border-white/[0.06]">
                                 <div
-                                    className="absolute left-0 top-0 h-full bg-gradient-to-r from-sky-500 to-blue-500 transition-all duration-500 ease-out"
-                                    style={{ width: `${stats.homePossession}%` }}
+                                    className="h-full rounded-l-full transition-all duration-500"
+                                    style={{ width: `${stats.homePossession}%`, background: homeColor }}
                                 />
                                 <div
-                                    className="absolute right-0 top-0 h-full bg-gradient-to-l from-amber-500 to-orange-500 transition-all duration-500 ease-out"
-                                    style={{ width: `${stats.awayPossession}%` }}
+                                    className="h-full rounded-r-full transition-all duration-500"
+                                    style={{ width: `${stats.awayPossession}%`, background: awayColor }}
                                 />
                             </div>
                         </div>
 
-                        {/* Stats Metrics Card */}
-                        <div className="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-4 shadow-xl space-y-3">
-                            <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-2">Rendimiento en Vivo</h4>
+                        {/* Comparative Match Metrics */}
+                        <div className="apex-card p-4 space-y-3.5">
+                            <h3 className="font-display text-sm font-extrabold uppercase tracking-wider text-white">
+                                Estadísticas del Encuentro
+                            </h3>
 
-                            {/* Shots */}
-                            <div>
-                                <div className="flex justify-between text-xs font-semibold mb-1">
-                                    <span className="font-mono text-white">{stats.homeShots}</span>
-                                    <span className="text-slate-500 text-[11px] uppercase">Tiros Totales</span>
-                                    <span className="font-mono text-white">{stats.awayShots}</span>
-                                </div>
-                                <div className="h-1.5 bg-slate-900 rounded-full overflow-hidden flex">
-                                    <div className="bg-sky-400 transition-all duration-300" style={{ width: `${(stats.homeShots / Math.max(1, stats.homeShots + stats.awayShots)) * 100}%` }} />
-                                    <div className="bg-amber-400 transition-all duration-300" style={{ width: `${(stats.awayShots / Math.max(1, stats.homeShots + stats.awayShots)) * 100}%` }} />
-                                </div>
-                            </div>
+                            {[
+                                { label: 'Tiros Totales', home: stats.homeShots, away: stats.awayShots },
+                                { label: 'Tiros al Arco', home: stats.homeShotsOnTarget, away: stats.awayShotsOnTarget },
+                                { label: 'Faltas Cometidas', home: stats.homeFouls, away: stats.awayFouls },
+                            ].map((row) => {
+                                const total = Math.max(1, row.home + row.away);
+                                const homePct = (row.home / total) * 100;
+                                const awayPct = (row.away / total) * 100;
+                                return (
+                                    <div key={row.label} className="space-y-1">
+                                        <div className="flex items-baseline justify-between text-xs">
+                                            <span className="font-display tabular text-base font-extrabold text-white">
+                                                {row.home}
+                                            </span>
+                                            <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--apex-text-secondary)]">
+                                                {row.label}
+                                            </span>
+                                            <span className="font-display tabular text-base font-extrabold text-white">
+                                                {row.away}
+                                            </span>
+                                        </div>
+                                        <div className="h-1.5 bg-black/40 rounded-full overflow-hidden flex gap-0.5">
+                                            <div
+                                                className="h-full rounded-l-full transition-all duration-300"
+                                                style={{ width: `${homePct}%`, background: homeColor }}
+                                            />
+                                            <div
+                                                className="h-full rounded-r-full transition-all duration-300"
+                                                style={{ width: `${awayPct}%`, background: awayColor }}
+                                            />
+                                        </div>
+                                    </div>
+                                );
+                            })}
 
-                            {/* Shots on Target */}
-                            <div>
-                                <div className="flex justify-between text-xs font-semibold mb-1">
-                                    <span className="font-mono text-white">{stats.homeShotsOnTarget}</span>
-                                    <span className="text-slate-500 text-[11px] uppercase">Tiros al Arco</span>
-                                    <span className="font-mono text-white">{stats.awayShotsOnTarget}</span>
+                            {/* Momentum Rhythm */}
+                            <div className="pt-3 border-t border-white/[0.07]">
+                                <div className="flex justify-between text-[9px] font-extrabold text-[var(--apex-text-muted)] uppercase tracking-widest mb-1.5">
+                                    <span>Dominio {homeTeam.shortName || 'Local'}</span>
+                                    <span>Dominio {awayTeam.shortName || 'Visita'}</span>
                                 </div>
-                                <div className="h-1.5 bg-slate-900 rounded-full overflow-hidden flex">
-                                    <div className="bg-sky-400 transition-all duration-300" style={{ width: `${(stats.homeShotsOnTarget / Math.max(1, stats.homeShotsOnTarget + stats.awayShotsOnTarget)) * 100}%` }} />
-                                    <div className="bg-amber-400 transition-all duration-300" style={{ width: `${(stats.awayShotsOnTarget / Math.max(1, stats.homeShotsOnTarget + stats.awayShotsOnTarget)) * 100}%` }} />
-                                </div>
-                            </div>
-
-                            {/* Fouls */}
-                            <div>
-                                <div className="flex justify-between text-xs font-semibold mb-1">
-                                    <span className="font-mono text-white">{stats.homeFouls}</span>
-                                    <span className="text-slate-500 text-[11px] uppercase">Faltas Cometidas</span>
-                                    <span className="font-mono text-white">{stats.awayFouls}</span>
-                                </div>
-                                <div className="h-1.5 bg-slate-900 rounded-full overflow-hidden flex">
-                                    <div className="bg-sky-400 transition-all duration-300" style={{ width: `${(stats.homeFouls / Math.max(1, stats.homeFouls + stats.awayFouls)) * 100}%` }} />
-                                    <div className="bg-amber-400 transition-all duration-300" style={{ width: `${(stats.awayFouls / Math.max(1, stats.homeFouls + stats.awayFouls)) * 100}%` }} />
-                                </div>
-                            </div>
-
-                            {/* Momentum pressure graph */}
-                            <div className="pt-2 border-t border-slate-800/60">
-                                <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                                    <span>Presión Local</span>
-                                    <span>Presión Visitante</span>
-                                </div>
-                                <div className="flex items-end justify-center gap-1 h-10 bg-slate-900/60 rounded-lg p-1.5">
+                                <div className="flex items-end justify-center gap-1 h-11 bg-black/35 rounded-xl p-2 border border-white/[0.05]">
                                     {momentum.map((val, i) => (
                                         <div
                                             key={i}
-                                            className={`w-full rounded-sm transition-all duration-300 ${val >= 0 ? 'bg-sky-500' : 'bg-amber-500'}`}
+                                            className="w-full rounded-sm transition-all duration-300"
                                             style={{
-                                                height: `${Math.max(4, Math.abs(val))}%`,
-                                                opacity: 0.3 + (i / momentum.length) * 0.7
+                                                height: `${Math.max(12, Math.min(100, Math.abs(val) * 2))}%`,
+                                                background: val >= 0 ? homeColor : awayColor,
+                                                opacity: 0.35 + (i / momentum.length) * 0.65,
                                             }}
                                         />
                                     ))}
@@ -714,33 +1078,47 @@ export const FullScreenMatchSimulation: React.FC<FullScreenMatchSimulationProps>
                 </div>
             </main>
 
-            {/* 4. BOTTOM ACTION BAR */}
-            <footer className="relative z-10 px-4 sm:px-8 py-3 border-t border-white/10 bg-slate-950/90 backdrop-blur-md flex items-center justify-between">
-                <div className="text-xs text-slate-400">
-                    {isFinished ? (
-                        <span className="font-bold text-white">Partida lista para continuar al panel.</span>
-                    ) : (
-                        <span>Simulando minuto a minuto a pantalla completa.</span>
-                    )}
-                </div>
+            {/* 4. BOTTOM BROADCAST CONTROL BAR */}
+            <footer className="relative z-10 pb-safe border-t border-white/[0.07] bg-[#050814]/85 backdrop-blur-xl">
+                <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                        <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[var(--apex-text-muted)]">
+                            {isFinished
+                                ? 'Tiempo Cumplido'
+                                : minute < 45
+                                ? 'Primer Tiempo'
+                                : minute === 45
+                                ? 'Descanso'
+                                : minute <= 90
+                                ? 'Segundo Tiempo'
+                                : 'Tiempo Suplementario'}
+                        </p>
+                        <p className="text-xs font-bold text-white truncate">
+                            {isFinished
+                                ? `${homeTeam.name} ${displayScore.home} - ${displayScore.away} ${awayTeam.name}`
+                                : targetStats?.stadiumAttendance
+                                ? `${ stadiumName } · ${targetStats.stadiumAttendance.toLocaleString()} espectadores`
+                                : stadiumName}
+                        </p>
+                    </div>
 
-                <div className="flex items-center gap-3">
                     {isFinished ? (
                         <button
+                            type="button"
                             onClick={onMatchComplete}
-                            className="px-6 py-2.5 rounded-xl bg-[var(--apex-gold)] text-slate-950 font-black text-xs uppercase tracking-widest hover:brightness-110 shadow-lg shadow-[var(--apex-gold)]/20 transition-all flex items-center gap-2"
+                            className="apex-btn-gold apex-shine !w-auto !py-2.5 !px-5 !text-xs shrink-0"
                         >
-                            <span>Ir al Vestuario y Avanzar</span>
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                            </svg>
+                            <span>Continuar</span>
+                            <ChevronRight className="w-4 h-4" />
                         </button>
                     ) : (
                         <button
+                            type="button"
                             onClick={handleSkipToEnd}
-                            className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-all border border-slate-700"
+                            className="px-4 py-2.5 rounded-xl bg-white/[0.07] hover:bg-white/[0.14] border border-white/15 text-white text-xs font-extrabold uppercase tracking-wider transition-all active:scale-95 flex items-center gap-2 cursor-pointer shrink-0"
                         >
-                            Finalizar Partido
+                            <FastForward className="w-3.5 h-3.5 text-[var(--apex-brand)]" />
+                            <span>Saltar al Final</span>
                         </button>
                     )}
                 </div>

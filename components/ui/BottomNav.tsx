@@ -112,7 +112,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeScreen, onNavigate, 
 
             {/* Primary Navigation Bar */}
             <nav className="fixed bottom-0 left-0 right-0 z-40 pb-safe"
-                 style={{ background: 'rgba(10,14,23,0.95)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderTop: '1px solid var(--apex-border)' }}>
+                 style={{ background: 'linear-gradient(180deg, rgba(8,12,26,0.88), rgba(4,6,14,0.97))', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderTop: '1px solid rgba(45,212,255,0.12)', boxShadow: '0 -10px 30px -10px rgba(0,0,0,0.7)' }}>
                 <div className="max-w-md mx-auto flex items-center justify-between px-2">
                     {primaryItems.map(item => {
                         const isActive = activeScreen === item.screen;
@@ -124,27 +124,25 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeScreen, onNavigate, 
                                 onMouseEnter={() => prefetchScreen(item.screen)}
                                 onTouchStart={() => prefetchScreen(item.screen)}
                                 onFocus={() => prefetchScreen(item.screen)}
-                                className="relative flex flex-col items-center justify-center flex-1 py-3 cursor-pointer"
+                                className="relative flex flex-col items-center justify-center flex-1 py-2.5 cursor-pointer"
                             >
                                 {isActive && (
                                     <motion.div 
                                         layoutId="activeTab"
-                                        className="absolute top-0 h-[2px] w-8 rounded-b-full shadow-[0_0_10px_rgba(200,168,78,0.5)]"
-                                        style={{ background: 'var(--apex-gold)' }} 
+                                        transition={{ type: 'spring', damping: 26, stiffness: 320 }}
+                                        className="absolute inset-x-1.5 inset-y-1.5 rounded-2xl"
+                                        style={{
+                                            background: 'linear-gradient(180deg, rgba(45,212,255,0.18), rgba(61,123,255,0.06))',
+                                            border: '1px solid rgba(45,212,255,0.35)',
+                                            boxShadow: '0 0 18px -4px rgba(45,212,255,0.45), inset 0 1px 0 rgba(255,255,255,0.08)'
+                                        }} 
                                     />
                                 )}
                                 <div className="relative mb-1">
-                                    <item.icon className="h-6 w-6" style={{ color: isActive ? 'var(--apex-gold)' : 'var(--apex-text-muted)' }} />
-                                    {isActive && (
-                                        <motion.div 
-                                            initial={{ opacity: 0, scale: 0.5 }}
-                                            animate={{ opacity: 0.2, scale: 1 }}
-                                            className="absolute inset-0 bg-yellow-500 blur-md" 
-                                        />
-                                    )}
+                                    <item.icon className="h-6 w-6 transition-colors" style={{ color: isActive ? 'var(--apex-brand)' : 'var(--apex-text-muted)', filter: isActive ? 'drop-shadow(0 0 6px rgba(45,212,255,0.6))' : 'none' }} />
                                 </div>
-                                <span className="text-[9px] font-bold uppercase tracking-wider"
-                                      style={{ color: isActive ? 'var(--apex-gold)' : 'var(--apex-text-muted)' }}>
+                                <span className="relative text-[9px] font-extrabold uppercase tracking-wider"
+                                      style={{ color: isActive ? '#FFFFFF' : 'var(--apex-text-muted)' }}>
                                     {item.label}
                                 </span>
                             </motion.button>

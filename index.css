@@ -5,25 +5,43 @@
    APEX AI — Premium Design System
    ======================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;1,700;1,800&display=swap');
 
-/* ---- CSS Custom Properties ---- */
+/* ---- CSS Custom Properties (Design System v2 · "Night Match Electric") ---- */
 :root {
-  --apex-dark: #0A0E17;
-  --apex-darker: #060A12;
-  --apex-card: #101624;
-  --apex-card-solid: #0F1423;
-  --apex-border: rgba(255, 255, 255, 0.08);
-  --apex-border-active: rgba(200, 168, 78, 0.45);
-  --apex-gold: #C8A84E;
-  --apex-gold-light: #FFD700;
-  --apex-gold-dim: rgba(200, 168, 78, 0.3);
+  /* Surfaces */
+  --apex-dark: #070B16;
+  --apex-darker: #04060D;
+  --apex-card: #0E1527;
+  --apex-card-solid: #0D1324;
+  --apex-surface-2: #131C36;
+  --apex-border: rgba(140, 180, 255, 0.10);
+  --apex-border-active: rgba(255, 201, 64, 0.55);
+
+  /* Brand (electric) */
+  --apex-brand: #2DD4FF;
+  --apex-brand-2: #3D7BFF;
+  --apex-brand-glow: rgba(45, 212, 255, 0.35);
+
+  /* Premium (only for value: trophies, money, high ratings) */
+  --apex-gold: #FFC940;
+  --apex-gold-light: #FFE27A;
+  --apex-gold-deep: #F59E0B;
+  --apex-gold-dim: rgba(255, 201, 64, 0.3);
+
+  /* Semantic */
   --apex-text: #FFFFFF;
-  --apex-text-secondary: #94A3B8;
-  --apex-text-muted: #64748B;
-  --apex-green: #10B981;
-  --apex-green-light: #34D399;
-  --apex-red: #EF4444;
+  --apex-text-secondary: #A3B3CC;
+  --apex-text-muted: #6B7A94;
+  --apex-green: #22F59A;
+  --apex-green-light: #6BFFC0;
+  --apex-red: #FF3D6E;
+  --apex-warning: #FFB020;
+
+  /* Dynamic club color (overridden at runtime by MainLayout) */
+  --club-color: #3D7BFF;
+
+  --font-display: 'Barlow Condensed', 'Inter', system-ui, sans-serif;
 }
 
 /* ---- Global Reset ---- */
@@ -46,9 +64,13 @@ body {
 
 /* ---- Apex Card System (Zero-blur GPU-optimized solid surfaces) ---- */
 .apex-card {
-  background: var(--apex-card);
+  position: relative;
+  background:
+    radial-gradient(120% 80% at 0% 0%, rgba(61, 123, 255, 0.10), transparent 55%),
+    linear-gradient(165deg, rgba(20, 30, 58, 0.86), rgba(9, 14, 28, 0.92));
   border: 1px solid var(--apex-border);
-  border-radius: 14px;
+  border-radius: 16px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 10px 30px -12px rgba(0, 0, 0, 0.6);
 }
 
 .apex-card-solid {
@@ -109,23 +131,27 @@ body {
   gap: 0.75rem;
   width: 100%;
   padding: 1rem 1.5rem;
-  background: linear-gradient(135deg, var(--apex-gold), #B8963E);
+  background: linear-gradient(180deg, var(--apex-gold-light) 0%, var(--apex-gold) 45%, var(--apex-gold-deep) 100%);
   border: none;
   border-radius: 12px;
-  color: #0A0E17;
+  color: #1A1204;
   font-weight: 800;
   font-size: 0.875rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  transition: all 0.3s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
-  box-shadow: 0 4px 20px rgba(200, 168, 78, 0.3);
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 6px 22px -6px rgba(255, 180, 32, 0.55);
 }
 
 .apex-btn-gold:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 30px rgba(200, 168, 78, 0.4);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 10px 30px -6px rgba(255, 180, 32, 0.7);
 }
+
+.apex-btn-gold:active { transform: scale(0.97); }
 
 /* ---- Apex Input System ---- */
 .apex-input {
@@ -172,6 +198,7 @@ body {
 
 /* ---- Typography Utilities ---- */
 .apex-heading {
+  font-family: var(--font-display);
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -209,7 +236,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(200, 168, 78, 0.3);
+  background: rgba(45, 212, 255, 0.25);
   border-radius: 3px;
 }
 
@@ -554,4 +581,589 @@ dialog.apex-top-overlay::backdrop {
 .apex-press-card:focus-visible {
   outline: 2px solid var(--apex-gold);
   outline-offset: 2px;
+}
+
+
+/* ========================================
+   DESIGN SYSTEM v2 — "Night Match Electric"
+   ======================================== */
+
+/* Display typography (broadcast / videogame look) */
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: 0.01em;
+}
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* Gradient text */
+.text-brand-gradient {
+  background: linear-gradient(90deg, var(--apex-brand), var(--apex-brand-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.text-premium-gradient {
+  background: linear-gradient(180deg, var(--apex-gold-light), var(--apex-gold-deep));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Electric primary button */
+.apex-btn-brand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.25rem;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 0.8125rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #021018;
+  background: linear-gradient(180deg, #7DEBFF 0%, var(--apex-brand) 40%, var(--apex-brand-2) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), 0 8px 24px -8px var(--apex-brand-glow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+.apex-btn-brand:hover { transform: translateY(-1px); box-shadow: inset 0 1px 0 rgba(255,255,255,0.55), 0 12px 30px -8px var(--apex-brand-glow); }
+.apex-btn-brand:active { transform: scale(0.97); }
+
+/* Shine sweep for premium buttons / cards */
+.apex-shine::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 35%, rgba(255, 255, 255, 0.35) 50%, transparent 65%);
+  transform: translateX(-120%);
+  animation: apex-shine 3.6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes apex-shine {
+  0%, 60% { transform: translateX(-120%); }
+  100% { transform: translateX(120%); }
+}
+
+/* Chips */
+.apex-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid rgba(45, 212, 255, 0.3);
+  background: rgba(45, 212, 255, 0.10);
+  color: #9BEFFF;
+}
+.apex-chip-premium { border-color: rgba(255, 201, 64, 0.35); background: rgba(255, 201, 64, 0.12); color: var(--apex-gold-light); }
+
+/* Live dot */
+.apex-live-dot {
+  width: 8px; height: 8px; border-radius: 999px;
+  background: var(--apex-brand);
+  box-shadow: 0 0 0 0 var(--apex-brand-glow);
+  animation: apex-ping 1.8s ease-out infinite;
+}
+@keyframes apex-ping {
+  0% { box-shadow: 0 0 0 0 rgba(45, 212, 255, 0.55); }
+  100% { box-shadow: 0 0 0 10px rgba(45, 212, 255, 0); }
+}
+
+/* Film grain overlay to avoid flat digital look */
+.apex-grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.06;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+/* Hero banner image card */
+.apex-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  border: 1px solid rgba(140, 180, 255, 0.14);
+  background-color: var(--apex-card);
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 20px 40px -18px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.apex-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(4, 7, 16, 0.35) 0%, rgba(4, 7, 16, 0.55) 45%, rgba(6, 10, 22, 0.96) 100%),
+    radial-gradient(80% 60% at 50% 0%, color-mix(in srgb, var(--club-color) 28%, transparent), transparent 70%);
+  pointer-events: none;
+}
+.apex-hero > * { position: relative; z-index: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .apex-shine::after, .apex-live-dot { animation: none; }
+}
+
+
+/* ---- Native Top-Layer Modal Dialogs ---- */
+dialog:modal {
+  overscroll-behavior: contain;
+}
+dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+dialog.apex-dialog {
+  opacity: 0;
+  margin: auto;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: inherit;
+  max-height: 92dvh;
+  max-width: calc(100vw - 1.5rem);
+  overflow: visible;
+  transition-property: opacity, transform, display, overlay;
+  transition-duration: 0.24s;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  transition-behavior: allow-discrete;
+}
+@media (prefers-reduced-motion: no-preference) {
+  dialog.apex-dialog {
+    transform: scale(0.95) translateY(8px);
+  }
+}
+dialog.apex-dialog::backdrop {
+  background-color: rgba(3, 6, 15, 0);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition-property: background-color, display, overlay;
+  transition-duration: 0.24s;
+  transition-timing-function: ease-out;
+  transition-behavior: allow-discrete;
+}
+dialog.apex-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+dialog.apex-dialog[open]:where(:not([data-closing])) {
+  opacity: 1;
+}
+@starting-style {
+  dialog.apex-dialog[open]:where(:not([data-closing])) {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  dialog.apex-dialog[open]:where(:not([data-closing])) {
+    transform: scale(1) translateY(0);
+  }
+  @starting-style {
+    dialog.apex-dialog[open]:where(:not([data-closing])) {
+      transform: scale(0.95) translateY(8px);
+    }
+  }
+}
+dialog.apex-dialog[open]:where(:not([data-closing]))::backdrop {
+  background-color: rgba(3, 6, 15, 0.82);
+}
+@starting-style {
+  dialog.apex-dialog[open]:where(:not([data-closing]))::backdrop {
+    background-color: rgba(3, 6, 15, 0);
+  }
+}
+
+/* =====================================================
+   AUTH GATE — 100% Fullscreen Tunnel Parallax Sign-In
+   ===================================================== */
+dialog.apex-gate {
+  opacity: 0;
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: #03050C;
+  color: #fff;
+  overflow: hidden;
+  transition-property: opacity, display, overlay;
+  transition-duration: 0.35s;
+  transition-timing-function: ease-out;
+  transition-behavior: allow-discrete;
+}
+dialog.apex-gate::backdrop {
+  background-color: rgba(3, 5, 12, 0);
+  transition-property: background-color, display, overlay;
+  transition-duration: 0.35s;
+  transition-timing-function: ease-out;
+  transition-behavior: allow-discrete;
+}
+dialog.apex-gate[open] {
+  display: block;
+}
+dialog.apex-gate[open]:where(:not([data-closing])) {
+  opacity: 1;
+}
+@starting-style {
+  dialog.apex-gate[open]:where(:not([data-closing])) {
+    opacity: 0;
+  }
+}
+dialog.apex-gate[open]:where(:not([data-closing]))::backdrop {
+  background-color: #03050C;
+}
+@starting-style {
+  dialog.apex-gate[open]:where(:not([data-closing]))::backdrop {
+    background-color: rgba(3, 5, 12, 0);
+  }
+}
+
+.apex-gate-stage {
+  --px: 0;
+  --py: 0;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  isolation: isolate;
+}
+.apex-gate-layer {
+  position: absolute;
+  inset: -6%;
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* Plane 1 — Deep stadium tunnel */
+.apex-gate-bg {
+  background-size: cover;
+  background-position: center top;
+  transform: translate3d(calc(var(--px) * -15px), calc(var(--py) * -10px), 0) scale(1.07);
+  animation: apex-gate-breathe 16s ease-in-out infinite alternate;
+}
+@keyframes apex-gate-breathe {
+  from { filter: brightness(0.62) saturate(1.05); }
+  to   { filter: brightness(0.76) saturate(1.18); }
+}
+
+/* Plane 2 — Volumetric floodlight beams */
+.apex-gate-beams {
+  transform: translate3d(calc(var(--px) * -34px), calc(var(--py) * -20px), 0);
+  mix-blend-mode: screen;
+}
+.apex-gate-beams span {
+  position: absolute;
+  top: -22%;
+  width: 36%;
+  height: 92%;
+  background: linear-gradient(180deg, rgba(145, 228, 255, 0.30), rgba(61, 123, 255, 0.07) 56%, transparent 82%);
+  filter: blur(20px);
+  transform-origin: top center;
+  animation: apex-gate-beam 9s ease-in-out infinite alternate;
+}
+.apex-gate-beams span:nth-child(1) { left: 0%; transform: rotate(19deg); }
+.apex-gate-beams span:nth-child(2) {
+  left: 34%;
+  transform: rotate(-3deg);
+  animation-delay: -3.2s;
+  opacity: 0.78;
+  background: linear-gradient(180deg, rgba(255, 214, 115, 0.24), rgba(255, 201, 64, 0.05) 55%, transparent 78%);
+}
+.apex-gate-beams span:nth-child(3) { right: -2%; transform: rotate(-20deg); animation-delay: -6.2s; }
+@keyframes apex-gate-beam {
+  from { opacity: 0.38; translate: -4% 0; }
+  to   { opacity: 0.92; translate: 4% 0; }
+}
+
+/* Plane 3 — Rising stadium light dust */
+.apex-gate-dust {
+  transform: translate3d(calc(var(--px) * -58px), calc(var(--py) * -36px), 0);
+  background-image:
+    radial-gradient(1.6px 1.6px at 14% 24%, rgba(255, 255, 255, 0.85), transparent),
+    radial-gradient(1.2px 1.2px at 29% 68%, rgba(155, 239, 255, 0.8), transparent),
+    radial-gradient(2px 2px at 47% 36%, rgba(255, 214, 120, 0.78), transparent),
+    radial-gradient(1.2px 1.2px at 64% 19%, rgba(255, 255, 255, 0.75), transparent),
+    radial-gradient(1.6px 1.6px at 79% 54%, rgba(155, 239, 255, 0.85), transparent),
+    radial-gradient(1px 1px at 89% 31%, rgba(255, 255, 255, 0.65), transparent),
+    radial-gradient(2px 2px at 21% 83%, rgba(255, 214, 120, 0.6), transparent),
+    radial-gradient(1.3px 1.3px at 71% 77%, rgba(255, 255, 255, 0.65), transparent);
+  background-size: 100% 100%;
+  animation: apex-gate-drift 22s linear infinite;
+  opacity: 0.85;
+}
+@keyframes apex-gate-drift {
+  from { background-position: 0 0; }
+  to   { background-position: 0 -100vh; }
+}
+
+.apex-gate-shade {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 70% at 50% 26%, rgba(3, 5, 12, 0.28) 22%, rgba(3, 5, 12, 0.86) 100%),
+    linear-gradient(180deg, rgba(3, 5, 12, 0.56) 0%, rgba(3, 5, 12, 0.44) 30%, rgba(3, 5, 12, 0.92) 59%, #03050C 87%);
+  pointer-events: none;
+}
+
+/* Foreground composition */
+.apex-gate-content {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  max-width: 31rem;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: max(1rem, env(safe-area-inset-top)) 1.5rem max(1.35rem, env(safe-area-inset-bottom));
+}
+
+.apex-gate-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.apex-gate-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.68);
+}
+.apex-gate-status i {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--apex-brand);
+  box-shadow: 0 0 10px var(--apex-brand);
+}
+.apex-gate-skip {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.58);
+  padding: 0.45rem 0.25rem;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+.apex-gate-skip:hover { color: #fff; }
+
+/* Plane 4 — Counter-moving hero */
+.apex-gate-hero {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  transform: translate3d(calc(var(--px) * 11px), calc(var(--py) * 7px), 0);
+}
+.apex-gate-logo-wrap {
+  position: relative;
+  margin-bottom: 1.15rem;
+  animation: apex-gate-rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.apex-gate-logo-wrap::before {
+  content: '';
+  position: absolute;
+  inset: -22% -14%;
+  background: radial-gradient(closest-side, rgba(255, 201, 64, 0.38), rgba(45, 212, 255, 0.14), transparent);
+  filter: blur(22px);
+  animation: apex-gate-pulse 4.2s ease-in-out infinite;
+}
+.apex-gate-logo {
+  position: relative;
+  width: min(58vw, 14.5rem);
+  height: auto;
+  filter: drop-shadow(0 16px 32px rgba(0, 0, 0, 0.88));
+}
+@keyframes apex-gate-pulse {
+  50% { opacity: 0.55; transform: scale(1.06); }
+}
+
+.apex-gate-kicker {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.38em;
+  text-transform: uppercase;
+  color: var(--apex-gold);
+  animation: apex-gate-rise 0.8s 0.12s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.apex-gate-title {
+  margin-top: 0.35rem;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-style: italic;
+  text-transform: uppercase;
+  font-size: clamp(2.25rem, 9.5vw, 3.25rem);
+  line-height: 0.91;
+  letter-spacing: 0.01em;
+  animation: apex-gate-rise 0.8s 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.apex-gate-title span {
+  background: linear-gradient(100deg, #fff 0%, #FFE27A 34%, #FFC940 50%, #fff 66%, #9BEFFF 100%);
+  background-size: 240% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: apex-gate-sheen 6s ease-in-out infinite;
+}
+@keyframes apex-gate-sheen {
+  0%, 100% { background-position: 100% 0; }
+  50%      { background-position: 0 0; }
+}
+.apex-gate-rule {
+  margin-top: 0.9rem;
+  width: 5rem;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--apex-gold), var(--apex-brand), transparent);
+  animation: apex-gate-rise 0.8s 0.26s both;
+}
+
+/* Broadcast HUD Strip (no boxes, no icons) */
+.apex-gate-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+.apex-gate-hud {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid rgba(255, 255, 255, 0.10);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+  margin-bottom: 0.25rem;
+}
+.apex-gate-hud li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.85rem;
+  padding: 0.58rem 0.15rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  animation: apex-gate-rise 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.apex-gate-hud li:last-child { border-bottom: none; }
+.apex-gate-num {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-style: italic;
+  font-size: 1.3rem;
+  line-height: 1;
+  min-width: 1.85rem;
+  background: linear-gradient(180deg, var(--apex-gold-light), var(--apex-gold-deep));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.apex-gate-hud strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 0.98rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #fff;
+  line-height: 1.1;
+}
+.apex-gate-hud small {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--apex-text-secondary);
+  margin-top: 1px;
+}
+
+.apex-gate-error {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #FF8CA8;
+  text-align: center;
+  padding: 0.6rem 0.75rem;
+  border-radius: 12px;
+  background: rgba(255, 61, 110, 0.14);
+  border: 1px solid rgba(255, 61, 110, 0.35);
+}
+
+.apex-gate-google {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.95rem 1.25rem;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #EDF2FA 100%);
+  color: #080D1A;
+  font-weight: 900;
+  font-size: 0.78rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.45), 0 14px 40px -10px rgba(45, 212, 255, 0.45);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  animation: apex-gate-rise 0.65s 0.52s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.apex-gate-google::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 35%, rgba(45, 212, 255, 0.25) 50%, transparent 65%);
+  transform: translateX(-120%);
+  animation: apex-shine 3.4s 1s ease-in-out infinite;
+  pointer-events: none;
+}
+.apex-gate-google:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 0 1px #fff, 0 18px 46px -10px rgba(45, 212, 255, 0.65);
+}
+.apex-gate-google:active { transform: scale(0.98); }
+.apex-gate-google:disabled { opacity: 0.7; cursor: wait; }
+
+.apex-gate-guest {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.62);
+  padding: 0.45rem;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  animation: apex-gate-rise 0.65s 0.6s both;
+}
+.apex-gate-guest:hover { color: #fff; }
+
+@keyframes apex-gate-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  dialog.apex-dialog,
+  dialog.apex-dialog::backdrop,
+  dialog.apex-gate,
+  dialog.apex-gate::backdrop {
+    transition-duration: 0.1s;
+  }
+  .apex-gate-stage *,
+  .apex-gate-stage *::before,
+  .apex-gate-stage *::after {
+    animation: none !important;
+  }
 }

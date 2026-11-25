@@ -107,7 +107,7 @@ export const ProfileCreation: React.FC<ProfileCreationProps> = ({ onProfileCreat
                 <div 
                     className="absolute inset-0 bg-cover bg-center"
                     style={{ 
-                        backgroundImage: 'url("/bg-profile.png")',
+                        backgroundImage: 'url("/assets/bg/club.webp")',
                         filter: 'brightness(1.0) saturate(1.1)'
                     }}
                 />

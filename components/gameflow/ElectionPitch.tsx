@@ -85,7 +85,7 @@ export const ElectionPitch: React.FC<ElectionPitchProps> = ({ team, player, onSu
                 <div 
                     className="absolute inset-0 bg-cover bg-center"
                     style={{ 
-                        backgroundImage: 'url("/bg-debate.png")',
+                        backgroundImage: 'url("/assets/bg/election.webp")',
                         filter: 'brightness(1.0) saturate(1.1)'
                     }}
                 />
@@ -158,7 +158,7 @@ export const ElectionPitch: React.FC<ElectionPitchProps> = ({ team, player, onSu
             <div 
                 className="absolute inset-0 bg-cover bg-center"
                 style={{ 
-                    backgroundImage: 'url("/bg-debate.png")',
+                    backgroundImage: 'url("/assets/bg/election.webp")',
                     filter: 'brightness(0.6) saturate(0.8)'
                 }}
             />

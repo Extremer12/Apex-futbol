@@ -2,7 +2,11 @@ import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { AuthModal } from './AuthModal';
 
-export const UserBadge: React.FC = () => {
+interface UserBadgeProps {
+    mode?: 'fullscreen' | 'modal';
+}
+
+export const UserBadge: React.FC<UserBadgeProps> = ({ mode = 'modal' }) => {
     const { user, profile } = useAuth();
     const [isAuthOpen, setIsAuthOpen] = useState(false);
 
@@ -11,9 +15,10 @@ export const UserBadge: React.FC = () => {
 
     return (
         <>
-            {isAuthOpen && <AuthModal onClose={() => setIsAuthOpen(false)} />}
-            
+            {isAuthOpen && <AuthModal mode={mode} onClose={() => setIsAuthOpen(false)} />}
+
             <button
+                type="button"
                 onClick={() => setIsAuthOpen(true)}
                 className="flex items-center gap-2 transition-transform active:scale-95 cursor-pointer focus:outline-none"
                 title={user ? `Conectado como ${name}` : 'Iniciar sesión con Google'}
@@ -31,11 +36,11 @@ export const UserBadge: React.FC = () => {
                                 {user.email?.charAt(0).toUpperCase()}
                             </div>
                         )}
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-[#0A0E17] absolute -bottom-0.5 -right-0.5" title="Sincronizado con Supabase"></span>
+                        <span className="w-2.5 h-2.5 rounded-full bg-[var(--apex-green)] border-2 border-[#060A16] absolute -bottom-0.5 -right-0.5 shadow-[0_0_6px_var(--apex-green)]" title="Sincronizado con Supabase" />
                     </div>
                 ) : (
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 shadow-md">
-                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0E1527]/85 hover:bg-[#141F3A] border border-white/15 hover:border-[var(--apex-brand)]/50 shadow-md transition-colors">
+                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" aria-hidden>
                             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
                             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
