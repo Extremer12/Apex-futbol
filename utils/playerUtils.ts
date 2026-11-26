@@ -1,4 +1,5 @@
-import { Player, PotentialTier, SquadRole } from '../types';
+import { Player, PotentialTier, SquadRole, Team } from '../types';
+import { getRegionalWageScale } from '../services/economy';
 
 export const getPlayerAge = (player: Player): number => {
     return player.age || 24;
@@ -71,8 +72,9 @@ export const getTierBadge = (tier: PotentialTier) => {
 
 export const getExpectedWage = (
     player: Player, 
-    buyerTier: 'Top' | 'Mid' | 'Lower' = 'Mid',
-    proposedRole: SquadRole = 'FirstTeam'
+    buyerTier: Team['tier'] = 'Mid',
+    proposedRole: SquadRole = 'FirstTeam',
+    leagueId?: string
 ): number => {
     // Base wage computation based on rating
     let base = 5000;
@@ -84,6 +86,9 @@ export const getExpectedWage = (
     else if (r >= 75) base = 22000 + (r - 75) * 6500;
     else if (r >= 70) base = 10000 + (r - 70) * 2400;
     else base = Math.max(3000, 3000 + (r - 60) * 700);
+
+    const regionScale = leagueId ? getRegionalWageScale(leagueId, buyerTier) : 1.0;
+    base *= regionScale;
 
     // If player has an existing wage that is higher, start from existing wage
     if (player.wage && player.wage > base * 0.8) {
@@ -103,7 +108,7 @@ export const getExpectedWage = (
     if (buyerTier === 'Lower') base *= 1.25;
     else if (buyerTier === 'Mid' && player.rating >= 82) base *= 1.15;
 
-    return Math.round(base / 500) * 500; // Round to nearest 500
+    return Math.max(1000, Math.round(base / 500) * 500); // Round to nearest 500
 };
 
 export const getPlayerReleaseClause = (player: Player): number => {

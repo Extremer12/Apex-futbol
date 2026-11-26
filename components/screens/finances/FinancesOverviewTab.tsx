@@ -1,5 +1,7 @@
 import React, { useMemo } from 'react';
+import { ClubMembership, MembershipPolicy } from '../../../types';
 import { FinancialBreakdown, FinancialHealthEvaluation } from '../../../services/economy';
+import { MEMBERSHIP_POLICY_META } from '../../../services/membership';
 import { formatCurrencyShort } from '../../../utils';
 import {
     Coins,
@@ -8,7 +10,8 @@ import {
     TrendingDown,
     Landmark,
     ArrowRightLeft,
-    ChevronRight
+    ChevronRight,
+    Users
 } from 'lucide-react';
 
 interface FinancesOverviewTabProps {
@@ -21,6 +24,9 @@ interface FinancesOverviewTabProps {
     breakdown: FinancialBreakdown;
     health: FinancialHealthEvaluation;
     balanceHistory: number[];
+    membership?: ClubMembership;
+    membershipPolicy?: MembershipPolicy;
+    fanApprovalRating?: number;
     onNavigateToStrategy: () => void;
     onNavigateToBanking: () => void;
 }
@@ -55,6 +61,9 @@ export const FinancesOverviewTab: React.FC<FinancesOverviewTabProps> = React.mem
     breakdown,
     health,
     balanceHistory,
+    membership,
+    membershipPolicy = 'standard',
+    fanApprovalRating = 60,
     onNavigateToStrategy,
     onNavigateToBanking
 }) => {
@@ -62,6 +71,7 @@ export const FinancesOverviewTab: React.FC<FinancesOverviewTabProps> = React.mem
         breakdown.matchdayRevenue +
         breakdown.sponsorshipRevenue +
         breakdown.tvRevenue +
+        (breakdown.membershipRevenue || 0) +
         (breakdown.merchandisingRevenue || 0) +
         (breakdown.transferRevenue || 0);
 
@@ -199,6 +209,53 @@ export const FinancesOverviewTab: React.FC<FinancesOverviewTabProps> = React.mem
                 </span>
             </div>
 
+            {/* Club Membership (Socios) Strip */}
+            {membership && (
+                <div className="apex-card p-3.5 sm:p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-l-2 border-emerald-400">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400 shrink-0">
+                            <Users className="w-5 h-5" />
+                        </div>
+                        <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-xs font-black text-white tabular-nums">
+                                    {membership.activeMembers.toLocaleString()} Socios Activos
+                                </span>
+                                {membership.lastWeeklyDelta !== 0 && (
+                                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-black tabular-nums border ${
+                                        membership.lastWeeklyDelta > 0
+                                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                            : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                                    }`}>
+                                        {membership.lastWeeklyDelta > 0 ? '+' : ''}{membership.lastWeeklyDelta.toLocaleString()} esta sem.
+                                    </span>
+                                )}
+                            </div>
+                            <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                                {membership.lastDeltaReason || 'Padrón al día'} · Humor social: <strong className={fanApprovalRating >= 60 ? 'text-emerald-400' : fanApprovalRating >= 45 ? 'text-amber-400' : 'text-rose-400'}>{fanApprovalRating}%</strong>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5 shrink-0">
+                        <div className="text-left sm:text-right">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                                {MEMBERSHIP_POLICY_META[membershipPolicy]?.label}
+                            </span>
+                            <span className="text-sm font-black text-emerald-400 tabular-nums">
+                                +{formatCurrencyShort(breakdown.membershipRevenue || 0)}/sem
+                            </span>
+                        </div>
+                        <button
+                            onClick={onNavigateToStrategy}
+                            className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-bold text-white transition-colors cursor-pointer"
+                        >
+                            Ajustar cuota
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Income vs Expenses */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="apex-card p-4 sm:p-5 rounded-2xl space-y-3.5">
@@ -207,6 +264,7 @@ export const FinancesOverviewTab: React.FC<FinancesOverviewTabProps> = React.mem
                         <span className="text-sm font-black text-emerald-400 tabular-nums">{formatCurrencyShort(totalIncome)}/sem</span>
                     </div>
                     <div className="space-y-3">
+                        <BreakdownBar label="Cuota de Socios y Abonos" amount={breakdown.membershipRevenue || 0} total={totalIncome} barClass="bg-teal-400" />
                         <BreakdownBar label="Taquilla (Día de partido)" amount={breakdown.matchdayRevenue} total={totalIncome} barClass="bg-emerald-400" />
                         <BreakdownBar label="Patrocinios comerciales" amount={breakdown.sponsorshipRevenue} total={totalIncome} barClass="bg-[var(--apex-gold)]" />
                         <BreakdownBar label="Derechos de TV" amount={breakdown.tvRevenue} total={totalIncome} barClass="bg-sky-400" />

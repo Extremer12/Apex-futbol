@@ -305,6 +305,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = React.memo(({ gameSta
                     clubBalance={gameState.finances?.balance || 0}
                     boardConfidence={boardConfidence}
                     electoralPromises={electoralPromises || []}
+                    membership={gameState.membership}
+                    membershipPolicy={gameState.finances?.membershipPolicy}
                 />
             )}
 

@@ -91,7 +91,7 @@ export const determineCupWinner = (match: Match): number | null => {
  */
 export const isInternationalCompetition = (cupId?: string): boolean => {
     if (!cupId) return false;
-    return ['champions_league', 'europa_league', 'copa_libertadores', 'copa_sudamericana'].includes(cupId);
+    return ['champions_league', 'europa_league', 'copa_libertadores', 'copa_sudamericana', 'recopa_sudamericana'].includes(cupId);
 };
 
 /**
@@ -315,26 +315,53 @@ export const progressInternationalCup = (
         const fixturesWithWeek: Match[] = [];
         const secondLegFixtures: Match[] = [];
         const matchCount = Math.min(shuffledFirsts.length, shuffledSeconds.length);
-        const compType: Match['competition'] = cup.id === 'copa_sudamericana' ? 'Copa_Sudamericana' : 'Copa_Libertadores';
+        const isClubWorldCup = cup.id === 'club_world_cup';
+        const compType: Match['competition'] = isClubWorldCup
+            ? 'Club_World_Cup'
+            : cup.id === 'copa_sudamericana'
+                ? 'Copa_Sudamericana'
+                : 'Copa_Libertadores';
+
+        // Cross adjacent groups symmetrically for FIFA Club World Cup (1A vs 2B, 1B vs 2A...) or shuffled for Libertadores/Sudamericana
+        const orderedFirsts = isClubWorldCup ? firsts : shuffledFirsts;
+        const orderedSeconds = isClubWorldCup ? seconds : shuffledSeconds;
+
         for (let i = 0; i < matchCount; i++) {
-            fixturesWithWeek.push({
-                week: nextWeek,
-                homeTeamId: shuffledSeconds[i].id, // 2nd place plays home first
-                awayTeamId: shuffledFirsts[i].id,  // 1st place plays away first
-                competition: compType,
-                isCupMatch: true,
-                isMidweek: true,
-                leg: 1
-            });
-            secondLegFixtures.push({
-                week: nextWeek + 2,
-                homeTeamId: shuffledFirsts[i].id,  // 1st place plays return leg at home
-                awayTeamId: shuffledSeconds[i].id,
-                competition: compType,
-                isCupMatch: true,
-                isMidweek: true,
-                leg: 2
-            });
+            const firstTeam = orderedFirsts[i];
+            const secondIndex = isClubWorldCup ? (i % 2 === 0 ? i + 1 : i - 1) : i;
+            const secondTeam = orderedSeconds[secondIndex] || orderedSeconds[i];
+            if (!firstTeam || !secondTeam) continue;
+
+            if (isClubWorldCup) {
+                // FIFA Club World Cup 32 format: Single-leg Knockout (Octavos -> Cuartos -> Semis -> Final)
+                fixturesWithWeek.push({
+                    week: nextWeek,
+                    homeTeamId: firstTeam.id,
+                    awayTeamId: secondTeam.id,
+                    competition: compType,
+                    isCupMatch: true,
+                    isMidweek: true
+                });
+            } else {
+                fixturesWithWeek.push({
+                    week: nextWeek,
+                    homeTeamId: secondTeam.id, // 2nd place plays home first
+                    awayTeamId: firstTeam.id,  // 1st place plays away first
+                    competition: compType,
+                    isCupMatch: true,
+                    isMidweek: true,
+                    leg: 1
+                });
+                secondLegFixtures.push({
+                    week: nextWeek + 2,
+                    homeTeamId: firstTeam.id,  // 1st place plays return leg at home
+                    awayTeamId: secondTeam.id,
+                    competition: compType,
+                    isCupMatch: true,
+                    isMidweek: true,
+                    leg: 2
+                });
+            }
         }
 
         return {
@@ -343,7 +370,7 @@ export const progressInternationalCup = (
             rounds: [{ 
                 name: 'Round of 16', 
                 fixtures: fixturesWithWeek, 
-                secondLegFixtures, 
+                secondLegFixtures: secondLegFixtures.length > 0 ? secondLegFixtures : undefined, 
                 completed: false 
             }],
             currentRoundIndex: 0,
@@ -472,7 +499,9 @@ export const advanceCupRound = (
     if (cup.id === 'europa_league') competitionType = 'Europa_League';
     if (cup.id === 'copa_libertadores') competitionType = 'Copa_Libertadores';
     if (cup.id === 'copa_sudamericana') competitionType = 'Copa_Sudamericana';
+    if (cup.id === 'recopa_sudamericana') competitionType = 'Recopa_Sudamericana';
     if (cup.id === 'copa_intercontinental') competitionType = 'Copa_Intercontinental';
+    if (cup.id === 'club_world_cup') competitionType = 'Club_World_Cup';
 
     const isMidweekCompetition = 
         competitionType !== 'Playoffs_Apertura' &&
@@ -915,6 +944,14 @@ export const finalizeSeasonCompetitions = (
         if (interCup) {
             cups.copaIntercontinental = finalizeSingleCupCompetition(interCup, allTeams);
         }
+    }
+
+    // Ensure Recopa Sudamericana & FIFA Club World Cup resolve cleanly if initialized
+    if (cups.recopaSudamericana && !cups.recopaSudamericana.winnerId && cups.recopaSudamericana.rounds?.length > 0) {
+        cups.recopaSudamericana = finalizeSingleCupCompetition(cups.recopaSudamericana, allTeams);
+    }
+    if (cups.clubWorldCup && !cups.clubWorldCup.winnerId && (cups.clubWorldCup.groups?.length || cups.clubWorldCup.rounds?.length)) {
+        cups.clubWorldCup = finalizeSingleCupCompetition(cups.clubWorldCup, allTeams);
     }
 };
 

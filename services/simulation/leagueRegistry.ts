@@ -4,7 +4,7 @@ export interface LeagueConfig {
     id: LeagueId;
     name: string;
     country: CountryCode;
-    region: 'europe' | 'southAmerica';
+    region: 'europe' | 'southAmerica' | 'northAmerica';
     division: 1 | 2;
     teamsCount: number;
     maxWeeks: number;
@@ -307,6 +307,71 @@ export const LEAGUE_REGISTRY: Record<LeagueId, LeagueConfig> = {
         promotionSlots: 2,
         relegationSlots: 0,
         promotesTo: LeagueId.PRIMERA_A_COLOMBIA,
+        domesticCups: [],
+        format: 'round-robin'
+    },
+    [LeagueId.PRIMEIRA_LIGA]: {
+        id: LeagueId.PRIMEIRA_LIGA,
+        name: 'Liga Portugal Betclic',
+        country: 'POR',
+        region: 'europe',
+        division: 1,
+        teamsCount: 14,
+        maxWeeks: 26,
+        promotionSlots: 0,
+        relegationSlots: 0,
+        domesticCups: [],
+        format: 'round-robin'
+    },
+    [LeagueId.EREDIVISIE]: {
+        id: LeagueId.EREDIVISIE,
+        name: 'Eredivisie',
+        country: 'NED',
+        region: 'europe',
+        division: 1,
+        teamsCount: 14,
+        maxWeeks: 26,
+        promotionSlots: 0,
+        relegationSlots: 0,
+        domesticCups: [],
+        format: 'round-robin'
+    },
+    [LeagueId.LIGA_URUGUAYA]: {
+        id: LeagueId.LIGA_URUGUAYA,
+        name: 'Liga AUF Uruguaya',
+        country: 'URU',
+        region: 'southAmerica',
+        division: 1,
+        teamsCount: 12,
+        maxWeeks: 22,
+        promotionSlots: 0,
+        relegationSlots: 0,
+        domesticCups: [],
+        format: 'round-robin'
+    },
+    [LeagueId.LIGA_ECUADOR]: {
+        id: LeagueId.LIGA_ECUADOR,
+        name: 'LigaPro Serie A',
+        country: 'ECU',
+        region: 'southAmerica',
+        division: 1,
+        teamsCount: 12,
+        maxWeeks: 22,
+        promotionSlots: 0,
+        relegationSlots: 0,
+        domesticCups: [],
+        format: 'round-robin'
+    },
+    [LeagueId.MLS]: {
+        id: LeagueId.MLS,
+        name: 'Major League Soccer',
+        country: 'USA',
+        region: 'northAmerica',
+        division: 1,
+        teamsCount: 14,
+        maxWeeks: 26,
+        promotionSlots: 0,
+        relegationSlots: 0,
         domesticCups: [],
         format: 'round-robin'
     }

@@ -37,10 +37,12 @@ export const CompetitionPalmaresTab: React.FC<CompetitionPalmaresTabProps> = ({ 
     const isEuropean = ['Inglaterra', 'España', 'Alemania', 'Italia', 'Francia'].includes(userCountry);
     const userContinentalComp = validCompetitions.find(c => c.id === (isEuropean ? 'CHAMPIONS_LEAGUE' : 'COPA_LIBERTADORES'));
     const intercontinentalComp = validCompetitions.find(c => c.id === 'COPA_INTERCONTINENTAL');
+    const clubWorldCupComp = validCompetitions.find(c => c.id === 'CLUB_WORLD_CUP');
+    const recopaComp = !isEuropean ? validCompetitions.find(c => c.id === 'RECOPA_SUDAMERICANA') : undefined;
 
     const quickShortcutComps = useMemo(() => {
-        return [userLeagueComp, userCupComp, userContinentalComp, intercontinentalComp].filter(Boolean) as CompetitionItem[];
-    }, [userLeagueComp, userCupComp, userContinentalComp, intercontinentalComp]);
+        return [userLeagueComp, userCupComp, userContinentalComp, recopaComp, clubWorldCupComp, intercontinentalComp].filter(Boolean) as CompetitionItem[];
+    }, [userLeagueComp, userCupComp, userContinentalComp, recopaComp, clubWorldCupComp, intercontinentalComp]);
 
     const filteredCompetitions = useMemo(() => {
         let list = validCompetitions;

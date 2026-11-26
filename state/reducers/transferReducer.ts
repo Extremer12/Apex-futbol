@@ -7,6 +7,9 @@ import {
     sanitizeIncomingOffers
 } from '../../services/squadRules';
 import { resolvePlayerNationality } from '../../services/nationalityService';
+import { applyMembershipEventBoost, generateClubMembership } from '../../services/membership';
+import { calculateFanApproval } from '../../services/political';
+import { getRegionalWageScale } from '../../services/economy';
 import type { GameAction } from '../reducer';
 
 // Actions handled by this reducer
@@ -254,7 +257,7 @@ export function handleTransferAction(state: GameState, action: TransferAction): 
                 playerPhoto: player.photo
             };
 
-            return {
+            const baseState: GameState = {
                 ...state,
                 team: updatedPlayerTeam,
                 allTeams: updatedAllTeams,
@@ -266,6 +269,31 @@ export function handleTransferAction(state: GameState, action: TransferAction): 
                     weeklyWages: newWages
                 },
                 newsFeed: [newsItem, ...state.newsFeed].slice(0, 20)
+            };
+
+            // Star signing ("Efecto Ilusión"): boost fan approval & membership
+            const regionScale = getRegionalWageScale(state.team.leagueId, state.team.tier);
+            const starThreshold = regionScale < 0.75 ? 78 : 84;
+            if (player.rating >= starThreshold) {
+                const baseMembership = state.membership || generateClubMembership(updatedPlayerTeam, state.stadium);
+                const { updatedMembership, delta } = applyMembershipEventBoost(baseMembership, 'STAR_SIGNING', player.name);
+                if (delta > 0) {
+                    const signingBoomNews: NewsItem = {
+                        id: `membership_star_${Date.now()}_${player.id}`,
+                        headline: `Furor de Socios por ${player.name}`,
+                        body: `La llegada de ${player.name} desató una ola de ilusión: +${delta.toLocaleString()} nuevos socios se afiliaron al club esta semana.`,
+                        date: formatDate(state.currentDate),
+                        type: 'institutional',
+                        sourceName: 'Departamento de Socios'
+                    };
+                    baseState.membership = updatedMembership;
+                    baseState.newsFeed = [signingBoomNews, ...baseState.newsFeed].slice(0, 20);
+                }
+            }
+
+            return {
+                ...baseState,
+                fanApproval: calculateFanApproval(baseState)
             };
         }
 

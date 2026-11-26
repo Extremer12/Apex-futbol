@@ -5,6 +5,7 @@ import { TournamentBracket } from '../../ui/TournamentBracket';
 import { EuropeanTable } from './EuropeanTable';
 import { CUP_LOGOS, CUP_THEMES } from './constants';
 import { customPacksService } from '../../../services/customPacks/packService';
+import { ResourceFallback } from '../../../services/resources/ResourceFallback';
 import { TeamLogo, usePacksVersion } from '../../../data/teams/helpers';
 import { Trophy, Calendar, Table as TableIcon, Layers, Shield, ChevronRight } from 'lucide-react';
 
@@ -107,6 +108,7 @@ export const CupView: React.FC<CupViewProps> = React.memo(({
             europaleague: ['europaleague'],
             copalibertadores: ['copalibertadores'],
             copasudamericana: ['copasudamericana'],
+            recopasudamericana: ['recopasudamericana'],
             facup: ['facup'],
             carabaocup: ['carabaocup'],
             copadelrey: ['copadelrey'],
@@ -115,6 +117,7 @@ export const CupView: React.FC<CupViewProps> = React.memo(({
             copaargentina: ['copaargentina'],
             copamx: ['copamx'],
             copaintercontinental: ['copaintercontinental'],
+            clubworldcup: ['clubworldcup'],
             aperturaplayoffs: ['playoffsapertura', 'aperturaplayoffs'],
             clausuraplayoffs: ['playoffsclausura', 'clausuraplayoffs'],
             nacionalreducido: ['nacionalreducido'],
@@ -286,9 +289,9 @@ export const CupView: React.FC<CupViewProps> = React.memo(({
                     <div className="flex items-center gap-5">
                         <div className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center shrink-0">
                             <img
-                                src={logo || '/sinlogo.png'}
+                                src={logo || ResourceFallback.competitionLogo(cup.name)}
                                 alt={cup.name}
-                                onError={(e) => { (e.target as HTMLImageElement).src = '/sinlogo.png'; }}
+                                onError={(e) => { (e.target as HTMLImageElement).src = ResourceFallback.competitionLogo(cup.name); }}
                                 className="w-full h-full object-contain drop-shadow-2xl"
                             />
                         </div>
@@ -296,7 +299,13 @@ export const CupView: React.FC<CupViewProps> = React.memo(({
                             <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight uppercase italic">{cup.name}</h2>
                             <div className="flex flex-wrap items-center gap-2 md:gap-3 mt-1">
                                 <span className={`font-bold uppercase tracking-widest text-[10px] md:text-xs ${theme.accent}`}>
-                                    {cup.type === 'swiss' ? 'Fase de Liga Suiza (36 Clubes)' : cup.type === 'groups' ? 'Torneo Internacional (Grupos + Eliminatorias)' : 'Torneo Eliminatorio'}
+                                    {cup.type === 'swiss'
+                                        ? 'Fase de Liga Suiza (36 Clubes)'
+                                        : cup.id === 'club_world_cup'
+                                            ? 'Mundial de Clubes FIFA (32 Clubes · 8 Grupos)'
+                                            : cup.type === 'groups'
+                                                ? 'Torneo Internacional (Grupos + Eliminatorias)'
+                                                : 'Torneo Eliminatorio'}
                                 </span>
                                 <span className="text-slate-600 hidden md:block">•</span>
                                 <span className="text-slate-400 text-xs md:text-sm font-medium">{currentStageTitle}</span>

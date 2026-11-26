@@ -6,6 +6,7 @@ import { CupView } from './league/CupView';
 import { ClubRankingsView } from './league/ClubRankingsView';
 import { customPacksService } from '../../services/customPacks/packService';
 import { resourceManager } from '../../services/resources/ResourceManager';
+import { ResourceFallback } from '../../services/resources/ResourceFallback';
 import { TeamLogo, usePacksVersion } from '../../data/teams/helpers';
 import { BottomSheet, EmptyState } from './transfers/TransferUI';
 import { Search, X, SlidersHorizontal, ChevronRight, Globe, SearchX } from 'lucide-react';
@@ -18,11 +19,11 @@ type ScreenTab = 'CURRENT' | 'EXPLORE' | 'RANKINGS';
 type RegionFilter = 'ALL' | 'MY_COUNTRY' | 'INTERNATIONAL' | 'EUROPA' | 'AMERICA';
 type TypeFilter = 'ALL' | 'FIRST_DIV' | 'SECOND_DIV' | 'DOMESTIC_CUP' | 'INTL_CUP';
 
-const AMERICA_COUNTRIES = new Set(['Argentina', 'Brasil', 'Chile', 'Colombia', 'Paraguay', 'México']);
-const EUROPA_COUNTRIES = new Set(['Inglaterra', 'España', 'Alemania', 'Italia', 'Francia']);
+const AMERICA_COUNTRIES = new Set(['Argentina', 'Brasil', 'Uruguay', 'Ecuador', 'Chile', 'Colombia', 'Paraguay', 'México', 'EE.UU.']);
+const EUROPA_COUNTRIES = new Set(['Inglaterra', 'España', 'Alemania', 'Italia', 'Francia', 'Portugal', 'Países Bajos']);
 const COUNTRY_ORDER = [
     'Argentina', 'Inglaterra', 'España', 'Brasil', 'Italia', 'Alemania',
-    'Francia', 'México', 'Colombia', 'Chile', 'Paraguay'
+    'Francia', 'Portugal', 'Países Bajos', 'Uruguay', 'Ecuador', 'México', 'Colombia', 'Chile', 'Paraguay', 'EE.UU.'
 ];
 
 interface AccentStyle {
@@ -56,7 +57,9 @@ const getCompAccent = (comp: CompetitionItem): AccentStyle => {
         case 'EUROPA_LEAGUE': return ACCENTS.orange;
         case 'COPA_LIBERTADORES': return ACCENTS.amber;
         case 'COPA_SUDAMERICANA': return ACCENTS.sky;
+        case 'RECOPA_SUDAMERICANA': return ACCENTS.yellow;
         case 'COPA_INTERCONTINENTAL': return ACCENTS.emerald;
+        case 'CLUB_WORLD_CUP': return ACCENTS.amber;
         case 'FA_CUP': return ACCENTS.rose;
         case 'CARABAO_CUP': return ACCENTS.green;
         case 'COPA_DEL_REY': return ACCENTS.amber;
@@ -206,12 +209,23 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                 if (regionFilter === 'INTERNATIONAL' && comp.category !== 'INTERNATIONAL') return null;
                 if (regionFilter === 'AMERICA') {
                     if (comp.category === 'INTERNATIONAL') {
-                        if (comp.id !== 'COPA_LIBERTADORES' && comp.id !== 'COPA_SUDAMERICANA' && comp.id !== 'COPA_INTERCONTINENTAL') return null;
+                        if (
+                            comp.id !== 'COPA_LIBERTADORES' &&
+                            comp.id !== 'COPA_SUDAMERICANA' &&
+                            comp.id !== 'RECOPA_SUDAMERICANA' &&
+                            comp.id !== 'COPA_INTERCONTINENTAL' &&
+                            comp.id !== 'CLUB_WORLD_CUP'
+                        ) return null;
                     } else if (!comp.country || !AMERICA_COUNTRIES.has(comp.country)) return null;
                 }
                 if (regionFilter === 'EUROPA') {
                     if (comp.category === 'INTERNATIONAL') {
-                        if (comp.id !== 'CHAMPIONS_LEAGUE' && comp.id !== 'EUROPA_LEAGUE' && comp.id !== 'COPA_INTERCONTINENTAL') return null;
+                        if (
+                            comp.id !== 'CHAMPIONS_LEAGUE' &&
+                            comp.id !== 'EUROPA_LEAGUE' &&
+                            comp.id !== 'COPA_INTERCONTINENTAL' &&
+                            comp.id !== 'CLUB_WORLD_CUP'
+                        ) return null;
                     } else if (!comp.country || !EUROPA_COUNTRIES.has(comp.country)) return null;
                 }
 
@@ -263,8 +277,8 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
     };
 
     const selectedLogo = useMemo(() => {
-        if (!selectedCompDef) return '/sinlogo.png';
-        return customPacksService.resolveCompetitionLogo(selectedCompDef.id, selectedCompDef.name, selectedCompDef.logo) || '/sinlogo.png';
+        if (!selectedCompDef) return ResourceFallback.competitionLogo('Torneo');
+        return customPacksService.resolveCompetitionLogo(selectedCompDef.id, selectedCompDef.name, selectedCompDef.logo) || ResourceFallback.competitionLogo(selectedCompDef.name);
     }, [selectedCompDef, packsVersion]);
 
     const selectedAccent = selectedCompDef ? getCompAccent(selectedCompDef) : ACCENTS.amber;
@@ -297,7 +311,7 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                             src={selectedLogo}
                             alt=""
                             className="w-full h-full object-contain"
-                            onError={(e) => { e.currentTarget.src = '/sinlogo.png'; }}
+                            onError={(e) => { e.currentTarget.src = ResourceFallback.competitionLogo(selectedCompDef?.name || 'Torneo'); }}
                         />
                     </div>
                     <div className="min-w-0">
@@ -345,7 +359,7 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                                         src={selectedLogo}
                                         alt={selectedCompDef.name}
                                         className="w-full h-full object-contain"
-                                        onError={(e) => { e.currentTarget.src = '/sinlogo.png'; }}
+                                        onError={(e) => { e.currentTarget.src = ResourceFallback.competitionLogo(selectedCompDef?.name || 'Torneo'); }}
                                     />
                                 </div>
                                 <div className="min-w-0">
@@ -402,7 +416,7 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                                             src={peerLogo}
                                             alt=""
                                             className="w-3.5 h-3.5 object-contain shrink-0"
-                                            onError={(e) => { e.currentTarget.src = '/sinlogo.png'; }}
+                                            onError={(e) => { e.currentTarget.src = ResourceFallback.competitionLogo(selectedCompDef?.name || 'Torneo'); }}
                                         />
                                         <span>{comp.name}</span>
                                     </button>
@@ -543,7 +557,7 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                                                             src={logo}
                                                             alt={comp.name}
                                                             className="w-full h-full object-contain"
-                                                            onError={(e) => { e.currentTarget.src = '/sinlogo.png'; }}
+                                                            onError={(e) => { e.currentTarget.src = ResourceFallback.competitionLogo(selectedCompDef?.name || 'Torneo'); }}
                                                         />
                                                     </div>
                                                     <div className="min-w-0 flex-1">
@@ -626,7 +640,7 @@ export const LeagueScreen: React.FC<LeagueScreenProps> = ({ gameState }) => {
                                                                                 src={logo}
                                                                                 alt={comp.name}
                                                                                 className="w-full h-full object-contain"
-                                                                                onError={(e) => { e.currentTarget.src = '/sinlogo.png'; }}
+                                                                                onError={(e) => { e.currentTarget.src = ResourceFallback.competitionLogo(selectedCompDef?.name || 'Torneo'); }}
                                                                             />
                                                                         </div>
                                                                         <div className="min-w-0 flex-1">

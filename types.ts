@@ -95,10 +95,17 @@ export enum LeagueId {
   PRIMERA_DIVISION_CHILE = 'PRIMERA_DIVISION_CHILE',
   PRIMERA_B_CHILE = 'PRIMERA_B_CHILE',
   PRIMERA_A_COLOMBIA = 'PRIMERA_A_COLOMBIA',
-  PRIMERA_B_COLOMBIA = 'PRIMERA_B_COLOMBIA'
+  PRIMERA_B_COLOMBIA = 'PRIMERA_B_COLOMBIA',
+  PRIMEIRA_LIGA = 'PRIMEIRA_LIGA',
+  EREDIVISIE = 'EREDIVISIE',
+  LIGA_URUGUAYA = 'LIGA_URUGUAYA',
+  LIGA_ECUADOR = 'LIGA_ECUADOR',
+  MLS = 'MLS'
 }
 
-export type CountryCode = 'ENG' | 'ESP' | 'GER' | 'ITA' | 'FRA' | 'ARG' | 'BRA' | 'PAR' | 'MEX' | 'CHI' | 'COL';
+export type CountryCode =
+  | 'ENG' | 'ESP' | 'GER' | 'ITA' | 'FRA' | 'POR' | 'NED'
+  | 'ARG' | 'BRA' | 'PAR' | 'MEX' | 'CHI' | 'COL' | 'URU' | 'ECU' | 'USA';
 
 export type PlayerNationality =
   | CountryCode
@@ -132,7 +139,12 @@ export const LEAGUE_COUNTRY: Record<LeagueId, CountryCode> = {
   [LeagueId.PRIMERA_DIVISION_CHILE]: 'CHI',
   [LeagueId.PRIMERA_B_CHILE]: 'CHI',
   [LeagueId.PRIMERA_A_COLOMBIA]: 'COL',
-  [LeagueId.PRIMERA_B_COLOMBIA]: 'COL'
+  [LeagueId.PRIMERA_B_COLOMBIA]: 'COL',
+  [LeagueId.PRIMEIRA_LIGA]: 'POR',
+  [LeagueId.EREDIVISIE]: 'NED',
+  [LeagueId.LIGA_URUGUAYA]: 'URU',
+  [LeagueId.LIGA_ECUADOR]: 'ECU',
+  [LeagueId.MLS]: 'USA'
 };
 
 export interface SquadPower {
@@ -462,7 +474,9 @@ export type CupKey =
   | 'europaLeague'
   | 'copaLibertadores'
   | 'copaSudamericana'
-  | 'copaIntercontinental';
+  | 'recopaSudamericana'
+  | 'copaIntercontinental'
+  | 'clubWorldCup';
 
 export const COMPETITION_TO_CUP_KEY: Record<string, CupKey> = {
   'FA_Cup': 'faCup',
@@ -480,7 +494,9 @@ export const COMPETITION_TO_CUP_KEY: Record<string, CupKey> = {
   'Europa_League': 'europaLeague',
   'Copa_Libertadores': 'copaLibertadores',
   'Copa_Sudamericana': 'copaSudamericana',
+  'Recopa_Sudamericana': 'recopaSudamericana',
   'Copa_Intercontinental': 'copaIntercontinental',
+  'Club_World_Cup': 'clubWorldCup',
 };
 
 // Presidential System Types
@@ -529,6 +545,16 @@ export interface Stadium {
 export type SponsorSector = 'apparel' | 'airline' | 'tech' | 'betting' | 'automotive' | 'beverage' | 'banking';
 export type SponsorPrestige = 'Global' | 'Continental' | 'Regional';
 export type TicketPolicy = 'cheap' | 'standard' | 'premium';
+export type MembershipPolicy = 'popular' | 'standard' | 'exclusive';
+
+export interface ClubMembership {
+  activeMembers: number;        // Padrón activo de socios / abonados que pagan cuota
+  baseMembers: number;          // Padrón histórico base del club
+  weeklyFeePerMember: number;   // Cuota semanal promedio base por socio (en EUR)
+  lastWeeklyDelta: number;      // Altas o bajas netas de la última semana
+  lastDeltaReason?: string;     // Motivo resumido de la última variación
+  totalPeakMembers: number;     // Máximo histórico alcanzado durante la gestión
+}
 
 export interface Sponsor {
   id: string;
@@ -571,6 +597,7 @@ export interface FinancialBreakdown {
   matchdayRevenue: number;      // Entradas
   sponsorshipRevenue: number;   // Sponsors
   tvRevenue: number;            // Derechos de TV
+  membershipRevenue?: number;   // Cuota social de socios y abonados
   prizeMoneyRevenue: number;    // Premios de liga/copa
   transferRevenue: number;      // Ventas de jugadores
   merchandisingRevenue?: number;// Venta de indumentaria y marketing global
@@ -630,10 +657,12 @@ export interface GameState {
     balanceHistory: number[];
     breakdown?: FinancialBreakdown; // Detailed breakdown
     ticketPolicy?: TicketPolicy;
+    membershipPolicy?: MembershipPolicy;
     activeLoans?: BankLoan[];
     clubDirectives?: ClubDirectives;
   };
   stadium: Stadium;
+  membership?: ClubMembership;
   sponsors: Sponsor[];
   availableSponsors: Sponsor[];  // Market of sponsor offers
   // Political System (Separated from tactical management)
@@ -661,7 +690,9 @@ export interface GameState {
     europaLeague: CupCompetition;
     copaLibertadores: CupCompetition;
     copaSudamericana?: CupCompetition;
+    recopaSudamericana?: CupCompetition;
     copaIntercontinental: CupCompetition;
+    clubWorldCup?: CupCompetition;
   };
   availableCoaches: Coach[]; // Market of available coaches
   clubStaff?: ClubStaff; // Active club staff (doctor, fitness coach, sporting director, youth coach)

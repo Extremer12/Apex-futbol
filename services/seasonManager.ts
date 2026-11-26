@@ -7,6 +7,7 @@ import { GameState, Team, Player, NewsItem, EuropeanCompetition, EuropeanTableRo
 import { generateYouthPlayer, generateSeasonSchedule, generateCupDraw, createInitialLeagueTable, handlePromotionRelegation, generateSwissPhase, generateGroupPhase, createInitialEuropeanTable, sortArgentineZones, simulateMacroMatch, PROMOTION_RELEGATION_PAIRS, finalizeSeasonCompetitions } from './simulation';
 import { computeArgentineRelegation, computeArgentineInternationalQualification } from './argentinaRegulations';
 import { calculatePrizeMoney, generateSponsorMarket } from './economy';
+import { generateClubMembership, applyMembershipEventBoost } from './membership';
 import { generateCoachMarket } from './coaching';
 import { generateStaffMarket, generateScoutMarket } from './staffService';
 import { awardPresidentXp, getPresidentialStyleModifiers } from './presidentialProgression';
@@ -14,6 +15,7 @@ import { formatDate, formatCurrency } from '../utils';
 import { evaluateAchievements } from './achievementService';
 import { initializeLibertadoresSeason } from './libertadoresEngine';
 import { initializeSudamericanaSeason } from './sudamericanaEngine';
+import { initializeClubWorldCupSeason, generateRecopaSudamericanaFixtures } from './clubWorldCupEngine';
 import { SOUTH_AMERICAN_EXTRA_TEAMS } from '../data/teams/southAmericanClubs';
 import { resourceManager } from './resources/ResourceManager';
 import { processFullSeasonSquadProgression } from './squadProgressionService';
@@ -100,7 +102,12 @@ export function startNewSeason(currentState: GameState): GameState {
         [LeagueId.PRIMERA_DIVISION_CHILE]: 'Primera División de Chile',
         [LeagueId.PRIMERA_B_CHILE]: 'Primera B de Chile',
         [LeagueId.PRIMERA_A_COLOMBIA]: 'Liga BetPlay (Primera A Colombia)',
-        [LeagueId.PRIMERA_B_COLOMBIA]: 'Torneo BetPlay (Primera B Colombia)'
+        [LeagueId.PRIMERA_B_COLOMBIA]: 'Torneo BetPlay (Primera B Colombia)',
+        [LeagueId.PRIMEIRA_LIGA]: 'Liga Portugal Betclic',
+        [LeagueId.EREDIVISIE]: 'Eredivisie',
+        [LeagueId.LIGA_URUGUAYA]: 'Liga AUF Uruguaya',
+        [LeagueId.LIGA_ECUADOR]: 'LigaPro Serie A',
+        [LeagueId.MLS]: 'Major League Soccer'
     };
 
     // Ensure all competitions of the season are crowned and finalized before awarding trophies
@@ -190,6 +197,12 @@ export function startNewSeason(currentState: GameState): GameState {
 
     const intWinner = getCupWinnerId(currentState.cups.copaIntercontinental);
     if (intWinner) trophiesToAward.push({ teamId: intWinner, name: 'Copa Intercontinental', type: 'cup' });
+
+    const recWinner = getCupWinnerId(currentState.cups.recopaSudamericana);
+    if (recWinner) trophiesToAward.push({ teamId: recWinner, name: 'Recopa Sudamericana', type: 'cup' });
+
+    const cwcWinner = getCupWinnerId(currentState.cups.clubWorldCup);
+    if (cwcWinner) trophiesToAward.push({ teamId: cwcWinner, name: 'Mundial de Clubes FIFA', type: 'cup' });
 
     // Apply Trophies to processedTeams
     const teamsWithTrophies = processedTeams.map(team => {
@@ -453,27 +466,31 @@ export function startNewSeason(currentState: GameState): GameState {
             .filter(Boolean) as Team[];
     };
 
-    // Champions League Qualification (36 unique teams for 2026 format)
+    // Champions League Qualification (36 unique teams for 2026 format: Top 5 + Portugal + Netherlands)
     const clTeamsMap = new Map<number, Team>();
     [
-        ...getTopTeams(LeagueId.PREMIER_LEAGUE, 7),
-        ...getTopTeams(LeagueId.LA_LIGA, 7),
-        ...getTopTeams(LeagueId.BUNDESLIGA, 7),
-        ...getTopTeams(LeagueId.SERIE_A, 7),
-        ...getTopTeams(LeagueId.LIGUE_1, 6),
-        ...getTopTeams(LeagueId.CHAMPIONSHIP, 2)
+        ...getTopTeams(LeagueId.PREMIER_LEAGUE, 6),
+        ...getTopTeams(LeagueId.LA_LIGA, 6),
+        ...getTopTeams(LeagueId.BUNDESLIGA, 6),
+        ...getTopTeams(LeagueId.SERIE_A, 6),
+        ...getTopTeams(LeagueId.LIGUE_1, 5),
+        ...getTopTeams(LeagueId.PRIMEIRA_LIGA, 3),
+        ...getTopTeams(LeagueId.EREDIVISIE, 3),
+        ...getTopTeams(LeagueId.CHAMPIONSHIP, 1)
     ].forEach(t => clTeamsMap.set(t.id, t));
     const clTeams = Array.from(clTeamsMap.values()).slice(0, 36);
 
     // Europa League Qualification (36 unique teams for 2026 format)
     const elTeamsMap = new Map<number, Team>();
     [
-        ...getTeamsRange(LeagueId.PREMIER_LEAGUE, 7, 7),
-        ...getTeamsRange(LeagueId.LA_LIGA, 7, 7),
-        ...getTeamsRange(LeagueId.BUNDESLIGA, 7, 7),
-        ...getTeamsRange(LeagueId.SERIE_A, 7, 7),
-        ...getTeamsRange(LeagueId.LIGUE_1, 6, 6),
-        ...getTeamsRange(LeagueId.CHAMPIONSHIP, 2, 2)
+        ...getTeamsRange(LeagueId.PREMIER_LEAGUE, 6, 6),
+        ...getTeamsRange(LeagueId.LA_LIGA, 6, 6),
+        ...getTeamsRange(LeagueId.BUNDESLIGA, 6, 6),
+        ...getTeamsRange(LeagueId.SERIE_A, 6, 6),
+        ...getTeamsRange(LeagueId.LIGUE_1, 5, 5),
+        ...getTeamsRange(LeagueId.PRIMEIRA_LIGA, 3, 3),
+        ...getTeamsRange(LeagueId.EREDIVISIE, 3, 3),
+        ...getTeamsRange(LeagueId.CHAMPIONSHIP, 1, 2)
     ].filter(t => !clTeamsMap.has(t.id)).forEach(t => elTeamsMap.set(t.id, t));
     const elTeams = Array.from(elTeamsMap.values()).slice(0, 36);
 
@@ -522,9 +539,12 @@ export function startNewSeason(currentState: GameState): GameState {
     const libGroupFixtures = libInit.fixtures;
     const sudGroupFixtures = sudInit.fixtures;
 
-    // Intercontinental Cup
+    // Intercontinental Cup, Recopa Sudamericana & FIFA Club World Cup (32 teams)
     const lastLibertadoresWinner = currentState.cups.copaLibertadores?.winnerId;
+    const lastSudamericanaWinner = currentState.cups.copaSudamericana?.winnerId;
     const lastChampionsWinner = currentState.cups.championsLeague?.winnerId;
+    const lastEuropaWinner = currentState.cups.europaLeague?.winnerId;
+    const lastCwcWinner = currentState.cups.clubWorldCup?.winnerId;
     
     let intercontinentalFixtures: Match[] = [];
     if (lastLibertadoresWinner && lastChampionsWinner) {
@@ -542,10 +562,22 @@ export function startNewSeason(currentState: GameState): GameState {
         }
     }
 
+    const recopaFixtures = generateRecopaSudamericanaFixtures(lastLibertadoresWinner, lastSudamericanaWinner, teamsAfterProRel, 8);
+    const cwcInit = initializeClubWorldCupSeason({
+        allTeams: teamsAfterProRel,
+        leagueTables: currentState.leagueTables,
+        championsLeagueWinnerId: lastChampionsWinner,
+        europaLeagueWinnerId: lastEuropaWinner,
+        libertadoresWinnerId: lastLibertadoresWinner,
+        sudamericanaWinnerId: lastSudamericanaWinner,
+        defendingClubWorldCupWinnerId: lastCwcWinner,
+        startWeek: 22
+    }, currentState.cups.clubWorldCup);
+
     const fullSchedule = [
         ...newSeasonSchedule, 
         ...faCupFixtures, ...carabaoCupFixtures, ...copaDelReyFixtures, ...dfbPokalFixtures, ...coppaItaliaFixtures, ...copaArgentinaFixtures, ...copaMxFixtures,
-        ...clFixtures, ...elFixtures, ...libGroupFixtures, ...sudGroupFixtures, ...intercontinentalFixtures
+        ...clFixtures, ...elFixtures, ...libGroupFixtures, ...sudGroupFixtures, ...intercontinentalFixtures, ...recopaFixtures, ...cwcInit.fixtures
     ];
 
     // 6. Create news items
@@ -735,10 +767,57 @@ export function startNewSeason(currentState: GameState): GameState {
     const totalEndSeasonIncome = prizeMoney + sponsorshipBonuses;
     const newBalance = currentState.finances.balance + totalEndSeasonIncome;
 
+    // 8.5 Update Club Membership (Socios) for major season milestones (Trophies, Promotion, Relegation)
+    let updatedMembership = currentState.membership || generateClubMembership(updatedPlayerTeamWithTrophies, currentState.stadium);
+    let seasonMembershipDelta = 0;
+    const seasonMembershipNotes: string[] = [];
+
+    const userSeasonTrophies = trophiesToAward.filter(t => t.teamId === updatedPlayerTeam.id);
+    for (const tr of userSeasonTrophies) {
+        const isContinentalMajor = tr.name === 'UEFA Champions League' || tr.name === 'Copa Libertadores';
+        const evType = isContinentalMajor ? 'CONTINENTAL_WIN' : tr.type === 'league' ? 'LEAGUE_WIN' : 'CUP_WIN';
+        const res = applyMembershipEventBoost(updatedMembership, evType, tr.name);
+        updatedMembership = res.updatedMembership;
+        seasonMembershipDelta += res.delta;
+        if (res.delta !== 0) {
+            seasonMembershipNotes.push(`${tr.name}: +${res.delta.toLocaleString()} socios`);
+        }
+    }
+
+    const prevLeagueId = currentState.team.leagueId;
+    const postProRelTeam = teamsAfterProRel.find(t => t.id === currentState.team.id);
+    const nextLeagueId = postProRelTeam?.leagueId;
+    if (nextLeagueId && nextLeagueId !== prevLeagueId) {
+        const wasPromoted = PROMOTION_RELEGATION_PAIRS.some(([d1, d2]) => prevLeagueId === d2 && nextLeagueId === d1);
+        const wasRelegated = PROMOTION_RELEGATION_PAIRS.some(([d1, d2]) => prevLeagueId === d1 && nextLeagueId === d2);
+        if (wasPromoted) {
+            const res = applyMembershipEventBoost(updatedMembership, 'PROMOTION');
+            updatedMembership = res.updatedMembership;
+            seasonMembershipDelta += res.delta;
+            if (res.delta !== 0) seasonMembershipNotes.push(`Ascenso: +${res.delta.toLocaleString()} socios`);
+        } else if (wasRelegated) {
+            const res = applyMembershipEventBoost(updatedMembership, 'RELEGATION');
+            updatedMembership = res.updatedMembership;
+            seasonMembershipDelta += res.delta;
+            if (res.delta !== 0) seasonMembershipNotes.push(`Descenso: ${res.delta.toLocaleString()} socios`);
+        }
+    }
+    if (seasonMembershipDelta !== 0) {
+        updatedMembership = {
+            ...updatedMembership,
+            lastWeeklyDelta: seasonMembershipDelta,
+            lastDeltaReason: seasonMembershipNotes.join(' · ')
+        };
+    }
+
+    const membershipLine = seasonMembershipNotes.length > 0
+        ? `\nPadrón de Socios: ${seasonMembershipNotes.join(' | ')} (Total: ${updatedMembership.activeMembers.toLocaleString()})`
+        : '';
+
     const prizeNews: NewsItem = {
         id: `prize_${newSeasonYear}`,
-        headline: `💰 Balance de Final de Temporada`,
-        body: `Premios de Liga: ${formatCurrency(prizeMoney)} por terminar ${playerPosition}º.\n${bonusMessages.join('\n')}\nTotal ingresado: ${formatCurrency(totalEndSeasonIncome)}`,
+        headline: `Balance de Final de Temporada`,
+        body: `Premios de Liga: ${formatCurrency(prizeMoney)} por terminar ${playerPosition}º.\n${bonusMessages.join('\n')}\nTotal ingresado: ${formatCurrency(totalEndSeasonIncome)}${membershipLine}`,
         date: formatDate(newDate),
         type: 'achievement'
     };
@@ -1122,8 +1201,28 @@ export function startNewSeason(currentState: GameState): GameState {
                 type: 'knockout', phase: 'knockout',
                 rounds: intercontinentalFixtures.length > 0 ? [{ name: 'Final', fixtures: intercontinentalFixtures, completed: false }] : [],
                 currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: buildArchiveChampions(currentState.cups.copaIntercontinental) }
+            },
+            recopaSudamericana: {
+                id: 'recopa_sudamericana', name: 'Recopa Sudamericana',
+                type: 'knockout', phase: 'knockout',
+                rounds: recopaFixtures.length === 2 ? [{
+                    name: 'Final',
+                    fixtures: [recopaFixtures[0]],
+                    secondLegFixtures: [recopaFixtures[1]],
+                    completed: false
+                }] : [],
+                currentRoundIndex: 0, statistics: { topScorers: [], championsHistory: buildArchiveChampions(currentState.cups.recopaSudamericana) }
+            },
+            clubWorldCup: {
+                ...cwcInit.cup,
+                statistics: {
+                    topScorers: [],
+                    championsHistory: buildArchiveChampions(currentState.cups.clubWorldCup)
+                }
             }
         },
+        stadium: currentState.stadium,
+        membership: updatedMembership,
         finances: (() => {
             const isSouthAm = [
                 LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,

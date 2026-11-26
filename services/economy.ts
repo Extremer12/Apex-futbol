@@ -1,6 +1,56 @@
-import { Stadium, Sponsor, Team, FinancialBreakdown, LeagueId, SponsorSector, SponsorPrestige, TicketPolicy, BankLoan, ClubDirectives, Scout } from '../types';
+import { Stadium, Sponsor, Team, FinancialBreakdown, LeagueId, SponsorSector, SponsorPrestige, TicketPolicy, BankLoan, ClubDirectives, Scout, ClubMembership, MembershipPolicy } from '../types';
 import { getTeamStadium } from '../data/stadiums';
 import { getPresidentialStyleModifiers } from './presidentialProgression';
+import { calculateMembershipRevenue } from './membership';
+
+export const getRegionalWageScale = (leagueId?: string, tier: Team['tier'] = 'Mid'): number => {
+    switch (leagueId) {
+        case LeagueId.BRASILEIRAO:
+        case 'BRASILEIRAO':
+            return 0.62;
+        case LeagueId.SERIE_B_BR:
+        case 'SERIE_B_BR':
+            return 0.28;
+        case LeagueId.LIGA_ARGENTINA:
+        case 'LIGA_ARGENTINA':
+            return tier === 'Top' ? 0.42 : 0.35;
+        case LeagueId.PRIMERA_NACIONAL:
+        case 'PRIMERA_NACIONAL':
+            return 0.22;
+        case LeagueId.LIGA_MX:
+        case 'LIGA_MX':
+            return 0.70;
+        case LeagueId.LIGA_EXPANSION_MX:
+        case 'LIGA_EXPANSION_MX':
+            return 0.35;
+        case LeagueId.PRIMERA_DIVISION_CHILE:
+        case 'PRIMERA_DIVISION_CHILE':
+        case LeagueId.PRIMERA_A_COLOMBIA:
+        case 'PRIMERA_A_COLOMBIA':
+        case LeagueId.COPA_DE_PRIMERA:
+        case 'COPA_DE_PRIMERA':
+        case LeagueId.LIGA_URUGUAYA:
+        case 'LIGA_URUGUAYA':
+        case LeagueId.LIGA_ECUADOR:
+        case 'LIGA_ECUADOR':
+            return tier === 'Top' ? 0.38 : 0.25;
+        case LeagueId.PRIMEIRA_LIGA:
+        case 'PRIMEIRA_LIGA':
+        case LeagueId.EREDIVISIE:
+        case 'EREDIVISIE':
+            return tier === 'Top' ? 0.65 : 0.42;
+        case LeagueId.MLS:
+        case 'MLS':
+            return tier === 'Top' ? 0.58 : 0.36;
+        case LeagueId.PRIMERA_B_CHILE:
+        case 'PRIMERA_B_CHILE':
+        case LeagueId.PRIMERA_B_COLOMBIA:
+        case 'PRIMERA_B_COLOMBIA':
+            return 0.15;
+        default:
+            return 1.0;
+    }
+};
 
 export type { FinancialBreakdown };
 
@@ -499,7 +549,9 @@ export const calculateFinancialBreakdown = (
     activeLoans: BankLoan[] = [],
     clubDirectives?: ClubDirectives,
     scouts: Scout[] = [],
-    presidentialStyle?: string
+    presidentialStyle?: string,
+    membership?: ClubMembership,
+    membershipPolicy: MembershipPolicy = 'standard'
 ): FinancialBreakdown => {
     const styleMods = getPresidentialStyleModifiers(presidentialStyle);
     const isSouthAm = [
@@ -515,6 +567,7 @@ export const calculateFinancialBreakdown = (
     const matchdayRevenue = wasHomeMatch ? calculateMatchdayRevenue(stadium, leaguePosition, false, ticketPolicy) : 0;
     const sponsorshipRevenue = sponsors.reduce((sum, s) => sum + s.weeklyIncome, 0);
     const tvRevenue = getBaseWeeklyIncome(leagueId);
+    const membershipRevenue = calculateMembershipRevenue(membership, membershipPolicy);
     const prizeMoneyRevenue = 0;
     const transferRevenue = transfersThisWeek.sold;
 
@@ -523,7 +576,7 @@ export const calculateFinancialBreakdown = (
     let merchandisingExpenses = 0;
     if (clubDirectives?.globalMarketing) {
         merchandisingExpenses = isSouthAm ? 8_000 : 25_000;
-        const top5SquadAvg = team.squad.length > 0 
+        const top5SquadAvg = team.squad.length > 0
             ? team.squad.slice().sort((a, b) => b.rating - a.rating).slice(0, 5).reduce((s, p) => s + p.rating, 0) / Math.min(5, team.squad.length)
             : 70;
         const starBoost = Math.max(1, (top5SquadAvg - 65) / 10);
@@ -561,6 +614,7 @@ export const calculateFinancialBreakdown = (
         matchdayRevenue,
         sponsorshipRevenue,
         tvRevenue,
+        membershipRevenue,
         prizeMoneyRevenue,
         transferRevenue,
         merchandisingRevenue,
@@ -577,8 +631,8 @@ export const calculateFinancialBreakdown = (
 
 export const getNetWeeklyIncome = (breakdown: FinancialBreakdown): number => {
     const income = breakdown.matchdayRevenue + breakdown.sponsorshipRevenue +
-        breakdown.tvRevenue + breakdown.prizeMoneyRevenue + breakdown.transferRevenue +
-        (breakdown.merchandisingRevenue || 0);
+        breakdown.tvRevenue + (breakdown.membershipRevenue || 0) + breakdown.prizeMoneyRevenue +
+        breakdown.transferRevenue + (breakdown.merchandisingRevenue || 0);
 
     const expenses = breakdown.wageExpenses + breakdown.coachExpenses +
         breakdown.stadiumExpenses + breakdown.operationalExpenses +
@@ -801,37 +855,51 @@ export const getBaseWeeklyIncome = (leagueId: string): number => {
             return 350_000;
         case LeagueId.BRASILEIRAO:
         case 'BRASILEIRAO':
-            return 160_000;
+            return 380_000;
         case LeagueId.SERIE_B_BR:
         case 'SERIE_B_BR':
-            return 40_000;
+            return 75_000;
         case LeagueId.LIGA_ARGENTINA:
         case 'LIGA_ARGENTINA':
-            return 85_000;
+            return 135_000;
         case LeagueId.PRIMERA_NACIONAL:
         case 'PRIMERA_NACIONAL':
-            return 22_000;
+            return 40_000;
         case LeagueId.COPA_DE_PRIMERA:
         case 'COPA_DE_PRIMERA':
-            return 30_000;
+            return 55_000;
         case LeagueId.LIGA_MX:
         case 'LIGA_MX':
-            return 220_000;
+            return 320_000;
         case LeagueId.LIGA_EXPANSION_MX:
         case 'LIGA_EXPANSION_MX':
-            return 35_000;
+            return 50_000;
         case LeagueId.PRIMERA_DIVISION_CHILE:
         case 'PRIMERA_DIVISION_CHILE':
-            return 35_000;
+            return 70_000;
         case LeagueId.PRIMERA_B_CHILE:
         case 'PRIMERA_B_CHILE':
-            return 15_000;
+            return 22_000;
         case LeagueId.PRIMERA_A_COLOMBIA:
         case 'PRIMERA_A_COLOMBIA':
-            return 40_000;
+            return 75_000;
         case LeagueId.PRIMERA_B_COLOMBIA:
         case 'PRIMERA_B_COLOMBIA':
-            return 15_000;
+            return 22_000;
+        case LeagueId.PRIMEIRA_LIGA:
+        case 'PRIMEIRA_LIGA':
+            return 650_000;
+        case LeagueId.EREDIVISIE:
+        case 'EREDIVISIE':
+            return 600_000;
+        case LeagueId.LIGA_URUGUAYA:
+        case 'LIGA_URUGUAYA':
+        case LeagueId.LIGA_ECUADOR:
+        case 'LIGA_ECUADOR':
+            return 65_000;
+        case LeagueId.MLS:
+        case 'MLS':
+            return 420_000;
         default:
             return 250_000;
     }
@@ -906,6 +974,19 @@ export const calculatePrizeMoney = (leagueId: string, position: number): number 
         case LeagueId.PRIMERA_B_COLOMBIA:
         case 'PRIMERA_B_COLOMBIA':
             baseAmount = 1_500_000; break;
+        case LeagueId.PRIMEIRA_LIGA:
+        case 'PRIMEIRA_LIGA':
+        case LeagueId.EREDIVISIE:
+        case 'EREDIVISIE':
+            baseAmount = 38_000_000; break;
+        case LeagueId.LIGA_URUGUAYA:
+        case 'LIGA_URUGUAYA':
+        case LeagueId.LIGA_ECUADOR:
+        case 'LIGA_ECUADOR':
+            baseAmount = 4_500_000; break;
+        case LeagueId.MLS:
+        case 'MLS':
+            baseAmount = 18_000_000; break;
         default:
             baseAmount = 10_000_000;
     }

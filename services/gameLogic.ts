@@ -322,7 +322,7 @@ export const generatePlayerContractNegotiationResponse = async (
         };
     }
 
-    const expectedWage = getExpectedWage(player, buyingTeam.tier, role);
+    const expectedWage = getExpectedWage(player, buyingTeam.tier, role, buyingTeam.leagueId);
     const normWage = Math.max(1, wageOffer);
     const normBonus = normalizeMonetaryValue(signingBonus, 0);
     const wageRatio = normWage / Math.max(1, expectedWage);

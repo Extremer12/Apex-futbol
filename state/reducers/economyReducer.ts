@@ -1,6 +1,8 @@
 import { GameState, NewsItem } from '../../types';
 import { formatDate, formatCurrency } from '../../utils';
 import { generateSponsorMarket, getStadiumExpansionCost } from '../../services/economy';
+import { calculateFanApproval } from '../../services/political';
+import { MEMBERSHIP_POLICY_META } from '../../services/membership';
 import type { GameAction } from '../reducer';
 
 // Actions handled by this reducer
@@ -10,6 +12,7 @@ type EconomyAction = Extract<GameAction,
     | { type: 'TAKE_LOAN' }
     | { type: 'REPAY_LOAN' }
     | { type: 'SET_TICKET_POLICY' }
+    | { type: 'SET_MEMBERSHIP_POLICY' }
     | { type: 'REALLOCATE_BUDGET' }
     | { type: 'UPDATE_CLUB_DIRECTIVES' }
     | { type: 'UPGRADE_FACILITY' }
@@ -179,12 +182,40 @@ export function handleEconomyAction(state: GameState, action: EconomyAction): Ga
         }
 
         case 'SET_TICKET_POLICY': {
-            return {
+            const nextState: GameState = {
                 ...state,
                 finances: {
                     ...state.finances,
                     ticketPolicy: action.payload.policy
                 }
+            };
+            return {
+                ...nextState,
+                fanApproval: calculateFanApproval(nextState)
+            };
+        }
+
+        case 'SET_MEMBERSHIP_POLICY': {
+            const policy = action.payload.policy;
+            const meta = MEMBERSHIP_POLICY_META[policy];
+            const nextState: GameState = {
+                ...state,
+                finances: {
+                    ...state.finances,
+                    membershipPolicy: policy
+                },
+                newsFeed: [{
+                    id: `membership_policy_${Date.now()}`,
+                    headline: `Nueva Política Societaria: ${meta.label}`,
+                    body: `La Comisión Directiva ha fijado la nueva escala de cuota social (${meta.label}): ${meta.shortDesc}.`,
+                    date: formatDate(state.currentDate),
+                    type: 'institutional' as const,
+                    sourceName: 'Comunicado Oficial'
+                }, ...state.newsFeed].slice(0, 25)
+            };
+            return {
+                ...nextState,
+                fanApproval: calculateFanApproval(nextState)
             };
         }
 

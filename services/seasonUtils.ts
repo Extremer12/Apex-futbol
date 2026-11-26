@@ -5,7 +5,7 @@ import { finalizeSeasonCompetitions, determineTwoLeggedTieWinner, determineCupWi
 export interface CompetitionChampionItem {
     name: string;
     competitionId?: string;
-    region: 'Internacional' | 'Argentina' | 'Inglaterra' | 'España' | 'Italia' | 'Alemania' | 'Francia' | 'Brasil' | 'Paraguay' | 'Chile' | 'Colombia' | 'México';
+    region: 'Internacional' | 'Argentina' | 'Inglaterra' | 'España' | 'Italia' | 'Alemania' | 'Francia' | 'Portugal' | 'Países Bajos' | 'Brasil' | 'Paraguay' | 'Uruguay' | 'Ecuador' | 'Chile' | 'Colombia' | 'México' | 'EE.UU.';
     category: 'Liga' | 'Copa' | 'Ascenso';
     team: Team | null;
     runnerUp?: Team | null;
@@ -70,6 +70,8 @@ export const isSeasonCompleted = (gameState: GameState | null): boolean => {
     else if (userLeagueId === LeagueId.CHAMPIONSHIP) maxLeagueWeek = 46;
     else if (userLeagueId === LeagueId.SEGUNDA_DIVISION_ESP) maxLeagueWeek = 42;
     else if (userLeagueId === LeagueId.BUNDESLIGA || userLeagueId === LeagueId.ZWEITE_BUNDESLIGA || userLeagueId === LeagueId.LIGUE_1) maxLeagueWeek = 34;
+    else if (userLeagueId === LeagueId.PRIMEIRA_LIGA || userLeagueId === LeagueId.EREDIVISIE || userLeagueId === LeagueId.MLS) maxLeagueWeek = 26;
+    else if (userLeagueId === LeagueId.LIGA_URUGUAYA || userLeagueId === LeagueId.LIGA_ECUADOR) maxLeagueWeek = 22;
 
     // 3. Check if the user is still alive in an active cup where subsequent rounds must be played
     const userCupActive = Object.values(gameState.cups || {}).some(cup => {
@@ -307,6 +309,8 @@ export const getSeasonSummaryData = (gameState: GameState): SeasonSummaryData =>
         ['Copa Sudamericana', gameState.cups?.copaSudamericana],
         ['UEFA Champions League', gameState.cups?.championsLeague],
         ['UEFA Europa League', gameState.cups?.europaLeague],
+        ['Recopa Sudamericana', gameState.cups?.recopaSudamericana],
+        ['Mundial de Clubes FIFA', gameState.cups?.clubWorldCup],
         ['Copa Intercontinental', gameState.cups?.copaIntercontinental],
     ];
 
@@ -366,9 +370,11 @@ export const getSeasonSummaryData = (gameState: GameState): SeasonSummaryData =>
         // Internacionales
         buildCupChamp('Copa Libertadores', 'COPA_LIBERTADORES', 'Internacional', 'Copa', gameState.cups?.copaLibertadores, 'Gloria Eterna'),
         buildCupChamp('Copa Sudamericana', 'COPA_SUDAMERICANA', 'Internacional', 'Copa', gameState.cups?.copaSudamericana, 'La Gran Conquista'),
+        buildCupChamp('Recopa Sudamericana', 'RECOPA_SUDAMERICANA', 'Internacional', 'Copa', gameState.cups?.recopaSudamericana, 'Campeón Recopa'),
         buildCupChamp('UEFA Champions League', 'CHAMPIONS_LEAGUE', 'Internacional', 'Copa', gameState.cups?.championsLeague, 'Campeón Europeo'),
         buildCupChamp('UEFA Europa League', 'EUROPA_LEAGUE', 'Internacional', 'Copa', gameState.cups?.europaLeague, 'Campeón'),
-        buildCupChamp('Copa Intercontinental', 'COPA_INTERCONTINENTAL', 'Internacional', 'Copa', gameState.cups?.copaIntercontinental, 'Campeón Mundial'),
+        buildCupChamp('Mundial de Clubes FIFA', 'CLUB_WORLD_CUP', 'Internacional', 'Copa', gameState.cups?.clubWorldCup, 'Campeón Mundial'),
+        buildCupChamp('Copa Intercontinental', 'COPA_INTERCONTINENTAL', 'Internacional', 'Copa', gameState.cups?.copaIntercontinental, 'Campeón Intercontinental'),
 
         // Argentina
         buildCupChamp('Torneo Apertura', 'LIGA_ARGENTINA', 'Argentina', 'Liga', gameState.cups?.aperturaPlayoffs, 'Campeón Apertura'),
@@ -427,10 +433,19 @@ export const getSeasonSummaryData = (gameState: GameState): SeasonSummaryData =>
         buildLeagueChamp('Liga BetPlay (Primera A)', 'Colombia', 'Liga', LeagueId.PRIMERA_A_COLOMBIA, 'Campeón'),
         buildLeagueChamp('Torneo BetPlay (Primera B)', 'Colombia', 'Ascenso', LeagueId.PRIMERA_B_COLOMBIA, 'Campeón Ascenso'),
 
-        // México
+        // México & EE.UU.
         buildLeagueChamp('Liga MX', 'México', 'Liga', LeagueId.LIGA_MX, 'Campeón'),
         buildLeagueChamp('Liga de Expansión MX', 'México', 'Ascenso', LeagueId.LIGA_EXPANSION_MX, 'Campeón Ascenso'),
         buildCupChamp('Copa MX', 'COPA_MX', 'México', 'Copa', (gameState.cups as any)?.copaMx, 'Campeón Copa'),
+        buildLeagueChamp('Major League Soccer', 'EE.UU.', 'Liga', LeagueId.MLS, 'MLS Cup'),
+
+        // Portugal & Países Bajos
+        buildLeagueChamp('Liga Portugal Betclic', 'Portugal', 'Liga', LeagueId.PRIMEIRA_LIGA, 'Campeão'),
+        buildLeagueChamp('Eredivisie', 'Países Bajos', 'Liga', LeagueId.EREDIVISIE, 'Kampioen'),
+
+        // Uruguay & Ecuador
+        buildLeagueChamp('Liga AUF Uruguaya', 'Uruguay', 'Liga', LeagueId.LIGA_URUGUAYA, 'Campeón Uruguayo'),
+        buildLeagueChamp('LigaPro Serie A', 'Ecuador', 'Liga', LeagueId.LIGA_ECUADOR, 'Campeón Ecuador'),
     ];
 
     // Ascensos y Descensos calculation specifically for active context
@@ -485,8 +500,10 @@ export const getSeasonSummaryData = (gameState: GameState): SeasonSummaryData =>
             LeagueId.LIGUE_1
         ].includes(userLeagueId as LeagueId) ? 2 : (userLeagueId === LeagueId.BRASILEIRAO ? 4 : 3);
 
-        relegatedTeams = sortedDiv1.slice(-slots).map(r => findTeam(r.teamId)).filter(Boolean) as Team[];
-        promotedTeams = sortedDiv2.slice(0, slots).map(r => findTeam(r.teamId)).filter(Boolean) as Team[];
+        if (lowerLeagueId && sortedDiv2.length > 0) {
+            relegatedTeams = sortedDiv1.slice(-slots).map(r => findTeam(r.teamId)).filter(Boolean) as Team[];
+            promotedTeams = sortedDiv2.slice(0, slots).map(r => findTeam(r.teamId)).filter(Boolean) as Team[];
+        }
     }
 
     // International qualifications
@@ -500,6 +517,8 @@ export const getSeasonSummaryData = (gameState: GameState): SeasonSummaryData =>
         LeagueId.COPA_DE_PRIMERA,
         LeagueId.PRIMERA_DIVISION_CHILE,
         LeagueId.PRIMERA_A_COLOMBIA,
+        LeagueId.LIGA_URUGUAYA,
+        LeagueId.LIGA_ECUADOR,
     ].includes(userLeagueId as LeagueId);
 
     const isEuropeanFirstDiv = [
@@ -508,6 +527,8 @@ export const getSeasonSummaryData = (gameState: GameState): SeasonSummaryData =>
         LeagueId.BUNDESLIGA,
         LeagueId.SERIE_A,
         LeagueId.LIGUE_1,
+        LeagueId.PRIMEIRA_LIGA,
+        LeagueId.EREDIVISIE,
     ].includes(userLeagueId as LeagueId);
 
     if (isArgentina) {

@@ -88,6 +88,26 @@ export function buildLibertadoresParticipants(context: LibertadoresQualification
                 teams.push(t);
                 seen.add(t.id);
             });
+        } else if (countryCode === 'URU') {
+            const uruTeams = allTeams.filter(t => t.leagueId === LeagueId.LIGA_URUGUAYA && !seen.has(t.id));
+            uruTeams.forEach(t => {
+                teams.push(t);
+                seen.add(t.id);
+            });
+            SOUTH_AMERICAN_EXTRA_TEAMS.filter(t => t.country === 'URU' && !seen.has(t.id)).forEach(t => {
+                teams.push(t);
+                seen.add(t.id);
+            });
+        } else if (countryCode === 'ECU') {
+            const ecuTeams = allTeams.filter(t => t.leagueId === LeagueId.LIGA_ECUADOR && !seen.has(t.id));
+            ecuTeams.forEach(t => {
+                teams.push(t);
+                seen.add(t.id);
+            });
+            SOUTH_AMERICAN_EXTRA_TEAMS.filter(t => t.country === 'ECU' && !seen.has(t.id)).forEach(t => {
+                teams.push(t);
+                seen.add(t.id);
+            });
         } else {
             const extras = SOUTH_AMERICAN_EXTRA_TEAMS.filter(t => t.country === countryCode && !seen.has(t.id));
             extras.forEach(t => {

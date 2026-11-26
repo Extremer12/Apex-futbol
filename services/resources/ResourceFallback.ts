@@ -238,7 +238,69 @@ export class ResourceFallback {
             return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
         }
 
-        // 4. Meisterschale / Plate style trophy (Bundesliga)
+        // 4. Recopa / Supercup Star Amphora (Recopa Sudamericana / Supercopas)
+        if (key.includes('recopa') || key.includes('supercup') || key.includes('supercopa')) {
+            const svg = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 140" width="120" height="140">
+                <defs>
+                    <linearGradient id="recopa-silver" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#ffffff"/>
+                        <stop offset="45%" stop-color="#cbd5e1"/>
+                        <stop offset="100%" stop-color="#64748b"/>
+                    </linearGradient>
+                    <linearGradient id="recopa-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#fef08a"/>
+                        <stop offset="50%" stop-color="#eab308"/>
+                        <stop offset="100%" stop-color="#a16207"/>
+                    </linearGradient>
+                </defs>
+                <path d="M 34 32 C 18 28, 16 62, 40 70" fill="none" stroke="url(#recopa-gold)" stroke-width="5" stroke-linecap="round"/>
+                <path d="M 86 32 C 102 28, 104 62, 80 70" fill="none" stroke="url(#recopa-gold)" stroke-width="5" stroke-linecap="round"/>
+                <path d="M 38 22 L 82 22 L 74 74 C 70 86, 65 92, 60 94 C 55 92, 50 86, 46 74 Z" fill="url(#recopa-silver)" stroke="url(#recopa-gold)" stroke-width="1.5"/>
+                <polygon points="60,36 63,45 72,45 65,51 67,60 60,54 53,60 55,51 48,45 57,45" fill="url(#recopa-gold)"/>
+                <path d="M 54 94 L 66 94 L 68 112 L 52 112 Z" fill="url(#recopa-gold)"/>
+                <rect x="34" y="112" width="52" height="18" rx="3" fill="#0f172a" stroke="url(#recopa-gold)" stroke-width="1.6"/>
+            </svg>
+            `.trim();
+            return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+        }
+
+        // 5. Domestic Knockout Cups (FA Cup, Copa del Rey, DFB Pokal, Coppa Italia, Copa Argentina, Carabao)
+        if (key.includes('fa_cup') || key.includes('fa cup') || key.includes('copa_del_rey') || key.includes('copa del rey') || key.includes('pokal') || key.includes('coppa') || key.includes('copa_argentina') || key.includes('copa argentina') || key.includes('carabao') || key.includes('copa_mx') || key.includes('copa mx')) {
+            const svg = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 140" width="120" height="140">
+                <defs>
+                    <linearGradient id="cup-silver" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#f8fafc"/>
+                        <stop offset="40%" stop-color="#cbd5e1"/>
+                        <stop offset="80%" stop-color="#94a3b8"/>
+                        <stop offset="100%" stop-color="#475569"/>
+                    </linearGradient>
+                    <linearGradient id="cup-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#fef08a"/>
+                        <stop offset="60%" stop-color="#f59e0b"/>
+                        <stop offset="100%" stop-color="#b45309"/>
+                    </linearGradient>
+                </defs>
+                <!-- Crowned Finial Lid -->
+                <path d="M 42 24 C 44 14, 76 14, 78 24 Z" fill="url(#cup-gold)"/>
+                <circle cx="60" cy="11" r="4" fill="url(#cup-gold)"/>
+                <!-- Ornate Handles -->
+                <path d="M 34 32 C 18 32, 20 62, 42 66" fill="none" stroke="url(#cup-silver)" stroke-width="4.5" stroke-linecap="round"/>
+                <path d="M 86 32 C 102 32, 100 62, 78 66" fill="none" stroke="url(#cup-silver)" stroke-width="4.5" stroke-linecap="round"/>
+                <!-- Chalice Body -->
+                <path d="M 35 24 L 85 24 C 82 54, 74 82, 60 90 C 46 82, 38 54, 35 24 Z" fill="url(#cup-silver)"/>
+                <rect x="39" y="42" width="42" height="7" rx="2" fill="url(#cup-gold)" opacity="0.85"/>
+                <!-- Fluted Stem & Two-Tier Plinth -->
+                <path d="M 53 90 L 67 90 L 70 112 L 50 112 Z" fill="url(#cup-silver)"/>
+                <rect x="42" y="112" width="36" height="7" rx="2" fill="#475569"/>
+                <rect x="32" y="119" width="56" height="14" rx="3" fill="#090d16" stroke="url(#cup-silver)" stroke-width="1.6"/>
+            </svg>
+            `.trim();
+            return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+        }
+
+        // 6. Meisterschale / Plate style trophy (Bundesliga)
         if (key.includes('bundesliga') || key.includes('zweite') || key.includes('plato') || key.includes('schale')) {
             const svg = `
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 140" width="120" height="140">
@@ -336,7 +398,7 @@ export class ResourceFallback {
             case 'flag':
                 return this.flag(String(identifier || ''));
             default:
-                return '/sinlogo.png';
+                return this.competitionLogo(String(identifier || 'Club'));
         }
     }
 }

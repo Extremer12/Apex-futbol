@@ -9,7 +9,9 @@ import { generateRandomCoach, generateCoachMarket } from './coaching';
 import { generateYouthPlayer, generateSeasonSchedule, generateCupDraw, createInitialLeagueTable, generateSwissPhase, generateGroupPhase, createInitialEuropeanTable, sortArgentineZones } from './simulation';
 import { initializeLibertadoresSeason } from './libertadoresEngine';
 import { initializeSudamericanaSeason } from './sudamericanaEngine';
+import { initializeClubWorldCupSeason, generateRecopaSudamericanaFixtures } from './clubWorldCupEngine';
 import { getBaseWeeklyIncome, generateStadium, generateSponsor, generateSponsorMarket } from './economy';
+import { generateClubMembership, calculateMembershipRevenue } from './membership';
 import { formatDate } from '../utils';
 import { getInitialAchievements } from './achievementService';
 import { calculateFanApproval } from './political';
@@ -81,13 +83,14 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
         () => generateYouthPlayer(playerTeamCopy.tier, 0, homeCountry)
     );
 
-    // Calculate initial finances
+    // Calculate initial finances & membership
     const totalWages = playerTeamCopy.squad.reduce((sum, player) => sum + player.wage, 0);
-    const weeklyIncome = getBaseWeeklyIncome(selectedTeam.leagueId); // Dynamic based on league
+    const initialStadium = generateStadium(playerTeamCopy);
+    const initialMembership = generateClubMembership(playerTeamCopy, initialStadium);
+    const weeklyIncome = getBaseWeeklyIncome(selectedTeam.leagueId) + calculateMembershipRevenue(initialMembership, 'standard');
 
     // Generate club-tailored initial news
     const starPlayer = [...playerTeamCopy.squad].sort((a, b) => b.rating - a.rating)[0];
-    const initialStadium = generateStadium(playerTeamCopy);
 
     const presidentName = playerProfile?.name || 'su nuevo presidente';
     const initialNews: NewsItem[] = [
@@ -170,6 +173,11 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
     const expansionChileTeamsList = allTeamsCopy.filter(t => t.leagueId === LeagueId.PRIMERA_B_CHILE);
     const colombianTeamsList = allTeamsCopy.filter(t => t.leagueId === LeagueId.PRIMERA_A_COLOMBIA);
     const expansionColombianTeamsList = allTeamsCopy.filter(t => t.leagueId === LeagueId.PRIMERA_B_COLOMBIA);
+    const primeiraTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.PRIMEIRA_LIGA);
+    const eredivisieTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.EREDIVISIE);
+    const uruguayTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.LIGA_URUGUAYA);
+    const ecuadorTeams = allTeamsCopy.filter(t => t.leagueId === LeagueId.LIGA_ECUADOR);
+    const mlsTeamsList = allTeamsCopy.filter(t => t.leagueId === LeagueId.MLS);
 
     // International competitions (Champions League, Copa Libertadores) are NOT generated
     // in season 1. They will be created by seasonManager.ts from season 2 onwards
@@ -225,27 +233,31 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
         }).slice(start, start + count);
     };
 
-    // UEFA Champions League (36 teams)
+    // UEFA Champions League (36 teams: Top 5 + Portugal + Países Bajos)
     const clTeamsMap = new Map<number, Team>();
     [
-        ...getTopClubs(plTeams, 7),
-        ...getTopClubs(laTeams, 7),
-        ...getTopClubs(gerTeams, 7),
-        ...getTopClubs(itaTeams, 7),
-        ...getTopClubs(ligue1Teams, 6),
-        ...getTopClubs(chTeams, 2)
+        ...getTopClubs(plTeams, 6),
+        ...getTopClubs(laTeams, 6),
+        ...getTopClubs(gerTeams, 6),
+        ...getTopClubs(itaTeams, 6),
+        ...getTopClubs(ligue1Teams, 5),
+        ...getTopClubs(primeiraTeams, 3),
+        ...getTopClubs(eredivisieTeams, 3),
+        ...getTopClubs(chTeams, 1)
     ].forEach(t => clTeamsMap.set(t.id, t));
     const clTeams = Array.from(clTeamsMap.values()).slice(0, 36);
 
     // UEFA Europa League (36 teams)
     const elTeamsMap = new Map<number, Team>();
     [
-        ...getMidClubs(plTeams, 7, 7),
-        ...getMidClubs(laTeams, 7, 7),
-        ...getMidClubs(gerTeams, 7, 7),
-        ...getMidClubs(itaTeams, 7, 7),
-        ...getMidClubs(ligue1Teams, 6, 6),
-        ...getMidClubs(chTeams, 2, 2)
+        ...getMidClubs(plTeams, 6, 6),
+        ...getMidClubs(laTeams, 6, 6),
+        ...getMidClubs(gerTeams, 6, 6),
+        ...getMidClubs(itaTeams, 6, 6),
+        ...getMidClubs(ligue1Teams, 5, 5),
+        ...getMidClubs(primeiraTeams, 3, 3),
+        ...getMidClubs(eredivisieTeams, 3, 3),
+        ...getMidClubs(chTeams, 1, 2)
     ].filter(t => !clTeamsMap.has(t.id)).forEach(t => elTeamsMap.set(t.id, t));
     const elTeams = Array.from(elTeamsMap.values()).slice(0, 36);
 
@@ -293,6 +305,18 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
         isMidweek: true
     }] : [];
 
+    // CONMEBOL Recopa Sudamericana (Ida Sem. 8 / Vuelta Sem. 10: Botafogo vs Racing Club)
+    const recopaFixtures = generateRecopaSudamericanaFixtures(810, 703, allTeamsCopy, 8);
+
+    // FIFA Club World Cup (32-team format: 8 groups x 4 clubs, start Week 22)
+    const cwcInit = initializeClubWorldCupSeason({
+        allTeams: allTeamsCopy,
+        championsLeagueWinnerId: 201,
+        libertadoresWinnerId: 810,
+        sudamericanaWinnerId: 703,
+        startWeek: 22
+    });
+
     // Full Season Schedule
     const initialSchedule = [
         ...generateSeasonSchedule(allTeamsCopy, 2026),
@@ -304,10 +328,12 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
         ...copaArgentinaFixtures,
         ...copaMxFixtures,
         ...intercontinentalFixtures,
+        ...recopaFixtures,
         ...libInit.fixtures,
         ...sudInit.fixtures,
         ...clFixtures,
-        ...elFixtures
+        ...elFixtures,
+        ...cwcInit.fixtures
     ];
 
     // Build initial staff and coach
@@ -349,13 +375,20 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
             [LeagueId.PRIMERA_B_CHILE]: createInitialLeagueTable(expansionChileTeamsList),
             [LeagueId.PRIMERA_A_COLOMBIA]: createInitialLeagueTable(colombianTeamsList),
             [LeagueId.PRIMERA_B_COLOMBIA]: createInitialLeagueTable(expansionColombianTeamsList),
+            [LeagueId.PRIMEIRA_LIGA]: createInitialLeagueTable(primeiraTeams),
+            [LeagueId.EREDIVISIE]: createInitialLeagueTable(eredivisieTeams),
+            [LeagueId.LIGA_URUGUAYA]: createInitialLeagueTable(uruguayTeams),
+            [LeagueId.LIGA_ECUADOR]: createInitialLeagueTable(ecuadorTeams),
+            [LeagueId.MLS]: createInitialLeagueTable(mlsTeamsList),
         },
         finances: {
             balance: selectedTeam.budget,
             transferBudget: selectedTeam.transferBudget,
             weeklyIncome,
             weeklyWages: totalWages,
-            balanceHistory: [selectedTeam.budget]
+            balanceHistory: [selectedTeam.budget],
+            ticketPolicy: 'standard',
+            membershipPolicy: 'standard'
         },
         boardConfidence: initialConfidence[selectedTeam.tier],
         fanApproval: {
@@ -487,12 +520,29 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
                 currentRoundIndex: 0,
                 statistics: { topScorers: [], championsHistory: [] }
             },
+            recopaSudamericana: {
+                id: 'recopa_sudamericana',
+                name: 'Recopa Sudamericana',
+                logo: resourceManager.competitionLogo('recopa_sudamericana', 'Recopa Sudamericana'),
+                type: 'knockout',
+                phase: 'knockout',
+                rounds: recopaFixtures.length === 2 ? [{
+                    name: 'Final',
+                    fixtures: [recopaFixtures[0]],
+                    secondLegFixtures: [recopaFixtures[1]],
+                    completed: false
+                }] : [],
+                currentRoundIndex: 0,
+                statistics: { topScorers: [], championsHistory: [] }
+            },
+            clubWorldCup: cwcInit.cup,
         },
         availableCoaches: generateCoachMarket(5, playerTeamCopy.leagueId, playerTeamCopy.tier),
         clubStaff: initialStaff,
         availableStaff: generateStaffMarket(playerTeamCopy.tier, playerTeamCopy.leagueId),
         availableScouts: generateScoutMarket(playerTeamCopy.tier, playerTeamCopy.leagueId),
-        stadium: generateStadium(playerTeamCopy),
+        stadium: initialStadium,
+        membership: initialMembership,
         sponsors: [
             generateSponsor('shirt', playerTeamCopy.tier, playerTeamCopy.leagueId),
             generateSponsor('kit', playerTeamCopy.tier, playerTeamCopy.leagueId)

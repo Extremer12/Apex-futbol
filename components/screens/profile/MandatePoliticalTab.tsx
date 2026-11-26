@@ -1,6 +1,7 @@
 import React from 'react';
-import { Team, ElectoralPromise } from '../../../types';
+import { Team, ElectoralPromise, ClubMembership, MembershipPolicy } from '../../../types';
 import { formatCurrencyShort } from '../../../utils';
+import { calculateMembershipRevenue } from '../../../services/membership';
 import {
     Users,
     TrendingUp,
@@ -38,6 +39,8 @@ interface MandatePoliticalTabProps {
     clubBalance: number;
     boardConfidence: number;
     electoralPromises: ElectoralPromise[];
+    membership?: ClubMembership;
+    membershipPolicy?: MembershipPolicy;
 }
 
 export const MandatePoliticalTab: React.FC<MandatePoliticalTabProps> = React.memo(({
@@ -48,8 +51,11 @@ export const MandatePoliticalTab: React.FC<MandatePoliticalTabProps> = React.mem
     careerStats,
     clubBalance,
     boardConfidence,
-    electoralPromises
+    electoralPromises,
+    membership,
+    membershipPolicy
 }) => {
+    const activeMembershipPolicy: MembershipPolicy = membershipPolicy || 'standard';
     const fulfilledCount = electoralPromises.filter(p => p.fulfilled).length;
 
     return (
@@ -135,6 +141,21 @@ export const MandatePoliticalTab: React.FC<MandatePoliticalTabProps> = React.mem
                                 style={{ width: `${fanApproval.rating}%` }}
                             />
                         </div>
+                        {membership && (
+                            <div className="flex items-center justify-between pt-2 mt-1 border-t border-white/5 text-[11px]">
+                                <span className="text-slate-400">
+                                    Padrón: <strong className="text-white tabular-nums">{membership.activeMembers.toLocaleString()} socios</strong>
+                                    {membership.lastWeeklyDelta !== 0 && (
+                                        <span className={`ml-1.5 font-black ${membership.lastWeeklyDelta > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                            ({membership.lastWeeklyDelta > 0 ? '+' : ''}{membership.lastWeeklyDelta.toLocaleString()})
+                                        </span>
+                                    )}
+                                </span>
+                                <span className="font-black text-emerald-400 tabular-nums">
+                                    +{formatCurrencyShort(calculateMembershipRevenue(membership, activeMembershipPolicy))}/sem
+                                </span>
+                            </div>
+                        )}
                     </div>
 
                     <div className="space-y-2">

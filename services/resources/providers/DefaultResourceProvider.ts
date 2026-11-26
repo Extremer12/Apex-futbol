@@ -50,8 +50,15 @@ export class DefaultResourceProvider {
             }
         }
 
-        // 3. Fallback to valid meta.logo if provided (and not hotlinked third-party scraper)
-        if (meta?.logo && typeof meta.logo === 'string' && meta.logo.trim() !== '') {
+        // 3. Fallback to valid meta.logo if provided (strictly skip hotlinked third-party scrapers or broken /logos/ paths)
+        if (
+            meta?.logo &&
+            typeof meta.logo === 'string' &&
+            meta.logo.trim() !== '' &&
+            !meta.logo.includes('tmssl.akamaized.net') &&
+            !meta.logo.startsWith('/logos/') &&
+            !meta.logo.includes('/sinlogo.png')
+        ) {
             return {
                 url: meta.logo,
                 source: 'builtin-cdn',
@@ -194,17 +201,34 @@ export class DefaultResourceProvider {
 
     public static readonly COMMUNITY_TROPHIES: Record<string, string> = {
         champions_league: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_uefa-champions-league.football-logos.cc.svg`,
+        europa_league: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_uefa-europa-league.football-logos.cc.svg`,
         copa_libertadores: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_conmebol-libertadores.football-logos.cc.svg`,
         copa_sudamericana: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_conmebol-copa-sudamericana.football-logos.cc.svg`,
+        recopa_sudamericana: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_conmebol-recopa-sudamericana.football-logos.cc.svg`,
         copa_intercontinental: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_fifa-intercontinental-cup.football-logos.cc.svg`,
+        club_world_cup: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_fifa-club-world-cup.football-logos.cc.svg`,
         copa_argentina: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_copa-argentina.football-logos.cc.svg`,
-        europa_league: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_uefa-europa-league.football-logos.cc.svg`,
         liga_argentina: `${COMMUNITY_PACK_CDN}/Argentina/primera_division/argentina_argentina-primera-division.football-logos.cc.svg`,
+        primera_nacional: `${COMMUNITY_PACK_CDN}/Argentina/primera_nacional/argentina_primera-nacional.football-logos.cc.svg`,
         premier_league: `${COMMUNITY_PACK_CDN}/Premier%20League/england_english-premier-league.football-logos.cc.svg`,
+        championship: `${COMMUNITY_PACK_CDN}/Championship/england_efl-championship.football-logos.cc.svg`,
+        la_liga: `${COMMUNITY_PACK_CDN}/La%20Liga/spain_la-liga.football-logos.cc.svg`,
+        segunda_division_esp: `${COMMUNITY_PACK_CDN}/La%20Liga%202/spain_segunda-division.football-logos.cc.svg`,
+        bundesliga: `${COMMUNITY_PACK_CDN}/Bundesliga/germany_bundesliga.football-logos.cc.svg`,
+        zweite_bundesliga: `${COMMUNITY_PACK_CDN}/Bundesliga%202/germany_2-bundesliga.football-logos.cc.svg`,
+        serie_a: `${COMMUNITY_PACK_CDN}/Serie%20A/italy_serie-a.football-logos.cc.svg`,
+        serie_b_ita: `${COMMUNITY_PACK_CDN}/Serie%20B/italy_serie-b.football-logos.cc.svg`,
+        ligue_1: `${COMMUNITY_PACK_CDN}/Ligue%201/france_ligue-1.football-logos.cc.svg`,
+        ligue_2: `${COMMUNITY_PACK_CDN}/Ligue%202/france_ligue-2.football-logos.cc.svg`,
         brasileirao: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_campeonato-brasileiro-serie-a.football-logos.cc.svg`,
+        serie_b_br: `${COMMUNITY_PACK_CDN}/Football%20Tournament%20%26%20Competition%20Logos/tournaments_campeonato-brasileiro-serie-b.football-logos.cc.svg`,
         copa_de_primera: `${COMMUNITY_PACK_CDN}/Copa%20de%20Primera/paraguay_copa-de-primera.football-logos.cc.svg`,
         liga_mx: `${COMMUNITY_PACK_CDN}/Liga%20MX/mexico_liga-mx.football-logos.cc.svg`,
+        liga_expansion_mx: `${COMMUNITY_PACK_CDN}/Liga%20de%20Expansi%C3%B3n%20MX/mexico_liga-de-expansion-mx.football-logos.cc.svg`,
         primera_division_chile: `${COMMUNITY_PACK_CDN}/Liga%20de%20Primera/chile_liga-de-primera.football-logos.cc.svg`,
+        primera_b_chile: `${COMMUNITY_PACK_CDN}/Categoria%20Primera%20B/chile_liga-de-ascenso.football-logos.cc.svg`,
+        primera_a_colombia: `${COMMUNITY_PACK_CDN}/Categor%C3%ADa%20Primera%20A/colombia_categoria-primera-a.football-logos.cc.svg`,
+        primera_b_colombia: `${COMMUNITY_PACK_CDN}/Categor%C3%ADa%20Primera%20A/colombia_categoria-primera-a.football-logos.cc.svg`,
     };
 
     /**
@@ -261,11 +285,12 @@ export class DefaultResourceProvider {
                 (num >= 700 && num <= 899) ||
                 (num >= 980 && num <= 999) ||
                 (num >= 1100 && num <= 1399) ||
+                (num >= 2200 && num <= 2999) ||
                 (num >= 9100 && num <= 9199)
             ) {
                 return true;
             }
-            if ((num >= 1 && num <= 699) || (num >= 900 && num <= 979)) {
+            if ((num >= 1 && num <= 699) || (num >= 900 && num <= 979) || (num >= 2000 && num <= 2199)) {
                 return false;
             }
         }
@@ -277,7 +302,13 @@ export class DefaultResourceProvider {
                 lower.includes('paraguay') ||
                 lower.includes('mexico') ||
                 lower.includes('chile') ||
-                lower.includes('colombia')
+                lower.includes('colombia') ||
+                lower.includes('uruguay') ||
+                lower.includes('ecuador') ||
+                lower.includes('peru') ||
+                lower.includes('bolivia') ||
+                lower.includes('venezuela') ||
+                lower.includes('conmebol')
             );
         }
         return false;

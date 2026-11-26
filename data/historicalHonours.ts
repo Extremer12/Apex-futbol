@@ -193,6 +193,59 @@ export const COMPETITION_HISTORICAL_CHAMPIONS: Record<string, CompetitionHistori
         ]
     },
 
+    'RECOPA_SUDAMERICANA': {
+        id: 'RECOPA_SUDAMERICANA',
+        name: 'CONMEBOL Recopa Sudamericana',
+        allTimeRanking: [
+            { teamName: 'Boca Juniors', titles: 4, lastWonYear: 2008 },
+            { teamName: 'River Plate', titles: 3, lastWonYear: 2019 },
+            { teamName: 'São Paulo FC', titles: 2, lastWonYear: 1994 },
+            { teamName: 'Internacional', titles: 2, lastWonYear: 2011 },
+            { teamName: 'LDU Quito', titles: 2, lastWonYear: 2010 },
+            { teamName: 'Olimpia', titles: 2, lastWonYear: 2003 },
+            { teamName: 'Grêmio', titles: 2, lastWonYear: 2018 },
+            { teamName: 'Racing Club', titles: 1, lastWonYear: 2025 },
+            { teamName: 'Fluminense', titles: 1, lastWonYear: 2024 },
+            { teamName: 'Palmeiras', titles: 1, lastWonYear: 2022 },
+            { teamName: 'Flamengo', titles: 1, lastWonYear: 2020 },
+            { teamName: 'Independiente', titles: 1, lastWonYear: 1995 },
+            { teamName: 'Atlético Nacional', titles: 1, lastWonYear: 2017 },
+            { teamName: 'San Lorenzo', titles: 1, lastWonYear: 2003 }
+        ],
+        recentEditions: [
+            { season: '2025', winnerName: 'Racing Club', runnerUp: 'Botafogo', score: '4-0 (agg)' },
+            { season: '2024', winnerName: 'Fluminense', runnerUp: 'LDU Quito', score: '2-1 (agg)' },
+            { season: '2023', winnerName: 'Independiente del Valle', runnerUp: 'Flamengo', score: '1-1 (5-4 pen.)' },
+            { season: '2022', winnerName: 'Palmeiras', runnerUp: 'Athletico Paranaense', score: '4-2 (agg)' },
+            { season: '2021', winnerName: 'Defensa y Justicia', runnerUp: 'Palmeiras', score: '3-3 (4-3 pen.)' }
+        ]
+    },
+
+    'CLUB_WORLD_CUP': {
+        id: 'CLUB_WORLD_CUP',
+        name: 'Mundial de Clubes FIFA (32 Equipos)',
+        allTimeRanking: [
+            { teamName: 'Real Madrid', titles: 5, lastWonYear: 2022 },
+            { teamName: 'FC Barcelona', titles: 3, lastWonYear: 2015 },
+            { teamName: 'Corinthians', titles: 2, lastWonYear: 2012 },
+            { teamName: 'Bayern München', titles: 2, lastWonYear: 2020 },
+            { teamName: 'Manchester City', titles: 1, lastWonYear: 2023 },
+            { teamName: 'Chelsea', titles: 1, lastWonYear: 2021 },
+            { teamName: 'Liverpool', titles: 1, lastWonYear: 2019 },
+            { teamName: 'Internacional', titles: 1, lastWonYear: 2006 },
+            { teamName: 'São Paulo FC', titles: 1, lastWonYear: 2005 },
+            { teamName: 'Inter Milano', titles: 1, lastWonYear: 2010 },
+            { teamName: 'AC Milan', titles: 1, lastWonYear: 2007 },
+            { teamName: 'Manchester United', titles: 1, lastWonYear: 2008 }
+        ],
+        recentEditions: [
+            { season: '2023', winnerName: 'Manchester City', runnerUp: 'Fluminense', score: '4-0' },
+            { season: '2022', winnerName: 'Real Madrid', runnerUp: 'Al-Hilal', score: '5-3' },
+            { season: '2021', winnerName: 'Chelsea', runnerUp: 'Palmeiras', score: '2-1 (t.e.)' },
+            { season: '2020', winnerName: 'Bayern München', runnerUp: 'Tigres UANL', score: '1-0' }
+        ]
+    },
+
     'COPA_INTERCONTINENTAL': {
         id: 'COPA_INTERCONTINENTAL',
         name: 'Copa Intercontinental / FIFA Club World Cup',

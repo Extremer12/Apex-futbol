@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { GameState, Sponsor, BankLoan, TicketPolicy, ClubDirectives } from '../../types';
+import { GameState, Sponsor, BankLoan, TicketPolicy, MembershipPolicy, ClubDirectives } from '../../types';
 import { GameAction } from '../../state/reducer';
 import { formatCurrency, formatCurrencyShort } from '../../utils';
 import {
@@ -9,6 +9,7 @@ import {
     evaluateFinancialHealth,
     getStadiumExpansionCost
 } from '../../services/economy';
+import { generateClubMembership, MEMBERSHIP_POLICY_META } from '../../services/membership';
 import { AlertTriangle } from 'lucide-react';
 import { useToast } from '../common/ToastProvider';
 import { TabKey } from './finances/financesUiTypes';
@@ -49,6 +50,12 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = React.memo(({ gameS
     );
     const wasHomeMatch = currentMatch?.homeTeamId === team.id;
 
+    const activeMembership = useMemo(
+        () => gameState.membership || generateClubMembership(team, stadium),
+        [gameState.membership, team, stadium]
+    );
+    const membershipPolicy: MembershipPolicy = finances.membershipPolicy || 'standard';
+
     const breakdown = useMemo(() => {
         return calculateFinancialBreakdown(
             team,
@@ -62,9 +69,11 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = React.memo(({ gameS
             finances.activeLoans || [],
             finances.clubDirectives,
             scouts,
-            gameState.playerProfile?.style
+            gameState.playerProfile?.style,
+            activeMembership,
+            membershipPolicy
         );
-    }, [team, stadium, sponsors, playerPosition, wasHomeMatch, finances.ticketPolicy, finances.activeLoans, finances.clubDirectives, scouts, gameState.playerProfile?.style]);
+    }, [team, stadium, sponsors, playerPosition, wasHomeMatch, finances.ticketPolicy, finances.activeLoans, finances.clubDirectives, scouts, gameState.playerProfile?.style, activeMembership, membershipPolicy]);
 
     const breakdownWithoutMatchday = useMemo(() => {
         return calculateFinancialBreakdown(
@@ -79,9 +88,11 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = React.memo(({ gameS
             finances.activeLoans || [],
             finances.clubDirectives,
             scouts,
-            gameState.playerProfile?.style
+            gameState.playerProfile?.style,
+            activeMembership,
+            membershipPolicy
         );
-    }, [team, stadium, sponsors, playerPosition, finances.ticketPolicy, finances.activeLoans, finances.clubDirectives, scouts, gameState.playerProfile?.style]);
+    }, [team, stadium, sponsors, playerPosition, finances.ticketPolicy, finances.activeLoans, finances.clubDirectives, scouts, gameState.playerProfile?.style, activeMembership, membershipPolicy]);
 
     const netIncome = useMemo(() => getNetWeeklyIncome(breakdown), [breakdown]);
     const netIncomeWithoutMatchday = useMemo(() => getNetWeeklyIncome(breakdownWithoutMatchday), [breakdownWithoutMatchday]);
@@ -106,6 +117,11 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = React.memo(({ gameS
             premium: 'Pase Prémium'
         };
         showToast(`Política de entradas: ${labels[policy]}`, 'info');
+    }, [dispatch, showToast]);
+
+    const handleSetMembershipPolicy = useCallback((policy: MembershipPolicy) => {
+        dispatch({ type: 'SET_MEMBERSHIP_POLICY', payload: { policy } });
+        showToast(`Cuota social: ${MEMBERSHIP_POLICY_META[policy].label}`, 'info');
     }, [dispatch, showToast]);
 
     const handleReallocateBudget = useCallback((amount: number, direction: 'to_transfers' | 'to_balance') => {
@@ -276,6 +292,9 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = React.memo(({ gameS
                     breakdown={breakdown}
                     health={health}
                     balanceHistory={finances.balanceHistory || []}
+                    membership={activeMembership}
+                    membershipPolicy={membershipPolicy}
+                    fanApprovalRating={gameState.fanApproval?.rating ?? 60}
                     onNavigateToStrategy={() => setActiveTab('strategy')}
                     onNavigateToBanking={() => setActiveTab('banking')}
                 />
@@ -294,12 +313,15 @@ export const FinancesScreen: React.FC<FinancesScreenProps> = React.memo(({ gameS
             {activeTab === 'strategy' && (
                 <FinancesStrategyTab
                     stadium={stadium}
+                    membership={activeMembership}
                     currentPolicy={finances.ticketPolicy || 'standard'}
+                    currentMembershipPolicy={membershipPolicy}
                     directives={finances.clubDirectives}
                     balance={finances.balance}
                     transferBudget={finances.transferBudget}
                     leagueId={team.leagueId}
                     onSetTicketPolicy={handleSetTicketPolicy}
+                    onSetMembershipPolicy={handleSetMembershipPolicy}
                     onReallocateBudget={handleReallocateBudget}
                     onUpdateDirectives={handleUpdateDirectives}
                 />

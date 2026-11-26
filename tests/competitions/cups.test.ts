@@ -173,7 +173,12 @@ test('handlePromotionRelegation promotes top teams and relegates bottom teams', 
         [LeagueId.PRIMERA_DIVISION_CHILE]: [],
         [LeagueId.PRIMERA_B_CHILE]: [],
         [LeagueId.PRIMERA_A_COLOMBIA]: [],
-        [LeagueId.PRIMERA_B_COLOMBIA]: []
+        [LeagueId.PRIMERA_B_COLOMBIA]: [],
+        [LeagueId.PRIMEIRA_LIGA]: [],
+        [LeagueId.EREDIVISIE]: [],
+        [LeagueId.LIGA_URUGUAYA]: [],
+        [LeagueId.LIGA_ECUADOR]: [],
+        [LeagueId.MLS]: []
     };
 
     const updatedTeams = handlePromotionRelegation(allTeams, leagueTables);

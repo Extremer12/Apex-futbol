@@ -73,13 +73,13 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         squad: createGenericSquad(9112, 'Wilstermann', 69, '#C8102E', '#002B49')
     },
 
-    // --- ECUADOR (4) ---
+    // --- ECUADOR (4) -> Promovidos a LigaPro Serie A (LIGA_ECUADOR) ---
     {
         id: 9113,
         name: 'LDU Quito',
         shortName: 'LDU Quito',
         logo: '',
-        leagueId: 'CONMEBOL',
+        leagueId: LeagueId.LIGA_ECUADOR,
         budget: 18000000,
         transferBudget: 6000000,
         tier: 'Mid',
@@ -95,7 +95,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         name: 'Independiente del Valle',
         shortName: 'IDV',
         logo: '',
-        leagueId: 'CONMEBOL',
+        leagueId: LeagueId.LIGA_ECUADOR,
         budget: 17000000,
         transferBudget: 5500000,
         tier: 'Mid',
@@ -111,7 +111,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         name: 'Barcelona SC',
         shortName: 'Barcelona SC',
         logo: '',
-        leagueId: 'CONMEBOL',
+        leagueId: LeagueId.LIGA_ECUADOR,
         budget: 15000000,
         transferBudget: 5000000,
         tier: 'Mid',
@@ -127,7 +127,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         name: 'CS Emelec',
         shortName: 'Emelec',
         logo: '',
-        leagueId: 'CONMEBOL',
+        leagueId: LeagueId.LIGA_ECUADOR,
         budget: 12000000,
         transferBudget: 3800000,
         tier: 'Mid',
@@ -205,13 +205,13 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         squad: createGenericSquad(9120, 'Melgar', 71, '#C8102E', '#000000')
     },
 
-    // --- URUGUAY (4) ---
+    // --- URUGUAY (4) -> Promovidos a Liga Uruguaya (LIGA_URUGUAYA) ---
     {
         id: 9121,
         name: 'Peñarol',
         shortName: 'Peñarol',
         logo: '',
-        leagueId: 'CONMEBOL',
+        leagueId: LeagueId.LIGA_URUGUAYA,
         budget: 19000000,
         transferBudget: 6500000,
         tier: 'Mid',
@@ -227,7 +227,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         name: 'Club Nacional de Football',
         shortName: 'Nacional (Uru)',
         logo: '',
-        leagueId: 'CONMEBOL',
+        leagueId: LeagueId.LIGA_URUGUAYA,
         budget: 18000000,
         transferBudget: 6000000,
         tier: 'Mid',
@@ -243,7 +243,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         name: 'Defensor Sporting',
         shortName: 'Defensor Sp.',
         logo: '',
-        leagueId: 'CONMEBOL',
+        leagueId: LeagueId.LIGA_URUGUAYA,
         budget: 9000000,
         transferBudget: 2600000,
         tier: 'Mid',
@@ -259,7 +259,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         name: 'Liverpool FC (Uru)',
         shortName: 'Liverpool (Uru)',
         logo: '',
-        leagueId: 'CONMEBOL',
+        leagueId: LeagueId.LIGA_URUGUAYA,
         budget: 8000000,
         transferBudget: 2200000,
         tier: 'Mid',
@@ -403,13 +403,13 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         squad: createGenericSquad(9140, 'Nac. Potosí', 68, '#C8102E', '#FFFFFF')
     },
 
-    // --- ECUADOR SUDAMERICANA (4) ---
+    // --- ECUADOR SUDAMERICANA (4) -> Promovidos a LIGA_ECUADOR ---
     {
         id: 9141,
         name: 'Universidad Católica (Ecu)',
         shortName: 'U. Católica (Ecu)',
         logo: '',
-        leagueId: 'CONMEBOL',
+        leagueId: LeagueId.LIGA_ECUADOR,
         budget: 9500000,
         transferBudget: 2800000,
         tier: 'Mid',
@@ -425,7 +425,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         name: 'Delfín SC',
         shortName: 'Delfín SC',
         logo: '',
-        leagueId: 'CONMEBOL',
+        leagueId: LeagueId.LIGA_ECUADOR,
         budget: 7000000,
         transferBudget: 2000000,
         tier: 'Mid',
@@ -441,7 +441,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         name: 'SD Aucas',
         shortName: 'Aucas',
         logo: '',
-        leagueId: 'CONMEBOL',
+        leagueId: LeagueId.LIGA_ECUADOR,
         budget: 8500000,
         transferBudget: 2400000,
         tier: 'Mid',
@@ -457,7 +457,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         name: 'Deportivo Cuenca',
         shortName: 'Dep. Cuenca',
         logo: '',
-        leagueId: 'CONMEBOL',
+        leagueId: LeagueId.LIGA_ECUADOR,
         budget: 6500000,
         transferBudget: 1800000,
         tier: 'Lower',
@@ -535,13 +535,13 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         squad: createGenericSquad(9148, 'Sp. Huancayo', 69, '#C8102E', '#008000')
     },
 
-    // --- URUGUAY SUDAMERICANA (4) ---
+    // --- URUGUAY SUDAMERICANA (4) -> Promovidos a LIGA_URUGUAYA ---
     {
         id: 9149,
         name: 'Danubio FC',
         shortName: 'Danubio',
         logo: '',
-        leagueId: 'CONMEBOL',
+        leagueId: LeagueId.LIGA_URUGUAYA,
         budget: 9000000,
         transferBudget: 2600000,
         tier: 'Mid',
@@ -557,7 +557,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         name: 'Montevideo Wanderers',
         shortName: 'Wanderers',
         logo: '',
-        leagueId: 'CONMEBOL',
+        leagueId: LeagueId.LIGA_URUGUAYA,
         budget: 8500000,
         transferBudget: 2300000,
         tier: 'Mid',
@@ -573,7 +573,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         name: 'Cerro Largo FC',
         shortName: 'Cerro Largo',
         logo: '',
-        leagueId: 'CONMEBOL',
+        leagueId: LeagueId.LIGA_URUGUAYA,
         budget: 6000000,
         transferBudget: 1500000,
         tier: 'Lower',
@@ -589,7 +589,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         name: 'Racing Club de Montevideo',
         shortName: 'Racing (Uru)',
         logo: '',
-        leagueId: 'CONMEBOL',
+        leagueId: LeagueId.LIGA_URUGUAYA,
         budget: 7000000,
         transferBudget: 1900000,
         tier: 'Mid',

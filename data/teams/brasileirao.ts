@@ -5,7 +5,7 @@ export const brasileiraoTeams: Team[] = [
     {
         id: 801,
         name: 'Flamengo',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/614.png',
+        logo: '',
         leagueId: LeagueId.BRASILEIRAO,
         budget: 45000000,
         transferBudget: 20000000,
@@ -38,7 +38,7 @@ export const brasileiraoTeams: Team[] = [
     {
         id: 802,
         name: 'Palmeiras',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/1023.png',
+        logo: '',
         leagueId: LeagueId.BRASILEIRAO,
         budget: 40000000,
         transferBudget: 18000000,
@@ -70,7 +70,7 @@ export const brasileiraoTeams: Team[] = [
     {
         id: 803,
         name: 'São Paulo FC',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/585.png',
+        logo: '',
         leagueId: LeagueId.BRASILEIRAO,
         budget: 25000000,
         transferBudget: 10000000,
@@ -100,7 +100,7 @@ export const brasileiraoTeams: Team[] = [
     {
         id: 804,
         name: 'Corinthians',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/1134.png',
+        logo: '',
         leagueId: LeagueId.BRASILEIRAO,
         budget: 28000000,
         transferBudget: 11000000,
@@ -130,7 +130,7 @@ export const brasileiraoTeams: Team[] = [
     {
         id: 805,
         name: 'Santos',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/221.png',
+        logo: '',
         leagueId: LeagueId.BRASILEIRAO,
         budget: 22000000,
         transferBudget: 8500000,
@@ -157,7 +157,7 @@ export const brasileiraoTeams: Team[] = [
     {
         id: 806,
         name: 'Grêmio',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/1490.png',
+        logo: '',
         leagueId: LeagueId.BRASILEIRAO,
         budget: 24000000,
         transferBudget: 9000000,
@@ -186,7 +186,7 @@ export const brasileiraoTeams: Team[] = [
     {
         id: 807,
         name: 'Internacional',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/6600.png',
+        logo: '',
         leagueId: LeagueId.BRASILEIRAO,
         budget: 25000000,
         transferBudget: 9500000,
@@ -216,7 +216,7 @@ export const brasileiraoTeams: Team[] = [
     {
         id: 808,
         name: 'Atlético Mineiro',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/330.png',
+        logo: '',
         leagueId: LeagueId.BRASILEIRAO,
         budget: 26000000,
         transferBudget: 10000000,
@@ -246,7 +246,7 @@ export const brasileiraoTeams: Team[] = [
     {
         id: 809,
         name: 'Fluminense',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/2462.png',
+        logo: '',
         leagueId: LeagueId.BRASILEIRAO,
         budget: 22000000,
         transferBudget: 8500000,
@@ -275,7 +275,7 @@ export const brasileiraoTeams: Team[] = [
     {
         id: 810,
         name: 'Botafogo',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/537.png',
+        logo: '',
         leagueId: LeagueId.BRASILEIRAO,
         budget: 38000000,
         transferBudget: 16000000,
@@ -305,7 +305,7 @@ export const brasileiraoTeams: Team[] = [
     {
         id: 811,
         name: 'Vasco da Gama',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/2745.png',
+        logo: '',
         leagueId: LeagueId.BRASILEIRAO,
         budget: 18000000,
         transferBudget: 6500000,
@@ -332,7 +332,7 @@ export const brasileiraoTeams: Team[] = [
     {
         id: 812,
         name: 'Cruzeiro',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/609.png',
+        logo: '',
         leagueId: LeagueId.BRASILEIRAO,
         budget: 24000000,
         transferBudget: 9500000,
@@ -361,7 +361,7 @@ export const brasileiraoTeams: Team[] = [
     {
         id: 813,
         name: 'Bahia',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/10010.png',
+        logo: '',
         leagueId: LeagueId.BRASILEIRAO,
         budget: 22000000,
         transferBudget: 8000000,
@@ -387,7 +387,7 @@ export const brasileiraoTeams: Team[] = [
     {
         id: 814,
         name: 'Fortaleza',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/10870.png',
+        logo: '',
         leagueId: LeagueId.BRASILEIRAO,
         budget: 18000000,
         transferBudget: 6500000,
@@ -414,7 +414,7 @@ export const brasileiraoTeams: Team[] = [
     {
         id: 815,
         name: 'Ceará SC',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/38264.png',
+        logo: '',
         leagueId: LeagueId.BRASILEIRAO,
         budget: 10000000,
         transferBudget: 3000000,
@@ -440,7 +440,7 @@ export const brasileiraoTeams: Team[] = [
     {
         id: 816,
         name: 'Athletico Paranaense',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/7773.png',
+        logo: '',
         leagueId: LeagueId.BRASILEIRAO,
         budget: 18000000,
         transferBudget: 6000000,
@@ -468,7 +468,7 @@ export const brasileiraoTeams: Team[] = [
     {
         id: 817,
         name: 'Coritiba',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/776.png',
+        logo: '',
         leagueId: LeagueId.BRASILEIRAO,
         budget: 11000000,
         transferBudget: 3500000,
@@ -495,7 +495,7 @@ export const brasileiraoTeams: Team[] = [
     {
         id: 818,
         name: 'Bragantino',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/10009.png',
+        logo: '',
         leagueId: LeagueId.BRASILEIRAO,
         budget: 20000000,
         transferBudget: 8000000,
@@ -523,7 +523,7 @@ export const brasileiraoTeams: Team[] = [
     {
         id: 819,
         name: 'América Mineiro',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/33765.png',
+        logo: '',
         leagueId: LeagueId.BRASILEIRAO,
         budget: 10000000,
         transferBudget: 3000000,
@@ -549,7 +549,7 @@ export const brasileiraoTeams: Team[] = [
     {
         id: 820,
         name: 'Cuiabá',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/44019.png',
+        logo: '',
         leagueId: LeagueId.BRASILEIRAO,
         budget: 11000000,
         transferBudget: 3500000,
@@ -575,22 +575,22 @@ export const brasileiraoTeams: Team[] = [
 ];
 
 export const serieBBrTeams: Team[] = [
-    { id: 851, name: 'Goiás', logo: 'https://tmssl.akamaized.net/images/wappen/head/3197.png', leagueId: LeagueId.SERIE_B_BR, budget: 5000000, transferBudget: 1000000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#006400', secondaryColor: '#FFFFFF', squad: createGenericSquad(85100, 'Goias', 71) },
-    { id: 852, name: 'Sport Recife', logo: 'https://tmssl.akamaized.net/images/wappen/head/8718.png', leagueId: LeagueId.SERIE_B_BR, budget: 6000000, transferBudget: 1500000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#C8102E', secondaryColor: '#000000', squad: createGenericSquad(85200, 'Sport Recife', 73) },
-    { id: 853, name: 'Ponte Preta', logo: 'https://tmssl.akamaized.net/images/wappen/head/738.png', leagueId: LeagueId.SERIE_B_BR, budget: 3500000, transferBudget: 700000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#000000', secondaryColor: '#FFFFFF', squad: createGenericSquad(85300, 'Ponte Preta', 68) },
-    { id: 854, name: 'Guarani', logo: 'https://tmssl.akamaized.net/images/wappen/head/1755.png', leagueId: LeagueId.SERIE_B_BR, budget: 3000000, transferBudget: 600000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#006400', secondaryColor: '#FFFFFF', squad: createGenericSquad(85400, 'Guarani', 67) },
-    { id: 855, name: 'Vila Nova', logo: 'https://tmssl.akamaized.net/images/wappen/head/42432.png', leagueId: LeagueId.SERIE_B_BR, budget: 3500000, transferBudget: 700000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#FFFFFF', squad: createGenericSquad(85500, 'Vila Nova', 69) },
-    { id: 856, name: 'CRB', logo: 'https://tmssl.akamaized.net/images/wappen/head/2337.png', leagueId: LeagueId.SERIE_B_BR, budget: 3000000, transferBudget: 600000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#000000', squad: createGenericSquad(85600, 'CRB', 68) },
-    { id: 857, name: 'Novorizontino', logo: 'https://tmssl.akamaized.net/images/wappen/head/42428.png', leagueId: LeagueId.SERIE_B_BR, budget: 4500000, transferBudget: 900000, tier: 'Mid', teamMorale: 'Feliz', primaryColor: '#C8102E', secondaryColor: '#FFFFFF', squad: createGenericSquad(85700, 'Novorizontino', 71) },
-    { id: 858, name: 'Operário Ferroviário', logo: 'https://tmssl.akamaized.net/images/wappen/head/42429.png', leagueId: LeagueId.SERIE_B_BR, budget: 2500000, transferBudget: 400000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#000000', secondaryColor: '#FFFFFF', squad: createGenericSquad(85800, 'Operario', 67) },
-    { id: 859, name: 'Ituano', logo: 'https://tmssl.akamaized.net/images/wappen/head/42430.png', leagueId: LeagueId.SERIE_B_BR, budget: 2500000, transferBudget: 400000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#FFFFFF', squad: createGenericSquad(85900, 'Ituano', 66) },
-    { id: 860, name: 'Botafogo-SP', logo: 'https://tmssl.akamaized.net/images/wappen/head/4024.png', leagueId: LeagueId.SERIE_B_BR, budget: 2500000, transferBudget: 400000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#000000', squad: createGenericSquad(86000, 'Botafogo SP', 67) },
-    { id: 861, name: 'Londrina EC', logo: 'https://tmssl.akamaized.net/images/wappen/head/24186.png', leagueId: LeagueId.SERIE_B_BR, budget: 2000000, transferBudget: 300000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#FFFFFF', squad: createGenericSquad(86100, 'Londrina', 66) },
-    { id: 862, name: 'Chapecoense', logo: 'https://tmssl.akamaized.net/images/wappen/head/8474.png', leagueId: LeagueId.SERIE_B_BR, budget: 3000000, transferBudget: 500000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#006400', secondaryColor: '#FFFFFF', squad: createGenericSquad(86200, 'Chapecoense', 68) },
-    { id: 863, name: 'ABC FC', logo: 'https://tmssl.akamaized.net/images/wappen/head/17239.png', leagueId: LeagueId.SERIE_B_BR, budget: 2000000, transferBudget: 300000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#000000', squad: createGenericSquad(86300, 'ABC', 65) },
-    { id: 864, name: 'Sampaio Corrêa', logo: 'https://tmssl.akamaized.net/images/wappen/head/17240.png', leagueId: LeagueId.SERIE_B_BR, budget: 2000000, transferBudget: 300000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#FFFFFF', squad: createGenericSquad(86400, 'Sampaio', 65) },
-    { id: 865, name: 'Mirassol', logo: 'https://tmssl.akamaized.net/images/wappen/head/42431.png', leagueId: LeagueId.SERIE_B_BR, budget: 4500000, transferBudget: 900000, tier: 'Mid', teamMorale: 'Feliz', primaryColor: '#FFD700', secondaryColor: '#000000', squad: createGenericSquad(86500, 'Mirassol', 72) },
-    { id: 866, name: 'Paysandu SC', logo: 'https://tmssl.akamaized.net/images/wappen/head/3824.png', leagueId: LeagueId.SERIE_B_BR, budget: 2500000, transferBudget: 400000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#FFFFFF', squad: createGenericSquad(86600, 'Paysandu', 67) },
-    { id: 867, name: 'Atlético Goianiense', logo: 'https://tmssl.akamaized.net/images/wappen/head/23837.png', leagueId: LeagueId.SERIE_B_BR, budget: 4000000, transferBudget: 800000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#000000', squad: createGenericSquad(86700, 'Atletico GO', 71) },
-    { id: 868, name: 'Juventude', logo: 'https://tmssl.akamaized.net/images/wappen/head/5782.png', leagueId: LeagueId.SERIE_B_BR, budget: 5000000, transferBudget: 1000000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#006400', secondaryColor: '#FFFFFF', squad: createGenericSquad(86800, 'Juventude', 73) },
+    { id: 851, name: 'Goiás', logo: '', leagueId: LeagueId.SERIE_B_BR, budget: 5000000, transferBudget: 1000000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#006400', secondaryColor: '#FFFFFF', squad: createGenericSquad(85100, 'Goias', 71) },
+    { id: 852, name: 'Sport Recife', logo: '', leagueId: LeagueId.SERIE_B_BR, budget: 6000000, transferBudget: 1500000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#C8102E', secondaryColor: '#000000', squad: createGenericSquad(85200, 'Sport Recife', 73) },
+    { id: 853, name: 'Ponte Preta', logo: '', leagueId: LeagueId.SERIE_B_BR, budget: 3500000, transferBudget: 700000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#000000', secondaryColor: '#FFFFFF', squad: createGenericSquad(85300, 'Ponte Preta', 68) },
+    { id: 854, name: 'Guarani', logo: '', leagueId: LeagueId.SERIE_B_BR, budget: 3000000, transferBudget: 600000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#006400', secondaryColor: '#FFFFFF', squad: createGenericSquad(85400, 'Guarani', 67) },
+    { id: 855, name: 'Vila Nova', logo: '', leagueId: LeagueId.SERIE_B_BR, budget: 3500000, transferBudget: 700000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#FFFFFF', squad: createGenericSquad(85500, 'Vila Nova', 69) },
+    { id: 856, name: 'CRB', logo: '', leagueId: LeagueId.SERIE_B_BR, budget: 3000000, transferBudget: 600000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#000000', squad: createGenericSquad(85600, 'CRB', 68) },
+    { id: 857, name: 'Novorizontino', logo: '', leagueId: LeagueId.SERIE_B_BR, budget: 4500000, transferBudget: 900000, tier: 'Mid', teamMorale: 'Feliz', primaryColor: '#C8102E', secondaryColor: '#FFFFFF', squad: createGenericSquad(85700, 'Novorizontino', 71) },
+    { id: 858, name: 'Operário Ferroviário', logo: '', leagueId: LeagueId.SERIE_B_BR, budget: 2500000, transferBudget: 400000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#000000', secondaryColor: '#FFFFFF', squad: createGenericSquad(85800, 'Operario', 67) },
+    { id: 859, name: 'Ituano', logo: '', leagueId: LeagueId.SERIE_B_BR, budget: 2500000, transferBudget: 400000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#FFFFFF', squad: createGenericSquad(85900, 'Ituano', 66) },
+    { id: 860, name: 'Botafogo-SP', logo: '', leagueId: LeagueId.SERIE_B_BR, budget: 2500000, transferBudget: 400000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#000000', squad: createGenericSquad(86000, 'Botafogo SP', 67) },
+    { id: 861, name: 'Londrina EC', logo: '', leagueId: LeagueId.SERIE_B_BR, budget: 2000000, transferBudget: 300000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#FFFFFF', squad: createGenericSquad(86100, 'Londrina', 66) },
+    { id: 862, name: 'Chapecoense', logo: '', leagueId: LeagueId.SERIE_B_BR, budget: 3000000, transferBudget: 500000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#006400', secondaryColor: '#FFFFFF', squad: createGenericSquad(86200, 'Chapecoense', 68) },
+    { id: 863, name: 'ABC FC', logo: '', leagueId: LeagueId.SERIE_B_BR, budget: 2000000, transferBudget: 300000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#000000', squad: createGenericSquad(86300, 'ABC', 65) },
+    { id: 864, name: 'Sampaio Corrêa', logo: '', leagueId: LeagueId.SERIE_B_BR, budget: 2000000, transferBudget: 300000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#FFFFFF', squad: createGenericSquad(86400, 'Sampaio', 65) },
+    { id: 865, name: 'Mirassol', logo: '', leagueId: LeagueId.SERIE_B_BR, budget: 4500000, transferBudget: 900000, tier: 'Mid', teamMorale: 'Feliz', primaryColor: '#FFD700', secondaryColor: '#000000', squad: createGenericSquad(86500, 'Mirassol', 72) },
+    { id: 866, name: 'Paysandu SC', logo: '', leagueId: LeagueId.SERIE_B_BR, budget: 2500000, transferBudget: 400000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#FFFFFF', squad: createGenericSquad(86600, 'Paysandu', 67) },
+    { id: 867, name: 'Atlético Goianiense', logo: '', leagueId: LeagueId.SERIE_B_BR, budget: 4000000, transferBudget: 800000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#000000', squad: createGenericSquad(86700, 'Atletico GO', 71) },
+    { id: 868, name: 'Juventude', logo: '', leagueId: LeagueId.SERIE_B_BR, budget: 5000000, transferBudget: 1000000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#006400', secondaryColor: '#FFFFFF', squad: createGenericSquad(86800, 'Juventude', 73) },
 ];

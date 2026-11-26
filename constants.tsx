@@ -1,4 +1,5 @@
 import { Team } from './types';
+import { getRegionalWageScale } from './services/economy';
 import { premierLeagueTeams } from './data/teams/premierLeague';
 import { championshipTeams } from './data/teams/championship';
 import { laLigaTeams } from './data/teams/laLiga';
@@ -12,6 +13,8 @@ import { ligaMxTeams, ligaExpansionMxTeams } from './data/teams/ligaMx';
 import { chileanTeams, chileanExpansionTeams } from './data/teams/ligaChile';
 import { colombianTeams, colombianExpansionTeams } from './data/teams/ligaColombia';
 import { segundaDivisionTeams, zweiteBundesligaTeams, serieBItaTeams } from './data/teams/secondDivisions';
+import { primeiraLigaTeams, eredivisieTeams } from './data/teams/europeExpansion';
+import { mlsTeams, uruguayExpansionTeams, ecuadorExpansionTeams } from './data/teams/americasExpansion';
 import { SOUTH_AMERICAN_EXTRA_TEAMS } from './data/teams/southAmericanClubs';
 
 export * from './data/teams/helpers';
@@ -38,18 +41,29 @@ const rawTeams: Team[] = [
   ...(chileanExpansionTeams || []),
   ...(colombianTeams || []),
   ...(colombianExpansionTeams || []),
+  ...(primeiraLigaTeams || []),
+  ...(eredivisieTeams || []),
+  ...(uruguayExpansionTeams || []),
+  ...(ecuadorExpansionTeams || []),
+  ...(mlsTeams || []),
   ...(SOUTH_AMERICAN_EXTRA_TEAMS || []),
 ];
 
-export const TEAMS: Team[] = rawTeams.map(team => ({
-  ...team,
-  budget: team.budget && team.budget < 10_000 ? team.budget * 1_000_000 : (team.budget || 10_000_000),
-  transferBudget: team.transferBudget && team.transferBudget < 10_000 ? team.transferBudget * 1_000_000 : (team.transferBudget || 5_000_000),
-  squad: (team.squad || []).map(player => ({
-    ...player,
-    value: player.value && player.value < 10_000 ? player.value * 1_000_000 : (player.value || 1_000_000)
-  }))
-}));
+export const TEAMS: Team[] = rawTeams.map(team => {
+  const wageScale = getRegionalWageScale(team.leagueId, team.tier);
+  return {
+    ...team,
+    budget: team.budget && team.budget < 10_000 ? team.budget * 1_000_000 : (team.budget || 10_000_000),
+    transferBudget: team.transferBudget && team.transferBudget < 10_000 ? team.transferBudget * 1_000_000 : (team.transferBudget || 5_000_000),
+    squad: (team.squad || []).map(player => ({
+      ...player,
+      value: player.value && player.value < 10_000 ? player.value * 1_000_000 : (player.value || 1_000_000),
+      wage: wageScale !== 1.0
+        ? Math.max(1_000, Math.round((player.wage * wageScale) / 250) * 250)
+        : player.wage
+    }))
+  };
+});
 
 // Safety guard for sorting to prevent crashes if any team object is malformed
 TEAMS.sort((a, b) => (a?.name || '').localeCompare(b?.name || ''));

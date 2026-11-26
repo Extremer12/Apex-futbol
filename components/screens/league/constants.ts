@@ -1,3 +1,5 @@
+import { ARG_COMPETITION_LOGOS } from '../../../services/customPacks/argentineLogos';
+
 export const LEAGUE_THEMES: Record<string, string> = {
     PREMIER_LEAGUE: 'purple',
     CHAMPIONSHIP: 'sky',
@@ -20,47 +22,59 @@ export const LEAGUE_THEMES: Record<string, string> = {
     PRIMERA_B_CHILE: 'rose',
     PRIMERA_A_COLOMBIA: 'amber',
     PRIMERA_B_COLOMBIA: 'yellow',
+    PRIMEIRA_LIGA: 'emerald',
+    EREDIVISIE: 'orange',
+    LIGA_URUGUAYA: 'sky',
+    LIGA_ECUADOR: 'yellow',
+    MLS: 'blue',
 };
 
 export const LEAGUE_LOGOS: Record<string, string> = {
-    PREMIER_LEAGUE: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Premier%20League/england_english-premier-league.football-logos.cc.svg',
-    CHAMPIONSHIP: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Championship/england_efl-championship.football-logos.cc.svg',
-    LA_LIGA: 'https://tmssl.akamaized.net/images/logo/header/es1.png',
-    SEGUNDA_DIVISION_ESP: 'https://tmssl.akamaized.net/images/logo/header/es2.png',
-    BUNDESLIGA: 'https://tmssl.akamaized.net/images/logo/header/l1.png',
-    ZWEITE_BUNDESLIGA: 'https://tmssl.akamaized.net/images/logo/header/l2.png',
-    SERIE_A: 'https://tmssl.akamaized.net/images/logo/header/it1.png',
-    SERIE_B_ITA: 'https://tmssl.akamaized.net/images/logo/header/it2.png',
-    LIGUE_1: 'https://tmssl.akamaized.net/images/logo/header/fr1.png',
-    LIGUE_2: 'https://tmssl.akamaized.net/images/logo/header/fr2.png',
-    LIGA_ARGENTINA: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Argentina/primera_division/argentina_argentina-primera-division.football-logos.cc.svg',
-    PRIMERA_NACIONAL: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Argentina/primera_nacional/argentina_primera-nacional.football-logos.cc.svg',
-    BRASILEIRAO: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Football%20Tournament%20%26%20Competition%20Logos/tournaments_campeonato-brasileiro-serie-a.football-logos.cc.svg',
-    SERIE_B_BR: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Football%20Tournament%20%26%20Competition%20Logos/tournaments_campeonato-brasileiro-serie-b.football-logos.cc.svg',
-    COPA_DE_PRIMERA: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Copa%20de%20Primera/paraguay_copa-de-primera.football-logos.cc.svg',
-    LIGA_MX: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Liga%20MX/mexico_liga-mx.football-logos.cc.svg',
-    LIGA_EXPANSION_MX: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Liga%20de%20Expansi%C3%B3n%20MX/mexico_liga-de-expansion-mx.football-logos.cc.svg',
-    PRIMERA_DIVISION_CHILE: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Liga%20de%20Primera/chile_liga-de-primera.football-logos.cc.svg',
-    PRIMERA_B_CHILE: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Categoria%20Primera%20B/chile_liga-de-ascenso.football-logos.cc.svg',
-    PRIMERA_A_COLOMBIA: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Categor%C3%ADa%20Primera%20A/colombia_categoria-primera-a.football-logos.cc.svg',
-    PRIMERA_B_COLOMBIA: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Categor%C3%ADa%20Primera%20A/colombia_categoria-primera-a.football-logos.cc.svg',
+    PREMIER_LEAGUE: ARG_COMPETITION_LOGOS.PREMIER_LEAGUE || '',
+    CHAMPIONSHIP: ARG_COMPETITION_LOGOS.CHAMPIONSHIP || '',
+    LA_LIGA: ARG_COMPETITION_LOGOS.LA_LIGA || '',
+    SEGUNDA_DIVISION_ESP: ARG_COMPETITION_LOGOS.SEGUNDA_DIVISION_ESP || '',
+    BUNDESLIGA: ARG_COMPETITION_LOGOS.BUNDESLIGA || '',
+    ZWEITE_BUNDESLIGA: ARG_COMPETITION_LOGOS.ZWEITE_BUNDESLIGA || '',
+    SERIE_A: ARG_COMPETITION_LOGOS.SERIE_A || '',
+    SERIE_B_ITA: ARG_COMPETITION_LOGOS.SERIE_B_ITA || '',
+    LIGUE_1: ARG_COMPETITION_LOGOS.LIGUE_1 || '',
+    LIGUE_2: ARG_COMPETITION_LOGOS.LIGUE_2 || '',
+    LIGA_ARGENTINA: ARG_COMPETITION_LOGOS.LIGA_ARGENTINA || '',
+    PRIMERA_NACIONAL: ARG_COMPETITION_LOGOS.PRIMERA_NACIONAL || '',
+    BRASILEIRAO: ARG_COMPETITION_LOGOS.BRASILEIRAO || '',
+    SERIE_B_BR: ARG_COMPETITION_LOGOS.SERIE_B_BR || '',
+    COPA_DE_PRIMERA: ARG_COMPETITION_LOGOS.COPA_DE_PRIMERA || '',
+    LIGA_MX: ARG_COMPETITION_LOGOS.LIGA_MX || '',
+    LIGA_EXPANSION_MX: ARG_COMPETITION_LOGOS.LIGA_EXPANSION_MX || '',
+    PRIMERA_DIVISION_CHILE: ARG_COMPETITION_LOGOS.PRIMERA_DIVISION_CHILE || '',
+    PRIMERA_B_CHILE: ARG_COMPETITION_LOGOS.PRIMERA_B_CHILE || '',
+    PRIMERA_A_COLOMBIA: ARG_COMPETITION_LOGOS.PRIMERA_A_COLOMBIA || '',
+    PRIMERA_B_COLOMBIA: ARG_COMPETITION_LOGOS.PRIMERA_B_COLOMBIA || '',
+    PRIMEIRA_LIGA: ARG_COMPETITION_LOGOS.PRIMEIRA_LIGA || '',
+    EREDIVISIE: ARG_COMPETITION_LOGOS.EREDIVISIE || '',
+    LIGA_URUGUAYA: ARG_COMPETITION_LOGOS.LIGA_URUGUAYA || '',
+    LIGA_ECUADOR: ARG_COMPETITION_LOGOS.LIGA_ECUADOR || '',
+    MLS: ARG_COMPETITION_LOGOS.MLS || '',
 };
 
 export const CUP_LOGOS: Record<string, string> = {
-    champions_league: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Football%20Tournament%20%26%20Competition%20Logos/tournaments_uefa-champions-league.football-logos.cc.svg',
-    europa_league: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Football%20Tournament%20%26%20Competition%20Logos/tournaments_uefa-europa-league.football-logos.cc.svg',
-    copa_libertadores: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Football%20Tournament%20%26%20Competition%20Logos/tournaments_conmebol-libertadores.football-logos.cc.svg',
-    copa_sudamericana: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Football%20Tournament%20%26%20Competition%20Logos/tournaments_conmebol-copa-sudamericana.football-logos.cc.svg',
-    copa_intercontinental: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Football%20Tournament%20%26%20Competition%20Logos/tournaments_fifa-intercontinental-cup.football-logos.cc.svg',
+    champions_league: ARG_COMPETITION_LOGOS.champions_league || '',
+    europa_league: ARG_COMPETITION_LOGOS.EUROPA_LEAGUE || '',
+    copa_libertadores: ARG_COMPETITION_LOGOS.copa_libertadores || '',
+    copa_sudamericana: ARG_COMPETITION_LOGOS.copa_sudamericana || '',
+    recopa_sudamericana: ARG_COMPETITION_LOGOS.recopa_sudamericana || '',
+    copa_intercontinental: ARG_COMPETITION_LOGOS.copa_intercontinental || '',
+    club_world_cup: ARG_COMPETITION_LOGOS.club_world_cup || '',
     fa_cup: '',
     carabao_cup: '',
-    copa_del_rey: 'https://tmssl.akamaized.net/images/logo/header/cdr.png',
-    dfb_pokal: 'https://tmssl.akamaized.net/images/logo/header/dfb.png',
-    coppa_italia: 'https://tmssl.akamaized.net/images/logo/header/cit.png',
-    copa_argentina: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Football%20Tournament%20%26%20Competition%20Logos/tournaments_copa-argentina.football-logos.cc.svg',
-    nacional_primer_ascenso: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Argentina/primera_nacional/argentina_primera-nacional.football-logos.cc.svg',
-    nacional_reducido: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Argentina/primera_nacional/argentina_primera-nacional.football-logos.cc.svg',
-    copa_mx: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Liga%20MX/mexico_copa-mx.football-logos.cc.svg',
+    copa_del_rey: '',
+    dfb_pokal: '',
+    coppa_italia: '',
+    copa_argentina: ARG_COMPETITION_LOGOS.copa_argentina || '',
+    nacional_primer_ascenso: ARG_COMPETITION_LOGOS.PRIMERA_NACIONAL || '',
+    nacional_reducido: ARG_COMPETITION_LOGOS.PRIMERA_NACIONAL || '',
+    copa_mx: ARG_COMPETITION_LOGOS.copa_mx || '',
 };
 
 export const CUP_THEMES: Record<string, { accent: string; bg: string; border: string }> = {
@@ -68,7 +82,9 @@ export const CUP_THEMES: Record<string, { accent: string; bg: string; border: st
     europa_league: { accent: 'text-amber-500', bg: 'from-amber-950 via-slate-950 to-slate-950', border: 'border-orange-500/40' },
     copa_libertadores: { accent: 'text-amber-400', bg: 'from-amber-950 via-slate-950 to-slate-950', border: 'border-amber-500/40' },
     copa_sudamericana: { accent: 'text-amber-500', bg: 'from-amber-950 via-slate-950 to-slate-950', border: 'border-amber-600/40' },
+    recopa_sudamericana: { accent: 'text-yellow-400', bg: 'from-yellow-950 via-slate-950 to-slate-950', border: 'border-yellow-500/40' },
     copa_intercontinental: { accent: 'text-emerald-400', bg: 'from-emerald-950 via-slate-950 to-slate-950', border: 'border-emerald-500/40' },
+    club_world_cup: { accent: 'text-amber-300', bg: 'from-amber-950 via-slate-950 to-slate-950', border: 'border-amber-400/50' },
     fa_cup: { accent: 'text-red-400', bg: 'from-red-950 via-slate-950 to-slate-950', border: 'border-red-500/40' },
     carabao_cup: { accent: 'text-green-400', bg: 'from-green-950 via-slate-950 to-slate-950', border: 'border-green-500/40' },
     copa_del_rey: { accent: 'text-amber-500', bg: 'from-amber-950 via-slate-950 to-slate-950', border: 'border-amber-500/40' },
@@ -94,12 +110,14 @@ export type CompetitionItem = {
 
 export const ALL_COMPETITIONS: CompetitionItem[] = [
     // Internacionales
-    { id: 'CLUB_RANKINGS', name: 'Rankings CONMEBOL / UEFA', type: 'CUP', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Football%20Tournament%20%26%20Competition%20Logos/tournaments_conmebol-libertadores.football-logos.cc.svg', category: 'INTERNATIONAL' },
+    { id: 'CLUB_RANKINGS', name: 'Rankings CONMEBOL / UEFA', type: 'CUP', logo: '', category: 'INTERNATIONAL' },
     { id: 'CHAMPIONS_LEAGUE', name: 'Champions League', type: 'CUP', logo: CUP_LOGOS.champions_league, category: 'INTERNATIONAL', cupKey: 'championsLeague' },
     { id: 'EUROPA_LEAGUE', name: 'UEFA Europa League', type: 'CUP', logo: CUP_LOGOS.europa_league, category: 'INTERNATIONAL', cupKey: 'europaLeague' },
     { id: 'COPA_LIBERTADORES', name: 'Copa Libertadores', type: 'CUP', logo: CUP_LOGOS.copa_libertadores, category: 'INTERNATIONAL', cupKey: 'copaLibertadores' },
     { id: 'COPA_SUDAMERICANA', name: 'Copa Sudamericana', type: 'CUP', logo: CUP_LOGOS.copa_sudamericana, category: 'INTERNATIONAL', cupKey: 'copaSudamericana' },
+    { id: 'RECOPA_SUDAMERICANA', name: 'Recopa Sudamericana', type: 'CUP', logo: CUP_LOGOS.recopa_sudamericana, category: 'INTERNATIONAL', cupKey: 'recopaSudamericana' },
     { id: 'COPA_INTERCONTINENTAL', name: 'Copa Intercontinental', type: 'CUP', logo: CUP_LOGOS.copa_intercontinental, category: 'INTERNATIONAL', cupKey: 'copaIntercontinental' },
+    { id: 'CLUB_WORLD_CUP', name: 'Mundial de Clubes FIFA', type: 'CUP', logo: CUP_LOGOS.club_world_cup, category: 'INTERNATIONAL', cupKey: 'clubWorldCup' },
 
     // Inglaterra
     { id: 'PREMIER_LEAGUE', name: 'Premier League', type: 'LEAGUE', logo: LEAGUE_LOGOS.PREMIER_LEAGUE, country: 'Inglaterra', flagUrl: 'https://flagcdn.com/gb-eng.svg', category: 'DOMESTIC', isFirstDiv: true },
@@ -150,4 +168,13 @@ export const ALL_COMPETITIONS: CompetitionItem[] = [
     // Colombia
     { id: 'PRIMERA_A_COLOMBIA', name: 'Liga BetPlay (Primera A)', type: 'LEAGUE', logo: LEAGUE_LOGOS.PRIMERA_A_COLOMBIA, country: 'Colombia', flagUrl: 'https://flagcdn.com/co.svg', category: 'DOMESTIC', isFirstDiv: true },
     { id: 'PRIMERA_B_COLOMBIA', name: 'Torneo BetPlay (Primera B)', type: 'LEAGUE', logo: LEAGUE_LOGOS.PRIMERA_B_COLOMBIA, country: 'Colombia', flagUrl: 'https://flagcdn.com/co.svg', category: 'DOMESTIC', isFirstDiv: false },
+
+    // Portugal & Países Bajos
+    { id: 'PRIMEIRA_LIGA', name: 'Liga Portugal Betclic', type: 'LEAGUE', logo: LEAGUE_LOGOS.PRIMEIRA_LIGA, country: 'Portugal', flagUrl: 'https://flagcdn.com/pt.svg', category: 'DOMESTIC', isFirstDiv: true },
+    { id: 'EREDIVISIE', name: 'Eredivisie', type: 'LEAGUE', logo: LEAGUE_LOGOS.EREDIVISIE, country: 'Países Bajos', flagUrl: 'https://flagcdn.com/nl.svg', category: 'DOMESTIC', isFirstDiv: true },
+
+    // Uruguay, Ecuador & EE.UU.
+    { id: 'LIGA_URUGUAYA', name: 'Liga AUF Uruguaya', type: 'LEAGUE', logo: LEAGUE_LOGOS.LIGA_URUGUAYA, country: 'Uruguay', flagUrl: 'https://flagcdn.com/uy.svg', category: 'DOMESTIC', isFirstDiv: true },
+    { id: 'LIGA_ECUADOR', name: 'LigaPro Serie A', type: 'LEAGUE', logo: LEAGUE_LOGOS.LIGA_ECUADOR, country: 'Ecuador', flagUrl: 'https://flagcdn.com/ec.svg', category: 'DOMESTIC', isFirstDiv: true },
+    { id: 'MLS', name: 'Major League Soccer', type: 'LEAGUE', logo: LEAGUE_LOGOS.MLS, country: 'EE.UU.', flagUrl: 'https://flagcdn.com/us.svg', category: 'DOMESTIC', isFirstDiv: true },
 ];

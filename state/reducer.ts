@@ -58,6 +58,7 @@ export type GameAction =
     | { type: 'TAKE_LOAN'; payload: { loan: import('../types').BankLoan } }
     | { type: 'REPAY_LOAN'; payload: { loanId: string } }
     | { type: 'SET_TICKET_POLICY'; payload: { policy: import('../types').TicketPolicy } }
+    | { type: 'SET_MEMBERSHIP_POLICY'; payload: { policy: import('../types').MembershipPolicy } }
     | { type: 'REALLOCATE_BUDGET'; payload: { amount: number; direction: 'to_transfers' | 'to_balance' } }
     | { type: 'UPDATE_CLUB_DIRECTIVES'; payload: Partial<import('../types').ClubDirectives> }
     | { type: 'UPGRADE_FACILITY'; payload: { cost: number } }
@@ -143,6 +144,7 @@ export function gameReducer(state: GameState | null, action: GameAction): GameSt
                 case 'TAKE_LOAN':
                 case 'REPAY_LOAN':
                 case 'SET_TICKET_POLICY':
+                case 'SET_MEMBERSHIP_POLICY':
                 case 'REALLOCATE_BUDGET':
                 case 'UPDATE_CLUB_DIRECTIVES':
                 case 'UPGRADE_FACILITY':

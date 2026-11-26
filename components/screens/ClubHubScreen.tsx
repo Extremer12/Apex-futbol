@@ -6,6 +6,7 @@ import { Trophy, Users, TrendingUp, Building2, Coins, ChevronRight, CheckCircle2
 import { TeamLogo } from '../../data/teams/helpers';
 import { useGameStore } from '../../state/gameStore';
 import { getClubHistoricalHonours } from '../../data/historicalHonours';
+import { calculateMembershipRevenue, generateClubMembership } from '../../services/membership';
 import { EmptyState, StatCell } from './transfers/TransferUI';
 
 interface ClubHubScreenProps {
@@ -22,6 +23,11 @@ export const ClubHubScreen: React.FC<ClubHubScreenProps> = ({ gameState, onNavig
     const clubHonours = useMemo(() => getClubHistoricalHonours(team.name), [team.name]);
     const totalTitles = (clubHonours?.totalOfficialTitles || 0) + (team.trophyCabinet?.length || 0);
     const weeklySponsorIncome = useMemo(() => gameState.sponsors.reduce((s, c) => s + c.weeklyIncome, 0), [gameState.sponsors]);
+    const membership = useMemo(() => gameState.membership || generateClubMembership(team, stadium), [gameState.membership, team, stadium]);
+    const weeklyMembershipIncome = useMemo(
+        () => calculateMembershipRevenue(membership, gameState.finances?.membershipPolicy || 'standard'),
+        [membership, gameState.finances?.membershipPolicy]
+    );
 
     const getPromiseTypeIcon = (type: ElectoralPromise['type']) => {
         switch (type) {
@@ -116,14 +122,32 @@ export const ClubHubScreen: React.FC<ClubHubScreenProps> = ({ gameState, onNavig
             {/* 3. APPROVAL & PROMISES */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                 <div className="lg:col-span-5 space-y-4">
-                    {/* Fan Approval */}
+                    {/* Fan Approval & Padrón */}
                     <div className="apex-card p-4 sm:p-5 rounded-2xl space-y-4">
                         <div className="flex items-center justify-between">
                             <h2 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
                                 <Users className="w-4 h-4 text-[var(--apex-gold)]" />
-                                Aprobación de Socios
+                                Masa Societaria
                             </h2>
                             <span className="text-lg font-black text-white tabular-nums">{fanApproval.rating}%</span>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-2 bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2.5">
+                            <div className="min-w-0">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Socios Activos</span>
+                                <span className="text-sm font-black text-white tabular-nums">
+                                    {membership.activeMembers.toLocaleString()}
+                                </span>
+                                {membership.lastWeeklyDelta !== 0 && (
+                                    <span className={`ml-2 text-[10px] font-black tabular-nums ${membership.lastWeeklyDelta > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                        ({membership.lastWeeklyDelta > 0 ? '+' : ''}{membership.lastWeeklyDelta.toLocaleString()}/sem)
+                                    </span>
+                                )}
+                            </div>
+                            <div className="text-right shrink-0">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Cuota</span>
+                                <span className="text-xs font-black text-emerald-400 tabular-nums">+{formatCurrencyShort(weeklyMembershipIncome)}/sem</span>
+                            </div>
                         </div>
 
                         <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">

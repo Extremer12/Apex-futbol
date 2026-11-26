@@ -5,7 +5,7 @@ export const bundesligaTeams: Team[] = [
     {
         id: 401,
         name: 'Bayern München',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/27.png',
+        logo: '',
         leagueId: LeagueId.BUNDESLIGA,
         budget: 150000000,
         transferBudget: 80000000,
@@ -44,7 +44,7 @@ export const bundesligaTeams: Team[] = [
     {
         id: 402,
         name: 'Borussia Dortmund',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/16.png',
+        logo: '',
         leagueId: LeagueId.BUNDESLIGA,
         budget: 90000000,
         transferBudget: 45000000,
@@ -80,7 +80,7 @@ export const bundesligaTeams: Team[] = [
     {
         id: 403,
         name: 'Bayer Leverkusen',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/15.png',
+        logo: '',
         leagueId: LeagueId.BUNDESLIGA,
         budget: 85000000,
         transferBudget: 40000000,
@@ -116,7 +116,7 @@ export const bundesligaTeams: Team[] = [
     {
         id: 404,
         name: 'RB Leipzig',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/23826.png',
+        logo: '',
         leagueId: LeagueId.BUNDESLIGA,
         budget: 80000000,
         transferBudget: 35000000,
@@ -153,7 +153,7 @@ export const bundesligaTeams: Team[] = [
     {
         id: 405,
         name: 'Eintracht Frankfurt',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/24.png',
+        logo: '',
         leagueId: LeagueId.BUNDESLIGA,
         budget: 50000000,
         transferBudget: 22000000,
@@ -188,7 +188,7 @@ export const bundesligaTeams: Team[] = [
     {
         id: 406,
         name: 'VfB Stuttgart',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/79.png',
+        logo: '',
         leagueId: LeagueId.BUNDESLIGA,
         budget: 45000000,
         transferBudget: 18000000,
@@ -223,7 +223,7 @@ export const bundesligaTeams: Team[] = [
     {
         id: 407,
         name: 'SC Freiburg',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/60.png',
+        logo: '',
         leagueId: LeagueId.BUNDESLIGA,
         budget: 38000000,
         transferBudget: 14000000,
@@ -258,7 +258,7 @@ export const bundesligaTeams: Team[] = [
     {
         id: 408,
         name: 'TSG Hoffenheim',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/533.png',
+        logo: '',
         leagueId: LeagueId.BUNDESLIGA,
         budget: 32000000,
         transferBudget: 11000000,
@@ -292,7 +292,7 @@ export const bundesligaTeams: Team[] = [
     {
         id: 410,
         name: 'Werder Bremen',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/86.png',
+        logo: '',
         leagueId: LeagueId.BUNDESLIGA,
         budget: 26000000,
         transferBudget: 9000000,
@@ -327,7 +327,7 @@ export const bundesligaTeams: Team[] = [
     {
         id: 412,
         name: 'VfL Wolfsburg',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/82.png',
+        logo: '',
         leagueId: LeagueId.BUNDESLIGA,
         budget: 46000000,
         transferBudget: 16000000,
@@ -362,7 +362,7 @@ export const bundesligaTeams: Team[] = [
     {
         id: 414,
         name: 'Bor. Mönchengladbach',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/18.png',
+        logo: '',
         leagueId: LeagueId.BUNDESLIGA,
         budget: 36000000,
         transferBudget: 12000000,
@@ -398,7 +398,7 @@ export const bundesligaTeams: Team[] = [
     {
         id: 416,
         name: 'Union Berlin',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/898.png',
+        logo: '',
         leagueId: LeagueId.BUNDESLIGA,
         budget: 28000000,
         transferBudget: 9000000,
@@ -433,7 +433,7 @@ export const bundesligaTeams: Team[] = [
     {
         id: 411,
         name: 'FC Augsburg',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/167.png',
+        logo: '',
         leagueId: LeagueId.BUNDESLIGA,
         budget: 22000000,
         transferBudget: 7000000,
@@ -468,7 +468,7 @@ export const bundesligaTeams: Team[] = [
     {
         id: 413,
         name: 'FSV Mainz 05',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/39.png',
+        logo: '',
         leagueId: LeagueId.BUNDESLIGA,
         budget: 24000000,
         transferBudget: 8000000,
@@ -502,7 +502,7 @@ export const bundesligaTeams: Team[] = [
     {
         id: 409,
         name: '1. FC Heidenheim',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/2036.png',
+        logo: '',
         leagueId: LeagueId.BUNDESLIGA,
         budget: 18000000,
         transferBudget: 6000000,
@@ -536,7 +536,7 @@ export const bundesligaTeams: Team[] = [
     {
         id: 417,
         name: 'FC St. Pauli',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/35.png',
+        logo: '',
         leagueId: LeagueId.BUNDESLIGA,
         budget: 17000000,
         transferBudget: 5500000,
@@ -570,7 +570,7 @@ export const bundesligaTeams: Team[] = [
     {
         id: 418,
         name: 'Holstein Kiel',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/269.png',
+        logo: '',
         leagueId: LeagueId.BUNDESLIGA,
         budget: 16000000,
         transferBudget: 5000000,
@@ -605,7 +605,7 @@ export const bundesligaTeams: Team[] = [
     {
         id: 415,
         name: 'VfL Bochum',
-        logo: 'https://tmssl.akamaized.net/images/wappen/head/80.png',
+        logo: '',
         leagueId: LeagueId.BUNDESLIGA,
         budget: 16000000,
         transferBudget: 4500000,

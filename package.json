@@ -10,7 +10,8 @@
     "test": "tsx --test \"tests/**/*.test.ts\"",
     "build-pack": "tsx scripts/buildPack.ts",
     "sync:argentina": "tsx scripts/syncPromiedosSquads.ts",
-    "sync:faces": "tsx scripts/syncPlayerFaces.ts"
+    "sync:faces": "tsx scripts/syncPlayerFaces.ts",
+    "sync:world": "tsx scripts/syncWorldAssets.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.115.0",

@@ -186,8 +186,19 @@ export class PackResolver {
             }
             case 'trophy': {
                 if (!assets.trophies) return undefined;
+                const idLower = identifier.toLowerCase();
+                const idUnderscore = idLower.replace(/[^a-z0-9]/g, '_');
+                const idSlug = idLower.replace(/[^a-z0-9]/g, '');
                 const cleanName = meta?.name ? meta.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '') : '';
-                return assets.trophies[identifier] || assets.trophies[identifier.toLowerCase()] || (cleanName ? assets.trophies[cleanName] : undefined);
+                const cleanUnderscore = meta?.name ? meta.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '_') : '';
+                return (
+                    assets.trophies[identifier] ||
+                    assets.trophies[idLower] ||
+                    assets.trophies[idUnderscore] ||
+                    assets.trophies[idSlug] ||
+                    (cleanName ? assets.trophies[cleanName] : undefined) ||
+                    (cleanUnderscore ? assets.trophies[cleanUnderscore] : undefined)
+                );
             }
             case 'flag': {
                 if (!assets.flags) return undefined;

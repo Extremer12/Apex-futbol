@@ -3,7 +3,7 @@ import { Team, LeagueId } from '../../types';
 // --- SEGUNDA DIVISIÓN ESPAÑOLA (LALIGA HYPERMOTION) ---
 export const segundaDivisionTeams: Team[] = [
     {
-        id: 901, name: 'Elche CF', logo: 'https://tmssl.akamaized.net/images/wappen/head/2268.png', leagueId: LeagueId.SEGUNDA_DIVISION_ESP, budget: 14000000, transferBudget: 4500000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#006400', secondaryColor: '#FFFFFF',
+        id: 901, name: 'Elche CF', logo: '', leagueId: LeagueId.SEGUNDA_DIVISION_ESP, budget: 14000000, transferBudget: 4500000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#006400', secondaryColor: '#FFFFFF',
         squad: [
             { id: 90101, name: 'M. Dituro', position: 'POR', rating: 76, potential: 76, age: 37, value: 1200000, wage: 20000, morale: 'Feliz', contractYears: 1 },
             { id: 90102, name: 'P. Bigas', position: 'DEF', rating: 75, potential: 75, age: 34, value: 1000000, wage: 22000, morale: 'Contento', contractYears: 1 },
@@ -19,7 +19,7 @@ export const segundaDivisionTeams: Team[] = [
         ]
     },
     {
-        id: 902, name: 'Sporting Gijón', logo: 'https://tmssl.akamaized.net/images/wappen/head/456.png', leagueId: LeagueId.SEGUNDA_DIVISION_ESP, budget: 12000000, transferBudget: 3500000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#C8102E', secondaryColor: '#FFFFFF',
+        id: 902, name: 'Sporting Gijón', logo: '', leagueId: LeagueId.SEGUNDA_DIVISION_ESP, budget: 12000000, transferBudget: 3500000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#C8102E', secondaryColor: '#FFFFFF',
         squad: [
             { id: 90201, name: 'Rubén Yáñez', position: 'POR', rating: 76, potential: 77, age: 30, value: 2500000, wage: 22000, morale: 'Feliz', contractYears: 3 },
             { id: 90202, name: 'Róber Pier', position: 'DEF', rating: 75, potential: 75, age: 29, value: 2000000, wage: 22000, morale: 'Contento', contractYears: 2 },
@@ -35,7 +35,7 @@ export const segundaDivisionTeams: Team[] = [
         ]
     },
     {
-        id: 903, name: 'Málaga CF', logo: 'https://tmssl.akamaized.net/images/wappen/head/450.png', leagueId: LeagueId.SEGUNDA_DIVISION_ESP, budget: 10000000, transferBudget: 2800000, tier: 'Mid', teamMorale: 'Feliz', primaryColor: '#003DA5', secondaryColor: '#FFFFFF',
+        id: 903, name: 'Málaga CF', logo: '', leagueId: LeagueId.SEGUNDA_DIVISION_ESP, budget: 10000000, transferBudget: 2800000, tier: 'Mid', teamMorale: 'Feliz', primaryColor: '#003DA5', secondaryColor: '#FFFFFF',
         squad: [
             { id: 90301, name: 'Alfonso Herrero', position: 'POR', rating: 76, potential: 77, age: 30, value: 2500000, wage: 22000, morale: 'Feliz', contractYears: 3 },
             { id: 90302, name: 'Nelson Monte', position: 'DEF', rating: 74, potential: 74, age: 29, value: 1600000, wage: 18000, morale: 'Contento', contractYears: 2 },
@@ -67,7 +67,7 @@ export const segundaDivisionTeams: Team[] = [
         ]
     },
     {
-        id: 907, name: 'Racing Santander', logo: 'https://tmssl.akamaized.net/images/wappen/head/524.png', leagueId: LeagueId.SEGUNDA_DIVISION_ESP, budget: 12000000, transferBudget: 3500000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#006400', secondaryColor: '#FFFFFF',
+        id: 907, name: 'Racing Santander', logo: '', leagueId: LeagueId.SEGUNDA_DIVISION_ESP, budget: 12000000, transferBudget: 3500000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#006400', secondaryColor: '#FFFFFF',
         squad: [
             { id: 90701, name: 'Jokin Ezkieta', position: 'POR', rating: 76, potential: 77, age: 27, value: 2500000, wage: 22000, morale: 'Feliz', contractYears: 3 },
             { id: 90702, name: 'Javi Castro', position: 'DEF', rating: 75, potential: 79, age: 23, value: 2800000, wage: 18000, morale: 'Contento', contractYears: 3 },
@@ -83,7 +83,7 @@ export const segundaDivisionTeams: Team[] = [
         ]
     },
     {
-        id: 911, name: 'UD Almería', logo: 'https://tmssl.akamaized.net/images/wappen/head/2223.png', leagueId: LeagueId.SEGUNDA_DIVISION_ESP, budget: 20000000, transferBudget: 7000000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#C8102E', secondaryColor: '#FFFFFF',
+        id: 911, name: 'UD Almería', logo: '', leagueId: LeagueId.SEGUNDA_DIVISION_ESP, budget: 20000000, transferBudget: 7000000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#C8102E', secondaryColor: '#FFFFFF',
         squad: [
             { id: 91101, name: 'Luís Maximiano', position: 'POR', rating: 78, potential: 81, age: 25, value: 6500000, wage: 35000, morale: 'Feliz', contractYears: 4 },
             { id: 91102, name: 'Lucas Robertone', position: 'CEN', rating: 79, potential: 81, age: 27, value: 8000000, wage: 40000, morale: 'Feliz', contractYears: 4 },
@@ -99,7 +99,7 @@ export const segundaDivisionTeams: Team[] = [
         ]
     },
     {
-        id: 916, name: 'Levante UD', logo: 'https://tmssl.akamaized.net/images/wappen/head/514.png', leagueId: LeagueId.SEGUNDA_DIVISION_ESP, budget: 14000000, transferBudget: 4000000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#C8102E', secondaryColor: '#003DA5',
+        id: 916, name: 'Levante UD', logo: '', leagueId: LeagueId.SEGUNDA_DIVISION_ESP, budget: 14000000, transferBudget: 4000000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#C8102E', secondaryColor: '#003DA5',
         squad: [
             { id: 91601, name: 'Andrés Fernández', position: 'POR', rating: 76, potential: 76, age: 37, value: 1000000, wage: 22000, morale: 'Contento', contractYears: 1 },
             { id: 91602, name: 'Unai Elgezabal', position: 'DEF', rating: 75, potential: 75, age: 31, value: 1800000, wage: 20000, morale: 'Normal', contractYears: 2 },
@@ -115,7 +115,7 @@ export const segundaDivisionTeams: Team[] = [
         ]
     },
     {
-        id: 919, name: 'Real Oviedo', logo: 'https://tmssl.akamaized.net/images/wappen/head/2497.png', leagueId: LeagueId.SEGUNDA_DIVISION_ESP, budget: 14000000, transferBudget: 4200000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#003DA5', secondaryColor: '#FFFFFF',
+        id: 919, name: 'Real Oviedo', logo: '', leagueId: LeagueId.SEGUNDA_DIVISION_ESP, budget: 14000000, transferBudget: 4200000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#003DA5', secondaryColor: '#FFFFFF',
         squad: [
             { id: 91901, name: 'Aarón Escandell', position: 'POR', rating: 76, potential: 77, age: 28, value: 2500000, wage: 22000, morale: 'Feliz', contractYears: 3 },
             { id: 91902, name: 'David Costas', position: 'DEF', rating: 76, potential: 76, age: 29, value: 2800000, wage: 24000, morale: 'Contento', contractYears: 2 },
@@ -131,7 +131,7 @@ export const segundaDivisionTeams: Team[] = [
         ]
     },
     {
-        id: 921, name: 'SD Eibar', logo: 'https://tmssl.akamaized.net/images/wappen/head/1533.png', leagueId: LeagueId.SEGUNDA_DIVISION_ESP, budget: 13000000, transferBudget: 3800000, tier: 'Top', teamMorale: 'Contento', primaryColor: '#003DA5', secondaryColor: '#C8102E',
+        id: 921, name: 'SD Eibar', logo: '', leagueId: LeagueId.SEGUNDA_DIVISION_ESP, budget: 13000000, transferBudget: 3800000, tier: 'Top', teamMorale: 'Contento', primaryColor: '#003DA5', secondaryColor: '#C8102E',
         squad: [
             { id: 92101, name: 'Daniel Fuzato', position: 'POR', rating: 75, potential: 77, age: 27, value: 2200000, wage: 20000, morale: 'Contento', contractYears: 3 },
             { id: 92102, name: 'Anaitz Arbilla', position: 'DEF', rating: 75, potential: 75, age: 37, value: 800000, wage: 22000, morale: 'Feliz', contractYears: 1 },
@@ -147,7 +147,7 @@ export const segundaDivisionTeams: Team[] = [
         ]
     },
     {
-        id: 922, name: 'Granada CF', logo: 'https://tmssl.akamaized.net/images/wappen/head/16795.png', leagueId: LeagueId.SEGUNDA_DIVISION_ESP, budget: 16000000, transferBudget: 5000000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#C8102E', secondaryColor: '#FFFFFF',
+        id: 922, name: 'Granada CF', logo: '', leagueId: LeagueId.SEGUNDA_DIVISION_ESP, budget: 16000000, transferBudget: 5000000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#C8102E', secondaryColor: '#FFFFFF',
         squad: [
             { id: 92201, name: 'Diego Mariño', position: 'POR', rating: 75, potential: 75, age: 34, value: 1200000, wage: 20000, morale: 'Contento', contractYears: 2 },
             { id: 92202, name: 'Miguel Rubio', position: 'DEF', rating: 75, potential: 76, age: 26, value: 2200000, wage: 20000, morale: 'Normal', contractYears: 2 },
@@ -167,7 +167,7 @@ export const segundaDivisionTeams: Team[] = [
 // --- 2. BUNDESLIGA ALEMANA ---
 export const zweiteBundesligaTeams: Team[] = [
     {
-        id: 931, name: 'Hamburger SV', logo: 'https://tmssl.akamaized.net/images/wappen/head/41.png', leagueId: LeagueId.ZWEITE_BUNDESLIGA, budget: 18000000, transferBudget: 6000000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#003DA5', secondaryColor: '#FFFFFF',
+        id: 931, name: 'Hamburger SV', logo: '', leagueId: LeagueId.ZWEITE_BUNDESLIGA, budget: 18000000, transferBudget: 6000000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#003DA5', secondaryColor: '#FFFFFF',
         squad: [
             { id: 93101, name: 'D. Heuer Fernandes', position: 'POR', rating: 76, potential: 76, age: 31, value: 2500000, wage: 28000, morale: 'Feliz', contractYears: 2 },
             { id: 93102, name: 'S. Schonlau', position: 'DEF', rating: 76, potential: 76, age: 30, value: 2800000, wage: 30000, morale: 'Feliz', contractYears: 2 },
@@ -183,7 +183,7 @@ export const zweiteBundesligaTeams: Team[] = [
         ]
     },
     {
-        id: 933, name: 'Schalke 04', logo: 'https://tmssl.akamaized.net/images/wappen/head/33.png', leagueId: LeagueId.ZWEITE_BUNDESLIGA, budget: 16000000, transferBudget: 5000000, tier: 'Top', teamMorale: 'Contento', primaryColor: '#003DA5', secondaryColor: '#FFFFFF',
+        id: 933, name: 'Schalke 04', logo: '', leagueId: LeagueId.ZWEITE_BUNDESLIGA, budget: 16000000, transferBudget: 5000000, tier: 'Top', teamMorale: 'Contento', primaryColor: '#003DA5', secondaryColor: '#FFFFFF',
         squad: [
             { id: 93301, name: 'J. Hoffmann', position: 'POR', rating: 75, potential: 77, age: 25, value: 2200000, wage: 22000, morale: 'Contento', contractYears: 3 },
             { id: 93302, name: 'M. Kamiński', position: 'DEF', rating: 75, potential: 75, age: 32, value: 1800000, wage: 25000, morale: 'Normal', contractYears: 2 },
@@ -199,7 +199,7 @@ export const zweiteBundesligaTeams: Team[] = [
         ]
     },
     {
-        id: 934, name: 'Fortuna Düsseldorf', logo: 'https://tmssl.akamaized.net/images/wappen/head/69.png', leagueId: LeagueId.ZWEITE_BUNDESLIGA, budget: 15000000, transferBudget: 4500000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#C8102E', secondaryColor: '#FFFFFF',
+        id: 934, name: 'Fortuna Düsseldorf', logo: '', leagueId: LeagueId.ZWEITE_BUNDESLIGA, budget: 15000000, transferBudget: 4500000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#C8102E', secondaryColor: '#FFFFFF',
         squad: [
             { id: 93401, name: 'F. Kastenmeier', position: 'POR', rating: 77, potential: 79, age: 27, value: 3500000, wage: 28000, morale: 'Feliz', contractYears: 3 },
             { id: 93402, name: 'A. Hoffmann', position: 'DEF', rating: 76, potential: 76, age: 31, value: 2500000, wage: 26000, morale: 'Feliz', contractYears: 2 },
@@ -215,7 +215,7 @@ export const zweiteBundesligaTeams: Team[] = [
         ]
     },
     {
-        id: 938, name: 'Hertha BSC', logo: 'https://tmssl.akamaized.net/images/wappen/head/9.png', leagueId: LeagueId.ZWEITE_BUNDESLIGA, budget: 17000000, transferBudget: 5500000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#003DA5', secondaryColor: '#FFFFFF',
+        id: 938, name: 'Hertha BSC', logo: '', leagueId: LeagueId.ZWEITE_BUNDESLIGA, budget: 17000000, transferBudget: 5500000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#003DA5', secondaryColor: '#FFFFFF',
         squad: [
             { id: 93801, name: 'T. Ernst', position: 'POR', rating: 76, potential: 83, age: 21, value: 4500000, wage: 22000, morale: 'Feliz', contractYears: 4 },
             { id: 93802, name: 'T. Leistner', position: 'DEF', rating: 75, potential: 75, age: 34, value: 1500000, wage: 26000, morale: 'Contento', contractYears: 1 },
@@ -231,7 +231,7 @@ export const zweiteBundesligaTeams: Team[] = [
         ]
     },
     {
-        id: 942, name: '1. FC Köln', logo: 'https://tmssl.akamaized.net/images/wappen/head/3.png', leagueId: LeagueId.ZWEITE_BUNDESLIGA, budget: 18000000, transferBudget: 6000000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#C8102E', secondaryColor: '#FFFFFF',
+        id: 942, name: '1. FC Köln', logo: '', leagueId: LeagueId.ZWEITE_BUNDESLIGA, budget: 18000000, transferBudget: 6000000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#C8102E', secondaryColor: '#FFFFFF',
         squad: [
             { id: 94201, name: 'J. Urbig', position: 'POR', rating: 77, potential: 84, age: 21, value: 6500000, wage: 26000, morale: 'Feliz', contractYears: 4 },
             { id: 94202, name: 'T. Hübers', position: 'DEF', rating: 77, potential: 78, age: 28, value: 5000000, wage: 35000, morale: 'Feliz', contractYears: 3 },
@@ -251,7 +251,7 @@ export const zweiteBundesligaTeams: Team[] = [
 // --- SERIE B ITALIANA ---
 export const serieBItaTeams: Team[] = [
     {
-        id: 963, name: 'Palermo FC', logo: 'https://tmssl.akamaized.net/images/wappen/head/155.png', leagueId: LeagueId.SERIE_B_ITA, budget: 15000000, transferBudget: 5000000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#FFB6C1', secondaryColor: '#000000',
+        id: 963, name: 'Palermo FC', logo: '', leagueId: LeagueId.SERIE_B_ITA, budget: 15000000, transferBudget: 5000000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#FFB6C1', secondaryColor: '#000000',
         squad: [
             { id: 96301, name: 'S. Desplanches', position: 'POR', rating: 75, potential: 82, age: 21, value: 3500000, wage: 20000, morale: 'Feliz', contractYears: 4 },
             { id: 96302, name: 'P. Ceccaroni', position: 'DEF', rating: 75, potential: 75, age: 31, value: 2000000, wage: 24000, morale: 'Contento', contractYears: 2 },
@@ -267,7 +267,7 @@ export const serieBItaTeams: Team[] = [
         ]
     },
     {
-        id: 967, name: 'US Cremonese', logo: 'https://tmssl.akamaized.net/images/wappen/head/6284.png', leagueId: LeagueId.SERIE_B_ITA, budget: 14000000, transferBudget: 4500000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#C8102E', secondaryColor: '#808080',
+        id: 967, name: 'US Cremonese', logo: '', leagueId: LeagueId.SERIE_B_ITA, budget: 14000000, transferBudget: 4500000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#C8102E', secondaryColor: '#808080',
         squad: [
             { id: 96701, name: 'A. Fulignati', position: 'POR', rating: 76, potential: 77, age: 29, value: 2800000, wage: 24000, morale: 'Feliz', contractYears: 3 },
             { id: 96702, name: 'M. Bianchetti', position: 'DEF', rating: 75, potential: 75, age: 31, value: 2000000, wage: 22000, morale: 'Contento', contractYears: 2 },
@@ -283,7 +283,7 @@ export const serieBItaTeams: Team[] = [
         ]
     },
     {
-        id: 971, name: 'Pisa SC', logo: 'https://tmssl.akamaized.net/images/wappen/head/2355.png', leagueId: LeagueId.SERIE_B_ITA, budget: 13000000, transferBudget: 4000000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#003DA5', secondaryColor: '#000000',
+        id: 971, name: 'Pisa SC', logo: '', leagueId: LeagueId.SERIE_B_ITA, budget: 13000000, transferBudget: 4000000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#003DA5', secondaryColor: '#000000',
         squad: [
             { id: 97101, name: 'A. Šemper', position: 'POR', rating: 76, potential: 78, age: 26, value: 3000000, wage: 24000, morale: 'Feliz', contractYears: 3 },
             { id: 97102, name: 'A. Caracciolo', position: 'DEF', rating: 75, potential: 75, age: 34, value: 1500000, wage: 22000, morale: 'Feliz', contractYears: 2 },
@@ -299,7 +299,7 @@ export const serieBItaTeams: Team[] = [
         ]
     },
     {
-        id: 972, name: 'US Salernitana', logo: 'https://tmssl.akamaized.net/images/wappen/head/4026.png', leagueId: LeagueId.SERIE_B_ITA, budget: 14000000, transferBudget: 4200000, tier: 'Top', teamMorale: 'Normal', primaryColor: '#8B0000', secondaryColor: '#FFFFFF',
+        id: 972, name: 'US Salernitana', logo: '', leagueId: LeagueId.SERIE_B_ITA, budget: 14000000, transferBudget: 4200000, tier: 'Top', teamMorale: 'Normal', primaryColor: '#8B0000', secondaryColor: '#FFFFFF',
         squad: [
             { id: 97201, name: 'L. Sepe', position: 'POR', rating: 76, potential: 76, age: 33, value: 1800000, wage: 26000, morale: 'Normal', contractYears: 2 },
             { id: 97202, name: 'D. Bronn', position: 'DEF', rating: 75, potential: 75, age: 29, value: 2200000, wage: 24000, morale: 'Contento', contractYears: 2 },

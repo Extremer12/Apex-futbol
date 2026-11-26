@@ -359,3 +359,49 @@ test('RESOURCE SYSTEM: Country flag bundle scoping, ZIP SVG sanitization, and ZI
 
     await PackManager.clearAllPacks();
 });
+
+test('RESOURCE SYSTEM: Full 383-club crest resolution (zero tmssl/broken /logos) & Trophy SVG pack', async () => {
+    const JSZip = (await import('jszip')).default;
+    const { TEAMS } = await import('../../constants');
+    const { SOUTH_AMERICAN_EXTRA_TEAMS } = await import('../../data/teams/southAmericanClubs');
+
+    const worldTeams = Array.from(new Map([...TEAMS, ...SOUTH_AMERICAN_EXTRA_TEAMS].map(t => [t.id, t])).values());
+    assert.ok(worldTeams.length >= 433, `Expected at least 433 clubs across all 26 leagues + CONMEBOL, got ${worldTeams.length}`);
+
+    for (const club of worldTeams) {
+        // Base team objects must not carry hotlinked tmssl or missing /logos/ paths (Play Store compliance)
+        assert.equal(club.logo.includes('tmssl.akamaized.net'), false, `Base club ${club.name} must not hardcode tmssl`);
+        assert.equal(club.logo.startsWith('/logos/'), false, `Base club ${club.name} must not reference missing /logos/`);
+
+        const resolved = DefaultResourceProvider.resolveTeamLogo(club.id, club);
+        assert.ok(resolved && resolved.url, `Expected community crest resolution for ${club.name} (${club.id})`);
+        assert.equal(resolved.url.includes('tmssl.akamaized.net'), false, `Resolved crest for ${club.name} must not use tmssl`);
+        assert.equal(resolved.url.startsWith('/logos/'), false, `Resolved crest for ${club.name} must not use /logos/`);
+    }
+
+    // Distinct fallback & community trophy silhouettes
+    const recopaFb = ResourceFallback.trophy('Recopa Sudamericana');
+    const faCupFb = ResourceFallback.trophy('FA Cup');
+    assert.ok(recopaFb.startsWith('data:image/svg+xml') && faCupFb.startsWith('data:image/svg+xml'));
+    assert.notEqual(recopaFb, faCupFb);
+    assert.equal(ResourceFallback.forType('league-logo', 'UNKNOWN').includes('sinlogo.png'), false);
+
+    // Real downloadable SVG trophies ZIP import & case-insensitive ID resolution
+    const zip = new JSZip();
+    const sampleSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="#eab308"/></svg>';
+    zip.folder('trophies')?.file('recopa_sudamericana.svg', sampleSvg);
+    zip.folder('trophies')?.file('fa_cup.svg', sampleSvg);
+    const bytes = await zip.generateAsync({ type: 'uint8array' });
+
+    await PackManager.clearAllPacks();
+    const trophyPack = await PackManager.installZipFile(bytes, { name: 'trophies-custom.zip' });
+    assert.equal(trophyPack.assetCount, 2);
+
+    ResourceCache.clearMemory();
+    const recopaRes = PackResolver.resolve('trophy', 'RECOPA_SUDAMERICANA', PackManager.getInstalledPacks(), { name: 'Recopa Sudamericana' });
+    assert.equal(recopaRes.packId, trophyPack.packId);
+    const faRes = PackResolver.resolve('trophy', 'FA_CUP', PackManager.getInstalledPacks(), { name: 'FA Cup' });
+    assert.equal(faRes.packId, trophyPack.packId);
+
+    await PackManager.clearAllPacks();
+});

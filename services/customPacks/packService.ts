@@ -5,6 +5,7 @@ import { normalizeKey, getTeamMatchKeys, getCompetitionMatchKeys, getPlayerMatch
 import { ARG_CLUB_LOGOS_BY_ID, ARG_CLUB_LOGOS_BY_NAME, ARG_COMPETITION_LOGOS } from './argentineLogos';
 import { PLAYER_PHOTOS_BY_ID, PLAYER_PHOTOS_BY_NAME } from './playerPhotos';
 import { resourceManager } from '../resources/ResourceManager';
+import { ResourceFallback } from '../resources/ResourceFallback';
 import { ResourceCache } from '../resources/ResourceCache';
 
 export type PackUpdateListener = () => void;
@@ -437,7 +438,7 @@ class CustomPacksService {
     }
 
     public resolvePlayerPhoto(player?: { id?: number | string; name?: string; photo?: string; position?: string }): string {
-        if (!player) return '/sinrostro.png';
+        if (!player) return ResourceFallback.playerFace('Jugador');
         return resourceManager.playerFace(player.id, player);
     }
 

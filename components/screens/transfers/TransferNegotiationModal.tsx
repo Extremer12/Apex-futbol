@@ -90,8 +90,8 @@ export const TransferNegotiationModal: React.FC<TransferNegotiationModalProps> =
 
     // Step 2: Contract State
     const expectedWage = useMemo(() => {
-        return getExpectedWage(negotiatingPlayer, myTeam.tier, 'FirstTeam');
-    }, [negotiatingPlayer, myTeam.tier]);
+        return getExpectedWage(negotiatingPlayer, myTeam.tier, 'FirstTeam', myTeam.leagueId);
+    }, [negotiatingPlayer, myTeam.tier, myTeam.leagueId]);
 
     const [offeredWage, setOfferedWage] = useState<number>(() => expectedWage);
     const [offeredYears, setOfferedYears] = useState<number>(3);

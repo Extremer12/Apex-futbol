@@ -527,6 +527,69 @@ export function handleCupProgression(
         updatedCups.copaIntercontinental = advanceCupRound(updatedCups.copaIntercontinental, teams, newWeek, updatedSchedule);
     }
 
+    // 5b. Recopa Sudamericana (Final a Ida y Vuelta)
+    if (updatedCups.recopaSudamericana && !updatedCups.recopaSudamericana.winnerId) {
+        const recopaMatches = justPlayedMatches.filter(m => m.competition === 'Recopa_Sudamericana');
+        if (recopaMatches.length > 0) {
+            updatedCups.recopaSudamericana = advanceCupRound(updatedCups.recopaSudamericana, teams, newWeek, updatedSchedule);
+        }
+    }
+
+    // 5c. Mundial de Clubes FIFA (32 Equipos: 8 Grupos -> Octavos -> Cuartos -> Semis -> Final)
+    if (updatedCups.clubWorldCup && !updatedCups.clubWorldCup.winnerId) {
+        const cwcMatches = justPlayedMatches.filter(m => m.competition === 'Club_World_Cup');
+        if (updatedCups.clubWorldCup.phase === 'groups' && cwcMatches.length > 0) {
+            (updatedCups.clubWorldCup.groups || []).forEach(g => {
+                g.fixtures = g.fixtures.map(f => {
+                    if (f.result !== undefined) return f;
+                    const played = updatedSchedule.find(m =>
+                        ((f.id && m.id && f.id === m.id) ||
+                        (m.homeTeamId === f.homeTeamId && m.awayTeamId === f.awayTeamId && m.competition === f.competition && m.week === f.week)) &&
+                        m.result !== undefined
+                    );
+                    return played ? { ...f, result: played.result, penalties: played.penalties } : f;
+                });
+                syncAndRecalculateGroupTable(g);
+                g.table.sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference || b.goalsFor - a.goalsFor);
+                g.table.forEach((row, idx) => { row.position = idx + 1; });
+            });
+        }
+        const shouldProgressCwc = cwcMatches.length > 0 || (updatedCups.clubWorldCup.phase === 'groups' && simulatedWeek >= 26);
+        if (shouldProgressCwc) {
+            const cwcRoundsCount = updatedCups.clubWorldCup.rounds?.length || 0;
+            const cwcWeekMap: Record<number, number> = {
+                0: 28, // Octavos de Final (Semana 28)
+                1: 30, // Cuartos de Final (Semana 30)
+                2: 32, // Semifinales (Semana 32)
+                3: 34  // Gran Final (Semana 34)
+            };
+            const nextCwcWeek = cwcWeekMap[cwcRoundsCount] || Math.min(36, Math.max(newWeek + 2, 28));
+            const wasGroups = updatedCups.clubWorldCup.phase === 'groups';
+            const result = progressInternationalCup(updatedCups.clubWorldCup, teams, nextCwcWeek, updatedSchedule);
+            updatedCups.clubWorldCup = result;
+
+            if (result.newFixtures) {
+                updatedSchedule.push(...result.newFixtures);
+                const isPlayerInNewFixtures = playerTeamId
+                    ? result.newFixtures.some(f => f.homeTeamId === playerTeamId || f.awayTeamId === playerTeamId)
+                    : false;
+                if (isPlayerInNewFixtures && wasGroups && result.phase === 'knockout') {
+                    cinematicEvents.push({
+                        id: `cwc_ko_${Date.now()}`,
+                        type: 'CUP_KICKOFF',
+                        title: 'MUNDIAL DE CLUBES FIFA',
+                        subtitle: '¡Clasificaste a los Octavos de Final del torneo de los 32 mejores clubes!',
+                        metadata: {
+                            competition: 'Mundial de Clubes FIFA',
+                            competitionId: 'CLUB_WORLD_CUP',
+                            accentColor: '#F59E0B',
+                            bgClass: 'from-amber-900 via-slate-950 to-slate-950'
+                        }
+                    });
+                }
+            }
+        }
+    }
     // 6. Argentine Playoffs (Torneo Apertura)
     if (simulatedWeek >= 16 && (!updatedCups.aperturaPlayoffs || !updatedCups.aperturaPlayoffs.rounds || updatedCups.aperturaPlayoffs.rounds.length === 0)) {
         const { zoneA, zoneB } = calculateTournamentStandings(updatedSchedule, 'Torneo_Apertura', teams);
@@ -691,7 +754,8 @@ export function handleCupProgression(
         { cup: updatedCups.copaLibertadores, comp: 'Copa_Libertadores' },
         { cup: updatedCups.copaSudamericana, comp: 'Copa_Sudamericana' },
         { cup: updatedCups.championsLeague, comp: 'Champions_League' },
-        { cup: updatedCups.europaLeague, comp: 'Europa_League' }
+        { cup: updatedCups.europaLeague, comp: 'Europa_League' },
+        { cup: updatedCups.clubWorldCup, comp: 'Club_World_Cup' }
     ];
 
     cupsInKnockout.forEach(({ cup, comp }) => {

@@ -100,6 +100,11 @@ const LEAGUE_FOREIGN_POOLS: Partial<Record<CountryCode, PlayerNationality[]>> = 
     PAR: ['ARG', 'URU', 'BRA', 'COL'],
     CHI: ['ARG', 'URU', 'COL', 'PAR', 'PER'],
     COL: ['ARG', 'URU', 'BRA', 'PAR', 'ECU'],
+    POR: ['BRA', 'ESP', 'ARG', 'URU', 'FRA'],
+    NED: ['BEL', 'GER', 'MAR', 'DEN', 'NOR'],
+    URU: ['ARG', 'BRA', 'PAR', 'CHI'],
+    ECU: ['COL', 'ARG', 'URU', 'PAR', 'BRA'],
+    USA: ['ARG', 'MEX', 'CAN', 'BRA', 'COL'],
 };
 
 const NAME_POOLS: Record<string, { first: string[]; last: string[] }> = {
@@ -150,6 +155,22 @@ const NAME_POOLS: Record<string, { first: string[]; last: string[] }> = {
     URU: {
         first: ['Federico', 'Darwin', 'Ronald', 'Manuel', 'Rodrigo', 'Facundo', 'Maximiliano', 'Luciano', 'Nicolás', 'Matías', 'Nahitan', 'Brian', 'Guillermo', 'Agustín', 'Lucas'],
         last: ['Valverde', 'Núñez', 'Araújo', 'Ugarte', 'Bentancur', 'Pellistri', 'De la Cruz', 'Olivera', 'Giménez', 'Varela', 'Nández', 'Rodríguez', 'Viña', 'Torreira', 'Suárez']
+    },
+    POR: {
+        first: ['Bruno', 'Bernardo', 'Rúben', 'Rafael', 'Diogo', 'João', 'Pedro', 'Gonçalo', 'Vitinha', 'Nuno', 'António', 'Francisco', 'Rodrigo', 'Tiago'],
+        last: ['Fernandes', 'Silva', 'Dias', 'Leão', 'Costa', 'Neves', 'Félix', 'Palhinha', 'Inácio', 'Gomes', 'Santos', 'Pereira', 'Mendes', 'Almeida']
+    },
+    NED: {
+        first: ['Virgil', 'Frenkie', 'Cody', 'Xavi', 'Tijjani', 'Joey', 'Matthijs', 'Denzel', 'Jeremie', 'Jurriën', 'Brian', 'Kenneth', 'Jorrel', 'Quinten'],
+        last: ['van Dijk', 'de Jong', 'Gakpo', 'Simons', 'Reijnders', 'Veerman', 'de Ligt', 'Dumfries', 'Frimpong', 'Timber', 'Brobbey', 'Taylor', 'Hato', 'Bakker']
+    },
+    ECU: {
+        first: ['Moisés', 'Piero', 'Kendry', 'Enner', 'Pervis', 'Gonzalo', 'Willian', 'Ángel', 'Jhoanner', 'Alan', 'Jeremy', 'Félix', 'Alexander', 'José'],
+        last: ['Caicedo', 'Hincapié', 'Páez', 'Valencia', 'Estupiñán', 'Plata', 'Pacho', 'Mena', 'Preciado', 'Franco', 'Sarmiento', 'Torres', 'Domínguez', 'Cifuentes']
+    },
+    USA: {
+        first: ['Christian', 'Weston', 'Tyler', 'Gio', 'Folarin', 'Tim', 'Yunus', 'Antonee', 'Chris', 'Ricardo', 'Matt', 'Brendan', 'Brenden', 'Paxten'],
+        last: ['Pulisic', 'McKennie', 'Adams', 'Reyna', 'Balogun', 'Weah', 'Musah', 'Robinson', 'Richards', 'Pepi', 'Turner', 'Aaronson', 'Dest', 'Morris']
     }
 };
 

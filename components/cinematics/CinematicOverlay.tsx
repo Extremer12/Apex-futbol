@@ -17,6 +17,14 @@ interface CinematicOverlayProps {
 const resolveCompetitionLogos = (comp?: string, title?: string, compId?: string) => {
     const raw = `${compId || ''} ${comp || ''} ${title || ''}`.toLowerCase();
 
+    if (raw.includes('recopa')) {
+        const logo = resourceManager.competitionLogo('RECOPA_SUDAMERICANA', 'Recopa Sudamericana');
+        return { id: 'RECOPA_SUDAMERICANA', primary: logo, fallback: logo, badge: 'CONMEBOL RECOPA', accent: '#EAB308' };
+    }
+    if (raw.includes('club_world') || raw.includes('club world') || raw.includes('mundial de clubes') || raw.includes('mundial_de_clubes')) {
+        const logo = resourceManager.competitionLogo('CLUB_WORLD_CUP', 'Mundial de Clubes FIFA');
+        return { id: 'CLUB_WORLD_CUP', primary: logo, fallback: logo, badge: 'MUNDIAL DE CLUBES FIFA', accent: '#F59E0B' };
+    }
     if (raw.includes('libertadores')) {
         const logo = resourceManager.competitionLogo('COPA_LIBERTADORES', 'Copa Libertadores');
         return { id: 'COPA_LIBERTADORES', primary: logo, fallback: logo, badge: 'CONMEBOL LIBERTADORES', accent: '#C8A84E' };
@@ -72,6 +80,26 @@ const resolveCompetitionLogos = (comp?: string, title?: string, compId?: string)
     if (raw.includes('brasileir')) {
         const logo = resourceManager.leagueLogo('BRASILEIRAO', 'Brasileirão');
         return { id: 'BRASILEIRAO', primary: logo, fallback: logo, badge: 'BRASILEIRÃO SÉRIE A', accent: '#10B981' };
+    }
+    if (raw.includes('portugal') || raw.includes('primeira')) {
+        const logo = resourceManager.leagueLogo('PRIMEIRA_LIGA', 'Liga Portugal Betclic');
+        return { id: 'PRIMEIRA_LIGA', primary: logo, fallback: logo, badge: 'LIGA PORTUGAL', accent: '#10B981' };
+    }
+    if (raw.includes('eredivisie')) {
+        const logo = resourceManager.leagueLogo('EREDIVISIE', 'Eredivisie');
+        return { id: 'EREDIVISIE', primary: logo, fallback: logo, badge: 'EREDIVISIE', accent: '#F97316' };
+    }
+    if (raw.includes('uruguay')) {
+        const logo = resourceManager.leagueLogo('LIGA_URUGUAYA', 'Liga AUF Uruguaya');
+        return { id: 'LIGA_URUGUAYA', primary: logo, fallback: logo, badge: 'LIGA AUF URUGUAYA', accent: '#0EA5E9' };
+    }
+    if (raw.includes('ecuador') || raw.includes('ligapro')) {
+        const logo = resourceManager.leagueLogo('LIGA_ECUADOR', 'LigaPro Serie A');
+        return { id: 'LIGA_ECUADOR', primary: logo, fallback: logo, badge: 'LIGAPRO SERIE A', accent: '#EAB308' };
+    }
+    if (raw.includes('mls') || raw.includes('major league')) {
+        const logo = resourceManager.leagueLogo('MLS', 'Major League Soccer');
+        return { id: 'MLS', primary: logo, fallback: logo, badge: 'MLS', accent: '#3B82F6' };
     }
 
     const cleanBadge = title ? title.replace(/[🏆⭐🌍★¡!]/g, '').trim() : 'COMPETICIÓN OFICIAL';

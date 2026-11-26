@@ -28,3 +28,7 @@ dist-ssr
 
 # Raw design source art (optimized copies live in public/assets)
 design/
+
+# Generated external Community Packs & ZIPs (upload separately to community-data-packs)
+dist-packs/
+scripts/.cache/

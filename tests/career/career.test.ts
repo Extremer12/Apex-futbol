@@ -300,9 +300,9 @@ test('Phase 2 Modularization: LEAGUE_REGISTRY and monotonic generatePlayerId', a
         generatePlayerId 
     } = await import('../../services/simulation');
 
-    // 1. Verify LEAGUE_REGISTRY covers all 21 leagues
+    // 1. Verify LEAGUE_REGISTRY covers all defined leagues
     const leagueKeys = Object.keys(LEAGUE_REGISTRY);
-    assert.equal(leagueKeys.length, 21, 'LEAGUE_REGISTRY must contain all 21 leagues');
+    assert.equal(leagueKeys.length, Object.values(LeagueId).length, 'LEAGUE_REGISTRY must contain all defined leagues');
 
     const premierConfig = getLeagueConfig(LeagueId.PREMIER_LEAGUE);
     assert.equal(premierConfig.country, 'ENG');
@@ -982,4 +982,93 @@ test('57. Squad 31+15 Reserve, Real 2026 Ages & Nationalities, Open Registration
     // 7. Global Ranking points always enabled without foreign restrictions
     assert.equal(canSubmitToLeaderboard('FREE'), true, 'All careers must submit points to global ranking');
     assert.equal(canSubmitToLeaderboard('REALISTIC'), true, 'All careers must submit points to global ranking');
+});
+
+test('58. Club Membership (Socios) & Realistic Regional Economy: initialization, approval churn, fee policy & title booms', async () => {
+    const { initializeGame } = await import('../../services/gameFactory');
+    const { calculateFinancialBreakdown, getNetWeeklyIncome } = await import('../../services/economy');
+    const {
+        calculateMembershipRevenue,
+        processWeeklyMembershipUpdate,
+        applyMembershipEventBoost
+    } = await import('../../services/membership');
+    const { gameReducer } = await import('../../state/reducer');
+
+    const boca = TEAMS.find(t => t.id === 701)!;
+    let state = initializeGame({
+        selectedTeam: boca,
+        playerProfile: { name: 'Presidente Socios', experience: 0, style: 'Equilibrado' }
+    });
+
+    // 1. Authentic Boca Juniors member base (~323k) & realistic net cashflow
+    assert.ok(state.membership, 'Membership must be initialized on new game');
+    assert.equal(state.membership!.activeMembers, 323_000);
+    assert.equal(state.finances.membershipPolicy, 'standard');
+
+    const breakdownAway = calculateFinancialBreakdown(
+        state.team,
+        state.stadium,
+        state.sponsors,
+        3,
+        { bought: 0, sold: 0 },
+        false,
+        state.team.leagueId,
+        state.finances.ticketPolicy,
+        [],
+        state.finances.clubDirectives,
+        [],
+        state.playerProfile?.style,
+        state.membership,
+        state.finances.membershipPolicy
+    );
+    assert.ok((breakdownAway.membershipRevenue || 0) > 400_000, 'Boca membership revenue should be substantial weekly');
+    assert.ok(getNetWeeklyIncome(breakdownAway) > -150_000, 'Regional wage calibration + socios prevents catastrophic away-week collapse');
+
+    // 2. Membership fee policy affects both revenue and fan approval immediately
+    const stdApproval = state.fanApproval.rating;
+    const stdRev = calculateMembershipRevenue(state.membership, 'standard');
+
+    state = gameReducer(state, { type: 'SET_MEMBERSHIP_POLICY', payload: { policy: 'popular' } })!;
+    const popApproval = state.fanApproval.rating;
+    const popRev = calculateMembershipRevenue(state.membership, 'popular');
+    assert.ok(popRev < stdRev, 'Popular fee must be cheaper than standard');
+    assert.ok(popApproval > stdApproval, 'Popular fee must boost fan approval');
+
+    state = gameReducer(state, { type: 'SET_MEMBERSHIP_POLICY', payload: { policy: 'exclusive' } })!;
+    const excApproval = state.fanApproval.rating;
+    const excRev = calculateMembershipRevenue(state.membership, 'exclusive');
+    assert.ok(excRev > stdRev, 'Exclusive fee must yield higher revenue per member');
+    assert.ok(excApproval < stdApproval, 'Exclusive fee must lower fan approval');
+
+    // 3. Weekly membership growth vs churn based on fan approval & results
+    const happyStep = processWeeklyMembershipUpdate({
+        membership: state.membership!,
+        fanApprovalRating: 86,
+        leaguePosition: 1,
+        totalTeamsInLeague: 30,
+        policy: 'popular',
+        stadiumCapacity: state.stadium.capacity,
+        matchOutcome: 'win',
+        wasDerby: true
+    });
+    assert.ok(happyStep.delta > 0, 'High approval + derby win must grow active members');
+
+    const angryStep = processWeeklyMembershipUpdate({
+        membership: state.membership!,
+        fanApprovalRating: 25,
+        leaguePosition: 28,
+        totalTeamsInLeague: 30,
+        policy: 'exclusive',
+        stadiumCapacity: state.stadium.capacity,
+        matchOutcome: 'loss',
+        wasDerby: true
+    });
+    assert.ok(angryStep.delta < 0, 'Low approval + derby loss + exclusive fee must cause member churn');
+
+    // 4. Title booms & relegation exodus
+    const libBoom = applyMembershipEventBoost(state.membership!, 'CONTINENTAL_WIN', 'Copa Libertadores');
+    assert.ok(libBoom.delta > 30_000, 'Continental title triggers major membership boom');
+
+    const relegationDrop = applyMembershipEventBoost(state.membership!, 'RELEGATION');
+    assert.ok(relegationDrop.delta < -30_000, 'Relegation causes mass member exodus');
 });

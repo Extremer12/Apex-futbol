@@ -1,5 +1,6 @@
 import { GameState, FanApproval, Team, LeagueId } from '../types';
 import { getPresidentialStyleModifiers } from './presidentialProgression';
+import { MEMBERSHIP_POLICY_META } from './membership';
 
 /**
  * Calculate the transfer factor for fan approval (-10 to +10).
@@ -86,9 +87,11 @@ export const calculateFanApproval = (gameState: GameState): FanApproval => {
     else if (balance >= 0) finances = 2;
     else finances = -10;
 
-    // Factor Política de Entradas (Precios Populares benefician a la masa societaria)
+    // Factor Política de Entradas y Cuota Social (Precios accesibles benefician a la masa societaria)
     const ticketPolicy = gameState.finances?.ticketPolicy || 'standard';
     const ticketBonus = ticketPolicy === 'cheap' ? 3 : ticketPolicy === 'premium' ? -3 : 0;
+    const membershipPolicy = gameState.finances?.membershipPolicy || 'standard';
+    const membershipPolicyBonus = MEMBERSHIP_POLICY_META[membershipPolicy]?.fanApprovalImpact ?? 0;
 
     // Factor Promesas (-20 a +20)
     const electoralPromises = gameState.electoralPromises || [];
@@ -113,7 +116,7 @@ export const calculateFanApproval = (gameState: GameState): FanApproval => {
     // Total
     const baseRating = 60; // Start at 60%
     const totalRating = Math.max(10, Math.min(100,
-        baseRating + results + finances + promises + transfers + ticketBonus
+        baseRating + results + finances + promises + transfers + ticketBonus + membershipPolicyBonus
     ));
 
     // Determine trend

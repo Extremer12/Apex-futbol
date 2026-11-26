@@ -22,6 +22,11 @@ const LEAGUE_DISPLAY_NAMES: Record<string, string> = {
     [LeagueId.PRIMERA_B_CHILE]: 'Primera B de Chile',
     [LeagueId.PRIMERA_A_COLOMBIA]: 'Liga BetPlay',
     [LeagueId.PRIMERA_B_COLOMBIA]: 'Torneo BetPlay',
+    [LeagueId.PRIMEIRA_LIGA]: 'Liga Portugal Betclic',
+    [LeagueId.EREDIVISIE]: 'Eredivisie',
+    [LeagueId.LIGA_URUGUAYA]: 'Liga AUF Uruguaya',
+    [LeagueId.LIGA_ECUADOR]: 'LigaPro Serie A',
+    [LeagueId.MLS]: 'Major League Soccer',
 };
 
 function getLeagueDisplayName(leagueId: string): string {
@@ -255,9 +260,11 @@ export function detectCinematicEvents(
     const genericCups = [
         { key: 'copaLibertadores' as const, name: `Copa Libertadores ${seasonYear}`, compId: 'COPA_LIBERTADORES', accent: '#F59E0B' },
         { key: 'copaSudamericana' as const, name: `Copa Sudamericana ${seasonYear}`, compId: 'COPA_SUDAMERICANA', accent: '#D97706' },
+        { key: 'recopaSudamericana' as const, name: `Recopa Sudamericana ${seasonYear}`, compId: 'RECOPA_SUDAMERICANA', accent: '#EAB308' },
         { key: 'championsLeague' as const, name: `UEFA Champions League ${seasonYear}`, compId: 'CHAMPIONS_LEAGUE', accent: '#6366F1' },
         { key: 'europaLeague' as const, name: `UEFA Europa League ${seasonYear}`, compId: 'EUROPA_LEAGUE', accent: '#F97316' },
         { key: 'copaIntercontinental' as const, name: `Copa Intercontinental ${seasonYear}`, compId: 'COPA_INTERCONTINENTAL', accent: '#10B981' },
+        { key: 'clubWorldCup' as const, name: `Mundial de Clubes FIFA ${seasonYear}`, compId: 'CLUB_WORLD_CUP', accent: '#F59E0B' },
         { key: 'faCup' as const, name: `FA Cup ${seasonYear}`, compId: 'FA_CUP', accent: '#EF4444' },
         { key: 'carabaoCup' as const, name: `Carabao Cup ${seasonYear}`, compId: 'CARABAO_CUP', accent: '#10B981' },
         { key: 'copaDelRey' as const, name: `Copa del Rey ${seasonYear}`, compId: 'COPA_DEL_REY', accent: '#DC2626' },
@@ -306,6 +313,10 @@ export function detectCinematicEvents(
         maxLeagueWeeks = 46;
     } else if (playerLeague === LeagueId.SEGUNDA_DIVISION_ESP) {
         maxLeagueWeeks = 42;
+    } else if (playerLeague === LeagueId.PRIMEIRA_LIGA || playerLeague === LeagueId.EREDIVISIE || playerLeague === LeagueId.MLS) {
+        maxLeagueWeeks = 26;
+    } else if (playerLeague === LeagueId.LIGA_URUGUAYA || playerLeague === LeagueId.LIGA_ECUADOR) {
+        maxLeagueWeeks = 22;
     }
 
     const alreadyCelebratedLeague = (gameState.cinematicQueue || []).some(c => c.type === 'LEAGUE_WIN') ||
@@ -394,6 +405,46 @@ export function detectCinematicEvents(
                 competitionId: 'COPA_INTERCONTINENTAL',
                 accentColor: '#10B981',
                 bgClass: 'from-emerald-900 via-slate-950 to-slate-950'
+            }
+        });
+    }
+
+    const recopaMatches = justPlayedMatches.filter(m => m.competition === 'Recopa_Sudamericana');
+    const isPlayerInRecopa = isTeamInCup(gameState.cups.recopaSudamericana, playerTeam.id);
+    const isFirstRecopa = gameState.cups.recopaSudamericana?.rounds?.length > 0 &&
+        gameState.cups.recopaSudamericana.rounds[0].fixtures.every(m => !m.result) &&
+        recopaMatches.length > 0;
+    if (isFirstRecopa && isPlayerInRecopa) {
+        events.push({
+            id: `cup_kickoff_recopa_${newWeek}`,
+            type: 'CUP_KICKOFF',
+            title: 'RECOPA SUDAMERICANA',
+            subtitle: 'Campeón de Libertadores vs Campeón de Sudamericana por la corona continental.',
+            metadata: {
+                competition: 'Recopa Sudamericana',
+                competitionId: 'RECOPA_SUDAMERICANA',
+                accentColor: '#EAB308',
+                bgClass: 'from-yellow-900 via-slate-950 to-slate-950'
+            }
+        });
+    }
+
+    const cwcMatches = justPlayedMatches.filter(m => m.competition === 'Club_World_Cup');
+    const isPlayerInCwc = isTeamInCup(gameState.cups.clubWorldCup, playerTeam.id);
+    const isFirstCwc = gameState.cups.clubWorldCup?.groups?.length > 0 &&
+        gameState.cups.clubWorldCup.groups.every(g => g.fixtures.every(m => !m.result)) &&
+        cwcMatches.length > 0;
+    if (isFirstCwc && isPlayerInCwc) {
+        events.push({
+            id: `cup_kickoff_cwc_${newWeek}`,
+            type: 'CUP_KICKOFF',
+            title: 'MUNDIAL DE CLUBES FIFA',
+            subtitle: 'Los 32 mejores clubes del mundo luchan por la gloria eterna.',
+            metadata: {
+                competition: 'Mundial de Clubes FIFA',
+                competitionId: 'CLUB_WORLD_CUP',
+                accentColor: '#F59E0B',
+                bgClass: 'from-amber-900 via-slate-950 to-slate-950'
             }
         });
     }

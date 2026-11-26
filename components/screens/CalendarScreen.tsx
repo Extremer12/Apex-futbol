@@ -27,7 +27,10 @@ const SOUTH_AMERICA_LEAGUES = new Set<string>([
     LeagueId.PRIMERA_DIVISION_CHILE,
     LeagueId.PRIMERA_B_CHILE,
     LeagueId.PRIMERA_A_COLOMBIA,
-    LeagueId.PRIMERA_B_COLOMBIA
+    LeagueId.PRIMERA_B_COLOMBIA,
+    LeagueId.LIGA_URUGUAYA,
+    LeagueId.LIGA_ECUADOR,
+    LeagueId.MLS
 ]);
 
 const EUROPEAN_MONTHS = ['Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio'];

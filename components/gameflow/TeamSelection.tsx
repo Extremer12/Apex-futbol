@@ -21,7 +21,6 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
         leagues: {
             id: LeagueId;
             name: string;
-            logo: string;
             teams: string;
             div: string;
         }[];
@@ -29,93 +28,128 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
         ENG: {
             title: 'La Cuna del Fútbol',
             leagues: [
-                { id: LeagueId.PREMIER_LEAGUE, name: 'Premier League', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Premier%20League/england_english-premier-league.football-logos.cc.svg', teams: '20', div: '1ª División' },
-                { id: LeagueId.CHAMPIONSHIP, name: 'Championship', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Championship/england_efl-championship.football-logos.cc.svg', teams: '24', div: '2ª División' }
+                { id: LeagueId.PREMIER_LEAGUE, name: 'Premier League', teams: '20', div: '1ª División' },
+                { id: LeagueId.CHAMPIONSHIP, name: 'Championship', teams: '24', div: '2ª División' }
             ]
         },
         ARG: {
             title: 'Pasión Argentina',
             leagues: [
-                { id: LeagueId.LIGA_ARGENTINA, name: 'Liga Argentina', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Argentina/primera_division/argentina_argentina-primera-division.football-logos.cc.svg', teams: '30', div: '1ª División' },
-                { id: LeagueId.PRIMERA_NACIONAL, name: 'Primera Nacional', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Argentina/primera_nacional/argentina_primera-nacional.football-logos.cc.svg', teams: '36', div: '2ª División' }
+                { id: LeagueId.LIGA_ARGENTINA, name: 'Liga Argentina', teams: '30', div: '1ª División' },
+                { id: LeagueId.PRIMERA_NACIONAL, name: 'Primera Nacional', teams: '36', div: '2ª División' }
             ]
         },
         BRA: {
             title: 'O Jogo Bonito',
             leagues: [
-                { id: LeagueId.BRASILEIRAO, name: 'Brasileirão', logo: 'https://tmssl.akamaized.net/images/logo/header/bra1.png', teams: '20', div: '1ª División' },
-                { id: LeagueId.SERIE_B_BR, name: 'Série B', logo: 'https://tmssl.akamaized.net/images/logo/header/bra2.png', teams: '20', div: '2ª División' }
+                { id: LeagueId.BRASILEIRAO, name: 'Brasileirão', teams: '20', div: '1ª División' },
+                { id: LeagueId.SERIE_B_BR, name: 'Série B', teams: '20', div: '2ª División' }
             ]
         },
         ESP: {
             title: 'La Pasión Española',
             leagues: [
-                { id: LeagueId.LA_LIGA, name: 'La Liga', logo: 'https://tmssl.akamaized.net/images/logo/header/es1.png', teams: '20', div: '1ª División' },
-                { id: LeagueId.SEGUNDA_DIVISION_ESP, name: 'Segunda División', logo: 'https://tmssl.akamaized.net/images/logo/header/es2.png', teams: '22', div: '2ª División' }
+                { id: LeagueId.LA_LIGA, name: 'La Liga', teams: '20', div: '1ª División' },
+                { id: LeagueId.SEGUNDA_DIVISION_ESP, name: 'Segunda División', teams: '22', div: '2ª División' }
             ]
         },
         GER: {
             title: 'Deutsche Fußball',
             leagues: [
-                { id: LeagueId.BUNDESLIGA, name: 'Bundesliga', logo: 'https://tmssl.akamaized.net/images/logo/header/l1.png', teams: '18', div: '1ª División' },
-                { id: LeagueId.ZWEITE_BUNDESLIGA, name: '2. Bundesliga', logo: 'https://tmssl.akamaized.net/images/logo/header/l2.png', teams: '18', div: '2ª División' }
+                { id: LeagueId.BUNDESLIGA, name: 'Bundesliga', teams: '18', div: '1ª División' },
+                { id: LeagueId.ZWEITE_BUNDESLIGA, name: '2. Bundesliga', teams: '18', div: '2ª División' }
             ]
         },
         ITA: {
             title: 'Il Calcio Italiano',
             leagues: [
-                { id: LeagueId.SERIE_A, name: 'Serie A', logo: 'https://tmssl.akamaized.net/images/logo/header/it1.png', teams: '20', div: '1ª División' },
-                { id: LeagueId.SERIE_B_ITA, name: 'Serie B', logo: 'https://tmssl.akamaized.net/images/logo/header/it2.png', teams: '20', div: '2ª División' }
+                { id: LeagueId.SERIE_A, name: 'Serie A', teams: '20', div: '1ª División' },
+                { id: LeagueId.SERIE_B_ITA, name: 'Serie B', teams: '20', div: '2ª División' }
             ]
         },
         FRA: {
             title: 'Le Football Français',
             leagues: [
-                { id: LeagueId.LIGUE_1, name: 'Ligue 1', logo: 'https://tmssl.akamaized.net/images/logo/header/fr1.png', teams: '18', div: '1ª División' },
-                { id: LeagueId.LIGUE_2, name: 'Ligue 2', logo: 'https://tmssl.akamaized.net/images/logo/header/fr2.png', teams: '20', div: '2ª División' }
+                { id: LeagueId.LIGUE_1, name: 'Ligue 1', teams: '18', div: '1ª División' },
+                { id: LeagueId.LIGUE_2, name: 'Ligue 2', teams: '20', div: '2ª División' }
             ]
         },
         PAR: {
             title: 'Fútbol Paraguayo',
             leagues: [
-                { id: LeagueId.COPA_DE_PRIMERA, name: 'Copa de Primera', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Copa%20de%20Primera/paraguay_copa-de-primera.football-logos.cc.svg', teams: '14', div: '1ª División' }
+                { id: LeagueId.COPA_DE_PRIMERA, name: 'Copa de Primera', teams: '14', div: '1ª División' }
             ]
         },
         MEX: {
             title: 'Fútbol Mexicano',
             leagues: [
-                { id: LeagueId.LIGA_MX, name: 'Liga MX', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Liga%20MX/mexico_liga-mx.football-logos.cc.svg', teams: '18', div: '1ª División' },
-                { id: LeagueId.LIGA_EXPANSION_MX, name: 'Liga de Expansión MX', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Liga%20de%20Expansi%C3%B3n%20MX/mexico_liga-de-expansion-mx.football-logos.cc.svg', teams: '14', div: '2ª División' }
+                { id: LeagueId.LIGA_MX, name: 'Liga MX', teams: '18', div: '1ª División' },
+                { id: LeagueId.LIGA_EXPANSION_MX, name: 'Liga de Expansión MX', teams: '14', div: '2ª División' }
             ]
         },
         CHI: {
             title: 'Fútbol Chileno',
             leagues: [
-                { id: LeagueId.PRIMERA_DIVISION_CHILE, name: 'Primera División', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Liga%20de%20Primera/chile_liga-de-primera.football-logos.cc.svg', teams: '16', div: '1ª División' },
-                { id: LeagueId.PRIMERA_B_CHILE, name: 'Primera B / Ascenso', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Categoria%20Primera%20B/chile_liga-de-ascenso.football-logos.cc.svg', teams: '16', div: '2ª División' }
+                { id: LeagueId.PRIMERA_DIVISION_CHILE, name: 'Primera División', teams: '16', div: '1ª División' },
+                { id: LeagueId.PRIMERA_B_CHILE, name: 'Primera B / Ascenso', teams: '16', div: '2ª División' }
             ]
         },
         COL: {
             title: 'Fútbol Colombiano',
             leagues: [
-                { id: LeagueId.PRIMERA_A_COLOMBIA, name: 'Liga BetPlay (Primera A)', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Categor%C3%ADa%20Primera%20A/colombia_categoria-primera-a.football-logos.cc.svg', teams: '20', div: '1ª División' },
-                { id: LeagueId.PRIMERA_B_COLOMBIA, name: 'Torneo BetPlay (Primera B)', logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Categor%C3%ADa%20Primera%20A/colombia_categoria-primera-a.football-logos.cc.svg', teams: '16', div: '2ª División' }
+                { id: LeagueId.PRIMERA_A_COLOMBIA, name: 'Liga BetPlay (Primera A)', teams: '20', div: '1ª División' },
+                { id: LeagueId.PRIMERA_B_COLOMBIA, name: 'Torneo BetPlay (Primera B)', teams: '16', div: '2ª División' }
+            ]
+        },
+        POR: {
+            title: 'Futebol Português',
+            leagues: [
+                { id: LeagueId.PRIMEIRA_LIGA, name: 'Liga Portugal Betclic', teams: '14', div: '1ª División' }
+            ]
+        },
+        NED: {
+            title: 'Nederlands Voetbal',
+            leagues: [
+                { id: LeagueId.EREDIVISIE, name: 'Eredivisie', teams: '14', div: '1ª División' }
+            ]
+        },
+        URU: {
+            title: 'Garra Charrúa',
+            leagues: [
+                { id: LeagueId.LIGA_URUGUAYA, name: 'Liga AUF Uruguaya', teams: '12', div: '1ª División' }
+            ]
+        },
+        ECU: {
+            title: 'Fútbol Ecuatoriano',
+            leagues: [
+                { id: LeagueId.LIGA_ECUADOR, name: 'LigaPro Serie A', teams: '12', div: '1ª División' }
+            ]
+        },
+        USA: {
+            title: 'Fútbol Norteamericano',
+            leagues: [
+                { id: LeagueId.MLS, name: 'Major League Soccer (MLS)', teams: '14', div: '1ª División' }
             ]
         }
     };
 
     const COUNTRIES = [
-        { id: 'ENG' as CountryCode, name: 'Inglaterra', flagUrl: 'https://flagcdn.com/gb-eng.svg' },
-        { id: 'ESP' as CountryCode, name: 'España', flagUrl: 'https://flagcdn.com/es.svg' },
-        { id: 'GER' as CountryCode, name: 'Alemania', flagUrl: 'https://flagcdn.com/de.svg' },
-        { id: 'ITA' as CountryCode, name: 'Italia', flagUrl: 'https://flagcdn.com/it.svg' },
-        { id: 'FRA' as CountryCode, name: 'Francia', flagUrl: 'https://flagcdn.com/fr.svg' },
-        { id: 'ARG' as CountryCode, name: 'Argentina', flagUrl: 'https://flagcdn.com/ar.svg' },
-        { id: 'BRA' as CountryCode, name: 'Brasil', flagUrl: 'https://flagcdn.com/br.svg' },
-        { id: 'COL' as CountryCode, name: 'Colombia', flagUrl: 'https://flagcdn.com/co.svg' },
-        { id: 'CHI' as CountryCode, name: 'Chile', flagUrl: 'https://flagcdn.com/cl.svg' },
-        { id: 'PAR' as CountryCode, name: 'Paraguay', flagUrl: 'https://flagcdn.com/py.svg' },
-        { id: 'MEX' as CountryCode, name: 'México', flagUrl: 'https://flagcdn.com/mx.svg' },
+        { id: 'ENG' as CountryCode, name: 'Inglaterra' },
+        { id: 'ESP' as CountryCode, name: 'España' },
+        { id: 'GER' as CountryCode, name: 'Alemania' },
+        { id: 'ITA' as CountryCode, name: 'Italia' },
+        { id: 'FRA' as CountryCode, name: 'Francia' },
+        { id: 'POR' as CountryCode, name: 'Portugal' },
+        { id: 'NED' as CountryCode, name: 'Países Bajos' },
+        { id: 'ARG' as CountryCode, name: 'Argentina' },
+        { id: 'BRA' as CountryCode, name: 'Brasil' },
+        { id: 'URU' as CountryCode, name: 'Uruguay' },
+        { id: 'ECU' as CountryCode, name: 'Ecuador' },
+        { id: 'COL' as CountryCode, name: 'Colombia' },
+        { id: 'CHI' as CountryCode, name: 'Chile' },
+        { id: 'PAR' as CountryCode, name: 'Paraguay' },
+        { id: 'MEX' as CountryCode, name: 'México' },
+        { id: 'USA' as CountryCode, name: 'EE.UU.' },
     ];
 
     const FAN_EXPECTATIONS: Record<Team['tier'], string> = {

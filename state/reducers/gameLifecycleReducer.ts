@@ -3,6 +3,8 @@ import React from 'react';
 import { GameState, Team, PlayerProfile, NewsItem, Player, Match, LeagueTableRow, Offer, LeagueId, CupCompetition } from '../../types';
 import { generateRandomCoach, generateCoachMarket } from '../../services/coaching';
 import { generateStadium, generateSponsorMarket, calculateFinancialBreakdown, getNetWeeklyIncome, generateSponsor, getBaseWeeklyIncome } from '../../services/economy';
+import { generateClubMembership, calculateMembershipRevenue, processWeeklyMembershipUpdate } from '../../services/membership';
+import { checkDerbyMatch } from '../../services/simulation/derbyRegistry';
 import { initializeGame } from '../../services/gameFactory';
 import { generateInitialClubStaff, generateStaffMarket, generateScoutMarket } from '../../services/staffService';
 import { generateYouthPlayer } from '../../services/simulation';
@@ -108,12 +110,14 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
 
             // 3. Economy System Migration
             const stadium = loadedState.stadium || generateStadium(playerTeamWithCoach);
+            const membership = loadedState.membership || generateClubMembership(playerTeamWithCoach, stadium);
             const sponsors = loadedState.sponsors || [];
             const availableSponsors = loadedState.availableSponsors || generateSponsorMarket(playerTeamWithCoach.tier);
 
             // Ensure finances has breakdown if missing (will be calculated next week)
             const finances = {
                 ...loadedState.finances,
+                membershipPolicy: loadedState.finances.membershipPolicy || 'standard',
                 breakdown: loadedState.finances.breakdown || undefined
             };
 
@@ -173,6 +177,7 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
                 availableStaff,
                 availableScouts,
                 stadium,
+                membership,
                 sponsors,
                 availableSponsors,
                 finances,
@@ -237,6 +242,8 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
             const wasHomeMatch = currentMatch?.homeTeamId === state.team.id;
 
             const styleMods = getPresidentialStyleModifiers(state.playerProfile?.style);
+            const activeMembership = state.membership || generateClubMembership(updatedPlayerTeam, state.stadium);
+            const membershipPolicy = state.finances.membershipPolicy || 'standard';
             const breakdown = calculateFinancialBreakdown(
                 updatedPlayerTeam,
                 state.stadium,
@@ -249,7 +256,9 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
                 state.finances.activeLoans,
                 state.finances.clubDirectives,
                 state.scouts,
-                state.playerProfile?.style
+                state.playerProfile?.style,
+                activeMembership,
+                membershipPolicy
             );
 
             // Award match XP and apply presidential style confidence modifiers
@@ -260,16 +269,30 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
             );
             let matchXpDelta = 0;
             let adjustedConfidence = newConfidence;
+            let matchOutcome: 'win' | 'draw' | 'loss' | null = null;
+            let wasDerbyMatch = false;
+            let beatTopRival = false;
             if (playedMatch?.result) {
                 const isHome = playedMatch.homeTeamId === state.team.id;
                 const myScore = isHome ? playedMatch.result.homeScore : playedMatch.result.awayScore;
                 const oppScore = isHome ? playedMatch.result.awayScore : playedMatch.result.homeScore;
+                const oppId = isHome ? playedMatch.awayTeamId : playedMatch.homeTeamId;
+                const oppTeam = newAllTeams.find(t => t.id === oppId);
+                const homeT = isHome ? updatedPlayerTeam : oppTeam;
+                const awayT = isHome ? oppTeam : updatedPlayerTeam;
+                if (homeT && awayT) {
+                    wasDerbyMatch = checkDerbyMatch(homeT, awayT).isDerby;
+                }
                 if (myScore > oppScore) {
+                    matchOutcome = 'win';
+                    beatTopRival = oppTeam?.tier === 'Top';
                     matchXpDelta = Math.round(15 * styleMods.xpWinMultiplier);
                     adjustedConfidence = Math.min(100, adjustedConfidence + styleMods.winConfidenceBonus);
                 } else if (myScore === oppScore) {
+                    matchOutcome = 'draw';
                     matchXpDelta = 5;
                 } else {
+                    matchOutcome = 'loss';
                     matchXpDelta = 2;
                     adjustedConfidence = Math.max(0, Math.min(100, adjustedConfidence + styleMods.lossConfidenceBuffer));
                 }
@@ -346,7 +369,7 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
             const nextWeek = state.currentTurn === 'midweek' ? state.currentWeek + 1 : state.currentWeek;
             const daysToAdd = state.currentTurn === 'weekend' ? 3 : 4; // Sat -> Wed (3), Wed -> Sat (4)
 
-            const totalWeeklyInc = breakdown.matchdayRevenue + breakdown.sponsorshipRevenue + breakdown.tvRevenue + breakdown.prizeMoneyRevenue + breakdown.transferRevenue + (breakdown.merchandisingRevenue || 0);
+            const totalWeeklyInc = breakdown.matchdayRevenue + breakdown.sponsorshipRevenue + breakdown.tvRevenue + (breakdown.membershipRevenue || 0) + breakdown.prizeMoneyRevenue + breakdown.transferRevenue + (breakdown.merchandisingRevenue || 0);
             const totalWeeklyExp = breakdown.wageExpenses + breakdown.coachExpenses + breakdown.stadiumExpenses + breakdown.operationalExpenses + breakdown.transferExpenses + (breakdown.loanExpenses || 0) + (breakdown.youthAcademyExpenses || 0) + (breakdown.merchandisingExpenses || 0);
 
             const updatedFinances = {
@@ -398,9 +421,43 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
 
             // Dynamically recalculate fan approval with new league table, finances & squad
             const liveFanApproval = calculateFanApproval(interimState);
+
+            // Update club membership (Socios) weekly on weekend turns based on approval, results & fee policy
+            let updatedMembership = activeMembership;
+            let membershipNewsFeed = interimState.newsFeed;
+            if (state.currentTurn === 'weekend') {
+                const memUpdate = processWeeklyMembershipUpdate({
+                    membership: activeMembership,
+                    fanApprovalRating: liveFanApproval.rating,
+                    leaguePosition: playerPosition,
+                    totalTeamsInLeague: playerTable.length || 20,
+                    policy: membershipPolicy,
+                    stadiumCapacity: state.stadium.capacity,
+                    facilityLevel: state.stadium.facilityLevel,
+                    matchOutcome,
+                    wasDerby: wasDerbyMatch,
+                    beatTopRival
+                });
+                updatedMembership = memUpdate.updatedMembership;
+
+                const notableThreshold = Math.max(800, Math.round(activeMembership.baseMembers * 0.01));
+                if (Math.abs(memUpdate.delta) >= notableThreshold) {
+                    membershipNewsFeed = [{
+                        id: `membership_shift_${Date.now()}`,
+                        headline: memUpdate.delta > 0 ? 'Campaña de Socios en Alza' : 'Alerta en el Padrón de Socios',
+                        body: `${memUpdate.reason}. Variación semanal: ${memUpdate.delta > 0 ? '+' : ''}${memUpdate.delta.toLocaleString()} socios activos.`,
+                        date: formatDate(state.currentDate),
+                        type: memUpdate.delta > 0 ? ('institutional' as const) : ('warning' as const),
+                        sourceName: 'Departamento de Socios'
+                    }, ...membershipNewsFeed].slice(0, 30);
+                }
+            }
+
             const stateWithFanApproval: GameState = {
                 ...interimState,
-                fanApproval: liveFanApproval
+                fanApproval: liveFanApproval,
+                membership: updatedMembership,
+                newsFeed: membershipNewsFeed
             };
 
             const { updatedAchievements } = evaluateAchievements(stateWithFanApproval);
@@ -462,12 +519,13 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
             });
 
             const newStadium = generateStadium(targetClub);
+            const newMembership = generateClubMembership(targetClub, newStadium);
             const newSponsors = [
                 generateSponsor('shirt', targetClub.tier, targetClub.leagueId),
                 generateSponsor('kit', targetClub.tier, targetClub.leagueId)
             ];
             const totalWages = targetClub.squad.reduce((sum, p) => sum + p.wage, 0) + newCoach.salary;
-            const newWeeklyIncome = getBaseWeeklyIncome(targetClub.leagueId);
+            const newWeeklyIncome = getBaseWeeklyIncome(targetClub.leagueId) + calculateMembershipRevenue(newMembership, 'standard');
 
             const nextState: GameState = {
                 ...state,
@@ -479,6 +537,7 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
                 availableScouts: generateScoutMarket(targetClub.tier, targetClub.leagueId),
                 scouts: [],
                 stadium: newStadium,
+                membership: newMembership,
                 sponsors: newSponsors,
                 availableSponsors: generateSponsorMarket(targetClub.tier, targetClub.leagueId),
                 youthAcademy: Array.from(
@@ -492,6 +551,7 @@ export function handleGameLifecycleAction(state: GameState | null, action: GameL
                     weeklyWages: totalWages,
                     balanceHistory: [targetClub.budget],
                     ticketPolicy: 'standard',
+                    membershipPolicy: 'standard',
                     activeLoans: [],
                     clubDirectives: state.finances.clubDirectives
                 },
