@@ -304,12 +304,87 @@ export const STADIUMS_BY_TEAM_ID: Record<number, TeamStadiumInfo> = {
     1236: { name: 'Estadio Municipal de San Felipe', capacity: 10000, city: 'San Felipe' },
 
     // =========================================================================
-    // 🌎 SUDAMÉRICA - GIGANTES CONTINENTALES (IDs 9101-9122)
+    // 🌎 SUDAMÉRICA - URUGUAY, ECUADOR & CONMEBOL (IDs 2201-2304, 9101-9152)
     // =========================================================================
     9101: { name: 'Estadio Monumental David Arellano', capacity: 47347, city: 'Santiago' },
     9113: { name: 'Estadio Rodrigo Paz Delgado (Casa Blanca)', capacity: 41575, city: 'Quito' },
+    9114: { name: 'Estadio Banco Guayaquil', capacity: 12000, city: 'Sangolquí / Quito' },
+    9115: { name: 'Estadio Monumental Banco Pichincha', capacity: 59283, city: 'Guayaquil' },
+    9116: { name: 'Estadio George Capwell', capacity: 40020, city: 'Guayaquil' },
+    9141: { name: 'Estadio Olímpico Atahualpa', capacity: 35258, city: 'Quito' },
+    9142: { name: 'Estadio Jocay', capacity: 21000, city: 'Manta' },
+    9143: { name: 'Estadio Gonzalo Pozo Ripalda', capacity: 21689, city: 'Quito' },
+    9144: { name: 'Estadio Alejandro Serrano Aguilar', capacity: 18549, city: 'Cuenca' },
+    2301: { name: 'Estadio Olímpico Atahualpa', capacity: 35258, city: 'Quito' },
+    2302: { name: 'Estadio 9 de Mayo', capacity: 16456, city: 'Machala' },
+    2303: { name: 'Estadio COAC Mushuc Runa', capacity: 8200, city: 'Ambato' },
+    2304: { name: 'Estadio Bellavista', capacity: 16467, city: 'Ambato' },
     9121: { name: 'Estadio Campeón del Siglo', capacity: 40000, city: 'Montevideo' },
     9122: { name: 'Estadio Gran Parque Central', capacity: 34000, city: 'Montevideo' },
+    9123: { name: 'Estadio Luis Franzini', capacity: 16000, city: 'Montevideo' },
+    9124: { name: 'Estadio Belvedere', capacity: 8500, city: 'Montevideo' },
+    9149: { name: 'Estadio Jardines del Hipódromo', capacity: 18000, city: 'Montevideo' },
+    9150: { name: 'Parque Alfredo Víctor Viera', capacity: 15000, city: 'Montevideo' },
+    9151: { name: 'Estadio Municipal Arquitecto Antonio Ubilla', capacity: 9000, city: 'Melo' },
+    9152: { name: 'Parque Osvaldo Roberto', capacity: 5400, city: 'Montevideo' },
+    2201: { name: 'Estadio Campeones Olímpicos', capacity: 7000, city: 'Florida' },
+    2202: { name: 'Parque Abraham Paladino', capacity: 5400, city: 'Montevideo' },
+    2203: { name: 'Parque Federico Omar Saroldi', capacity: 5165, city: 'Montevideo' },
+    2204: { name: 'Parque Luis Méndez Piana', capacity: 6500, city: 'Montevideo' },
+
+    // =========================================================================
+    // 🇵🇹 PORTUGAL - LIGA PORTUGAL BETCLIC (IDs 2001-2014)
+    // =========================================================================
+    2001: { name: 'Estádio da Luz', capacity: 64642, city: 'Lisboa' },
+    2002: { name: 'Estádio José Alvalade', capacity: 50095, city: 'Lisboa' },
+    2003: { name: 'Estádio do Dragão', capacity: 50033, city: 'Oporto' },
+    2004: { name: 'Estádio Municipal de Braga', capacity: 30286, city: 'Braga' },
+    2005: { name: 'Estádio D. Afonso Henriques', capacity: 30029, city: 'Guimarães' },
+    2006: { name: 'Estádio Municipal de Famalicão', capacity: 5186, city: 'Vila Nova de Famalicão' },
+    2007: { name: 'Estádio Comendador Joaquim de Almeida Freitas', capacity: 6153, city: 'Moreira de Cónegos' },
+    2008: { name: 'Estádio António Coimbra da Mota', capacity: 8015, city: 'Estoril' },
+    2009: { name: 'Estádio Cidade de Barcelos', capacity: 12046, city: 'Barcelos' },
+    2010: { name: 'Estádio Municipal de Rio Maior', capacity: 7000, city: 'Lisboa / Rio Maior' },
+    2011: { name: 'Estádio dos Arcos', capacity: 5300, city: 'Vila do Conde' },
+    2012: { name: 'Estádio Municipal de Arouca', capacity: 5600, city: 'Arouca' },
+    2013: { name: 'Estádio do Bessa Século XXI', capacity: 28263, city: 'Oporto' },
+    2014: { name: 'Estádio de São Miguel', capacity: 12500, city: 'Ponta Delgada' },
+
+    // =========================================================================
+    // 🇳🇱 PAÍSES BAJOS - EREDIVISIE (IDs 2101-2114)
+    // =========================================================================
+    2101: { name: 'Philips Stadion', capacity: 35000, city: 'Eindhoven' },
+    2102: { name: 'Stadion Feijenoord (De Kuip)', capacity: 51117, city: 'Róterdam' },
+    2103: { name: 'Johan Cruijff ArenA', capacity: 55865, city: 'Ámsterdam' },
+    2104: { name: 'AFAS Stadion', capacity: 19500, city: 'Alkmaar' },
+    2105: { name: 'De Grolsch Veste', capacity: 30205, city: 'Enschede' },
+    2106: { name: 'Stadion Galgenwaard', capacity: 23750, city: 'Utrecht' },
+    2107: { name: 'De Adelaarshorst', capacity: 10000, city: 'Deventer' },
+    2108: { name: 'Goffertstadion', capacity: 12500, city: 'Nimega' },
+    2109: { name: 'Abe Lenstra Stadion', capacity: 27224, city: 'Heerenveen' },
+    2110: { name: 'Sparta-Stadion Het Kasteel', capacity: 11026, city: 'Róterdam' },
+    2111: { name: 'Euroborg', capacity: 22550, city: 'Groninga' },
+    2112: { name: 'Fortuna Sittard Stadion', capacity: 12500, city: 'Sittard' },
+    2113: { name: 'Asito Stadion', capacity: 12080, city: 'Almelo' },
+    2114: { name: 'Koning Willem II Stadion', capacity: 14700, city: 'Tilburgo' },
+
+    // =========================================================================
+    // 🇺🇸 ESTADOS UNIDOS / CANADÁ - MLS (IDs 2401-2414)
+    // =========================================================================
+    2401: { name: 'Chase Stadium', capacity: 21550, city: 'Fort Lauderdale / Miami' },
+    2402: { name: 'BMO Stadium', capacity: 22000, city: 'Los Ángeles' },
+    2403: { name: 'Dignity Health Sports Park', capacity: 27000, city: 'Carson / Los Ángeles' },
+    2404: { name: 'Lower.com Field', capacity: 20371, city: 'Columbus' },
+    2405: { name: 'Lumen Field', capacity: 68740, city: 'Seattle' },
+    2406: { name: 'TQL Stadium', capacity: 26000, city: 'Cincinnati' },
+    2407: { name: 'Mercedes-Benz Stadium', capacity: 71000, city: 'Atlanta' },
+    2408: { name: 'Yankee Stadium / Citi Field', capacity: 46537, city: 'Nueva York' },
+    2409: { name: 'Red Bull Arena', capacity: 25000, city: 'Harrison / Nueva York' },
+    2410: { name: 'Inter&Co Stadium', capacity: 25500, city: 'Orlando' },
+    2411: { name: 'Subaru Park', capacity: 18500, city: 'Chester / Filadelfia' },
+    2412: { name: 'Shell Energy Stadium', capacity: 22039, city: 'Houston' },
+    2413: { name: 'Providence Park', capacity: 25218, city: 'Portland' },
+    2414: { name: 'BMO Field', capacity: 30000, city: 'Toronto' },
 };
 
 /**
@@ -433,11 +508,25 @@ export const STADIUMS_BY_NAME: Record<string, TeamStadiumInfo> = {
     'vasco da gama': { name: 'Estádio São Januário', capacity: 21880, city: 'Río de Janeiro' },
     'cruzeiro': { name: 'Estádio Mineirão', capacity: 61846, city: 'Belo Horizonte' },
 
-    // Uruguay, Chile, Ecuador
+    // Uruguay, Chile, Ecuador, Portugal, Países Bajos, MLS
     'peñarol': { name: 'Estadio Campeón del Siglo', capacity: 40000, city: 'Montevideo' },
     'nacional': { name: 'Estadio Gran Parque Central', capacity: 34000, city: 'Montevideo' },
     'colo-colo': { name: 'Estadio Monumental David Arellano', capacity: 47347, city: 'Santiago' },
     'ldu quito': { name: 'Estadio Rodrigo Paz Delgado (Casa Blanca)', capacity: 41575, city: 'Quito' },
+    'barcelona sc': { name: 'Estadio Monumental Banco Pichincha', capacity: 59283, city: 'Guayaquil' },
+    'independiente del valle': { name: 'Estadio Banco Guayaquil', capacity: 12000, city: 'Quito' },
+    'sl benfica': { name: 'Estádio da Luz', capacity: 64642, city: 'Lisboa' },
+    'benfica': { name: 'Estádio da Luz', capacity: 64642, city: 'Lisboa' },
+    'sporting cp': { name: 'Estádio José Alvalade', capacity: 50095, city: 'Lisboa' },
+    'fc porto': { name: 'Estádio do Dragão', capacity: 50033, city: 'Oporto' },
+    'porto': { name: 'Estádio do Dragão', capacity: 50033, city: 'Oporto' },
+    'psv eindhoven': { name: 'Philips Stadion', capacity: 35000, city: 'Eindhoven' },
+    'feyenoord': { name: 'Stadion Feijenoord (De Kuip)', capacity: 51117, city: 'Róterdam' },
+    'ajax': { name: 'Johan Cruijff ArenA', capacity: 55865, city: 'Ámsterdam' },
+    'inter miami cf': { name: 'Chase Stadium', capacity: 21550, city: 'Fort Lauderdale / Miami' },
+    'inter miami': { name: 'Chase Stadium', capacity: 21550, city: 'Fort Lauderdale / Miami' },
+    'lafc': { name: 'BMO Stadium', capacity: 22000, city: 'Los Ángeles' },
+    'la galaxy': { name: 'Dignity Health Sports Park', capacity: 27000, city: 'Los Ángeles' },
 };
 
 /**

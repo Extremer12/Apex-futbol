@@ -739,5 +739,11 @@ export const getTeamConmebolMeta = (team: Team): ConmebolTeamMeta => {
     if (team.leagueId === LeagueId.PRIMERA_A_COLOMBIA || team.leagueId === LeagueId.PRIMERA_B_COLOMBIA) {
         return { country: 'COL', conmebolRanking: 35 + (team.id % 35) };
     }
+    if (team.leagueId === LeagueId.LIGA_URUGUAYA) {
+        return { country: 'URU', conmebolRanking: 42 + (team.id % 35) };
+    }
+    if (team.leagueId === LeagueId.LIGA_ECUADOR) {
+        return { country: 'ECU', conmebolRanking: 42 + (team.id % 35) };
+    }
     return { country: 'ARG', conmebolRanking: 99 };
 };

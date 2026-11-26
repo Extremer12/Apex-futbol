@@ -44,7 +44,7 @@ function getCompetitionDetails(compName?: string, isCupMatch?: boolean, isMidwee
     let isInt = false;
     let isDomesticCup = false;
 
-    if (comp.includes('Champions') || comp.includes('Europa') || comp.includes('Libertadores') || comp.includes('Sudamericana') || comp.includes('Intercontinental')) {
+    if (comp.includes('Champions') || comp.includes('Europa') || comp.includes('Libertadores') || comp.includes('Sudamericana') || comp.includes('Recopa') || comp.includes('Club_World') || comp.includes('Mundial') || comp.includes('Intercontinental')) {
         isInt = true;
     } else if (isCupMatch || comp.includes('Cup') || comp.includes('Copa') || comp.includes('Pokal') || comp.includes('Playoffs') || comp.includes('Reducido')) {
         isDomesticCup = true;
@@ -52,6 +52,8 @@ function getCompetitionDetails(compName?: string, isCupMatch?: boolean, isMidwee
 
     if (comp.includes('Torneo_Apertura') || comp.includes('Torneo Apertura')) label = 'Torneo Apertura';
     else if (comp.includes('Torneo_Clausura') || comp.includes('Torneo Clausura')) label = 'Torneo Clausura';
+    else if (comp.includes('Club_World_Cup')) label = 'Mundial de Clubes';
+    else if (comp.includes('Recopa_Sudamericana')) label = 'Recopa Sudamericana';
     else if (comp.includes('FA_Cup') || comp.includes('FA Cup')) label = 'FA Cup';
     else if (comp.includes('Carabao_Cup') || comp.includes('Carabao Cup')) label = 'Carabao Cup';
     else if (comp.includes('Copa_Argentina') || comp.includes('Copa Argentina')) label = 'Copa Argentina';

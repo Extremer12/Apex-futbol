@@ -233,40 +233,13 @@ export class DefaultResourceProvider {
 
     /**
      * Resolve Trophy Image
+     * Returns bespoke high-detail engraved SVG trophies for all 40 official competitions.
      */
     public static resolveTrophy(competitionId: string, name?: string): ResourceResolution | null {
-        const normalized = competitionId.toLowerCase().replace(/[^a-z0-9]/g, '_');
-        
-        // 1. Direct match in Community Trophies
-        const directTrophy = this.COMMUNITY_TROPHIES[normalized];
-        if (directTrophy) {
+        const svgUrl = ResourceFallback.trophy(name || competitionId);
+        if (svgUrl) {
             return {
-                url: directTrophy,
-                source: 'builtin-cdn',
-                packId: this.ID,
-                isFallback: false
-            };
-        }
-
-        // 2. Direct match by name
-        if (name) {
-            const cleanName = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '_');
-            const nameTrophy = this.COMMUNITY_TROPHIES[cleanName];
-            if (nameTrophy) {
-                return {
-                    url: nameTrophy,
-                    source: 'builtin-cdn',
-                    packId: this.ID,
-                    isFallback: false
-                };
-            }
-        }
-
-        // 3. Fallback to tournament logo if present
-        const compLogo = this.resolveCompetitionLogo(competitionId, name);
-        if (compLogo) {
-            return {
-                url: compLogo.url,
+                url: svgUrl,
                 source: 'builtin-cdn',
                 packId: this.ID,
                 isFallback: false

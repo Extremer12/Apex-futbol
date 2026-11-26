@@ -184,7 +184,7 @@ self.onmessage = async (e: MessageEvent<SimulationInput>) => {
         if (newSchedule.length > 0) {
             newSchedule.forEach((m, idx) => {
                 if (m.week === nextWeek && !!m.isMidweek === isMidweek) {
-                    scheduleIndexMap.set(`${m.homeTeamId}_${m.awayTeamId}`, idx);
+                    scheduleIndexMap.set(`${m.homeTeamId}_${m.awayTeamId}_${m.competition || ''}_${m.leg || ''}`, idx);
                 }
             });
         }
@@ -332,6 +332,8 @@ self.onmessage = async (e: MessageEvent<SimulationInput>) => {
                     compKey === 'nacional_primer_ascenso' ||
                     compKey === 'nacional_reducido' ||
                     compKey === 'copa_intercontinental' ||
+                    compKey === 'recopa_sudamericana' ||
+                    (compKey === 'club_world_cup' && updatedCups['clubWorldCup']?.phase !== 'groups') ||
                     ((compKey === 'champions_league' || compKey === 'europa_league') && updatedCups[compKey === 'champions_league' ? 'championsLeague' : 'europaLeague']?.phase !== 'swiss') ||
                     (compKey === 'copa_libertadores' && updatedCups['copaLibertadores']?.phase !== 'groups') ||
                     (compKey === 'copa_sudamericana' && updatedCups['copaSudamericana']?.phase !== 'groups')
@@ -370,7 +372,7 @@ self.onmessage = async (e: MessageEvent<SimulationInput>) => {
                 };
                 updatedWeekMatches.push(updatedMatch);
 
-                const matchIndex = scheduleIndexMap.get(`${match.homeTeamId}_${match.awayTeamId}`);
+                const matchIndex = scheduleIndexMap.get(`${match.homeTeamId}_${match.awayTeamId}_${match.competition || ''}_${match.leg || ''}`);
                 if (matchIndex !== undefined && newSchedule[matchIndex]) {
                     newSchedule[matchIndex] = updatedMatch;
                 }
@@ -680,8 +682,8 @@ self.onmessage = async (e: MessageEvent<SimulationInput>) => {
                             }
                         }
 
-                        // Copa Libertadores & Copa Sudamericana Group Table & Fixtures Update
-                        if ((match.competition === 'Copa_Libertadores' || match.competition === 'Copa_Sudamericana') && currentCup.phase === 'groups' && currentCup.groups) {
+                        // Copa Libertadores, Copa Sudamericana & Club World Cup Group Table & Fixtures Update
+                        if ((match.competition === 'Copa_Libertadores' || match.competition === 'Copa_Sudamericana' || match.competition === 'Club_World_Cup') && currentCup.phase === 'groups' && currentCup.groups) {
                             for (const group of currentCup.groups) {
                                 const gFix = group.fixtures?.find((fix: any) =>
                                     (fix.id && fix.id === match.id) ||

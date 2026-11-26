@@ -554,16 +554,16 @@ export function handleCupProgression(
                 g.table.forEach((row, idx) => { row.position = idx + 1; });
             });
         }
-        const shouldProgressCwc = cwcMatches.length > 0 || (updatedCups.clubWorldCup.phase === 'groups' && simulatedWeek >= 26);
+        const shouldProgressCwc = cwcMatches.length > 0 || (updatedCups.clubWorldCup.phase === 'groups' && simulatedWeek >= 25);
         if (shouldProgressCwc) {
             const cwcRoundsCount = updatedCups.clubWorldCup.rounds?.length || 0;
             const cwcWeekMap: Record<number, number> = {
-                0: 28, // Octavos de Final (Semana 28)
-                1: 30, // Cuartos de Final (Semana 30)
-                2: 32, // Semifinales (Semana 32)
-                3: 34  // Gran Final (Semana 34)
+                0: 27, // Octavos de Final (Semana 27)
+                1: 29, // Cuartos de Final (Semana 29)
+                2: 31, // Semifinales (Semana 31)
+                3: 33  // Gran Final (Semana 33)
             };
-            const nextCwcWeek = cwcWeekMap[cwcRoundsCount] || Math.min(36, Math.max(newWeek + 2, 28));
+            const nextCwcWeek = cwcWeekMap[cwcRoundsCount] || Math.min(35, Math.max(newWeek + 2, 27));
             const wasGroups = updatedCups.clubWorldCup.phase === 'groups';
             const result = progressInternationalCup(updatedCups.clubWorldCup, teams, nextCwcWeek, updatedSchedule);
             updatedCups.clubWorldCup = result;

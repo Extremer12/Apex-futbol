@@ -2,6 +2,7 @@ import { GameState, Player, PlayerProfile, Team, CoachReport, CoachRequest, Squa
 import { formatCurrency, formatWeeklyWage, normalizeMonetaryValue } from '../utils';
 import { getExpectedWage } from '../utils/playerUtils';
 import { buildContextualClubNews } from './newsEngine';
+import { isSouthAmericanClubLeague } from './economy';
 
 // --- INTERFACES ---
 
@@ -232,13 +233,7 @@ export const generateTransferNegotiationResponse = async (
         'PREMIER_LEAGUE', 'LA_LIGA', 'BUNDESLIGA', 'SERIE_A', 'LIGUE_1'
     ].includes(sellingTeam.leagueId as any);
 
-    const isSouthAmericanBuyer = [
-        LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
-        LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
-        LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE,
-        LeagueId.PRIMERA_A_COLOMBIA, LeagueId.PRIMERA_B_COLOMBIA,
-        'LIGA_ARGENTINA', 'PRIMERA_NACIONAL', 'BRASILEIRAO', 'SERIE_B_BR', 'COPA_DE_PRIMERA', 'PRIMERA_A_COLOMBIA'
-    ].includes(buyingTeam.leagueId as any);
+    const isSouthAmericanBuyer = isSouthAmericanClubLeague(buyingTeam.leagueId);
 
     if (!isFreeMode && isEuropeanEliteLeague && isSouthAmericanBuyer && player.rating >= 83) {
         return {
@@ -307,13 +302,7 @@ export const generatePlayerContractNegotiationResponse = async (
     const isFreeMode = gameMode === 'FREE';
 
     // 0. Prestigio Continental (solo en Modo Realista)
-    const isSouthAmericanBuyer = [
-        LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
-        LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
-        LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE,
-        LeagueId.PRIMERA_A_COLOMBIA, LeagueId.PRIMERA_B_COLOMBIA,
-        'LIGA_ARGENTINA', 'PRIMERA_NACIONAL', 'BRASILEIRAO', 'SERIE_B_BR', 'COPA_DE_PRIMERA', 'PRIMERA_A_COLOMBIA'
-    ].includes(buyingTeam.leagueId as any);
+    const isSouthAmericanBuyer = isSouthAmericanClubLeague(buyingTeam.leagueId);
 
     if (!isFreeMode && isSouthAmericanBuyer && player.rating >= 83) {
         return {

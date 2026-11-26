@@ -71,7 +71,7 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
             title: 'Le Football Français',
             leagues: [
                 { id: LeagueId.LIGUE_1, name: 'Ligue 1', teams: '18', div: '1ª División' },
-                { id: LeagueId.LIGUE_2, name: 'Ligue 2', teams: '20', div: '2ª División' }
+                { id: LeagueId.LIGUE_2, name: 'Ligue 2', teams: '18', div: '2ª División' }
             ]
         },
         PAR: {

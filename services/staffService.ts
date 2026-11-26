@@ -1,4 +1,5 @@
 import { StaffMember, StaffRole, ClubStaff, Coach, LeagueId, Scout } from '../types';
+import { getRegionalFinancialScale, isSouthAmericanClubLeague, isNorthAmericanClubLeague } from './economy';
 
 const FIRST_NAMES = [
     'Alejandro', 'Mateo', 'Carlos', 'Guillermo', 'Lucas', 'Julian', 'Marco', 'Andrea', 'Hans', 'Jürgen',
@@ -13,16 +14,9 @@ const LAST_NAMES = [
 const SCOUT_SPECIALTIES: Scout['specialty'][] = ['POR', 'DEF', 'CEN', 'DEL', 'Youth', undefined];
 
 export const getStaffRegionScale = (leagueId?: string): { regionScale: number; isSouthAm: boolean; isMex: boolean } => {
-    const isSouthAm = Boolean(leagueId && [
-        LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
-        LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
-        LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE,
-        LeagueId.PRIMERA_A_COLOMBIA, LeagueId.PRIMERA_B_COLOMBIA,
-        'LIGA_ARGENTINA', 'PRIMERA_NACIONAL', 'BRASILEIRAO', 'SERIE_B_BR', 'COPA_DE_PRIMERA', 'PRIMERA_A_COLOMBIA'
-    ].includes(leagueId as any));
-
-    const isMex = Boolean(leagueId && [LeagueId.LIGA_MX, LeagueId.LIGA_EXPANSION_MX, 'LIGA_MX'].includes(leagueId as any));
-    const regionScale = isSouthAm ? 0.22 : isMex ? 0.42 : 1.0;
+    const isSouthAm = isSouthAmericanClubLeague(leagueId);
+    const isMex = isNorthAmericanClubLeague(leagueId);
+    const regionScale = Math.max(0.22, getRegionalFinancialScale(leagueId));
 
     return { regionScale, isSouthAm, isMex };
 };

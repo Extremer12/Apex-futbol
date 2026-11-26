@@ -6,6 +6,7 @@
  */
 
 import { ResourceType } from './ResourceTypes';
+import { findTrophySpec, renderTrophySvg } from '../../data/trophyCatalog';
 
 export class ResourceFallback {
     /**
@@ -129,9 +130,15 @@ export class ResourceFallback {
 
     /**
      * Fallback for a trophy: Generates distinct vector silhouettes per tournament type.
+     * Prioritizes the 40 bespoke competition trophies with engraved competition plaques.
      * Guaranteed zero-network, high-fidelity and 100% App Store compliant.
      */
     public static trophy(name?: string): string {
+        const matchedSpec = findTrophySpec(name);
+        if (matchedSpec) {
+            return `data:image/svg+xml;utf8,${encodeURIComponent(renderTrophySvg(matchedSpec))}`;
+        }
+
         const key = (name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
         // 1. European Cup with large curved handles (Champions League / Europa League)
@@ -300,8 +307,8 @@ export class ResourceFallback {
             return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
         }
 
-        // 6. Meisterschale / Plate style trophy (Bundesliga)
-        if (key.includes('bundesliga') || key.includes('zweite') || key.includes('plato') || key.includes('schale')) {
+        // 6. Meisterschale / Kampioensschaal Plate style trophy (Bundesliga / Eredivisie)
+        if (key.includes('bundesliga') || key.includes('zweite') || key.includes('eredivisie') || key.includes('plato') || key.includes('schale')) {
             const svg = `
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 140" width="120" height="140">
                 <defs>

@@ -34,11 +34,12 @@ export const CompetitionPalmaresTab: React.FC<CompetitionPalmaresTabProps> = ({ 
     const userLeagueComp = validCompetitions.find(c => c.id === team.leagueId);
     const userCountry = userLeagueComp?.country || (team as any).country || 'Argentina';
     const userCupComp = validCompetitions.find(c => c.country === userCountry && c.type === 'CUP');
-    const isEuropean = ['Inglaterra', 'España', 'Alemania', 'Italia', 'Francia'].includes(userCountry);
+    const isEuropean = ['Inglaterra', 'España', 'Alemania', 'Italia', 'Francia', 'Portugal', 'Países Bajos'].includes(userCountry);
+    const isNorthAmerica = ['México', 'EE.UU.'].includes(userCountry);
     const userContinentalComp = validCompetitions.find(c => c.id === (isEuropean ? 'CHAMPIONS_LEAGUE' : 'COPA_LIBERTADORES'));
     const intercontinentalComp = validCompetitions.find(c => c.id === 'COPA_INTERCONTINENTAL');
     const clubWorldCupComp = validCompetitions.find(c => c.id === 'CLUB_WORLD_CUP');
-    const recopaComp = !isEuropean ? validCompetitions.find(c => c.id === 'RECOPA_SUDAMERICANA') : undefined;
+    const recopaComp = (!isEuropean && !isNorthAmerica) ? validCompetitions.find(c => c.id === 'RECOPA_SUDAMERICANA') : undefined;
 
     const quickShortcutComps = useMemo(() => {
         return [userLeagueComp, userCupComp, userContinentalComp, recopaComp, clubWorldCupComp, intercontinentalComp].filter(Boolean) as CompetitionItem[];
@@ -50,10 +51,10 @@ export const CompetitionPalmaresTab: React.FC<CompetitionPalmaresTabProps> = ({ 
         if (selectedRegion === 'INT') {
             list = list.filter(c => c.category === 'INTERNATIONAL');
         } else if (selectedRegion === 'SUDAMERICA') {
-            const southAmericanCountries = ['Argentina', 'Brasil', 'Chile', 'Colombia', 'Paraguay', 'México'];
-            list = list.filter(c => c.country && southAmericanCountries.includes(c.country));
+            const americanCountries = ['Argentina', 'Brasil', 'Uruguay', 'Ecuador', 'Chile', 'Colombia', 'Paraguay', 'México', 'EE.UU.'];
+            list = list.filter(c => c.country && americanCountries.includes(c.country));
         } else if (selectedRegion === 'EUROPA') {
-            const europeanCountries = ['Inglaterra', 'España', 'Alemania', 'Italia', 'Francia'];
+            const europeanCountries = ['Inglaterra', 'España', 'Alemania', 'Italia', 'Francia', 'Portugal', 'Países Bajos'];
             list = list.filter(c => c.country && europeanCountries.includes(c.country));
         }
 

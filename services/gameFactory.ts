@@ -10,7 +10,7 @@ import { generateYouthPlayer, generateSeasonSchedule, generateCupDraw, createIni
 import { initializeLibertadoresSeason } from './libertadoresEngine';
 import { initializeSudamericanaSeason } from './sudamericanaEngine';
 import { initializeClubWorldCupSeason, generateRecopaSudamericanaFixtures } from './clubWorldCupEngine';
-import { getBaseWeeklyIncome, generateStadium, generateSponsor, generateSponsorMarket } from './economy';
+import { getBaseWeeklyIncome, generateStadium, generateSponsor, generateSponsorMarket, isCalendarYearSeasonLeague } from './economy';
 import { generateClubMembership, calculateMembershipRevenue } from './membership';
 import { formatDate } from '../utils';
 import { getInitialAchievements } from './achievementService';
@@ -31,19 +31,7 @@ interface InitializeGameParams {
  * Creates the initial game state for a new game
  */
 export function initializeGame({ selectedTeam, playerProfile, initialPromises }: InitializeGameParams): GameState {
-    const isSouthAmerica = [
-        LeagueId.LIGA_ARGENTINA,
-        LeagueId.PRIMERA_NACIONAL,
-        LeagueId.BRASILEIRAO,
-        LeagueId.SERIE_B_BR,
-        LeagueId.COPA_DE_PRIMERA,
-        LeagueId.PRIMERA_DIVISION_CHILE,
-        LeagueId.PRIMERA_B_CHILE,
-        LeagueId.PRIMERA_A_COLOMBIA,
-        LeagueId.PRIMERA_B_COLOMBIA,
-        LeagueId.LIGA_MX,
-        LeagueId.LIGA_EXPANSION_MX
-    ].includes(selectedTeam.leagueId as LeagueId);
+    const isSouthAmerica = isCalendarYearSeasonLeague(selectedTeam.leagueId);
 
     const now = isSouthAmerica ? new Date('2026-01-15T12:00:00') : new Date('2026-08-10T12:00:00');
 
@@ -305,16 +293,16 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
         isMidweek: true
     }] : [];
 
-    // CONMEBOL Recopa Sudamericana (Ida Sem. 8 / Vuelta Sem. 10: Botafogo vs Racing Club)
-    const recopaFixtures = generateRecopaSudamericanaFixtures(810, 703, allTeamsCopy, 8);
+    // CONMEBOL Recopa Sudamericana (Ida Sem. 3 / Vuelta Sem. 5: Botafogo vs Racing Club)
+    const recopaFixtures = generateRecopaSudamericanaFixtures(810, 703, allTeamsCopy, 3);
 
-    // FIFA Club World Cup (32-team format: 8 groups x 4 clubs, start Week 22)
+    // FIFA Club World Cup (32-team format: 8 groups x 4 clubs, start Week 21 -> odd weeks)
     const cwcInit = initializeClubWorldCupSeason({
         allTeams: allTeamsCopy,
         championsLeagueWinnerId: 201,
         libertadoresWinnerId: 810,
         sudamericanaWinnerId: 703,
-        startWeek: 22
+        startWeek: 21
     });
 
     // Full Season Schedule

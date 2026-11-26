@@ -1,4 +1,5 @@
 import { Coach, Team, LeagueId } from '../types';
+import { getRegionalFinancialScale, isSouthAmericanClubLeague, isNorthAmericanClubLeague } from './economy';
 
 const FIRST_NAMES_LATAM = ['Marcelo', 'Gustavo', 'Eduardo', 'Jorge', 'Diego', 'Gabriel', 'Ricardo', 'Fernando', 'Guillermo', 'Lucas', 'Mauricio', 'Renato', 'Alejandro', 'Hernán', 'Martín'];
 const LAST_NAMES_LATAM = ['Gallardo', 'Almirón', 'Coudet', 'Sampaoli', 'Simeone', 'Milito', 'Gareca', 'Crespo', 'Heinze', 'Zubeldía', 'Demichelis', 'Schelotto', 'Medina', 'Domínguez'];
@@ -10,16 +11,9 @@ const STYLES: Coach['style'][] = ['Attacking', 'Defensive', 'Possession', 'Count
 const FORMATIONS: Coach['preferredFormation'][] = ['4-3-3', '4-4-2', '3-5-2', '4-2-3-1', '5-3-2'];
 
 export const generateRandomCoach = (tier: 'Top' | 'Mid' | 'Lower', leagueId?: string): Coach => {
-    const isSouthAm = leagueId && [
-        LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
-        LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
-        LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE,
-        LeagueId.PRIMERA_A_COLOMBIA, LeagueId.PRIMERA_B_COLOMBIA,
-        'LIGA_ARGENTINA', 'PRIMERA_NACIONAL', 'BRASILEIRAO', 'SERIE_B_BR', 'COPA_DE_PRIMERA', 'PRIMERA_A_COLOMBIA'
-    ].includes(leagueId as any);
-
-    const isMex = leagueId && [LeagueId.LIGA_MX, LeagueId.LIGA_EXPANSION_MX, 'LIGA_MX'].includes(leagueId as any);
-    const regionScale = isSouthAm ? 0.22 : isMex ? 0.42 : 1.0;
+    const isSouthAm = isSouthAmericanClubLeague(leagueId);
+    const isMex = isNorthAmericanClubLeague(leagueId);
+    const regionScale = Math.max(0.22, getRegionalFinancialScale(leagueId));
 
     const firstNames = (isSouthAm || isMex || Math.random() < 0.4) ? FIRST_NAMES_LATAM : FIRST_NAMES_EUR;
     const lastNames = (isSouthAm || isMex || Math.random() < 0.4) ? LAST_NAMES_LATAM : LAST_NAMES_EUR;

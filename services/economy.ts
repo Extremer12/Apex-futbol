@@ -3,6 +3,48 @@ import { getTeamStadium } from '../data/stadiums';
 import { getPresidentialStyleModifiers } from './presidentialProgression';
 import { calculateMembershipRevenue } from './membership';
 
+export const SOUTH_AMERICAN_LEAGUES = new Set<string>([
+    LeagueId.LIGA_ARGENTINA,
+    LeagueId.PRIMERA_NACIONAL,
+    LeagueId.BRASILEIRAO,
+    LeagueId.SERIE_B_BR,
+    LeagueId.COPA_DE_PRIMERA,
+    LeagueId.PRIMERA_DIVISION_CHILE,
+    LeagueId.PRIMERA_B_CHILE,
+    LeagueId.PRIMERA_A_COLOMBIA,
+    LeagueId.PRIMERA_B_COLOMBIA,
+    LeagueId.LIGA_URUGUAYA,
+    LeagueId.LIGA_ECUADOR,
+]);
+
+export const NORTH_AMERICAN_LEAGUES = new Set<string>([
+    LeagueId.LIGA_MX,
+    LeagueId.LIGA_EXPANSION_MX,
+    LeagueId.MLS,
+]);
+
+export const EUROPE_SECONDARY_FIRST_DIVS = new Set<string>([
+    LeagueId.PRIMEIRA_LIGA,
+    LeagueId.EREDIVISIE,
+]);
+
+export const isSouthAmericanClubLeague = (leagueId?: string): boolean =>
+    Boolean(leagueId && SOUTH_AMERICAN_LEAGUES.has(leagueId));
+
+export const isNorthAmericanClubLeague = (leagueId?: string): boolean =>
+    Boolean(leagueId && NORTH_AMERICAN_LEAGUES.has(leagueId));
+
+export const isCalendarYearSeasonLeague = (leagueId?: string): boolean =>
+    isSouthAmericanClubLeague(leagueId) || isNorthAmericanClubLeague(leagueId);
+
+export const getRegionalFinancialScale = (leagueId?: string): number => {
+    if (!leagueId) return 1.0;
+    if (SOUTH_AMERICAN_LEAGUES.has(leagueId)) return 0.20;
+    if (NORTH_AMERICAN_LEAGUES.has(leagueId)) return 0.42;
+    if (EUROPE_SECONDARY_FIRST_DIVS.has(leagueId)) return 0.50;
+    return 1.0;
+};
+
 export const getRegionalWageScale = (leagueId?: string, tier: Team['tier'] = 'Mid'): number => {
     switch (leagueId) {
         case LeagueId.BRASILEIRAO:
@@ -380,20 +422,17 @@ export const generateStadium = (team: Team): Stadium => {
     const info = getTeamStadium(team);
     const capacity = info.capacity;
 
-    const isSouthAm = [
-        LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
-        LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
-        LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE,
-        LeagueId.PRIMERA_A_COLOMBIA, LeagueId.PRIMERA_B_COLOMBIA
-    ].includes(team.leagueId as LeagueId);
-
-    const isMex = [LeagueId.LIGA_MX, LeagueId.LIGA_EXPANSION_MX].includes(team.leagueId as LeagueId);
+    const isSouthAm = isSouthAmericanClubLeague(team.leagueId);
+    const isNorthAm = isNorthAmericanClubLeague(team.leagueId);
+    const isEuroMid = EUROPE_SECONDARY_FIRST_DIVS.has(team.leagueId as string);
 
     let ticketPrice = 25;
     if (isSouthAm) {
         ticketPrice = team.tier === 'Top' ? 18 : team.tier === 'Mid' ? 12 : 8;
-    } else if (isMex) {
-        ticketPrice = team.tier === 'Top' ? 25 : team.tier === 'Mid' ? 18 : 12;
+    } else if (isNorthAm) {
+        ticketPrice = team.tier === 'Top' ? 26 : team.tier === 'Mid' ? 18 : 12;
+    } else if (isEuroMid) {
+        ticketPrice = team.tier === 'Top' ? 32 : team.tier === 'Mid' ? 22 : 15;
     } else {
         switch (team.tier) {
             case 'Top': ticketPrice = 50; break;
@@ -402,7 +441,9 @@ export const generateStadium = (team: Team): Stadium => {
         }
     }
 
-    const maintenanceCost = Math.max(10000, Math.floor(capacity * (isSouthAm ? 1.2 : 2.5)));
+    const maintenancePerSeat = isSouthAm ? 1.2 : isNorthAm ? 1.6 : isEuroMid ? 1.8 : 2.5;
+    const expansionPerSeat = isSouthAm ? 400 : isNorthAm ? 600 : isEuroMid ? 700 : 1000;
+    const maintenanceCost = Math.max(10000, Math.floor(capacity * maintenancePerSeat));
 
     return {
         name: info.name,
@@ -410,7 +451,7 @@ export const generateStadium = (team: Team): Stadium => {
         city: info.city,
         ticketPrice,
         maintenanceCost,
-        expansionCost: capacity * (isSouthAm ? 400 : 1000),
+        expansionCost: capacity * expansionPerSeat,
         expansionCapacity: Math.floor(capacity * 1.2),
         facilityLevel: 1
     };
@@ -421,16 +462,7 @@ export const generateSponsor = (
     tier: 'Top' | 'Mid' | 'Lower',
     leagueId?: string
 ): Sponsor => {
-    const isSouthAm = leagueId && [
-        LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
-        LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
-        LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE,
-        LeagueId.PRIMERA_A_COLOMBIA, LeagueId.PRIMERA_B_COLOMBIA,
-        'LIGA_ARGENTINA', 'PRIMERA_NACIONAL', 'BRASILEIRAO', 'SERIE_B_BR', 'COPA_DE_PRIMERA', 'PRIMERA_A_COLOMBIA'
-    ].includes(leagueId as any);
-
-    const isMex = leagueId && [LeagueId.LIGA_MX, LeagueId.LIGA_EXPANSION_MX, 'LIGA_MX'].includes(leagueId as any);
-    const regionScale = isSouthAm ? 0.18 : isMex ? 0.38 : 1.0;
+    const regionScale = getRegionalFinancialScale(leagueId);
 
     // Filter brands from catalog suitable for this type and tier
     let candidates = BRAND_CATALOG.filter(b => b.type === type);
@@ -554,14 +586,8 @@ export const calculateFinancialBreakdown = (
     membershipPolicy: MembershipPolicy = 'standard'
 ): FinancialBreakdown => {
     const styleMods = getPresidentialStyleModifiers(presidentialStyle);
-    const isSouthAm = [
-        LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
-        LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
-        LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE,
-        LeagueId.PRIMERA_A_COLOMBIA, LeagueId.PRIMERA_B_COLOMBIA
-    ].includes(leagueId as any);
-    const isMex = [LeagueId.LIGA_MX, LeagueId.LIGA_EXPANSION_MX].includes(leagueId as any);
-    const regionScale = isSouthAm ? 0.20 : isMex ? 0.40 : 1.0;
+    const isSouthAm = isSouthAmericanClubLeague(leagueId);
+    const regionScale = getRegionalFinancialScale(leagueId);
 
     // Ingresos
     const matchdayRevenue = wasHomeMatch ? calculateMatchdayRevenue(stadium, leaguePosition, false, ticketPolicy) : 0;
@@ -646,15 +672,7 @@ export const getNetWeeklyIncome = (breakdown: FinancialBreakdown): number => {
 };
 
 export const getAvailableLoans = (team: Team, leagueId: string): BankLoan[] => {
-    const isSouthAm = [
-        LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
-        LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
-        LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE,
-        LeagueId.PRIMERA_A_COLOMBIA, LeagueId.PRIMERA_B_COLOMBIA
-    ].includes(leagueId as any);
-
-    const isMex = [LeagueId.LIGA_MX, LeagueId.LIGA_EXPANSION_MX].includes(leagueId as any);
-    const scale = isSouthAm ? 0.20 : isMex ? 0.40 : 1.0;
+    const scale = getRegionalFinancialScale(leagueId);
 
     const microPrincipal = Math.floor((team.tier === 'Top' ? 8_000_000 : team.tier === 'Mid' ? 3_500_000 : 1_500_000) * scale);
     const expansionPrincipal = Math.floor((team.tier === 'Top' ? 25_000_000 : team.tier === 'Mid' ? 10_000_000 : 4_000_000) * scale);
@@ -707,14 +725,7 @@ export const evaluateFinancialHealth = (
     weeksRemainingInSeason: number = 30,
     leagueId?: string
 ): FinancialHealthEvaluation => {
-    const isSouthAm = leagueId && [
-        LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
-        LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
-        LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE,
-        LeagueId.PRIMERA_A_COLOMBIA, LeagueId.PRIMERA_B_COLOMBIA
-    ].includes(leagueId as any);
-    const isMex = leagueId && [LeagueId.LIGA_MX, LeagueId.LIGA_EXPANSION_MX].includes(leagueId as any);
-    const scale = isSouthAm ? 0.20 : isMex ? 0.40 : 1.0;
+    const scale = getRegionalFinancialScale(leagueId);
 
     const totalDebt = (finances.activeLoans || []).reduce((sum, l) => sum + (l.remainingAmount || 0), 0);
     const projectedEndBalance = finances.balance + (netWeeklyIncome * weeksRemainingInSeason);
@@ -770,14 +781,7 @@ export const getFacilityUpgradeCost = (
     tier: Team['tier'] = 'Mid',
     leagueId?: string
 ): number => {
-    const isSouthAm = leagueId && [
-        LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
-        LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
-        LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE,
-        LeagueId.PRIMERA_A_COLOMBIA, LeagueId.PRIMERA_B_COLOMBIA
-    ].includes(leagueId as any);
-    const isMex = leagueId && [LeagueId.LIGA_MX, LeagueId.LIGA_EXPANSION_MX].includes(leagueId as any);
-    const scale = isSouthAm ? 0.20 : isMex ? 0.40 : 1.0;
+    const scale = getRegionalFinancialScale(leagueId);
 
     const baseCost = nextLevel * (tier === 'Top' ? 3_500_000 : tier === 'Mid' ? 1_600_000 : 700_000);
     return Math.floor(baseCost * scale);
@@ -788,27 +792,18 @@ export const getStadiumExpansionCost = (
     tier: Team['tier'] = 'Mid',
     leagueId?: string
 ): number => {
-    const isSouthAm = leagueId && [
-        LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
-        LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
-        LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE,
-        LeagueId.PRIMERA_A_COLOMBIA, LeagueId.PRIMERA_B_COLOMBIA
-    ].includes(leagueId as any);
-    return Math.floor(capacity * (isSouthAm ? 400 : 1000));
+    const isSouthAm = isSouthAmericanClubLeague(leagueId);
+    const isNorthAm = isNorthAmericanClubLeague(leagueId);
+    const isEuroMid = EUROPE_SECONDARY_FIRST_DIVS.has(leagueId as string);
+    const perSeat = isSouthAm ? 400 : isNorthAm ? 600 : isEuroMid ? 700 : 1000;
+    return Math.floor(capacity * perSeat);
 };
 
 export const getDirectiveCosts = (
     directives?: ClubDirectives,
     leagueId?: string
 ) => {
-    const isSouthAm = leagueId && [
-        LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
-        LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
-        LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE,
-        LeagueId.PRIMERA_A_COLOMBIA, LeagueId.PRIMERA_B_COLOMBIA
-    ].includes(leagueId as any);
-    const isMex = leagueId && [LeagueId.LIGA_MX, LeagueId.LIGA_EXPANSION_MX].includes(leagueId as any);
-    const scale = isSouthAm ? 0.20 : isMex ? 0.40 : 1.0;
+    const scale = getRegionalFinancialScale(leagueId);
 
     const youthCost = directives?.youthInvestment === 'high' ? Math.floor(65_000 * scale) : directives?.youthInvestment === 'medium' ? Math.floor(22_000 * scale) : 0;
     const marketingCost = directives?.globalMarketing ? Math.floor(25_000 * scale) : 0;

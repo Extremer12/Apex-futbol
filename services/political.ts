@@ -1,6 +1,7 @@
 import { GameState, FanApproval, Team, LeagueId } from '../types';
 import { getPresidentialStyleModifiers } from './presidentialProgression';
 import { MEMBERSHIP_POLICY_META } from './membership';
+import { getRegionalFinancialScale } from './economy';
 
 /**
  * Calculate the transfer factor for fan approval (-10 to +10).
@@ -71,14 +72,7 @@ export const calculateFanApproval = (gameState: GameState): FanApproval => {
 
     // Factor Finanzas (-10 a +10)
     const balance = gameState.finances?.balance ?? 0;
-    const isSouthAm = [
-        LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
-        LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
-        LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE,
-        LeagueId.PRIMERA_A_COLOMBIA, LeagueId.PRIMERA_B_COLOMBIA
-    ].includes(gameState.team.leagueId as any);
-    const isMex = [LeagueId.LIGA_MX, LeagueId.LIGA_EXPANSION_MX].includes(gameState.team.leagueId as any);
-    const finScale = isSouthAm ? 0.20 : isMex ? 0.40 : 1.0;
+    const finScale = getRegionalFinancialScale(gameState.team.leagueId);
 
     let finances = 0;
     if (balance >= 25_000_000 * finScale) finances = 10;

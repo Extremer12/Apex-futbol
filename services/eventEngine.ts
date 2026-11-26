@@ -5,6 +5,7 @@ import { GameState, Player } from '../types';
 import { getMoraleValue, getMoraleLabel } from './morale';
 import { generateYouthPlayer } from './simulation';
 import { getLeagueCountryCode } from './nationalityService';
+import { getRegionalFinancialScale } from './economy';
 import eventsData from '../data/events.json';
 
 export interface GameEvent {
@@ -64,16 +65,7 @@ class EventEngine {
     }
 
     private getRegionScale(leagueId?: string): number {
-        if (!leagueId) return 1.0;
-        const southAm = [
-            'LIGA_ARGENTINA', 'PRIMERA_NACIONAL',
-            'BRASILEIRAO', 'SERIE_B_BR',
-            'COPA_DE_PRIMERA', 'PRIMERA_DIVISION_CHILE', 'PRIMERA_B_CHILE',
-            'PRIMERA_A_COLOMBIA', 'PRIMERA_B_COLOMBIA'
-        ];
-        if (southAm.includes(leagueId)) return 0.20;
-        if (['LIGA_MX', 'LIGA_EXPANSION_MX'].includes(leagueId)) return 0.40;
-        return 1.0;
+        return getRegionalFinancialScale(leagueId);
     }
 
     /**

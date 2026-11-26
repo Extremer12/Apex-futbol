@@ -50,6 +50,18 @@ export interface SeasonSummaryData {
  * preventing unrelated fixtures in other countries from locking the season transition
  * and guaranteeing that the season strictly culminates without infinite empty weeks.
  */
+function getMaxLeagueWeek(userLeagueId: LeagueId | string): number {
+    if (userLeagueId === LeagueId.LIGA_ARGENTINA) return 40;
+    if (userLeagueId === LeagueId.PRIMERA_NACIONAL) return 38;
+    if (userLeagueId === LeagueId.CHAMPIONSHIP) return 46;
+    if (userLeagueId === LeagueId.SEGUNDA_DIVISION_ESP) return 42;
+    if (userLeagueId === LeagueId.BUNDESLIGA || userLeagueId === LeagueId.ZWEITE_BUNDESLIGA || userLeagueId === LeagueId.LIGUE_1 || userLeagueId === LeagueId.LIGUE_2 || userLeagueId === LeagueId.LIGA_MX) return 34;
+    if (userLeagueId === LeagueId.PRIMERA_DIVISION_CHILE || userLeagueId === LeagueId.PRIMERA_B_CHILE || userLeagueId === LeagueId.PRIMERA_B_COLOMBIA) return 30;
+    if (userLeagueId === LeagueId.PRIMEIRA_LIGA || userLeagueId === LeagueId.EREDIVISIE || userLeagueId === LeagueId.MLS || userLeagueId === LeagueId.LIGA_EXPANSION_MX || userLeagueId === LeagueId.COPA_DE_PRIMERA) return 26;
+    if (userLeagueId === LeagueId.LIGA_URUGUAYA || userLeagueId === LeagueId.LIGA_ECUADOR) return 22;
+    return 38;
+}
+
 export const isSeasonCompleted = (gameState: GameState | null): boolean => {
     if (!gameState || !gameState.schedule || gameState.schedule.length === 0) {
         return false;
@@ -64,14 +76,7 @@ export const isSeasonCompleted = (gameState: GameState | null): boolean => {
     }
 
     // 2. Maximum season duration per league
-    let maxLeagueWeek = 38;
-    if (userLeagueId === LeagueId.LIGA_ARGENTINA) maxLeagueWeek = 40;
-    else if (userLeagueId === LeagueId.PRIMERA_NACIONAL) maxLeagueWeek = 38;
-    else if (userLeagueId === LeagueId.CHAMPIONSHIP) maxLeagueWeek = 46;
-    else if (userLeagueId === LeagueId.SEGUNDA_DIVISION_ESP) maxLeagueWeek = 42;
-    else if (userLeagueId === LeagueId.BUNDESLIGA || userLeagueId === LeagueId.ZWEITE_BUNDESLIGA || userLeagueId === LeagueId.LIGUE_1) maxLeagueWeek = 34;
-    else if (userLeagueId === LeagueId.PRIMEIRA_LIGA || userLeagueId === LeagueId.EREDIVISIE || userLeagueId === LeagueId.MLS) maxLeagueWeek = 26;
-    else if (userLeagueId === LeagueId.LIGA_URUGUAYA || userLeagueId === LeagueId.LIGA_ECUADOR) maxLeagueWeek = 22;
+    const maxLeagueWeek = getMaxLeagueWeek(userLeagueId);
 
     // 3. Check if the user is still alive in an active cup where subsequent rounds must be played
     const userCupActive = Object.values(gameState.cups || {}).some(cup => {
@@ -86,9 +91,16 @@ export const isSeasonCompleted = (gameState: GameState | null): boolean => {
             ));
         if (!isUserInCup) return false;
 
-        // In Swiss or groups: only active during group stage weeks (weeks <= 20)
-        if (cup.phase === 'swiss' || cup.phase === 'groups') {
-            return currentWeek <= 20;
+        // In Swiss or groups: remain active until the cup's final scheduled group/swiss matchday finishes
+        if (cup.phase === 'swiss') {
+            const fixtures = cup.swissFixtures || [];
+            const maxSwissWeek = Math.max(20, ...fixtures.map(f => f.week || 0));
+            return currentWeek <= maxSwissWeek && fixtures.some(f => f.result === undefined);
+        }
+        if (cup.phase === 'groups') {
+            const allGroupFixtures = (cup.groups || []).flatMap(g => g.fixtures || []);
+            const maxGroupWeek = Math.max(20, ...allGroupFixtures.map(f => f.week || 0));
+            return currentWeek <= maxGroupWeek && allGroupFixtures.some(f => f.result === undefined);
         }
 
         // In knockout, check if user is in current round or won current round
@@ -140,7 +152,7 @@ export const isSeasonCompleted = (gameState: GameState | null): boolean => {
     const userHasPendingMatches = gameState.schedule.some(
         m => (m.homeTeamId === gameState.team.id || m.awayTeamId === gameState.team.id) &&
              m.week >= currentWeek &&
-             m.week <= maxLeagueWeek &&
+             (m.week <= maxLeagueWeek || m.isCupMatch) &&
              m.result === undefined
     );
     if (userHasPendingMatches) {
@@ -188,16 +200,7 @@ export const isSeasonCompleted = (gameState: GameState | null): boolean => {
         return currentWeek >= 34;
     }
 
-    let minWeeks = 38;
-    if (userLeagueId === LeagueId.BUNDESLIGA || userLeagueId === LeagueId.ZWEITE_BUNDESLIGA || userLeagueId === LeagueId.LIGUE_1) {
-        minWeeks = 34;
-    } else if (userLeagueId === LeagueId.CHAMPIONSHIP) {
-        minWeeks = 46;
-    } else if (userLeagueId === LeagueId.SEGUNDA_DIVISION_ESP) {
-        minWeeks = 42;
-    }
-
-    return currentWeek >= minWeeks;
+    return currentWeek >= maxLeagueWeek;
 };
 
 /**
@@ -629,9 +632,15 @@ export function getMatchKickoffTime(match: Match): string {
     }
 
     // CONMEBOL Competitions
-    if (comp === 'Copa_Libertadores' || comp === 'Copa_Sudamericana') {
+    if (comp === 'Copa_Libertadores' || comp === 'Copa_Sudamericana' || comp === 'Recopa_Sudamericana') {
         const conmebolSlots = ['19:00', '21:00', '21:30', '19:15', '21:30'];
         return conmebolSlots[seed % conmebolSlots.length];
+    }
+
+    // FIFA Club World Cup & Intercontinental
+    if (comp === 'Club_World_Cup' || comp === 'Copa_Intercontinental') {
+        const fifaSlots = ['15:00', '18:00', '21:00'];
+        return fifaSlots[seed % fifaSlots.length];
     }
 
     // Domestic Cups & Midweeks
@@ -696,9 +705,19 @@ export function getMatchKickoffTime(match: Match): string {
         return mexSlots[seed % mexSlots.length];
     }
 
-    if (comp === 'Copa_de_Primera') {
-        const parSlots = ['17:30', '18:00', '20:00', '20:30'];
-        return parSlots[seed % parSlots.length];
+    if (comp === 'Copa_de_Primera' || comp === 'Liga_Uruguaya' || comp === 'Liga_Ecuador') {
+        const conmebolLeagueSlots = ['17:30', '18:00', '20:00', '20:30'];
+        return conmebolLeagueSlots[seed % conmebolLeagueSlots.length];
+    }
+
+    if (comp === 'Primeira_Liga' || comp === 'Eredivisie') {
+        const euroMidSlots = ['16:30', '18:45', '20:00', '21:15'];
+        return euroMidSlots[seed % euroMidSlots.length];
+    }
+
+    if (comp === 'MLS') {
+        const mlsSlots = ['19:30', '20:30', '21:30', '22:00'];
+        return mlsSlots[seed % mlsSlots.length];
     }
 
     // Liga Argentina / Primera Nacional

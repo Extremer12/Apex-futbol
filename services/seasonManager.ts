@@ -6,7 +6,7 @@
 import { GameState, Team, Player, NewsItem, EuropeanCompetition, EuropeanTableRow, Match, CupCompetition, CupChampion, LeagueId, SeasonHistoryRecord, LeagueTableRow } from '../types';
 import { generateYouthPlayer, generateSeasonSchedule, generateCupDraw, createInitialLeagueTable, handlePromotionRelegation, generateSwissPhase, generateGroupPhase, createInitialEuropeanTable, sortArgentineZones, simulateMacroMatch, PROMOTION_RELEGATION_PAIRS, finalizeSeasonCompetitions } from './simulation';
 import { computeArgentineRelegation, computeArgentineInternationalQualification } from './argentinaRegulations';
-import { calculatePrizeMoney, generateSponsorMarket } from './economy';
+import { calculatePrizeMoney, generateSponsorMarket, isCalendarYearSeasonLeague, isSouthAmericanClubLeague, isNorthAmericanClubLeague } from './economy';
 import { generateClubMembership, applyMembershipEventBoost } from './membership';
 import { generateCoachMarket } from './coaching';
 import { generateStaffMarket, generateScoutMarket } from './staffService';
@@ -27,17 +27,7 @@ import { MAX_FIRST_TEAM_SIZE, MAX_RESERVE_SIZE } from './squadRules';
  * Handles aging, retirements, regens, promotion/relegation, and schedule generation
  */
 export function startNewSeason(currentState: GameState): GameState {
-    const isSouthAmerica = [
-        LeagueId.LIGA_ARGENTINA,
-        LeagueId.PRIMERA_NACIONAL,
-        LeagueId.BRASILEIRAO,
-        LeagueId.SERIE_B_BR,
-        LeagueId.COPA_DE_PRIMERA,
-        LeagueId.PRIMERA_DIVISION_CHILE,
-        LeagueId.PRIMERA_B_CHILE,
-        LeagueId.PRIMERA_A_COLOMBIA,
-        LeagueId.PRIMERA_B_COLOMBIA
-    ].includes(currentState.team.leagueId as LeagueId);
+    const isSouthAmerica = isCalendarYearSeasonLeague(currentState.team.leagueId);
 
     const newSeasonYear = currentState.season + 1;
     const newDate = isSouthAmerica 
@@ -501,15 +491,16 @@ export function startNewSeason(currentState: GameState): GameState {
         .map(q => teamsAfterProRel.find(t => t.id === q.teamId))
         .filter(Boolean) as Team[];
 
-    // CONMEBOL Copa Libertadores (Official 47-team structure)
+    // CONMEBOL Copa Libertadores (Official 47-team structure, dynamic standings from Season 2+)
     const libInit = initializeLibertadoresSeason({
         allTeams: teamsAfterProRel,
+        leagueTables: currentState.leagueTables,
         lastLibertadoresWinnerId: getCupWinnerId(currentState.cups.copaLibertadores) || undefined,
         lastSudamericanaWinnerId: getCupWinnerId(currentState.cups.copaSudamericana) || undefined,
         argentineQualifiedIds: argLibTeams.map(t => t.id)
     }, currentState.cups.copaLibertadores);
 
-    // CONMEBOL Copa Sudamericana (Official 56-team structure)
+    // CONMEBOL Copa Sudamericana (Official 56-team structure, dynamic standings from Season 2+)
     const argSudTeams = argQual.sudamericana
         .map(q => teamsAfterProRel.find(t => t.id === q.teamId))
         .filter(Boolean) as Team[];
@@ -523,6 +514,7 @@ export function startNewSeason(currentState: GameState): GameState {
 
     const sudInit = initializeSudamericanaSeason({
         allTeams: teamsAfterProRel,
+        leagueTables: currentState.leagueTables,
         lastSudamericanaWinnerId: getCupWinnerId(currentState.cups.copaSudamericana) || undefined,
         argentineQualifiedIds: argSudTeams.map(t => t.id),
         libertadoresPhase3Losers: libInit.phase3Losers,
@@ -562,7 +554,7 @@ export function startNewSeason(currentState: GameState): GameState {
         }
     }
 
-    const recopaFixtures = generateRecopaSudamericanaFixtures(lastLibertadoresWinner, lastSudamericanaWinner, teamsAfterProRel, 8);
+    const recopaFixtures = generateRecopaSudamericanaFixtures(lastLibertadoresWinner, lastSudamericanaWinner, teamsAfterProRel, 3);
     const cwcInit = initializeClubWorldCupSeason({
         allTeams: teamsAfterProRel,
         leagueTables: currentState.leagueTables,
@@ -571,7 +563,7 @@ export function startNewSeason(currentState: GameState): GameState {
         libertadoresWinnerId: lastLibertadoresWinner,
         sudamericanaWinnerId: lastSudamericanaWinner,
         defendingClubWorldCupWinnerId: lastCwcWinner,
-        startWeek: 22
+        startWeek: 21
     }, currentState.cups.clubWorldCup);
 
     const fullSchedule = [
@@ -1224,20 +1216,13 @@ export function startNewSeason(currentState: GameState): GameState {
         stadium: currentState.stadium,
         membership: updatedMembership,
         finances: (() => {
-            const isSouthAm = [
-                LeagueId.LIGA_ARGENTINA, LeagueId.PRIMERA_NACIONAL,
-                LeagueId.BRASILEIRAO, LeagueId.SERIE_B_BR,
-                LeagueId.COPA_DE_PRIMERA, LeagueId.PRIMERA_DIVISION_CHILE, LeagueId.PRIMERA_B_CHILE,
-                LeagueId.PRIMERA_A_COLOMBIA, LeagueId.PRIMERA_B_COLOMBIA,
-                'LIGA_ARGENTINA', 'PRIMERA_NACIONAL', 'BRASILEIRAO', 'SERIE_B_BR', 'COPA_DE_PRIMERA', 'PRIMERA_A_COLOMBIA'
-            ].includes(userLeagueId as any);
-
-            const isMex = [LeagueId.LIGA_MX, LeagueId.LIGA_EXPANSION_MX, 'LIGA_MX'].includes(userLeagueId as any);
+            const isSouthAm = isSouthAmericanClubLeague(userLeagueId);
+            const isNorthAm = isNorthAmericanClubLeague(userLeagueId);
 
             let maxBudgetCap = 120_000_000;
             if (isSouthAm) {
                 maxBudgetCap = updatedPlayerTeam.tier === 'Top' ? 14_000_000 : updatedPlayerTeam.tier === 'Mid' ? 5_000_000 : 2_000_000;
-            } else if (isMex) {
+            } else if (isNorthAm) {
                 maxBudgetCap = updatedPlayerTeam.tier === 'Top' ? 25_000_000 : updatedPlayerTeam.tier === 'Mid' ? 10_000_000 : 4_000_000;
             } else if (updatedPlayerTeam.tier !== 'Top') {
                 maxBudgetCap = updatedPlayerTeam.tier === 'Mid' ? 35_000_000 : 12_000_000;

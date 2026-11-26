@@ -1,9 +1,10 @@
-import { Team, Match, CupCompetition, CupGroup, LeagueId } from '../types';
+import { Team, Match, CupCompetition, CupGroup, LeagueId, LeagueTableRow } from '../types';
 import { SOUTH_AMERICAN_EXTRA_TEAMS, getTeamConmebolMeta } from '../data/teams/southAmericanClubs';
 import { generateCupDraw } from './simulation';
 
 export interface LibertadoresQualificationContext {
     allTeams: Team[];
+    leagueTables?: Partial<Record<LeagueId, LeagueTableRow[]>>;
     lastLibertadoresWinnerId?: number;
     lastSudamericanaWinnerId?: number;
     argentineQualifiedIds?: number[]; // from computeArgentineInternationalQualification
@@ -27,7 +28,7 @@ export function buildLibertadoresParticipants(context: LibertadoresQualification
     defendingChampion?: Team;
     sudamericanaChampion?: Team;
 } {
-    const { allTeams, lastLibertadoresWinnerId, lastSudamericanaWinnerId, argentineQualifiedIds = [] } = context;
+    const { allTeams, leagueTables, lastLibertadoresWinnerId, lastSudamericanaWinnerId, argentineQualifiedIds = [] } = context;
     const allPool = [...(allTeams || []), ...SOUTH_AMERICAN_EXTRA_TEAMS];
     const findTeam = (id?: number) => id ? allPool.find(t => t.id === id) : undefined;
     const defendingChampion = findTeam(lastLibertadoresWinnerId);
@@ -35,7 +36,16 @@ export function buildLibertadoresParticipants(context: LibertadoresQualification
 
     const usedIds = new Set<number>();
 
-    // Helpers to get clubs by country
+    const LEAGUE_BY_COUNTRY: Partial<Record<string, LeagueId>> = {
+        BRA: LeagueId.BRASILEIRAO,
+        PAR: LeagueId.COPA_DE_PRIMERA,
+        CHI: LeagueId.PRIMERA_DIVISION_CHILE,
+        COL: LeagueId.PRIMERA_A_COLOMBIA,
+        URU: LeagueId.LIGA_URUGUAYA,
+        ECU: LeagueId.LIGA_ECUADOR,
+    };
+
+    // Helpers to get clubs by country (prioritizes live league table standings in Season 2+)
     const getTeamsByCountry = (countryCode: string, minTierPriority: boolean = true): Team[] => {
         let teams: Team[] = [];
         const seen = new Set<number>(usedIds);
@@ -64,47 +74,38 @@ export function buildLibertadoresParticipants(context: LibertadoresQualification
                     seen.add(t.id);
                 }
             }
-        } else if (countryCode === 'BRA') {
-            const brTeams = allTeams.filter(t => t.leagueId === LeagueId.BRASILEIRAO && !seen.has(t.id));
-            brTeams.forEach(t => {
+            return teams;
+        }
+
+        const mappedLeague = LEAGUE_BY_COUNTRY[countryCode];
+        if (mappedLeague) {
+            const table = leagueTables?.[mappedLeague];
+            if (table && table.some(r => (r.played || 0) > 0)) {
+                const orderedByTable = [...table]
+                    .sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference || b.goalsFor - a.goalsFor)
+                    .map(r => findTeam(r.teamId))
+                    .filter((t): t is Team => Boolean(t && !seen.has(t.id)));
+                orderedByTable.forEach(t => {
+                    teams.push(t);
+                    seen.add(t.id);
+                });
+                // Append any remaining clubs from that league/country sorted by CONMEBOL ranking
+                const extras = [
+                    ...allTeams.filter(t => t.leagueId === mappedLeague && !seen.has(t.id)),
+                    ...SOUTH_AMERICAN_EXTRA_TEAMS.filter(t => t.country === countryCode && !seen.has(t.id))
+                ].sort((a, b) => getTeamConmebolMeta(a).conmebolRanking - getTeamConmebolMeta(b).conmebolRanking);
+                extras.forEach(t => {
+                    teams.push(t);
+                    seen.add(t.id);
+                });
+                return teams;
+            }
+
+            allTeams.filter(t => t.leagueId === mappedLeague && !seen.has(t.id)).forEach(t => {
                 teams.push(t);
                 seen.add(t.id);
             });
-        } else if (countryCode === 'PAR') {
-            const parTeams = allTeams.filter(t => t.leagueId === LeagueId.COPA_DE_PRIMERA && !seen.has(t.id));
-            parTeams.forEach(t => {
-                teams.push(t);
-                seen.add(t.id);
-            });
-        } else if (countryCode === 'CHI') {
-            const chiTeams = allTeams.filter(t => t.leagueId === LeagueId.PRIMERA_DIVISION_CHILE && !seen.has(t.id));
-            chiTeams.forEach(t => {
-                teams.push(t);
-                seen.add(t.id);
-            });
-        } else if (countryCode === 'COL') {
-            const colTeams = allTeams.filter(t => t.leagueId === LeagueId.PRIMERA_A_COLOMBIA && !seen.has(t.id));
-            colTeams.forEach(t => {
-                teams.push(t);
-                seen.add(t.id);
-            });
-        } else if (countryCode === 'URU') {
-            const uruTeams = allTeams.filter(t => t.leagueId === LeagueId.LIGA_URUGUAYA && !seen.has(t.id));
-            uruTeams.forEach(t => {
-                teams.push(t);
-                seen.add(t.id);
-            });
-            SOUTH_AMERICAN_EXTRA_TEAMS.filter(t => t.country === 'URU' && !seen.has(t.id)).forEach(t => {
-                teams.push(t);
-                seen.add(t.id);
-            });
-        } else if (countryCode === 'ECU') {
-            const ecuTeams = allTeams.filter(t => t.leagueId === LeagueId.LIGA_ECUADOR && !seen.has(t.id));
-            ecuTeams.forEach(t => {
-                teams.push(t);
-                seen.add(t.id);
-            });
-            SOUTH_AMERICAN_EXTRA_TEAMS.filter(t => t.country === 'ECU' && !seen.has(t.id)).forEach(t => {
+            SOUTH_AMERICAN_EXTRA_TEAMS.filter(t => t.country === countryCode && !seen.has(t.id)).forEach(t => {
                 teams.push(t);
                 seen.add(t.id);
             });
@@ -116,7 +117,7 @@ export function buildLibertadoresParticipants(context: LibertadoresQualification
             });
         }
 
-        // Sort by CONMEBOL Ranking
+        // Sort by CONMEBOL Ranking (Season 1 initial seeding & non-playable nations)
         return teams.sort((a, b) => {
             const metaA = getTeamConmebolMeta(a);
             const metaB = getTeamConmebolMeta(b);
@@ -125,7 +126,15 @@ export function buildLibertadoresParticipants(context: LibertadoresQualification
     };
 
     const southAmericanPool = [
-        ...allTeams.filter(t => t.leagueId === LeagueId.LIGA_ARGENTINA || t.leagueId === LeagueId.BRASILEIRAO || t.leagueId === LeagueId.COPA_DE_PRIMERA || t.leagueId === LeagueId.PRIMERA_DIVISION_CHILE || t.leagueId === LeagueId.PRIMERA_A_COLOMBIA),
+        ...allTeams.filter(t =>
+            t.leagueId === LeagueId.LIGA_ARGENTINA ||
+            t.leagueId === LeagueId.BRASILEIRAO ||
+            t.leagueId === LeagueId.COPA_DE_PRIMERA ||
+            t.leagueId === LeagueId.PRIMERA_DIVISION_CHILE ||
+            t.leagueId === LeagueId.PRIMERA_A_COLOMBIA ||
+            t.leagueId === LeagueId.LIGA_URUGUAYA ||
+            t.leagueId === LeagueId.LIGA_ECUADOR
+        ),
         ...SOUTH_AMERICAN_EXTRA_TEAMS
     ];
 

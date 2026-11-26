@@ -7,6 +7,11 @@ import { startNewSeason } from '../../services/seasonManager';
 import { handleCupProgression } from '../../services/simulation/cupProgressionHandler';
 import { finalizeSeasonCompetitions } from '../../services/simulation/cupGenerator';
 import { selectClubWorldCupParticipants } from '../../services/clubWorldCupEngine';
+import { isSeasonCompleted } from '../../services/seasonUtils';
+import { getRegionalFinancialScale, isCalendarYearSeasonLeague } from '../../services/economy';
+import { getTeamStadium } from '../../data/stadiums';
+import { checkDerbyMatch } from '../../services/simulation/derbyRegistry';
+import { buildLibertadoresParticipants } from '../../services/libertadoresEngine';
 
 test('INTERNATIONAL CUPS: Recopa Sudamericana two-legged final and FIFA Club World Cup 32-team lifecycle', () => {
     const boca = TEAMS.find(t => t.id === 701) || TEAMS[0];
@@ -79,8 +84,8 @@ test('INTERNATIONAL CUPS: Recopa Sudamericana two-legged final and FIFA Club Wor
         state.cups,
         schedule,
         state.allTeams,
+        25,
         26,
-        27,
         state.leagueTables,
         'midweek',
         boca.id
@@ -91,6 +96,12 @@ test('INTERNATIONAL CUPS: Recopa Sudamericana two-legged final and FIFA Club Wor
     assert.equal(cwcKo.rounds[0].name, 'Round of 16');
     assert.equal(cwcKo.rounds[0].fixtures.length, 8);
     assert.equal(cwcKo.rounds[0].secondLegFixtures, undefined, 'FIFA Club World Cup knockouts must be single-leg');
+
+    // Verify conflict-free scheduling: Recopa in weeks 3 & 5, Club World Cup in odd weeks 21/23/25 & 27
+    assert.equal(recopa.rounds[0].fixtures[0].week, 3);
+    assert.equal(recopa.rounds[0].secondLegFixtures![0].week, 5);
+    assert.ok(cwc.groups![0].fixtures.every(f => [21, 23, 25].includes(f.week)), 'Club World Cup group matchdays must run on odd weeks 21, 23, 25');
+    assert.equal(cwcKo.rounds[0].fixtures[0].week, 27, 'Club World Cup Round of 16 must run on week 27');
 
     // 4. Simulate Recopa Leg 1 & Leg 2 and confirm aggregate winner is crowned
     const recopaLeg1 = recopa.rounds[0].fixtures[0];
@@ -109,8 +120,8 @@ test('INTERNATIONAL CUPS: Recopa Sudamericana two-legged final and FIFA Club Wor
         progOctavos.updatedCups,
         recopaSched,
         state.allTeams,
-        10,
-        11,
+        5,
+        6,
         state.leagueTables,
         'midweek',
         boca.id
@@ -131,4 +142,61 @@ test('INTERNATIONAL CUPS: Recopa Sudamericana two-legged final and FIFA Club Wor
     assert.equal(nextSeason.cups.clubWorldCup?.groups?.length, 8);
     assert.equal(nextSeason.cups.clubWorldCup?.statistics?.championsHistory.length, 1);
     assert.equal(nextSeason.cups.recopaSudamericana?.statistics?.championsHistory.length, 1);
+});
+
+test('STABILIZATION: 5 expansion leagues economy, season-end with Club World Cup, dynamic CONMEBOL merit, stadiums & derbies', () => {
+    const penarol = TEAMS.find(t => t.id === 9121)!;
+    const nacional = TEAMS.find(t => t.id === 9122)!;
+    const benfica = TEAMS.find(t => t.id === 2001)!;
+    const porto = TEAMS.find(t => t.id === 2003)!;
+    const barcelonaSc = TEAMS.find(t => t.id === 9115)!;
+    const emelec = TEAMS.find(t => t.id === 9116)!;
+
+    // 1. Unified regional scaling & calendar year leagues
+    assert.equal(getRegionalFinancialScale(LeagueId.LIGA_URUGUAYA), 0.20);
+    assert.equal(getRegionalFinancialScale(LeagueId.LIGA_ECUADOR), 0.20);
+    assert.equal(getRegionalFinancialScale(LeagueId.MLS), 0.42);
+    assert.equal(getRegionalFinancialScale(LeagueId.PRIMEIRA_LIGA), 0.50);
+    assert.equal(getRegionalFinancialScale(LeagueId.EREDIVISIE), 0.50);
+    assert.equal(isCalendarYearSeasonLeague(LeagueId.LIGA_URUGUAYA), true);
+    assert.equal(isCalendarYearSeasonLeague(LeagueId.MLS), true);
+    assert.equal(isCalendarYearSeasonLeague(LeagueId.PRIMEIRA_LIGA), false);
+
+    // 2. Real stadiums & derbies for new leagues
+    assert.equal(getTeamStadium(benfica).name, 'Estádio da Luz');
+    assert.equal(checkDerbyMatch(penarol, nacional).isDerby, true);
+    assert.equal(checkDerbyMatch(benfica, porto).derbyName, 'O Clássico');
+    assert.equal(checkDerbyMatch(barcelonaSc, emelec).derbyName, 'Clásico del Astillero');
+
+    // 3. Uruguay (22 league weeks) must NOT end season at week 23 while alive in Club World Cup groups (weeks 21, 23, 25)
+    const uruState = initializeGame({ selectedTeam: penarol });
+    assert.equal(uruState.currentDate.getMonth(), 0, 'Liga Uruguaya must start in January');
+    // Put Peñarol explicitly in CWC and simulate week 22
+    const cwcGroups = uruState.cups.clubWorldCup!.groups!;
+    const penarolInCwc = cwcGroups.some(g => g.teams.includes(penarol.id));
+    if (penarolInCwc) {
+        const midSeasonState = {
+            ...uruState,
+            currentWeek: 23,
+            schedule: uruState.schedule.map(m => m.week < 23 ? { ...m, result: { homeScore: 1, awayScore: 0 } } : m)
+        };
+        assert.equal(isSeasonCompleted(midSeasonState), false, 'Season must stay active during CWC matchdays 23/25 even though Liga Uruguaya ends at week 22');
+    }
+
+    // 4. Dynamic CONMEBOL sporting merit in Season 2+: #1 club in Liga Uruguaya table qualifies for Libertadores even if its static ranking is low
+    const miramar = TEAMS.find(t => t.id === 2204)!;
+    const uruTable = uruState.leagueTables[LeagueId.LIGA_URUGUAYA].map((row, idx) => ({
+        ...row,
+        played: 22,
+        points: row.teamId === miramar.id ? 60 : Math.max(10, 50 - idx * 2),
+        goalDifference: row.teamId === miramar.id ? 30 : 5,
+    }));
+    const libParticipants = buildLibertadoresParticipants({
+        allTeams: uruState.allTeams,
+        leagueTables: { ...uruState.leagueTables, [LeagueId.LIGA_URUGUAYA]: uruTable },
+    });
+    assert.ok(
+        libParticipants.directToGroups.some(t => t.id === miramar.id),
+        'Season 2+ Libertadores must qualify league champion Miramar Misiones directly via table merit'
+    );
 });

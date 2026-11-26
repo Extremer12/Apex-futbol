@@ -56,7 +56,32 @@ export const GLOBAL_DERBIES: DerbyDefinition[] = [
     { name: 'Clásico Nacional', pairNames: ['américa', 'guadalajara'], tension: 1.40 },
     { name: 'Clásico Regio', pairNames: ['monterrey', 'tigres'], tension: 1.35 },
     { name: 'Clásico Joven', pairNames: ['américa', 'cruz azul'], tension: 1.30 },
-    { name: 'Clásico Capitalino', pairNames: ['américa', 'pumas'], tension: 1.30 }
+    { name: 'Clásico Capitalino', pairNames: ['américa', 'pumas'], tension: 1.30 },
+
+    // --- PORTUGAL ---
+    { name: 'O Clássico', pairIds: [2001, 2003], pairNames: ['benfica', 'porto'], tension: 1.45 },
+    { name: 'Dérbi de Lisboa', pairIds: [2001, 2002], pairNames: ['benfica', 'sporting'], tension: 1.40 },
+    { name: 'Clássico Porto-Sporting', pairIds: [2003, 2002], pairNames: ['porto', 'sporting'], tension: 1.35 },
+
+    // --- PAÍSES BAJOS ---
+    { name: 'De Klassieker', pairIds: [2103, 2102], pairNames: ['ajax', 'feyenoord'], tension: 1.45 },
+    { name: 'De Topper', pairIds: [2103, 2101], pairNames: ['ajax', 'psv'], tension: 1.35 },
+    { name: 'Topduel Eredivisie', pairIds: [2101, 2102], pairNames: ['psv', 'feyenoord'], tension: 1.30 },
+
+    // --- URUGUAY ---
+    { name: 'Superclásico del Fútbol Uruguayo', pairIds: [9121, 9122], pairNames: ['peñarol', 'nacional'], tension: 1.50 },
+    { name: 'Clásico de los Medianos', pairIds: [9123, 9149], pairNames: ['defensor', 'danubio'], tension: 1.25 },
+
+    // --- ECUADOR ---
+    { name: 'Clásico del Astillero', pairIds: [9115, 9116], pairNames: ['barcelona sc', 'emelec'], tension: 1.45 },
+    { name: 'Superclásico Capitalino', pairIds: [9113, 2301], pairNames: ['ldu quito', 'el nacional'], tension: 1.35 },
+    { name: 'Duelo de Campeones de Quito', pairIds: [9113, 9114], pairNames: ['ldu quito', 'independiente del valle'], tension: 1.30 },
+
+    // --- MLS (EE.UU.) ---
+    { name: 'El Tráfico (LA Derby)', pairIds: [2402, 2403], pairNames: ['lafc', 'la galaxy'], tension: 1.40 },
+    { name: 'Cascadia Cup', pairIds: [2405, 2413], pairNames: ['seattle', 'portland'], tension: 1.35 },
+    { name: 'Hudson River Derby', pairIds: [2408, 2409], pairNames: ['new york city', 'red bulls'], tension: 1.35 },
+    { name: 'Florida Derby', pairIds: [2401, 2410], pairNames: ['inter miami', 'orlando city'], tension: 1.30 }
 ];
 
 const normalize = (str?: string) => (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');

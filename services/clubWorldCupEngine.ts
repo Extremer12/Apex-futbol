@@ -199,7 +199,7 @@ export function selectClubWorldCupParticipants(context: ClubWorldCupQualificatio
  * Organizes 32 qualified clubs into 8 balanced 4-team groups (Grupos A-H) with a
  * 3-matchday single round-robin schedule (FIFA Club World Cup official format).
  */
-export function generateClubWorldCupGroups(teams: Team[], startWeek: number = 22): CupGroup[] {
+export function generateClubWorldCupGroups(teams: Team[], startWeek: number = 21): CupGroup[] {
     const sortedByStrength = [...teams].slice(0, 32).sort((a, b) => getTeamStrengthScore(b) - getTeamStrengthScore(a));
 
     // Seed into 4 pots of 8 teams, rotating pot order so European, South American, and Mexican clubs mix across all 8 groups
@@ -267,7 +267,7 @@ export function initializeClubWorldCupSeason(
     context: ClubWorldCupQualificationContext,
     previousCup?: CupCompetition
 ): ClubWorldCupInitialState {
-    const startWeek = context.startWeek ?? 22;
+    const startWeek = context.startWeek ?? 21;
     const participants = selectClubWorldCupParticipants(context);
     const groups = generateClubWorldCupGroups(participants, startWeek);
     const fixtures = groups.flatMap(g => g.fixtures);
@@ -298,7 +298,7 @@ export function generateRecopaSudamericanaFixtures(
     libertadoresWinnerId: number | undefined,
     sudamericanaWinnerId: number | undefined,
     allTeams: Team[],
-    startWeek: number = 8
+    startWeek: number = 3
 ): Match[] {
     const pool = [...allTeams, ...SOUTH_AMERICAN_EXTRA_TEAMS];
     let libChamp = libertadoresWinnerId ? pool.find(t => t.id === libertadoresWinnerId) : undefined;
