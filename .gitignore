@@ -32,3 +32,11 @@ design/
 # Generated external Community Packs & ZIPs (upload separately to community-data-packs)
 dist-packs/
 scripts/.cache/
+
+# Android signing keys & Play Store release binaries (DO NOT COMMIT)
+*.keystore
+*.jks
+*.aab
+*.apk
+signing-key-info.txt
+play store/
