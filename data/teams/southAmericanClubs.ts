@@ -22,7 +22,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#FFFFFF',
         country: 'BOL',
         conmebolRanking: 27,
-        squad: createGenericSquad(9109, 'Bolívar', 73, '#00A3E0', '#FFFFFF')
+        squad: createGenericSquad(910901, 'Bolívar', 73, '#00A3E0', '#FFFFFF')
     },
     {
         id: 9110,
@@ -38,7 +38,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#000000',
         country: 'BOL',
         conmebolRanking: 36,
-        squad: createGenericSquad(9110, 'The Strongest', 72, '#FFD100', '#000000')
+        squad: createGenericSquad(911001, 'The Strongest', 72, '#FFD100', '#000000')
     },
     {
         id: 9111,
@@ -54,7 +54,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#FFFFFF',
         country: 'BOL',
         conmebolRanking: 62,
-        squad: createGenericSquad(9111, 'Always Ready', 70, '#D22630', '#FFFFFF')
+        squad: createGenericSquad(911101, 'Always Ready', 70, '#D22630', '#FFFFFF')
     },
     {
         id: 9112,
@@ -70,7 +70,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#002B49',
         country: 'BOL',
         conmebolRanking: 68,
-        squad: createGenericSquad(9112, 'Wilstermann', 69, '#C8102E', '#002B49')
+        squad: createGenericSquad(911201, 'Wilstermann', 69, '#C8102E', '#002B49')
     },
 
     // --- ECUADOR (4) -> Promovidos a LigaPro Serie A (LIGA_ECUADOR) ---
@@ -88,7 +88,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#C8102E',
         country: 'ECU',
         conmebolRanking: 12,
-        squad: createGenericSquad(9113, 'LDU Quito', 76, '#FFFFFF', '#C8102E')
+        squad: createGenericSquad(911301, 'LDU Quito', 76, '#FFFFFF', '#C8102E')
     },
     {
         id: 9114,
@@ -104,7 +104,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#D8262E',
         country: 'ECU',
         conmebolRanking: 10,
-        squad: createGenericSquad(9114, 'IDV', 76, '#002F6C', '#D8262E')
+        squad: createGenericSquad(911401, 'IDV', 76, '#002F6C', '#D8262E')
     },
     {
         id: 9115,
@@ -120,7 +120,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#000000',
         country: 'ECU',
         conmebolRanking: 22,
-        squad: createGenericSquad(9115, 'Barcelona SC', 74, '#FFD100', '#000000')
+        squad: createGenericSquad(911501, 'Barcelona SC', 74, '#FFD100', '#000000')
     },
     {
         id: 9116,
@@ -136,7 +136,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#888888',
         country: 'ECU',
         conmebolRanking: 34,
-        squad: createGenericSquad(9116, 'Emelec', 73, '#0033A0', '#888888')
+        squad: createGenericSquad(911601, 'Emelec', 73, '#0033A0', '#888888')
     },
 
     // --- PERÚ (4) ---
@@ -154,7 +154,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#800000',
         country: 'PER',
         conmebolRanking: 31,
-        squad: createGenericSquad(9117, 'Universitario', 74, '#FFFDD0', '#800000')
+        squad: createGenericSquad(911701, 'Universitario', 74, '#FFFDD0', '#800000')
     },
     {
         id: 9118,
@@ -170,7 +170,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#FFFFFF',
         country: 'PER',
         conmebolRanking: 37,
-        squad: createGenericSquad(9118, 'Alianza Lima', 73, '#002B49', '#FFFFFF')
+        squad: createGenericSquad(911801, 'Alianza Lima', 73, '#002B49', '#FFFFFF')
     },
     {
         id: 9119,
@@ -186,7 +186,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#FFFFFF',
         country: 'PER',
         conmebolRanking: 40,
-        squad: createGenericSquad(9119, 'Sp. Cristal', 73, '#6CACE4', '#FFFFFF')
+        squad: createGenericSquad(911901, 'Sp. Cristal', 73, '#6CACE4', '#FFFFFF')
     },
     {
         id: 9120,
@@ -202,7 +202,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#000000',
         country: 'PER',
         conmebolRanking: 52,
-        squad: createGenericSquad(9120, 'Melgar', 71, '#C8102E', '#000000')
+        squad: createGenericSquad(912001, 'Melgar', 71, '#C8102E', '#000000')
     },
 
     // --- URUGUAY (4) -> Promovidos a Liga Uruguaya (LIGA_URUGUAYA) ---
@@ -220,7 +220,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#000000',
         country: 'URU',
         conmebolRanking: 9,
-        squad: createGenericSquad(9121, 'Peñarol', 76, '#FFD100', '#000000')
+        squad: createGenericSquad(912101, 'Peñarol', 76, '#FFD100', '#000000')
     },
     {
         id: 9122,
@@ -236,7 +236,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#002B49',
         country: 'URU',
         conmebolRanking: 8,
-        squad: createGenericSquad(9122, 'Nacional (Uru)', 76, '#FFFFFF', '#002B49')
+        squad: createGenericSquad(912201, 'Nacional (Uru)', 76, '#FFFFFF', '#002B49')
     },
     {
         id: 9123,
@@ -252,7 +252,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#FFFFFF',
         country: 'URU',
         conmebolRanking: 48,
-        squad: createGenericSquad(9123, 'Defensor Sp.', 72, '#5C2D91', '#FFFFFF')
+        squad: createGenericSquad(912301, 'Defensor Sp.', 72, '#5C2D91', '#FFFFFF')
     },
     {
         id: 9124,
@@ -268,7 +268,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#000000',
         country: 'URU',
         conmebolRanking: 58,
-        squad: createGenericSquad(9124, 'Liverpool (Uru)', 71, '#002B49', '#000000')
+        squad: createGenericSquad(912401, 'Liverpool (Uru)', 71, '#002B49', '#000000')
     },
 
     // --- VENEZUELA (4) ---
@@ -286,7 +286,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#000000',
         country: 'VEN',
         conmebolRanking: 45,
-        squad: createGenericSquad(9125, 'Dep. Táchira', 71, '#FFD100', '#000000')
+        squad: createGenericSquad(912501, 'Dep. Táchira', 71, '#FFD100', '#000000')
     },
     {
         id: 9126,
@@ -302,7 +302,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#000000',
         country: 'VEN',
         conmebolRanking: 50,
-        squad: createGenericSquad(9126, 'Caracas FC', 70, '#C8102E', '#000000')
+        squad: createGenericSquad(912601, 'Caracas FC', 70, '#C8102E', '#000000')
     },
     {
         id: 9127,
@@ -318,7 +318,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#FFFFFF',
         country: 'VEN',
         conmebolRanking: 72,
-        squad: createGenericSquad(9127, 'Carabobo', 69, '#800020', '#FFFFFF')
+        squad: createGenericSquad(912701, 'Carabobo', 69, '#800020', '#FFFFFF')
     },
     {
         id: 9128,
@@ -334,7 +334,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#C8102E',
         country: 'VEN',
         conmebolRanking: 78,
-        squad: createGenericSquad(9128, 'Monagas', 68, '#0033A0', '#C8102E')
+        squad: createGenericSquad(912801, 'Monagas', 68, '#0033A0', '#C8102E')
     },
 
     // --- BOLIVIA SUDAMERICANA (4) ---
@@ -352,7 +352,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#FFFFFF',
         country: 'BOL',
         conmebolRanking: 68,
-        squad: createGenericSquad(9137, 'Oriente Pet.', 70, '#00843D', '#FFFFFF')
+        squad: createGenericSquad(913701, 'Oriente Pet.', 70, '#00843D', '#FFFFFF')
     },
     {
         id: 9138,
@@ -368,7 +368,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#FFFFFF',
         country: 'BOL',
         conmebolRanking: 70,
-        squad: createGenericSquad(9138, 'Blooming', 70, '#0099FF', '#FFFFFF')
+        squad: createGenericSquad(913801, 'Blooming', 70, '#0099FF', '#FFFFFF')
     },
     {
         id: 9139,
@@ -384,7 +384,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#FFFFFF',
         country: 'BOL',
         conmebolRanking: 85,
-        squad: createGenericSquad(9139, 'Tomayapo', 67, '#008080', '#FFFFFF')
+        squad: createGenericSquad(913901, 'Tomayapo', 67, '#008080', '#FFFFFF')
     },
     {
         id: 9140,
@@ -400,7 +400,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#FFFFFF',
         country: 'BOL',
         conmebolRanking: 75,
-        squad: createGenericSquad(9140, 'Nac. Potosí', 68, '#C8102E', '#FFFFFF')
+        squad: createGenericSquad(914001, 'Nac. Potosí', 68, '#C8102E', '#FFFFFF')
     },
 
     // --- ECUADOR SUDAMERICANA (4) -> Promovidos a LIGA_ECUADOR ---
@@ -418,7 +418,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#FFD100',
         country: 'ECU',
         conmebolRanking: 46,
-        squad: createGenericSquad(9141, 'U. Católica (Ecu)', 72, '#003366', '#FFD100')
+        squad: createGenericSquad(914101, 'U. Católica (Ecu)', 72, '#003366', '#FFD100')
     },
     {
         id: 9142,
@@ -434,7 +434,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#FFD100',
         country: 'ECU',
         conmebolRanking: 64,
-        squad: createGenericSquad(9142, 'Delfín SC', 70, '#002B49', '#FFD100')
+        squad: createGenericSquad(914201, 'Delfín SC', 70, '#002B49', '#FFD100')
     },
     {
         id: 9143,
@@ -450,7 +450,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#C8102E',
         country: 'ECU',
         conmebolRanking: 56,
-        squad: createGenericSquad(9143, 'Aucas', 71, '#FFD100', '#C8102E')
+        squad: createGenericSquad(914301, 'Aucas', 71, '#FFD100', '#C8102E')
     },
     {
         id: 9144,
@@ -466,7 +466,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#000000',
         country: 'ECU',
         conmebolRanking: 74,
-        squad: createGenericSquad(9144, 'Dep. Cuenca', 69, '#C8102E', '#000000')
+        squad: createGenericSquad(914401, 'Dep. Cuenca', 69, '#C8102E', '#000000')
     },
 
     // --- PERÚ SUDAMERICANA (4) ---
@@ -484,7 +484,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#FF6600',
         country: 'PER',
         conmebolRanking: 66,
-        squad: createGenericSquad(9145, 'César Vallejo', 70, '#003366', '#FF6600')
+        squad: createGenericSquad(914501, 'César Vallejo', 70, '#003366', '#FF6600')
     },
     {
         id: 9146,
@@ -500,7 +500,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#FFD100',
         country: 'PER',
         conmebolRanking: 76,
-        squad: createGenericSquad(9146, 'Cusco FC', 69, '#000000', '#FFD100')
+        squad: createGenericSquad(914601, 'Cusco FC', 69, '#000000', '#FFD100')
     },
     {
         id: 9147,
@@ -516,7 +516,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#FFFFFF',
         country: 'PER',
         conmebolRanking: 57,
-        squad: createGenericSquad(9147, 'Cienciano', 71, '#C8102E', '#FFFFFF')
+        squad: createGenericSquad(914701, 'Cienciano', 71, '#C8102E', '#FFFFFF')
     },
     {
         id: 9148,
@@ -532,7 +532,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#008000',
         country: 'PER',
         conmebolRanking: 73,
-        squad: createGenericSquad(9148, 'Sp. Huancayo', 69, '#C8102E', '#008000')
+        squad: createGenericSquad(914801, 'Sp. Huancayo', 69, '#C8102E', '#008000')
     },
 
     // --- URUGUAY SUDAMERICANA (4) -> Promovidos a LIGA_URUGUAYA ---
@@ -550,7 +550,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#000000',
         country: 'URU',
         conmebolRanking: 54,
-        squad: createGenericSquad(9149, 'Danubio', 72, '#FFFFFF', '#000000')
+        squad: createGenericSquad(914901, 'Danubio', 72, '#FFFFFF', '#000000')
     },
     {
         id: 9150,
@@ -566,7 +566,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#FFFFFF',
         country: 'URU',
         conmebolRanking: 59,
-        squad: createGenericSquad(9150, 'Wanderers', 71, '#000000', '#FFFFFF')
+        squad: createGenericSquad(915001, 'Wanderers', 71, '#000000', '#FFFFFF')
     },
     {
         id: 9151,
@@ -582,7 +582,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#FFFFFF',
         country: 'URU',
         conmebolRanking: 79,
-        squad: createGenericSquad(9151, 'Cerro Largo', 69, '#003366', '#FFFFFF')
+        squad: createGenericSquad(915101, 'Cerro Largo', 69, '#003366', '#FFFFFF')
     },
     {
         id: 9152,
@@ -598,7 +598,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#FFFFFF',
         country: 'URU',
         conmebolRanking: 69,
-        squad: createGenericSquad(9152, 'Racing (Uru)', 70, '#008000', '#FFFFFF')
+        squad: createGenericSquad(915201, 'Racing (Uru)', 70, '#008000', '#FFFFFF')
     },
 
     // --- VENEZUELA SUDAMERICANA (4) ---
@@ -616,7 +616,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#FFFFFF',
         country: 'VEN',
         conmebolRanking: 67,
-        squad: createGenericSquad(9153, 'Metropolitanos', 70, '#660099', '#FFFFFF')
+        squad: createGenericSquad(915301, 'Metropolitanos', 70, '#660099', '#FFFFFF')
     },
     {
         id: 9154,
@@ -632,7 +632,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#FF6600',
         country: 'VEN',
         conmebolRanking: 80,
-        squad: createGenericSquad(9154, 'Pto. Cabello', 69, '#003366', '#FF6600')
+        squad: createGenericSquad(915401, 'Pto. Cabello', 69, '#003366', '#FF6600')
     },
     {
         id: 9155,
@@ -648,7 +648,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#5C2D91',
         country: 'VEN',
         conmebolRanking: 77,
-        squad: createGenericSquad(9155, 'La Guaira', 69, '#FF6600', '#5C2D91')
+        squad: createGenericSquad(915501, 'La Guaira', 69, '#FF6600', '#5C2D91')
     },
     {
         id: 9156,
@@ -664,7 +664,7 @@ export const SOUTH_AMERICAN_EXTRA_TEAMS: (Team & ConmebolTeamMeta)[] = [
         secondaryColor: '#003366',
         country: 'VEN',
         conmebolRanking: 88,
-        squad: createGenericSquad(9156, 'Rayo Zuliano', 67, '#FFD100', '#003366')
+        squad: createGenericSquad(915601, 'Rayo Zuliano', 67, '#FFD100', '#003366')
     }
 ];
 

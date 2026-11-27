@@ -884,7 +884,7 @@ self.onmessage = async (e: MessageEvent<SimulationInput>) => {
 
         // If cup progression created or removed fixtures, send finalSchedule; otherwise send undefined to use week matches delta
         const originalScheduleCount = schedule ? schedule.length : 0;
-        const scheduleChangedStructurally = finalSchedule.length !== originalScheduleCount;
+        const scheduleChangedStructurally = Boolean(cupResult.scheduleModified) || finalSchedule.length !== originalScheduleCount;
 
         const output: SimulationOutput = {
             type: 'SIMULATION_COMPLETE',

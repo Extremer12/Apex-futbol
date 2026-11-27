@@ -1,27 +1,28 @@
 import { GameState, Team, Match, LeagueId, CinematicEvent, LeagueTableRow, CupGroup, CupRound } from '../../types';
-import { 
-    advanceCupRound, 
-    progressInternationalCup, 
-    checkAndScheduleIntercontinental, 
-    generateArgentinePlayoffs, 
-    generateNacionalPrimerAscenso, 
-    generateNacionalReducidoPhase1, 
-    generateNacionalReducidoCuartos, 
+import {
+    advanceCupRound,
+    progressInternationalCup,
+    checkAndScheduleIntercontinental,
+    generateArgentinePlayoffs,
+    generateNacionalPrimerAscenso,
+    generateNacionalReducidoPhase1,
+    generateNacionalReducidoCuartos,
     determineCupWinner,
     determineTwoLeggedTieWinner,
     calculateTournamentStandings
 } from '../simulation';
 import { sortLibertadoresGroupTable } from '../libertadoresEngine';
-import { 
-    sortSudamericanaGroupTable, 
-    generateSudamericanaPlayoff, 
-    drawSudamericanaOctavos 
+import {
+    sortSudamericanaGroupTable,
+    generateSudamericanaPlayoff,
+    drawSudamericanaOctavos
 } from '../sudamericanaEngine';
 
 export interface CupProgressionResult {
     updatedCups: GameState['cups'];
     updatedSchedule: Match[];
     cinematicEvents: CinematicEvent[];
+    scheduleModified: boolean;
 }
 
 /**
@@ -95,123 +96,59 @@ export function handleCupProgression(
     const updatedCups: GameState['cups'] = { ...cups };
     const updatedSchedule: Match[] = [...schedule];
     const cinematicEvents: CinematicEvent[] = [];
+    let scheduleModified = false;
+
+    const pushToSchedule = (...matches: Match[]) => {
+        if (matches.length > 0) {
+            updatedSchedule.push(...matches);
+            scheduleModified = true;
+        }
+    };
 
     const justPlayedMatches = updatedSchedule.filter(
         m => m.result !== undefined && m.week === simulatedWeek && !!m.isMidweek === (currentTurn === 'midweek')
     );
 
-    // 1. FA Cup
-    if (updatedCups.faCup?.rounds?.length && !updatedCups.faCup.winnerId) {
-        const prevRoundsCount = updatedCups.faCup.rounds.length;
-        const nextCupWeek = newWeek + 4;
-        updatedCups.faCup = advanceCupRound(updatedCups.faCup, teams, nextCupWeek, updatedSchedule);
-        if (updatedCups.faCup.rounds.length > prevRoundsCount) {
-            const newRound = updatedCups.faCup.rounds[updatedCups.faCup.rounds.length - 1];
-            updatedSchedule.push(...newRound.fixtures, ...(newRound.secondLegFixtures || []));
-        }
-    }
+    // 1-2.5. Domestic Cups on collision-free odd midweek calendar (avoiding CWC weeks 21..33)
+    const domesticCupSpecs: Array<{
+        key: 'faCup' | 'carabaoCup' | 'copaDelRey' | 'dfbPokal' | 'coppaItalia' | 'copaArgentina' | 'copaMx';
+        roundWeeks: Record<number, number>;
+        fallbackMin: number;
+        fallbackMax: number;
+    }> = [
+            { key: 'faCup', roundWeeks: { 0: 9, 1: 13, 2: 17, 3: 35 }, fallbackMin: 9, fallbackMax: 35 },
+            { key: 'carabaoCup', roundWeeks: { 0: 7, 1: 11, 2: 15, 3: 19 }, fallbackMin: 7, fallbackMax: 19 },
+            { key: 'copaDelRey', roundWeeks: { 0: 9, 1: 13, 2: 17, 3: 35 }, fallbackMin: 9, fallbackMax: 35 },
+            { key: 'dfbPokal', roundWeeks: { 0: 9, 1: 13, 2: 17, 3: 35 }, fallbackMin: 9, fallbackMax: 35 },
+            { key: 'coppaItalia', roundWeeks: { 0: 9, 1: 13, 2: 17, 3: 35 }, fallbackMin: 9, fallbackMax: 35 },
+            { key: 'copaArgentina', roundWeeks: { 0: 11, 1: 15, 2: 19, 3: 35 }, fallbackMin: 11, fallbackMax: 35 },
+            { key: 'copaMx', roundWeeks: { 0: 7, 1: 11, 2: 15, 3: 19 }, fallbackMin: 7, fallbackMax: 19 }
+        ];
 
-    // 2. Carabao Cup
-    if (updatedCups.carabaoCup?.rounds?.length && !updatedCups.carabaoCup.winnerId) {
-        const prevRoundsCount = updatedCups.carabaoCup.rounds.length;
-        const nextCupWeek = newWeek + 3;
-        updatedCups.carabaoCup = advanceCupRound(updatedCups.carabaoCup, teams, nextCupWeek, updatedSchedule);
-        if (updatedCups.carabaoCup.rounds.length > prevRoundsCount) {
-            const newRound = updatedCups.carabaoCup.rounds[updatedCups.carabaoCup.rounds.length - 1];
-            updatedSchedule.push(...newRound.fixtures, ...(newRound.secondLegFixtures || []));
-        }
-    }
+    for (const spec of domesticCupSpecs) {
+        const cup = updatedCups[spec.key];
+        if (!cup?.rounds?.length || cup.winnerId) continue;
 
-    // 2.1 Copa del Rey (España)
-    if (updatedCups.copaDelRey?.rounds?.length && !updatedCups.copaDelRey.winnerId) {
-        const prevRoundsCount = updatedCups.copaDelRey.rounds.length;
-        const nextCupWeek = newWeek + 4;
-        updatedCups.copaDelRey = advanceCupRound(updatedCups.copaDelRey, teams, nextCupWeek, updatedSchedule);
-        if (updatedCups.copaDelRey.rounds.length > prevRoundsCount) {
-            const newRound = updatedCups.copaDelRey.rounds[updatedCups.copaDelRey.rounds.length - 1];
-            updatedSchedule.push(...newRound.fixtures, ...(newRound.secondLegFixtures || []));
-        }
-    }
+        const prevRoundsCount = cup.rounds.length;
+        const nextCupWeek = spec.roundWeeks[cup.currentRoundIndex]
+            ?? Math.min(spec.fallbackMax, Math.max(newWeek + 2, spec.fallbackMin));
+        const advanced = advanceCupRound(cup, teams, nextCupWeek, updatedSchedule);
+        updatedCups[spec.key] = advanced;
 
-    // 2.2 DFB-Pokal (Alemania)
-    if (updatedCups.dfbPokal?.rounds?.length && !updatedCups.dfbPokal.winnerId) {
-        const prevRoundsCount = updatedCups.dfbPokal.rounds.length;
-        const nextCupWeek = newWeek + 4;
-        updatedCups.dfbPokal = advanceCupRound(updatedCups.dfbPokal, teams, nextCupWeek, updatedSchedule);
-        if (updatedCups.dfbPokal.rounds.length > prevRoundsCount) {
-            const newRound = updatedCups.dfbPokal.rounds[updatedCups.dfbPokal.rounds.length - 1];
-            updatedSchedule.push(...newRound.fixtures, ...(newRound.secondLegFixtures || []));
-        }
-    }
-
-    // 2.3 Coppa Italia (Italia)
-    if (updatedCups.coppaItalia?.rounds?.length && !updatedCups.coppaItalia.winnerId) {
-        const prevRoundsCount = updatedCups.coppaItalia.rounds.length;
-        const nextCupWeek = newWeek + 4;
-        updatedCups.coppaItalia = advanceCupRound(updatedCups.coppaItalia, teams, nextCupWeek, updatedSchedule);
-        if (updatedCups.coppaItalia.rounds.length > prevRoundsCount) {
-            const newRound = updatedCups.coppaItalia.rounds[updatedCups.coppaItalia.rounds.length - 1];
-            updatedSchedule.push(...newRound.fixtures, ...(newRound.secondLegFixtures || []));
-        }
-    }
-
-    // 2.4 Copa Argentina (Argentina - Disputada a lo largo de todo el año calendario)
-    // Ronda 1 (32avos): Semana 6 (Apertura)
-    // Ronda 2 (16avos): Semana 13 (Apertura)
-    // Ronda 3 (Cuartos): Semana 23 (Clausura)
-    // Ronda 4 (Semis): Semana 29 (Clausura)
-    // Ronda 5 (Final): Semana 35 (Cierre de Clausura regular, previo a playoffs)
-    if (updatedCups.copaArgentina?.rounds?.length && !updatedCups.copaArgentina.winnerId) {
-        const prevRoundsCount = updatedCups.copaArgentina.rounds.length;
-        const caWeekMap: Record<number, number> = {
-            0: 13, // Genera Ronda 2 (16avos) para la semana 13
-            1: 23, // Genera Ronda 3 (Cuartos) para la semana 23
-            2: 29, // Genera Ronda 4 (Semis) para la semana 29
-            3: 35  // Genera Ronda 5 (Gran Final) para la semana 35
-        };
-        const nextCupWeek = caWeekMap[updatedCups.copaArgentina.currentRoundIndex] || Math.min(35, Math.max(newWeek + 1, 6));
-        updatedCups.copaArgentina = advanceCupRound(updatedCups.copaArgentina, teams, nextCupWeek, updatedSchedule);
-        if (updatedCups.copaArgentina.rounds.length > prevRoundsCount) {
-            const newRound = updatedCups.copaArgentina.rounds[updatedCups.copaArgentina.rounds.length - 1];
-            updatedSchedule.push(...newRound.fixtures, ...(newRound.secondLegFixtures || []));
+        if (advanced.rounds.length > prevRoundsCount) {
+            const newRound = advanced.rounds[advanced.rounds.length - 1];
+            pushToSchedule(...newRound.fixtures, ...(newRound.secondLegFixtures || []));
         }
 
-        // Safety fallback: coronar campeón si la final concluyó
-        if (!updatedCups.copaArgentina.winnerId && updatedCups.copaArgentina.rounds.length > 0) {
-            const lastRound = updatedCups.copaArgentina.rounds[updatedCups.copaArgentina.rounds.length - 1];
+        // Safety fallback: crown winner if a single-leg final already has a result
+        const currentCup = updatedCups[spec.key];
+        if (currentCup && !currentCup.winnerId && currentCup.rounds.length > 0) {
+            const lastRound = currentCup.rounds[currentCup.rounds.length - 1];
             if (lastRound.fixtures?.length === 1 && lastRound.fixtures[0].result !== undefined) {
                 const wId = determineCupWinner(lastRound.fixtures[0]);
                 if (wId) {
-                    updatedCups.copaArgentina.winnerId = wId;
-                    updatedCups.copaArgentina.phase = 'finished';
-                }
-            }
-        }
-    }
-
-    // 2.5 Copa MX (México)
-    if (updatedCups.copaMx?.rounds?.length && !updatedCups.copaMx.winnerId) {
-        const prevRoundsCount = updatedCups.copaMx.rounds.length;
-        const mxWeekMap: Record<number, number> = {
-            0: 14, // Cuartos de Final
-            1: 22, // Semifinales
-            2: 30  // Gran Final
-        };
-        const nextCupWeek = mxWeekMap[updatedCups.copaMx.currentRoundIndex] || Math.min(34, Math.max(newWeek + 2, 8));
-        updatedCups.copaMx = advanceCupRound(updatedCups.copaMx, teams, nextCupWeek, updatedSchedule);
-        if (updatedCups.copaMx.rounds.length > prevRoundsCount) {
-            const newRound = updatedCups.copaMx.rounds[updatedCups.copaMx.rounds.length - 1];
-            updatedSchedule.push(...newRound.fixtures, ...(newRound.secondLegFixtures || []));
-        }
-
-        // Safety fallback: coronar campeón si la final concluyó
-        if (!updatedCups.copaMx.winnerId && updatedCups.copaMx.rounds.length > 0) {
-            const lastRound = updatedCups.copaMx.rounds[updatedCups.copaMx.rounds.length - 1];
-            if (lastRound.fixtures?.length === 1 && lastRound.fixtures[0].result !== undefined) {
-                const wId = determineCupWinner(lastRound.fixtures[0]);
-                if (wId) {
-                    updatedCups.copaMx.winnerId = wId;
-                    updatedCups.copaMx.phase = 'finished';
+                    currentCup.winnerId = wId;
+                    currentCup.phase = 'finished';
                 }
             }
         }
@@ -235,19 +172,19 @@ export function handleCupProgression(
             updatedCups.copaLibertadores = result;
 
             if (result.newFixtures) {
-                updatedSchedule.push(...result.newFixtures);
+                pushToSchedule(...result.newFixtures);
                 const isPlayerInNewFixtures = playerTeamId ? result.newFixtures.some(f => f.homeTeamId === playerTeamId || f.awayTeamId === playerTeamId) : false;
                 // Only show kickoff cinematic once, upon entering knockout phase
                 if (isPlayerInNewFixtures && wasGroups && result.phase === 'knockout') {
-                    cinematicEvents.push({ 
+                    cinematicEvents.push({
                         id: `libertadores_ko_${Date.now()}`,
                         type: 'CUP_KICKOFF',
                         title: 'COPA LIBERTADORES',
                         subtitle: '¡Comienzan las eliminatorias directas!',
-                        metadata: { 
+                        metadata: {
                             competition: 'Copa Libertadores',
-                            accentColor: '#F59E0B', 
-                            bgClass: 'from-amber-900 via-slate-950 to-slate-950' 
+                            accentColor: '#F59E0B',
+                            bgClass: 'from-amber-900 via-slate-950 to-slate-950'
                         }
                     });
                 }
@@ -268,7 +205,7 @@ export function handleCupProgression(
                     if (f.result !== undefined) return f;
                     const played = updatedSchedule.find(m =>
                         ((f.id && m.id && f.id === m.id) ||
-                        (m.homeTeamId === f.homeTeamId && m.awayTeamId === f.awayTeamId && m.competition === f.competition && m.week === f.week)) &&
+                            (m.homeTeamId === f.homeTeamId && m.awayTeamId === f.awayTeamId && m.competition === f.competition && m.week === f.week)) &&
                         m.result !== undefined
                     );
                     return played ? { ...f, result: played.result, penalties: played.penalties } : f;
@@ -282,7 +219,7 @@ export function handleCupProgression(
                     if (f.result !== undefined) return f;
                     const played = updatedSchedule.find(m =>
                         ((f.id && m.id && f.id === m.id) ||
-                        (m.homeTeamId === f.homeTeamId && m.awayTeamId === f.awayTeamId && m.competition === f.competition && m.week === f.week)) &&
+                            (m.homeTeamId === f.homeTeamId && m.awayTeamId === f.awayTeamId && m.competition === f.competition && m.week === f.week)) &&
                         m.result !== undefined
                     );
                     return played ? { ...f, result: played.result, penalties: played.penalties } : f;
@@ -331,19 +268,19 @@ export function handleCupProgression(
                         rounds: [{ name: 'Playoff Octavos', fixtures: playoffFixtures, secondLegFixtures, completed: false }],
                         currentRoundIndex: 0
                     };
-                    updatedSchedule.push(...playoffFixtures, ...secondLegFixtures);
+                    pushToSchedule(...playoffFixtures, ...secondLegFixtures);
 
                     const isPlayerInPlayoff = playerTeamId ? [...playoffFixtures, ...secondLegFixtures].some(f => f.homeTeamId === playerTeamId || f.awayTeamId === playerTeamId) : false;
                     if (isPlayerInPlayoff) {
-                        cinematicEvents.push({ 
+                        cinematicEvents.push({
                             id: `sudamericana_playoff_${Date.now()}`,
                             type: 'CUP_KICKOFF',
                             title: 'COPA SUDAMERICANA',
                             subtitle: '¡Playoff de Octavos de Final!',
-                            metadata: { 
+                            metadata: {
                                 competition: 'Copa Sudamericana',
-                                accentColor: '#D97706', 
-                                bgClass: 'from-amber-900 via-slate-950 to-slate-950' 
+                                accentColor: '#D97706',
+                                bgClass: 'from-amber-900 via-slate-950 to-slate-950'
                             }
                         });
                     }
@@ -357,7 +294,7 @@ export function handleCupProgression(
                     if (f.result !== undefined) return f;
                     const played = updatedSchedule.find(m =>
                         ((f.id && m.id && f.id === m.id) ||
-                        (m.homeTeamId === f.homeTeamId && m.awayTeamId === f.awayTeamId && m.competition === f.competition && m.week === f.week)) &&
+                            (m.homeTeamId === f.homeTeamId && m.awayTeamId === f.awayTeamId && m.competition === f.competition && m.week === f.week)) &&
                         m.result !== undefined
                     );
                     return played ? { ...f, result: played.result, penalties: played.penalties } : f;
@@ -368,7 +305,7 @@ export function handleCupProgression(
                         if (f.result !== undefined) return f;
                         const played = updatedSchedule.find(m =>
                             ((f.id && m.id && f.id === m.id) ||
-                            (m.homeTeamId === f.homeTeamId && m.awayTeamId === f.awayTeamId && m.competition === f.competition && m.week === f.week)) &&
+                                (m.homeTeamId === f.homeTeamId && m.awayTeamId === f.awayTeamId && m.competition === f.competition && m.week === f.week)) &&
                             m.result !== undefined
                         );
                         return played ? { ...f, result: played.result, penalties: played.penalties, aggregateScore: played.aggregateScore } : f;
@@ -420,36 +357,37 @@ export function handleCupProgression(
                                 ],
                                 currentRoundIndex: 1
                             };
-                            updatedSchedule.push(...octavosFixtures, ...secondLegFixtures);
+                            pushToSchedule(...octavosFixtures, ...secondLegFixtures);
 
                             const isPlayerInOctavos = playerTeamId ? [...octavosFixtures, ...secondLegFixtures].some(f => f.homeTeamId === playerTeamId || f.awayTeamId === playerTeamId) : false;
                             if (isPlayerInOctavos) {
-                                cinematicEvents.push({ 
+                                cinematicEvents.push({
                                     id: `sudamericana_octavos_${Date.now()}`,
                                     type: 'CUP_KICKOFF',
                                     title: 'COPA SUDAMERICANA',
                                     subtitle: '¡Octavos de Final!',
-                                    metadata: { 
+                                    metadata: {
                                         competition: 'Copa Sudamericana',
-                                        accentColor: '#D97706', 
-                                        bgClass: 'from-amber-900 via-slate-950 to-slate-950' 
+                                        accentColor: '#D97706',
+                                        bgClass: 'from-amber-900 via-slate-950 to-slate-950'
                                     }
                                 });
                             }
                         }
                     } else {
-                        // Subsequent knockout rounds: Octavos (W24) -> Cuartos (W28) -> Semis (W31) -> Final (W34)
+                        // Subsequent knockout rounds (strictly even midweeks avoiding CWC):
+                        // Octavos (W24/26) -> Cuartos (W28/30) -> Semis (W32/34) -> Final (W36)
                         const prevRoundsCount = updatedCups.copaSudamericana.rounds.length;
                         const matchCount = currentRound.fixtures.length;
                         let nextRoundWeek = newWeek + 4;
                         if (matchCount === 8) nextRoundWeek = 28; // Cuartos
-                        else if (matchCount === 4) nextRoundWeek = 31; // Semifinales
-                        else if (matchCount === 2) nextRoundWeek = 34; // Gran Final
+                        else if (matchCount === 4) nextRoundWeek = 32; // Semifinales
+                        else if (matchCount === 2) nextRoundWeek = 36; // Gran Final
 
                         updatedCups.copaSudamericana = advanceCupRound(updatedCups.copaSudamericana, teams, nextRoundWeek, updatedSchedule);
                         if (updatedCups.copaSudamericana.rounds.length > prevRoundsCount) {
                             const newRound = updatedCups.copaSudamericana.rounds[updatedCups.copaSudamericana.rounds.length - 1];
-                            updatedSchedule.push(...newRound.fixtures, ...(newRound.secondLegFixtures || []));
+                            pushToSchedule(...newRound.fixtures, ...(newRound.secondLegFixtures || []));
                         }
                     }
                 }
@@ -474,19 +412,19 @@ export function handleCupProgression(
         updatedCups.championsLeague = result;
 
         if (result.newFixtures) {
-            updatedSchedule.push(...result.newFixtures);
+            pushToSchedule(...result.newFixtures);
             const isPlayerInCL = playerTeamId ? result.newFixtures.some(f => f.homeTeamId === playerTeamId || f.awayTeamId === playerTeamId) : false;
             // Only show kickoff cinematic once, upon entering knockout phase
             if (isPlayerInCL && wasSwiss && result.phase === 'knockout') {
-                cinematicEvents.push({ 
+                cinematicEvents.push({
                     id: `champions_ko_${Date.now()}`,
                     type: 'CUP_KICKOFF',
                     title: 'UEFA CHAMPIONS LEAGUE',
                     subtitle: '¡Comienzan las eliminatorias directas!',
-                    metadata: { 
+                    metadata: {
                         competition: 'Champions League',
-                        accentColor: '#3B82F6', 
-                        bgClass: 'from-blue-900 via-slate-950 to-slate-950' 
+                        accentColor: '#3B82F6',
+                        bgClass: 'from-blue-900 via-slate-950 to-slate-950'
                     }
                 });
             }
@@ -499,18 +437,18 @@ export function handleCupProgression(
         if (europaLeagueMatches.length > 0 && europaLeagueMatches.every(m => m.result !== undefined)) {
             const elRoundsCount = updatedCups.europaLeague.rounds?.length || 0;
             const elKnockoutWeekMap: Record<number, number> = {
-                0: 21,
-                1: 25,
-                2: 29,
-                3: 33,
-                4: 36
+                0: 22,
+                1: 26,
+                2: 30,
+                3: 34,
+                4: 37
             };
-            const nextCupWeek = elKnockoutWeekMap[elRoundsCount] || Math.min(37, Math.max(newWeek + 2, 21));
+            const nextCupWeek = elKnockoutWeekMap[elRoundsCount] || Math.min(37, Math.max(newWeek + 2, 22));
             const result = progressInternationalCup(updatedCups.europaLeague, teams, nextCupWeek, updatedSchedule);
             updatedCups.europaLeague = result;
 
             if (result.newFixtures) {
-                updatedSchedule.push(...result.newFixtures);
+                pushToSchedule(...result.newFixtures);
             }
         }
     }
@@ -519,7 +457,7 @@ export function handleCupProgression(
     const interCup = checkAndScheduleIntercontinental({ cups: updatedCups, allTeams: teams }, newWeek);
     if (interCup) {
         updatedCups.copaIntercontinental = interCup;
-        updatedSchedule.push(...interCup.rounds[0].fixtures);
+        pushToSchedule(...interCup.rounds[0].fixtures);
     }
 
     const intercontinentalMatches = justPlayedMatches.filter(m => m.competition === 'Copa_Intercontinental');
@@ -544,7 +482,7 @@ export function handleCupProgression(
                     if (f.result !== undefined) return f;
                     const played = updatedSchedule.find(m =>
                         ((f.id && m.id && f.id === m.id) ||
-                        (m.homeTeamId === f.homeTeamId && m.awayTeamId === f.awayTeamId && m.competition === f.competition && m.week === f.week)) &&
+                            (m.homeTeamId === f.homeTeamId && m.awayTeamId === f.awayTeamId && m.competition === f.competition && m.week === f.week)) &&
                         m.result !== undefined
                     );
                     return played ? { ...f, result: played.result, penalties: played.penalties } : f;
@@ -569,7 +507,7 @@ export function handleCupProgression(
             updatedCups.clubWorldCup = result;
 
             if (result.newFixtures) {
-                updatedSchedule.push(...result.newFixtures);
+                pushToSchedule(...result.newFixtures);
                 const isPlayerInNewFixtures = playerTeamId
                     ? result.newFixtures.some(f => f.homeTeamId === playerTeamId || f.awayTeamId === playerTeamId)
                     : false;
@@ -605,7 +543,7 @@ export function handleCupProgression(
                 currentRoundIndex: 0,
                 statistics: { topScorers: [], championsHistory: updatedCups.aperturaPlayoffs?.statistics?.championsHistory || [] }
             };
-            updatedSchedule.push(...octavosFixtures);
+            pushToSchedule(...octavosFixtures);
         }
     }
 
@@ -615,7 +553,7 @@ export function handleCupProgression(
         updatedCups.aperturaPlayoffs = advanceCupRound(updatedCups.aperturaPlayoffs, teams, nextPlayoffWeek, updatedSchedule);
         if (updatedCups.aperturaPlayoffs.rounds.length > prevRoundsCount) {
             const nextRound = updatedCups.aperturaPlayoffs.rounds[updatedCups.aperturaPlayoffs.rounds.length - 1];
-            updatedSchedule.push(...nextRound.fixtures);
+            pushToSchedule(...nextRound.fixtures);
         }
 
         // Safety fallback: ensure final champion is crowned if final match completed
@@ -646,7 +584,7 @@ export function handleCupProgression(
                 currentRoundIndex: 0,
                 statistics: { topScorers: [], championsHistory: updatedCups.clausuraPlayoffs?.statistics?.championsHistory || [] }
             };
-            updatedSchedule.push(...octavosFixtures);
+            pushToSchedule(...octavosFixtures);
         }
     }
 
@@ -656,7 +594,7 @@ export function handleCupProgression(
         updatedCups.clausuraPlayoffs = advanceCupRound(updatedCups.clausuraPlayoffs, teams, nextPlayoffWeek, updatedSchedule);
         if (updatedCups.clausuraPlayoffs.rounds.length > prevRoundsCount) {
             const nextRound = updatedCups.clausuraPlayoffs.rounds[updatedCups.clausuraPlayoffs.rounds.length - 1];
-            updatedSchedule.push(...nextRound.fixtures);
+            pushToSchedule(...nextRound.fixtures);
         }
 
         // Safety fallback: ensure final champion is crowned if final match completed
@@ -689,7 +627,7 @@ export function handleCupProgression(
                 currentRoundIndex: 0,
                 statistics: { topScorers: [], championsHistory: [] }
             };
-            updatedSchedule.push(finalPrimerAscensoFixture);
+            pushToSchedule(finalPrimerAscensoFixture);
 
             const reducidoPhase1Fixtures = generateNacionalReducidoPhase1(zoneATeams, zoneBTeams, 35);
             updatedCups.nacionalReducido = {
@@ -701,14 +639,14 @@ export function handleCupProgression(
                 currentRoundIndex: 0,
                 statistics: { topScorers: [], championsHistory: [] }
             };
-            updatedSchedule.push(...reducidoPhase1Fixtures);
+            pushToSchedule(...reducidoPhase1Fixtures);
         }
     }
 
     if (updatedCups.nacionalPrimerAscenso && !updatedCups.nacionalPrimerAscenso.winnerId) {
         const primerAscensoMatches = updatedSchedule.filter(m => m.competition === 'Nacional_Primer_Ascenso' && m.result !== undefined);
         const reducidoPhase1Matches = updatedSchedule.filter(m => m.competition === 'Nacional_Reducido' && m.result !== undefined);
-        
+
         if (primerAscensoMatches.length > 0 && reducidoPhase1Matches.length >= 7 && updatedCups.nacionalReducido && updatedCups.nacionalReducido.rounds.length === 1) {
             const finalMatch = primerAscensoMatches[0];
             const winnerId = determineCupWinner(finalMatch);
@@ -735,7 +673,7 @@ export function handleCupProgression(
                 ],
                 currentRoundIndex: 1
             };
-            updatedSchedule.push(...cuartosFixtures);
+            pushToSchedule(...cuartosFixtures);
         }
     }
 
@@ -745,7 +683,7 @@ export function handleCupProgression(
         updatedCups.nacionalReducido = advanceCupRound(updatedCups.nacionalReducido, teams, nextReducidoWeek, updatedSchedule);
         if (updatedCups.nacionalReducido.rounds.length > prevRoundsCount) {
             const nextRound = updatedCups.nacionalReducido.rounds[updatedCups.nacionalReducido.rounds.length - 1];
-            updatedSchedule.push(...nextRound.fixtures);
+            pushToSchedule(...nextRound.fixtures);
         }
     }
 
@@ -776,6 +714,7 @@ export function handleCupProgression(
                     const key = `${m.week}_${m.homeTeamId}_${m.awayTeamId}`;
                     if (!validKnockoutKeys.has(key)) {
                         updatedSchedule.splice(i, 1);
+                        scheduleModified = true;
                     }
                 }
             }
@@ -785,6 +724,7 @@ export function handleCupProgression(
     return {
         updatedCups,
         updatedSchedule,
-        cinematicEvents
+        cinematicEvents,
+        scheduleModified
     };
 }

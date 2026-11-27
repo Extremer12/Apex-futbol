@@ -509,3 +509,60 @@ test('53. Liga MX: Copa MX is initialized, crowns a champion, and never finishes
     assert.ok(copaMxItem.team !== null, 'Copa MX champion team must not be null');
     assert.notEqual(copaMxItem.team?.name, 'En Disputa', 'Copa MX champion must not be "En Disputa"');
 });
+
+test('54. Integrity: Unique player IDs, >=18 squad depth, odd-team bye schedule, full competition logos & 0 midweek collisions', async () => {
+    const { initializeGame } = await import('../../services/gameFactory');
+    const { generateLeagueSchedule, simulateMacroMatch } = await import('../../services/simulation');
+    const { handleCupProgression } = await import('../../services/simulation/cupProgressionHandler');
+    const { CUP_LOGOS, ALL_COMPETITIONS } = await import('../../components/screens/league/constants');
+
+    // 1. Unique player IDs and >= 18 squad size across all TEAMS
+    const playerIds = new Set<number>();
+    for (const club of TEAMS) {
+        assert.ok(club.squad.length >= 18, `${club.name} must have at least 18 players (got ${club.squad.length})`);
+        for (const p of club.squad) {
+            assert.ok(!playerIds.has(p.id), `Duplicate player ID ${p.id} found in ${club.name}`);
+            playerIds.add(p.id);
+        }
+    }
+
+    // 2. Odd-sized league generates valid bye-week round-robin fixtures
+    const oddLeague = TEAMS.slice(0, 5);
+    const oddSchedule = generateLeagueSchedule(oddLeague, 'ODD_TEST');
+    assert.equal(oddSchedule.length, 20, '5 teams must produce 20 double round-robin matches');
+
+    // 3. All UI competition logo entries are populated
+    for (const [key, val] of Object.entries(CUP_LOGOS)) {
+        assert.ok(val && val.length > 0, `CUP_LOGOS.${key} must not be empty`);
+    }
+    for (const comp of ALL_COMPETITIONS) {
+        assert.ok(comp.logo && comp.logo.length > 0, `ALL_COMPETITIONS[${comp.id}].logo must not be empty`);
+    }
+
+    // 4. Full 40-week simulation produces zero midweek club collisions
+    const state = initializeGame({ selectedTeam: TEAMS.find(t => t.id === 1) || TEAMS[0] });
+    let cups = state.cups;
+    let schedule = state.schedule;
+    for (let w = 1; w <= 40; w++) {
+        for (const turn of ['weekend', 'midweek'] as const) {
+            const matches = schedule.filter(m => m.week === w && !!m.isMidweek === (turn === 'midweek') && !m.result);
+            if (turn === 'midweek') {
+                const seen = new Map<number, string>();
+                for (const m of matches) {
+                    for (const tid of [m.homeTeamId, m.awayTeamId]) {
+                        assert.ok(!seen.has(tid), `Week ${w} midweek collision for team ${tid}: ${seen.get(tid)} vs ${m.competition}`);
+                        seen.set(tid, m.competition);
+                    }
+                }
+            }
+            for (const m of matches) {
+                const h = state.allTeams.find(t => t.id === m.homeTeamId) || TEAMS[0];
+                const a = state.allTeams.find(t => t.id === m.awayTeamId) || TEAMS[1];
+                m.result = simulateMacroMatch(h, a, undefined, undefined, m.competition !== 'League');
+            }
+            const res = handleCupProgression(cups, schedule, state.allTeams, w, turn === 'midweek' ? w + 1 : w, state.leagueTables, turn, state.team.id);
+            cups = res.updatedCups;
+            schedule = res.updatedSchedule;
+        }
+    }
+});

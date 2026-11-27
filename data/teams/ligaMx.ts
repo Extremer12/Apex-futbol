@@ -1,4 +1,5 @@
 import { Team, LeagueId } from '../../types';
+import { createGenericSquad } from './squadHelpers';
 
 export const ligaMxTeams: Team[] = [
     {
@@ -84,7 +85,7 @@ export const ligaMxTeams: Team[] = [
         id: 1104,
         name: 'CF Monterrey',
         shortName: 'Rayados',
-        logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Liga%20MX/mexico_cf-monterrey.football-logos.cc.svg',
+        logo: '',
         leagueId: LeagueId.LIGA_MX,
         budget: 40000000,
         transferBudget: 18000000,
@@ -137,7 +138,7 @@ export const ligaMxTeams: Team[] = [
         id: 1106,
         name: 'Deportivo Toluca',
         shortName: 'Toluca',
-        logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Liga%20MX/mexico_deportivo-toluca.football-logos.cc.svg',
+        logo: '',
         leagueId: LeagueId.LIGA_MX,
         budget: 28000000,
         transferBudget: 11000000,
@@ -164,7 +165,7 @@ export const ligaMxTeams: Team[] = [
         id: 1107,
         name: 'Club Universidad Nacional',
         shortName: 'Pumas UNAM',
-        logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Liga%20MX/mexico_club-universidad-nacional.football-logos.cc.svg',
+        logo: '',
         leagueId: LeagueId.LIGA_MX,
         budget: 22000000,
         transferBudget: 8000000,
@@ -190,7 +191,7 @@ export const ligaMxTeams: Team[] = [
         id: 1108,
         name: 'CF Pachuca',
         shortName: 'Pachuca',
-        logo: 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Liga%20MX/mexico_cf-pachuca.football-logos.cc.svg',
+        logo: '',
         leagueId: LeagueId.LIGA_MX,
         budget: 24000000,
         transferBudget: 9000000,
@@ -211,7 +212,17 @@ export const ligaMxTeams: Team[] = [
             { id: 110810, name: 'Salomón Rondón', position: 'DEL', rating: 81, potential: 81, age: 34, value: 6000000, wage: 52000, morale: 'Feliz', contractYears: 2 },
             { id: 110811, name: 'Borja Bastón', position: 'DEL', rating: 75, potential: 75, age: 31, value: 2000000, wage: 26000, morale: 'Normal', contractYears: 2 }
         ]
-    }
+    },
+    { id: 1109, name: 'Club León', shortName: 'León', logo: '', leagueId: LeagueId.LIGA_MX, budget: 20000000, transferBudget: 5500000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#006B3F', secondaryColor: '#FFFFFF', squad: createGenericSquad(110900, 'Club León', 75) },
+    { id: 1110, name: 'Santos Laguna', shortName: 'Santos', logo: '', leagueId: LeagueId.LIGA_MX, budget: 17000000, transferBudget: 4500000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#00843D', secondaryColor: '#FFFFFF', squad: createGenericSquad(111000, 'Santos Laguna', 73) },
+    { id: 1111, name: 'Atlas FC', shortName: 'Atlas', logo: '', leagueId: LeagueId.LIGA_MX, budget: 16000000, transferBudget: 4000000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#000000', squad: createGenericSquad(111100, 'Atlas FC', 73) },
+    { id: 1112, name: 'Club Puebla', shortName: 'Puebla', logo: '', leagueId: LeagueId.LIGA_MX, budget: 12000000, transferBudget: 3000000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#FFFFFF', squad: createGenericSquad(111200, 'Club Puebla', 72) },
+    { id: 1113, name: 'Club Necaxa', shortName: 'Necaxa', logo: '', leagueId: LeagueId.LIGA_MX, budget: 14000000, transferBudget: 3800000, tier: 'Mid', teamMorale: 'Feliz', primaryColor: '#C8102E', secondaryColor: '#FFFFFF', squad: createGenericSquad(111300, 'Club Necaxa', 73) },
+    { id: 1114, name: 'Atlético San Luis', shortName: 'San Luis', logo: '', leagueId: LeagueId.LIGA_MX, budget: 15000000, transferBudget: 4000000, tier: 'Mid', teamMorale: 'Feliz', primaryColor: '#C8102E', secondaryColor: '#003DA5', squad: createGenericSquad(111400, 'Atlético San Luis', 74) },
+    { id: 1115, name: 'Querétaro FC', shortName: 'Querétaro', logo: '', leagueId: LeagueId.LIGA_MX, budget: 11000000, transferBudget: 2600000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#000000', squad: createGenericSquad(111500, 'Querétaro FC', 71) },
+    { id: 1116, name: 'Club Tijuana', shortName: 'Xolos', logo: '', leagueId: LeagueId.LIGA_MX, budget: 15000000, transferBudget: 4000000, tier: 'Mid', teamMorale: 'Feliz', primaryColor: '#C8102E', secondaryColor: '#000000', squad: createGenericSquad(111600, 'Club Tijuana', 74) },
+    { id: 1117, name: 'FC Juárez', shortName: 'Juárez', logo: '', leagueId: LeagueId.LIGA_MX, budget: 12000000, transferBudget: 3000000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#43B02A', secondaryColor: '#000000', squad: createGenericSquad(111700, 'FC Juárez', 72) },
+    { id: 1118, name: 'Mazatlán FC', shortName: 'Mazatlán', logo: '', leagueId: LeagueId.LIGA_MX, budget: 11000000, transferBudget: 2800000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#582C83', secondaryColor: '#000000', squad: createGenericSquad(111800, 'Mazatlán FC', 71) }
 ];
 
 export const ligaExpansionMxTeams: Team[] = [
@@ -349,5 +360,14 @@ export const ligaExpansionMxTeams: Team[] = [
             { id: 115511, name: 'Brayan Trejo', position: 'DEL', rating: 72, potential: 75, age: 25, value: 1150000, wage: 9500, morale: 'Contento', contractYears: 2 },
             { id: 115512, name: 'Alonso Flores', position: 'DEL', rating: 71, potential: 77, age: 22, value: 1050000, wage: 7500, morale: 'Contento', contractYears: 3 }
         ]
-    }
+    },
+    { id: 1156, name: 'Mineros de Zacatecas', shortName: 'Mineros', logo: '', leagueId: LeagueId.LIGA_EXPANSION_MX, budget: 4500000, transferBudget: 1200000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#C8102E', secondaryColor: '#FFFFFF', squad: createGenericSquad(115600, 'Mineros', 69) },
+    { id: 1157, name: 'Dorados de Sinaloa', shortName: 'Dorados', logo: '', leagueId: LeagueId.LIGA_EXPANSION_MX, budget: 4000000, transferBudget: 1000000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#FFD700', secondaryColor: '#000000', squad: createGenericSquad(115700, 'Dorados', 68) },
+    { id: 1158, name: 'Venados FC', shortName: 'Venados', logo: '', leagueId: LeagueId.LIGA_EXPANSION_MX, budget: 4200000, transferBudget: 1100000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#FFD700', secondaryColor: '#006400', squad: createGenericSquad(115800, 'Venados FC', 68) },
+    { id: 1159, name: 'Alebrijes de Oaxaca', shortName: 'Alebrijes', logo: '', leagueId: LeagueId.LIGA_EXPANSION_MX, budget: 3200000, transferBudget: 750000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#F97316', secondaryColor: '#000000', squad: createGenericSquad(115900, 'Alebrijes', 66) },
+    { id: 1160, name: 'Correcaminos UAT', shortName: 'Correcaminos', logo: '', leagueId: LeagueId.LIGA_EXPANSION_MX, budget: 3500000, transferBudget: 850000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#F97316', secondaryColor: '#003DA5', squad: createGenericSquad(116000, 'Correcaminos', 67) },
+    { id: 1161, name: 'Irapuato', shortName: 'Irapuato', logo: '', leagueId: LeagueId.LIGA_EXPANSION_MX, budget: 3800000, transferBudget: 950000, tier: 'Mid', teamMorale: 'Feliz', primaryColor: '#C8102E', secondaryColor: '#003DA5', squad: createGenericSquad(116100, 'Irapuato', 68) },
+    { id: 1162, name: 'Jaiba Brava', shortName: 'Jaiba Brava', logo: '', leagueId: LeagueId.LIGA_EXPANSION_MX, budget: 4000000, transferBudget: 1000000, tier: 'Mid', teamMorale: 'Feliz', primaryColor: '#0093D0', secondaryColor: '#FFFFFF', squad: createGenericSquad(116200, 'Jaiba Brava', 68) },
+    { id: 1163, name: 'Atlético La Paz', shortName: 'La Paz', logo: '', leagueId: LeagueId.LIGA_EXPANSION_MX, budget: 3600000, transferBudget: 900000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#000000', secondaryColor: '#FFD700', squad: createGenericSquad(116300, 'Atlético La Paz', 67) },
+    { id: 1164, name: 'CD Tapatío', shortName: 'Tapatío', logo: '', leagueId: LeagueId.LIGA_EXPANSION_MX, budget: 4800000, transferBudget: 1300000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#C8102E', secondaryColor: '#003DA5', squad: createGenericSquad(116400, 'CD Tapatío', 70) }
 ];

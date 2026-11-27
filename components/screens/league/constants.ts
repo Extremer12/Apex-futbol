@@ -66,11 +66,11 @@ export const CUP_LOGOS: Record<string, string> = {
     recopa_sudamericana: ARG_COMPETITION_LOGOS.recopa_sudamericana || '',
     copa_intercontinental: ARG_COMPETITION_LOGOS.copa_intercontinental || '',
     club_world_cup: ARG_COMPETITION_LOGOS.club_world_cup || '',
-    fa_cup: '',
-    carabao_cup: '',
-    copa_del_rey: '',
-    dfb_pokal: '',
-    coppa_italia: '',
+    fa_cup: ARG_COMPETITION_LOGOS.FA_CUP || '',
+    carabao_cup: ARG_COMPETITION_LOGOS.CARABAO_CUP || '',
+    copa_del_rey: ARG_COMPETITION_LOGOS.COPA_DEL_REY || '',
+    dfb_pokal: ARG_COMPETITION_LOGOS.DFB_POKAL || '',
+    coppa_italia: ARG_COMPETITION_LOGOS.COPPA_ITALIA || '',
     copa_argentina: ARG_COMPETITION_LOGOS.copa_argentina || '',
     nacional_primer_ascenso: ARG_COMPETITION_LOGOS.PRIMERA_NACIONAL || '',
     nacional_reducido: ARG_COMPETITION_LOGOS.PRIMERA_NACIONAL || '',
@@ -110,7 +110,7 @@ export type CompetitionItem = {
 
 export const ALL_COMPETITIONS: CompetitionItem[] = [
     // Internacionales
-    { id: 'CLUB_RANKINGS', name: 'Rankings CONMEBOL / UEFA', type: 'CUP', logo: '', category: 'INTERNATIONAL' },
+    { id: 'CLUB_RANKINGS', name: 'Rankings CONMEBOL / UEFA', type: 'CUP', logo: ARG_COMPETITION_LOGOS.CLUB_RANKINGS || '', category: 'INTERNATIONAL' },
     { id: 'CHAMPIONS_LEAGUE', name: 'Champions League', type: 'CUP', logo: CUP_LOGOS.champions_league, category: 'INTERNATIONAL', cupKey: 'championsLeague' },
     { id: 'EUROPA_LEAGUE', name: 'UEFA Europa League', type: 'CUP', logo: CUP_LOGOS.europa_league, category: 'INTERNATIONAL', cupKey: 'europaLeague' },
     { id: 'COPA_LIBERTADORES', name: 'Copa Libertadores', type: 'CUP', logo: CUP_LOGOS.copa_libertadores, category: 'INTERNATIONAL', cupKey: 'copaLibertadores' },

@@ -6,7 +6,6 @@
  * Enable/Disable, Priorities, Updates, and offline IndexedDB cache management.
  */
 
-import JSZip from 'jszip';
 import { InstalledPack, PackManifest, PackCatalogItem, ResourceType } from './ResourceTypes';
 import { PackManifestValidator } from './PackManifest';
 import { ResourceCache, CachedAssetRecord } from './ResourceCache';
@@ -363,6 +362,7 @@ export class PackManager {
                 : typeof (file as Blob).arrayBuffer === 'function'
                     ? await (file as Blob).arrayBuffer()
                     : file;
+        const { default: JSZip } = await import('jszip');
         const zip = await JSZip.loadAsync(zipPayload);
 
         const fileEntries = Object.entries(zip.files).filter(([, entry]) => !entry.dir);
@@ -612,6 +612,7 @@ export class PackManager {
         const blobRecords = records.filter(r => r.blob);
         if (blobRecords.length === 0) return null;
 
+        const { default: JSZip } = await import('jszip');
         const zip = new JSZip();
         for (const rec of blobRecords) {
             if (!rec.blob) continue;

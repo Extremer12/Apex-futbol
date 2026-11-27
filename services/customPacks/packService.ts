@@ -1,4 +1,3 @@
-import JSZip from 'jszip';
 import { StoredAsset, saveStoredAssetsBatch, getAllStoredAssets, clearAllStoredAssets, getStoredAssetsCount } from './storage';
 import { normalizeKey, getTeamMatchKeys, getCompetitionMatchKeys, getPlayerMatchKeys } from './matcher';
 
@@ -454,6 +453,7 @@ class CustomPacksService {
         onProgress?: (progressPercent: number, statusText: string) => void
     ): Promise<{ importedCount: number; errors: string[] }> {
         onProgress?.(5, 'Leyendo archivo ZIP...');
+        const { default: JSZip } = await import('jszip');
         const zip = new JSZip();
         const loadedZip = await zip.loadAsync(file);
 
@@ -504,13 +504,13 @@ class CustomPacksService {
             try {
                 const blob = await zipEntry.async('blob');
                 const now = Date.now();
-                const mimeType = lowerPath.endsWith('.svg') 
-                    ? 'image/svg+xml' 
+                const mimeType = lowerPath.endsWith('.svg')
+                    ? 'image/svg+xml'
                     : lowerPath.endsWith('.webp')
-                    ? 'image/webp'
-                    : lowerPath.endsWith('.jpg') || lowerPath.endsWith('.jpeg')
-                    ? 'image/jpeg'
-                    : 'image/png';
+                        ? 'image/webp'
+                        : lowerPath.endsWith('.jpg') || lowerPath.endsWith('.jpeg')
+                            ? 'image/jpeg'
+                            : 'image/png';
 
                 // Save by normalized identifier
                 if (normalizedIdentifier) {
@@ -598,7 +598,7 @@ class CustomPacksService {
         onProgress?: (progressPercent: number, statusText: string) => void
     ): Promise<{ importedCount: number; errors: string[] }> {
         onProgress?.(3, 'Conectando con el repositorio del paquete...');
-        
+
         const blob = await this.fetchBlobWithFallback(zipUrl, (mb, totalMb, pct) => {
             onProgress?.(pct, `Descargando pack (${mb}MB / ${totalMb}MB)...`);
         });
@@ -676,6 +676,7 @@ class CustomPacksService {
      */
     public async exportZipPack(): Promise<Blob> {
         const stored = await getAllStoredAssets();
+        const { default: JSZip } = await import('jszip');
         const zip = new JSZip();
 
         for (const item of stored) {

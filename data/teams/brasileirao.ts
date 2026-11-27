@@ -593,4 +593,6 @@ export const serieBBrTeams: Team[] = [
     { id: 866, name: 'Paysandu SC', logo: '', leagueId: LeagueId.SERIE_B_BR, budget: 2500000, transferBudget: 400000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#FFFFFF', squad: createGenericSquad(86600, 'Paysandu', 67) },
     { id: 867, name: 'Atlético Goianiense', logo: '', leagueId: LeagueId.SERIE_B_BR, budget: 4000000, transferBudget: 800000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#000000', squad: createGenericSquad(86700, 'Atletico GO', 71) },
     { id: 868, name: 'Juventude', logo: '', leagueId: LeagueId.SERIE_B_BR, budget: 5000000, transferBudget: 1000000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#006400', secondaryColor: '#FFFFFF', squad: createGenericSquad(86800, 'Juventude', 73) },
+    { id: 869, name: 'Criciúma', logo: '', leagueId: LeagueId.SERIE_B_BR, budget: 4200000, transferBudget: 850000, tier: 'Mid', teamMorale: 'Feliz', primaryColor: '#FFD700', secondaryColor: '#000000', squad: createGenericSquad(86900, 'Criciuma', 71) },
+    { id: 870, name: 'Avaí', logo: '', leagueId: LeagueId.SERIE_B_BR, budget: 3800000, transferBudget: 750000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#FFFFFF', squad: createGenericSquad(87000, 'Avai', 70) },
 ];

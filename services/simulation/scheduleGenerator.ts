@@ -2,43 +2,60 @@ import { Team, Match, LeagueTableRow, LeagueId } from '../../types';
 import { generateArgentineTournamentSchedule, generatePrimeraNacionalSchedule } from './argentineFormat';
 
 /**
- * Generates a standard double round-robin league schedule.
+ * Generates a balanced double round-robin schedule using the circle method,
+ * inserting a bye week when the league has an odd number of teams.
  */
-export const generateLeagueSchedule = (teams: Team[], leagueId: string): Match[] => {
-    // Shuffle teams before round-robin generation so match calendar varies every season
-    const shuffledTeams = [...teams].sort(() => 0.5 - Math.random());
-    const teamIds = shuffledTeams.map(t => t.id);
-    if (teamIds.length % 2 !== 0) return []; // Should handle odd teams with byes ideally
+export const buildDoubleRoundRobin = (
+    teams: Team[],
+    competition: Match['competition'] = 'League'
+): Match[] => {
+    if (teams.length < 2) return [];
+    const shuffledIds: Array<number | null> = [...teams]
+        .sort(() => 0.5 - Math.random())
+        .map(t => t.id);
+    if (shuffledIds.length % 2 !== 0) {
+        shuffledIds.push(null); // Bye slot for odd-sized leagues
+    }
     const schedule: Match[] = [];
-    const numWeeks = teamIds.length - 1;
-    const halfSeasonSize = teamIds.length / 2;
-    const teamsSlice = teamIds.slice(1);
+    const numWeeks = shuffledIds.length - 1;
+    const halfSeasonSize = shuffledIds.length / 2;
+    const teamsSlice = shuffledIds.slice(1);
 
     for (let week = 0; week < numWeeks; week++) {
-        const weekFixtures: { home: number, away: number }[] = [];
+        const weekFixtures: { home: number | null; away: number | null }[] = [];
         const awayTeamIndex = week % teamsSlice.length;
-        weekFixtures.push({ home: teamIds[0], away: teamsSlice[awayTeamIndex] });
+        weekFixtures.push({ home: shuffledIds[0], away: teamsSlice[awayTeamIndex] });
         for (let i = 1; i < halfSeasonSize; i++) {
             const homeIndex = (week + i) % teamsSlice.length;
             const awayIndex = (week + teamsSlice.length - i) % teamsSlice.length;
             weekFixtures.push({ home: teamsSlice[homeIndex], away: teamsSlice[awayIndex] });
         }
-        weekFixtures.forEach(fixture => schedule.push({
-            week: week + 1,
-            homeTeamId: fixture.home,
-            awayTeamId: fixture.away,
-            competition: 'League' as const,
-            isCupMatch: false
-        }));
+        weekFixtures.forEach(fixture => {
+            if (fixture.home === null || fixture.away === null) return;
+            schedule.push({
+                week: week + 1,
+                homeTeamId: fixture.home,
+                awayTeamId: fixture.away,
+                competition,
+                isCupMatch: false
+            });
+        });
     }
     const secondHalf = schedule.map(match => ({
         week: match.week + numWeeks,
         homeTeamId: match.awayTeamId,
         awayTeamId: match.homeTeamId,
-        competition: 'League' as const,
+        competition,
         isCupMatch: false
     }));
     return [...schedule, ...secondHalf];
+};
+
+/**
+ * Generates a standard double round-robin league schedule.
+ */
+export const generateLeagueSchedule = (teams: Team[], _leagueId: string): Match[] => {
+    return buildDoubleRoundRobin(teams, 'League');
 };
 
 /**

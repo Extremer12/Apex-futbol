@@ -15,6 +15,21 @@ export const PROMOTION_RELEGATION_PAIRS: [LeagueId, LeagueId][] = [
     [LeagueId.PRIMERA_A_COLOMBIA, LeagueId.PRIMERA_B_COLOMBIA],
 ];
 
+export const getPromotionRelegationSlots = (div1: LeagueId): number => {
+    if (div1 === LeagueId.LIGA_ARGENTINA) return 2;
+    if (div1 === LeagueId.BRASILEIRAO) return 4;
+    if ([
+        LeagueId.PRIMERA_DIVISION_CHILE,
+        LeagueId.PRIMERA_A_COLOMBIA,
+        LeagueId.LIGA_MX,
+        LeagueId.BUNDESLIGA,
+        LeagueId.LIGUE_1
+    ].includes(div1)) {
+        return 2;
+    }
+    return 3;
+};
+
 export const handlePromotionRelegation = (allTeams: Team[], leagueTables: Record<LeagueId, LeagueTableRow[]>): Team[] => {
     let updatedTeams = [...allTeams];
 
@@ -50,13 +65,7 @@ export const handlePromotionRelegation = (allTeams: Team[], leagueTables: Record
             if (promo1) promotedIds.push(promo1);
             if (promo2 && promo2 !== promo1) promotedIds.push(promo2);
         } else {
-            const slots = [
-                LeagueId.PRIMERA_DIVISION_CHILE,
-                LeagueId.PRIMERA_A_COLOMBIA,
-                LeagueId.LIGA_MX,
-                LeagueId.BUNDESLIGA,
-                LeagueId.LIGUE_1
-            ].includes(div1) ? 2 : (div1 === LeagueId.BRASILEIRAO ? 4 : 3);
+            const slots = getPromotionRelegationSlots(div1);
 
             relegatedIds = sortedDiv1.slice(-slots).map(r => r.teamId);
             promotedIds = sortedDiv2.slice(0, slots).map(r => r.teamId);

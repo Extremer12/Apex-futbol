@@ -399,7 +399,7 @@ export class ResourceFallback {
                 return this.teamLogo(typeof extraMeta === 'object' ? extraMeta : { name: String(identifier || '') });
             case 'league-logo':
             case 'competition-logo':
-                return this.competitionLogo(String(identifier || 'Torneo'));
+                return this.competitionLogo(String(extraMeta?.name || identifier || 'Torneo'));
             case 'trophy':
                 return this.trophy(String(identifier || 'Trofeo'));
             case 'flag':

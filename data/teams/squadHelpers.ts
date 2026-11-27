@@ -77,3 +77,55 @@ export function createGenericSquad(
 
   return squad;
 }
+
+/**
+ * Guarantees every team starts with at least `minSize` distinct players
+ * without colliding with any existing player IDs.
+ */
+export function ensureMinimumSquadDepth(
+  squad: Player[],
+  teamId: number,
+  avgRating: number = 70,
+  minSize: number = 18
+): Player[] {
+  if (squad.length >= minSize) return squad;
+
+  const usedIds = new Set(squad.map(p => p.id));
+  const result = [...squad];
+  let nextId = teamId * 100 + 51;
+  const rotPositions: Array<'POR' | 'DEF' | 'CEN' | 'DEL'> = ['DEF', 'CEN', 'DEL', 'DEF', 'CEN', 'POR', 'DEL'];
+  let rotIdx = 0;
+
+  // Deterministic pseudo-random seed from teamId + slot so every load matches
+  while (result.length < minSize) {
+    while (usedIds.has(nextId)) nextId++;
+    const seed = (teamId * 31 + rotIdx * 17) >>> 0;
+    const first = FIRST_NAMES[seed % FIRST_NAMES.length];
+    const last = LAST_NAMES[(seed * 7 + rotIdx) % LAST_NAMES.length];
+    const hasTwoKeepers = result.filter(p => p.position === 'POR').length >= 2;
+    let pos = rotPositions[rotIdx % rotPositions.length];
+    if (pos === 'POR' && hasTwoKeepers) pos = 'CEN';
+    const rating = Math.max(58, Math.min(82, Math.round(avgRating - 4 + (seed % 5))));
+    const potential = Math.min(88, rating + 3 + (seed % 4));
+    const value = Math.max(300000, Math.floor((rating - 55) * 350000));
+    const wage = Math.max(2500, Math.floor((rating - 55) * 650));
+
+    result.push({
+      id: nextId,
+      name: `${first[0]}. ${last}`,
+      position: pos,
+      rating,
+      potential,
+      value,
+      wage,
+      morale: 'Normal',
+      contractYears: 2 + (seed % 3),
+      age: 19 + (seed % 9)
+    });
+    usedIds.add(nextId);
+    nextId++;
+    rotIdx++;
+  }
+
+  return result;
+}

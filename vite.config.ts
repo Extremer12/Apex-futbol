@@ -36,10 +36,16 @@ export default defineConfig({
             }
             return 'vendor-other';
           }
-          if (normalizedId.includes('playerPhotos')) {
+          if (normalizedId.includes('playerPhotos') || normalizedId.includes('realPlayerMetadata')) {
             return 'data-player-photos';
           }
-          if (normalizedId.includes('/constants/teamLogos') || normalizedId.includes('/constants/championship')) {
+          if (
+            normalizedId.includes('/constants/teamLogos') ||
+            normalizedId.includes('/constants/championship') ||
+            normalizedId.includes('argentineLogos') ||
+            normalizedId.includes('trophyCatalog') ||
+            normalizedId.includes('competitionLogoCatalog')
+          ) {
             return 'data-logos';
           }
           if (normalizedId.includes('/data/teams/')) {

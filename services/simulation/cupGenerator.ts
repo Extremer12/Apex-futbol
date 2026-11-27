@@ -487,7 +487,7 @@ export const advanceCupRound = (
 
     let competitionType: Match['competition'] = 'FA_Cup';
     if (cup.id === 'carabao_cup') competitionType = 'Carabao_Cup';
-    if (cup.id === 'copa_del_rey') competitionType = 'Copa_Del_Rey';
+    if (cup.id === 'copa_del_rey') competitionType = 'Copa_del_Rey';
     if (cup.id === 'dfb_pokal') competitionType = 'DFB_Pokal';
     if (cup.id === 'coppa_italia') competitionType = 'Coppa_Italia';
     if (cup.id === 'copa_argentina') competitionType = 'Copa_Argentina';

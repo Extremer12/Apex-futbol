@@ -1,4 +1,5 @@
 import { Team, LeagueId } from '../../types';
+import { createGenericSquad } from './squadHelpers';
 
 // --- SEGUNDA DIVISIÓN ESPAÑOLA (LALIGA HYPERMOTION) ---
 export const segundaDivisionTeams: Team[] = [
@@ -51,7 +52,7 @@ export const segundaDivisionTeams: Team[] = [
         ]
     },
     {
-        id: 904, name: 'Real Zaragoza', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Real_Zaragoza_logo.svg/200px-Real_Zaragoza_logo.svg.png', leagueId: LeagueId.SEGUNDA_DIVISION_ESP, budget: 13000000, transferBudget: 4000000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#003DA5', secondaryColor: '#FFFFFF',
+        id: 904, name: 'Real Zaragoza', logo: '', leagueId: LeagueId.SEGUNDA_DIVISION_ESP, budget: 13000000, transferBudget: 4000000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#003DA5', secondaryColor: '#FFFFFF',
         squad: [
             { id: 90401, name: 'Gaëtan Poussin', position: 'POR', rating: 75, potential: 77, age: 25, value: 2200000, wage: 20000, morale: 'Contento', contractYears: 3 },
             { id: 90402, name: 'Lluís López', position: 'DEF', rating: 75, potential: 76, age: 27, value: 2000000, wage: 20000, morale: 'Contento', contractYears: 2 },
@@ -161,7 +162,19 @@ export const segundaDivisionTeams: Team[] = [
             { id: 92210, name: 'Lucas Boyé', position: 'DEL', rating: 78, potential: 79, age: 28, value: 6500000, wage: 38000, morale: 'Feliz', contractYears: 3 },
             { id: 92211, name: 'Myrto Uzuni', position: 'DEL', rating: 79, potential: 80, age: 29, value: 7500000, wage: 40000, morale: 'Feliz', contractYears: 3 }
         ]
-    }
+    },
+    { id: 905, name: 'CD Tenerife', logo: '', leagueId: LeagueId.SEGUNDA_DIVISION_ESP, budget: 11000000, transferBudget: 3200000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#FFFFFF', squad: createGenericSquad(90500, 'CD Tenerife', 74) },
+    { id: 906, name: 'Cádiz CF', logo: '', leagueId: LeagueId.SEGUNDA_DIVISION_ESP, budget: 15000000, transferBudget: 4800000, tier: 'Top', teamMorale: 'Normal', primaryColor: '#FFD700', secondaryColor: '#003DA5', squad: createGenericSquad(90600, 'Cádiz CF', 76) },
+    { id: 908, name: 'FC Andorra', logo: '', leagueId: LeagueId.SEGUNDA_DIVISION_ESP, budget: 9000000, transferBudget: 2500000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#FFD700', squad: createGenericSquad(90800, 'FC Andorra', 73) },
+    { id: 909, name: 'Deportivo La Coruña', logo: '', leagueId: LeagueId.SEGUNDA_DIVISION_ESP, budget: 13000000, transferBudget: 4000000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#003DA5', secondaryColor: '#FFFFFF', squad: createGenericSquad(90900, 'Deportivo La Coruña', 75) },
+    { id: 910, name: 'Albacete Balompié', logo: '', leagueId: LeagueId.SEGUNDA_DIVISION_ESP, budget: 9500000, transferBudget: 2600000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#FFFFFF', secondaryColor: '#000000', squad: createGenericSquad(91000, 'Albacete Balompié', 73) },
+    { id: 912, name: 'CE Sabadell', logo: '', leagueId: LeagueId.SEGUNDA_DIVISION_ESP, budget: 7500000, transferBudget: 2000000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#0055A4', secondaryColor: '#FFFFFF', squad: createGenericSquad(91200, 'CE Sabadell', 71) },
+    { id: 913, name: 'Burgos CF', logo: '', leagueId: LeagueId.SEGUNDA_DIVISION_ESP, budget: 9500000, transferBudget: 2600000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#FFFFFF', secondaryColor: '#000000', squad: createGenericSquad(91300, 'Burgos CF', 74) },
+    { id: 914, name: 'AD Ceuta FC', logo: '', leagueId: LeagueId.SEGUNDA_DIVISION_ESP, budget: 7000000, transferBudget: 1800000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#FFFFFF', secondaryColor: '#000000', squad: createGenericSquad(91400, 'AD Ceuta FC', 71) },
+    { id: 915, name: 'CD Eldense', logo: '', leagueId: LeagueId.SEGUNDA_DIVISION_ESP, budget: 8000000, transferBudget: 2200000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#C8102E', squad: createGenericSquad(91500, 'CD Eldense', 72) },
+    { id: 917, name: 'CD Castellón', logo: '', leagueId: LeagueId.SEGUNDA_DIVISION_ESP, budget: 9000000, transferBudget: 2500000, tier: 'Mid', teamMorale: 'Feliz', primaryColor: '#000000', secondaryColor: '#FFFFFF', squad: createGenericSquad(91700, 'CD Castellón', 73) },
+    { id: 918, name: 'Córdoba CF', logo: '', leagueId: LeagueId.SEGUNDA_DIVISION_ESP, budget: 9000000, transferBudget: 2500000, tier: 'Mid', teamMorale: 'Feliz', primaryColor: '#008000', secondaryColor: '#FFFFFF', squad: createGenericSquad(91800, 'Córdoba CF', 73) },
+    { id: 920, name: 'SD Huesca', logo: '', leagueId: LeagueId.SEGUNDA_DIVISION_ESP, budget: 10000000, transferBudget: 2800000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#C8102E', squad: createGenericSquad(92000, 'SD Huesca', 74) }
 ];
 
 // --- 2. BUNDESLIGA ALEMANA ---
@@ -245,7 +258,20 @@ export const zweiteBundesligaTeams: Team[] = [
             { id: 94210, name: 'T. Lemperle', position: 'DEL', rating: 76, potential: 82, age: 22, value: 4500000, wage: 24000, morale: 'Feliz', contractYears: 4 },
             { id: 94211, name: 'D. Downs', position: 'DEL', rating: 75, potential: 83, age: 20, value: 3800000, wage: 18000, morale: 'Feliz', contractYears: 4 }
         ]
-    }
+    },
+    { id: 932, name: 'Hannover 96', logo: '', leagueId: LeagueId.ZWEITE_BUNDESLIGA, budget: 16000000, transferBudget: 4500000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#1E8238', secondaryColor: '#000000', squad: createGenericSquad(93200, 'Hannover 96', 76) },
+    { id: 935, name: 'SC Paderborn 07', logo: '', leagueId: LeagueId.ZWEITE_BUNDESLIGA, budget: 14000000, transferBudget: 4000000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#004A99', secondaryColor: '#000000', squad: createGenericSquad(93500, 'SC Paderborn 07', 75) },
+    { id: 936, name: '1. FC Kaiserslautern', logo: '', leagueId: LeagueId.ZWEITE_BUNDESLIGA, budget: 15000000, transferBudget: 4200000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#C8102E', secondaryColor: '#FFFFFF', squad: createGenericSquad(93600, '1. FC Kaiserslautern', 75) },
+    { id: 937, name: '1. FC Nürnberg', logo: '', leagueId: LeagueId.ZWEITE_BUNDESLIGA, budget: 14500000, transferBudget: 4000000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#8B0000', secondaryColor: '#FFFFFF', squad: createGenericSquad(93700, '1. FC Nürnberg', 75) },
+    { id: 939, name: 'SpVgg Greuther Fürth', logo: '', leagueId: LeagueId.ZWEITE_BUNDESLIGA, budget: 12000000, transferBudget: 3200000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#006400', secondaryColor: '#FFFFFF', squad: createGenericSquad(93900, 'SpVgg Greuther Fürth', 74) },
+    { id: 940, name: 'Eintracht Braunschweig', logo: '', leagueId: LeagueId.ZWEITE_BUNDESLIGA, budget: 10000000, transferBudget: 2500000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#FFD700', secondaryColor: '#003DA5', squad: createGenericSquad(94000, 'Eintracht Braunschweig', 72) },
+    { id: 941, name: 'SV Darmstadt 98', logo: '', leagueId: LeagueId.ZWEITE_BUNDESLIGA, budget: 14000000, transferBudget: 3800000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#004A99', secondaryColor: '#FFFFFF', squad: createGenericSquad(94100, 'SV Darmstadt 98', 75) },
+    { id: 943, name: 'Dynamo Dresden', logo: '', leagueId: LeagueId.ZWEITE_BUNDESLIGA, budget: 11000000, transferBudget: 2800000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#FFD700', secondaryColor: '#000000', squad: createGenericSquad(94300, 'Dynamo Dresden', 73) },
+    { id: 944, name: 'Karlsruher SC', logo: '', leagueId: LeagueId.ZWEITE_BUNDESLIGA, budget: 13500000, transferBudget: 3600000, tier: 'Mid', teamMorale: 'Feliz', primaryColor: '#004A99', secondaryColor: '#FFFFFF', squad: createGenericSquad(94400, 'Karlsruher SC', 75) },
+    { id: 945, name: 'VfL Osnabrück', logo: '', leagueId: LeagueId.ZWEITE_BUNDESLIGA, budget: 9500000, transferBudget: 2200000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#662D91', secondaryColor: '#FFFFFF', squad: createGenericSquad(94500, 'VfL Osnabrück', 72) },
+    { id: 946, name: 'Arminia Bielefeld', logo: '', leagueId: LeagueId.ZWEITE_BUNDESLIGA, budget: 11500000, transferBudget: 3000000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#000000', squad: createGenericSquad(94600, 'Arminia Bielefeld', 73) },
+    { id: 947, name: '1. FC Magdeburg', logo: '', leagueId: LeagueId.ZWEITE_BUNDESLIGA, budget: 12000000, transferBudget: 3200000, tier: 'Mid', teamMorale: 'Feliz', primaryColor: '#004A99', secondaryColor: '#FFFFFF', squad: createGenericSquad(94700, '1. FC Magdeburg', 74) },
+    { id: 948, name: 'SV Elversberg', logo: '', leagueId: LeagueId.ZWEITE_BUNDESLIGA, budget: 11000000, transferBudget: 3000000, tier: 'Mid', teamMorale: 'Feliz', primaryColor: '#000000', secondaryColor: '#FFFFFF', squad: createGenericSquad(94800, 'SV Elversberg', 74) }
 ];
 
 // --- SERIE B ITALIANA ---
@@ -313,5 +339,21 @@ export const serieBItaTeams: Team[] = [
             { id: 97210, name: 'S. Nwankwo (Simy)', position: 'DEL', rating: 75, potential: 75, age: 32, value: 1800000, wage: 25000, morale: 'Normal', contractYears: 1 },
             { id: 97211, name: 'E. Torregrossa', position: 'DEL', rating: 75, potential: 75, age: 32, value: 1800000, wage: 24000, morale: 'Contento', contractYears: 2 }
         ]
-    }
+    },
+    { id: 961, name: 'UC Sampdoria', logo: '', leagueId: LeagueId.SERIE_B_ITA, budget: 16000000, transferBudget: 4500000, tier: 'Top', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#C8102E', squad: createGenericSquad(96100, 'UC Sampdoria', 76) },
+    { id: 962, name: 'US Sassuolo', logo: '', leagueId: LeagueId.SERIE_B_ITA, budget: 22000000, transferBudget: 7500000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#008000', secondaryColor: '#000000', squad: createGenericSquad(96200, 'US Sassuolo', 78) },
+    { id: 964, name: 'Modena FC', logo: '', leagueId: LeagueId.SERIE_B_ITA, budget: 10000000, transferBudget: 2800000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#FFD700', secondaryColor: '#003DA5', squad: createGenericSquad(96400, 'Modena FC', 74) },
+    { id: 965, name: 'US Catanzaro', logo: '', leagueId: LeagueId.SERIE_B_ITA, budget: 10500000, transferBudget: 3000000, tier: 'Mid', teamMorale: 'Feliz', primaryColor: '#C8102E', secondaryColor: '#FFD700', squad: createGenericSquad(96500, 'US Catanzaro', 74) },
+    { id: 966, name: 'Cesena FC', logo: '', leagueId: LeagueId.SERIE_B_ITA, budget: 10500000, transferBudget: 2900000, tier: 'Mid', teamMorale: 'Feliz', primaryColor: '#FFFFFF', secondaryColor: '#000000', squad: createGenericSquad(96600, 'Cesena FC', 74) },
+    { id: 968, name: 'Frosinone Calcio', logo: '', leagueId: LeagueId.SERIE_B_ITA, budget: 15000000, transferBudget: 4500000, tier: 'Top', teamMorale: 'Normal', primaryColor: '#FFD700', secondaryColor: '#003DA5', squad: createGenericSquad(96800, 'Frosinone Calcio', 75) },
+    { id: 969, name: 'FC Südtirol', logo: '', leagueId: LeagueId.SERIE_B_ITA, budget: 9000000, transferBudget: 2400000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#FFFFFF', squad: createGenericSquad(96900, 'FC Südtirol', 73) },
+    { id: 970, name: 'Mantova 1911', logo: '', leagueId: LeagueId.SERIE_B_ITA, budget: 8500000, transferBudget: 2200000, tier: 'Lower', teamMorale: 'Feliz', primaryColor: '#C8102E', secondaryColor: '#FFFFFF', squad: createGenericSquad(97000, 'Mantova 1911', 72) },
+    { id: 973, name: 'Carrarese Calcio', logo: '', leagueId: LeagueId.SERIE_B_ITA, budget: 8000000, transferBudget: 2000000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#003DA5', secondaryColor: '#FFD700', squad: createGenericSquad(97300, 'Carrarese Calcio', 72) },
+    { id: 974, name: 'SS Juve Stabia', logo: '', leagueId: LeagueId.SERIE_B_ITA, budget: 9000000, transferBudget: 2500000, tier: 'Mid', teamMorale: 'Feliz', primaryColor: '#FFD700', secondaryColor: '#003DA5', squad: createGenericSquad(97400, 'SS Juve Stabia', 73) },
+    { id: 975, name: 'Benevento Calcio', logo: '', leagueId: LeagueId.SERIE_B_ITA, budget: 9500000, transferBudget: 2500000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#FFD700', squad: createGenericSquad(97500, 'Benevento Calcio', 73) },
+    { id: 976, name: 'Ascoli Calcio', logo: '', leagueId: LeagueId.SERIE_B_ITA, budget: 9000000, transferBudget: 2300000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#000000', secondaryColor: '#FFFFFF', squad: createGenericSquad(97600, 'Ascoli Calcio', 72) },
+    { id: 977, name: 'Calcio Padova', logo: '', leagueId: LeagueId.SERIE_B_ITA, budget: 9000000, transferBudget: 2400000, tier: 'Mid', teamMorale: 'Feliz', primaryColor: '#C8102E', secondaryColor: '#FFFFFF', squad: createGenericSquad(97700, 'Calcio Padova', 73) },
+    { id: 978, name: 'LR Vicenza', logo: '', leagueId: LeagueId.SERIE_B_ITA, budget: 9500000, transferBudget: 2500000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#C8102E', secondaryColor: '#FFFFFF', squad: createGenericSquad(97800, 'LR Vicenza', 73) },
+    { id: 979, name: 'US Avellino', logo: '', leagueId: LeagueId.SERIE_B_ITA, budget: 8500000, transferBudget: 2200000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#008000', secondaryColor: '#FFFFFF', squad: createGenericSquad(97900, 'US Avellino', 72) },
+    { id: 980, name: 'Virtus Entella', logo: '', leagueId: LeagueId.SERIE_B_ITA, budget: 8000000, transferBudget: 2000000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#0093D0', secondaryColor: '#FFFFFF', squad: createGenericSquad(98000, 'Virtus Entella', 71) }
 ];

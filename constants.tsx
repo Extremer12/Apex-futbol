@@ -1,5 +1,6 @@
 import { Team } from './types';
 import { getRegionalWageScale } from './services/economy';
+import { ensureMinimumSquadDepth } from './data/teams/squadHelpers';
 import { premierLeagueTeams } from './data/teams/premierLeague';
 import { championshipTeams } from './data/teams/championship';
 import { laLigaTeams } from './data/teams/laLiga';
@@ -51,11 +52,12 @@ const rawTeams: Team[] = [
 
 export const TEAMS: Team[] = rawTeams.map(team => {
   const wageScale = getRegionalWageScale(team.leagueId, team.tier);
+  const rawSquad = ensureMinimumSquadDepth(team.squad || [], team.id);
   return {
     ...team,
     budget: team.budget && team.budget < 10_000 ? team.budget * 1_000_000 : (team.budget || 10_000_000),
     transferBudget: team.transferBudget && team.transferBudget < 10_000 ? team.transferBudget * 1_000_000 : (team.transferBudget || 5_000_000),
-    squad: (team.squad || []).map(player => ({
+    squad: rawSquad.map(player => ({
       ...player,
       value: player.value && player.value < 10_000 ? player.value * 1_000_000 : (player.value || 1_000_000),
       wage: wageScale !== 1.0

@@ -1,4 +1,5 @@
 import { Team, Match, LeagueId } from '../../types';
+import { buildDoubleRoundRobin } from './scheduleGenerator';
 
 // Fixed rivalry pairs for Argentine Football (AFA Interzonal Derbies)
 export const ARGENTINE_CLASSIC_PAIRS: [number, number][] = [
@@ -105,41 +106,9 @@ export const sortArgentineZones = (teams: Team[]): { zoneA: Team[]; zoneB: Team[
     return { zoneA, zoneB, pairs: activePairs };
 };
 
-// Internal round-robin fallback for Argentine leagues
+// Internal round-robin fallback for Argentine leagues (supports odd team counts via byes)
 const fallbackRoundRobin = (teams: Team[], competitionName: string): Match[] => {
-    const shuffledTeams = [...teams].sort(() => 0.5 - Math.random());
-    const teamIds = shuffledTeams.map(t => t.id);
-    if (teamIds.length % 2 !== 0) return [];
-    const schedule: Match[] = [];
-    const numWeeks = teamIds.length - 1;
-    const halfSeasonSize = teamIds.length / 2;
-    const teamsSlice = teamIds.slice(1);
-
-    for (let week = 0; week < numWeeks; week++) {
-        const weekFixtures: { home: number, away: number }[] = [];
-        const awayTeamIndex = week % teamsSlice.length;
-        weekFixtures.push({ home: teamIds[0], away: teamsSlice[awayTeamIndex] });
-        for (let i = 1; i < halfSeasonSize; i++) {
-            const homeIndex = (week + i) % teamsSlice.length;
-            const awayIndex = (week + teamsSlice.length - i) % teamsSlice.length;
-            weekFixtures.push({ home: teamsSlice[homeIndex], away: teamsSlice[awayIndex] });
-        }
-        weekFixtures.forEach(fixture => schedule.push({
-            week: week + 1,
-            homeTeamId: fixture.home,
-            awayTeamId: fixture.away,
-            competition: competitionName,
-            isCupMatch: false
-        }));
-    }
-    const secondHalf = schedule.map(match => ({
-        week: match.week + numWeeks,
-        homeTeamId: match.awayTeamId,
-        awayTeamId: match.homeTeamId,
-        competition: competitionName,
-        isCupMatch: false
-    }));
-    return [...schedule, ...secondHalf];
+    return buildDoubleRoundRobin(teams, competitionName as Match['competition']);
 };
 
 // Helper to generate Argentine 2026 30-team format schedule (Apertura & Clausura)

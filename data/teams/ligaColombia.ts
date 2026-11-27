@@ -432,5 +432,18 @@ export const colombianExpansionTeams: Team[] = [
         primaryColor: '#000000',
         secondaryColor: '#FFD700',
         squad: createGenericSquad(135300, 'Internacional de Bogotá', 68, '#000000', '#FFD700')
-    }
+    },
+    { id: 1354, name: 'Real Cartagena', logo: '', leagueId: LeagueId.PRIMERA_B_COLOMBIA, budget: 5000000, transferBudget: 1200000, tier: 'Top', teamMorale: 'Feliz', primaryColor: '#FACC15', secondaryColor: '#15803D', squad: createGenericSquad(135400, 'Real Cartagena', 69) },
+    { id: 1355, name: 'Atlético Huila', logo: '', leagueId: LeagueId.PRIMERA_B_COLOMBIA, budget: 4500000, transferBudget: 1000000, tier: 'Top', teamMorale: 'Normal', primaryColor: '#FACC15', secondaryColor: '#166534', squad: createGenericSquad(135500, 'Atletico Huila', 68) },
+    { id: 1356, name: 'Patriotas Boyacá', logo: '', leagueId: LeagueId.PRIMERA_B_COLOMBIA, budget: 4200000, transferBudget: 900000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#DC2626', secondaryColor: '#16A34A', squad: createGenericSquad(135600, 'Patriotas Boyaca', 68) },
+    { id: 1357, name: 'Deportes Quindío', logo: '', leagueId: LeagueId.PRIMERA_B_COLOMBIA, budget: 4000000, transferBudget: 850000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#15803D', secondaryColor: '#FACC15', squad: createGenericSquad(135700, 'Deportes Quindio', 68) },
+    { id: 1358, name: 'Internacional de Palmira', logo: '', leagueId: LeagueId.PRIMERA_B_COLOMBIA, budget: 3800000, transferBudget: 800000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#1E3A8A', secondaryColor: '#FACC15', squad: createGenericSquad(135800, 'Inter Palmira', 67) },
+    { id: 1359, name: 'Orsomarso SC', logo: '', leagueId: LeagueId.PRIMERA_B_COLOMBIA, budget: 3200000, transferBudget: 650000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#1D4ED8', secondaryColor: '#FFFFFF', squad: createGenericSquad(135900, 'Orsomarso SC', 66) },
+    { id: 1360, name: 'Real Cundinamarca', logo: '', leagueId: LeagueId.PRIMERA_B_COLOMBIA, budget: 3400000, transferBudget: 700000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#1E40AF', secondaryColor: '#FACC15', squad: createGenericSquad(136000, 'Real Cundinamarca', 67) },
+    { id: 1361, name: 'Barranquilla FC', logo: '', leagueId: LeagueId.PRIMERA_B_COLOMBIA, budget: 3000000, transferBudget: 600000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#DC2626', secondaryColor: '#1D4ED8', squad: createGenericSquad(136100, 'Barranquilla FC', 66) },
+    { id: 1362, name: 'Bogotá FC', logo: '', leagueId: LeagueId.PRIMERA_B_COLOMBIA, budget: 3000000, transferBudget: 600000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#B91C1C', secondaryColor: '#FACC15', squad: createGenericSquad(136200, 'Bogota FC', 66) },
+    { id: 1363, name: 'Tigres FC', logo: '', leagueId: LeagueId.PRIMERA_B_COLOMBIA, budget: 3000000, transferBudget: 600000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#B91C1C', secondaryColor: '#F8FAFC', squad: createGenericSquad(136300, 'Tigres FC', 66) },
+    { id: 1364, name: 'Boca Juniors de Cali', logo: '', leagueId: LeagueId.PRIMERA_B_COLOMBIA, budget: 3100000, transferBudget: 620000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#1E3A8A', secondaryColor: '#FACC15', squad: createGenericSquad(136400, 'Boca Juniors Cali', 66) },
+    { id: 1365, name: 'Atlético FC', logo: '', leagueId: LeagueId.PRIMERA_B_COLOMBIA, budget: 2800000, transferBudget: 550000, tier: 'Lower', teamMorale: 'Normal', primaryColor: '#1D4ED8', secondaryColor: '#DC2626', squad: createGenericSquad(136500, 'Atletico FC', 65) },
+    { id: 1366, name: 'Leones FC', logo: '', leagueId: LeagueId.PRIMERA_B_COLOMBIA, budget: 3500000, transferBudget: 750000, tier: 'Mid', teamMorale: 'Normal', primaryColor: '#FACC15', secondaryColor: '#111827', squad: createGenericSquad(136600, 'Leones FC', 67) }
 ];

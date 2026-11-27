@@ -61,6 +61,7 @@ export {
 // Promotion & Relegation
 export {
     PROMOTION_RELEGATION_PAIRS,
+    getPromotionRelegationSlots,
     handlePromotionRelegation
 } from './simulation/promotionRelegation';
 
