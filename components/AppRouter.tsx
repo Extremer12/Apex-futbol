@@ -1,13 +1,13 @@
 import React, { Suspense } from 'react';
-import { PlayerProfile, Team, GameState } from '../types';
-import { ElectionResponse } from '../services/gameLogic';
+import { PlayerProfile, Team, ElectoralPromise } from '../types';
+import type { ElectionResponse } from '../services/gameLogic';
+import { useGameStore } from '../state/gameStore';
 import { StartScreen } from './gameflow/StartScreen';
-import { GameOverScreen } from './gameflow/GameOverScreen';
 import { LoadingSpinner } from './icons';
-import { ElectoralPromise } from '../types';
 import { StartupScreenContainer } from './gameflow/StartupScreenContainer';
 
 // Lazy load secondary flow screens to minimize main bundle
+const GameOverScreen = React.lazy(() => import('./gameflow/GameOverScreen').then(m => ({ default: m.GameOverScreen })));
 const LoadGameScreen = React.lazy(() => import('./gameflow/LoadGameScreen').then(m => ({ default: m.LoadGameScreen })));
 const ProfileCreation = React.lazy(() => import('./gameflow/ProfileCreation').then(m => ({ default: m.ProfileCreation })));
 const TeamSelection = React.lazy(() => import('./gameflow/TeamSelection').then(m => ({ default: m.TeamSelection })));
@@ -28,7 +28,6 @@ export type AppState = 'START_SCREEN' | 'LOAD_GAME' | 'PROFILE_CREATION' | 'TEAM
 
 interface AppRouterProps {
     appState: AppState;
-    gameState?: GameState | null;
     playerProfile: PlayerProfile | null;
     selectedTeam: Team | null;
     electionResult: ElectionResponse | null;
@@ -45,9 +44,24 @@ interface AppRouterProps {
     children?: React.ReactNode;
 }
 
+const GameOverSlot: React.FC<{
+    playerProfile: PlayerProfile | null;
+    onNewGame: () => void;
+    onBackToMenu?: () => void;
+}> = ({ playerProfile, onNewGame, onBackToMenu }) => {
+    const gameState = useGameStore(s => s.gameState);
+    return (
+        <GameOverScreen
+            gameState={gameState}
+            playerProfile={playerProfile}
+            onNewGame={onNewGame}
+            onBackToMenu={onBackToMenu}
+        />
+    );
+};
+
 export const AppRouter: React.FC<AppRouterProps> = ({
     appState,
-    gameState,
     playerProfile,
     selectedTeam,
     electionResult,
@@ -73,11 +87,10 @@ export const AppRouter: React.FC<AppRouterProps> = ({
 
             case 'GAME_OVER':
                 return (
-                    <GameOverScreen 
-                        gameState={gameState} 
-                        playerProfile={playerProfile} 
-                        onNewGame={onNewGame} 
-                        onBackToMenu={onBackToStart} 
+                    <GameOverSlot
+                        playerProfile={playerProfile}
+                        onNewGame={onNewGame}
+                        onBackToMenu={onBackToStart}
                     />
                 );
 

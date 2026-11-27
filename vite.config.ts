@@ -36,19 +36,22 @@ export default defineConfig({
             }
             return 'vendor-other';
           }
-          if (normalizedId.includes('playerPhotos') || normalizedId.includes('realPlayerMetadata')) {
+          if (normalizedId.endsWith('/services/customPacks/playerPhotos.ts')) {
             return 'data-player-photos';
+          }
+          if (normalizedId.endsWith('/data/realPlayerMetadata.ts')) {
+            return 'data-player-metadata';
           }
           if (
             normalizedId.includes('/constants/teamLogos') ||
             normalizedId.includes('/constants/championship') ||
-            normalizedId.includes('argentineLogos') ||
-            normalizedId.includes('trophyCatalog') ||
-            normalizedId.includes('competitionLogoCatalog')
+            normalizedId.endsWith('/services/customPacks/argentineLogos.ts') ||
+            normalizedId.endsWith('/data/trophyCatalog.ts') ||
+            normalizedId.endsWith('/data/competitionLogoCatalog.ts')
           ) {
             return 'data-logos';
           }
-          if (normalizedId.includes('/data/teams/')) {
+          if (normalizedId.includes('/data/teams/') && !normalizedId.endsWith('/helpers.tsx') && !normalizedId.endsWith('/squadHelpers.ts')) {
             if (
               normalizedId.includes('ligaArgentina') ||
               normalizedId.includes('brasileirao') ||
@@ -56,7 +59,8 @@ export default defineConfig({
               normalizedId.includes('ligaColombia') ||
               normalizedId.includes('copaDePrimera') ||
               normalizedId.includes('ligaMx') ||
-              normalizedId.includes('southAmericanClubs')
+              normalizedId.includes('southAmericanClubs') ||
+              normalizedId.includes('americasExpansion')
             ) {
               return 'data-teams-latam';
             }
@@ -67,7 +71,8 @@ export default defineConfig({
               normalizedId.includes('bundesliga') ||
               normalizedId.includes('serieA') ||
               normalizedId.includes('ligue1') ||
-              normalizedId.includes('secondDivisions')
+              normalizedId.includes('secondDivisions') ||
+              normalizedId.includes('europeExpansion')
             ) {
               return 'data-teams-europe';
             }

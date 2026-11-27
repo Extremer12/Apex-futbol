@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { GameState, Player, SquadRole, Offer, Team } from '../../types';
+import { GameState, Player, SquadRole, Offer } from '../../types';
 import { GameAction } from '../../state/reducer';
 import { useGameStore } from '../../state/gameStore';
+import { getAvailableMarketPlayers, getGlobalPlayerIndex } from '../../services/playerIndex';
 import { generateCounterOfferDecision } from '../../services/gameLogic';
 import {
     formatCurrency,
@@ -26,6 +27,7 @@ import { TransfersOffersTab } from './transfers/TransfersOffersTab';
 import { TransfersSquadTab } from './transfers/TransfersSquadTab';
 import { TransferNegotiationModal } from './transfers/TransferNegotiationModal';
 import { CounterOfferModal } from './transfers/CounterOfferModal';
+import { Modal } from '../ui/Modal';
 
 interface TransfersScreenProps {
     gameState?: GameState;
@@ -80,29 +82,14 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
         }
     }, [normBudget, showBudgetModal]);
 
-    // O(1) teams index map
-    const teamsById = useMemo(() => new Map(allTeams.map(t => [t.id, t])), [allTeams]);
+    // O(1) teams index map (reused from global player index)
+    const teamsById = useMemo(() => getGlobalPlayerIndex(allTeams).teamsById, [allTeams]);
 
-    // Fast indexed computation of available players and player-to-team map
-    const { availablePlayers, playerTeamMap } = useMemo(() => {
-        const mySquadIds = new Set([
-            ...myTeam.squad.map(mp => mp.id),
-            ...(gameState.youthAcademy || []).map(rp => rp.id)
-        ]);
-        const playersList: Player[] = [];
-        const pTeamMap = new Map<number, Team>();
-
-        for (const t of allTeams) {
-            const isUserTeam = t.id === myTeam.id;
-            for (const p of t.squad) {
-                pTeamMap.set(p.id, t);
-                if (!isUserTeam && !mySquadIds.has(p.id)) {
-                    playersList.push(p);
-                }
-            }
-        }
-        return { availablePlayers: playersList, playerTeamMap: pTeamMap };
-    }, [allTeams, myTeam.id, myTeam.squad, gameState.youthAcademy]);
+    // Memoized available market players derived from cached global player index
+    const { availablePlayers, playerTeamMap } = useMemo(
+        () => getAvailableMarketPlayers(allTeams, myTeam.id, myTeam.squad, gameState.youthAcademy || []),
+        [allTeams, myTeam.id, myTeam.squad, gameState.youthAcademy]
+    );
 
     const reservePlayers = gameState.youthAcademy || [];
 
@@ -377,104 +364,96 @@ export const TransfersScreen: React.FC<TransfersScreenProps> = ({
             )}
 
             {/* 6. PRESIDENTIAL BUDGET ALLOCATION MODAL */}
-            {showBudgetModal && (
-                <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
-                    <div className="w-full max-w-lg bg-[#0D121F] border border-white/15 rounded-3xl p-6 shadow-2xl space-y-5">
-                        <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                            <div className="flex items-center gap-2.5">
-                                <div className="w-9 h-9 rounded-xl bg-[var(--apex-gold)]/10 border border-[var(--apex-gold)]/30 flex items-center justify-center text-[var(--apex-gold)]">
-                                    <Sliders className="w-4 h-4" />
-                                </div>
-                                <div>
-                                    <h3 className="text-sm font-black text-white uppercase tracking-wider">Asignación Presidencial de Fondos</h3>
-                                    <p className="text-[11px] text-slate-400">Ajusta el presupuesto destinado a traspasos con cargo a tesorería</p>
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => setShowBudgetModal(false)}
-                                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white cursor-pointer"
-                            >
-                                <X className="w-4 h-4" />
-                            </button>
+            <Modal
+                isOpen={showBudgetModal}
+                onClose={() => setShowBudgetModal(false)}
+                title="Asignación Presidencial de Fondos"
+                maxWidth="max-w-lg"
+            >
+                <div className="space-y-5">
+                    <div className="flex items-center gap-2.5 text-xs text-slate-400">
+                        <div className="w-9 h-9 rounded-xl bg-[var(--apex-gold)]/10 border border-[var(--apex-gold)]/30 flex items-center justify-center text-[var(--apex-gold)] shrink-0">
+                            <Sliders className="w-4 h-4" />
                         </div>
+                        <p>Ajusta el presupuesto destinado a traspasos con cargo a tesorería</p>
+                    </div>
 
-                        {/* Balance status */}
-                        <div className="grid grid-cols-2 gap-3 text-center">
-                            <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/10">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase block">Saldo en Tesorería</span>
-                                <span className="text-sm font-black text-emerald-400">{formatCurrency(normBalance)}</span>
-                            </div>
-                            <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/10">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase block">Presupuesto Actual</span>
-                                <span className="text-sm font-black text-[var(--apex-gold)]">{formatCurrency(normBudget)}</span>
-                            </div>
+                    {/* Balance status */}
+                    <div className="grid grid-cols-2 gap-3 text-center">
+                        <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/10">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase block">Saldo en Tesorería</span>
+                            <span className="text-sm font-black text-emerald-400">{formatCurrency(normBalance)}</span>
                         </div>
-
-                        {/* Slider & Presets */}
-                        <div className="space-y-3 p-4 rounded-2xl bg-black/40 border border-white/10">
-                            <div className="flex items-center justify-between">
-                                <span className="text-xs font-bold text-slate-300">Nuevo Presupuesto Asignado:</span>
-                                <span className="text-base font-black text-[var(--apex-gold)]">{formatCurrency(newBudgetDraft)}</span>
-                            </div>
-
-                            <input
-                                type="range"
-                                min={0}
-                                max={Math.max(normBalance, 10_000_000)}
-                                step={1_000_000}
-                                value={newBudgetDraft}
-                                onChange={(e) => setNewBudgetDraft(Number(e.target.value))}
-                                className="w-full accent-[var(--apex-gold)] cursor-pointer h-2 bg-white/10 rounded-lg appearance-none"
-                            />
-
-                            <div className="grid grid-cols-4 gap-2">
-                                {[
-                                    { label: '25%', factor: 0.25 },
-                                    { label: '50%', factor: 0.50 },
-                                    { label: '75%', factor: 0.75 },
-                                    { label: '100% (Todo)', factor: 1.0 },
-                                ].map(p => (
-                                    <button
-                                        key={p.label}
-                                        type="button"
-                                        onClick={() => setNewBudgetDraft(Math.round(normBalance * p.factor))}
-                                        className="py-1.5 px-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-bold text-slate-300 border border-white/5 cursor-pointer active:scale-95 transition-all"
-                                    >
-                                        {p.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-3 pt-2">
-                            <button
-                                type="button"
-                                onClick={() => setShowBudgetModal(false)}
-                                className="flex-1 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white font-bold text-xs uppercase cursor-pointer"
-                            >
-                                Cancelar
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    dispatch({
-                                        type: 'UPDATE_FINANCES',
-                                        payload: {
-                                            ...finances,
-                                            transferBudget: newBudgetDraft
-                                        }
-                                    });
-                                    showToast(`Presupuesto de traspasos establecido en ${formatCurrency(newBudgetDraft)}`, 'success');
-                                    setShowBudgetModal(false);
-                                }}
-                                className="flex-1 py-3 rounded-xl bg-[var(--apex-gold)] hover:bg-yellow-400 text-slate-950 font-black text-xs uppercase tracking-wider cursor-pointer shadow-lg shadow-[var(--apex-gold)]/20 active:scale-98 transition-all"
-                            >
-                                Confirmar Presupuesto
-                            </button>
+                        <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/10">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase block">Presupuesto Actual</span>
+                            <span className="text-sm font-black text-[var(--apex-gold)]">{formatCurrency(normBudget)}</span>
                         </div>
                     </div>
+
+                    {/* Slider & Presets */}
+                    <div className="space-y-3 p-4 rounded-2xl bg-black/40 border border-white/10">
+                        <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-slate-300">Nuevo Presupuesto Asignado:</span>
+                            <span className="text-base font-black text-[var(--apex-gold)]">{formatCurrency(newBudgetDraft)}</span>
+                        </div>
+
+                        <input
+                            type="range"
+                            min={0}
+                            max={Math.max(normBalance, 10_000_000)}
+                            step={1_000_000}
+                            value={newBudgetDraft}
+                            onChange={(e) => setNewBudgetDraft(Number(e.target.value))}
+                            className="w-full accent-[var(--apex-gold)] cursor-pointer h-2 bg-white/10 rounded-lg appearance-none"
+                        />
+
+                        <div className="grid grid-cols-4 gap-2">
+                            {[
+                                { label: '25%', factor: 0.25 },
+                                { label: '50%', factor: 0.50 },
+                                { label: '75%', factor: 0.75 },
+                                { label: '100% (Todo)', factor: 1.0 },
+                            ].map(p => (
+                                <button
+                                    key={p.label}
+                                    type="button"
+                                    onClick={() => setNewBudgetDraft(Math.round(normBalance * p.factor))}
+                                    className="py-1.5 px-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-bold text-slate-300 border border-white/5 cursor-pointer active:scale-95 transition-all"
+                                >
+                                    {p.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 pt-2">
+                        <button
+                            type="button"
+                            onClick={() => setShowBudgetModal(false)}
+                            className="flex-1 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white font-bold text-xs uppercase cursor-pointer"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                dispatch({
+                                    type: 'UPDATE_FINANCES',
+                                    payload: {
+                                        ...finances,
+                                        transferBudget: newBudgetDraft
+                                    }
+                                });
+                                showToast(`Presupuesto de traspasos establecido en ${formatCurrency(newBudgetDraft)}`, 'success');
+                                setShowBudgetModal(false);
+                            }}
+                            className="flex-1 py-3 rounded-xl bg-[var(--apex-gold)] hover:bg-yellow-400 text-slate-950 font-black text-xs uppercase tracking-wider cursor-pointer shadow-lg shadow-[var(--apex-gold)]/20 active:scale-98 transition-all"
+                        >
+                            Confirmar Presupuesto
+                        </button>
+                    </div>
                 </div>
-            )}
+            </Modal>
         </div>
     );
 };

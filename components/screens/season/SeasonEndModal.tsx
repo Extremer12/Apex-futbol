@@ -226,8 +226,8 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
         let isMounted = true;
         const autoSubmit = async () => {
             try {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (user && !scoreSubmitted && !isSubmittingScore) {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session?.user && !scoreSubmitted && !isSubmittingScore) {
                     setIsSubmittingScore(true);
                     await submitPresidentialScore({
                         managerName: gameState.playerProfile?.name || 'Presidente',
@@ -238,6 +238,7 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
                         fanApproval: fanApp,
                         boardConfidence: boardConf,
                         gameMode: gameState.gameMode,
+                        careerId: gameState.careerId,
                     });
                     if (isMounted) setScoreSubmitted(true);
                 }
@@ -264,6 +265,7 @@ export const SeasonEndModal: React.FC<SeasonEndModalProps> = ({
                 fanApproval: fanApp,
                 boardConfidence: boardConf,
                 gameMode: gameState.gameMode,
+                careerId: gameState.careerId,
             });
             setScoreSubmitted(true);
             playUiClick();

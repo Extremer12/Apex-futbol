@@ -262,7 +262,7 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ gameState }) => 
                                     <div className="h-px bg-white/10 flex-1" />
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 apex-grid-deferred">
                                     {group.matches.map((match, mIdx) => {
                                         const isHome = match.homeTeamId === gameState.team.id;
                                         const opponentId = isHome ? match.awayTeamId : match.homeTeamId;

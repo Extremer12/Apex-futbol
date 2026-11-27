@@ -1,41 +1,42 @@
-import React, { useState, useCallback } from 'react';
-import { GameState, MatchPhase, PendingSimulationResults } from '../types';
-import { GameAction } from '../state/reducer';
+import { useCallback } from 'react';
 import { simulationWorker } from '../services/simulationWorker';
-import { TriggeredEvent, eventEngine } from '../services/eventEngine';
-import { isSeasonCompleted } from '../services/seasonUtils';
+import { useGameStore } from '../state/gameStore';
 
+/**
+ * Simulation hook unified directly on Zustand (`useGameStore`), eliminating duplicate
+ * React state and removing `gameState` closure dependencies from simulation handlers.
+ */
 export function useSimulation(
-    gameState: GameState | null,
-    dispatch: React.Dispatch<GameAction>,
-    setAppState: (state: any) => void,
-    showNotification: (msg: string, type?: 'success' | 'error' | 'info' | 'warning') => void,
-    setCurrentEvent: (event: TriggeredEvent | null) => void
+    showNotification: (msg: string, type?: 'success' | 'error' | 'info' | 'warning') => void
 ) {
-    const [matchPhase, setMatchPhase] = useState<MatchPhase>('PRE');
-    const [pendingResults, setPendingResults] = useState<PendingSimulationResults | null>(null);
-    const [isSimulating, setIsSimulating] = useState(false);
+    const matchPhase = useGameStore(s => s.matchPhase);
+    const pendingResults = useGameStore(s => s.pendingResults);
+    const isSimulating = useGameStore(s => s.isSimulating);
+    const setMatchPhase = useGameStore(s => s.setMatchPhase);
+    const setPendingResults = useGameStore(s => s.setPendingResults);
 
     const handlePlayMatch = useCallback(async () => {
-        if (!gameState || isSimulating) return;
+        const state = useGameStore.getState();
+        const gameState = state.gameState;
+        if (!gameState || state.isSimulating) return;
 
+        const { isSeasonCompleted } = await import('../services/seasonUtils');
         if (isSeasonCompleted(gameState)) {
             showNotification('La temporada ha finalizado. Inicia la nueva temporada desde el panel.', 'info');
             return;
         }
 
         try {
-            setIsSimulating(true);
+            state.setIsSimulating(true);
             // Yield to browser renderer so the button state switches immediately to 'Simulando...'
             await new Promise(resolve => setTimeout(resolve, 30));
-            setMatchPhase('LIVE');
+            state.setMatchPhase('LIVE');
 
-            // 1. Pipeline de Simulación 100% Off-Main-Thread (Worker)
-            // Ejecuta simulación, copas, eventos cinemáticos, noticias y reporte del DT en segundo plano
+            // 1. Off-Main-Thread Stateful Worker Pipeline (INIT_STATE / PATCH_STATE / SIMULATE_TURN)
             const simulationResult = await simulationWorker.simulateWeek(gameState);
 
-            // 2. Establecer resultados pendientes procesados íntegramente en el Worker
-            setPendingResults({
+            // 2. Store processed worker deltas in Zustand
+            state.setPendingResults({
                 newsToAdd: simulationResult.newsToAdd || [],
                 updatedSchedule: simulationResult.updatedSchedule,
                 updatedLeagueTables: simulationResult.updatedLeagueTables,
@@ -49,49 +50,54 @@ export function useSimulation(
                 cinematicEvents: simulationResult.cinematicEvents || []
             });
 
-            setMatchPhase('LIVE');
+            state.setMatchPhase('LIVE');
         } catch (error) {
             console.error('Simulation error:', error);
             showNotification('Error al simular la semana', 'error');
-            setMatchPhase('PRE');
+            useGameStore.getState().setMatchPhase('PRE');
         } finally {
-            setIsSimulating(false);
+            useGameStore.getState().setIsSimulating(false);
         }
-    }, [gameState, isSimulating, showNotification, setCurrentEvent, dispatch]);
+    }, [showNotification]);
 
     const handleWeekComplete = useCallback(() => {
-        if (!gameState || !pendingResults) return;
+        const state = useGameStore.getState();
+        const { gameState, pendingResults: pending, dispatch, setAppState, setCurrentEvent } = state;
+        if (!gameState || !pending) return;
 
-        const newConfidence = Math.max(0, Math.min(100, gameState.boardConfidence + pendingResults.confidenceChange));
+        const newConfidence = Math.max(0, Math.min(100, gameState.boardConfidence + pending.confidenceChange));
 
         dispatch({
             type: 'ADVANCE_WEEK_SUCCESS',
             payload: {
-                newsItems: pendingResults.newsToAdd,
-                newSchedule: pendingResults.updatedSchedule,
-                newLeagueTables: pendingResults.updatedLeagueTables,
-                newAllTeams: pendingResults.updatedAllTeams,
+                newsItems: pending.newsToAdd,
+                newSchedule: pending.updatedSchedule,
+                newLeagueTables: pending.updatedLeagueTables,
+                newAllTeams: pending.updatedAllTeams,
                 newConfidence,
-                newOffers: pendingResults.newOffers,
-                newCups: pendingResults.updatedCups,
-                newScoutedPlayerIds: pendingResults.updatedScoutedPlayerIds,
-                coachReport: pendingResults.coachReport,
-                cinematicEvents: pendingResults.cinematicEvents
+                newOffers: pending.newOffers,
+                newCups: pending.updatedCups,
+                newScoutedPlayerIds: pending.updatedScoutedPlayerIds,
+                coachReport: pending.coachReport,
+                cinematicEvents: pending.cinematicEvents
             }
         });
 
         if (newConfidence <= 0) {
             setAppState('GAME_OVER');
         } else {
-            setMatchPhase('PRE');
+            state.setMatchPhase('PRE');
+            const latestGameState = useGameStore.getState().gameState || gameState;
             // Trigger balanced presidential dilemma event if conditions match
-            const triggeredEvt = eventEngine.triggerEvent(gameState);
-            if (triggeredEvt) {
-                setCurrentEvent(triggeredEvt);
-            }
+            void import('../services/eventEngine').then(({ eventEngine }) => {
+                const triggeredEvt = eventEngine.triggerEvent(latestGameState);
+                if (triggeredEvt) {
+                    setCurrentEvent(triggeredEvt);
+                }
+            });
         }
-        setPendingResults(null);
-    }, [gameState, pendingResults, dispatch, setAppState, setCurrentEvent]);
+        state.setPendingResults(null);
+    }, []);
 
     return {
         matchPhase,

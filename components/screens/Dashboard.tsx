@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { GameState, Player, Team, MatchPhase, NewsItem } from '../../types';
+import { GameState, Player, MatchPhase, NewsItem } from '../../types';
 import { GameAction } from '../../state/reducer';
+import { getGlobalPlayerIndex, getLeaguePlayersIndex, getMarketOpportunities } from '../../services/playerIndex';
 import { formatCurrencyShort } from '../../utils';
 import { CircularProgress } from './dashboard/CircularProgress';
 import { FinanceCard } from './dashboard/FinanceCard';
@@ -40,47 +41,32 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({
     onStartNewSeason,
     onOpenSeasonEndModal
 }) => {
-    const allPlayers = useMemo(() => {
-        if (propAllPlayers && propAllPlayers.length > 0) return propAllPlayers;
-        if (!gameState?.team) return [];
-        const userLeagueId = gameState.team.leagueId;
-        return gameState.allTeams
-            .filter(t => t.leagueId === userLeagueId || t.id === gameState.team.id)
-            .flatMap(t => t.squad);
+    const globalIndex = useMemo(() => getGlobalPlayerIndex(gameState?.allTeams), [gameState?.allTeams]);
+
+    const { allPlayers, leaguePlayersById, leaguePlayersByName } = useMemo(() => {
+        if (propAllPlayers && propAllPlayers.length > 0) {
+            const byId = new Map<number, Player>();
+            const byName = new Map<string, Player>();
+            for (const p of propAllPlayers) {
+                byId.set(p.id, p);
+                byName.set(p.name.toLowerCase(), p);
+            }
+            return { allPlayers: propAllPlayers, leaguePlayersById: byId, leaguePlayersByName: byName };
+        }
+        const leagueProj = getLeaguePlayersIndex(gameState?.allTeams, gameState?.team?.leagueId, gameState?.team?.id);
+        return {
+            allPlayers: leagueProj.leaguePlayers,
+            leaguePlayersById: leagueProj.leaguePlayersById,
+            leaguePlayersByName: leagueProj.leaguePlayersByName
+        };
     }, [propAllPlayers, gameState?.allTeams, gameState?.team?.leagueId, gameState?.team?.id]);
 
-    const { leaguePlayersById, leaguePlayersByName, allPlayersById, allPlayersByName, allPlayersByNameLower, teamsById } = useMemo(() => {
-        const byId = new Map<number, Player>();
-        const byName = new Map<string, Player>();
-        const allById = new Map<number, Player>();
-        const allByName = new Map<string, Player>();
-        const allByNameLower = new Map<string, Player>();
-        const tMap = new Map<number, Team>();
-
-        for (const p of allPlayers) {
-            byId.set(p.id, p);
-            byName.set(p.name.toLowerCase(), p);
-        }
-        if (gameState?.allTeams) {
-            for (const t of gameState.allTeams) {
-                tMap.set(t.id, t);
-                for (const p of t.squad) {
-                    allById.set(p.id, p);
-                    if (!allByName.has(p.name)) allByName.set(p.name, p);
-                    const lower = p.name.toLowerCase();
-                    if (!allByNameLower.has(lower)) allByNameLower.set(lower, p);
-                }
-            }
-        }
-        return {
-            leaguePlayersById: byId,
-            leaguePlayersByName: byName,
-            allPlayersById: allById,
-            allPlayersByName: allByName,
-            allPlayersByNameLower: allByNameLower,
-            teamsById: tMap,
-        };
-    }, [allPlayers, gameState?.allTeams]);
+    const {
+        playersById: allPlayersById,
+        playersByName: allPlayersByName,
+        playersByNameLower: allPlayersByNameLower,
+        teamsById
+    } = globalIndex;
 
     const handlePlayerClick = useCallback((playerName: string) => {
         const player = leaguePlayersByName.get(playerName.toLowerCase()) || allPlayersByName.get(playerName);
@@ -106,49 +92,10 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({
         return undefined;
     }, [gameState.team?.squad, leaguePlayersById, allPlayersById, leaguePlayersByName, allPlayersByNameLower]);
 
-    const marketTargets = useMemo(() => {
-        const playerTeamId = gameState.team.id;
-        const targets: { player: Player; clubName: string; tag: string }[] = [];
-
-        for (const t of gameState.allTeams) {
-            if (t.id === playerTeamId) continue;
-            for (const p of t.squad) {
-                if (p.isTransferListed) {
-                    targets.push({ player: p, clubName: t.shortName || t.name, tag: 'Transferible' });
-                    if (targets.length >= 4) break;
-                }
-            }
-            if (targets.length >= 4) break;
-        }
-
-        if (targets.length < 4) {
-            for (const t of gameState.allTeams) {
-                if (t.id === playerTeamId) continue;
-                for (const p of t.squad) {
-                    if (p.contractYears <= 1 && p.rating >= 80 && !targets.some(x => x.player.id === p.id)) {
-                        targets.push({ player: p, clubName: t.shortName || t.name, tag: 'Fin Contrato' });
-                        if (targets.length >= 4) break;
-                    }
-                }
-                if (targets.length >= 4) break;
-            }
-        }
-
-        if (targets.length < 4) {
-            for (const t of gameState.allTeams) {
-                if (t.id === playerTeamId) continue;
-                for (const p of t.squad) {
-                    if (p.rating >= 85 && !targets.some(x => x.player.id === p.id)) {
-                        targets.push({ player: p, clubName: t.shortName || t.name, tag: 'Destacado' });
-                        if (targets.length >= 4) break;
-                    }
-                }
-                if (targets.length >= 4) break;
-            }
-        }
-
-        return targets;
-    }, [gameState.team.id, gameState.allTeams]);
+    const marketTargets = useMemo(
+        () => getMarketOpportunities(gameState.allTeams, gameState.team.id, 4),
+        [gameState.team.id, gameState.allTeams]
+    );
 
     return (
         <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-5 pb-24">

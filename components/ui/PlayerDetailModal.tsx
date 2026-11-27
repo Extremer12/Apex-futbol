@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
-import { Player, Morale, Team } from '../../types';
+import React, { useState } from 'react';
+import { Player, Morale } from '../../types';
 import { GameAction } from '../../state/reducer';
 import { useGameStore } from '../../state/gameStore';
+import { usePlayerById, useTeamSlice } from '../../state/selectors';
 import { Modal } from './Modal';
 import { formatCurrency, formatTransferFee, formatWeeklyWage } from '../../utils';
 import { PlayerPhoto, TeamLogo } from '../../data/teams/helpers';
@@ -37,19 +38,14 @@ interface PlayerDetailModalProps {
     dispatch: React.Dispatch<GameAction>;
 }
 
-export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({ player, dispatch }) => {
-    const gameState = useGameStore(s => s.gameState);
+export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({ player: initialPlayer, dispatch }) => {
+    const { player: livePlayer, ownerTeam, isInFirstTeam, isInReserve } = usePlayerById(initialPlayer.id);
+    const { team: userTeam, squad, youthAcademy, leagueId } = useTeamSlice();
+    const gameMode = useGameStore(s => s.gameState?.gameMode);
+    const player = livePlayer || initialPlayer;
     const { showToast } = useToast();
 
-    const userTeam = gameState?.team;
-    const isInFirstTeam = userTeam?.squad?.some(p => p.id === player.id) ?? false;
-    const isInReserve = gameState?.youthAcademy?.some(p => p.id === player.id) ?? false;
     const isUserPlayer = isInFirstTeam || isInReserve;
-
-    const ownerTeam: Team | undefined = useMemo(() => {
-        if (isUserPlayer) return userTeam;
-        return gameState?.allTeams?.find(t => t.squad.some(p => p.id === player.id));
-    }, [isUserPlayer, userTeam, gameState?.allTeams, player.id]);
 
     const [hasTalked, setHasTalked] = useState(false);
     const [hasRenewed, setHasRenewed] = useState(false);
@@ -109,8 +105,8 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({ player, di
     };
 
     const handleDemoteToReserve = () => {
-        if (!gameState || !isInFirstTeam) return;
-        const check = canMoveToReserve(gameState.team.squad, gameState.youthAcademy || []);
+        if (!userTeam || !isInFirstTeam) return;
+        const check = canMoveToReserve(squad, youthAcademy);
         if (!check.allowed) {
             showToast(check.reason || 'No se puede mover a Reserva.', 'warning');
             return;
@@ -120,8 +116,8 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({ player, di
     };
 
     const handlePromoteToFirstTeam = () => {
-        if (!gameState || !isInReserve) return;
-        const check = canPromoteToFirstTeam(gameState.team.squad, player, gameState.team.leagueId, gameState.gameMode);
+        if (!userTeam || !isInReserve) return;
+        const check = canPromoteToFirstTeam(squad, player, leagueId || userTeam.leagueId, gameMode);
         if (!check.allowed) {
             showToast(check.reason || 'No se puede ascender al Primer Equipo.', 'warning');
             return;
@@ -320,7 +316,7 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({ player, di
                                 className="w-full py-2.5 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors"
                             >
                                 <ArrowDownLeft className="w-4 h-4 text-amber-400" />
-                                <span>Enviar a Reserva ({gameState?.youthAcademy?.length || 0}/15)</span>
+                                <span>Enviar a Reserva ({youthAcademy.length}/15)</span>
                             </button>
                         ) : (
                             <div className="grid grid-cols-2 gap-2">

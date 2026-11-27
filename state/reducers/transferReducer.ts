@@ -10,6 +10,7 @@ import { resolvePlayerNationality } from '../../services/nationalityService';
 import { applyMembershipEventBoost, generateClubMembership } from '../../services/membership';
 import { calculateFanApproval } from '../../services/political';
 import { getRegionalWageScale } from '../../services/economy';
+import { calculateSquadPower } from '../../services/squadProgressionService';
 import type { GameAction } from '../reducer';
 
 // Actions handled by this reducer
@@ -105,10 +106,16 @@ export function handleTransferAction(state: GameState, action: TransferAction): 
                 }
                 : undefined;
 
-            const newTeam = { ...state.team, squad: newSquad, customLineup: updatedLineup };
+            const baseNewTeam = { ...state.team, squad: newSquad, customLineup: updatedLineup };
+            const newTeam = { ...baseNewTeam, squadPower: calculateSquadPower(baseNewTeam) };
 
-            // Add player to offering team
-            const updatedOfferingTeam = offeringTeam ? { ...offeringTeam, squad: [...offeringTeam.squad, player] } : null;
+            // Add player to offering team & recalculate squadPower
+            const updatedOfferingTeam = offeringTeam
+                ? (() => {
+                    const nextTeam = { ...offeringTeam, squad: [...offeringTeam.squad, player] };
+                    return { ...nextTeam, squadPower: calculateSquadPower(nextTeam) };
+                })()
+                : null;
 
             const newAllTeams = state.allTeams.map(t => {
                 if (t.id === newTeam.id) return newTeam;
@@ -134,7 +141,6 @@ export function handleTransferAction(state: GameState, action: TransferAction): 
                 team: newTeam,
                 allTeams: newAllTeams,
                 youthAcademy: newReserve,
-                viewingPlayer: state.viewingPlayer?.id === player.id ? null : state.viewingPlayer,
                 finances: {
                     ...state.finances,
                     balance: newBalance,
@@ -232,10 +238,12 @@ export function handleTransferAction(state: GameState, action: TransferAction): 
 
             const updatedAllTeams = state.allTeams.map(t => {
                 if (t.squad.some(p => p.id === player.id)) {
-                    return { ...t, squad: t.squad.filter(p => p.id !== player.id) };
+                    const nextSelling = { ...t, squad: t.squad.filter(p => p.id !== player.id) };
+                    return { ...nextSelling, squadPower: calculateSquadPower(nextSelling) };
                 }
                 if (t.id === state.team.id && !sendToReserve) {
-                    return { ...t, squad: [...t.squad, playerToAdd] };
+                    const nextBuying = { ...t, squad: [...t.squad, playerToAdd] };
+                    return { ...nextBuying, squadPower: calculateSquadPower(nextBuying) };
                 }
                 return t;
             });
@@ -320,9 +328,6 @@ export function handleTransferAction(state: GameState, action: TransferAction): 
                 team: newTeam,
                 allTeams: newAllTeams,
                 youthAcademy: newReserve,
-                viewingPlayer: state.viewingPlayer && state.viewingPlayer.id === playerToToggle.id
-                    ? toggle(state.viewingPlayer)
-                    : state.viewingPlayer,
             };
         }
 
@@ -351,9 +356,6 @@ export function handleTransferAction(state: GameState, action: TransferAction): 
                 incomingOffers: nextUntouchable
                     ? state.incomingOffers.filter(o => o.playerId !== target.id)
                     : state.incomingOffers,
-                viewingPlayer: state.viewingPlayer && state.viewingPlayer.id === target.id
-                    ? updateFlag(state.viewingPlayer)
-                    : state.viewingPlayer,
             };
         }
 
@@ -436,9 +438,6 @@ export function handleTransferAction(state: GameState, action: TransferAction): 
                 youthAcademy: newReserve,
                 incomingOffers: combinedOffers,
                 newsFeed: [newsItem, ...state.newsFeed].slice(0, 20),
-                viewingPlayer: state.viewingPlayer && state.viewingPlayer.id === playerId
-                    ? markListed(state.viewingPlayer)
-                    : state.viewingPlayer
             };
         }
 

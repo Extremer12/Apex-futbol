@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { X, Shield } from 'lucide-react';
+import { Modal } from './Modal';
 import { CommunityPacksSection } from '../screens/settings/CommunityPacksSection';
 
 interface CommunityPacksModalProps {
@@ -8,28 +9,16 @@ interface CommunityPacksModalProps {
 }
 
 export const CommunityPacksModal: React.FC<CommunityPacksModalProps> = ({ isOpen, onClose }) => {
-    useEffect(() => {
-        if (!isOpen) return;
-        const onKey = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') onClose();
-        };
-        window.addEventListener('keydown', onKey);
-        const prev = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
-        return () => {
-            window.removeEventListener('keydown', onKey);
-            document.body.style.overflow = prev;
-        };
-    }, [isOpen, onClose]);
-
-    if (!isOpen) return null;
-
     return (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 animate-fade-in" role="dialog" aria-modal="true">
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
-
-            <div className="relative w-full sm:max-w-5xl bg-[#0A0E17] border-t sm:border border-white/10 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden z-10 h-[92vh] sm:h-[88vh] flex flex-col">
-                <div className="sm:hidden flex justify-center pt-2.5">
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Gestor de Packs Visuales"
+            maxWidth="max-w-5xl"
+            hideHeader
+        >
+            <div className="flex flex-col h-[88dvh] bg-[#0A0E17]">
+                <div className="sm:hidden flex justify-center pt-2.5 shrink-0">
                     <span className="w-10 h-1 rounded-full bg-white/20" />
                 </div>
 
@@ -39,9 +28,9 @@ export const CommunityPacksModal: React.FC<CommunityPacksModalProps> = ({ isOpen
                             <Shield className="w-4 h-4 text-[var(--apex-gold)]" />
                         </div>
                         <div className="min-w-0">
-                            <span className="text-xs font-black text-white uppercase tracking-wider block truncate">
+                            <h1 className="text-xs font-black text-white uppercase tracking-wider truncate">
                                 Gestor de Packs Visuales
-                            </span>
+                            </h1>
                             <span className="text-[11px] text-slate-400 block truncate">
                                 Escudos, ligas, rostros y trofeos
                             </span>
@@ -52,7 +41,7 @@ export const CommunityPacksModal: React.FC<CommunityPacksModalProps> = ({ isOpen
                         type="button"
                         onClick={onClose}
                         aria-label="Cerrar"
-                        className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition-colors shrink-0"
+                        className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition-colors shrink-0 cursor-pointer"
                     >
                         <X className="w-4 h-4" />
                     </button>
@@ -62,6 +51,6 @@ export const CommunityPacksModal: React.FC<CommunityPacksModalProps> = ({ isOpen
                     <CommunityPacksSection embedded />
                 </div>
             </div>
-        </div>
+        </Modal>
     );
 };

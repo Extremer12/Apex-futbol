@@ -46,11 +46,18 @@ export async function submitPresidentialScore(data: {
     fanApproval: number;
     boardConfidence: number;
     gameMode?: GameMode;
+    careerId?: string;
 }): Promise<boolean> {
     if (!canSubmitToLeaderboard(data.gameMode)) {
         return false;
     }
-    const { data: { user } } = await supabase.auth.getUser();
+
+    // Use local cached session first to avoid unauthenticated HTTP roundtrips
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
+    if (!user) {
+        return false;
+    }
 
     const score = calculatePresidentialScore(
         data.trophiesCount,
@@ -60,8 +67,9 @@ export async function submitPresidentialScore(data: {
         data.season
     );
 
-    const { error } = await supabase.from('leaderboards').insert({
-        user_id: user ? user.id : null,
+    const payload = {
+        user_id: user.id,
+        career_id: data.careerId || null,
         manager_name: data.managerName,
         team_name: data.teamName,
         season: data.season,
@@ -70,7 +78,11 @@ export async function submitPresidentialScore(data: {
         fan_approval: data.fanApproval,
         board_confidence: data.boardConfidence,
         score,
-    });
+    };
+
+    const { error } = data.careerId
+        ? await supabase.from('leaderboards').upsert(payload, { onConflict: 'user_id,career_id' })
+        : await supabase.from('leaderboards').insert(payload);
 
     if (error) {
         console.error('Error submitting score to leaderboard:', error);

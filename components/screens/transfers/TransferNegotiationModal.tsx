@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Player, Team, SquadRole, GameMode } from '../../../types';
+import { Modal } from '../../ui/Modal';
 import { 
-    X, 
     Check, 
     Building2, 
     FileText, 
@@ -221,15 +221,21 @@ export const TransferNegotiationModal: React.FC<TransferNegotiationModalProps> =
     const canAffordTotal = totalOutlay <= normBalance;
 
     return (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 overflow-y-auto animate-fade-in select-none">
-            <div className="w-full max-w-2xl bg-[#0B0F19] border border-white/15 rounded-3xl shadow-2xl overflow-hidden flex flex-col my-auto">
+        <Modal
+            isOpen
+            onClose={onClose}
+            title={`Negociación: ${negotiatingPlayer.name}`}
+            maxWidth="max-w-2xl"
+            hideHeader
+        >
+            <div className="w-full bg-[#0B0F19] overflow-hidden flex flex-col select-none">
                 {/* 1. PRESIDENTIAL HEADER & PLAYER OVERVIEW */}
-                <div className="p-4 sm:p-5 bg-gradient-to-r from-slate-900/90 via-[#0E1424] to-slate-900/90 border-b border-white/10 flex items-center justify-between gap-3">
+                <div className="p-4 sm:p-5 bg-gradient-to-r from-slate-900/90 via-[#0E1424] to-slate-900/90 border-b border-white/10 flex items-center justify-between gap-3 pr-12">
                     <div className="flex items-center gap-3 min-w-0">
                         <PlayerPhoto player={negotiatingPlayer} className="w-12 h-12 rounded-2xl border border-white/20 shrink-0 shadow-md" />
                         <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                                <h2 className="text-base sm:text-lg font-black text-white truncate">{negotiatingPlayer.name}</h2>
+                                <h1 className="text-base sm:text-lg font-black text-white truncate">{negotiatingPlayer.name}</h1>
                                 <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-[var(--apex-gold)]/20 text-[var(--apex-gold)] border border-[var(--apex-gold)]/30 shrink-0">
                                     {negotiatingPlayer.position}
                                 </span>
@@ -250,14 +256,6 @@ export const TransferNegotiationModal: React.FC<TransferNegotiationModalProps> =
                             </div>
                         </div>
                     </div>
-
-                    <button
-                        onClick={onClose}
-                        className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-colors cursor-pointer shrink-0"
-                        title="Cerrar negociación"
-                    >
-                        <X className="w-4 h-4" />
-                    </button>
                 </div>
 
                 {/* 2. PROGRESS STEPPER */}
@@ -695,6 +693,6 @@ export const TransferNegotiationModal: React.FC<TransferNegotiationModalProps> =
                     )}
                 </div>
             </div>
-        </div>
+        </Modal>
     );
 });

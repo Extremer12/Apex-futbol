@@ -2,6 +2,7 @@ import { GameState, Player, NewsItem } from '../../types';
 import { formatDate } from '../../utils';
 import { awardPresidentXp, getPresidentialStyleModifiers } from '../../services/presidentialProgression';
 import { canAddYouthProspect, canMoveToReserve, canPromoteToFirstTeam } from '../../services/squadRules';
+import { calculateSquadPower } from '../../services/squadProgressionService';
 import type { GameAction } from '../reducer';
 
 // Actions handled by this reducer
@@ -50,7 +51,8 @@ export function handleSquadAction(state: GameState, action: SquadAction): GameSt
             const newSquad = [...state.team.squad, promotedPlayer];
             const newWages = state.finances.weeklyWages + promotedPlayer.wage;
 
-            const newTeam = { ...state.team, squad: newSquad };
+            const baseNewTeam = { ...state.team, squad: newSquad };
+            const newTeam = { ...baseNewTeam, squadPower: calculateSquadPower(baseNewTeam) };
             const newAllTeams = state.allTeams.map(t => t.id === newTeam.id ? newTeam : t);
 
             const newsItem: NewsItem = {
@@ -82,7 +84,6 @@ export function handleSquadAction(state: GameState, action: SquadAction): GameSt
                 allTeams: newAllTeams,
                 youthAcademy: newAcademy,
                 coachReport: updatedCoachReport,
-                viewingPlayer: state.viewingPlayer?.id === player.id ? promotedPlayer : state.viewingPlayer,
                 playerProfile: awardPresidentXp(state.playerProfile, xpReward),
                 fanApproval: approvalBoost > 0 ? {
                     ...state.fanApproval,
@@ -109,9 +110,13 @@ export function handleSquadAction(state: GameState, action: SquadAction): GameSt
                 morale: 'Feliz'
             };
 
-            const updatedTeam = {
+            const baseUpdatedTeam = {
                 ...state.team,
                 squad: [...state.team.squad, promotedPlayer]
+            };
+            const updatedTeam = {
+                ...baseUpdatedTeam,
+                squadPower: calculateSquadPower(baseUpdatedTeam)
             };
             const updatedAllTeams = state.allTeams.map(t => t.id === updatedTeam.id ? updatedTeam : t);
             const updatedCoachReport = state.coachReport
@@ -143,7 +148,6 @@ export function handleSquadAction(state: GameState, action: SquadAction): GameSt
                 team: updatedTeam,
                 allTeams: updatedAllTeams,
                 coachReport: updatedCoachReport,
-                viewingPlayer: state.viewingPlayer?.id === playerId ? promotedPlayer : state.viewingPlayer,
                 playerProfile: awardPresidentXp(state.playerProfile, xpReward),
                 fanApproval: approvalBoost > 0 ? {
                     ...state.fanApproval,
@@ -173,10 +177,14 @@ export function handleSquadAction(state: GameState, action: SquadAction): GameSt
                 }
                 : undefined;
 
-            const updatedTeam = {
+            const baseDemotedTeam = {
                 ...state.team,
                 squad: updatedSquad,
                 customLineup: updatedLineup
+            };
+            const updatedTeam = {
+                ...baseDemotedTeam,
+                squadPower: calculateSquadPower(baseDemotedTeam)
             };
             const updatedAllTeams = state.allTeams.map(t => t.id === updatedTeam.id ? updatedTeam : t);
 
@@ -185,7 +193,6 @@ export function handleSquadAction(state: GameState, action: SquadAction): GameSt
                 team: updatedTeam,
                 allTeams: updatedAllTeams,
                 youthAcademy: [player, ...state.youthAcademy],
-                viewingPlayer: state.viewingPlayer?.id === playerId ? player : state.viewingPlayer,
                 finances: {
                     ...state.finances,
                     weeklyWages: Math.max(0, state.finances.weeklyWages - (player.wage || 0))
@@ -202,7 +209,6 @@ export function handleSquadAction(state: GameState, action: SquadAction): GameSt
                 ...state,
                 youthAcademy: state.youthAcademy.filter(p => p.id !== playerId),
                 incomingOffers: state.incomingOffers.filter(o => o.playerId !== playerId),
-                viewingPlayer: state.viewingPlayer?.id === playerId ? null : state.viewingPlayer,
             };
         }
 
@@ -216,7 +222,8 @@ export function handleSquadAction(state: GameState, action: SquadAction): GameSt
         }
 
         case 'SET_VIEWING_PLAYER': {
-            return { ...state, viewingPlayer: action.payload };
+            // UI-only viewingPlayer lives in Zustand outside GameState
+            return state;
         }
 
         case 'RENEW_PLAYER_CONTRACT': {
@@ -245,16 +252,12 @@ export function handleSquadAction(state: GameState, action: SquadAction): GameSt
             });
             const updatedTeam = { ...state.team, squad: updatedSquad };
             const updatedAllTeams = state.allTeams.map(t => t.id === updatedTeam.id ? updatedTeam : t);
-            const updatedViewing = state.viewingPlayer?.id === playerId
-                ? (updatedSquad.find(p => p.id === playerId) || updatedReserve.find(p => p.id === playerId) || null)
-                : state.viewingPlayer;
 
             return {
                 ...state,
                 team: updatedTeam,
                 allTeams: updatedAllTeams,
                 youthAcademy: updatedReserve,
-                viewingPlayer: updatedViewing,
                 finances: {
                     ...state.finances,
                     weeklyWages: state.finances.weeklyWages + wageDelta
@@ -275,16 +278,12 @@ export function handleSquadAction(state: GameState, action: SquadAction): GameSt
             const updatedReserve = state.youthAcademy.map(p => (p.id === playerId ? bumpMorale(p) : p));
             const updatedTeam = { ...state.team, squad: updatedSquad };
             const updatedAllTeams = state.allTeams.map(t => t.id === updatedTeam.id ? updatedTeam : t);
-            const updatedViewing = state.viewingPlayer?.id === playerId
-                ? (updatedSquad.find(p => p.id === playerId) || updatedReserve.find(p => p.id === playerId) || null)
-                : state.viewingPlayer;
 
             return {
                 ...state,
                 team: updatedTeam,
                 allTeams: updatedAllTeams,
                 youthAcademy: updatedReserve,
-                viewingPlayer: updatedViewing
             };
         }
 

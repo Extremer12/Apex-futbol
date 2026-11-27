@@ -1,8 +1,5 @@
 import { StoredAsset, saveStoredAssetsBatch, getAllStoredAssets, clearAllStoredAssets, getStoredAssetsCount } from './storage';
-import { normalizeKey, getTeamMatchKeys, getCompetitionMatchKeys, getPlayerMatchKeys } from './matcher';
-
-import { ARG_CLUB_LOGOS_BY_ID, ARG_CLUB_LOGOS_BY_NAME, ARG_COMPETITION_LOGOS } from './argentineLogos';
-import { PLAYER_PHOTOS_BY_ID, PLAYER_PHOTOS_BY_NAME } from './playerPhotos';
+import { normalizeKey } from './matcher';
 import { resourceManager } from '../resources/ResourceManager';
 import { ResourceFallback } from '../resources/ResourceFallback';
 import { ResourceCache } from '../resources/ResourceCache';

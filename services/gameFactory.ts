@@ -248,7 +248,6 @@ export function initializeGame({ selectedTeam, playerProfile, initialPromises }:
             totalMandates: 1
         },
         electoralPromises: initialPromises || [],
-        viewingPlayer: null,
         incomingOffers: [],
         youthAcademy: initialYouthAcademy,
         cups: initialCups,

@@ -2,7 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { TEAMS } from '../../constants';
 import { Team, Player, LeagueId } from '../../types';
-import { compressString, decompressString } from '../../utils/compression';
+import { compressString, decompressString, compressStringAsync, decompressStringAsync } from '../../utils/compression';
+import { ResourceCache } from '../../services/resources/ResourceCache';
+import { buildSaveSummary } from '../../services/db';
 import {
     calculateSquadPower,
     processPlayerAgingAndProgression,
@@ -1071,4 +1073,350 @@ test('58. Club Membership (Socios) & Realistic Regional Economy: initialization,
 
     const relegationDrop = applyMembershipEventBoost(state.membership!, 'RELEGATION');
     assert.ok(relegationDrop.delta < -30_000, 'Relegation causes mass member exodus');
+});
+
+test('Bloque 2 — Compression V3 Gzip handles >120KB multi-club payloads and decodes legacy V2 saves', async () => {
+    // Generate >120KB of varied high-entropy career JSON (exceeding old 65,535 LZW table size)
+    const largeTeams = Array.from({ length: 650 }, (_, idx) => ({
+        id: idx + 1,
+        name: `Club Atlético Edición_${idx}_${(idx * 97) % 1000}`,
+        players: Array.from({ length: 12 }, (__, pIdx) => ({
+            id: idx * 100 + pIdx,
+            name: `Jugador_${idx}_${pIdx}_Áéíóúñ🏆`,
+            ovr: 55 + ((idx + pIdx) % 40),
+            value: 250000 + idx * 1337 + pIdx * 911
+        }))
+    }));
+    const bigPayload = JSON.stringify({
+        careerId: 'career_big_test',
+        season: 4,
+        teams: largeTeams
+    });
+    assert.ok(bigPayload.length > 120_000, 'Test payload must exceed 120KB');
+
+    const v3Compressed = await compressStringAsync(bigPayload);
+    assert.ok(v3Compressed.startsWith('VjM6'), 'Gzip V3 Base64 payload must carry V3: header ("VjM6")');
+    assert.ok(v3Compressed.length < bigPayload.length * 0.4, 'Gzip V3 must compress JSON significantly');
+
+    const roundtripped = await decompressStringAsync(v3Compressed);
+    assert.equal(roundtripped, bigPayload, 'Gzip V3 decompression must match original >120KB JSON byte-for-byte');
+
+    // Legacy V2 backward compatibility through decompressStringAsync + 16-bit dictionary safety
+    const v2Compressed = compressString(bigPayload);
+    const v2Restored = await decompressStringAsync(v2Compressed);
+    assert.equal(v2Restored, bigPayload, 'Legacy V2 LZW must remain readable via decompressStringAsync without 16-bit overflow');
+});
+
+test('Bloque 2 — ResourceCache.removePackAssets revokes allocated blob: URLs cleanly', async () => {
+    const origCreate = URL.createObjectURL;
+    const origRevoke = URL.revokeObjectURL;
+    const revokedUrls: string[] = [];
+    let counter = 0;
+
+    (URL as any).createObjectURL = () => `blob:mock://pack_asset_${++counter}`;
+    (URL as any).revokeObjectURL = (url: string) => {
+        revokedUrls.push(url);
+    };
+
+    try {
+        const blobUrl = await ResourceCache.putAsset('team-logo', '999999', {
+            blob: new Blob(['mock-webp-bytes'], { type: 'image/webp' }),
+            packId: 'test_pack_bloque2'
+        });
+
+        assert.ok(blobUrl.startsWith('blob:mock://'), 'Allocated mock blob URL');
+        assert.equal(
+            ResourceCache.getPackBlobUrl('test_pack_bloque2', 'team-logo', '999999'),
+            blobUrl
+        );
+
+        await ResourceCache.removePackAssets('test_pack_bloque2');
+
+        assert.equal(
+            ResourceCache.getPackBlobUrl('test_pack_bloque2', 'team-logo', '999999'),
+            undefined,
+            'Pack blob mapping removed'
+        );
+        assert.ok(revokedUrls.includes(blobUrl), 'URL.revokeObjectURL must be called for evicted pack blob');
+    } finally {
+        URL.createObjectURL = origCreate;
+        URL.revokeObjectURL = origRevoke;
+        await ResourceCache.clearAll();
+    }
+});
+
+test('Bloque 2 — DB buildSaveSummary extracts lightweight career metadata without heavy state arrays', async () => {
+    const { initializeGame } = await import('../../services/gameFactory');
+    const club = TEAMS.find(t => t.name.includes('Boca')) || TEAMS[0];
+    const state = initializeGame({
+        selectedTeam: club,
+        playerProfile: { name: 'Presidente Summary', country: 'ARG', age: 45, style: 'cantera', difficulty: 'normal' }
+    });
+    state.careerId = 'career_summary_test';
+    state.season = 3;
+    state.currentWeek = 14;
+
+    const summary = buildSaveSummary('career_summary_test', 'Mi Carrera', state, state.playerProfile, 'manual');
+    assert.equal(summary.id, 'career_summary_test');
+    assert.equal(summary.careerId, 'career_summary_test');
+    assert.equal(summary.teamId, club.id);
+    assert.equal(summary.teamName, club.name);
+    assert.equal(summary.season, 3);
+    assert.equal(summary.currentWeek, 14);
+    assert.equal(summary.managerName, 'Presidente Summary');
+    assert.equal((summary as unknown as Record<string, unknown>).allTeams, undefined);
+    assert.equal((summary as unknown as Record<string, unknown>).fixtures, undefined);
+});
+
+test('Bloque 3 — viewingPlayer lives in Zustand outside GameState and SET_VIEWING_PLAYER never mutates gameState reference', async () => {
+    const { useGameStore, ensureGameReducerLoaded } = await import('../../state/gameStore');
+    const { initializeGame } = await import('../../services/gameFactory');
+    await ensureGameReducerLoaded();
+
+    const club = TEAMS.find(t => t.name.includes('Boca')) || TEAMS[0];
+    const initialState = initializeGame({
+        selectedTeam: club,
+        playerProfile: { name: 'Presidente Store', country: 'ARG', age: 40, style: 'galactico', difficulty: 'normal' }
+    });
+    assert.equal('viewingPlayer' in initialState, false, 'GameState must not hold viewingPlayer');
+
+    useGameStore.setState({ gameState: initialState, viewingPlayer: null });
+    const refBefore = useGameStore.getState().gameState;
+    const samplePlayer = initialState.team.squad[0];
+
+    useGameStore.getState().dispatch({ type: 'SET_VIEWING_PLAYER', payload: samplePlayer });
+    assert.equal(useGameStore.getState().viewingPlayer?.id, samplePlayer.id, 'viewingPlayer updated in Zustand UI state');
+    assert.strictEqual(useGameStore.getState().gameState, refBefore, 'GameState reference must remain untouched');
+
+    useGameStore.getState().dispatch({ type: 'SET_VIEWING_PLAYER', payload: null });
+    assert.equal(useGameStore.getState().viewingPlayer, null);
+    useGameStore.getState().resetGameData();
+});
+
+test('Bloque 3 — getGlobalPlayerIndex skips re-indexing when squads are untouched and rebuilds on real squad change', async () => {
+    const { initializeGame } = await import('../../services/gameFactory');
+    const { getGlobalPlayerIndex, getMarketOpportunities, getAvailableMarketPlayers } = await import('../../services/playerIndex');
+
+    const club = TEAMS.find(t => t.name.includes('River')) || TEAMS[0];
+    const state = initializeGame({
+        selectedTeam: club,
+        playerProfile: { name: 'Presidente Index', country: 'ARG', age: 42, style: 'equilibrado', difficulty: 'normal' }
+    });
+
+    const idx1 = getGlobalPlayerIndex(state.allTeams);
+    assert.ok(idx1.allPlayers.length > 5000, 'Indexes full multi-league player database');
+
+    // Change only non-squad metadata on a team -> index must NOT re-scan 11,200 players
+    const teamsWithMetadataEdit = state.allTeams.map((t, i) =>
+        i === 0 ? { ...t, budget: t.budget + 1000 } : t
+    );
+    const idx2 = getGlobalPlayerIndex(teamsWithMetadataEdit);
+    assert.equal(idx2.version, idx1.version, 'Index version unchanged when squads did not change');
+    assert.strictEqual(idx2.allPlayers, idx1.allPlayers, 'allPlayers array reused with zero O(N) rebuild');
+
+    // Change an actual squad array -> triggers clean single-pass re-index
+    const teamsWithSquadEdit = teamsWithMetadataEdit.map((t, i) =>
+        i === 1 ? { ...t, squad: t.squad.map((p, pi) => (pi === 0 ? { ...p, isTransferListed: true } : p)) } : t
+    );
+    const idx3 = getGlobalPlayerIndex(teamsWithSquadEdit);
+    assert.ok(idx3.version > idx2.version, 'Index version increments when a club squad changes');
+
+    const opportunities = getMarketOpportunities(teamsWithSquadEdit, club.id, 4);
+    assert.ok(opportunities.length > 0 && opportunities.length <= 4, 'Market opportunities returned in O(1)');
+
+    const market = getAvailableMarketPlayers(teamsWithSquadEdit, club.id, club.squad, state.youthAcademy);
+    assert.ok(market.availablePlayers.length > 0, 'Available market excludes user squad');
+    assert.equal(market.availablePlayers.some(p => p.id === club.squad[0].id), false);
+});
+
+test('Bloque 4 — Real-time squadPower recalculation after SIGN_PLAYER, ACCEPT_OFFER, PROMOTE_PLAYER and DEMOTE_TO_RESERVE', async () => {
+    const { initializeGame } = await import('../../services/gameFactory');
+    const { gameReducer } = await import('../../state/reducer');
+
+    const club = TEAMS.find(t => t.name.includes('Boca')) || TEAMS[0];
+    let state = initializeGame({
+        selectedTeam: club,
+        playerProfile: { name: 'Presidente Power', country: 'ARG', age: 40, style: 'galactico', difficulty: 'normal' }
+    });
+    // Ensure squad has spare slots (< 31) and deep treasury
+    state = {
+        ...state,
+        team: { ...state.team, squad: state.team.squad.slice(0, 22) },
+        finances: { ...state.finances, balance: 200_000_000, transferBudget: 150_000_000 }
+    };
+    state.team.squadPower = calculateSquadPower(state.team);
+    state.allTeams = state.allTeams.map(t => (t.id === state.team.id ? state.team : t));
+
+    const otherClub = state.allTeams.find(t => t.id !== state.team.id)!;
+    const targetToSign = {
+        ...createMockPlayer(998001, 'DEL', 99),
+        name: 'Astro Mundial',
+        potential: 99,
+        age: 23,
+        value: 10_000_000
+    };
+    state = {
+        ...state,
+        allTeams: state.allTeams.map(t => (t.id === otherClub.id ? { ...t, squad: [...t.squad, targetToSign] } : t))
+    };
+
+    const powerBeforeSign = state.team.squadPower!.overall;
+    state = gameReducer(state, {
+        type: 'SIGN_PLAYER',
+        payload: { player: targetToSign, fee: 10_000_000, wage: 50_000, contractYears: 4, role: 'Key', signingBonus: 0 }
+    })!;
+    assert.ok(state.team.squadPower!.overall >= powerBeforeSign, 'SIGN_PLAYER recalculates squadPower immediately');
+    assert.deepEqual(state.team.squadPower, calculateSquadPower(state.team), 'Team squadPower matches fresh calculation');
+
+    // Accept an incoming offer for that star and verify both buyer & seller recalculate squadPower
+    const offerId = 'offer_power_test';
+    state = gameReducer(state, {
+        type: 'ADD_OFFER',
+        payload: {
+            id: offerId,
+            playerId: targetToSign.id,
+            offeringTeamId: otherClub.id,
+            offerValue: 20_000_000,
+            message: 'Oferta test'
+        }
+    })!;
+    state = gameReducer(state, { type: 'ACCEPT_OFFER', payload: { offerId } })!;
+    assert.deepEqual(state.team.squadPower, calculateSquadPower(state.team), 'ACCEPT_OFFER recalculates user squadPower');
+    const updatedBuyer = state.allTeams.find(t => t.id === otherClub.id)!;
+    assert.deepEqual(updatedBuyer.squadPower, calculateSquadPower(updatedBuyer), 'ACCEPT_OFFER recalculates buyer squadPower');
+
+    // Promote elite reserve player -> squadPower updated
+    const eliteYouth = { ...createMockPlayer(998002, 'CEN', 96), name: 'Joyita Cantera', age: 18 };
+    state = { ...state, youthAcademy: [eliteYouth, ...state.youthAcademy] };
+    state = gameReducer(state, { type: 'PROMOTE_PLAYER', payload: eliteYouth })!;
+    assert.deepEqual(state.team.squadPower, calculateSquadPower(state.team), 'PROMOTE_PLAYER updates squadPower');
+
+    // Demote back to reserve -> squadPower updated
+    state = gameReducer(state, { type: 'DEMOTE_TO_RESERVE', payload: eliteYouth.id })!;
+    assert.deepEqual(state.team.squadPower, calculateSquadPower(state.team), 'DEMOTE_TO_RESERVE updates squadPower');
+});
+
+test('Bloque 4 — Sponsorship clause settlement applies performance bonuses and relegation/continental/age penalties', async () => {
+    const { evaluateSponsorshipClauses } = await import('../../services/economy');
+
+    const testSponsors = [
+        {
+            id: 'sp_1',
+            name: 'Fly Emirates',
+            type: 'shirt' as const,
+            logo: 'shirt',
+            weeklyIncome: 100_000,
+            duration: 52,
+            bonus: { condition: 'top4' as const, amount: 600_000 },
+            clauses: ['Exige clasificación a Copa Continental', 'Penalización 20% si el equipo desciende']
+        },
+        {
+            id: 'sp_2',
+            name: 'Red Bull',
+            type: 'kit' as const,
+            logo: 'kit',
+            weeklyIncome: 50_000,
+            duration: 52,
+            clauses: ['Exige promedio de edad de plantilla inferior a 27 años', 'Cláusula de solvencia: prohíbe incurrir en déficit']
+        }
+    ];
+
+    // Failure scenario: relegated, missed continental, deficit, older squad
+    const failed = evaluateSponsorshipClauses(testSponsors, {
+        playerPosition: 19,
+        totalTeamsInLeague: 20,
+        isSecondDivision: false,
+        wasPromoted: false,
+        wasRelegated: true,
+        qualifiedContinental: false,
+        wonAnyCup: false,
+        reachedDomesticCupLateStage: false,
+        endBalanceBeforeClauses: -5_000_000,
+        squadAvgAge: 28.4,
+        fanApprovalRating: 45,
+        stadiumFacilityLevel: 1
+    });
+    assert.equal(failed.totalBonuses, 0);
+    assert.ok(failed.totalPenalties > 1_000_000, 'Triggers continental, relegation, solvency, and age penalties');
+    assert.ok(failed.netAdjustment < 0);
+    assert.equal(failed.penaltyMessages.length, 4);
+
+    // Success scenario: 2nd place, continental cup qualified, young squad, positive balance
+    const succeeded = evaluateSponsorshipClauses(testSponsors, {
+        playerPosition: 2,
+        totalTeamsInLeague: 20,
+        isSecondDivision: false,
+        wasPromoted: false,
+        wasRelegated: false,
+        qualifiedContinental: true,
+        wonAnyCup: false,
+        reachedDomesticCupLateStage: true,
+        endBalanceBeforeClauses: 25_000_000,
+        squadAvgAge: 24.5,
+        fanApprovalRating: 82,
+        stadiumFacilityLevel: 3
+    });
+    assert.equal(succeeded.totalPenalties, 0);
+    assert.ok(succeeded.totalBonuses >= 700_000, 'Pays explicit top4 bonus plus young-squad incentive');
+});
+
+test('Bloque 4 — seasonManager finishes unplayed league matches and re-sorts tables before crowning champions', async () => {
+    const { initializeGame } = await import('../../services/gameFactory');
+    const { startNewSeason } = await import('../../services/seasonManager');
+
+    const club = TEAMS.find(t => t.name.includes('Real Madrid') || t.leagueId === LeagueId.LA_LIGA) || TEAMS[0];
+    let state = initializeGame({
+        selectedTeam: club,
+        playerProfile: { name: 'Presidente Orden', country: 'ESP', age: 50, style: 'galactico', difficulty: 'normal' }
+    });
+
+    const userLid = state.team.leagueId;
+    const table = state.leagueTables[userLid];
+    const rivalId = table.find(r => r.teamId !== club.id)!.teamId;
+
+    // Power-up user club vs bottom club and leave 4 unplayed user matches that should flip points lead 58 -> 70 vs rival 60
+    state.allTeams = state.allTeams.map(t => {
+        if (t.id === club.id) {
+            return {
+                ...t,
+                squad: t.squad.map(p => ({ ...p, rating: 99, condition: 100 })),
+                squadPower: { attack: 99, midfield: 99, defense: 99, overall: 99 }
+            };
+        }
+        if (t.id !== rivalId && t.leagueId === userLid) {
+            return {
+                ...t,
+                squad: t.squad.map(p => ({ ...p, rating: 40, condition: 50 })),
+                squadPower: { attack: 40, midfield: 40, defense: 40, overall: 40 }
+            };
+        }
+        return t;
+    });
+
+    // Clear user's last 4 league matches so they remain unplayed at season transition
+    let cleared = 0;
+    state.schedule = state.schedule.map(m => {
+        if (!m.isCupMatch && (m.homeTeamId === club.id || m.awayTeamId === club.id) && cleared < 4) {
+            cleared++;
+            return { ...m, result: undefined };
+        }
+        return m;
+    });
+
+    // Seed table with rival slightly ahead BEFORE remaining 4 matches are simulated
+    state.leagueTables[userLid] = table.map(r => {
+        if (r.teamId === rivalId) return { ...r, played: 38, points: 61, goalDifference: 10, position: 1 };
+        if (r.teamId === club.id) return { ...r, played: 34, points: 58, goalDifference: 25, position: 2 };
+        return { ...r, played: 38, points: 30, position: 5 };
+    });
+
+    const nextSeason = startNewSeason(state);
+    assert.equal(nextSeason.season, state.season + 1);
+    const history = nextSeason.seasonHistory?.[nextSeason.seasonHistory.length - 1];
+    assert.equal(history?.userPosition, 1, 'User overtakes to 1st after pending matches are simulated and sorted');
+    assert.equal(history?.leagueChampion, club.name, 'Champion crowned AFTER unplayed league matches and re-sorting');
+    assert.ok(
+        (nextSeason.team.trophyCabinet || []).some(t => t.season === state.season && t.type === 'league'),
+        'League champion trophy awarded cleanly to settled leader'
+    );
 });

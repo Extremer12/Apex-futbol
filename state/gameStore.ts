@@ -1,19 +1,36 @@
 import { create } from 'zustand';
-import { GameState, PlayerProfile, Team, Screen, MatchPhase, PendingSimulationResults } from '../types';
-import { gameReducer, initialState, GameAction } from './reducer';
-import { ElectionResponse } from '../services/gameLogic';
-import { TriggeredEvent } from '../services/eventEngine';
+import { GameState, PlayerProfile, Team, Screen, MatchPhase, PendingSimulationResults, Player } from '../types';
+import type { GameAction } from './reducer';
+import type { ElectionResponse } from '../services/gameLogic';
+import type { TriggeredEvent } from '../services/eventEngine';
+import { registerPacksStoreNotifier } from '../services/resources/packNotifierBridge';
+import { simulationWorker } from '../services/simulationWorker';
 
-export type AppStateType = 
-    | 'START_SCREEN' 
-    | 'LOAD_GAME' 
-    | 'PROFILE_CREATION' 
-    | 'TEAM_SELECTION' 
-    | 'ELECTION_PITCH' 
-    | 'ELECTION_RESULT' 
-    | 'PROMISE_SELECTION' 
-    | 'GAME_ACTIVE' 
+export type AppStateType =
+    | 'START_SCREEN'
+    | 'LOAD_GAME'
+    | 'PROFILE_CREATION'
+    | 'TEAM_SELECTION'
+    | 'ELECTION_PITCH'
+    | 'ELECTION_RESULT'
+    | 'PROMISE_SELECTION'
+    | 'GAME_ACTIVE'
     | 'GAME_OVER';
+
+type GameReducerFn = (state: GameState | null, action: GameAction) => GameState | null;
+let loadedReducer: GameReducerFn | null = null;
+let reducerLoadPromise: Promise<GameReducerFn> | null = null;
+
+export async function ensureGameReducerLoaded(): Promise<GameReducerFn> {
+    if (loadedReducer) return loadedReducer;
+    if (!reducerLoadPromise) {
+        reducerLoadPromise = import('./reducer').then((mod) => {
+            loadedReducer = mod.gameReducer;
+            return mod.gameReducer;
+        });
+    }
+    return reducerLoadPromise;
+}
 
 export interface GameStoreState {
     // App lifecycle state
@@ -24,14 +41,15 @@ export interface GameStoreState {
     activeScreen: Screen;
 
     // Core Game State
-    gameState: GameState;
+    gameState: GameState | null;
 
     // Simulation state
     matchPhase: MatchPhase;
     pendingResults: PendingSimulationResults | null;
     isSimulating: boolean;
 
-    // Events & Modals state
+    // Events & Modals state (decoupled from GameState to avoid full-tree re-renders)
+    viewingPlayer: Player | null;
     currentEvent: TriggeredEvent | null;
     isSeasonEndModalOpen: boolean;
     isStartingSeason: boolean;
@@ -47,6 +65,7 @@ export interface GameStoreState {
 
     // Actions
     dispatch: (action: GameAction) => void;
+    setViewingPlayer: (player: Player | null) => void;
     setAppState: (state: AppStateType) => void;
     setActiveScreen: (screen: Screen) => void;
     setPlayerProfile: (profile: PlayerProfile | null) => void;
@@ -75,12 +94,13 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
     electionResult: null,
     activeScreen: Screen.Dashboard,
 
-    gameState: initialState,
+    gameState: null,
 
     matchPhase: 'PRE',
     pendingResults: null,
     isSimulating: false,
 
+    viewingPlayer: null,
     currentEvent: null,
     isSeasonEndModalOpen: false,
     isStartingSeason: false,
@@ -93,15 +113,56 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
     packsVersion: 0,
 
     dispatch: (action: GameAction) => {
-        set(state => {
-            const nextGameState = gameReducer(state.gameState, action);
-            return {
-                gameState: nextGameState,
-                playerProfile: nextGameState?.playerProfile ?? state.playerProfile
-            };
+        if (action.type === 'SET_VIEWING_PLAYER') {
+            set({ viewingPlayer: action.payload });
+            return;
+        }
+        if (action.type === 'RESET_GAME') {
+            simulationWorker.resetSession();
+            set({ gameState: null, viewingPlayer: null });
+            return;
+        }
+        if (
+            action.type === 'INITIALIZE_GAME' ||
+            action.type === 'LOAD_GAME' ||
+            action.type === 'START_NEW_SEASON' ||
+            action.type === 'SWITCH_CLUB'
+        ) {
+            simulationWorker.resetSession();
+        }
+        if (loadedReducer) {
+            const reducer = loadedReducer;
+            set((state) => {
+                const nextGameState = reducer(state.gameState, action);
+                let nextViewingPlayer = state.viewingPlayer;
+                if (
+                    action.type === 'INITIALIZE_GAME' ||
+                    action.type === 'LOAD_GAME' ||
+                    action.type === 'SWITCH_CLUB'
+                ) {
+                    nextViewingPlayer = null;
+                } else if (action.type === 'RELEASE_RESERVE_PLAYER' && state.viewingPlayer?.id === action.payload) {
+                    nextViewingPlayer = null;
+                } else if (action.type === 'ACCEPT_OFFER' && state.viewingPlayer && nextGameState) {
+                    const sold = !nextGameState.team.squad.some(p => p.id === state.viewingPlayer!.id) &&
+                        !(nextGameState.youthAcademy || []).some(p => p.id === state.viewingPlayer!.id);
+                    if (sold) nextViewingPlayer = null;
+                }
+                return {
+                    gameState: nextGameState,
+                    viewingPlayer: nextViewingPlayer,
+                    playerProfile: nextGameState?.playerProfile ?? state.playerProfile
+                };
+            });
+            return;
+        }
+        // Fallback: lazily load reducer if dispatch was called prior to explicit preload
+        void ensureGameReducerLoaded().then(() => {
+            get().dispatch(action);
         });
     },
 
+    setViewingPlayer: (viewingPlayer) => set({ viewingPlayer }),
     setAppState: (appState) => set({ appState }),
     setActiveScreen: (activeScreen) => set({ activeScreen }),
     setPlayerProfile: (playerProfile) => set({ playerProfile }),
@@ -113,9 +174,9 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
     setCurrentEvent: (currentEvent) => set({ currentEvent }),
     setIsSeasonEndModalOpen: (isSeasonEndModalOpen) => set({ isSeasonEndModalOpen }),
     setIsStartingSeason: (isStartingSeason) => set({ isStartingSeason }),
-    incrementPacksVersion: () => set(state => ({ packsVersion: state.packsVersion + 1 })),
+    incrementPacksVersion: () => set((state) => ({ packsVersion: state.packsVersion + 1 })),
 
-    setSaveState: (info) => set(state => ({
+    setSaveState: (info) => set((state) => ({
         currentSaveId: info.currentSaveId !== undefined ? info.currentSaveId : state.currentSaveId,
         currentSaveName: info.currentSaveName !== undefined ? info.currentSaveName : state.currentSaveName,
         lastSaved: info.lastSaved !== undefined ? info.lastSaved : state.lastSaved,
@@ -123,8 +184,9 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
     })),
 
     resetGameData: () => {
-        get().dispatch({ type: 'RESET_GAME' });
+        simulationWorker.resetSession();
         set({
+            gameState: null,
             playerProfile: null,
             selectedTeam: null,
             electionResult: null,
@@ -134,6 +196,7 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
             lastSaved: null,
             matchPhase: 'PRE',
             pendingResults: null,
+            viewingPlayer: null,
             currentEvent: null,
             isSeasonEndModalOpen: false,
             isStartingSeason: false
@@ -141,10 +204,8 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
     }
 }));
 
-// Connect resource manager reactive updates to game store
-import { registerPacksStoreNotifier } from '../services/resources/ResourceManager';
 registerPacksStoreNotifier(() => {
-    useGameStore.setState(s => ({ packsVersion: (s.packsVersion || 0) + 1 }));
+    useGameStore.setState((s) => ({ packsVersion: (s.packsVersion || 0) + 1 }));
 });
 
 // Re-export canonical selectors & helpers

@@ -457,6 +457,133 @@ export const generateStadium = (team: Team): Stadium => {
     };
 };
 
+export interface SponsorshipClauseSettlement {
+    totalBonuses: number;
+    totalPenalties: number;
+    netAdjustment: number;
+    bonusMessages: string[];
+    penaltyMessages: string[];
+}
+
+/**
+ * Evaluates both structured `sponsor.bonus` milestones and contractual `sponsor.clauses`
+ * (bonuses and penalties) at season end, returning a transparent ledger for Season Manager.
+ */
+export const evaluateSponsorshipClauses = (
+    sponsors: Sponsor[],
+    context: {
+        playerPosition: number;
+        totalTeamsInLeague: number;
+        isSecondDivision: boolean;
+        wasPromoted: boolean;
+        wasRelegated: boolean;
+        qualifiedContinental: boolean;
+        wonAnyCup: boolean;
+        reachedDomesticCupLateStage: boolean;
+        endBalanceBeforeClauses: number;
+        squadAvgAge: number;
+        fanApprovalRating: number;
+        stadiumFacilityLevel: number;
+    },
+    formatMoney: (amount: number) => string = (n) => `$${Math.round(n).toLocaleString()}`
+): SponsorshipClauseSettlement => {
+    let totalBonuses = 0;
+    let totalPenalties = 0;
+    const bonusMessages: string[] = [];
+    const penaltyMessages: string[] = [];
+
+    for (const sponsor of sponsors || []) {
+        // 1. Explicit structured bonus objective
+        if (sponsor.bonus) {
+            let achieved = false;
+            if (sponsor.bonus.condition === 'top4' && context.playerPosition <= 4) achieved = true;
+            else if (sponsor.bonus.condition === 'top6' && context.playerPosition <= 6) achieved = true;
+            else if (sponsor.bonus.condition === 'promotion' && (context.wasPromoted || (context.isSecondDivision && context.playerPosition <= 3))) achieved = true;
+            else if (sponsor.bonus.condition === 'win_cup' && context.wonAnyCup) achieved = true;
+
+            if (achieved) {
+                totalBonuses += sponsor.bonus.amount;
+                bonusMessages.push(`Bono por ${sponsor.name}: +${formatMoney(sponsor.bonus.amount)}`);
+            }
+        }
+
+        // 2. Contractual clauses (penalties and secondary performance incentives)
+        const clauses = sponsor.clauses || [];
+        for (const clause of clauses) {
+            const lower = clause.toLowerCase();
+
+            // Penalty clauses
+            if (lower.includes('desciende') && lower.includes('penalizaci')) {
+                if (context.wasRelegated) {
+                    const penalty = Math.round(sponsor.weeklyIncome * 52 * 0.20);
+                    totalPenalties += penalty;
+                    penaltyMessages.push(`Penalización ${sponsor.name} (Descenso): -${formatMoney(penalty)}`);
+                }
+                continue;
+            }
+            if (lower.includes('exige') && lower.includes('copa continental')) {
+                if (!context.qualifiedContinental) {
+                    const penalty = Math.round(sponsor.weeklyIncome * 4);
+                    totalPenalties += penalty;
+                    penaltyMessages.push(`Cláusula incumplida ${sponsor.name} (Sin Copa Continental): -${formatMoney(penalty)}`);
+                }
+                continue;
+            }
+            if (lower.includes('solvencia') && lower.includes('déficit')) {
+                if (context.endBalanceBeforeClauses < 0) {
+                    const penalty = Math.round(sponsor.weeklyIncome * 3);
+                    totalPenalties += penalty;
+                    penaltyMessages.push(`Cláusula solvencia ${sponsor.name} (Déficit): -${formatMoney(penalty)}`);
+                }
+                continue;
+            }
+            if (lower.includes('promedio de edad') && lower.includes('27')) {
+                if (context.squadAvgAge >= 27) {
+                    const penalty = Math.round(sponsor.weeklyIncome * 3);
+                    totalPenalties += penalty;
+                    penaltyMessages.push(`Cláusula edad media ${sponsor.name} (${context.squadAvgAge.toFixed(1)}a): -${formatMoney(penalty)}`);
+                } else {
+                    const bonus = Math.round(sponsor.weeklyIncome * 2);
+                    totalBonuses += bonus;
+                    bonusMessages.push(`Bono plantilla joven ${sponsor.name}: +${formatMoney(bonus)}`);
+                }
+                continue;
+            }
+
+            // Secondary clause bonuses (avoid double-counting primary top6 bonus)
+            if (lower.includes('top 6') && sponsor.bonus?.condition !== 'top6' && context.playerPosition <= 6) {
+                const bonus = Math.round(sponsor.weeklyIncome * 4);
+                totalBonuses += bonus;
+                bonusMessages.push(`Cláusula Top 6 ${sponsor.name}: +${formatMoney(bonus)}`);
+            } else if ((lower.includes('torneos internacionales') || lower.includes('torneos televisados')) && context.qualifiedContinental) {
+                const bonus = Math.round(sponsor.weeklyIncome * 3);
+                totalBonuses += bonus;
+                bonusMessages.push(`Cláusula internacional ${sponsor.name}: +${formatMoney(bonus)}`);
+            } else if (lower.includes('evitar el descenso') && !context.wasRelegated) {
+                const bonus = Math.round(sponsor.weeklyIncome * 2);
+                totalBonuses += bonus;
+                bonusMessages.push(`Bono permanencia ${sponsor.name}: +${formatMoney(bonus)}`);
+            } else if (lower.includes('afluencia superior') && (context.fanApprovalRating >= 75 || context.stadiumFacilityLevel >= 2)) {
+                const bonus = Math.round(sponsor.weeklyIncome * 2);
+                totalBonuses += bonus;
+                bonusMessages.push(`Bono asistencia ${sponsor.name}: +${formatMoney(bonus)}`);
+            } else if (lower.includes('rondas finales') && context.reachedDomesticCupLateStage) {
+                const bonus = Math.round(sponsor.weeklyIncome * 2);
+                totalBonuses += bonus;
+                bonusMessages.push(`Bono Copa Nacional ${sponsor.name}: +${formatMoney(bonus)}`);
+            }
+        }
+    }
+
+    return {
+        totalBonuses,
+        totalPenalties,
+        netAdjustment: totalBonuses - totalPenalties,
+        bonusMessages,
+        penaltyMessages
+    };
+};
+
 export const generateSponsor = (
     type: Sponsor['type'],
     tier: 'Top' | 'Mid' | 'Lower',

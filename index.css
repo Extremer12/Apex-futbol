@@ -5,7 +5,7 @@
    APEX AI — Premium Design System
    ======================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;1,700;1,800&display=swap');
+/* Fonts preconnected and loaded via index.html for non-blocking CSSOM */
 
 /* ---- CSS Custom Properties (Design System v2 · "Night Match Electric") ---- */
 :root {
@@ -828,6 +828,45 @@ dialog.apex-gate[open]:where(:not([data-closing]))::backdrop {
 @starting-style {
   dialog.apex-gate[open]:where(:not([data-closing]))::backdrop {
     background-color: rgba(3, 5, 12, 0);
+  }
+}
+
+/* ---- Mobile GPU Performance: Disable heavy full-screen blur readbacks on phones ---- */
+@media (max-width: 767px) {
+  .apex-glass,
+  dialog.apex-dialog::backdrop,
+  dialog.apex-top-overlay::backdrop,
+  dialog.apex-sheet::backdrop {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .apex-glass {
+    background: rgba(10, 14, 23, 0.94);
+  }
+  dialog.apex-dialog[open]:where(:not([data-closing]))::backdrop {
+    background-color: rgba(3, 6, 15, 0.90);
+  }
+  dialog.apex-top-overlay::backdrop {
+    background-color: rgba(2, 6, 23, 0.96);
+  }
+  dialog.apex-sheet::backdrop {
+    background-color: rgba(0, 0, 0, 0.85);
+  }
+}
+
+/* ---- Deferred Off-Screen Rendering for Dense Lists & Tables ---- */
+@supports (content-visibility: auto) {
+  .apex-list-deferred > li:nth-child(n + 8) {
+    content-visibility: auto;
+    contain-intrinsic-block-size: auto 4.5rem;
+  }
+  .apex-grid-deferred > *:nth-child(n + 9) {
+    content-visibility: auto;
+    contain-intrinsic-block-size: auto 7.5rem;
+  }
+  .apex-table-deferred > tbody > tr:nth-child(n + 11) {
+    content-visibility: auto;
+    contain-intrinsic-block-size: auto 3rem;
   }
 }
 

@@ -12,32 +12,91 @@ import { generateCoachReport } from '../services/gameLogic';
 import { isTransferWindowOpen, simulateWeeklyAITransfers } from '../services/squadProgressionService';
 import { formatDate, formatCurrency } from '../utils';
 
-interface SimulationInput {
-    type: 'SIMULATE_WEEK';
-    payload: {
-        requestId?: string;
-        currentWeek: number;
-        currentTurn: 'weekend' | 'midweek';
-        currentDate?: string | Date;
-        season?: number;
-        weekMatches?: Match[];
-        schedule?: Match[];
-        leagueTables: Record<LeagueId, LeagueTableRow[]>;
-        allTeams: Team[];
-        playerTeam?: Team;
-        playerTeamId: number;
-        cups: any;
-        finances: {
-            weeklyIncome: number;
-            weeklyWages: number;
-            clubDirectives?: any;
-        };
-        scouts: any[];
-        scoutedPlayerIds: Record<number, number>;
-        cinematicQueue?: any[];
-        youthAcademy?: any[];
-    };
+interface WorkerSessionState {
+    sessionKey: string;
+    allTeams: Team[];
+    teamMap: Map<number, Team>;
+    schedule: Match[];
+    leagueTables: Record<LeagueId, LeagueTableRow[]>;
+    cups: any;
+    scoutedPlayerIds: Record<number, number>;
+    playerTeamId: number;
 }
+
+interface TurnSimulationContext {
+    requestId?: string;
+    currentWeek: number;
+    currentTurn: 'weekend' | 'midweek';
+    currentDate?: string | Date;
+    season?: number;
+    weekMatches?: Match[];
+    schedule: Match[];
+    leagueTables: Record<LeagueId, LeagueTableRow[]>;
+    allTeams: Team[];
+    playerTeam?: Team;
+    playerTeamId: number;
+    cups: any;
+    finances: {
+        weeklyIncome: number;
+        weeklyWages: number;
+        clubDirectives?: any;
+    };
+    scouts: any[];
+    scoutedPlayerIds: Record<number, number>;
+    cinematicQueue?: any[];
+    youthAcademy?: any[];
+}
+
+type SimulationInput =
+    | {
+        type: 'INIT_STATE';
+        payload: {
+            sessionKey: string;
+            allTeams: Team[];
+            schedule: Match[];
+            leagueTables: Record<LeagueId, LeagueTableRow[]>;
+            cups: any;
+            scoutedPlayerIds: Record<number, number>;
+            playerTeamId: number;
+        };
+    }
+    | {
+        type: 'PATCH_STATE';
+        payload: {
+            sessionKey: string;
+            modifiedTeams?: Team[];
+            deletedTeamIds?: number[];
+            schedule?: Match[];
+            leagueTables?: Record<LeagueId, LeagueTableRow[]>;
+            cups?: any;
+            scoutedPlayerIds?: Record<number, number>;
+            playerTeamId?: number;
+        };
+    }
+    | {
+        type: 'SIMULATE_TURN';
+        payload: {
+            requestId?: string;
+            sessionKey: string;
+            currentWeek: number;
+            currentTurn: 'weekend' | 'midweek';
+            currentDate?: string | Date;
+            season?: number;
+            playerTeamId: number;
+            finances: {
+                weeklyIncome: number;
+                weeklyWages: number;
+                clubDirectives?: any;
+            };
+            scouts: any[];
+            cinematicQueue?: any[];
+            youthAcademy?: any[];
+        };
+    }
+    | {
+        type: 'SIMULATE_WEEK';
+        payload: TurnSimulationContext;
+    };
 
 interface SimulationOutput {
     type: 'SIMULATION_COMPLETE';
@@ -60,36 +119,40 @@ interface SimulationOutput {
     };
 }
 
+let workerSession: WorkerSessionState | null = null;
 
-// Worker message handler
-self.onmessage = async (e: MessageEvent<SimulationInput>) => {
-    const { type, payload } = e.data;
+async function runWeekSimulation(payload: TurnSimulationContext): Promise<{
+    output: SimulationOutput;
+    nextAllTeams: Team[];
+    nextSchedule: Match[];
+    nextLeagueTables: Record<LeagueId, LeagueTableRow[]>;
+    nextCups: any;
+    nextScoutedPlayerIds: Record<number, number>;
+}> {
+    const {
+        requestId,
+        currentWeek,
+        currentTurn,
+        currentDate,
+        season,
+        weekMatches,
+        schedule,
+        leagueTables,
+        allTeams,
+        playerTeam: inputPlayerTeam,
+        playerTeamId,
+        cups,
+        finances,
+        scouts,
+        scoutedPlayerIds,
+        cinematicQueue,
+        youthAcademy
+    } = payload;
 
-    if (type === 'SIMULATE_WEEK') {
-        const {
-            requestId,
-            currentWeek,
-            currentTurn,
-            currentDate,
-            season,
-            weekMatches,
-            schedule,
-            leagueTables,
-            allTeams,
-            playerTeam: inputPlayerTeam,
-            playerTeamId,
-            cups,
-            finances,
-            scouts,
-            scoutedPlayerIds,
-            cinematicQueue,
-            youthAcademy
-        } = payload;
-
-        const effectivePlayerTeam = inputPlayerTeam || allTeams.find(t => t.id === playerTeamId) || allTeams[0];
-        const nextWeek = currentWeek;
-        const isMidweek = currentTurn === 'midweek';
-        const newSchedule = schedule ? [...schedule] : [];
+    const effectivePlayerTeam = inputPlayerTeam || allTeams.find(t => t.id === playerTeamId) || allTeams[0];
+    const nextWeek = currentWeek;
+    const isMidweek = currentTurn === 'midweek';
+    const newSchedule = schedule ? [...schedule] : [];
 
         // Create Maps for easier update
         const leagueMaps: Record<string, Map<number, LeagueTableRow>> = {};
@@ -103,26 +166,76 @@ self.onmessage = async (e: MessageEvent<SimulationInput>) => {
         const playerTeam = effectivePlayerTeam;
         const playerLeagueId = playerTeam?.leagueId;
 
+        // Determine active official fixtures and clubs playing this turn BEFORE squad recovery/matches
+        const matchesThisWeek = weekMatches || (schedule ? newSchedule.filter(m => m.week === nextWeek && !!m.isMidweek === isMidweek) : []);
+        const updatedWeekMatches: Match[] = [];
+
+        let updatedCups = { ...cups };
+
+        const activeMatchesThisWeek = matchesThisWeek.filter(match => {
+            if (match.result) return false;
+            if (match.isCupMatch && match.competition) {
+                const cupId = COMPETITION_TO_CUP_KEY[match.competition];
+                const cup = cupId ? updatedCups[cupId] : null;
+                if (cup && cup.phase === 'knockout') {
+                    const isKnockoutFixture = cup.rounds?.some((r: any) =>
+                        r.fixtures?.some((f: any) =>
+                            ((f.id && match.id && f.id === match.id) ||
+                            (f.homeTeamId === match.homeTeamId && f.awayTeamId === match.awayTeamId && f.week === match.week))
+                        ) ||
+                        r.secondLegFixtures?.some((f: any) =>
+                            ((f.id && match.id && f.id === match.id) ||
+                            (f.homeTeamId === match.homeTeamId && f.awayTeamId === match.awayTeamId && f.week === match.week))
+                        )
+                    );
+                    if (!isKnockoutFixture) return false;
+                }
+            }
+            return true;
+        });
+
+        const officialMatchTeamIds = new Set<number>();
+        activeMatchesThisWeek.forEach(m => {
+            officialMatchTeamIds.add(m.homeTeamId);
+            officialMatchTeamIds.add(m.awayTeamId);
+        });
+
+        // Track pre-existing suspensions so red cards picked up DURING this turn's match aren't immediately expired
+        const preExistingSuspendedIds = new Set<number>();
+        for (let ti = 0; ti < allTeams.length; ti++) {
+            const squad = allTeams[ti].squad;
+            for (let pi = 0; pi < squad.length; pi++) {
+                const p = squad[pi];
+                if (p.isSuspended && (p.suspensionWeeksRemaining || 0) > 0) {
+                    preExistingSuspendedIds.add(p.id);
+                }
+            }
+        }
+
         // Track modified teams for low-overhead delta transfer
         const modifiedTeamIds = new Set<number>();
 
-        // Lazy condition & status updates: only allocate memory when status or condition genuinely changes
+        // Lazy condition & injury updates (NO double tick across weekend+midweek):
+        // - Injuries heal once per full week (!isMidweek)
+        // - Stamina recovers proportionally to elapsed days (~4d before weekend, ~3d before midweek)
+        // - Suspensions are served during official matches and decremented AFTER matches finish
+        const turnRecoveryShare = isMidweek ? (3 / 7) : (4 / 7);
         let updatedAllTeams = allTeams.map(t => {
             let teamChanged = false;
             const updatedSquad = t.squad.map(p => {
-                const needsHeal = (p.isInjured && p.injuryWeeksRemaining) || (p.isSuspended && p.suspensionWeeksRemaining);
+                const needsInjuryHeal = !isMidweek && Boolean(p.isInjured && p.injuryWeeksRemaining);
                 const needsRecovery = !p.condition || p.condition < 100;
                 const needsStats = !p.stats;
 
-                if (!needsHeal && !needsRecovery && !needsStats) {
+                if (!needsInjuryHeal && !needsRecovery && !needsStats) {
                     return p;
                 }
 
                 teamChanged = true;
                 const newP = { ...p };
 
-                // Heal injuries / suspensions if week advances
-                if (newP.isInjured && newP.injuryWeeksRemaining) {
+                // Heal injuries once per weekly cycle (weekend turn)
+                if (needsInjuryHeal && newP.injuryWeeksRemaining) {
                     const { recoveryBonusChance } = getDoctorEffect(t.clubStaff?.doctor);
                     const weeksToHeal = Math.random() < (recoveryBonusChance / 100) ? 2 : 1;
 
@@ -132,18 +245,12 @@ self.onmessage = async (e: MessageEvent<SimulationInput>) => {
                         newP.injuryWeeksRemaining = 0;
                     }
                 }
-                if (newP.isSuspended && newP.suspensionWeeksRemaining) {
-                    newP.suspensionWeeksRemaining -= 1;
-                    if (newP.suspensionWeeksRemaining <= 0) {
-                        newP.isSuspended = false;
-                        newP.suspensionWeeksRemaining = 0;
-                    }
-                }
 
-                // Recover condition for players boosted by fitness coach
+                // Recover condition proportionally to rest days between turns
                 if (!newP.condition || newP.condition < 100) {
                     const { weeklyRecoveryBonus: recoveryBonus } = getFitnessEffect(t.clubStaff?.fitnessCoach);
-                    newP.condition = Math.round(Math.min(100, (newP.condition || 100) + 12 + recoveryBonus));
+                    const gain = Math.max(3, Math.round((12 + recoveryBonus) * turnRecoveryShare));
+                    newP.condition = Math.round(Math.min(100, (newP.condition || 100) + gain));
                 }
 
                 // Ensure stats exists
@@ -163,14 +270,8 @@ self.onmessage = async (e: MessageEvent<SimulationInput>) => {
 
             return t; // Return original reference if nothing changed
         });
-        
-        // Filter matches by currentWeek AND currentTurn (use lightweight weekMatches if provided)
-        const matchesThisWeek = weekMatches || (schedule ? newSchedule.filter(m => m.week === nextWeek && !!m.isMidweek === isMidweek) : []);
-        const updatedWeekMatches: Match[] = [];
 
-        let updatedCups = { ...cups };
-
-        const userPlayedThisWeek = matchesThisWeek.some(m => m.homeTeamId === playerTeamId || m.awayTeamId === playerTeamId);
+        const userPlayedThisWeek = activeMatchesThisWeek.some(m => m.homeTeamId === playerTeamId || m.awayTeamId === playerTeamId);
         const weeklyNet = (finances.weeklyIncome - finances.weeklyWages) / 1_000_000;
         let confidenceChange = weeklyNet > 0 ? 1 : (userPlayedThisWeek ? -1 : 0);
 
@@ -189,28 +290,9 @@ self.onmessage = async (e: MessageEvent<SimulationInput>) => {
             });
         }
 
-        if (matchesThisWeek.length > 0) {
-            matchesThisWeek.forEach(match => {
+        if (activeMatchesThisWeek.length > 0) {
+            activeMatchesThisWeek.forEach(match => {
                 if (match.result) return;
-
-                // Skip stale/orphaned cup matches if the cup is already in knockout phase and this match is not in active rounds
-                if (match.isCupMatch && match.competition) {
-                    const cupId = COMPETITION_TO_CUP_KEY[match.competition];
-                    const cup = cupId ? updatedCups[cupId] : null;
-                    if (cup && cup.phase === 'knockout') {
-                        const isKnockoutFixture = cup.rounds?.some((r: any) =>
-                            r.fixtures?.some((f: any) =>
-                                ((f.id && match.id && f.id === match.id) ||
-                                (f.homeTeamId === match.homeTeamId && f.awayTeamId === match.awayTeamId && f.week === match.week))
-                            ) ||
-                            r.secondLegFixtures?.some((f: any) =>
-                                ((f.id && match.id && f.id === match.id) ||
-                                (f.homeTeamId === match.homeTeamId && f.awayTeamId === match.awayTeamId && f.week === match.week))
-                            )
-                        );
-                        if (!isKnockoutFixture) return;
-                    }
-                }
 
                 const homeTeam = teamMap.get(match.homeTeamId);
                 const awayTeam = teamMap.get(match.awayTeamId);
@@ -721,15 +803,48 @@ self.onmessage = async (e: MessageEvent<SimulationInput>) => {
             });
         }
 
+        // Decrement pre-existing suspensions by 1 ONLY for clubs that played an official match this turn
+        if (officialMatchTeamIds.size > 0 && preExistingSuspendedIds.size > 0) {
+            updatedAllTeams = updatedAllTeams.map(t => {
+                if (!officialMatchTeamIds.has(t.id)) return t;
+                let changed = false;
+                const nextSquad = t.squad.map(p => {
+                    if (!preExistingSuspendedIds.has(p.id) || !p.isSuspended || !p.suspensionWeeksRemaining) {
+                        return p;
+                    }
+                    changed = true;
+                    const rem = Math.max(0, p.suspensionWeeksRemaining - 1);
+                    return {
+                        ...p,
+                        suspensionWeeksRemaining: rem,
+                        isSuspended: rem > 0
+                    };
+                });
+                if (!changed) return t;
+                modifiedTeamIds.add(t.id);
+                return { ...t, squad: nextSquad };
+            });
+        }
+
         // Scouting Progress Logic (Intelligent specialized scouting)
         const updatedScoutedPlayerIds = { ...scoutedPlayerIds };
         const newsToAdd: any[] = [];
         
         if (scouts && scouts.length > 0) {
-            const allMarketPlayers = updatedAllTeams.flatMap(t => t.squad);
+            // Single-pass candidate pool extraction (avoids allocating full 11,200-player array first)
+            const baseCandidatePool: Player[] = [];
+            for (let ti = 0; ti < updatedAllTeams.length; ti++) {
+                const squad = updatedAllTeams[ti].squad;
+                for (let pi = 0; pi < squad.length; pi++) {
+                    const p = squad[pi];
+                    if ((updatedScoutedPlayerIds[p.id] || 0) < 100) {
+                        baseCandidatePool.push(p);
+                    }
+                }
+            }
+
             scouts.forEach(scout => {
-                // Find candidates that aren't fully scouted yet
-                let candidatePool = allMarketPlayers.filter(p => (updatedScoutedPlayerIds[p.id] || 0) < 100);
+                let candidatePool = baseCandidatePool.filter(p => (updatedScoutedPlayerIds[p.id] || 0) < 100);
                 if (scout.specialty) {
                     if (scout.specialty === 'Youth') {
                         const youthPool = candidatePool.filter(p => (p.age || 20) <= 21);
@@ -777,9 +892,9 @@ self.onmessage = async (e: MessageEvent<SimulationInput>) => {
         // =========================================================================
 
         const simulatedWeek = currentWeek;
-        const newWeek = currentWeek + 1;
-        const newDate = currentDate ? new Date(currentDate) : new Date();
-        newDate.setDate(newDate.getDate() + 7);
+        const newWeek = isMidweek ? currentWeek + 1 : currentWeek;
+        // News items belong to the matchday being simulated (exact sync with gameLifecycleReducer)
+        const newsDate = currentDate ? new Date(currentDate) : new Date();
 
         // 0. Live Weekly AI Transfer Market (Runs on weekends during open windows)
         if (!isMidweek && isTransferWindowOpen(simulatedWeek)) {
@@ -802,7 +917,7 @@ self.onmessage = async (e: MessageEvent<SimulationInput>) => {
                     id: `ai_transfer_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
                     headline: `Fichaje: ${transfer.playerName} al ${transfer.toTeam}`,
                     body: `${transfer.toTeam} acordó el traspaso de ${transfer.playerName} procedente de ${transfer.fromTeam} por ${formatCurrency(transfer.fee)}.`,
-                    date: formatDate(newDate),
+                    date: formatDate(newsDate),
                     type: 'transfer',
                     playerName: transfer.playerName
                 });
@@ -839,7 +954,7 @@ self.onmessage = async (e: MessageEvent<SimulationInput>) => {
             allTeams: updatedAllTeams,
             currentWeek,
             currentTurn,
-            currentDate: currentDate ? new Date(currentDate) : new Date(),
+            currentDate: newsDate,
             schedule: finalSchedule
         };
 
@@ -861,7 +976,7 @@ self.onmessage = async (e: MessageEvent<SimulationInput>) => {
             updatedAllTeams,
             playerMatchResult,
             simulatedWeek,
-            newDate,
+            newsDate,
             celebrationCinematics,
             isMidweek
         );
@@ -905,7 +1020,111 @@ self.onmessage = async (e: MessageEvent<SimulationInput>) => {
             }
         };
 
-        self.postMessage(output);
+        return {
+            output,
+            nextAllTeams: updatedAllTeams,
+            nextSchedule: finalSchedule,
+            nextLeagueTables: updatedLeagueTables,
+            nextCups: updatedCups,
+            nextScoutedPlayerIds: updatedScoutedPlayerIds
+        };
+}
+
+// Stateful Worker message handler
+self.onmessage = async (e: MessageEvent<SimulationInput>) => {
+    const msg = e.data;
+
+    if (msg.type === 'INIT_STATE') {
+        const p = msg.payload;
+        workerSession = {
+            sessionKey: p.sessionKey,
+            allTeams: p.allTeams,
+            teamMap: new Map(p.allTeams.map(t => [t.id, t])),
+            schedule: p.schedule,
+            leagueTables: p.leagueTables,
+            cups: p.cups,
+            scoutedPlayerIds: p.scoutedPlayerIds || {},
+            playerTeamId: p.playerTeamId
+        };
+        return;
+    }
+
+    if (msg.type === 'PATCH_STATE') {
+        const p = msg.payload;
+        if (!workerSession || workerSession.sessionKey !== p.sessionKey) {
+            return;
+        }
+
+        if (p.modifiedTeams && p.modifiedTeams.length > 0) {
+            const modMap = new Map<number, Team>(p.modifiedTeams.map(t => [t.id, t]));
+            const nextTeams = workerSession.allTeams.map(t => modMap.get(t.id) || t);
+            for (const mod of p.modifiedTeams) {
+                if (!workerSession.teamMap.has(mod.id)) {
+                    nextTeams.push(mod);
+                }
+                workerSession.teamMap.set(mod.id, mod);
+            }
+            workerSession.allTeams = nextTeams;
+        }
+
+        if (p.deletedTeamIds && p.deletedTeamIds.length > 0) {
+            const delSet = new Set(p.deletedTeamIds);
+            workerSession.allTeams = workerSession.allTeams.filter(t => !delSet.has(t.id));
+            delSet.forEach(id => workerSession!.teamMap.delete(id));
+        }
+
+        if (p.schedule !== undefined) workerSession.schedule = p.schedule;
+        if (p.leagueTables !== undefined) workerSession.leagueTables = p.leagueTables;
+        if (p.cups !== undefined) workerSession.cups = p.cups;
+        if (p.scoutedPlayerIds !== undefined) workerSession.scoutedPlayerIds = p.scoutedPlayerIds;
+        if (p.playerTeamId !== undefined) workerSession.playerTeamId = p.playerTeamId;
+        return;
+    }
+
+    if (msg.type === 'SIMULATE_TURN') {
+        const p = msg.payload;
+        if (!workerSession || workerSession.sessionKey !== p.sessionKey) {
+            self.postMessage({
+                type: 'STATE_SYNC_REQUIRED',
+                payload: { requestId: p.requestId, sessionKey: p.sessionKey }
+            });
+            return;
+        }
+
+        const result = await runWeekSimulation({
+            requestId: p.requestId,
+            currentWeek: p.currentWeek,
+            currentTurn: p.currentTurn,
+            currentDate: p.currentDate,
+            season: p.season,
+            schedule: workerSession.schedule,
+            leagueTables: workerSession.leagueTables,
+            allTeams: workerSession.allTeams,
+            playerTeam: workerSession.teamMap.get(p.playerTeamId),
+            playerTeamId: p.playerTeamId,
+            cups: workerSession.cups,
+            finances: p.finances,
+            scouts: p.scouts,
+            scoutedPlayerIds: workerSession.scoutedPlayerIds,
+            cinematicQueue: p.cinematicQueue,
+            youthAcademy: p.youthAcademy
+        });
+
+        workerSession.allTeams = result.nextAllTeams;
+        workerSession.teamMap = new Map(result.nextAllTeams.map(t => [t.id, t]));
+        workerSession.schedule = result.nextSchedule;
+        workerSession.leagueTables = result.nextLeagueTables;
+        workerSession.cups = result.nextCups;
+        workerSession.scoutedPlayerIds = result.nextScoutedPlayerIds;
+        workerSession.playerTeamId = p.playerTeamId;
+
+        self.postMessage(result.output);
+        return;
+    }
+
+    if (msg.type === 'SIMULATE_WEEK') {
+        const result = await runWeekSimulation(msg.payload);
+        self.postMessage(result.output);
     }
 };
 

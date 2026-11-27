@@ -1,6 +1,7 @@
 import { Team } from './types';
 import { getRegionalWageScale } from './services/economy';
 import { ensureMinimumSquadDepth } from './data/teams/squadHelpers';
+import { registerTeamCatalog } from './services/teamCatalogRegistry';
 import { premierLeagueTeams } from './data/teams/premierLeague';
 import { championshipTeams } from './data/teams/championship';
 import { laLigaTeams } from './data/teams/laLiga';
@@ -69,3 +70,4 @@ export const TEAMS: Team[] = rawTeams.map(team => {
 
 // Safety guard for sorting to prevent crashes if any team object is malformed
 TEAMS.sort((a, b) => (a?.name || '').localeCompare(b?.name || ''));
+registerTeamCatalog(TEAMS);

@@ -3,9 +3,7 @@
  * Synchronized by club squad & curated overrides (2026-11-26)
  */
 
-import { COMMUNITY_PACK_CDN } from './argentineLogos';
-
-export const PLAYER_FACES_CDN = `${COMMUNITY_PACK_CDN}/Players`;
+export const PLAYER_FACES_CDN = 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main/Players';
 
 export const PLAYER_PHOTOS_BY_ID: Record<number | string, string> = {
     101: 'https://images.fotmob.com/image_resources/playerimages/961995.png',

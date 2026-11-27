@@ -111,6 +111,9 @@ export const CommunityPacksSection: React.FC<CommunityPacksSectionProps> = ({ on
 
     useEffect(() => {
         refreshState();
+        void import('../../../services/resources/providers/DefaultResourceProvider').then(m =>
+            m.DefaultResourceProvider.preloadAssets()
+        );
         const unsub = PackManager.subscribe(() => refreshState());
         return () => {
             unsub();

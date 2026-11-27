@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { GameState, Screen, PlayerProfile, Team, MatchPhase, PendingSimulationResults, Player } from '../types';
+import { Screen } from '../types';
 import { FullScreenMatchSimulation } from './gameflow/FullScreenMatchSimulation';
-import { GameAction } from '../state/reducer';
 import { Header } from './ui/Header';
 import { BottomNav } from './ui/BottomNav';
 import { ScreenBackdrop } from './ui/ScreenBackdrop';
 import { Vote } from 'lucide-react';
+import { useGameStore } from '../state/gameStore';
+import { useTeamSlice, useCalendarSlice, useFinancesSlice } from '../state/selectors';
+import { useSimulation } from '../hooks/useSimulation';
+import { useNotification } from '../contexts/NotificationContext';
 
 // Core home screen kept static for zero-latency initial load
 import { Dashboard } from './screens/Dashboard';
@@ -15,8 +18,6 @@ const SquadScreen = React.lazy(() => import('./screens/SquadScreen').then(m => (
 const TransfersScreen = React.lazy(() => import('./screens/TransfersScreen').then(m => ({ default: m.TransfersScreen })));
 const LeagueScreen = React.lazy(() => import('./screens/LeagueScreen').then(m => ({ default: m.LeagueScreen })));
 const StaffScreen = React.lazy(() => import('./screens/StaffScreen').then(m => ({ default: m.StaffScreen })));
-
-// Secondary screens lazy loaded on-demand
 const FinancesScreen = React.lazy(() => import('./screens/FinancesScreen').then(m => ({ default: m.FinancesScreen })));
 const CalendarScreen = React.lazy(() => import('./screens/CalendarScreen').then(m => ({ default: m.CalendarScreen })));
 const StatisticsScreen = React.lazy(() => import('./screens/StatisticsScreen').then(m => ({ default: m.StatisticsScreen })));
@@ -29,53 +30,55 @@ const TrophyRoomScreen = React.lazy(() => import('./screens/TrophyRoomScreen').t
 const ProfileScreen = React.lazy(() => import('./screens/ProfileScreen').then(m => ({ default: m.ProfileScreen })));
 
 import { LoadingSpinner } from './icons';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 interface MainLayoutProps {
-    gameState: GameState;
-    activeScreen: Screen;
-    setActiveScreen: (screen: Screen) => void;
-    matchPhase: MatchPhase;
-    pendingResults: PendingSimulationResults | null;
-    onPlayMatch: () => void;
     onWeekComplete: () => void;
-    dispatch: React.Dispatch<GameAction>;
     onSaveGame: (mode: 'overwrite' | 'new') => void;
     onQuickSave?: () => Promise<boolean>;
     onQuitToMenu: (skipConfirm?: boolean) => void;
     onNewGame?: () => void;
-    currentSaveName: string | null;
-    lastSaved: Date | null;
     onElectionComplete: () => void;
-    isSimulating?: boolean;
     onStartNewSeason?: () => void;
     onOpenSeasonEndModal?: () => void;
 }
 
-export const MainLayout: React.FC<MainLayoutProps> = ({
-    gameState,
+const ActiveScreenContent: React.FC<{
+    activeScreen: Screen;
+    setActiveScreen: (screen: Screen) => void;
+    onPlayMatch: () => void;
+    onWeekComplete: () => void;
+    onSaveGame: (mode: 'overwrite' | 'new') => void;
+    onQuickSave?: () => Promise<boolean>;
+    onQuitToMenu: (skipConfirm?: boolean) => void;
+    onStartNewSeason?: () => void;
+    onOpenSeasonEndModal?: () => void;
+}> = React.memo(({
     activeScreen,
     setActiveScreen,
-    matchPhase,
-    pendingResults,
     onPlayMatch,
     onWeekComplete,
-    dispatch,
     onSaveGame,
     onQuickSave,
     onQuitToMenu,
-    onNewGame,
-    currentSaveName,
-    lastSaved,
-    onElectionComplete,
-    isSimulating,
     onStartNewSeason,
     onOpenSeasonEndModal
 }) => {
-    const renderContent = () => {
-        switch (activeScreen) {
-            case Screen.Dashboard:
-                return <Dashboard
+    const gameState = useGameStore(s => s.gameState);
+    const dispatch = useGameStore(s => s.dispatch);
+    const matchPhase = useGameStore(s => s.matchPhase);
+    const pendingResults = useGameStore(s => s.pendingResults);
+    const isSimulating = useGameStore(s => s.isSimulating);
+    const currentSaveName = useGameStore(s => s.currentSaveName);
+    const lastSaved = useGameStore(s => s.lastSaved);
+    const { preferredCurrency } = useFinancesSlice();
+
+    if (!gameState) return null;
+
+    switch (activeScreen) {
+        case Screen.Dashboard:
+            return (
+                <Dashboard
                     gameState={gameState}
                     onPlayMatch={onPlayMatch}
                     matchPhase={matchPhase}
@@ -85,77 +88,138 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                     isSimulating={isSimulating}
                     onStartNewSeason={onStartNewSeason}
                     onOpenSeasonEndModal={onOpenSeasonEndModal}
-                />;
-            case Screen.Squad: return <SquadScreen gameState={gameState} dispatch={dispatch} />;
-            case Screen.Transfers: return <TransfersScreen gameState={gameState} dispatch={dispatch} />;
-            case Screen.Finances: return <FinancesScreen gameState={gameState} dispatch={dispatch} />;
-            case Screen.League: return <LeagueScreen gameState={gameState} />;
-            case Screen.Calendar: return <CalendarScreen gameState={gameState} />;
-            case Screen.Statistics: return <StatisticsScreen gameState={gameState} />;
-            case Screen.Stadium:
-                return <StadiumScreen gameState={gameState} dispatch={dispatch} onNavigate={setActiveScreen} />;
-            case Screen.Sponsorships:
-                return <SponsorshipScreen gameState={gameState} dispatch={dispatch} onNavigate={setActiveScreen} />;
-            case Screen.Staff:
-                return <StaffScreen gameState={gameState} dispatch={dispatch} />;
-            case Screen.Settings: return (
-                <SettingsScreen
-                    gameState={gameState}
-                    onSaveGame={onSaveGame}
-                    onQuickSave={onQuickSave}
-                    onQuitToMenu={onQuitToMenu}
-                    currentSaveName={currentSaveName}
-                    lastSaved={lastSaved}
-                    preferredCurrency={gameState.preferredCurrency || 'EUR'}
-                    preferredLanguage={gameState.preferredLanguage || 'es'}
-                    dispatch={dispatch}
                 />
             );
-            case Screen.Club: return <ClubHubScreen gameState={gameState} dispatch={dispatch} onNavigate={setActiveScreen} />;
-            case Screen.Trophies: return <TrophyRoomScreen gameState={gameState} onNavigate={setActiveScreen} />;
-            case Screen.Profile: return <ProfileScreen gameState={gameState} dispatch={dispatch} />;
-            default: return <Dashboard gameState={gameState} onPlayMatch={onPlayMatch} matchPhase={matchPhase} pendingResults={pendingResults} onWeekComplete={onWeekComplete} dispatch={dispatch} isSimulating={isSimulating} onStartNewSeason={onStartNewSeason} onOpenSeasonEndModal={onOpenSeasonEndModal} />;
-        }
-    };
+        case Screen.Squad: return <SquadScreen gameState={gameState} dispatch={dispatch} />;
+        case Screen.Transfers: return <TransfersScreen gameState={gameState} dispatch={dispatch} />;
+        case Screen.Finances: return <FinancesScreen gameState={gameState} dispatch={dispatch} />;
+        case Screen.League: return <LeagueScreen gameState={gameState} />;
+        case Screen.Calendar: return <CalendarScreen gameState={gameState} />;
+        case Screen.Statistics: return <StatisticsScreen gameState={gameState} />;
+        case Screen.Stadium:
+            return <StadiumScreen gameState={gameState} dispatch={dispatch} onNavigate={setActiveScreen} />;
+        case Screen.Sponsorships:
+            return <SponsorshipScreen gameState={gameState} dispatch={dispatch} onNavigate={setActiveScreen} />;
+        case Screen.Staff:
+            return <StaffScreen gameState={gameState} dispatch={dispatch} />;
+        case Screen.Settings: return (
+            <SettingsScreen
+                gameState={gameState}
+                onSaveGame={onSaveGame}
+                onQuickSave={onQuickSave}
+                onQuitToMenu={onQuitToMenu}
+                currentSaveName={currentSaveName}
+                lastSaved={lastSaved}
+                preferredCurrency={preferredCurrency}
+                preferredLanguage={gameState.preferredLanguage || 'es'}
+                dispatch={dispatch}
+            />
+        );
+        case Screen.Club: return <ClubHubScreen gameState={gameState} dispatch={dispatch} onNavigate={setActiveScreen} />;
+        case Screen.Trophies: return <TrophyRoomScreen gameState={gameState} onNavigate={setActiveScreen} />;
+        case Screen.Profile: return <ProfileScreen gameState={gameState} dispatch={dispatch} />;
+        default:
+            return (
+                <Dashboard
+                    gameState={gameState}
+                    onPlayMatch={onPlayMatch}
+                    matchPhase={matchPhase}
+                    pendingResults={pendingResults}
+                    onWeekComplete={onWeekComplete}
+                    dispatch={dispatch}
+                    isSimulating={isSimulating}
+                    onStartNewSeason={onStartNewSeason}
+                    onOpenSeasonEndModal={onOpenSeasonEndModal}
+                />
+            );
+    }
+});
+
+const LiveMatchSlot: React.FC<{ onWeekComplete: () => void }> = ({ onWeekComplete }) => {
+    const gameState = useGameStore(s => s.gameState);
+    const pendingResults = useGameStore(s => s.pendingResults);
+    const dispatch = useGameStore(s => s.dispatch);
+    if (!gameState || !pendingResults) return null;
+    return (
+        <FullScreenMatchSimulation
+            gameState={gameState}
+            pendingResults={pendingResults}
+            onMatchComplete={onWeekComplete}
+            dispatch={dispatch}
+        />
+    );
+};
+
+const ElectionModalSlot: React.FC<{
+    onElectionComplete: () => void;
+    onClose: () => void;
+    onQuitToMenu: (skipConfirm?: boolean) => void;
+    onNewGame?: () => void;
+}> = ({ onElectionComplete, onClose, onQuitToMenu, onNewGame }) => {
+    const gameState = useGameStore(s => s.gameState);
+    const dispatch = useGameStore(s => s.dispatch);
+    if (!gameState) return null;
+    return (
+        <ElectionScreen
+            gameState={gameState}
+            dispatch={dispatch}
+            onElectionComplete={onElectionComplete}
+            onClose={onClose}
+            onQuitToMenu={onQuitToMenu}
+            onNewGame={onNewGame}
+        />
+    );
+};
+
+export const MainLayout: React.FC<MainLayoutProps> = ({
+    onWeekComplete,
+    onSaveGame,
+    onQuickSave,
+    onQuitToMenu,
+    onNewGame,
+    onElectionComplete,
+    onStartNewSeason,
+    onOpenSeasonEndModal
+}) => {
+    // Atomic domain slices (MainLayout NEVER subscribes to full `s => s.gameState`)
+    const { team, primaryColor } = useTeamSlice();
+    const { season, mandate } = useCalendarSlice();
+    const activeScreen = useGameStore(s => s.activeScreen);
+    const setActiveScreen = useGameStore(s => s.setActiveScreen);
+
+    const { showNotification } = useNotification();
+    const { matchPhase, pendingResults, handlePlayMatch } = useSimulation(showNotification);
 
     const [isElectionOpen, setIsElectionOpen] = useState(true);
 
     // Automatically re-open election screen whenever an election year begins or season changes
     useEffect(() => {
-        if (gameState.mandate?.isElectionYear) {
+        if (mandate?.isElectionYear) {
             setIsElectionOpen(true);
         }
-    }, [gameState.mandate?.isElectionYear, gameState.season]);
+    }, [mandate?.isElectionYear, season]);
 
     const isLiveMatch = matchPhase === 'LIVE' && !!pendingResults?.playerMatchResult;
 
     // Club identity color drives ambient glows; very dark/unknown colors fall back to brand blue.
     const clubColor = React.useMemo(() => {
-        const hex = (gameState.team.primaryColor || '').replace('#', '');
+        const hex = (primaryColor || '').replace('#', '');
         if (!/^[0-9a-fA-F]{6}$/.test(hex)) return '#3D7BFF';
         const r = parseInt(hex.slice(0, 2), 16), g = parseInt(hex.slice(2, 4), 16), b = parseInt(hex.slice(4, 6), 16);
         const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
         return luminance < 0.12 ? '#3D7BFF' : `#${hex}`;
-    }, [gameState.team.primaryColor]);
+    }, [primaryColor]);
 
     return (
         <div className="min-h-screen font-sans relative" style={{ background: 'var(--apex-darker)', color: 'var(--apex-text)', ['--club-color' as any]: clubColor }}>
             {!isLiveMatch && <ScreenBackdrop screen={activeScreen} />}
+
             {/* Fullscreen Match Simulation Overlay */}
-            {isLiveMatch && pendingResults && (
-                <FullScreenMatchSimulation
-                    gameState={gameState}
-                    pendingResults={pendingResults}
-                    onMatchComplete={onWeekComplete}
-                    dispatch={dispatch}
-                />
-            )}
+            {isLiveMatch && <LiveMatchSlot onWeekComplete={onWeekComplete} />}
 
             {/* Fullscreen Presidential Mandate & Election Overlay */}
-            {gameState.mandate?.isElectionYear && isElectionOpen && matchPhase === 'PRE' && (
-                <ElectionScreen
-                    gameState={gameState}
-                    dispatch={dispatch}
+            {mandate?.isElectionYear && isElectionOpen && matchPhase === 'PRE' && (
+                <ElectionModalSlot
                     onElectionComplete={onElectionComplete}
                     onClose={() => setIsElectionOpen(false)}
                     onQuitToMenu={onQuitToMenu}
@@ -167,7 +231,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
             {!isLiveMatch && (
                 <div className="max-w-md md:max-w-3xl lg:max-w-5xl mx-auto min-h-screen relative z-10 transition-all duration-300">
                     {/* Sticky Banner when Election Screen is minimized/closed to review the club */}
-                    {gameState.mandate?.isElectionYear && !isElectionOpen && (
+                    {mandate?.isElectionYear && !isElectionOpen && (
                         <div className="sticky top-0 z-30 bg-gradient-to-r from-amber-600/30 via-slate-900/90 to-amber-600/30 border-b border-amber-500/30 px-4 py-2.5 flex items-center justify-between backdrop-blur-md shadow-lg">
                             <div className="flex items-center gap-2.5">
                                 <Vote className="w-4 h-4 text-amber-400 animate-pulse" />
@@ -185,7 +249,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                             </button>
                         </div>
                     )}
-                    <Header gameState={gameState} onNavigate={setActiveScreen} />
+                    <Header onNavigate={setActiveScreen} />
                     <main className="pb-24 overflow-x-hidden min-h-[calc(100vh-140px)]">
                         <motion.div
                             key={activeScreen}
@@ -194,15 +258,27 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                             transition={{ duration: 0.25, ease: 'easeOut' }}
                         >
                             <React.Suspense fallback={<div className="flex items-center justify-center py-20"><LoadingSpinner /></div>}>
-                                {renderContent()}
+                                <ActiveScreenContent
+                                    activeScreen={activeScreen}
+                                    setActiveScreen={setActiveScreen}
+                                    onPlayMatch={handlePlayMatch}
+                                    onWeekComplete={onWeekComplete}
+                                    onSaveGame={onSaveGame}
+                                    onQuickSave={onQuickSave}
+                                    onQuitToMenu={onQuitToMenu}
+                                    onStartNewSeason={onStartNewSeason}
+                                    onOpenSeasonEndModal={onOpenSeasonEndModal}
+                                />
                             </React.Suspense>
                         </motion.div>
                     </main>
-                    <BottomNav
-                        activeScreen={activeScreen}
-                        onNavigate={setActiveScreen}
-                        team={gameState.team}
-                    />
+                    {team && (
+                        <BottomNav
+                            activeScreen={activeScreen}
+                            onNavigate={setActiveScreen}
+                            team={team}
+                        />
+                    )}
                 </div>
             )}
         </div>

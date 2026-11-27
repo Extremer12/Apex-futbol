@@ -8,7 +8,8 @@ import {
 } from '../../services/db';
 import { getCloudSaves, deleteCloudSave, CloudSaveSummary } from '../../services/cloudSave';
 import { useAuth } from '../../contexts/AuthContext';
-import { TEAMS } from '../../constants';
+import { getRegisteredTeams, loadTeamCatalog } from '../../services/teamCatalogRegistry';
+import { Team } from '../../types';
 import { LoadingSpinner } from '../icons';
 import { TeamLogo } from '../../data/teams/helpers';
 import { AuthModal } from '../auth/AuthModal';
@@ -40,7 +41,7 @@ type NoticeBanner = {
     text: string;
 };
 
-const getTeamDetails = (teamId: number) => TEAMS.find((t) => t.id === teamId);
+const getTeamDetails = (teamId: number) => getRegisteredTeams().find((t) => t.id === teamId);
 
 const resolveClubAccent = (primaryColor?: string): string => {
     const hex = (primaryColor || '').replace('#', '');
@@ -113,6 +114,17 @@ export const LoadGameScreen: React.FC<LoadGameScreenProps> = ({ onLoadGame, onBa
             setIsLoading(false);
         }
     };
+
+    const [teamsReady, setTeamsReady] = useState(() => getRegisteredTeams().length > 0);
+
+    useEffect(() => {
+        if (!teamsReady) {
+            void loadTeamCatalog().then(() => setTeamsReady(true));
+        }
+        void import('../../services/resources/providers/DefaultResourceProvider').then(m =>
+            m.DefaultResourceProvider.preloadAssets()
+        );
+    }, [teamsReady]);
 
     useEffect(() => {
         fetchSaves();
@@ -239,7 +251,7 @@ export const LoadGameScreen: React.FC<LoadGameScreenProps> = ({ onLoadGame, onBa
             </div>
 
             {/* Single Clean Top Navigation */}
-            <header className="sticky top-0 z-30 pt-safe backdrop-blur-xl bg-[#050814]/70 border-b border-white/[0.07]">
+            <header className="sticky top-0 z-30 pt-safe bg-[#050814]/95 md:bg-[#050814]/70 md:backdrop-blur-xl border-b border-white/[0.07]">
                 <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
                     <button
                         type="button"

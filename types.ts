@@ -671,8 +671,6 @@ export interface GameState {
   mandate: PresidentialMandate; // Sistema de mandato presidencial
   electoralPromises: ElectoralPromise[]; // Promesas electorales
 
-
-  viewingPlayer: Player | null;
   incomingOffers: Offer[];
   cups: {
     faCup: CupCompetition;

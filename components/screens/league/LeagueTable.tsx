@@ -5,6 +5,7 @@ import { TrophyIcon } from '../../icons';
 import { TeamLogo, usePacksVersion } from '../../../data/teams/helpers';
 import { LEAGUE_THEMES } from './constants';
 import { customPacksService } from '../../../services/customPacks/packService';
+import { ResourceFallback } from '../../../services/resources/ResourceFallback';
 import { Trophy, Shield, Flame, Activity } from 'lucide-react';
 import { TournamentBracket } from '../../ui/TournamentBracket';
 import { computeArgentineInternationalQualification, computeArgentineRelegation } from '../../../services/argentinaRegulations';
@@ -36,6 +37,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = React.memo(({
     const isPrimeraNacional = leagueId === 'PRIMERA_NACIONAL';
     const isZonalLeague = isArgentina || isPrimeraNacional;
     const theme = LEAGUE_THEMES[leagueId] || 'purple';
+    const fallbackLogo = useMemo(() => ResourceFallback.competitionLogo(title), [title]);
     const logo = useMemo(() => customPacksService.resolveCompetitionLogo(leagueId, title, logoPath), [leagueId, title, logoPath, packsVersion]);
 
     const teamsMap = useMemo(() => {
@@ -130,7 +132,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = React.memo(({
                             getTeamById={getTeamById}
                             playerTeamId={gameState.team.id}
                             theme={{ accent: 'text-amber-400', bg: 'from-amber-950/40', border: 'border-amber-500/30' }}
-                            logoUrl={logo || '/sinlogo.png'}
+                            logoUrl={logo || fallbackLogo}
                         />
                     )}
                 </div>
@@ -212,7 +214,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = React.memo(({
                                         getTeamById={getTeamById}
                                         playerTeamId={gameState.team.id}
                                         theme={{ accent: 'text-cyan-400', bg: 'from-cyan-950/40', border: 'border-cyan-500/30' }}
-                                        logoUrl={logo || '/sinlogo.png'}
+                                        logoUrl={logo || fallbackLogo}
                                     />
                                 </div>
                             ) : reducido.rounds[0]?.fixtures?.length !== 7 ? (
@@ -221,7 +223,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = React.memo(({
                                     getTeamById={getTeamById}
                                     playerTeamId={gameState.team.id}
                                     theme={{ accent: 'text-cyan-400', bg: 'from-cyan-950/40', border: 'border-cyan-500/30' }}
-                                    logoUrl={logo || '/sinlogo.png'}
+                                    logoUrl={logo || fallbackLogo}
                                 />
                             ) : null}
                         </div>
@@ -273,7 +275,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = React.memo(({
                         getTeamById={getTeamById}
                         playerTeamId={gameState.team.id}
                         theme={{ accent: 'text-amber-400', bg: 'from-amber-950/40', border: 'border-amber-500/30' }}
-                        logoUrl={logo || '/sinlogo.png'}
+                        logoUrl={logo || fallbackLogo}
                     />
                 )}
             </div>
@@ -322,7 +324,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = React.memo(({
                         getTeamById={getTeamById}
                         playerTeamId={gameState.team.id}
                         theme={{ accent: 'text-cyan-400', bg: 'from-cyan-950/40', border: 'border-cyan-500/30' }}
-                        logoUrl={logo || '/sinlogo.png'}
+                        logoUrl={logo || fallbackLogo}
                     />
                 )}
             </div>
@@ -336,9 +338,12 @@ export const LeagueTable: React.FC<LeagueTableProps> = React.memo(({
                 <div className="flex items-center gap-3 sm:gap-4">
                     <div className="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center shrink-0">
                         <img
-                            src={logo || '/sinlogo.png'}
+                            src={logo || fallbackLogo}
                             alt={title}
-                            onError={(e) => { (e.target as HTMLImageElement).src = '/sinlogo.png'; }}
+                            onError={(e) => {
+                                const img = e.currentTarget;
+                                if (img.src !== fallbackLogo) img.src = fallbackLogo;
+                            }}
                             className="w-full h-full object-contain drop-shadow-xl"
                         />
                     </div>
@@ -448,7 +453,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = React.memo(({
             ) : (
                 /* Tabla de Posiciones: 100% Ajustada sin Scroll Horizontal */
                 <div className="w-full overflow-hidden">
-                    <table className="w-full table-fixed text-xs sm:text-sm">
+                    <table className="w-full table-fixed text-xs sm:text-sm apex-table-deferred">
                         <thead>
                             <tr className="bg-slate-800/60 text-slate-400 uppercase text-[9px] sm:text-[10px] font-black tracking-wider border-b border-white/10">
                                 <th className="w-7 sm:w-10 px-1 py-2.5 sm:py-3 text-center">Pos</th>

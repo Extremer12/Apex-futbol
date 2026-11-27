@@ -1,5 +1,9 @@
-import { GameState, Team, Player, LeagueTableRow, LeagueId } from '../types';
-import { GameStoreState } from './gameStore';
+import { useShallow } from 'zustand/react/shallow';
+import { GameState, Team, Player, LeagueTableRow } from '../types';
+import { useGameStore, GameStoreState } from './gameStore';
+import { getGlobalPlayerIndex } from '../services/playerIndex';
+
+const EMPTY_PLAYERS: Player[] = [];
 
 /**
  * Selector canónico para obtener el equipo del usuario mánager,
@@ -28,18 +32,10 @@ export const selectOpponentTeams = (state: GameStoreState | GameState): Team[] =
 /**
  * Selector memoizado para obtener un mapa O(1) de equipos por ID.
  */
-let cachedAllTeamsRef: Team[] | null = null;
-let cachedTeamsMap: Map<number, Team> = new Map();
-
 export const selectTeamsMap = (state: GameStoreState | GameState): Map<number, Team> => {
     if (!state) return new Map();
     const gs = ('gameState' in state && state.gameState) ? state.gameState : (state as GameState);
-    const allTeams = gs?.allTeams || [];
-    if (allTeams !== cachedAllTeamsRef) {
-        cachedAllTeamsRef = allTeams;
-        cachedTeamsMap = new Map(allTeams.map(t => [t.id, t]));
-    }
-    return cachedTeamsMap;
+    return getGlobalPlayerIndex(gs?.allTeams).teamsById;
 };
 
 /**
@@ -70,6 +66,7 @@ export const syncUserTeam = (state: GameState, updatedTeam: Team): { team: Team;
  * Selector para la tabla de la liga del usuario.
  */
 export const selectUserLeagueTable = (state: GameStoreState): LeagueTableRow[] => {
+    if (!state.gameState?.team) return [];
     const userLeagueId = state.gameState.team.leagueId;
     return state.gameState.leagueTables[userLeagueId] || [];
 };
@@ -78,5 +75,89 @@ export const selectUserLeagueTable = (state: GameStoreState): LeagueTableRow[] =
  * Selector para los jugadores del primer equipo del usuario.
  */
 export const selectUserSquad = (state: GameStoreState): Player[] => {
-    return selectUserTeam(state).squad || [];
+    return selectUserTeam(state).squad || EMPTY_PLAYERS;
 };
+
+// ============================================================================
+// Atomic Domain Slice Hooks (prevent full-tree re-renders on unrelated slices)
+// ============================================================================
+
+export const useTeamSlice = () =>
+    useGameStore(
+        useShallow((s) => {
+            const team = s.gameState?.team;
+            return {
+                team,
+                teamId: team?.id,
+                teamName: team?.name || '',
+                primaryColor: team?.primaryColor || '',
+                leagueId: team?.leagueId,
+                squad: team?.squad || EMPTY_PLAYERS,
+                youthAcademy: s.gameState?.youthAcademy || EMPTY_PLAYERS,
+            };
+        })
+    );
+
+export const useFinancesSlice = () =>
+    useGameStore(
+        useShallow((s) => {
+            const finances = s.gameState?.finances;
+            return {
+                finances,
+                balance: finances?.balance ?? 0,
+                transferBudget: finances?.transferBudget ?? 0,
+                weeklyIncome: finances?.weeklyIncome ?? 0,
+                weeklyWages: finances?.weeklyWages ?? 0,
+                preferredCurrency: s.gameState?.preferredCurrency || 'EUR',
+            };
+        })
+    );
+
+export const useCalendarSlice = () =>
+    useGameStore(
+        useShallow((s) => ({
+            season: s.gameState?.season ?? 1,
+            currentWeek: s.gameState?.currentWeek ?? 1,
+            currentTurn: s.gameState?.currentTurn ?? ('weekend' as const),
+            currentDate: s.gameState?.currentDate,
+            mandate: s.gameState?.mandate,
+        }))
+    );
+
+/**
+ * O(1) reactive lookup for a player across allTeams or reserve squad using the global index.
+ */
+export const usePlayerById = (playerId: number | null | undefined): {
+    player: Player | undefined;
+    ownerTeam: Team | undefined;
+    isInFirstTeam: boolean;
+    isInReserve: boolean;
+} =>
+    useGameStore(
+        useShallow((s) => {
+            if (!playerId || !s.gameState) {
+                return { player: undefined, ownerTeam: undefined, isInFirstTeam: false, isInReserve: false };
+            }
+            const userTeam = s.gameState.team;
+            const reserveMatch = s.gameState.youthAcademy?.find(p => p.id === playerId);
+            if (reserveMatch) {
+                return {
+                    player: reserveMatch,
+                    ownerTeam: userTeam,
+                    isInFirstTeam: false,
+                    isInReserve: true
+                };
+            }
+            const idx = getGlobalPlayerIndex(s.gameState.allTeams);
+            const indexedPlayer = idx.playersById.get(playerId) || userTeam?.squad?.find(p => p.id === playerId);
+            const ownerTeam = idx.playerTeamById.get(playerId) || (userTeam?.squad?.some(p => p.id === playerId) ? userTeam : undefined);
+            const isInFirstTeam = ownerTeam?.id === userTeam?.id;
+
+            return {
+                player: indexedPlayer,
+                ownerTeam,
+                isInFirstTeam,
+                isInReserve: false
+            };
+        })
+    );

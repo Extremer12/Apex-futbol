@@ -342,7 +342,7 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
                             />
                         </div>
                     ) : (
-                        <ul className="apex-card divide-y divide-white/5 overflow-hidden">
+                        <ul className="apex-card divide-y divide-white/5 overflow-hidden apex-list-deferred">
                             {sortedSquad.map(player => {
                                 const age = getPlayerAge(player);
                                 const condition = Math.round(player.condition ?? 100);
@@ -607,7 +607,7 @@ export const SquadScreen = React.memo(({ gameState, dispatch }: SquadScreenProps
                             />
                         </div>
                     ) : (
-                        <ul className="apex-card divide-y divide-white/5 overflow-hidden">
+                        <ul className="apex-card divide-y divide-white/5 overflow-hidden apex-list-deferred">
                             {filteredReserve.map(player => {
                                 const age = getPlayerAge(player);
                                 const potential = getPlayerPotential(player);

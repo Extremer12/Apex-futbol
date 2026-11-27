@@ -1,16 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { LoadingSpinner } from '../icons';
-import { AchievementsModal } from './AchievementsModal';
-import { StartSettingsModal } from './StartSettingsModal';
 import { getSavedGames } from '../../services/db';
-import { getCloudSaves } from '../../services/cloudSave';
 import { supabase } from '../../services/supabase';
 
 import { UserBadge } from '../auth/UserBadge';
-import { AuthModal } from '../auth/AuthModal';
 import { useAuth } from '../../contexts/AuthContext';
-import { LeaderboardModal } from '../leaderboard/LeaderboardModal';
-import { CommunityPacksSection } from '../screens/settings/CommunityPacksSection';
 import { motion } from 'framer-motion';
 import {
     Play,
@@ -21,6 +15,12 @@ import {
     Award,
     ChevronRight
 } from 'lucide-react';
+
+const AuthModal = React.lazy(() => import('../auth/AuthModal').then(m => ({ default: m.AuthModal })));
+const AchievementsModal = React.lazy(() => import('./AchievementsModal').then(m => ({ default: m.AchievementsModal })));
+const StartSettingsModal = React.lazy(() => import('./StartSettingsModal').then(m => ({ default: m.StartSettingsModal })));
+const LeaderboardModal = React.lazy(() => import('../leaderboard/LeaderboardModal').then(m => ({ default: m.LeaderboardModal })));
+const CommunityPacksSection = React.lazy(() => import('../screens/settings/CommunityPacksSection').then(m => ({ default: m.CommunityPacksSection })));
 
 interface StartScreenProps {
     onNewGame: () => void;
@@ -69,8 +69,9 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onNewGame, onLoadGameS
                 const saves = await getSavedGames();
                 let hasAny = saves.length > 0;
                 if (!hasAny) {
-                    const { data: { user } } = await supabase.auth.getUser();
-                    if (user) {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (session?.user) {
+                        const { getCloudSaves } = await import('../../services/cloudSave');
                         const cloud = await getCloudSaves();
                         hasAny = cloud.length > 0;
                     }
@@ -91,7 +92,9 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onNewGame, onLoadGameS
         return (
             <div className="min-h-[100dvh] bg-[var(--apex-darker)] text-white flex flex-col animate-fade-in relative z-50">
                 <main className="flex-1 w-full">
-                    <CommunityPacksSection onBack={() => setCurrentView('MENU')} />
+                    <Suspense fallback={<div className="flex items-center justify-center min-h-[60vh]"><LoadingSpinner /></div>}>
+                        <CommunityPacksSection onBack={() => setCurrentView('MENU')} />
+                    </Suspense>
                 </main>
             </div>
         );
@@ -100,17 +103,19 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onNewGame, onLoadGameS
     // --- MAIN START MENU VIEW (FULLSCREEN PRO) ---
     return (
         <div className="min-h-[100dvh] w-full flex flex-col relative overflow-hidden bg-[var(--apex-darker)]">
-            {showWelcomeGate && !user && (
-                <AuthModal mode="fullscreen" onClose={handleDismissWelcomeGate} />
-            )}
-            {modal === 'achievements' && <AchievementsModal onClose={() => setModal(null)} />}
-            {modal === 'about' && (
-                <StartSettingsModal
-                    onClose={() => setModal(null)}
-                    onOpenPacks={() => setCurrentView('PACKS')}
-                />
-            )}
-            {modal === 'leaderboard' && <LeaderboardModal onClose={() => setModal(null)} />}
+            <Suspense fallback={null}>
+                {showWelcomeGate && !user && (
+                    <AuthModal mode="fullscreen" onClose={handleDismissWelcomeGate} />
+                )}
+                {modal === 'achievements' && <AchievementsModal onClose={() => setModal(null)} />}
+                {modal === 'about' && (
+                    <StartSettingsModal
+                        onClose={() => setModal(null)}
+                        onOpenPacks={() => setCurrentView('PACKS')}
+                    />
+                )}
+                {modal === 'leaderboard' && <LeaderboardModal onClose={() => setModal(null)} />}
+            </Suspense>
 
             {/* Full-bleed stadium art + spotlight + film grain */}
             <div aria-hidden className="fixed inset-0 pointer-events-none overflow-hidden">
@@ -156,6 +161,9 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onNewGame, onLoadGameS
                         <img
                             src="/assets/logo.webp"
                             alt="Apex AI — Football Club President"
+                            width={256}
+                            height={140}
+                            fetchPriority="high"
                             className="relative w-56 sm:w-64 h-auto object-contain drop-shadow-[0_12px_28px_rgba(0,0,0,0.85)]"
                         />
                     </div>

@@ -99,6 +99,7 @@ export type Database = {
       leaderboards: {
         Row: {
           board_confidence: number | null
+          career_id: string | null
           club_value: number | null
           created_at: string
           fan_approval: number | null
@@ -112,12 +113,13 @@ export type Database = {
         }
         Insert: {
           board_confidence?: number | null
+          career_id?: string | null
           club_value?: number | null
           created_at?: string
           fan_approval?: number | null
           id?: string
           manager_name: string
-          score: number
+          score?: number
           season: number
           team_name: string
           trophies_count?: number | null
@@ -125,6 +127,7 @@ export type Database = {
         }
         Update: {
           board_confidence?: number | null
+          career_id?: string | null
           club_value?: number | null
           created_at?: string
           fan_approval?: number | null

@@ -1,5 +1,6 @@
 import { GameState, Team } from '../types';
 import { SOUTH_AMERICAN_EXTRA_TEAMS, KNOWN_CONMEBOL_META } from './teams/southAmericanClubs';
+import { ResourceFallback } from '../services/resources/ResourceFallback';
 
 export interface ConmebolClubRankingItem {
     rank: number;
@@ -163,7 +164,7 @@ export function getResolvedConmebolRankings(gameState: GameState): ConmebolClubR
             ...item,
             countryName: countryMeta.name,
             flagUrl: countryMeta.flag,
-            logoUrl: matchedTeam?.logo || '/sinlogo.png',
+            logoUrl: matchedTeam?.logo || ResourceFallback.teamLogo({ name: item.teamName }),
             teamId: matchedTeam?.id,
         };
     });
@@ -237,7 +238,7 @@ export function getResolvedUefaRankings(gameState: GameState): UefaClubRankingIt
             ...item,
             countryName: countryMeta.name,
             flagUrl: countryMeta.flag,
-            logoUrl: matchedTeam?.logo || '/sinlogo.png',
+            logoUrl: matchedTeam?.logo || ResourceFallback.teamLogo({ name: item.teamName }),
             teamId: matchedTeam?.id,
         };
     });

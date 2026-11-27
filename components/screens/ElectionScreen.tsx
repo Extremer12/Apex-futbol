@@ -188,7 +188,8 @@ export const ElectionScreen: React.FC<ElectionScreenProps> = ({
                 clubValue,
                 fanApproval,
                 boardConfidence,
-                gameMode: gameState.gameMode
+                gameMode: gameState.gameMode,
+                careerId: gameState.careerId,
             });
             setScoreSubmitted(true);
         } catch (err) {
@@ -200,7 +201,7 @@ export const ElectionScreen: React.FC<ElectionScreenProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 z-50 bg-slate-950/98 backdrop-blur-2xl text-white overflow-y-auto min-h-screen flex flex-col justify-between select-none">
+        <div className="fixed inset-0 z-50 bg-slate-950/98 md:backdrop-blur-2xl text-white overflow-y-auto min-h-screen flex flex-col justify-between select-none">
             {/* Ambient atmospheric glows */}
             <div className="fixed top-0 left-1/4 -translate-x-1/2 w-[550px] h-[550px] bg-amber-500/10 blur-[150px] rounded-full pointer-events-none" />
             <div className="fixed bottom-0 right-1/4 translate-x-1/2 w-[550px] h-[550px] bg-emerald-500/10 blur-[150px] rounded-full pointer-events-none" />

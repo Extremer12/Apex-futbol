@@ -7,19 +7,63 @@
 
 import { ResourceType, ResourceResolution } from '../ResourceTypes';
 import { ResourceFallback } from '../ResourceFallback';
-import { ARG_CLUB_LOGOS_BY_ID, ARG_CLUB_LOGOS_BY_NAME, ARG_COMPETITION_LOGOS, COMMUNITY_PACK_CDN } from '../../customPacks/argentineLogos';
-import { PLAYER_PHOTOS_BY_ID, PLAYER_PHOTOS_BY_NAME } from '../../customPacks/playerPhotos';
+import { ResourceCache } from '../ResourceCache';
+import { notifyPacksStore } from '../packNotifierBridge';
+
+export const COMMUNITY_PACK_CDN = 'https://cdn.jsdelivr.net/gh/Extremer12/community-data-packs@main';
+
+let clubLogosById: Record<number | string, string> = {};
+let clubLogosByName: Record<string, string> = {};
+let competitionLogos: Record<string, string> = {};
+let playerPhotosById: Record<number | string, string> = {};
+let playerPhotosByName: Record<string, string> = {};
+let assetsLoaded = false;
+let assetsLoadPromise: Promise<void> | null = null;
 
 export class DefaultResourceProvider {
     public static readonly ID = 'default-official-provider';
     private static readonly BASE_CDN = COMMUNITY_PACK_CDN;
 
     /**
+     * Lazily loads the ~660 KB club logo & player face dictionaries on demand
+     * so initial startup / StartScreen pays zero parse/network cost.
+     */
+    public static async preloadAssets(): Promise<void> {
+        if (assetsLoaded) return;
+        if (!assetsLoadPromise) {
+            assetsLoadPromise = Promise.all([
+                import('../../customPacks/argentineLogos'),
+                import('../../customPacks/playerPhotos')
+            ]).then(([logosMod, photosMod]) => {
+                clubLogosById = logosMod.ARG_CLUB_LOGOS_BY_ID;
+                clubLogosByName = logosMod.ARG_CLUB_LOGOS_BY_NAME;
+                competitionLogos = logosMod.ARG_COMPETITION_LOGOS;
+                playerPhotosById = photosMod.PLAYER_PHOTOS_BY_ID;
+                playerPhotosByName = photosMod.PLAYER_PHOTOS_BY_NAME;
+                assetsLoaded = true;
+                ResourceCache.clearMemory();
+                notifyPacksStore();
+            }).catch((err) => {
+                assetsLoadPromise = null;
+                console.warn('DefaultResourceProvider: Failed to preload asset dictionaries', err);
+            });
+        }
+        return assetsLoadPromise;
+    }
+
+    private static ensureBrowserPreload(): void {
+        if (!assetsLoaded && typeof window !== 'undefined') {
+            void this.preloadAssets();
+        }
+    }
+
+    /**
      * Resolve Team Logo
      */
     public static resolveTeamLogo(teamId: number | string, meta?: { name?: string; logo?: string; primaryColor?: string; secondaryColor?: string }): ResourceResolution | null {
-        // 1. Direct ID in ARG_CLUB_LOGOS_BY_ID
-        const directLogo = ARG_CLUB_LOGOS_BY_ID[teamId] || (typeof teamId === 'number' ? ARG_CLUB_LOGOS_BY_ID[String(teamId)] : undefined);
+        this.ensureBrowserPreload();
+        // 1. Direct ID in clubLogosById
+        const directLogo = clubLogosById[teamId] || (typeof teamId === 'number' ? clubLogosById[String(teamId)] : undefined);
         if (directLogo) {
             return {
                 url: directLogo,
@@ -35,10 +79,10 @@ export class DefaultResourceProvider {
             const cleanNorm = rawLower.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
             const cleanSlug = cleanNorm.replace(/[^a-z0-9]/g, '');
 
-            const fromName = ARG_CLUB_LOGOS_BY_NAME[rawLower] 
-                || ARG_CLUB_LOGOS_BY_NAME[cleanNorm] 
-                || ARG_CLUB_LOGOS_BY_NAME[cleanSlug]
-                || ARG_CLUB_LOGOS_BY_ID[cleanSlug];
+            const fromName = clubLogosByName[rawLower] 
+                || clubLogosByName[cleanNorm] 
+                || clubLogosByName[cleanSlug]
+                || clubLogosById[cleanSlug];
 
             if (fromName) {
                 return {
@@ -74,8 +118,9 @@ export class DefaultResourceProvider {
      * Resolve Competition / League Logo
      */
     public static resolveCompetitionLogo(competitionId: string, name?: string): ResourceResolution | null {
+        this.ensureBrowserPreload();
         const normalized = competitionId.toUpperCase().replace(/[-\s]/g, '_');
-        const fromMap = ARG_COMPETITION_LOGOS[normalized] || ARG_COMPETITION_LOGOS[competitionId.toLowerCase()];
+        const fromMap = competitionLogos[normalized] || competitionLogos[competitionId.toLowerCase()];
         if (fromMap) {
             return {
                 url: fromMap,
@@ -87,7 +132,7 @@ export class DefaultResourceProvider {
 
         if (name) {
             const cleanName = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '_');
-            const fromName = ARG_COMPETITION_LOGOS[cleanName];
+            const fromName = competitionLogos[cleanName];
             if (fromName) {
                 return {
                     url: fromName,
@@ -106,11 +151,12 @@ export class DefaultResourceProvider {
      * Serves through community pack CDN / real photos without third-party scraping.
      */
     public static resolvePlayerFace(playerId: number | string, meta?: { name?: string; photo?: string }): ResourceResolution | null {
+        this.ensureBrowserPreload();
         const numId = Number(playerId);
 
-        // 1. Check PLAYER_PHOTOS_BY_ID
+        // 1. Check playerPhotosById
         if (!isNaN(numId) && numId > 0) {
-            const photoById = PLAYER_PHOTOS_BY_ID[numId] || (PLAYER_PHOTOS_BY_ID as Record<string, string>)[String(numId)];
+            const photoById = playerPhotosById[numId] || (playerPhotosById as Record<string, string>)[String(numId)];
             if (photoById) {
                 return {
                     url: photoById,
@@ -121,11 +167,11 @@ export class DefaultResourceProvider {
             }
         }
 
-        // 2. Check PLAYER_PHOTOS_BY_NAME
+        // 2. Check playerPhotosByName
         if (meta?.name) {
             const rawLower = meta.name.toLowerCase().trim();
             const cleanNorm = rawLower.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-            const photoByName = PLAYER_PHOTOS_BY_NAME[rawLower] || PLAYER_PHOTOS_BY_NAME[cleanNorm];
+            const photoByName = playerPhotosByName[rawLower] || playerPhotosByName[cleanNorm];
             if (photoByName) {
                 return {
                     url: photoByName,

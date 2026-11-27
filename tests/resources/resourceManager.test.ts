@@ -1,4 +1,4 @@
-import test from 'node:test';
+import test, { before } from 'node:test';
 import assert from 'node:assert/strict';
 import { resourceManager } from '../../services/resources/ResourceManager';
 import { ResourceFallback } from '../../services/resources/ResourceFallback';
@@ -11,6 +11,10 @@ import { ModerationService } from '../../services/resources/ModerationService';
 import { PackCatalog } from '../../services/resources/PackCatalog';
 import { DefaultResourceProvider } from '../../services/resources/providers/DefaultResourceProvider';
 import { InstalledPack, PackManifest } from '../../services/resources/ResourceTypes';
+
+before(async () => {
+    await DefaultResourceProvider.preloadAssets();
+});
 
 test('RESOURCE SYSTEM: ResourceFallback generates valid SVG data URIs', () => {
     // Player silhouette

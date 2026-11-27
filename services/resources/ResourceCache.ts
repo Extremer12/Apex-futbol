@@ -52,6 +52,15 @@ export class ResourceCache {
         return this.packBlobUrls.get(this.makeBlobKey(packId, type, identifier));
     }
 
+    private static revokeObjectUrl(url?: string): void {
+        if (url && url.startsWith('blob:')) {
+            try {
+                URL.revokeObjectURL(url);
+            } catch {}
+            this.objectUrls.delete(url);
+        }
+    }
+
     /**
      * Hydrate memory cache from persistent IndexedDB records (non-blocking at startup)
      */
@@ -75,8 +84,17 @@ export class ResourceCache {
                         if (record.blob) this.objectUrls.add(targetUrl);
 
                         if (record.packId) {
-                            this.packBlobUrls.set(this.makeBlobKey(record.packId, record.type, record.identifier), targetUrl);
+                            const blobKey = this.makeBlobKey(record.packId, record.type, record.identifier);
+                            const previousUrl = this.packBlobUrls.get(blobKey);
+                            if (previousUrl && previousUrl !== targetUrl) {
+                                this.revokeObjectUrl(previousUrl);
+                            }
+                            this.packBlobUrls.set(blobKey, targetUrl);
                         } else {
+                            const previousUrl = this.memoryCache.get(record.key);
+                            if (previousUrl && previousUrl !== targetUrl) {
+                                this.revokeObjectUrl(previousUrl);
+                            }
                             this.memoryCache.set(record.key, targetUrl);
                         }
                         loaded++;
@@ -257,8 +275,20 @@ export class ResourceCache {
             this.objectUrls.add(resolvedUrl);
         }
 
-        // Cache in memory immediately
+        // Cache in memory immediately, revoking any superseded blob URL
         if (resolvedUrl) {
+            if (data.packId) {
+                const blobKey = this.makeBlobKey(data.packId, type, identifier);
+                const prevPackUrl = this.packBlobUrls.get(blobKey);
+                if (prevPackUrl && prevPackUrl !== resolvedUrl) {
+                    this.revokeObjectUrl(prevPackUrl);
+                }
+                this.packBlobUrls.set(blobKey, resolvedUrl);
+            }
+            const prevMemUrl = this.memoryCache.get(key);
+            if (prevMemUrl && prevMemUrl !== resolvedUrl) {
+                this.revokeObjectUrl(prevMemUrl);
+            }
             this.memoryCache.set(key, resolvedUrl);
         }
 
@@ -297,8 +327,17 @@ export class ResourceCache {
             if (r.blob) this.objectUrls.add(resolved);
 
             if (r.packId) {
-                this.packBlobUrls.set(this.makeBlobKey(r.packId, r.type, r.identifier), resolved);
+                const blobKey = this.makeBlobKey(r.packId, r.type, r.identifier);
+                const prevUrl = this.packBlobUrls.get(blobKey);
+                if (prevUrl && prevUrl !== resolved) {
+                    this.revokeObjectUrl(prevUrl);
+                }
+                this.packBlobUrls.set(blobKey, resolved);
             } else {
+                const prevUrl = this.memoryCache.get(r.key);
+                if (prevUrl && prevUrl !== resolved) {
+                    this.revokeObjectUrl(prevUrl);
+                }
                 this.memoryCache.set(r.key, resolved);
             }
         });
@@ -322,13 +361,24 @@ export class ResourceCache {
     }
 
     /**
-     * Clear all cached assets for a specific pack
+     * Clear all cached assets for a specific pack and revoke allocated blob: URLs
      */
     public static async removePackAssets(packId: string): Promise<void> {
         const prefix = `${packId}::`;
-        for (const key of Array.from(this.packBlobUrls.keys())) {
+        const revokedUrls = new Set<string>();
+        for (const [key, url] of Array.from(this.packBlobUrls.entries())) {
             if (key.startsWith(prefix)) {
                 this.packBlobUrls.delete(key);
+                if (url.startsWith('blob:')) {
+                    revokedUrls.add(url);
+                    this.revokeObjectUrl(url);
+                }
+            }
+        }
+        // Evict any memoryCache entries pointing to revoked blob URLs
+        for (const [memKey, memUrl] of Array.from(this.memoryCache.entries())) {
+            if (revokedUrls.has(memUrl)) {
+                this.memoryCache.delete(memKey);
             }
         }
         this.memoryCache.clear();
@@ -349,9 +399,10 @@ export class ResourceCache {
                         store.delete(k);
                         this.memoryCache.delete(String(k));
                     }
-                    resolve();
                 };
                 req.onerror = () => resolve();
+                tx.oncomplete = () => resolve();
+                tx.onerror = () => resolve();
             } catch {
                 resolve();
             }

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Modal } from '../ui/Modal';
 
 interface ConfirmationModalProps {
     isOpen: boolean;
@@ -21,8 +22,6 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     onConfirm,
     onCancel
 }) => {
-    if (!isOpen) return null;
-
     const getConfirmButtonStyles = () => {
         switch (confirmVariant) {
             case 'danger':
@@ -35,21 +34,18 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
-            {/* Backdrop */}
-            <div
-                className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-                onClick={onCancel}
-            />
-
-            {/* Modal */}
-            <div className="relative bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-slate-700 rounded-2xl shadow-2xl max-w-md w-full p-6 animate-scale-in">
-                {/* Icon */}
+        <Modal isOpen={isOpen} title={title} onClose={onCancel} maxWidth="max-w-md" hideHeader>
+            <div className="p-6">
                 <div className="flex justify-center mb-4">
-                    <div className={`w-16 h-16 rounded-full flex items-center justify-center ${confirmVariant === 'danger' ? 'bg-red-900/40 border-2 border-red-500' :
-                            confirmVariant === 'success' ? 'bg-green-900/40 border-2 border-green-500' :
-                                'bg-blue-900/40 border-2 border-blue-500'
-                        }`}>
+                    <div
+                        className={`w-16 h-16 rounded-full flex items-center justify-center ${
+                            confirmVariant === 'danger'
+                                ? 'bg-red-900/40 border-2 border-red-500'
+                                : confirmVariant === 'success'
+                                ? 'bg-green-900/40 border-2 border-green-500'
+                                : 'bg-blue-900/40 border-2 border-blue-500'
+                        }`}
+                    >
                         {confirmVariant === 'danger' ? (
                             <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -66,32 +62,32 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                     </div>
                 </div>
 
-                {/* Title */}
-                <h3 className="text-2xl font-bold text-white text-center mb-3">
+                <h1 className="text-2xl font-bold text-white text-center mb-3">
                     {title}
-                </h3>
+                </h1>
 
-                {/* Message */}
                 <p className="text-slate-300 text-center mb-6">
                     {message}
                 </p>
 
-                {/* Actions */}
                 <div className="flex gap-3">
                     <button
+                        type="button"
+                        autoFocus
                         onClick={onCancel}
-                        className="flex-1 px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-semibold transition-all duration-200 border-2 border-slate-600"
+                        className="flex-1 px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-semibold transition-all duration-200 border-2 border-slate-600 cursor-pointer"
                     >
                         {cancelText}
                     </button>
                     <button
+                        type="button"
                         onClick={onConfirm}
-                        className={`flex-1 px-4 py-3 text-white rounded-lg font-semibold transition-all duration-200 border-2 ${getConfirmButtonStyles()}`}
+                        className={`flex-1 px-4 py-3 text-white rounded-lg font-semibold transition-all duration-200 border-2 cursor-pointer ${getConfirmButtonStyles()}`}
                     >
                         {confirmText}
                     </button>
                 </div>
             </div>
-        </div>
+        </Modal>
     );
 };

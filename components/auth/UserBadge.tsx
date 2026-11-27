@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { AuthModal } from './AuthModal';
+
+const AuthModal = React.lazy(() => import('./AuthModal').then(m => ({ default: m.AuthModal })));
 
 interface UserBadgeProps {
     mode?: 'fullscreen' | 'modal';
@@ -15,7 +16,11 @@ export const UserBadge: React.FC<UserBadgeProps> = ({ mode = 'modal' }) => {
 
     return (
         <>
-            {isAuthOpen && <AuthModal mode={mode} onClose={() => setIsAuthOpen(false)} />}
+            {isAuthOpen && (
+                <Suspense fallback={null}>
+                    <AuthModal mode={mode} onClose={() => setIsAuthOpen(false)} />
+                </Suspense>
+            )}
 
             <button
                 type="button"

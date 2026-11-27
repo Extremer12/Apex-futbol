@@ -6,7 +6,7 @@
 import { GameState, Team, Player, NewsItem, Match, CupCompetition, LeagueId, SeasonHistoryRecord, LeagueTableRow } from '../types';
 import { generateYouthPlayer, generateSeasonSchedule, createInitialLeagueTable, handlePromotionRelegation, sortArgentineZones, simulateMacroMatch, PROMOTION_RELEGATION_PAIRS, getPromotionRelegationSlots, finalizeSeasonCompetitions } from './simulation';
 import { computeArgentineRelegation } from './argentinaRegulations';
-import { calculatePrizeMoney, generateSponsorMarket, isCalendarYearSeasonLeague, isSouthAmericanClubLeague, isNorthAmericanClubLeague } from './economy';
+import { calculatePrizeMoney, evaluateSponsorshipClauses, generateSponsorMarket, isCalendarYearSeasonLeague, isSouthAmericanClubLeague, isNorthAmericanClubLeague } from './economy';
 import { generateClubMembership, applyMembershipEventBoost } from './membership';
 import { generateCoachMarket } from './coaching';
 import { generateStaffMarket, generateScoutMarket } from './staffService';
@@ -64,202 +64,34 @@ export function startNewSeason(currentState: GameState): GameState {
         }
     }
 
-    // 2.5 Process Trophies
-    const currentSeason = currentState.season;
-    const trophiesToAward: { teamId: number, name: string, type: 'league' | 'cup' }[] = [];
-
-    const LEAGUE_TROPHY_NAMES: Record<string, string> = {
-        [LeagueId.PREMIER_LEAGUE]: 'Premier League',
-        [LeagueId.CHAMPIONSHIP]: 'Championship',
-        [LeagueId.LA_LIGA]: 'LaLiga EA Sports',
-        [LeagueId.SEGUNDA_DIVISION_ESP]: 'LaLiga Hypermotion',
-        [LeagueId.BUNDESLIGA]: 'Bundesliga',
-        [LeagueId.ZWEITE_BUNDESLIGA]: '2. Bundesliga',
-        [LeagueId.SERIE_A]: 'Serie A',
-        [LeagueId.SERIE_B_ITA]: 'Serie B',
-        [LeagueId.LIGUE_1]: 'Ligue 1',
-        [LeagueId.LIGUE_2]: 'Ligue 2',
-        [LeagueId.LIGA_ARGENTINA]: 'Liga Argentina (Tabla Anual)',
-        [LeagueId.PRIMERA_NACIONAL]: 'Primera Nacional',
-        [LeagueId.BRASILEIRAO]: 'Brasileirão Série A',
-        [LeagueId.SERIE_B_BR]: 'Brasileirão Série B',
-        [LeagueId.COPA_DE_PRIMERA]: 'Copa de Primera (Paraguay)',
-        [LeagueId.LIGA_MX]: 'Liga MX',
-        [LeagueId.LIGA_EXPANSION_MX]: 'Liga de Expansión MX',
-        [LeagueId.PRIMERA_DIVISION_CHILE]: 'Primera División de Chile',
-        [LeagueId.PRIMERA_B_CHILE]: 'Primera B de Chile',
-        [LeagueId.PRIMERA_A_COLOMBIA]: 'Liga BetPlay (Primera A Colombia)',
-        [LeagueId.PRIMERA_B_COLOMBIA]: 'Torneo BetPlay (Primera B Colombia)',
-        [LeagueId.PRIMEIRA_LIGA]: 'Liga Portugal Betclic',
-        [LeagueId.EREDIVISIE]: 'Eredivisie',
-        [LeagueId.LIGA_URUGUAYA]: 'Liga AUF Uruguaya',
-        [LeagueId.LIGA_ECUADOR]: 'LigaPro Serie A',
-        [LeagueId.MLS]: 'Major League Soccer'
-    };
-
-    // Ensure all competitions of the season are crowned and finalized before awarding trophies
-    finalizeSeasonCompetitions(currentState.cups, currentState.allTeams, currentState.schedule);
-
-    // Leagues
-    Object.entries(currentState.leagueTables).forEach(([leagueId, table]) => {
-        if (table.length > 0) {
-            const sortedTable = [...table].sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference);
-            const winnerId = sortedTable[0].teamId;
-            const leagueName = LEAGUE_TROPHY_NAMES[leagueId] || leagueId.replace(/_/g, ' ');
-            trophiesToAward.push({ teamId: winnerId, name: leagueName, type: 'league' });
-        }
-    });
-
-    // Helper to resolve champion ID from winnerId or final fixture result
-    const getCupWinnerId = (cup?: CupCompetition): number | null => {
-        if (!cup) return null;
-        if (cup.winnerId) return cup.winnerId;
-        if (cup.rounds && cup.rounds.length > 0) {
-            const lastRound = cup.rounds[cup.rounds.length - 1];
-            if (lastRound.fixtures?.length === 1 && lastRound.fixtures[0].result) {
-                const finalMatch = lastRound.fixtures[0];
-                const hScore = finalMatch.result.homeScore;
-                const aScore = finalMatch.result.awayScore;
-                if (hScore > aScore) return finalMatch.homeTeamId;
-                if (aScore > hScore) return finalMatch.awayTeamId;
-                if (finalMatch.penalties) {
-                    return finalMatch.penalties.home > finalMatch.penalties.away ? finalMatch.homeTeamId : finalMatch.awayTeamId;
-                }
-                if (finalMatch.result.penalties) {
-                    return finalMatch.result.penalties.home > finalMatch.result.penalties.away ? finalMatch.homeTeamId : finalMatch.awayTeamId;
-                }
-            }
-        }
-        const histWinner = cup.statistics?.championsHistory?.[0];
-        if (histWinner?.winnerId) return histWinner.winnerId;
-        return null;
-    };
-
-    // National Cups
-    const faWinner = getCupWinnerId(currentState.cups.faCup);
-    if (faWinner) trophiesToAward.push({ teamId: faWinner, name: 'FA Cup', type: 'cup' });
-
-    const carabaoWinner = getCupWinnerId(currentState.cups.carabaoCup);
-    if (carabaoWinner) trophiesToAward.push({ teamId: carabaoWinner, name: 'Carabao Cup', type: 'cup' });
-
-    const cdrWinner = getCupWinnerId(currentState.cups.copaDelRey);
-    if (cdrWinner) trophiesToAward.push({ teamId: cdrWinner, name: 'Copa del Rey', type: 'cup' });
-
-    const dfbWinner = getCupWinnerId(currentState.cups.dfbPokal);
-    if (dfbWinner) trophiesToAward.push({ teamId: dfbWinner, name: 'DFB-Pokal', type: 'cup' });
-
-    const ciWinner = getCupWinnerId(currentState.cups.coppaItalia);
-    if (ciWinner) trophiesToAward.push({ teamId: ciWinner, name: 'Coppa Italia', type: 'cup' });
-
-    const caWinner = getCupWinnerId(currentState.cups.copaArgentina);
-    if (caWinner) trophiesToAward.push({ teamId: caWinner, name: 'Copa Argentina', type: 'cup' });
-
-    const copaMxWinner = getCupWinnerId(currentState.cups.copaMx);
-    if (copaMxWinner) trophiesToAward.push({ teamId: copaMxWinner, name: 'Copa MX', type: 'cup' });
-
-    const apWinner = getCupWinnerId(currentState.cups.aperturaPlayoffs);
-    if (apWinner) trophiesToAward.push({ teamId: apWinner, name: 'Torneo Apertura', type: 'league' });
-
-    const clWinner = getCupWinnerId(currentState.cups.clausuraPlayoffs);
-    if (clWinner) trophiesToAward.push({ teamId: clWinner, name: 'Torneo Clausura', type: 'league' });
-
-    const paWinner = getCupWinnerId(currentState.cups.nacionalPrimerAscenso);
-    if (paWinner) trophiesToAward.push({ teamId: paWinner, name: 'Primera Nacional (1º Ascenso)', type: 'cup' });
-
-    const redWinner = getCupWinnerId(currentState.cups.nacionalReducido);
-    if (redWinner) trophiesToAward.push({ teamId: redWinner, name: 'Torneo Reducido', type: 'cup' });
-
-    // International Cups
-    const uclWinner = getCupWinnerId(currentState.cups.championsLeague);
-    if (uclWinner) trophiesToAward.push({ teamId: uclWinner, name: 'UEFA Champions League', type: 'cup' });
-
-    const uelWinner = getCupWinnerId(currentState.cups.europaLeague);
-    if (uelWinner) trophiesToAward.push({ teamId: uelWinner, name: 'UEFA Europa League', type: 'cup' });
-
-    const libWinner = getCupWinnerId(currentState.cups.copaLibertadores);
-    if (libWinner) trophiesToAward.push({ teamId: libWinner, name: 'Copa Libertadores', type: 'cup' });
-
-    const sudWinner = getCupWinnerId(currentState.cups.copaSudamericana);
-    if (sudWinner) trophiesToAward.push({ teamId: sudWinner, name: 'Copa Sudamericana', type: 'cup' });
-
-    const intWinner = getCupWinnerId(currentState.cups.copaIntercontinental);
-    if (intWinner) trophiesToAward.push({ teamId: intWinner, name: 'Copa Intercontinental', type: 'cup' });
-
-    const recWinner = getCupWinnerId(currentState.cups.recopaSudamericana);
-    if (recWinner) trophiesToAward.push({ teamId: recWinner, name: 'Recopa Sudamericana', type: 'cup' });
-
-    const cwcWinner = getCupWinnerId(currentState.cups.clubWorldCup);
-    if (cwcWinner) trophiesToAward.push({ teamId: cwcWinner, name: 'Mundial de Clubes FIFA', type: 'cup' });
-
-    // Apply Trophies to processedTeams
-    const teamsWithTrophies = processedTeams.map(team => {
-        const teamTrophies = trophiesToAward.filter(t => t.teamId === team.id).map((t, idx) => ({
-            id: `trophy_${currentSeason}_${team.id}_${idx}`,
-            name: t.name,
-            season: currentSeason,
-            type: t.type
+    // 2.1 Clone and finalize ALL remaining unplayed league matches across ALL 26 leagues
+    // and re-sort every table BEFORE crowning champions, awarding trophies, or computing promotion/relegation
+    const workingLeagueTables: Record<LeagueId, LeagueTableRow[]> = {} as Record<LeagueId, LeagueTableRow[]>;
+    Object.entries(currentState.leagueTables || {}).forEach(([lid, rows]) => {
+        workingLeagueTables[lid as LeagueId] = (rows || []).map(r => ({
+            ...r,
+            form: [...(r.form || [])]
         }));
-        
-        if (teamTrophies.length > 0) {
-            return {
-                ...team,
-                trophyCabinet: [...(team.trophyCabinet || []), ...teamTrophies]
-            };
-        }
-        return team;
     });
+    const workingSchedule: Match[] = (currentState.schedule || []).map(m => ({ ...m }));
+    const workingCups: GameState['cups'] = { ...currentState.cups };
 
-    // Re-assign processedTeams so the rest of the flow uses teams with updated trophies
-    processedTeams.splice(0, processedTeams.length, ...teamsWithTrophies);
-
-    // 2.6 Process Player Awards & Stats Reset
-    let ballonDorWinner: Player | null = null;
-    let goldenBootWinner: Player | null = null;
-    let maxGoals = 0;
-    let bestScore = 0;
-
-    const allPlayers = processedTeams.flatMap(t => t.squad);
-
-    allPlayers.forEach(p => {
-        if (!p.stats) return;
-
-        // Golden Boot
-        if (p.stats.goals > maxGoals) {
-            maxGoals = p.stats.goals;
-            goldenBootWinner = p;
-        }
-
-        // Ballon d'Or score (Goals * 2 + Assists * 1 + Rating / 10 + Apps / 2)
-        const score = (p.stats.goals * 2) + p.stats.assists + (p.rating / 10) + (p.stats.appearances / 2);
-        if (score > bestScore) {
-            bestScore = score;
-            ballonDorWinner = p;
-        }
-
-        // Dynamic Value Update (performance bonus based on season output)
-        const performanceBonus = (p.stats.goals * 0.4) + (p.stats.assists * 0.2);
-        if (performanceBonus > 0) {
-            p.value = Number((p.value + performanceBonus * 0.3).toFixed(1));
-        }
-
-        // Reset seasonal stats
-        p.stats = { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 };
-    });
-
-    const updatedPlayerTeamWithTrophies = processedTeams.find(t => t.id === currentState.team.id)!;
-
-    // 2.5 Finalize any unplayed league matches across all 14 leagues so all tables are 100% complete
-    const unplayedLeagueMatches = currentState.schedule.filter(m => m.result === undefined && !m.isCupMatch);
+    const unplayedLeagueMatches = workingSchedule.filter(m => m.result === undefined && !m.isCupMatch);
     if (unplayedLeagueMatches.length > 0) {
         const teamMap = new Map<number, Team>(processedTeams.map(t => [t.id, t]));
+        const tableRowIndex = new Map<LeagueId, Map<number, LeagueTableRow>>();
+        Object.entries(workingLeagueTables).forEach(([lid, rows]) => {
+            tableRowIndex.set(lid as LeagueId, new Map(rows.map(r => [r.teamId, r])));
+        });
+
         unplayedLeagueMatches.forEach(m => {
             const hTeam = teamMap.get(m.homeTeamId);
             const aTeam = teamMap.get(m.awayTeamId);
             if (!hTeam || !aTeam) return;
 
-            const table = currentState.leagueTables[hTeam.leagueId];
-            const hRow = table?.find(r => r.teamId === hTeam.id);
-            const aRow = table?.find(r => r.teamId === aTeam.id);
+            const leagueRowsMap = tableRowIndex.get(hTeam.leagueId as LeagueId);
+            const hRow = leagueRowsMap?.get(hTeam.id);
+            const aRow = leagueRowsMap?.get(aTeam.id);
 
             const simResult = simulateMacroMatch(hTeam, aTeam, hRow, aRow, false);
             const hScore = simResult.homeScore;
@@ -297,25 +129,217 @@ export function startNewSeason(currentState: GameState): GameState {
                     hRow.form.unshift('D');
                     aRow.form.unshift('D');
                 }
+                hRow.playedTotal = (hRow.playedTotal || 0) + 1;
+                hRow.pointsTotal = (hRow.pointsTotal || 0) + (hScore > aScore ? 3 : hScore === aScore ? 1 : 0);
+                hRow.promedio = Number((hRow.pointsTotal / Math.max(1, hRow.playedTotal)).toFixed(3));
+                aRow.playedTotal = (aRow.playedTotal || 0) + 1;
+                aRow.pointsTotal = (aRow.pointsTotal || 0) + (aScore > hScore ? 3 : hScore === aScore ? 1 : 0);
+                aRow.promedio = Number((aRow.pointsTotal / Math.max(1, aRow.playedTotal)).toFixed(3));
             }
         });
     }
 
-    // 3. Process Promotion/Relegation (All leagues)
+    // Re-sort all 26 league tables accurately after finishing remaining fixtures
+    (Object.keys(workingLeagueTables) as LeagueId[]).forEach(lid => {
+        const sorted = [...workingLeagueTables[lid]].sort(
+            (a, b) => b.points - a.points || b.goalDifference - a.goalDifference || b.goalsFor - a.goalsFor
+        );
+        sorted.forEach((row, idx) => {
+            row.position = idx + 1;
+        });
+        workingLeagueTables[lid] = sorted;
+    });
+
+    // 2.2 Ensure all cup & playoff competitions are finalized before awarding trophies
+    finalizeSeasonCompetitions(workingCups, processedTeams, workingSchedule);
+
+    // 2.3 Crown League & Cup Champions from settled tables/cups
+    const currentSeason = currentState.season;
+    const trophiesToAward: { teamId: number, name: string, type: 'league' | 'cup' }[] = [];
+
+    const LEAGUE_TROPHY_NAMES: Record<string, string> = {
+        [LeagueId.PREMIER_LEAGUE]: 'Premier League',
+        [LeagueId.CHAMPIONSHIP]: 'Championship',
+        [LeagueId.LA_LIGA]: 'LaLiga EA Sports',
+        [LeagueId.SEGUNDA_DIVISION_ESP]: 'LaLiga Hypermotion',
+        [LeagueId.BUNDESLIGA]: 'Bundesliga',
+        [LeagueId.ZWEITE_BUNDESLIGA]: '2. Bundesliga',
+        [LeagueId.SERIE_A]: 'Serie A',
+        [LeagueId.SERIE_B_ITA]: 'Serie B',
+        [LeagueId.LIGUE_1]: 'Ligue 1',
+        [LeagueId.LIGUE_2]: 'Ligue 2',
+        [LeagueId.LIGA_ARGENTINA]: 'Liga Argentina (Tabla Anual)',
+        [LeagueId.PRIMERA_NACIONAL]: 'Primera Nacional',
+        [LeagueId.BRASILEIRAO]: 'Brasileirão Série A',
+        [LeagueId.SERIE_B_BR]: 'Brasileirão Série B',
+        [LeagueId.COPA_DE_PRIMERA]: 'Copa de Primera (Paraguay)',
+        [LeagueId.LIGA_MX]: 'Liga MX',
+        [LeagueId.LIGA_EXPANSION_MX]: 'Liga de Expansión MX',
+        [LeagueId.PRIMERA_DIVISION_CHILE]: 'Primera División de Chile',
+        [LeagueId.PRIMERA_B_CHILE]: 'Primera B de Chile',
+        [LeagueId.PRIMERA_A_COLOMBIA]: 'Liga BetPlay (Primera A Colombia)',
+        [LeagueId.PRIMERA_B_COLOMBIA]: 'Torneo BetPlay (Primera B Colombia)',
+        [LeagueId.PRIMEIRA_LIGA]: 'Liga Portugal Betclic',
+        [LeagueId.EREDIVISIE]: 'Eredivisie',
+        [LeagueId.LIGA_URUGUAYA]: 'Liga AUF Uruguaya',
+        [LeagueId.LIGA_ECUADOR]: 'LigaPro Serie A',
+        [LeagueId.MLS]: 'Major League Soccer'
+    };
+
+    Object.entries(workingLeagueTables).forEach(([leagueId, table]) => {
+        if (table.length > 0) {
+            const winnerId = table[0].teamId;
+            const leagueName = LEAGUE_TROPHY_NAMES[leagueId] || leagueId.replace(/_/g, ' ');
+            trophiesToAward.push({ teamId: winnerId, name: leagueName, type: 'league' });
+        }
+    });
+
+    const getCupWinnerId = (cup?: CupCompetition): number | null => {
+        if (!cup) return null;
+        if (cup.winnerId) return cup.winnerId;
+        if (cup.rounds && cup.rounds.length > 0) {
+            const lastRound = cup.rounds[cup.rounds.length - 1];
+            if (lastRound.fixtures?.length === 1 && lastRound.fixtures[0].result) {
+                const finalMatch = lastRound.fixtures[0];
+                const hScore = finalMatch.result.homeScore;
+                const aScore = finalMatch.result.awayScore;
+                if (hScore > aScore) return finalMatch.homeTeamId;
+                if (aScore > hScore) return finalMatch.awayTeamId;
+                if (finalMatch.penalties) {
+                    return finalMatch.penalties.home > finalMatch.penalties.away ? finalMatch.homeTeamId : finalMatch.awayTeamId;
+                }
+                if (finalMatch.result.penalties) {
+                    return finalMatch.result.penalties.home > finalMatch.result.penalties.away ? finalMatch.homeTeamId : finalMatch.awayTeamId;
+                }
+            }
+        }
+        const histWinner = cup.statistics?.championsHistory?.[0];
+        if (histWinner?.winnerId) return histWinner.winnerId;
+        return null;
+    };
+
+    // National Cups
+    const faWinner = getCupWinnerId(workingCups.faCup);
+    if (faWinner) trophiesToAward.push({ teamId: faWinner, name: 'FA Cup', type: 'cup' });
+
+    const carabaoWinner = getCupWinnerId(workingCups.carabaoCup);
+    if (carabaoWinner) trophiesToAward.push({ teamId: carabaoWinner, name: 'Carabao Cup', type: 'cup' });
+
+    const cdrWinner = getCupWinnerId(workingCups.copaDelRey);
+    if (cdrWinner) trophiesToAward.push({ teamId: cdrWinner, name: 'Copa del Rey', type: 'cup' });
+
+    const dfbWinner = getCupWinnerId(workingCups.dfbPokal);
+    if (dfbWinner) trophiesToAward.push({ teamId: dfbWinner, name: 'DFB-Pokal', type: 'cup' });
+
+    const ciWinner = getCupWinnerId(workingCups.coppaItalia);
+    if (ciWinner) trophiesToAward.push({ teamId: ciWinner, name: 'Coppa Italia', type: 'cup' });
+
+    const caWinner = getCupWinnerId(workingCups.copaArgentina);
+    if (caWinner) trophiesToAward.push({ teamId: caWinner, name: 'Copa Argentina', type: 'cup' });
+
+    const copaMxWinner = getCupWinnerId(workingCups.copaMx);
+    if (copaMxWinner) trophiesToAward.push({ teamId: copaMxWinner, name: 'Copa MX', type: 'cup' });
+
+    const apWinner = getCupWinnerId(workingCups.aperturaPlayoffs);
+    if (apWinner) trophiesToAward.push({ teamId: apWinner, name: 'Torneo Apertura', type: 'league' });
+
+    const clWinner = getCupWinnerId(workingCups.clausuraPlayoffs);
+    if (clWinner) trophiesToAward.push({ teamId: clWinner, name: 'Torneo Clausura', type: 'league' });
+
+    const paWinner = getCupWinnerId(workingCups.nacionalPrimerAscenso);
+    if (paWinner) trophiesToAward.push({ teamId: paWinner, name: 'Primera Nacional (1º Ascenso)', type: 'cup' });
+
+    const redWinner = getCupWinnerId(workingCups.nacionalReducido);
+    if (redWinner) trophiesToAward.push({ teamId: redWinner, name: 'Torneo Reducido', type: 'cup' });
+
+    // International Cups
+    const uclWinner = getCupWinnerId(workingCups.championsLeague);
+    if (uclWinner) trophiesToAward.push({ teamId: uclWinner, name: 'UEFA Champions League', type: 'cup' });
+
+    const uelWinner = getCupWinnerId(workingCups.europaLeague);
+    if (uelWinner) trophiesToAward.push({ teamId: uelWinner, name: 'UEFA Europa League', type: 'cup' });
+
+    const libWinner = getCupWinnerId(workingCups.copaLibertadores);
+    if (libWinner) trophiesToAward.push({ teamId: libWinner, name: 'Copa Libertadores', type: 'cup' });
+
+    const sudWinner = getCupWinnerId(workingCups.copaSudamericana);
+    if (sudWinner) trophiesToAward.push({ teamId: sudWinner, name: 'Copa Sudamericana', type: 'cup' });
+
+    const intWinner = getCupWinnerId(workingCups.copaIntercontinental);
+    if (intWinner) trophiesToAward.push({ teamId: intWinner, name: 'Copa Intercontinental', type: 'cup' });
+
+    const recWinner = getCupWinnerId(workingCups.recopaSudamericana);
+    if (recWinner) trophiesToAward.push({ teamId: recWinner, name: 'Recopa Sudamericana', type: 'cup' });
+
+    const cwcWinner = getCupWinnerId(workingCups.clubWorldCup);
+    if (cwcWinner) trophiesToAward.push({ teamId: cwcWinner, name: 'Mundial de Clubes FIFA', type: 'cup' });
+
+    // Apply Trophies to processedTeams
+    const teamsWithTrophies = processedTeams.map(team => {
+        const teamTrophies = trophiesToAward.filter(t => t.teamId === team.id).map((t, idx) => ({
+            id: `trophy_${currentSeason}_${team.id}_${idx}`,
+            name: t.name,
+            season: currentSeason,
+            type: t.type
+        }));
+
+        if (teamTrophies.length > 0) {
+            return {
+                ...team,
+                trophyCabinet: [...(team.trophyCabinet || []), ...teamTrophies]
+            };
+        }
+        return team;
+    });
+
+    processedTeams.splice(0, processedTeams.length, ...teamsWithTrophies);
+
+    // 2.4 Process Player Awards & Stats Reset
+    let ballonDorWinner: Player | null = null;
+    let goldenBootWinner: Player | null = null;
+    let maxGoals = 0;
+    let bestScore = 0;
+
+    const allPlayers = processedTeams.flatMap(t => t.squad);
+
+    allPlayers.forEach(p => {
+        if (!p.stats) return;
+
+        if (p.stats.goals > maxGoals) {
+            maxGoals = p.stats.goals;
+            goldenBootWinner = p;
+        }
+
+        const score = (p.stats.goals * 2) + p.stats.assists + (p.rating / 10) + (p.stats.appearances / 2);
+        if (score > bestScore) {
+            bestScore = score;
+            ballonDorWinner = p;
+        }
+
+        const performanceBonus = (p.stats.goals * 0.4) + (p.stats.assists * 0.2);
+        if (performanceBonus > 0) {
+            p.value = Number((p.value + performanceBonus * 0.3).toFixed(1));
+        }
+
+        p.stats = { goals: 0, assists: 0, minutes: 0, appearances: 0, yellowCards: 0, redCards: 0 };
+    });
+
+    const updatedPlayerTeamWithTrophies = processedTeams.find(t => t.id === currentState.team.id)!;
+
+    // 3. Process Promotion/Relegation from settled tables (All leagues)
     const teamsAfterProRel = handlePromotionRelegation(
         processedTeams,
-        currentState.leagueTables
+        workingLeagueTables
     );
 
-    // Identify which teams actually moved for the news feed
     const allMovementNews: string[] = [];
     PROMOTION_RELEGATION_PAIRS.forEach(([div1, div2]) => {
-        const div1Table = currentState.leagueTables[div1] || [];
-        const div2Table = currentState.leagueTables[div2] || [];
+        const div1Table = workingLeagueTables[div1] || [];
+        const div2Table = workingLeagueTables[div2] || [];
         if (div1Table.length > 0 && div2Table.length > 0) {
-            const sorted1 = [...div1Table].sort((a,b) => b.points - a.points || b.goalDifference - a.goalDifference);
-            const sorted2 = [...div2Table].sort((a,b) => b.points - a.points || b.goalDifference - a.goalDifference);
-            
+            const sorted1 = div1Table;
+            const sorted2 = div2Table;
+
             let relegatedNames: string[] = [];
             let promotedNames: string[] = [];
 
@@ -325,8 +349,8 @@ export function startNewSeason(currentState: GameState): GameState {
                     .map(id => processedTeams.find(tm => tm.id === id)?.name)
                     .filter(Boolean) as string[];
 
-                const promo1Id = currentState.cups.nacionalPrimerAscenso?.winnerId || div2Table.filter(r => r.zone === 'A').sort((a,b) => b.points - a.points)[0]?.teamId;
-                const promo2Id = currentState.cups.nacionalReducido?.winnerId || div2Table.filter(r => r.zone === 'B').sort((a,b) => b.points - a.points)[0]?.teamId;
+                const promo1Id = workingCups.nacionalPrimerAscenso?.winnerId || div2Table.filter(r => r.zone === 'A').sort((a,b) => b.points - a.points)[0]?.teamId;
+                const promo2Id = workingCups.nacionalReducido?.winnerId || div2Table.filter(r => r.zone === 'B').sort((a,b) => b.points - a.points)[0]?.teamId;
                 if (promo1Id) {
                     const t = processedTeams.find(tm => tm.id === promo1Id);
                     if (t) promotedNames.push(t.name);
@@ -347,7 +371,7 @@ export function startNewSeason(currentState: GameState): GameState {
                 relegatedNames = sorted1.slice(-slots).map(r => processedTeams.find(t => t.id === r.teamId)?.name).filter(Boolean) as string[];
                 promotedNames = sorted2.slice(0, slots).map(p => processedTeams.find(t => t.id === p.teamId)?.name).filter(Boolean) as string[];
             }
-            
+
             if (relegatedNames.length > 0 || promotedNames.length > 0) {
                 const leagueName = div1.replace(/_/g, ' ');
                 allMovementNews.push(`${leagueName}: ⬆️ ${promotedNames.join(', ')} | ⬇️ ${relegatedNames.join(', ')}`);
@@ -357,7 +381,6 @@ export function startNewSeason(currentState: GameState): GameState {
 
     // 4. Generate new season schedule and tables
     const argTeams = teamsAfterProRel.filter(t => t.leagueId === LeagueId.LIGA_ARGENTINA);
-    // Authentic AFA zone lottery for new season: fixed rivalry pairs 50/50 across Zona A & B
     sortArgentineZones(argTeams);
     const newSeasonSchedule = generateSeasonSchedule(teamsAfterProRel, newSeasonYear);
 
@@ -368,14 +391,12 @@ export function startNewSeason(currentState: GameState): GameState {
         const teams = getLeagueTeams(lid);
         const initialTable = createInitialLeagueTable(teams);
         if (lid === LeagueId.LIGA_ARGENTINA) {
-            const prevArgTable = currentState.leagueTables[LeagueId.LIGA_ARGENTINA] || [];
+            const prevArgTable = workingLeagueTables[LeagueId.LIGA_ARGENTINA] || [];
             initialTable.forEach(row => {
                 const prevRow = prevArgTable.find(r => r.teamId === row.teamId);
                 if (prevRow) {
-                    // Accumulate completed season into rolling 3-season history (AFA regulation)
                     let playedTotal = (prevRow.playedTotal || 0) + prevRow.played;
                     let pointsTotal = (prevRow.pointsTotal || 0) + prevRow.points;
-                    // Cap rolling window to approx. 3 seasons (32 matches/year * 3 = 96 matches)
                     if (playedTotal > 96) {
                         const factor = 96 / playedTotal;
                         playedTotal = 96;
@@ -385,7 +406,6 @@ export function startNewSeason(currentState: GameState): GameState {
                     row.pointsTotal = pointsTotal;
                     row.promedio = playedTotal > 0 ? Number((pointsTotal / playedTotal).toFixed(3)) : 0;
                 } else {
-                    // Newly promoted team divides only by matches played in new season
                     row.playedTotal = 0;
                     row.pointsTotal = 0;
                     row.promedio = 0;
@@ -399,8 +419,8 @@ export function startNewSeason(currentState: GameState): GameState {
     const { cups: newSeasonCups, competitionFixtures } = buildSeasonCompetitions({
         allTeams: teamsAfterProRel,
         playerTeamId: currentState.team?.id,
-        leagueTables: currentState.leagueTables,
-        previousCups: currentState.cups,
+        leagueTables: workingLeagueTables,
+        previousCups: workingCups,
         completedSeason: currentSeason
     });
 
@@ -447,9 +467,8 @@ export function startNewSeason(currentState: GameState): GameState {
     }
 
     // 7. Calculate fan approval changes based on season performance and promises
-    // Find the player's position in their own league table (works for ANY league)
-    const playerLeagueTable = currentState.leagueTables[updatedPlayerTeam.leagueId] || [];
-    const sortedPlayerLeague = [...playerLeagueTable].sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference);
+    const playerLeagueTable = workingLeagueTables[updatedPlayerTeam.leagueId] || [];
+    const sortedPlayerLeague = playerLeagueTable;
     const playerPosition = sortedPlayerLeague.findIndex(row => row.teamId === updatedPlayerTeam.id) + 1 || 10;
 
     let approvalDelta = 0;
@@ -561,37 +580,54 @@ export function startNewSeason(currentState: GameState): GameState {
 
     approvalDelta += promisesDelta;
 
-    // 8. Calculate Prize Money & Sponsorship Bonuses
+    // 8. Calculate Prize Money & Sponsorship Bonuses/Penalties (Clauses Settlement)
     const prizeMoney = calculatePrizeMoney(currentState.team.leagueId, playerPosition);
-    
-    let sponsorshipBonuses = 0;
-    let bonusMessages: string[] = [];
-    
-    currentState.sponsors.forEach(sponsor => {
-        if (sponsor.bonus) {
-            let achieved = false;
-            if (sponsor.bonus.condition === 'top4' && playerPosition <= 4) achieved = true;
-            else if (sponsor.bonus.condition === 'top6' && playerPosition <= 6) achieved = true;
-            else if (sponsor.bonus.condition === 'promotion') {
-                // Check if our team was in a second division and got promoted
-                const secondDivs = PROMOTION_RELEGATION_PAIRS.map(p => p[1]);
-                const wasInSecondDiv = secondDivs.includes(currentState.team.leagueId as LeagueId);
-                if (wasInSecondDiv && playerPosition <= 3) achieved = true;
-            } else if (sponsor.bonus.condition === 'win_cup') {
-                // Check if user team won any cup this season
-                const userCups = Object.values(currentState.cups || {});
-                achieved = userCups.some(c => {
-                    const winnerId = getCupWinnerId(c as CupCompetition);
-                    return winnerId === currentState.team.id;
-                });
-            }
-            
-            if (achieved) {
-                sponsorshipBonuses += sponsor.bonus.amount;
-                bonusMessages.push(`Bono por ${sponsor.name}: +${formatCurrency(sponsor.bonus.amount)}`);
-            }
-        }
-    });
+
+    const prevLeagueId = currentState.team.leagueId;
+    const postProRelTeam = teamsAfterProRel.find(t => t.id === currentState.team.id);
+    const nextLeagueId = postProRelTeam?.leagueId;
+    const wasPromoted = Boolean(nextLeagueId && nextLeagueId !== prevLeagueId && PROMOTION_RELEGATION_PAIRS.some(([d1, d2]) => prevLeagueId === d2 && nextLeagueId === d1));
+    const wasRelegated = Boolean(nextLeagueId && nextLeagueId !== prevLeagueId && PROMOTION_RELEGATION_PAIRS.some(([d1, d2]) => prevLeagueId === d1 && nextLeagueId === d2));
+    const secondDivs = PROMOTION_RELEGATION_PAIRS.map(p => p[1]);
+    const isSecondDivision = secondDivs.includes(prevLeagueId as LeagueId);
+    const wonAnyCup = Object.values(workingCups || {}).some(c => getCupWinnerId(c as CupCompetition) === currentState.team.id);
+    const qualifiedContinental = Boolean(
+        newSeasonCups.championsLeague?.swissTable?.some(r => r.teamId === updatedPlayerTeam.id) ||
+        newSeasonCups.europaLeague?.swissTable?.some(r => r.teamId === updatedPlayerTeam.id) ||
+        newSeasonCups.copaLibertadores?.groups?.some(g => g.teams.includes(updatedPlayerTeam.id)) ||
+        newSeasonCups.copaSudamericana?.groups?.some(g => g.teams.includes(updatedPlayerTeam.id))
+    );
+    const reachedDomesticCupLateStage = [
+        workingCups.faCup, workingCups.carabaoCup, workingCups.copaDelRey,
+        workingCups.dfbPokal, workingCups.coppaItalia, workingCups.copaArgentina, workingCups.copaMx
+    ].some(c => c?.rounds?.slice(-2).some(r =>
+        r.fixtures?.some(f => f.homeTeamId === currentState.team.id || f.awayTeamId === currentState.team.id)
+    ));
+    const squadAvgAge = updatedPlayerTeamWithTrophies.squad.length > 0
+        ? updatedPlayerTeamWithTrophies.squad.reduce((sum, p) => sum + (p.age || 25), 0) / updatedPlayerTeamWithTrophies.squad.length
+        : 25;
+
+    const sponsorSettlement = evaluateSponsorshipClauses(
+        currentState.sponsors,
+        {
+            playerPosition,
+            totalTeamsInLeague: playerLeagueTable.length || 20,
+            isSecondDivision,
+            wasPromoted,
+            wasRelegated,
+            qualifiedContinental,
+            wonAnyCup,
+            reachedDomesticCupLateStage,
+            endBalanceBeforeClauses: currentState.finances.balance + prizeMoney,
+            squadAvgAge,
+            fanApprovalRating: currentState.fanApproval?.rating ?? 60,
+            stadiumFacilityLevel: currentState.stadium?.facilityLevel ?? 1
+        },
+        formatCurrency
+    );
+
+    const sponsorshipBonuses = sponsorSettlement.netAdjustment;
+    const bonusMessages = [...sponsorSettlement.bonusMessages, ...sponsorSettlement.penaltyMessages];
 
     const totalEndSeasonIncome = prizeMoney + sponsorshipBonuses;
     const newBalance = currentState.finances.balance + totalEndSeasonIncome;
@@ -613,23 +649,16 @@ export function startNewSeason(currentState: GameState): GameState {
         }
     }
 
-    const prevLeagueId = currentState.team.leagueId;
-    const postProRelTeam = teamsAfterProRel.find(t => t.id === currentState.team.id);
-    const nextLeagueId = postProRelTeam?.leagueId;
-    if (nextLeagueId && nextLeagueId !== prevLeagueId) {
-        const wasPromoted = PROMOTION_RELEGATION_PAIRS.some(([d1, d2]) => prevLeagueId === d2 && nextLeagueId === d1);
-        const wasRelegated = PROMOTION_RELEGATION_PAIRS.some(([d1, d2]) => prevLeagueId === d1 && nextLeagueId === d2);
-        if (wasPromoted) {
-            const res = applyMembershipEventBoost(updatedMembership, 'PROMOTION');
-            updatedMembership = res.updatedMembership;
-            seasonMembershipDelta += res.delta;
-            if (res.delta !== 0) seasonMembershipNotes.push(`Ascenso: +${res.delta.toLocaleString()} socios`);
-        } else if (wasRelegated) {
-            const res = applyMembershipEventBoost(updatedMembership, 'RELEGATION');
-            updatedMembership = res.updatedMembership;
-            seasonMembershipDelta += res.delta;
-            if (res.delta !== 0) seasonMembershipNotes.push(`Descenso: ${res.delta.toLocaleString()} socios`);
-        }
+    if (wasPromoted) {
+        const res = applyMembershipEventBoost(updatedMembership, 'PROMOTION');
+        updatedMembership = res.updatedMembership;
+        seasonMembershipDelta += res.delta;
+        if (res.delta !== 0) seasonMembershipNotes.push(`Ascenso: +${res.delta.toLocaleString()} socios`);
+    } else if (wasRelegated) {
+        const res = applyMembershipEventBoost(updatedMembership, 'RELEGATION');
+        updatedMembership = res.updatedMembership;
+        seasonMembershipDelta += res.delta;
+        if (res.delta !== 0) seasonMembershipNotes.push(`Descenso: ${res.delta.toLocaleString()} socios`);
     }
     if (seasonMembershipDelta !== 0) {
         updatedMembership = {
@@ -646,7 +675,7 @@ export function startNewSeason(currentState: GameState): GameState {
     const prizeNews: NewsItem = {
         id: `prize_${newSeasonYear}`,
         headline: `Balance de Final de Temporada`,
-        body: `Premios de Liga: ${formatCurrency(prizeMoney)} por terminar ${playerPosition}º.\n${bonusMessages.join('\n')}\nTotal ingresado: ${formatCurrency(totalEndSeasonIncome)}${membershipLine}`,
+        body: `Premios de Liga: ${formatCurrency(prizeMoney)} por terminar ${playerPosition}º.${bonusMessages.length > 0 ? '\n' + bonusMessages.join('\n') : ''}\nTotal neto ingresado: ${formatCurrency(totalEndSeasonIncome)}${membershipLine}`,
         date: formatDate(newDate),
         type: 'achievement'
     };
@@ -762,15 +791,15 @@ export function startNewSeason(currentState: GameState): GameState {
     if (userPair) {
         const [div1, div2] = userPair;
         if (div1 === LeagueId.LIGA_ARGENTINA) {
-            const d1t = currentState.leagueTables[div1] || [];
-            const d2t = currentState.leagueTables[div2] || [];
+            const d1t = workingLeagueTables[div1] || [];
+            const d2t = workingLeagueTables[div2] || [];
             const relResult = computeArgentineRelegation(d1t);
             relResult.relegatedIds.forEach(id => {
                 const t = processedTeams.find(tm => tm.id === id);
                 if (t) relegatedTeamNames.push(t.name);
             });
-            const promo1Id = currentState.cups.nacionalPrimerAscenso?.winnerId || d2t.filter(r => r.zone === 'A').sort((a,b) => b.points - a.points)[0]?.teamId;
-            const promo2Id = currentState.cups.nacionalReducido?.winnerId || d2t.filter(r => r.zone === 'B').sort((a,b) => b.points - a.points)[0]?.teamId;
+            const promo1Id = workingCups.nacionalPrimerAscenso?.winnerId || d2t.filter(r => r.zone === 'A').sort((a,b) => b.points - a.points)[0]?.teamId;
+            const promo2Id = workingCups.nacionalReducido?.winnerId || d2t.filter(r => r.zone === 'B').sort((a,b) => b.points - a.points)[0]?.teamId;
             if (promo1Id) {
                 const t = processedTeams.find(tm => tm.id === promo1Id);
                 if (t) promotedTeamNames.push(t.name);
@@ -780,13 +809,11 @@ export function startNewSeason(currentState: GameState): GameState {
                 if (t) promotedTeamNames.push(t.name);
             }
         } else {
-            const d1t = currentState.leagueTables[div1] || [];
-            const d2t = currentState.leagueTables[div2] || [];
-            const s1 = [...d1t].sort((a,b) => b.points - a.points || b.goalDifference - a.goalDifference);
-            const s2 = [...d2t].sort((a,b) => b.points - a.points || b.goalDifference - a.goalDifference);
+            const d1t = workingLeagueTables[div1] || [];
+            const d2t = workingLeagueTables[div2] || [];
             const slots = getPromotionRelegationSlots(div1);
-            s1.slice(-slots).forEach(r => { const t = processedTeams.find(tm => tm.id === r.teamId); if (t) relegatedTeamNames.push(t.name); });
-            s2.slice(0, slots).forEach(r => { const t = processedTeams.find(tm => tm.id === r.teamId); if (t) promotedTeamNames.push(t.name); });
+            d1t.slice(-slots).forEach(r => { const t = processedTeams.find(tm => tm.id === r.teamId); if (t) relegatedTeamNames.push(t.name); });
+            d2t.slice(0, slots).forEach(r => { const t = processedTeams.find(tm => tm.id === r.teamId); if (t) promotedTeamNames.push(t.name); });
         }
     }
 
@@ -805,13 +832,13 @@ export function startNewSeason(currentState: GameState): GameState {
     });
 
     // 7.6 Build Season History Record
-    const userTable = (userLeagueId !== 'CONMEBOL' ? currentState.leagueTables[userLeagueId] : []) || [];
-    const sortedUserTable = [...userTable].sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference);
+    const userTable = (userLeagueId !== 'CONMEBOL' ? workingLeagueTables[userLeagueId] : []) || [];
+    const sortedUserTable = userTable;
     const userRow = sortedUserTable.find(r => r.teamId === currentState.team.id);
     const leagueChampionTeam = processedTeams.find(t => t.id === sortedUserTable[0]?.teamId)?.name || 'Desconocido';
 
     const cupWinnersList: { cupName: string; winnerName: string }[] = [];
-    Object.entries(currentState.cups).forEach(([_, cup]) => {
+    Object.entries(workingCups).forEach(([_, cup]) => {
         if (cup?.winnerId) {
             const winnerTeam = processedTeams.find(t => t.id === cup.winnerId);
             if (winnerTeam) {

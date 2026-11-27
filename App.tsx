@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect } from 'react';
-import { GameState, Team, Screen, PlayerProfile, NewsItem, ElectoralPromise } from './types';
-import { useGameStore } from './state/gameStore';
+import { Team, PlayerProfile, NewsItem, ElectoralPromise } from './types';
+import { useGameStore, ensureGameReducerLoaded } from './state/gameStore';
+import { useTeamSlice, useFinancesSlice, useCalendarSlice } from './state/selectors';
+import { loadTeamCatalog } from './services/teamCatalogRegistry';
 
 // Contexts & Providers
 import { NotificationProvider, useNotification } from './contexts/NotificationContext';
@@ -8,29 +10,56 @@ import { ModalProvider, useModal } from './contexts/ModalContext';
 import { ToastProvider } from './components/common/ToastProvider';
 import { AuthProvider } from './contexts/AuthContext';
 
-// Router and Layout
+// Router & Lazy Layout (MainLayout deferred until GAME_ACTIVE)
 import { AppRouter } from './components/AppRouter';
-import { MainLayout } from './components/MainLayout';
 
 // UI Modals & Overlays - Lazy loaded on-demand
 import { Notification } from './components/ui/Notification';
+const MainLayout = React.lazy(() => import('./components/MainLayout').then(m => ({ default: m.MainLayout })));
 const PlayerDetailModal = React.lazy(() => import('./components/ui/PlayerDetailModal').then(m => ({ default: m.PlayerDetailModal })));
 const SaveGameModal = React.lazy(() => import('./components/ui/SaveGameModal').then(m => ({ default: m.SaveGameModal })));
 const EventModal = React.lazy(() => import('./components/ui/EventModal').then(m => ({ default: m.EventModal })));
 const CinematicOverlay = React.lazy(() => import('./components/cinematics/CinematicOverlay').then(m => ({ default: m.CinematicOverlay })));
 const SeasonEndModal = React.lazy(() => import('./components/screens/season/SeasonEndModal').then(m => ({ default: m.SeasonEndModal })));
 
-// Services
-import { generateNews } from './services/gameLogic';
+// Utilities
 import { formatDate, setGlobalCurrency } from './utils';
-import { eventEngine } from './services/eventEngine';
 
 // Custom Hooks
 import { useGameSave } from './hooks/useGameSave';
 import { useSimulation } from './hooks/useSimulation';
 
+let gameRuntimePromise: Promise<void> | null = null;
+function preloadGameRuntime(): Promise<void> {
+    if (!gameRuntimePromise) {
+        gameRuntimePromise = Promise.all([
+            ensureGameReducerLoaded(),
+            loadTeamCatalog(),
+            import('./services/resources/providers/DefaultResourceProvider').then(m => m.DefaultResourceProvider.preloadAssets())
+        ]).then(() => undefined);
+    }
+    return gameRuntimePromise;
+}
+
+const SeasonEndModalContainer: React.FC<{
+    onClose: () => void;
+    onStartNewSeason: () => void;
+    isStarting: boolean;
+}> = React.memo(({ onClose, onStartNewSeason, isStarting }) => {
+    const gameState = useGameStore(s => s.gameState);
+    if (!gameState) return null;
+    return (
+        <SeasonEndModal
+            gameState={gameState}
+            onClose={onClose}
+            onStartNewSeason={onStartNewSeason}
+            isStarting={isStarting}
+        />
+    );
+});
+
 function AppLogic() {
-    // Fine-grained Zustand atomic selectors to avoid full-tree re-renders on arbitrary store mutations
+    // Atomic Zustand selectors (AppLogic NEVER subscribes to full `s => s.gameState`)
     const appState = useGameStore(s => s.appState);
     const setAppState = useGameStore(s => s.setAppState);
     const playerProfile = useGameStore(s => s.playerProfile);
@@ -39,10 +68,9 @@ function AppLogic() {
     const setSelectedTeam = useGameStore(s => s.setSelectedTeam);
     const electionResult = useGameStore(s => s.electionResult);
     const setElectionResult = useGameStore(s => s.setElectionResult);
-    const activeScreen = useGameStore(s => s.activeScreen);
-    const setActiveScreen = useGameStore(s => s.setActiveScreen);
-    const gameState = useGameStore(s => s.gameState);
+    const hasGameState = useGameStore(s => s.gameState !== null);
     const dispatch = useGameStore(s => s.dispatch);
+    const storeViewingPlayer = useGameStore(s => s.viewingPlayer);
     const currentEvent = useGameStore(s => s.currentEvent);
     const setCurrentEvent = useGameStore(s => s.setCurrentEvent);
     const isSeasonEndModalOpen = useGameStore(s => s.isSeasonEndModalOpen);
@@ -50,40 +78,43 @@ function AppLogic() {
     const isStartingSeason = useGameStore(s => s.isStartingSeason);
     const setIsStartingSeason = useGameStore(s => s.setIsStartingSeason);
     const resetGameData = useGameStore(s => s.resetGameData);
+    const topCinematic = useGameStore(s => s.gameState?.cinematicQueue?.[0] || null);
+    const newsFeedLength = useGameStore(s => s.gameState?.newsFeed?.length ?? 0);
+
+    // Atomic domain slices for shell metadata
+    const { teamName } = useTeamSlice();
+    const { preferredCurrency } = useFinancesSlice();
+    const { season } = useCalendarSlice();
 
     // Sync global currency formatters
     useEffect(() => {
-        if (gameState?.preferredCurrency) {
-            setGlobalCurrency(gameState.preferredCurrency);
+        if (preferredCurrency) {
+            setGlobalCurrency(preferredCurrency);
         }
-    }, [gameState?.preferredCurrency]);
+    }, [preferredCurrency]);
 
     // Contexts
     const { notification, showNotification, hideNotification } = useNotification();
     const { viewingPlayer: modalViewingPlayer, isSaveModalOpen, saveMode, openSaveModal, closeSaveModal } = useModal();
-    const viewingPlayer = gameState?.viewingPlayer || modalViewingPlayer;
+    const viewingPlayer = storeViewingPlayer || modalViewingPlayer;
 
-    // Simulation & Save hooks
-    const { 
-        matchPhase, 
-        setMatchPhase, 
-        pendingResults, 
-        setPendingResults, 
-        isSimulating, 
-        handlePlayMatch, 
-        handleWeekComplete 
-    } = useSimulation(gameState, dispatch, setAppState, showNotification, setCurrentEvent);
-    
-    const { 
-        currentSaveName, 
-        lastSaved, 
-        resetSaveState, 
-        performLoadGame, 
-        performLoadCloudGame, 
+    // Unified Zustand Simulation & Save hooks
+    const {
+        matchPhase,
+        setMatchPhase,
+        setPendingResults,
+        handleWeekComplete
+    } = useSimulation(showNotification);
+
+    const {
+        currentSaveName,
+        resetSaveState,
+        performLoadGame,
+        performLoadCloudGame,
         performSaveGame,
         performAutoSave,
         performQuickSave
-    } = useGameSave(gameState, playerProfile, appState, matchPhase, dispatch, showNotification);
+    } = useGameSave(showNotification);
 
     // Career lifecycle handlers
     const handleNewGame = useCallback(() => {
@@ -92,9 +123,11 @@ function AppLogic() {
         setMatchPhase('PRE');
         setPendingResults(null);
         setAppState('PROFILE_CREATION');
+        void preloadGameRuntime();
     }, [resetGameData, resetSaveState, setMatchPhase, setPendingResults, setAppState]);
 
     const handleLoadGame = useCallback(async (id: string, isCloud?: boolean) => {
+        await preloadGameRuntime();
         const loadedProfile = isCloud ? await performLoadCloudGame(id) : await performLoadGame(id);
         if (loadedProfile) {
             setPlayerProfile(loadedProfile);
@@ -104,15 +137,15 @@ function AppLogic() {
         }
     }, [performLoadGame, performLoadCloudGame, setPlayerProfile, setAppState]);
 
-    const handleProfileCreate = (profile: PlayerProfile) => {
+    const handleProfileCreate = useCallback((profile: PlayerProfile) => {
         setPlayerProfile(profile);
         setAppState('TEAM_SELECTION');
-    };
+    }, [setPlayerProfile, setAppState]);
 
-    const handleTeamSelect = (team: Team) => {
+    const handleTeamSelect = useCallback((team: Team) => {
         setSelectedTeam(team);
         setAppState('ELECTION_PITCH');
-    };
+    }, [setSelectedTeam, setAppState]);
 
     const handlePitchSubmit = useCallback(async (debateSummary: string) => {
         if (!selectedTeam || !playerProfile) return;
@@ -131,36 +164,41 @@ function AppLogic() {
         setAppState('PROMISE_SELECTION');
     }, [selectedTeam, playerProfile, setAppState]);
 
-    const handlePromisesSubmit = useCallback((promises: ElectoralPromise[]) => {
+    const handlePromisesSubmit = useCallback(async (promises: ElectoralPromise[]) => {
         if (!selectedTeam || !playerProfile) return;
-        dispatch({ 
-            type: 'INITIALIZE_GAME', 
-            payload: { 
-                team: selectedTeam, 
+        await preloadGameRuntime();
+        dispatch({
+            type: 'INITIALIZE_GAME',
+            payload: {
+                team: selectedTeam,
                 playerProfile,
-                initialPromises: promises 
-            } 
+                initialPromises: promises
+            }
         });
         setAppState('GAME_ACTIVE');
     }, [selectedTeam, playerProfile, dispatch, setAppState]);
 
-    const handleRetryElection = () => {
+    const handleRetryElection = useCallback(() => {
         setSelectedTeam(null);
         setElectionResult(null);
         setAppState('TEAM_SELECTION');
-    };
-
-    const fetchInitialNews = useCallback(async (state: GameState) => {
-        const initialNews = await generateNews(state);
-        const newsItem: NewsItem = { ...initialNews, id: new Date().toISOString(), date: formatDate(state.currentDate) };
-        dispatch({ type: 'ADD_NEWS', payload: newsItem });
-    }, [dispatch]);
+    }, [setSelectedTeam, setElectionResult, setAppState]);
 
     useEffect(() => {
-        if (gameState && gameState.newsFeed.length === 3) {
-            fetchInitialNews(gameState);
+        if (hasGameState && newsFeedLength === 3) {
+            const gs = useGameStore.getState().gameState;
+            if (!gs) return;
+            void import('./services/gameLogic').then(async ({ generateNews }) => {
+                const initialNews = await generateNews(gs);
+                const newsItem: NewsItem = {
+                    ...initialNews,
+                    id: new Date().toISOString(),
+                    date: formatDate(gs.currentDate)
+                };
+                dispatch({ type: 'ADD_NEWS', payload: newsItem });
+            });
         }
-    }, [gameState, fetchInitialNews]);
+    }, [hasGameState, newsFeedLength, dispatch]);
 
     const handleConfirmSave = useCallback(async (saveName: string) => {
         await performSaveGame(saveName, saveMode);
@@ -175,9 +213,11 @@ function AppLogic() {
         }
     }, [resetGameData, resetSaveState, setAppState]);
 
-    const handleEventChoice = useCallback((choiceIndex: number, effects: any) => {
-        if (!gameState || !currentEvent) return;
-        const updates = eventEngine.applyEffects(effects, gameState);
+    const handleEventChoice = useCallback(async (_choiceIndex: number, effects: any) => {
+        const gs = useGameStore.getState().gameState;
+        if (!gs || !currentEvent) return;
+        const { eventEngine } = await import('./services/eventEngine');
+        const updates = eventEngine.applyEffects(effects, gs);
 
         if (updates.finances) dispatch({ type: 'UPDATE_FINANCES', payload: updates.finances });
         if (updates.team) dispatch({ type: 'UPDATE_TEAM', payload: updates.team });
@@ -189,27 +229,27 @@ function AppLogic() {
         dispatch({ type: 'RECORD_TRIGGERED_EVENT', payload: currentEvent.event.id });
         showNotification(`Evento: ${currentEvent.event.title} - Decisión tomada`);
         setCurrentEvent(null);
-    }, [gameState, currentEvent, showNotification, dispatch, setCurrentEvent]);
+    }, [currentEvent, showNotification, dispatch, setCurrentEvent]);
 
     const onWeekComplete = useCallback(() => {
+        const gs = useGameStore.getState().gameState;
         handleWeekComplete();
-        // Throttled auto-save: run every 4 weeks on weekend turn (or week 1)
-        if (gameState && (gameState.currentWeek % 4 === 0 || gameState.currentWeek === 1) && gameState.currentTurn === 'weekend') {
+        if (gs && (gs.currentWeek % 4 === 0 || gs.currentWeek === 1) && gs.currentTurn === 'weekend') {
             performAutoSave();
         }
-    }, [handleWeekComplete, performAutoSave, gameState]);
+    }, [handleWeekComplete, performAutoSave]);
 
     // Keyboard shortcut for Quick-Save (F5 or Ctrl+S)
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (appState === 'GAME_ACTIVE' && gameState && (e.key === 'F5' || (e.ctrlKey && e.key.toLowerCase() === 's'))) {
+            if (appState === 'GAME_ACTIVE' && useGameStore.getState().gameState && (e.key === 'F5' || (e.ctrlKey && e.key.toLowerCase() === 's'))) {
                 e.preventDefault();
                 performQuickSave();
             }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [appState, gameState, performQuickSave]);
+    }, [appState, performQuickSave]);
 
     const handleStartNewSeason = useCallback(() => {
         setIsStartingSeason(true);
@@ -221,6 +261,14 @@ function AppLogic() {
             performAutoSave();
         }, 80);
     }, [dispatch, showNotification, performAutoSave, setIsStartingSeason, setIsSeasonEndModalOpen]);
+
+    const handleElectionComplete = useCallback(() => {
+        showNotification('¡Reelección exitosa! Nuevo mandato comenzado');
+    }, [showNotification]);
+
+    const handleOpenSeasonEndModal = useCallback(() => {
+        setIsSeasonEndModalOpen(true);
+    }, [setIsSeasonEndModalOpen]);
 
     return (
         <>
@@ -237,7 +285,7 @@ function AppLogic() {
                     <SaveGameModal
                         onSave={handleConfirmSave}
                         onClose={closeSaveModal}
-                        defaultName={currentSaveName || `${gameState?.team?.name} - Temp ${gameState?.season || 1}`}
+                        defaultName={currentSaveName || `${teamName || 'Club'} - Temp ${season}`}
                         mode={saveMode}
                     />
                 )}
@@ -249,27 +297,24 @@ function AppLogic() {
                     />
                 )}
 
-                {isSeasonEndModalOpen && gameState && (
-                    <SeasonEndModal
-                        gameState={gameState}
+                {isSeasonEndModalOpen && (
+                    <SeasonEndModalContainer
                         onClose={() => setIsSeasonEndModalOpen(false)}
                         onStartNewSeason={handleStartNewSeason}
                         isStarting={isStartingSeason}
                     />
                 )}
-                
-                {/* Cinematic Overlay System - Only show when NOT in fullscreen live match simulation */}
-                {gameState && gameState.cinematicQueue?.length > 0 && matchPhase !== 'LIVE' && (
-                    <CinematicOverlay 
-                        event={gameState.cinematicQueue[0]} 
-                        onContinue={() => dispatch({ type: 'POP_CINEMATIC' })} 
+
+                {topCinematic && matchPhase !== 'LIVE' && (
+                    <CinematicOverlay
+                        event={topCinematic}
+                        onContinue={() => dispatch({ type: 'POP_CINEMATIC' })}
                     />
                 )}
             </React.Suspense>
 
             <AppRouter
                 appState={appState}
-                gameState={gameState}
                 playerProfile={playerProfile}
                 selectedTeam={selectedTeam}
                 electionResult={electionResult}
@@ -284,27 +329,19 @@ function AppLogic() {
                 onStartGame={handleStartGame}
                 onRetryElection={handleRetryElection}
             >
-                {gameState && (
-                    <MainLayout
-                        gameState={gameState}
-                        activeScreen={activeScreen}
-                        setActiveScreen={setActiveScreen}
-                        matchPhase={matchPhase}
-                        pendingResults={pendingResults}
-                        onPlayMatch={handlePlayMatch}
-                        onWeekComplete={onWeekComplete}
-                        dispatch={dispatch}
-                        onSaveGame={openSaveModal}
-                        onQuickSave={performQuickSave}
-                        onQuitToMenu={handleQuitToMenu}
-                        onNewGame={handleNewGame}
-                        currentSaveName={currentSaveName}
-                        lastSaved={lastSaved}
-                        onElectionComplete={() => showNotification('¡Reelección exitosa! Nuevo mandato comenzado')}
-                        isSimulating={isSimulating}
-                        onStartNewSeason={handleStartNewSeason}
-                        onOpenSeasonEndModal={() => setIsSeasonEndModalOpen(true)}
-                    />
+                {hasGameState && (
+                    <React.Suspense fallback={null}>
+                        <MainLayout
+                            onWeekComplete={onWeekComplete}
+                            onSaveGame={openSaveModal}
+                            onQuickSave={performQuickSave}
+                            onQuitToMenu={handleQuitToMenu}
+                            onNewGame={handleNewGame}
+                            onElectionComplete={handleElectionComplete}
+                            onStartNewSeason={handleStartNewSeason}
+                            onOpenSeasonEndModal={handleOpenSeasonEndModal}
+                        />
+                    </React.Suspense>
                 )}
             </AppRouter>
         </>

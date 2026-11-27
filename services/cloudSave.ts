@@ -1,10 +1,22 @@
 import { supabase } from './supabase';
 import { GameState, PlayerProfile } from '../types';
 import { SCHEMA_VERSION } from './db';
-import { compressString, decompressString } from '../utils/compression';
+import { compressStringAsync, decompressStringAsync } from '../utils/compression';
 import type { Json } from '../types/supabase';
 
 export const MAX_CLOUD_SAVES = 3;
+
+/**
+ * Checks the locally cached Supabase session before touching Auth HTTP endpoints,
+ * preventing unnecessary network errors/traffic when playing offline or as a guest.
+ */
+async function getLocalSessionUser() {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error || !session?.user) {
+        return null;
+    }
+    return session.user;
+}
 
 export interface CloudSaveSummary {
     id: string;
@@ -23,39 +35,23 @@ export async function uploadSaveToCloud(
     gameState: GameState,
     playerProfile: PlayerProfile
 ): Promise<void> {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const user = await getLocalSessionUser();
 
-    if (userError || !user) {
+    if (!user) {
         throw new Error('Debes iniciar sesión con Google para guardar en la nube.');
     }
 
-    // Determine canonical slotId for this career to guarantee replacement
+    // Determine canonical slotId for this career to guarantee replacement by careerId (never by team_id)
     const canonicalSlotId = gameState.careerId || slotId;
 
-    // Check existing saves count and check if user already has a save for this team/career
     const { data: existingSaves } = await supabase
         .from('cloud_saves')
-        .select('id, slot_id, team_id')
+        .select('id, slot_id')
         .eq('user_id', user.id);
 
-    // If an existing save has the same team_id under an older different slot_id, delete the old slot
-    const duplicateSlot = existingSaves?.find(s => 
-        s.slot_id !== canonicalSlotId && s.team_id === gameState.team.id
-    );
+    const otherSlotsCount = (existingSaves || []).filter(s => s.slot_id !== canonicalSlotId).length;
 
-    if (duplicateSlot) {
-        await supabase
-            .from('cloud_saves')
-            .delete()
-            .eq('user_id', user.id)
-            .eq('slot_id', duplicateSlot.slot_id);
-    }
-
-    const remainingSlots = existingSaves?.filter(s => 
-        s.slot_id !== canonicalSlotId && (!duplicateSlot || s.slot_id !== duplicateSlot.slot_id)
-    ) || [];
-
-    if (remainingSlots.length >= MAX_CLOUD_SAVES) {
+    if (otherSlotsCount >= MAX_CLOUD_SAVES) {
         throw new Error(`Has alcanzado el límite máximo de ${MAX_CLOUD_SAVES} carreras en la nube. Sobrescribe una existente o elimina una para continuar.`);
     }
 
@@ -63,19 +59,16 @@ export async function uploadSaveToCloud(
     const stateToSerialize = {
         ...gameState,
         careerId: canonicalSlotId,
-        viewingPlayer: null,
         newsFeed: gameState.newsFeed ? gameState.newsFeed.slice(0, 60) : [],
         cinematicQueue: [],
     };
     const replacer = (key: string, value: unknown) => (key === 'logo' ? undefined : value);
     
-    // Yield to browser execution so heavy stringification and LZW compression don't freeze frames
+    // Yield a frame before JSON serialization, then compress off the main thread via Web Worker + Gzip V3
     const rawJson = await new Promise<string>(resolve => {
         setTimeout(() => resolve(JSON.stringify(stateToSerialize, replacer)), 0);
     });
-    const compressedData = await new Promise<string>(resolve => {
-        setTimeout(() => resolve(compressString(rawJson)), 0);
-    });
+    const compressedData = await compressStringAsync(rawJson);
 
     const storableGameState = {
         __compressed: true,
@@ -109,9 +102,9 @@ export async function uploadSaveToCloud(
 }
 
 export async function getCloudSaves(): Promise<CloudSaveSummary[]> {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const user = await getLocalSessionUser();
 
-    if (userError || !user) {
+    if (!user) {
         return [];
     }
 
@@ -126,37 +119,25 @@ export async function getCloudSaves(): Promise<CloudSaveSummary[]> {
         return [];
     }
 
-    // Deduplicate by team_id / career so multiple cloud saves of the same career never appear
-    const seenTeams = new Map<number, CloudSaveSummary>();
-    const duplicateIdsToDelete: string[] = [];
+    // Deduplicate strictly by canonical slot_id / careerId so distinct careers managing the same club are preserved
+    const seenSlots = new Map<string, CloudSaveSummary>();
 
     (data || []).forEach((row) => {
-        const item: CloudSaveSummary = {
-            id: row.id,
-            slotId: row.slot_id,
-            saveName: row.save_name,
-            teamId: row.team_id,
-            teamName: row.team_name,
-            season: row.season,
-            gameDate: row.game_date,
-            updatedAt: row.updated_at,
-        };
-
-        if (!seenTeams.has(row.team_id)) {
-            seenTeams.set(row.team_id, item);
-        } else {
-            // Already seen a more recent save for this club (since ordered by updated_at desc)
-            duplicateIdsToDelete.push(row.id);
+        if (!seenSlots.has(row.slot_id)) {
+            seenSlots.set(row.slot_id, {
+                id: row.id,
+                slotId: row.slot_id,
+                saveName: row.save_name,
+                teamId: row.team_id,
+                teamName: row.team_name,
+                season: row.season,
+                gameDate: row.game_date,
+                updatedAt: row.updated_at,
+            });
         }
     });
 
-    if (duplicateIdsToDelete.length > 0) {
-        Promise.resolve(supabase.from('cloud_saves').delete().in('id', duplicateIdsToDelete))
-            .then(() => console.log(`[Apex Cloud] Cleaned up ${duplicateIdsToDelete.length} obsolete duplicate cloud saves`))
-            .catch(err => console.warn('[Apex Cloud] Duplicate cleanup failed:', err));
-    }
-
-    return Array.from(seenTeams.values());
+    return Array.from(seenSlots.values());
 }
 
 export async function downloadCloudSave(slotId: string): Promise<{
@@ -164,9 +145,9 @@ export async function downloadCloudSave(slotId: string): Promise<{
     playerProfile: PlayerProfile;
     saveName: string;
 } | null> {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const user = await getLocalSessionUser();
 
-    if (userError || !user) {
+    if (!user) {
         throw new Error('Debes iniciar sesión con Google para cargar desde la nube.');
     }
 
@@ -186,7 +167,7 @@ export async function downloadCloudSave(slotId: string): Promise<{
     const rawState = data.game_state as any;
 
     if (rawState && rawState.__compressed && typeof rawState.data === 'string') {
-        const decompressedJson = decompressString(rawState.data);
+        const decompressedJson = await decompressStringAsync(rawState.data);
         loadedGameState = JSON.parse(decompressedJson);
     } else {
         loadedGameState = rawState as GameState;
@@ -204,9 +185,9 @@ export async function downloadCloudSave(slotId: string): Promise<{
 }
 
 export async function deleteCloudSave(slotId: string): Promise<void> {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const user = await getLocalSessionUser();
 
-    if (userError || !user) {
+    if (!user) {
         throw new Error('Debes iniciar sesión para eliminar una partida de la nube.');
     }
 
@@ -227,9 +208,9 @@ export async function deleteCloudSave(slotId: string): Promise<void> {
  * and signs out. Required for Google Play Store Account/Data Deletion Policy compliance.
  */
 export async function deleteAllUserDataFromCloud(): Promise<void> {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const user = await getLocalSessionUser();
 
-    if (userError || !user) {
+    if (!user) {
         return;
     }
 

@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { TEAMS } from '../../constants';
+import React, { useState, useMemo, useEffect } from 'react';
+import { getRegisteredTeams, loadTeamCatalog } from '../../services/teamCatalogRegistry';
 import { Team, PlayerProfile, LeagueId, CountryCode } from '../../types';
 import { TeamLogo, usePacksVersion } from '../../data/teams/helpers';
 import { formatCurrency } from '../../utils';
@@ -12,9 +12,19 @@ interface TeamSelectionProps {
 
 export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTeam }) => {
     usePacksVersion();
+    const [teamsCatalog, setTeamsCatalog] = useState<Team[]>(() => getRegisteredTeams());
     const [selectedCountry, setSelectedCountry] = useState<CountryCode | null>(null);
     const [selectedLeague, setSelectedLeague] = useState<LeagueId | null>(null);
     const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+
+    useEffect(() => {
+        if (teamsCatalog.length === 0) {
+            void loadTeamCatalog().then(setTeamsCatalog);
+        }
+        void import('../../services/resources/providers/DefaultResourceProvider').then(m =>
+            m.DefaultResourceProvider.preloadAssets()
+        );
+    }, [teamsCatalog.length]);
 
     const COUNTRY_CONFIG: Record<CountryCode, {
         title: string;
@@ -166,8 +176,8 @@ export const TeamSelection: React.FC<TeamSelectionProps> = ({ player, onSelectTe
 
     const teamsByLeague = useMemo(() => {
         if (!selectedLeague) return [];
-        return TEAMS.filter(t => t.leagueId === selectedLeague);
-    }, [selectedLeague]);
+        return teamsCatalog.filter(t => t.leagueId === selectedLeague);
+    }, [selectedLeague, teamsCatalog]);
 
     const currentStep = !selectedCountry ? 1 : !selectedLeague ? 2 : 3;
 

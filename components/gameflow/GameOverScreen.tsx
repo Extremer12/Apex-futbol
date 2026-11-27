@@ -64,7 +64,8 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({
                 clubValue,
                 fanApproval,
                 boardConfidence,
-                gameMode: gameState?.gameMode || playerProfile?.gameMode
+                gameMode: gameState?.gameMode || playerProfile?.gameMode,
+                careerId: gameState?.careerId,
             });
             setSubmitted(true);
         } catch (err) {

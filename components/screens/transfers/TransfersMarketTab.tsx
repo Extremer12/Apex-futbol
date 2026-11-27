@@ -209,7 +209,7 @@ export const TransfersMarketTab: React.FC<TransfersMarketTabProps> = React.memo(
                     />
                 </div>
             ) : (
-                <ul className="apex-card divide-y divide-white/5 overflow-hidden">
+                <ul className="apex-card divide-y divide-white/5 overflow-hidden apex-list-deferred">
                     {visible.map(player => {
                         const team = playerTeamMap.get(player.id);
                         const nat = resolvePlayerNationality(player, team?.leagueId);

@@ -9,12 +9,9 @@ import { ResourceType, ResourceResolution } from './ResourceTypes';
 import { PackResolver } from './PackResolver';
 import { PackManager } from './PackManager';
 import { ResourceCache } from './ResourceCache';
-type StoreNotifier = () => void;
-let packsStoreNotifier: StoreNotifier | null = null;
+import { notifyPacksStore, registerPacksStoreNotifier } from './packNotifierBridge';
 
-export function registerPacksStoreNotifier(notifier: StoreNotifier): void {
-    packsStoreNotifier = notifier;
-}
+export { registerPacksStoreNotifier };
 
 export class ResourceManager {
     private static instance: ResourceManager | null = null;
@@ -48,11 +45,7 @@ export class ResourceManager {
      * Notify game store of pack update to re-trigger React component updates
      */
     private notifyState(): void {
-        try {
-            if (packsStoreNotifier) {
-                packsStoreNotifier();
-            }
-        } catch {}
+        notifyPacksStore();
         this.listeners.forEach(fn => fn());
     }
 
