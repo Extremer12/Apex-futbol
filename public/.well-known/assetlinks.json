@@ -7,7 +7,8 @@
       "namespace": "android_app",
       "package_name": "app.apexai.footballpresident",
       "sha256_cert_fingerprints": [
-        "70:4C:79:0F:D0:88:D2:83:78:D8:53:C6:08:34:F3:9A:AD:F5:B9:73:A8:FF:97:4F:7D:E8:72:1E:26:33:0C:AE"
+        "70:4C:79:0F:D0:88:D2:83:78:D8:53:C6:08:34:F3:9A:AD:F5:B9:73:A8:FF:97:4F:7D:E8:72:1E:26:33:0C:AE",
+        "6C:CF:C6:2C:CC:01:0D:FE:FD:7E:25:4C:26:58:31:BE:3D:9D:73:67:15:D0:46:BB:87:C0:60:17:40:19:DD:06"
       ]
     }
   }
